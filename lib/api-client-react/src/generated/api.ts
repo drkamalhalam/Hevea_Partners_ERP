@@ -34,6 +34,7 @@ import type {
   ProjectInput,
   ProjectUpdate,
   RevenueStats,
+  StockSummary,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -1209,6 +1210,81 @@ export const useUpdateAgreement = <
 > => {
   return useMutation(getUpdateAgreementMutationOptions(options));
 };
+
+/**
+ * @summary Get current rubber stock levels per project (produced minus sold)
+ */
+export const getGetStockSummaryUrl = () => {
+  return `/api/stock`;
+};
+
+export const getStockSummary = async (
+  options?: RequestInit,
+): Promise<StockSummary[]> => {
+  return customFetch<StockSummary[]>(getGetStockSummaryUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetStockSummaryQueryKey = () => {
+  return [`/api/stock`] as const;
+};
+
+export const getGetStockSummaryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getStockSummary>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getStockSummary>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetStockSummaryQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getStockSummary>>> = ({
+    signal,
+  }) => getStockSummary({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getStockSummary>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetStockSummaryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getStockSummary>>
+>;
+export type GetStockSummaryQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get current rubber stock levels per project (produced minus sold)
+ */
+
+export function useGetStockSummary<
+  TData = Awaited<ReturnType<typeof getStockSummary>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getStockSummary>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetStockSummaryQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary List all rubber production records

@@ -328,6 +328,18 @@ export interface ActivityItem {
   createdAt: string;
 }
 
+export interface StockSummary {
+  projectId: number;
+  projectName: string;
+  location: string;
+  district: string;
+  totalProducedKg: number;
+  totalSoldKg: number;
+  currentStockKg: number;
+  /** @nullable */
+  lastUpdatedAt?: string | null;
+}
+
 export interface ProductionRecord {
   id: number;
   projectId: number;

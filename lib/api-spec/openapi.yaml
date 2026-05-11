@@ -277,6 +277,21 @@ paths:
               schema:
                 $ref: "#/components/schemas/Agreement"
 
+  /stock:
+    get:
+      operationId: getStockSummary
+      tags: [production]
+      summary: Get current rubber stock levels per project (produced minus sold)
+      responses:
+        "200":
+          description: Stock summary per project
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StockSummary"
+
   /production:
     get:
       operationId: listProductionRecords
@@ -801,6 +816,27 @@ components:
           type: string
         createdAt:
           type: string
+
+    StockSummary:
+      type: object
+      required: [projectId, projectName, location, district, totalProducedKg, totalSoldKg, currentStockKg]
+      properties:
+        projectId:
+          type: integer
+        projectName:
+          type: string
+        location:
+          type: string
+        district:
+          type: string
+        totalProducedKg:
+          type: number
+        totalSoldKg:
+          type: number
+        currentStockKg:
+          type: number
+        lastUpdatedAt:
+          type: ["string", "null"]
 
     ProductionRecord:
       type: object

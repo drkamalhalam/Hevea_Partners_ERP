@@ -411,6 +411,21 @@ export const UpdateAgreementResponse = zod.object({
 });
 
 /**
+ * @summary Get current rubber stock levels per project (produced minus sold)
+ */
+export const GetStockSummaryResponseItem = zod.object({
+  projectId: zod.number(),
+  projectName: zod.string(),
+  location: zod.string(),
+  district: zod.string(),
+  totalProducedKg: zod.number(),
+  totalSoldKg: zod.number(),
+  currentStockKg: zod.number(),
+  lastUpdatedAt: zod.string().nullish(),
+});
+export const GetStockSummaryResponse = zod.array(GetStockSummaryResponseItem);
+
+/**
  * @summary List all rubber production records
  */
 export const ListProductionRecordsQueryParams = zod.object({

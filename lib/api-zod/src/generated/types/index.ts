@@ -34,3 +34,4 @@ export * from "./projectStatus";
 export * from "./projectUpdate";
 export * from "./projectUpdateStatus";
 export * from "./revenueStats";
+export * from "./stockSummary";
