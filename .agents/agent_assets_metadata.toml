@@ -1,0 +1,8 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "Y38caah-XoNVWUSXetqQU"
+uri = "file://artifacts/plantation-web/public/hero-rubber-plantation.png"
+type = "image"
+title = "Rubber plantation hero image"

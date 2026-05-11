@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Rubber Plantation Partnership"
+version = "1.0.0"
+id = "artifacts/plantation-web"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23087
+
+[services.development]
+run = "pnpm --filter @workspace/plantation-web run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/plantation-web", "run", "build" ]
+publicDir = "artifacts/plantation-web/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23087"
+BASE_PATH = "/"

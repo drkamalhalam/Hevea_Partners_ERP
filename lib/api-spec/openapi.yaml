@@ -3,13 +3,22 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Rubber Plantation Partnership API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: projects
+    description: Plantation project operations
+  - name: partners
+    description: Partner operations
+  - name: agreements
+    description: Agreement operations
+  - name: dashboard
+    description: Dashboard and analytics
+
 paths:
   /healthz:
     get:
@@ -24,13 +33,714 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /projects:
+    get:
+      operationId: listProjects
+      tags: [projects]
+      summary: List all plantation projects
+      responses:
+        "200":
+          description: List of projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Project"
+    post:
+      operationId: createProject
+      tags: [projects]
+      summary: Create a new plantation project
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+
+  /projects/{id}:
+    get:
+      operationId: getProject
+      tags: [projects]
+      summary: Get a plantation project by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Project details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateProject
+      tags: [projects]
+      summary: Update a plantation project
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+    delete:
+      operationId: deleteProject
+      tags: [projects]
+      summary: Delete a plantation project
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /partners:
+    get:
+      operationId: listPartners
+      tags: [partners]
+      summary: List all partners
+      responses:
+        "200":
+          description: List of partners
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Partner"
+    post:
+      operationId: createPartner
+      tags: [partners]
+      summary: Register a new partner
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PartnerInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Partner"
+
+  /partners/{id}:
+    get:
+      operationId: getPartner
+      tags: [partners]
+      summary: Get a partner by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Partner details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Partner"
+        "404":
+          description: Not found
+    patch:
+      operationId: updatePartner
+      tags: [partners]
+      summary: Update a partner
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PartnerUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Partner"
+
+  /agreements:
+    get:
+      operationId: listAgreements
+      tags: [agreements]
+      summary: List all partnership agreements
+      responses:
+        "200":
+          description: List of agreements
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Agreement"
+    post:
+      operationId: createAgreement
+      tags: [agreements]
+      summary: Create a new partnership agreement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AgreementInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Agreement"
+
+  /agreements/{id}:
+    get:
+      operationId: getAgreement
+      tags: [agreements]
+      summary: Get an agreement by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Agreement details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Agreement"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateAgreement
+      tags: [agreements]
+      summary: Update an agreement
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AgreementUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Agreement"
+
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get overall dashboard summary metrics
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /dashboard/my-portfolio:
+    get:
+      operationId: getMyPortfolio
+      tags: [dashboard]
+      summary: Get current user's portfolio and agreements
+      responses:
+        "200":
+          description: User portfolio
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartnerPortfolio"
+
+  /dashboard/activity:
+    get:
+      operationId: getRecentActivity
+      tags: [dashboard]
+      summary: Get recent project activity feed
+      responses:
+        "200":
+          description: Activity feed
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityItem"
+
+  /dashboard/revenue:
+    get:
+      operationId: getRevenueStats
+      tags: [dashboard]
+      summary: Get revenue statistics across projects
+      responses:
+        "200":
+          description: Revenue statistics
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RevenueStats"
+
 components:
   schemas:
     HealthStatus:
       type: object
+      required: [status]
       properties:
         status:
           type: string
-      required:
-        - status
 
+    Project:
+      type: object
+      required: [id, name, location, district, state, landArea, landAreaUnit, status, startDate, termYears, createdAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        location:
+          type: string
+        village:
+          type: ["string", "null"]
+        district:
+          type: string
+        state:
+          type: string
+        landArea:
+          type: number
+        landAreaUnit:
+          type: string
+        landNotionalValue:
+          type: ["number", "null"]
+        landValuePerUnit:
+          type: ["number", "null"]
+        status:
+          type: string
+          enum: [planning, developing, maturing, tapping, completed]
+        startDate:
+          type: string
+        expectedMaturityDate:
+          type: ["string", "null"]
+        termYears:
+          type: integer
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: ["string", "null"]
+
+    ProjectInput:
+      type: object
+      required: [name, location, district, state, landArea, landAreaUnit, status, startDate, termYears]
+      properties:
+        name:
+          type: string
+        location:
+          type: string
+        village:
+          type: string
+        district:
+          type: string
+        state:
+          type: string
+        landArea:
+          type: number
+        landAreaUnit:
+          type: string
+        landNotionalValue:
+          type: number
+        landValuePerUnit:
+          type: number
+        status:
+          type: string
+          enum: [planning, developing, maturing, tapping, completed]
+        startDate:
+          type: string
+        expectedMaturityDate:
+          type: string
+        termYears:
+          type: integer
+        notes:
+          type: string
+
+    ProjectUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        location:
+          type: string
+        village:
+          type: string
+        district:
+          type: string
+        state:
+          type: string
+        landArea:
+          type: number
+        landAreaUnit:
+          type: string
+        landNotionalValue:
+          type: number
+        landValuePerUnit:
+          type: number
+        status:
+          type: string
+          enum: [planning, developing, maturing, tapping, completed]
+        startDate:
+          type: string
+        expectedMaturityDate:
+          type: string
+        termYears:
+          type: integer
+        notes:
+          type: string
+
+    Partner:
+      type: object
+      required: [id, name, role, email, phone, address, clerkUserId, createdAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        role:
+          type: string
+          enum: [project_developer, landowner, investor]
+        email:
+          type: string
+        phone:
+          type: ["string", "null"]
+        address:
+          type: string
+        aadhaarLast4:
+          type: ["string", "null"]
+        clerkUserId:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: ["string", "null"]
+
+    PartnerInput:
+      type: object
+      required: [name, role, email, address]
+      properties:
+        name:
+          type: string
+        role:
+          type: string
+          enum: [project_developer, landowner, investor]
+        email:
+          type: string
+        phone:
+          type: string
+        address:
+          type: string
+        aadhaarLast4:
+          type: string
+        clerkUserId:
+          type: string
+        notes:
+          type: string
+
+    PartnerUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        role:
+          type: string
+          enum: [project_developer, landowner, investor]
+        email:
+          type: string
+        phone:
+          type: string
+        address:
+          type: string
+        aadhaarLast4:
+          type: string
+        notes:
+          type: string
+
+    Agreement:
+      type: object
+      required: [id, projectId, projectName, landOwnerId, landOwnerName, projectDeveloperId, projectDeveloperName, executionDate, executionPlace, termYears, landArea, landAreaUnit, landNotionalValue, landValuePerUnit, landContributionAdjustment, yearlyEscalation, status, createdAt]
+      properties:
+        id:
+          type: integer
+        projectId:
+          type: integer
+        projectName:
+          type: string
+        landOwnerId:
+          type: integer
+        landOwnerName:
+          type: string
+        projectDeveloperId:
+          type: integer
+        projectDeveloperName:
+          type: string
+        executionDate:
+          type: string
+        executionPlace:
+          type: string
+        termYears:
+          type: integer
+        landArea:
+          type: number
+        landAreaUnit:
+          type: string
+        landNotionalValue:
+          type: number
+        landValuePerUnit:
+          type: number
+        landContributionAdjustment:
+          type: number
+        yearlyEscalation:
+          type: number
+        ownershipShareLandowner:
+          type: ["number", "null"]
+        ownershipShareDeveloper:
+          type: ["number", "null"]
+        revenueModel:
+          type: string
+          enum: [contribution, fifty_percent_revenue]
+        status:
+          type: string
+          enum: [draft, active, matured, terminated]
+        northBoundary:
+          type: ["string", "null"]
+        southBoundary:
+          type: ["string", "null"]
+        eastBoundary:
+          type: ["string", "null"]
+        westBoundary:
+          type: ["string", "null"]
+        gpsLat:
+          type: ["number", "null"]
+        gpsLng:
+          type: ["number", "null"]
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: ["string", "null"]
+
+    AgreementInput:
+      type: object
+      required: [projectId, landOwnerId, projectDeveloperId, executionDate, executionPlace, termYears, landArea, landAreaUnit, landNotionalValue, landValuePerUnit, landContributionAdjustment, yearlyEscalation]
+      properties:
+        projectId:
+          type: integer
+        landOwnerId:
+          type: integer
+        projectDeveloperId:
+          type: integer
+        executionDate:
+          type: string
+        executionPlace:
+          type: string
+        termYears:
+          type: integer
+        landArea:
+          type: number
+        landAreaUnit:
+          type: string
+        landNotionalValue:
+          type: number
+        landValuePerUnit:
+          type: number
+        landContributionAdjustment:
+          type: number
+        yearlyEscalation:
+          type: number
+        revenueModel:
+          type: string
+          enum: [contribution, fifty_percent_revenue]
+        northBoundary:
+          type: string
+        southBoundary:
+          type: string
+        eastBoundary:
+          type: string
+        westBoundary:
+          type: string
+        gpsLat:
+          type: number
+        gpsLng:
+          type: number
+        notes:
+          type: string
+
+    AgreementUpdate:
+      type: object
+      properties:
+        executionDate:
+          type: string
+        executionPlace:
+          type: string
+        termYears:
+          type: integer
+        landArea:
+          type: number
+        landAreaUnit:
+          type: string
+        landNotionalValue:
+          type: number
+        landValuePerUnit:
+          type: number
+        landContributionAdjustment:
+          type: number
+        yearlyEscalation:
+          type: number
+        ownershipShareLandowner:
+          type: number
+        ownershipShareDeveloper:
+          type: number
+        revenueModel:
+          type: string
+          enum: [contribution, fifty_percent_revenue]
+        status:
+          type: string
+          enum: [draft, active, matured, terminated]
+        northBoundary:
+          type: string
+        southBoundary:
+          type: string
+        eastBoundary:
+          type: string
+        westBoundary:
+          type: string
+        gpsLat:
+          type: number
+        gpsLng:
+          type: number
+        notes:
+          type: string
+
+    DashboardSummary:
+      type: object
+      required: [totalProjects, totalPartners, totalAgreements, totalLandArea, activeProjectsCount, maturingProjectsCount, tappingProjectsCount]
+      properties:
+        totalProjects:
+          type: integer
+        totalPartners:
+          type: integer
+        totalAgreements:
+          type: integer
+        totalLandArea:
+          type: number
+        activeProjectsCount:
+          type: integer
+        maturingProjectsCount:
+          type: integer
+        tappingProjectsCount:
+          type: integer
+
+    PartnerPortfolio:
+      type: object
+      required: [partnerId, partnerName, role, agreements, totalLandArea, totalOwnershipShare]
+      properties:
+        partnerId:
+          type: ["integer", "null"]
+        partnerName:
+          type: string
+        role:
+          type: string
+        agreements:
+          type: array
+          items:
+            $ref: "#/components/schemas/Agreement"
+        totalLandArea:
+          type: number
+        totalOwnershipShare:
+          type: number
+
+    ActivityItem:
+      type: object
+      required: [id, type, description, entityId, entityType, createdAt]
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+        description:
+          type: string
+        entityId:
+          type: integer
+        entityType:
+          type: string
+        createdAt:
+          type: string
+
+    RevenueStats:
+      type: object
+      required: [projectId, projectName, year, revenue, landContributionAdjustment, profit]
+      properties:
+        projectId:
+          type: integer
+        projectName:
+          type: string
+        year:
+          type: integer
+        revenue:
+          type: number
+        landContributionAdjustment:
+          type: number
+        profit:
+          type: number
