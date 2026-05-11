@@ -328,6 +328,33 @@ export interface ActivityItem {
   createdAt: string;
 }
 
+export interface ProductionRecord {
+  id: number;
+  projectId: number;
+  projectName: string;
+  recordedAt: string;
+  productionKg: number;
+  soldKg: number;
+  sellingPricePerKg: number;
+  revenue: number;
+  /** @nullable */
+  notes?: string | null;
+  createdAt: string;
+}
+
+export interface ProductionInput {
+  projectId: number;
+  /** ISO datetime of when production/sale happened */
+  recordedAt: string;
+  /** Total rubber produced in kg */
+  productionKg: number;
+  /** Quantity sold in kg */
+  soldKg: number;
+  /** Selling price per kg in INR */
+  sellingPricePerKg: number;
+  notes?: string;
+}
+
 export interface RevenueStats {
   projectId: number;
   projectName: string;
@@ -336,3 +363,7 @@ export interface RevenueStats {
   landContributionAdjustment: number;
   profit: number;
 }
+
+export type ListProductionRecordsParams = {
+  projectId?: number;
+};

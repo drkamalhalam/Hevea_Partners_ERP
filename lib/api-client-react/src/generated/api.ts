@@ -23,10 +23,13 @@ import type {
   AgreementUpdate,
   DashboardSummary,
   HealthStatus,
+  ListProductionRecordsParams,
   Partner,
   PartnerInput,
   PartnerPortfolio,
   PartnerUpdate,
+  ProductionInput,
+  ProductionRecord,
   Project,
   ProjectInput,
   ProjectUpdate,
@@ -1205,6 +1208,363 @@ export const useUpdateAgreement = <
   TContext
 > => {
   return useMutation(getUpdateAgreementMutationOptions(options));
+};
+
+/**
+ * @summary List all rubber production records
+ */
+export const getListProductionRecordsUrl = (
+  params?: ListProductionRecordsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/production?${stringifiedParams}`
+    : `/api/production`;
+};
+
+export const listProductionRecords = async (
+  params?: ListProductionRecordsParams,
+  options?: RequestInit,
+): Promise<ProductionRecord[]> => {
+  return customFetch<ProductionRecord[]>(getListProductionRecordsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListProductionRecordsQueryKey = (
+  params?: ListProductionRecordsParams,
+) => {
+  return [`/api/production`, ...(params ? [params] : [])] as const;
+};
+
+export const getListProductionRecordsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listProductionRecords>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListProductionRecordsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listProductionRecords>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListProductionRecordsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listProductionRecords>>
+  > = ({ signal }) =>
+    listProductionRecords(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listProductionRecords>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListProductionRecordsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listProductionRecords>>
+>;
+export type ListProductionRecordsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List all rubber production records
+ */
+
+export function useListProductionRecords<
+  TData = Awaited<ReturnType<typeof listProductionRecords>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListProductionRecordsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listProductionRecords>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListProductionRecordsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Log a new rubber production and sale record
+ */
+export const getCreateProductionRecordUrl = () => {
+  return `/api/production`;
+};
+
+export const createProductionRecord = async (
+  productionInput: ProductionInput,
+  options?: RequestInit,
+): Promise<ProductionRecord> => {
+  return customFetch<ProductionRecord>(getCreateProductionRecordUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(productionInput),
+  });
+};
+
+export const getCreateProductionRecordMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createProductionRecord>>,
+    TError,
+    { data: BodyType<ProductionInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createProductionRecord>>,
+  TError,
+  { data: BodyType<ProductionInput> },
+  TContext
+> => {
+  const mutationKey = ["createProductionRecord"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createProductionRecord>>,
+    { data: BodyType<ProductionInput> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createProductionRecord(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateProductionRecordMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createProductionRecord>>
+>;
+export type CreateProductionRecordMutationBody = BodyType<ProductionInput>;
+export type CreateProductionRecordMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Log a new rubber production and sale record
+ */
+export const useCreateProductionRecord = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createProductionRecord>>,
+    TError,
+    { data: BodyType<ProductionInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createProductionRecord>>,
+  TError,
+  { data: BodyType<ProductionInput> },
+  TContext
+> => {
+  return useMutation(getCreateProductionRecordMutationOptions(options));
+};
+
+/**
+ * @summary Get a production record by ID
+ */
+export const getGetProductionRecordUrl = (id: number) => {
+  return `/api/production/${id}`;
+};
+
+export const getProductionRecord = async (
+  id: number,
+  options?: RequestInit,
+): Promise<ProductionRecord> => {
+  return customFetch<ProductionRecord>(getGetProductionRecordUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetProductionRecordQueryKey = (id: number) => {
+  return [`/api/production/${id}`] as const;
+};
+
+export const getGetProductionRecordQueryOptions = <
+  TData = Awaited<ReturnType<typeof getProductionRecord>>,
+  TError = ErrorType<void>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getProductionRecord>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetProductionRecordQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getProductionRecord>>
+  > = ({ signal }) => getProductionRecord(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getProductionRecord>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetProductionRecordQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getProductionRecord>>
+>;
+export type GetProductionRecordQueryError = ErrorType<void>;
+
+/**
+ * @summary Get a production record by ID
+ */
+
+export function useGetProductionRecord<
+  TData = Awaited<ReturnType<typeof getProductionRecord>>,
+  TError = ErrorType<void>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getProductionRecord>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetProductionRecordQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Delete a production record
+ */
+export const getDeleteProductionRecordUrl = (id: number) => {
+  return `/api/production/${id}`;
+};
+
+export const deleteProductionRecord = async (
+  id: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteProductionRecordUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteProductionRecordMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteProductionRecord>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteProductionRecord>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["deleteProductionRecord"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteProductionRecord>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteProductionRecord(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteProductionRecordMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteProductionRecord>>
+>;
+
+export type DeleteProductionRecordMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Delete a production record
+ */
+export const useDeleteProductionRecord = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteProductionRecord>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteProductionRecord>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDeleteProductionRecordMutationOptions(options));
 };
 
 /**

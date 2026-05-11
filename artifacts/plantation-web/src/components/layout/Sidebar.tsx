@@ -6,7 +6,8 @@ import {
   FileText, 
   Briefcase, 
   ShieldCheck,
-  Sprout
+  Sprout,
+  Scale
 } from "lucide-react";
 import { useUser } from "@clerk/react";
 
@@ -20,6 +21,7 @@ export default function Sidebar() {
     { name: "Projects", href: "/projects", icon: Trees },
     { name: "Partners", href: "/partners", icon: Users },
     { name: "Agreements", href: "/agreements", icon: FileText },
+    { name: "Production & Sales", href: "/production", icon: Scale },
   ];
 
   return (

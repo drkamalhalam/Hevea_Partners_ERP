@@ -18,6 +18,8 @@ tags:
     description: Agreement operations
   - name: dashboard
     description: Dashboard and analytics
+  - name: production
+    description: Rubber production and sales records
 
 paths:
   /healthz:
@@ -274,6 +276,78 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Agreement"
+
+  /production:
+    get:
+      operationId: listProductionRecords
+      tags: [production]
+      summary: List all rubber production records
+      parameters:
+        - name: projectId
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of production records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProductionRecord"
+    post:
+      operationId: createProductionRecord
+      tags: [production]
+      summary: Log a new rubber production and sale record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductionInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductionRecord"
+
+  /production/{id}:
+    get:
+      operationId: getProductionRecord
+      tags: [production]
+      summary: Get a production record by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Production record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductionRecord"
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteProductionRecord
+      tags: [production]
+      summary: Delete a production record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
 
   /dashboard/summary:
     get:
@@ -726,6 +800,52 @@ components:
         entityType:
           type: string
         createdAt:
+          type: string
+
+    ProductionRecord:
+      type: object
+      required: [id, projectId, projectName, recordedAt, productionKg, soldKg, sellingPricePerKg, revenue, createdAt]
+      properties:
+        id:
+          type: integer
+        projectId:
+          type: integer
+        projectName:
+          type: string
+        recordedAt:
+          type: string
+        productionKg:
+          type: number
+        soldKg:
+          type: number
+        sellingPricePerKg:
+          type: number
+        revenue:
+          type: number
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    ProductionInput:
+      type: object
+      required: [projectId, recordedAt, productionKg, soldKg, sellingPricePerKg]
+      properties:
+        projectId:
+          type: integer
+        recordedAt:
+          type: string
+          description: ISO datetime of when production/sale happened
+        productionKg:
+          type: number
+          description: Total rubber produced in kg
+        soldKg:
+          type: number
+          description: Quantity sold in kg
+        sellingPricePerKg:
+          type: number
+          description: Selling price per kg in INR
+        notes:
           type: string
 
     RevenueStats:

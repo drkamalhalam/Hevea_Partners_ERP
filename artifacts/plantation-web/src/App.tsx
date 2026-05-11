@@ -16,6 +16,7 @@ import Agreements from "./pages/Agreements";
 import AgreementDetails from "./pages/AgreementDetails";
 import MyPortfolio from "./pages/MyPortfolio";
 import Admin from "./pages/Admin";
+import Production from "./pages/Production";
 import NotFound from "@/pages/not-found";
 import Layout from "./components/layout/Layout";
 
@@ -134,6 +135,7 @@ function AppRoutes() {
             <Route path="/agreements"><ProtectedRoute component={Agreements} /></Route>
             <Route path="/agreements/:id"><ProtectedRoute component={AgreementDetails} /></Route>
             <Route path="/my-portfolio"><ProtectedRoute component={MyPortfolio} /></Route>
+            <Route path="/production"><ProtectedRoute component={Production} /></Route>
             <Route path="/admin"><ProtectedRoute component={Admin} /></Route>
             
             <Route component={NotFound} />

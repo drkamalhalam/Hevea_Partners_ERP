@@ -411,6 +411,70 @@ export const UpdateAgreementResponse = zod.object({
 });
 
 /**
+ * @summary List all rubber production records
+ */
+export const ListProductionRecordsQueryParams = zod.object({
+  projectId: zod.coerce.number().optional(),
+});
+
+export const ListProductionRecordsResponseItem = zod.object({
+  id: zod.number(),
+  projectId: zod.number(),
+  projectName: zod.string(),
+  recordedAt: zod.string(),
+  productionKg: zod.number(),
+  soldKg: zod.number(),
+  sellingPricePerKg: zod.number(),
+  revenue: zod.number(),
+  notes: zod.string().nullish(),
+  createdAt: zod.string(),
+});
+export const ListProductionRecordsResponse = zod.array(
+  ListProductionRecordsResponseItem,
+);
+
+/**
+ * @summary Log a new rubber production and sale record
+ */
+export const CreateProductionRecordBody = zod.object({
+  projectId: zod.number(),
+  recordedAt: zod
+    .string()
+    .describe("ISO datetime of when production\/sale happened"),
+  productionKg: zod.number().describe("Total rubber produced in kg"),
+  soldKg: zod.number().describe("Quantity sold in kg"),
+  sellingPricePerKg: zod.number().describe("Selling price per kg in INR"),
+  notes: zod.string().optional(),
+});
+
+/**
+ * @summary Get a production record by ID
+ */
+export const GetProductionRecordParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetProductionRecordResponse = zod.object({
+  id: zod.number(),
+  projectId: zod.number(),
+  projectName: zod.string(),
+  recordedAt: zod.string(),
+  productionKg: zod.number(),
+  soldKg: zod.number(),
+  sellingPricePerKg: zod.number(),
+  revenue: zod.number(),
+  notes: zod.string().nullish(),
+  createdAt: zod.string(),
+});
+
+/**
+ * @summary Delete a production record
+ */
+export const DeleteProductionRecordParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
  * @summary Get overall dashboard summary metrics
  */
 export const GetDashboardSummaryResponse = zod.object({
