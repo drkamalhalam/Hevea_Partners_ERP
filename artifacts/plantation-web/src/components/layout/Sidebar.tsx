@@ -24,6 +24,7 @@ import {
   LibraryBig,
   Scroll,
   ClipboardList,
+  ListChecks,
   Landmark,
   TrendingUp,
   Archive,
@@ -247,6 +248,12 @@ const navGroups: NavGroup[] = [
         href: "/sales/audit",
         icon: ShieldCheck,
         roles: ["admin", "developer"],
+      },
+      {
+        name: "Tasks",
+        href: "/tasks",
+        icon: ListChecks,
+        roles: ["admin", "developer", "employee", "operational_staff"],
       },
       {
         name: "Distribution",

@@ -24,7 +24,8 @@
     "http-proxy-middleware": "^4.0.0",
     "pino": "^9",
     "pino-http": "^10",
-    "pizzip": "^3.2.0"
+    "pizzip": "^3.2.0",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.10",

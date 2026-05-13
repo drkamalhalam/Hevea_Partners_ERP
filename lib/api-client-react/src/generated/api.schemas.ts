@@ -4136,6 +4136,153 @@ export interface UpdateSaleDocumentBody {
   notes?: string;
 }
 
+export type OperationalTaskTaskType =
+  (typeof OperationalTaskTaskType)[keyof typeof OperationalTaskTaskType];
+
+export const OperationalTaskTaskType = {
+  production_entry: "production_entry",
+  stock_update: "stock_update",
+  inspection: "inspection",
+  general: "general",
+} as const;
+
+export type OperationalTaskStatus =
+  (typeof OperationalTaskStatus)[keyof typeof OperationalTaskStatus];
+
+export const OperationalTaskStatus = {
+  pending: "pending",
+  in_progress: "in_progress",
+  completed: "completed",
+  cancelled: "cancelled",
+} as const;
+
+export type OperationalTaskPriority =
+  (typeof OperationalTaskPriority)[keyof typeof OperationalTaskPriority];
+
+export const OperationalTaskPriority = {
+  low: "low",
+  normal: "normal",
+  high: "high",
+  urgent: "urgent",
+} as const;
+
+export interface OperationalTask {
+  id: string;
+  title: string;
+  description?: string;
+  taskType: OperationalTaskTaskType;
+  status: OperationalTaskStatus;
+  priority: OperationalTaskPriority;
+  projectId?: string;
+  projectName?: string;
+  assignedToId?: string;
+  assignedToName?: string;
+  assignedToRole?: string;
+  assignedById?: string;
+  assignedByName?: string;
+  dueDate?: string;
+  notes?: string;
+  completedAt?: string;
+  completedById?: string;
+  completedByName?: string;
+  linkedEntityType?: string;
+  linkedEntityId?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CreateTaskBodyTaskType =
+  (typeof CreateTaskBodyTaskType)[keyof typeof CreateTaskBodyTaskType];
+
+export const CreateTaskBodyTaskType = {
+  production_entry: "production_entry",
+  stock_update: "stock_update",
+  inspection: "inspection",
+  general: "general",
+} as const;
+
+export type CreateTaskBodyPriority =
+  (typeof CreateTaskBodyPriority)[keyof typeof CreateTaskBodyPriority];
+
+export const CreateTaskBodyPriority = {
+  low: "low",
+  normal: "normal",
+  high: "high",
+  urgent: "urgent",
+} as const;
+
+export interface CreateTaskBody {
+  title: string;
+  description?: string;
+  taskType?: CreateTaskBodyTaskType;
+  priority?: CreateTaskBodyPriority;
+  projectId?: string;
+  projectName?: string;
+  assignedToId?: string;
+  assignedToName?: string;
+  assignedToRole?: string;
+  dueDate?: string;
+  notes?: string;
+  linkedEntityType?: string;
+  linkedEntityId?: string;
+}
+
+export type UpdateTaskBodyTaskType =
+  (typeof UpdateTaskBodyTaskType)[keyof typeof UpdateTaskBodyTaskType];
+
+export const UpdateTaskBodyTaskType = {
+  production_entry: "production_entry",
+  stock_update: "stock_update",
+  inspection: "inspection",
+  general: "general",
+} as const;
+
+export type UpdateTaskBodyStatus =
+  (typeof UpdateTaskBodyStatus)[keyof typeof UpdateTaskBodyStatus];
+
+export const UpdateTaskBodyStatus = {
+  pending: "pending",
+  in_progress: "in_progress",
+  completed: "completed",
+  cancelled: "cancelled",
+} as const;
+
+export type UpdateTaskBodyPriority =
+  (typeof UpdateTaskBodyPriority)[keyof typeof UpdateTaskBodyPriority];
+
+export const UpdateTaskBodyPriority = {
+  low: "low",
+  normal: "normal",
+  high: "high",
+  urgent: "urgent",
+} as const;
+
+export interface UpdateTaskBody {
+  title?: string;
+  description?: string;
+  taskType?: UpdateTaskBodyTaskType;
+  status?: UpdateTaskBodyStatus;
+  priority?: UpdateTaskBodyPriority;
+  projectId?: string;
+  projectName?: string;
+  assignedToId?: string;
+  assignedToName?: string;
+  assignedToRole?: string;
+  dueDate?: string;
+  notes?: string;
+}
+
+export interface TaskSummary {
+  pending: number;
+  inProgress: number;
+  completed: number;
+  cancelled: number;
+  urgent: number;
+  overdue: number;
+  total: number;
+}
+
 export interface SuccessResponse {
   success: boolean;
 }
@@ -4748,4 +4895,31 @@ export type ListSaleDocumentsStatus =
 export const ListSaleDocumentsStatus = {
   active: "active",
   archived: "archived",
+} as const;
+
+export type ListTasksParams = {
+  status?: ListTasksStatus;
+  projectId?: string;
+  assignedToId?: string;
+  taskType?: ListTasksTaskType;
+};
+
+export type ListTasksStatus =
+  (typeof ListTasksStatus)[keyof typeof ListTasksStatus];
+
+export const ListTasksStatus = {
+  pending: "pending",
+  in_progress: "in_progress",
+  completed: "completed",
+  cancelled: "cancelled",
+} as const;
+
+export type ListTasksTaskType =
+  (typeof ListTasksTaskType)[keyof typeof ListTasksTaskType];
+
+export const ListTasksTaskType = {
+  production_entry: "production_entry",
+  stock_update: "stock_update",
+  inspection: "inspection",
+  general: "general",
 } as const;

@@ -11,6 +11,9 @@ import {
   Receipt,
   ClipboardCheck,
   CheckSquare,
+  CheckSquare2,
+  ListChecks,
+  Play,
   Warehouse,
   FileSignature,
   MapPin,
@@ -54,6 +57,8 @@ import {
   useListAgreements,
   useListUsers,
   useGetGovernanceSummary,
+  useListTasks,
+  useGetTaskSummary,
 } from "@workspace/api-client-react";
 import {
   AreaChart,
@@ -1712,6 +1717,76 @@ function InvestorDashboard() {
   );
 }
 
+// ── Pending Tasks Panel (shared by Employee + Staff dashboards) ───────────
+
+function PendingTasksPanel() {
+  const { data: tasks = [], isLoading } = useListTasks({ status: "pending" as any });
+  const { data: inProgress = [] } = useListTasks({ status: "in_progress" as any });
+  const allActive = [...inProgress, ...tasks].slice(0, 6);
+
+  if (!isLoading && allActive.length === 0) return null;
+
+  const priorityDot: Record<string, string> = {
+    urgent: "bg-red-500",
+    high: "bg-orange-400",
+    normal: "bg-blue-400",
+    low: "bg-gray-300",
+  };
+
+  return (
+    <section>
+      <InfoPanel
+        title="My Tasks"
+        subtitle="Pending and in-progress operational tasks"
+        icon={ListChecks}
+        iconColor="bg-violet-50 text-violet-600"
+        action={
+          <Link href="/tasks">
+            <Button variant="outline" size="sm" className="h-6 text-xs gap-1">
+              All Tasks <ArrowUpRight className="w-3 h-3" />
+            </Button>
+          </Link>
+        }
+      >
+        {isLoading ? (
+          <div className="space-y-2">
+            {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-10 w-full rounded" />)}
+          </div>
+        ) : (
+          <div className="space-y-1.5">
+            {allActive.map((t) => (
+              <div
+                key={t.id}
+                className="flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-gray-50 group"
+              >
+                <div className={`w-2 h-2 rounded-full flex-shrink-0 ${priorityDot[t.priority] ?? "bg-gray-300"}`} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium truncate">{t.title}</p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {t.projectName ? t.projectName : "General"} · {t.taskType === "production_entry" ? "Production" : t.taskType === "stock_update" ? "Stock" : t.taskType === "inspection" ? "Inspection" : "Task"}
+                  </p>
+                </div>
+                <span
+                  className={`text-xs px-1.5 py-0.5 rounded-full border font-medium ${
+                    t.status === "in_progress"
+                      ? "bg-blue-50 text-blue-700 border-blue-200"
+                      : "bg-amber-50 text-amber-700 border-amber-200"
+                  }`}
+                >
+                  {t.status === "in_progress" ? "In Progress" : "Pending"}
+                </span>
+                {t.dueDate && new Date(t.dueDate) < new Date() && (
+                  <span className="text-xs text-red-600 font-medium hidden sm:inline">Overdue</span>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </InfoPanel>
+    </section>
+  );
+}
+
 // ── Employee Dashboard ────────────────────────────────────────────────────
 
 function EmployeeDashboard() {
@@ -1763,6 +1838,12 @@ function EmployeeDashboard() {
                 <Button variant="outline" className="w-full justify-start gap-2.5 h-9 text-xs">
                   <Warehouse className="w-3.5 h-3.5 text-teal-500" />
                   View Stock Register
+                </Button>
+              </Link>
+              <Link href="/tasks">
+                <Button variant="outline" className="w-full justify-start gap-2.5 h-9 text-xs">
+                  <ListChecks className="w-3.5 h-3.5 text-violet-500" />
+                  My Tasks
                 </Button>
               </Link>
               <Link href="/projects">
@@ -1836,6 +1917,9 @@ function EmployeeDashboard() {
         </div>
       </section>
 
+      {/* Pending Tasks */}
+      <PendingTasksPanel />
+
       {/* Activity */}
       <section>
         <ActivityPanel />
@@ -1881,6 +1965,12 @@ function StaffDashboard() {
                 <Button variant="outline" className="w-full justify-start gap-2.5 h-9 text-xs">
                   <PackageOpen className="w-3.5 h-3.5 text-blue-500" />
                   Inventory Check
+                </Button>
+              </Link>
+              <Link href="/tasks">
+                <Button variant="outline" className="w-full justify-start gap-2.5 h-9 text-xs">
+                  <ListChecks className="w-3.5 h-3.5 text-violet-500" />
+                  My Tasks
                 </Button>
               </Link>
               <Link href="/distribution">
@@ -1956,6 +2046,9 @@ function StaffDashboard() {
           </InfoPanel>
         </div>
       </section>
+
+      {/* Pending Tasks */}
+      <PendingTasksPanel />
 
       {/* Activity */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-4">

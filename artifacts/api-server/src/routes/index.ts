@@ -37,6 +37,7 @@ import inventoryStockRouter from "./inventory_stock";
 import buyersRouter from "./buyers";
 import salesRouter from "./sales";
 import salesAuditRouter from "./sales_audit";
+import tasksRouter from "./tasks";
 import devRouter from "./dev";
 
 const router: IRouter = Router();
@@ -91,5 +92,6 @@ router.use("/inventory-stock", inventoryStockRouter);
 router.use("/buyers", buyersRouter);
 router.use("/sales", salesAuditRouter);
 router.use("/sales", salesRouter);
+router.use("/tasks", tasksRouter);
 
 export default router;

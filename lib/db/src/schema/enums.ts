@@ -499,6 +499,46 @@ export const recoverableAdvanceStatusEnum = pgEnum("recoverable_advance_status",
   "written_off",
 ]);
 
+// ── Operational task enums ────────────────────────────────────────────────
+
+/**
+ * Type of operational task.
+ *   production_entry — log a production batch or daily tapping record
+ *   stock_update     — update stock movements or inventory counts
+ *   inspection       — field inspection or quality check
+ *   general          — any other operational task
+ */
+export const taskTypeEnum = pgEnum("task_type", [
+  "production_entry",
+  "stock_update",
+  "inspection",
+  "general",
+]);
+
+/**
+ * Status of an operational task.
+ *   pending     — assigned but not started
+ *   in_progress — assignee has acknowledged and begun work
+ *   completed   — task finished successfully
+ *   cancelled   — task voided by admin/developer before completion
+ */
+export const taskStatusEnum = pgEnum("task_status", [
+  "pending",
+  "in_progress",
+  "completed",
+  "cancelled",
+]);
+
+/**
+ * Priority of an operational task.
+ */
+export const taskPriorityEnum = pgEnum("task_priority", [
+  "low",
+  "normal",
+  "high",
+  "urgent",
+]);
+
 // ── Land Contribution Adjustment (LCA) enums ──────────────────────────────
 
 /**

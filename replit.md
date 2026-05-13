@@ -788,6 +788,47 @@ Full audit trail for all sale mutations, document attachment storage, and govern
 
 **Note:** `History` from lucide-react conflicts with the browser's native `History` API in this React version. Use `ScrollText` or `Clock` instead.
 
+## Operational Task Workflow System
+
+Task assignment and tracking for employee and operational_staff roles. Admin/developer create and assign tasks; workers see only their own tasks and can start/complete them.
+
+**Access rules:**
+- `admin` / `developer` — full CRUD on all tasks; see all tasks across all users
+- `employee` / `operational_staff` — read + start/complete on own assigned tasks only
+- `landowner` / `investor` — no access (403)
+
+**Task types:** `production_entry`, `stock_update`, `inspection`, `general`
+**Status flow:** `pending` → `in_progress` → `completed` (or `cancelled` by admin)
+**Priority levels:** `urgent`, `high`, `normal`, `low` (colour-coded dots)
+
+**DB:** `operational_tasks` (`lib/db/src/schema/operational_tasks.ts`) — UUID PK, title, description, taskType, status, priority, projectId FK (set null), projectName (denorm), assignedToId FK (set null), assignedToName, assignedToRole, assignedById FK (set null), assignedByName, dueDate, notes, completedAt, completedById FK (set null), completedByName, linkedEntityType, linkedEntityId, isActive, audit cols
+**Enums added to `enums.ts`:** `taskTypeEnum`, `taskStatusEnum`, `taskPriorityEnum`
+
+**API endpoints** (`artifacts/api-server/src/routes/tasks.ts`, mounted at `/tasks`):
+- `GET /tasks` — list tasks (role-filtered; supports `?status=`, `?projectId=`, `?assignedToId=`, `?taskType=`)
+- `GET /tasks/summary` — `{ pending, inProgress, completed, cancelled, urgent, overdue, total }`
+- `POST /tasks` — create (admin/developer)
+- `GET /tasks/:id` — get single task (workers: own only)
+- `PATCH /tasks/:id` — update (admin/developer: all fields; workers: status+notes only)
+- `DELETE /tasks/:id` — soft-delete / archive (admin only)
+
+**Frontend:**
+- `OperationalTasks.tsx` (route `/tasks`) — mobile-friendly task list with:
+  - 4 KPI cards: Pending / In Progress / Urgent / Overdue
+  - Filter bar: status dropdown, task type dropdown, search
+  - Expandable task cards with priority dot, status badge, quick Start/Complete buttons, due date with overdue highlighting
+  - Admin/developer: inline Edit (Pencil) and Delete buttons; full Create/Edit dialog with assignee picker, project picker, due date, description, notes
+  - Workers: status-only actions; no management controls visible
+- `PendingTasksPanel` — shared dashboard component: shows up to 6 active tasks (in-progress first), priority dot + overdue indicator, links to `/tasks`. Rendered on both EmployeeDashboard and StaffDashboard. Hidden when there are no active tasks.
+- Quick Actions panel on Employee and Staff dashboards has "My Tasks" shortcut
+- Sidebar: "Tasks" added to Operations group (admin/developer/employee/operational_staff), icon: ListChecks, href: `/tasks`
+
+**Generated hooks:** `useListTasks`, `useGetTaskSummary`, `useCreateTask`, `useGetTask`, `useUpdateTask`, `useDeleteTask`
+
+**Sidebar access summary (employee + operational_staff):**
+- Visible: Dashboard, Projects, My Portfolio, My Profile, Production Log, Production (emp only), Inventory, Stock, Tasks, Distribution (staff only), Notifications
+- Hidden: all Finance modules, all Analytics modules, Governance, Sale Audit, Admin, Inv. Analytics, Sales
+
 ## Pointers
 
 - See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details

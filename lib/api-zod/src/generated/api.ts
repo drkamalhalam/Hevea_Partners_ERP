@@ -8514,3 +8514,185 @@ export const ArchiveSaleDocumentResponse = zod.object({
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
+
+/**
+ * @summary List operational tasks
+ */
+export const ListTasksQueryParams = zod.object({
+  status: zod
+    .enum(["pending", "in_progress", "completed", "cancelled"])
+    .optional(),
+  projectId: zod.coerce.string().uuid().optional(),
+  assignedToId: zod.coerce.string().uuid().optional(),
+  taskType: zod
+    .enum(["production_entry", "stock_update", "inspection", "general"])
+    .optional(),
+});
+
+export const ListTasksResponseItem = zod.object({
+  id: zod.string().uuid(),
+  title: zod.string(),
+  description: zod.string().optional(),
+  taskType: zod.enum([
+    "production_entry",
+    "stock_update",
+    "inspection",
+    "general",
+  ]),
+  status: zod.enum(["pending", "in_progress", "completed", "cancelled"]),
+  priority: zod.enum(["low", "normal", "high", "urgent"]),
+  projectId: zod.string().uuid().optional(),
+  projectName: zod.string().optional(),
+  assignedToId: zod.string().uuid().optional(),
+  assignedToName: zod.string().optional(),
+  assignedToRole: zod.string().optional(),
+  assignedById: zod.string().uuid().optional(),
+  assignedByName: zod.string().optional(),
+  dueDate: zod.coerce.date().optional(),
+  notes: zod.string().optional(),
+  completedAt: zod.coerce.date().optional(),
+  completedById: zod.string().uuid().optional(),
+  completedByName: zod.string().optional(),
+  linkedEntityType: zod.string().optional(),
+  linkedEntityId: zod.string().uuid().optional(),
+  isActive: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const ListTasksResponse = zod.array(ListTasksResponseItem);
+
+/**
+ * @summary Create a new task (admin/developer)
+ */
+export const CreateTaskBody = zod.object({
+  title: zod.string(),
+  description: zod.string().optional(),
+  taskType: zod
+    .enum(["production_entry", "stock_update", "inspection", "general"])
+    .optional(),
+  priority: zod.enum(["low", "normal", "high", "urgent"]).optional(),
+  projectId: zod.string().uuid().optional(),
+  projectName: zod.string().optional(),
+  assignedToId: zod.string().uuid().optional(),
+  assignedToName: zod.string().optional(),
+  assignedToRole: zod.string().optional(),
+  dueDate: zod.coerce.date().optional(),
+  notes: zod.string().optional(),
+  linkedEntityType: zod.string().optional(),
+  linkedEntityId: zod.string().uuid().optional(),
+});
+
+/**
+ * @summary Task KPI summary counts
+ */
+export const GetTaskSummaryResponse = zod.object({
+  pending: zod.number(),
+  inProgress: zod.number(),
+  completed: zod.number(),
+  cancelled: zod.number(),
+  urgent: zod.number(),
+  overdue: zod.number(),
+  total: zod.number(),
+});
+
+/**
+ * @summary Get a single task
+ */
+export const GetTaskParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const GetTaskResponse = zod.object({
+  id: zod.string().uuid(),
+  title: zod.string(),
+  description: zod.string().optional(),
+  taskType: zod.enum([
+    "production_entry",
+    "stock_update",
+    "inspection",
+    "general",
+  ]),
+  status: zod.enum(["pending", "in_progress", "completed", "cancelled"]),
+  priority: zod.enum(["low", "normal", "high", "urgent"]),
+  projectId: zod.string().uuid().optional(),
+  projectName: zod.string().optional(),
+  assignedToId: zod.string().uuid().optional(),
+  assignedToName: zod.string().optional(),
+  assignedToRole: zod.string().optional(),
+  assignedById: zod.string().uuid().optional(),
+  assignedByName: zod.string().optional(),
+  dueDate: zod.coerce.date().optional(),
+  notes: zod.string().optional(),
+  completedAt: zod.coerce.date().optional(),
+  completedById: zod.string().uuid().optional(),
+  completedByName: zod.string().optional(),
+  linkedEntityType: zod.string().optional(),
+  linkedEntityId: zod.string().uuid().optional(),
+  isActive: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Update task (full for admin/developer; status+notes for workers)
+ */
+export const UpdateTaskParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const UpdateTaskBody = zod.object({
+  title: zod.string().optional(),
+  description: zod.string().optional(),
+  taskType: zod
+    .enum(["production_entry", "stock_update", "inspection", "general"])
+    .optional(),
+  status: zod
+    .enum(["pending", "in_progress", "completed", "cancelled"])
+    .optional(),
+  priority: zod.enum(["low", "normal", "high", "urgent"]).optional(),
+  projectId: zod.string().uuid().optional(),
+  projectName: zod.string().optional(),
+  assignedToId: zod.string().uuid().optional(),
+  assignedToName: zod.string().optional(),
+  assignedToRole: zod.string().optional(),
+  dueDate: zod.coerce.date().optional(),
+  notes: zod.string().optional(),
+});
+
+export const UpdateTaskResponse = zod.object({
+  id: zod.string().uuid(),
+  title: zod.string(),
+  description: zod.string().optional(),
+  taskType: zod.enum([
+    "production_entry",
+    "stock_update",
+    "inspection",
+    "general",
+  ]),
+  status: zod.enum(["pending", "in_progress", "completed", "cancelled"]),
+  priority: zod.enum(["low", "normal", "high", "urgent"]),
+  projectId: zod.string().uuid().optional(),
+  projectName: zod.string().optional(),
+  assignedToId: zod.string().uuid().optional(),
+  assignedToName: zod.string().optional(),
+  assignedToRole: zod.string().optional(),
+  assignedById: zod.string().uuid().optional(),
+  assignedByName: zod.string().optional(),
+  dueDate: zod.coerce.date().optional(),
+  notes: zod.string().optional(),
+  completedAt: zod.coerce.date().optional(),
+  completedById: zod.string().uuid().optional(),
+  completedByName: zod.string().optional(),
+  linkedEntityType: zod.string().optional(),
+  linkedEntityId: zod.string().uuid().optional(),
+  isActive: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Soft-delete a task (admin only)
+ */
+export const DeleteTaskParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});

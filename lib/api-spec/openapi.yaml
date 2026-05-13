@@ -5641,6 +5641,116 @@ paths:
               schema:
                 $ref: "#/components/schemas/SaleDocument"
 
+  /tasks:
+    get:
+      operationId: listTasks
+      summary: List operational tasks
+      tags: [Tasks]
+      parameters:
+        - in: query
+          name: status
+          schema: { type: string, enum: [pending, in_progress, completed, cancelled] }
+        - in: query
+          name: projectId
+          schema: { type: string, format: uuid }
+        - in: query
+          name: assignedToId
+          schema: { type: string, format: uuid }
+        - in: query
+          name: taskType
+          schema: { type: string, enum: [production_entry, stock_update, inspection, general] }
+      responses:
+        "200":
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OperationalTask"
+    post:
+      operationId: createTask
+      summary: Create a new task (admin/developer)
+      tags: [Tasks]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTaskBody"
+      responses:
+        "201":
+          description: Created task
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperationalTask"
+
+  /tasks/summary:
+    get:
+      operationId: getTaskSummary
+      summary: Task KPI summary counts
+      tags: [Tasks]
+      responses:
+        "200":
+          description: Summary counts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaskSummary"
+
+  /tasks/{id}:
+    get:
+      operationId: getTask
+      summary: Get a single task
+      tags: [Tasks]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Task record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperationalTask"
+    patch:
+      operationId: updateTask
+      summary: Update task (full for admin/developer; status+notes for workers)
+      tags: [Tasks]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTaskBody"
+      responses:
+        "200":
+          description: Updated task
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperationalTask"
+    delete:
+      operationId: deleteTask
+      summary: Soft-delete a task (admin only)
+      tags: [Tasks]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "204":
+          description: Deleted
+
 components:
   schemas:
     HealthStatus:
@@ -9904,6 +10014,80 @@ components:
         description: { type: string }
         documentType: { type: string, enum: [invoice, buyer_document, sales_proof, operational_record, other] }
         notes: { type: string }
+
+    OperationalTask:
+      type: object
+      required: [id, title, taskType, status, priority, isActive, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        title: { type: string }
+        description: { type: string }
+        taskType: { type: string, enum: [production_entry, stock_update, inspection, general] }
+        status: { type: string, enum: [pending, in_progress, completed, cancelled] }
+        priority: { type: string, enum: [low, normal, high, urgent] }
+        projectId: { type: string, format: uuid }
+        projectName: { type: string }
+        assignedToId: { type: string, format: uuid }
+        assignedToName: { type: string }
+        assignedToRole: { type: string }
+        assignedById: { type: string, format: uuid }
+        assignedByName: { type: string }
+        dueDate: { type: string, format: date }
+        notes: { type: string }
+        completedAt: { type: string, format: date-time }
+        completedById: { type: string, format: uuid }
+        completedByName: { type: string }
+        linkedEntityType: { type: string }
+        linkedEntityId: { type: string, format: uuid }
+        isActive: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    CreateTaskBody:
+      type: object
+      required: [title]
+      properties:
+        title: { type: string }
+        description: { type: string }
+        taskType: { type: string, enum: [production_entry, stock_update, inspection, general] }
+        priority: { type: string, enum: [low, normal, high, urgent] }
+        projectId: { type: string, format: uuid }
+        projectName: { type: string }
+        assignedToId: { type: string, format: uuid }
+        assignedToName: { type: string }
+        assignedToRole: { type: string }
+        dueDate: { type: string, format: date }
+        notes: { type: string }
+        linkedEntityType: { type: string }
+        linkedEntityId: { type: string, format: uuid }
+
+    UpdateTaskBody:
+      type: object
+      properties:
+        title: { type: string }
+        description: { type: string }
+        taskType: { type: string, enum: [production_entry, stock_update, inspection, general] }
+        status: { type: string, enum: [pending, in_progress, completed, cancelled] }
+        priority: { type: string, enum: [low, normal, high, urgent] }
+        projectId: { type: string, format: uuid }
+        projectName: { type: string }
+        assignedToId: { type: string, format: uuid }
+        assignedToName: { type: string }
+        assignedToRole: { type: string }
+        dueDate: { type: string, format: date }
+        notes: { type: string }
+
+    TaskSummary:
+      type: object
+      required: [pending, inProgress, completed, cancelled, urgent, overdue, total]
+      properties:
+        pending: { type: integer }
+        inProgress: { type: integer }
+        completed: { type: integer }
+        cancelled: { type: integer }
+        urgent: { type: integer }
+        overdue: { type: integer }
+        total: { type: integer }
 
     SuccessResponse:
       type: object
