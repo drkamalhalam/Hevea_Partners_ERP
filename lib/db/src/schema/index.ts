@@ -4,6 +4,7 @@ export * from "./projects";
 export * from "./partners";
 export * from "./assignments";
 export * from "./agreements";
+export * from "./nominees";
 export * from "./production";
 export * from "./notifications";
 export * from "./activity";

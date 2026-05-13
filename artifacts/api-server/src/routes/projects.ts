@@ -5,6 +5,7 @@ import {
   activityTable,
   usersTable,
   userProjectAssignmentsTable,
+  projectNomineesTable,
 } from "@workspace/db";
 import { eq, and, inArray } from "drizzle-orm";
 import {
@@ -19,6 +20,13 @@ import {
   UpdateProjectParticipantParams,
   UpdateProjectParticipantBody,
   RemoveProjectParticipantParams,
+  GetProjectNomineeParams,
+  AddProjectNomineeBody,
+  EditProjectNomineeParams,
+  EditProjectNomineeBody,
+  ReplaceProjectNomineeParams,
+  ReplaceProjectNomineeBody,
+  RemoveProjectNomineeParams,
 } from "@workspace/api-zod";
 import { requireRole, canAccessProject } from "../middlewares/auth";
 
@@ -509,5 +517,264 @@ router.delete(
     }
   },
 );
+
+// ─────────────────────────────────────────────
+//  Nominee Sub-Routes  (/projects/:id/nominee)
+//  Governance continuity nominees — NOT ownership transfer.
+// ─────────────────────────────────────────────
+
+type NomineeRow = typeof projectNomineesTable.$inferSelect;
+
+function formatNominee(n: NomineeRow) {
+  return {
+    id: n.id,
+    projectId: n.projectId,
+    nominatedBy: n.nominatedBy ?? null,
+    nomineeName: n.nomineeName,
+    relationship: n.relationship,
+    phone: n.phone,
+    address: n.address,
+    idDocumentUrl: n.idDocumentUrl ?? null,
+    isActive: n.isActive,
+    activationStatus: n.activationStatus,
+    activationNotes: n.activationNotes ?? null,
+    activatedAt: n.activatedAt?.toISOString() ?? null,
+    activatedBy: n.activatedBy ?? null,
+    replacedAt: n.replacedAt?.toISOString() ?? null,
+    createdAt: n.createdAt.toISOString(),
+    updatedAt: n.updatedAt?.toISOString() ?? null,
+  };
+}
+
+// GET /projects/:id/nominee — any user with project access
+router.get("/:id/nominee", async (req, res) => {
+  const parsed = GetProjectNomineeParams.safeParse({ id: req.params.id });
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid project id" });
+    return;
+  }
+  if (!canAccessProject(req, parsed.data.id)) {
+    res.status(403).json({ error: "Forbidden: no access to this project" });
+    return;
+  }
+  try {
+    const [nominee] = await db
+      .select()
+      .from(projectNomineesTable)
+      .where(
+        and(
+          eq(projectNomineesTable.projectId, parsed.data.id),
+          eq(projectNomineesTable.isActive, true),
+        ),
+      )
+      .limit(1);
+
+    res.json(nominee ? formatNominee(nominee) : null);
+  } catch (err) {
+    req.log.error({ err }, "Failed to get project nominee");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// POST /projects/:id/nominee — add (admin or developer; 409 if already exists)
+router.post("/:id/nominee", requireRole("admin", "developer"), async (req, res) => {
+  const paramsParsed = GetProjectNomineeParams.safeParse({ id: req.params.id });
+  if (!paramsParsed.success) {
+    res.status(400).json({ error: "Invalid project id" });
+    return;
+  }
+  const bodyParsed = AddProjectNomineeBody.safeParse(req.body);
+  if (!bodyParsed.success) {
+    res.status(400).json({ error: bodyParsed.error.message });
+    return;
+  }
+
+  const projectId = paramsParsed.data.id;
+
+  try {
+    const [existing] = await db
+      .select({ id: projectNomineesTable.id })
+      .from(projectNomineesTable)
+      .where(
+        and(
+          eq(projectNomineesTable.projectId, projectId),
+          eq(projectNomineesTable.isActive, true),
+        ),
+      )
+      .limit(1);
+
+    if (existing) {
+      res.status(409).json({
+        error: "A nominee already exists for this project — use PUT to replace",
+      });
+      return;
+    }
+
+    let nominatedById: string | undefined;
+    if (req.userId) {
+      const [row] = await db
+        .select({ id: usersTable.id })
+        .from(usersTable)
+        .where(eq(usersTable.clerkUserId, req.userId))
+        .limit(1);
+      nominatedById = row?.id;
+    }
+
+    const [nominee] = await db
+      .insert(projectNomineesTable)
+      .values({
+        projectId,
+        nominatedBy: nominatedById ?? null,
+        nomineeName: bodyParsed.data.nomineeName,
+        relationship: bodyParsed.data.relationship,
+        phone: bodyParsed.data.phone,
+        address: bodyParsed.data.address,
+        idDocumentUrl: bodyParsed.data.idDocumentUrl ?? null,
+        isActive: true,
+        activationStatus: "pending",
+      })
+      .returning();
+
+    res.status(201).json(formatNominee(nominee));
+  } catch (err) {
+    req.log.error({ err }, "Failed to add project nominee");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// PATCH /projects/:id/nominee — edit details (admin or developer)
+router.patch("/:id/nominee", requireRole("admin", "developer"), async (req, res) => {
+  const paramsParsed = EditProjectNomineeParams.safeParse({ id: req.params.id });
+  if (!paramsParsed.success) {
+    res.status(400).json({ error: "Invalid project id" });
+    return;
+  }
+  const bodyParsed = EditProjectNomineeBody.safeParse(req.body);
+  if (!bodyParsed.success) {
+    res.status(400).json({ error: bodyParsed.error.message });
+    return;
+  }
+
+  try {
+    const [existing] = await db
+      .select()
+      .from(projectNomineesTable)
+      .where(
+        and(
+          eq(projectNomineesTable.projectId, paramsParsed.data.id),
+          eq(projectNomineesTable.isActive, true),
+        ),
+      )
+      .limit(1);
+
+    if (!existing) {
+      res.status(404).json({ error: "No nominee on record for this project" });
+      return;
+    }
+
+    const updates = Object.fromEntries(
+      Object.entries(bodyParsed.data).filter(([, v]) => v !== undefined),
+    );
+
+    const [updated] = await db
+      .update(projectNomineesTable)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(projectNomineesTable.id, existing.id))
+      .returning();
+
+    res.json(formatNominee(updated));
+  } catch (err) {
+    req.log.error({ err }, "Failed to edit project nominee");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// PUT /projects/:id/nominee — replace (marks old as replaced, creates new)
+router.put("/:id/nominee", requireRole("admin", "developer"), async (req, res) => {
+  const paramsParsed = ReplaceProjectNomineeParams.safeParse({ id: req.params.id });
+  if (!paramsParsed.success) {
+    res.status(400).json({ error: "Invalid project id" });
+    return;
+  }
+  const bodyParsed = ReplaceProjectNomineeBody.safeParse(req.body);
+  if (!bodyParsed.success) {
+    res.status(400).json({ error: bodyParsed.error.message });
+    return;
+  }
+
+  const projectId = paramsParsed.data.id;
+
+  try {
+    let replacingUserId: string | undefined;
+    if (req.userId) {
+      const [row] = await db
+        .select({ id: usersTable.id })
+        .from(usersTable)
+        .where(eq(usersTable.clerkUserId, req.userId))
+        .limit(1);
+      replacingUserId = row?.id;
+    }
+
+    // Soft-archive any currently active nominees for this project
+    await db
+      .update(projectNomineesTable)
+      .set({
+        isActive: false,
+        replacedAt: new Date(),
+        replacedBy: replacingUserId ?? null,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(projectNomineesTable.projectId, projectId),
+          eq(projectNomineesTable.isActive, true),
+        ),
+      );
+
+    const [nominee] = await db
+      .insert(projectNomineesTable)
+      .values({
+        projectId,
+        nominatedBy: replacingUserId ?? null,
+        nomineeName: bodyParsed.data.nomineeName,
+        relationship: bodyParsed.data.relationship,
+        phone: bodyParsed.data.phone,
+        address: bodyParsed.data.address,
+        idDocumentUrl: bodyParsed.data.idDocumentUrl ?? null,
+        isActive: true,
+        activationStatus: "pending",
+      })
+      .returning();
+
+    res.status(201).json(formatNominee(nominee));
+  } catch (err) {
+    req.log.error({ err }, "Failed to replace project nominee");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// DELETE /projects/:id/nominee — admin only (soft-archive)
+router.delete("/:id/nominee", requireRole("admin"), async (req, res) => {
+  const parsed = RemoveProjectNomineeParams.safeParse({ id: req.params.id });
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid project id" });
+    return;
+  }
+  try {
+    await db
+      .update(projectNomineesTable)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(
+        and(
+          eq(projectNomineesTable.projectId, parsed.data.id),
+          eq(projectNomineesTable.isActive, true),
+        ),
+      );
+    res.json({ ok: true });
+  } catch (err) {
+    req.log.error({ err }, "Failed to remove project nominee");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
 
 export default router;

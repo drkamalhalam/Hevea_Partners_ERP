@@ -474,6 +474,122 @@ paths:
               schema:
                 $ref: "#/components/schemas/OkResponse"
 
+  /projects/{id}/nominee:
+    get:
+      operationId: getProjectNominee
+      tags: [projects]
+      summary: Get the current nominee for a project (null if not set)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Current nominee or null
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/ProjectNominee"
+                  - type: "null"
+    post:
+      operationId: addProjectNominee
+      tags: [projects]
+      summary: Add a nominee for a project (project developer or admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateNomineeInput"
+      responses:
+        "201":
+          description: Nominee created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectNominee"
+        "409":
+          description: A nominee already exists — use PUT to replace
+    patch:
+      operationId: editProjectNominee
+      tags: [projects]
+      summary: Edit details of the current nominee (name, phone, address, etc.)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateNomineeInput"
+      responses:
+        "200":
+          description: Updated nominee
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectNominee"
+        "404":
+          description: No nominee on record for this project
+    put:
+      operationId: replaceProjectNominee
+      tags: [projects]
+      summary: Replace the current nominee (marks old as replaced, creates new)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateNomineeInput"
+      responses:
+        "201":
+          description: New nominee created, old record archived
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectNominee"
+    delete:
+      operationId: removeProjectNominee
+      tags: [projects]
+      summary: Remove the current nominee (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
   /partners:
     get:
       operationId: listPartners
@@ -1295,7 +1411,7 @@ components:
 
     UserProfile:
       type: object
-      required: [clerkUserId, role, assignedProjectIds, isActive]
+      required: [clerkUserId, role, assignedProjectIds, isActive, profileComplete]
       properties:
         clerkUserId:
           type: string
@@ -1316,6 +1432,15 @@ components:
           type: ["string", "null"]
         isActive:
           type: boolean
+        profileComplete:
+          type: boolean
+          description: "False if required actions are pending (e.g. developer missing nominee for one or more projects)"
+        missingNomineeProjectIds:
+          type: array
+          description: "Project IDs where this developer has no nominee registered"
+          items:
+            type: string
+            format: uuid
         assignedProjectIds:
           type: array
           items:
@@ -1384,6 +1509,76 @@ components:
         projectRole:
           type: string
           enum: [admin, developer, landowner, investor, employee, operational_staff]
+
+    ProjectNominee:
+      type: object
+      required: [id, projectId, nomineeName, relationship, phone, address, isActive, activationStatus, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        projectId:
+          type: string
+          format: uuid
+        nominatedBy:
+          type: ["string", "null"]
+          format: uuid
+        nomineeName:
+          type: string
+        relationship:
+          type: string
+        phone:
+          type: string
+        address:
+          type: string
+        idDocumentUrl:
+          type: ["string", "null"]
+        isActive:
+          type: boolean
+        activationStatus:
+          type: string
+          enum: [pending, activated, revoked]
+        activationNotes:
+          type: ["string", "null"]
+        activatedAt:
+          type: ["string", "null"]
+        activatedBy:
+          type: ["string", "null"]
+        replacedAt:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: ["string", "null"]
+
+    CreateNomineeInput:
+      type: object
+      required: [nomineeName, relationship, phone, address]
+      properties:
+        nomineeName:
+          type: string
+        relationship:
+          type: string
+        phone:
+          type: string
+        address:
+          type: string
+        idDocumentUrl:
+          type: string
+
+    UpdateNomineeInput:
+      type: object
+      properties:
+        nomineeName:
+          type: string
+        relationship:
+          type: string
+        phone:
+          type: string
+        address:
+          type: string
+        idDocumentUrl:
+          type: string
 
     ProjectParticipant:
       type: object

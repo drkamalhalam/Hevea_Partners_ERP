@@ -32,6 +32,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ROLE_LABELS, ROLE_COLORS } from "@/contexts/RoleContext";
 import type { UserRole } from "@/contexts/RoleContext";
 import { format } from "date-fns";
+import { Link } from "wouter";
 import {
   User,
   MapPin,
@@ -47,6 +48,7 @@ import {
   CalendarDays,
   CheckCircle2,
   XCircle,
+  AlertTriangle,
 } from "lucide-react";
 
 const profileFormSchema = z.object({
@@ -174,6 +176,37 @@ export default function MyProfile() {
         </div>
       ) : (
         <>
+          {/* Profile completeness banner — shown to developers missing nominees */}
+          {(profile?.missingNomineeProjectIds?.length ?? 0) > 0 && (
+            <div className="flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 p-4">
+              <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-amber-900">
+                  Profile Incomplete
+                </p>
+                <p className="text-sm text-amber-800 mt-0.5">
+                  You need to register a governance continuity nominee for{" "}
+                  {profile!.missingNomineeProjectIds!.length === 1
+                    ? "1 project"
+                    : `${profile!.missingNomineeProjectIds!.length} projects`}
+                  . Open the project to add a nominee.
+                </p>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {profile!.missingNomineeProjectIds!.map((pid) => {
+                    const proj = projects.find((p) => p.id === pid);
+                    return (
+                      <Link key={pid} href={`/projects/${pid}`}>
+                        <span className="inline-flex items-center text-xs bg-amber-100 border border-amber-300 text-amber-800 px-2 py-0.5 rounded-full hover:bg-amber-200 transition-colors cursor-pointer">
+                          {proj?.name ?? pid}
+                        </span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Profile hero card */}
           <Card>
             <CardContent className="pt-6">

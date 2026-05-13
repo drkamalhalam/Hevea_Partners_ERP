@@ -24,6 +24,10 @@ export interface UserProfile {
   /** @nullable */
   idDocumentUrl?: string | null;
   isActive: boolean;
+  /** False if required actions are pending (e.g. developer missing nominee for one or more projects) */
+  profileComplete: boolean;
+  /** Project IDs where this developer has no nominee registered */
+  missingNomineeProjectIds?: string[];
   assignedProjectIds: string[];
   projectAssignments?: ProjectAssignmentItem[];
   createdAt?: string;

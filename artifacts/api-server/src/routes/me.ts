@@ -1,6 +1,11 @@
 import { Router } from "express";
-import { db, usersTable, userProjectAssignmentsTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import {
+  db,
+  usersTable,
+  userProjectAssignmentsTable,
+  projectNomineesTable,
+} from "@workspace/db";
+import { eq, and, inArray } from "drizzle-orm";
 import { UpsertMeBody, UpdateMyProfileBody } from "@workspace/api-zod";
 
 const router = Router();
@@ -21,6 +26,37 @@ async function buildProfile(clerkUserId: string) {
 
   const activeAssignments = assignments.filter((a) => !a.revokedAt);
 
+  // ── Nominee completeness check (developer role only) ────────────────────
+  // A developer must register a nominee for each project they are assigned
+  // to in the "developer" project role.  If any are missing, profileComplete
+  // is false and the missing project IDs are returned for the UI to surface.
+  let missingNomineeProjectIds: string[] = [];
+
+  if (userRow?.role === "developer") {
+    const developerProjectIds = activeAssignments
+      .filter((a) => a.projectRole === "developer")
+      .map((a) => a.projectId);
+
+    if (developerProjectIds.length > 0) {
+      const nominees = await db
+        .select({ projectId: projectNomineesTable.projectId })
+        .from(projectNomineesTable)
+        .where(
+          and(
+            inArray(projectNomineesTable.projectId, developerProjectIds),
+            eq(projectNomineesTable.isActive, true),
+          ),
+        );
+
+      const nominatedSet = new Set(nominees.map((n) => n.projectId));
+      missingNomineeProjectIds = developerProjectIds.filter(
+        (id) => !nominatedSet.has(id),
+      );
+    }
+  }
+
+  const profileComplete = missingNomineeProjectIds.length === 0;
+
   return {
     clerkUserId,
     role: userRow?.role ?? "employee",
@@ -31,6 +67,8 @@ async function buildProfile(clerkUserId: string) {
     avatarUrl: userRow?.avatarUrl ?? null,
     idDocumentUrl: userRow?.idDocumentUrl ?? null,
     isActive: userRow?.isActive ?? true,
+    profileComplete,
+    missingNomineeProjectIds,
     assignedProjectIds: activeAssignments.map((a) => a.projectId),
     projectAssignments: activeAssignments.map((a) => ({
       assignmentId: a.id,
@@ -70,12 +108,10 @@ router.put("/", async (req, res) => {
         set: {
           displayName,
           email,
-          // Only update phone/address if provided (don't wipe existing values)
           ...(phone !== undefined && { phone }),
           ...(address !== undefined && { address }),
           updatedAt: new Date(),
         },
-        // Note: role is NOT updated on conflict — admin must change roles via /users/:id/role
       });
 
     res.json(await buildProfile(req.userId!));

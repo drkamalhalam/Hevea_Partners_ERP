@@ -445,6 +445,10 @@ export interface UserProfile {
   /** @nullable */
   idDocumentUrl?: string | null;
   isActive: boolean;
+  /** False if required actions are pending (e.g. developer missing nominee for one or more projects) */
+  profileComplete: boolean;
+  /** Project IDs where this developer has no nominee registered */
+  missingNomineeProjectIds?: string[];
   assignedProjectIds: string[];
   projectAssignments?: ProjectAssignmentItem[];
   createdAt?: string;
@@ -525,6 +529,57 @@ export const UpdateAssignmentInputProjectRole = {
 
 export interface UpdateAssignmentInput {
   projectRole: UpdateAssignmentInputProjectRole;
+}
+
+export type ProjectNomineeActivationStatus =
+  (typeof ProjectNomineeActivationStatus)[keyof typeof ProjectNomineeActivationStatus];
+
+export const ProjectNomineeActivationStatus = {
+  pending: "pending",
+  activated: "activated",
+  revoked: "revoked",
+} as const;
+
+export interface ProjectNominee {
+  id: string;
+  projectId: string;
+  /** @nullable */
+  nominatedBy?: string | null;
+  nomineeName: string;
+  relationship: string;
+  phone: string;
+  address: string;
+  /** @nullable */
+  idDocumentUrl?: string | null;
+  isActive: boolean;
+  activationStatus: ProjectNomineeActivationStatus;
+  /** @nullable */
+  activationNotes?: string | null;
+  /** @nullable */
+  activatedAt?: string | null;
+  /** @nullable */
+  activatedBy?: string | null;
+  /** @nullable */
+  replacedAt?: string | null;
+  createdAt: string;
+  /** @nullable */
+  updatedAt?: string | null;
+}
+
+export interface CreateNomineeInput {
+  nomineeName: string;
+  relationship: string;
+  phone: string;
+  address: string;
+  idDocumentUrl?: string;
+}
+
+export interface UpdateNomineeInput {
+  nomineeName?: string;
+  relationship?: string;
+  phone?: string;
+  address?: string;
+  idDocumentUrl?: string;
 }
 
 export type ProjectParticipantProjectRole =

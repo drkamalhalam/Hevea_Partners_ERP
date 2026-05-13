@@ -27,6 +27,15 @@ export const GetMeResponse = zod.object({
   avatarUrl: zod.string().nullish(),
   idDocumentUrl: zod.string().nullish(),
   isActive: zod.boolean(),
+  profileComplete: zod
+    .boolean()
+    .describe(
+      "False if required actions are pending (e.g. developer missing nominee for one or more projects)",
+    ),
+  missingNomineeProjectIds: zod
+    .array(zod.string().uuid())
+    .optional()
+    .describe("Project IDs where this developer has no nominee registered"),
   assignedProjectIds: zod.array(zod.string().uuid()),
   projectAssignments: zod
     .array(
@@ -85,6 +94,15 @@ export const UpsertMeResponse = zod.object({
   avatarUrl: zod.string().nullish(),
   idDocumentUrl: zod.string().nullish(),
   isActive: zod.boolean(),
+  profileComplete: zod
+    .boolean()
+    .describe(
+      "False if required actions are pending (e.g. developer missing nominee for one or more projects)",
+    ),
+  missingNomineeProjectIds: zod
+    .array(zod.string().uuid())
+    .optional()
+    .describe("Project IDs where this developer has no nominee registered"),
   assignedProjectIds: zod.array(zod.string().uuid()),
   projectAssignments: zod
     .array(
@@ -136,6 +154,15 @@ export const UpdateMyProfileResponse = zod.object({
   avatarUrl: zod.string().nullish(),
   idDocumentUrl: zod.string().nullish(),
   isActive: zod.boolean(),
+  profileComplete: zod
+    .boolean()
+    .describe(
+      "False if required actions are pending (e.g. developer missing nominee for one or more projects)",
+    ),
+  missingNomineeProjectIds: zod
+    .array(zod.string().uuid())
+    .optional()
+    .describe("Project IDs where this developer has no nominee registered"),
   assignedProjectIds: zod.array(zod.string().uuid()),
   projectAssignments: zod
     .array(
@@ -179,6 +206,15 @@ export const ListUsersResponseItem = zod.object({
   avatarUrl: zod.string().nullish(),
   idDocumentUrl: zod.string().nullish(),
   isActive: zod.boolean(),
+  profileComplete: zod
+    .boolean()
+    .describe(
+      "False if required actions are pending (e.g. developer missing nominee for one or more projects)",
+    ),
+  missingNomineeProjectIds: zod
+    .array(zod.string().uuid())
+    .optional()
+    .describe("Project IDs where this developer has no nominee registered"),
   assignedProjectIds: zod.array(zod.string().uuid()),
   projectAssignments: zod
     .array(
@@ -227,6 +263,15 @@ export const GetUserProfileResponse = zod.object({
   avatarUrl: zod.string().nullish(),
   idDocumentUrl: zod.string().nullish(),
   isActive: zod.boolean(),
+  profileComplete: zod
+    .boolean()
+    .describe(
+      "False if required actions are pending (e.g. developer missing nominee for one or more projects)",
+    ),
+  missingNomineeProjectIds: zod
+    .array(zod.string().uuid())
+    .optional()
+    .describe("Project IDs where this developer has no nominee registered"),
   assignedProjectIds: zod.array(zod.string().uuid()),
   projectAssignments: zod
     .array(
@@ -282,6 +327,15 @@ export const UpdateUserProfileResponse = zod.object({
   avatarUrl: zod.string().nullish(),
   idDocumentUrl: zod.string().nullish(),
   isActive: zod.boolean(),
+  profileComplete: zod
+    .boolean()
+    .describe(
+      "False if required actions are pending (e.g. developer missing nominee for one or more projects)",
+    ),
+  missingNomineeProjectIds: zod
+    .array(zod.string().uuid())
+    .optional()
+    .describe("Project IDs where this developer has no nominee registered"),
   assignedProjectIds: zod.array(zod.string().uuid()),
   projectAssignments: zod
     .array(
@@ -340,6 +394,15 @@ export const UpdateUserRoleResponse = zod.object({
   avatarUrl: zod.string().nullish(),
   idDocumentUrl: zod.string().nullish(),
   isActive: zod.boolean(),
+  profileComplete: zod
+    .boolean()
+    .describe(
+      "False if required actions are pending (e.g. developer missing nominee for one or more projects)",
+    ),
+  missingNomineeProjectIds: zod
+    .array(zod.string().uuid())
+    .optional()
+    .describe("Project IDs where this developer has no nominee registered"),
   assignedProjectIds: zod.array(zod.string().uuid()),
   projectAssignments: zod
     .array(
@@ -731,6 +794,110 @@ export const RemoveProjectParticipantParams = zod.object({
 });
 
 export const RemoveProjectParticipantResponse = zod.object({
+  ok: zod.boolean().optional(),
+});
+
+/**
+ * @summary Get the current nominee for a project (null if not set)
+ */
+export const GetProjectNomineeParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const GetProjectNomineeResponse = zod.union([
+  zod.object({
+    id: zod.string().uuid(),
+    projectId: zod.string().uuid(),
+    nominatedBy: zod.string().uuid().nullish(),
+    nomineeName: zod.string(),
+    relationship: zod.string(),
+    phone: zod.string(),
+    address: zod.string(),
+    idDocumentUrl: zod.string().nullish(),
+    isActive: zod.boolean(),
+    activationStatus: zod.enum(["pending", "activated", "revoked"]),
+    activationNotes: zod.string().nullish(),
+    activatedAt: zod.string().nullish(),
+    activatedBy: zod.string().nullish(),
+    replacedAt: zod.string().nullish(),
+    createdAt: zod.string(),
+    updatedAt: zod.string().nullish(),
+  }),
+  zod.null(),
+]);
+
+/**
+ * @summary Add a nominee for a project (project developer or admin)
+ */
+export const AddProjectNomineeParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const AddProjectNomineeBody = zod.object({
+  nomineeName: zod.string(),
+  relationship: zod.string(),
+  phone: zod.string(),
+  address: zod.string(),
+  idDocumentUrl: zod.string().optional(),
+});
+
+/**
+ * @summary Edit details of the current nominee (name, phone, address, etc.)
+ */
+export const EditProjectNomineeParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const EditProjectNomineeBody = zod.object({
+  nomineeName: zod.string().optional(),
+  relationship: zod.string().optional(),
+  phone: zod.string().optional(),
+  address: zod.string().optional(),
+  idDocumentUrl: zod.string().optional(),
+});
+
+export const EditProjectNomineeResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  nominatedBy: zod.string().uuid().nullish(),
+  nomineeName: zod.string(),
+  relationship: zod.string(),
+  phone: zod.string(),
+  address: zod.string(),
+  idDocumentUrl: zod.string().nullish(),
+  isActive: zod.boolean(),
+  activationStatus: zod.enum(["pending", "activated", "revoked"]),
+  activationNotes: zod.string().nullish(),
+  activatedAt: zod.string().nullish(),
+  activatedBy: zod.string().nullish(),
+  replacedAt: zod.string().nullish(),
+  createdAt: zod.string(),
+  updatedAt: zod.string().nullish(),
+});
+
+/**
+ * @summary Replace the current nominee (marks old as replaced, creates new)
+ */
+export const ReplaceProjectNomineeParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const ReplaceProjectNomineeBody = zod.object({
+  nomineeName: zod.string(),
+  relationship: zod.string(),
+  phone: zod.string(),
+  address: zod.string(),
+  idDocumentUrl: zod.string().optional(),
+});
+
+/**
+ * @summary Remove the current nominee (admin only)
+ */
+export const RemoveProjectNomineeParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const RemoveProjectNomineeResponse = zod.object({
   ok: zod.boolean().optional(),
 });
 

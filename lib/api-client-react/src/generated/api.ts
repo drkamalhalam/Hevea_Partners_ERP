@@ -23,6 +23,7 @@ import type {
   AgreementInput,
   AgreementUpdate,
   AssignProjectInput,
+  CreateNomineeInput,
   DashboardSummary,
   GetUserActivityParams,
   HealthStatus,
@@ -36,12 +37,14 @@ import type {
   ProductionRecord,
   Project,
   ProjectInput,
+  ProjectNominee,
   ProjectParticipant,
   ProjectUpdate,
   RevenueStats,
   SetUserRoleInput,
   StockSummary,
   UpdateAssignmentInput,
+  UpdateNomineeInput,
   UpdateParticipantInput,
   UpdateProfileInput,
   UpsertUserInput,
@@ -1901,6 +1904,438 @@ export const useRemoveProjectParticipant = <
   TContext
 > => {
   return useMutation(getRemoveProjectParticipantMutationOptions(options));
+};
+
+/**
+ * @summary Get the current nominee for a project (null if not set)
+ */
+export const getGetProjectNomineeUrl = (id: string) => {
+  return `/api/projects/${id}/nominee`;
+};
+
+export const getProjectNominee = async (
+  id: string,
+  options?: RequestInit,
+): Promise<ProjectNominee | null> => {
+  return customFetch<ProjectNominee | null>(getGetProjectNomineeUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetProjectNomineeQueryKey = (id: string) => {
+  return [`/api/projects/${id}/nominee`] as const;
+};
+
+export const getGetProjectNomineeQueryOptions = <
+  TData = Awaited<ReturnType<typeof getProjectNominee>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getProjectNominee>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetProjectNomineeQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getProjectNominee>>
+  > = ({ signal }) => getProjectNominee(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getProjectNominee>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetProjectNomineeQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getProjectNominee>>
+>;
+export type GetProjectNomineeQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get the current nominee for a project (null if not set)
+ */
+
+export function useGetProjectNominee<
+  TData = Awaited<ReturnType<typeof getProjectNominee>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getProjectNominee>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetProjectNomineeQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Add a nominee for a project (project developer or admin)
+ */
+export const getAddProjectNomineeUrl = (id: string) => {
+  return `/api/projects/${id}/nominee`;
+};
+
+export const addProjectNominee = async (
+  id: string,
+  createNomineeInput: CreateNomineeInput,
+  options?: RequestInit,
+): Promise<ProjectNominee> => {
+  return customFetch<ProjectNominee>(getAddProjectNomineeUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createNomineeInput),
+  });
+};
+
+export const getAddProjectNomineeMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof addProjectNominee>>,
+    TError,
+    { id: string; data: BodyType<CreateNomineeInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof addProjectNominee>>,
+  TError,
+  { id: string; data: BodyType<CreateNomineeInput> },
+  TContext
+> => {
+  const mutationKey = ["addProjectNominee"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof addProjectNominee>>,
+    { id: string; data: BodyType<CreateNomineeInput> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return addProjectNominee(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AddProjectNomineeMutationResult = NonNullable<
+  Awaited<ReturnType<typeof addProjectNominee>>
+>;
+export type AddProjectNomineeMutationBody = BodyType<CreateNomineeInput>;
+export type AddProjectNomineeMutationError = ErrorType<void>;
+
+/**
+ * @summary Add a nominee for a project (project developer or admin)
+ */
+export const useAddProjectNominee = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof addProjectNominee>>,
+    TError,
+    { id: string; data: BodyType<CreateNomineeInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof addProjectNominee>>,
+  TError,
+  { id: string; data: BodyType<CreateNomineeInput> },
+  TContext
+> => {
+  return useMutation(getAddProjectNomineeMutationOptions(options));
+};
+
+/**
+ * @summary Edit details of the current nominee (name, phone, address, etc.)
+ */
+export const getEditProjectNomineeUrl = (id: string) => {
+  return `/api/projects/${id}/nominee`;
+};
+
+export const editProjectNominee = async (
+  id: string,
+  updateNomineeInput: UpdateNomineeInput,
+  options?: RequestInit,
+): Promise<ProjectNominee> => {
+  return customFetch<ProjectNominee>(getEditProjectNomineeUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateNomineeInput),
+  });
+};
+
+export const getEditProjectNomineeMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof editProjectNominee>>,
+    TError,
+    { id: string; data: BodyType<UpdateNomineeInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof editProjectNominee>>,
+  TError,
+  { id: string; data: BodyType<UpdateNomineeInput> },
+  TContext
+> => {
+  const mutationKey = ["editProjectNominee"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof editProjectNominee>>,
+    { id: string; data: BodyType<UpdateNomineeInput> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return editProjectNominee(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type EditProjectNomineeMutationResult = NonNullable<
+  Awaited<ReturnType<typeof editProjectNominee>>
+>;
+export type EditProjectNomineeMutationBody = BodyType<UpdateNomineeInput>;
+export type EditProjectNomineeMutationError = ErrorType<void>;
+
+/**
+ * @summary Edit details of the current nominee (name, phone, address, etc.)
+ */
+export const useEditProjectNominee = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof editProjectNominee>>,
+    TError,
+    { id: string; data: BodyType<UpdateNomineeInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof editProjectNominee>>,
+  TError,
+  { id: string; data: BodyType<UpdateNomineeInput> },
+  TContext
+> => {
+  return useMutation(getEditProjectNomineeMutationOptions(options));
+};
+
+/**
+ * @summary Replace the current nominee (marks old as replaced, creates new)
+ */
+export const getReplaceProjectNomineeUrl = (id: string) => {
+  return `/api/projects/${id}/nominee`;
+};
+
+export const replaceProjectNominee = async (
+  id: string,
+  createNomineeInput: CreateNomineeInput,
+  options?: RequestInit,
+): Promise<ProjectNominee> => {
+  return customFetch<ProjectNominee>(getReplaceProjectNomineeUrl(id), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createNomineeInput),
+  });
+};
+
+export const getReplaceProjectNomineeMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof replaceProjectNominee>>,
+    TError,
+    { id: string; data: BodyType<CreateNomineeInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof replaceProjectNominee>>,
+  TError,
+  { id: string; data: BodyType<CreateNomineeInput> },
+  TContext
+> => {
+  const mutationKey = ["replaceProjectNominee"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof replaceProjectNominee>>,
+    { id: string; data: BodyType<CreateNomineeInput> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return replaceProjectNominee(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ReplaceProjectNomineeMutationResult = NonNullable<
+  Awaited<ReturnType<typeof replaceProjectNominee>>
+>;
+export type ReplaceProjectNomineeMutationBody = BodyType<CreateNomineeInput>;
+export type ReplaceProjectNomineeMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Replace the current nominee (marks old as replaced, creates new)
+ */
+export const useReplaceProjectNominee = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof replaceProjectNominee>>,
+    TError,
+    { id: string; data: BodyType<CreateNomineeInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof replaceProjectNominee>>,
+  TError,
+  { id: string; data: BodyType<CreateNomineeInput> },
+  TContext
+> => {
+  return useMutation(getReplaceProjectNomineeMutationOptions(options));
+};
+
+/**
+ * @summary Remove the current nominee (admin only)
+ */
+export const getRemoveProjectNomineeUrl = (id: string) => {
+  return `/api/projects/${id}/nominee`;
+};
+
+export const removeProjectNominee = async (
+  id: string,
+  options?: RequestInit,
+): Promise<OkResponse> => {
+  return customFetch<OkResponse>(getRemoveProjectNomineeUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getRemoveProjectNomineeMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof removeProjectNominee>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof removeProjectNominee>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["removeProjectNominee"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof removeProjectNominee>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return removeProjectNominee(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RemoveProjectNomineeMutationResult = NonNullable<
+  Awaited<ReturnType<typeof removeProjectNominee>>
+>;
+
+export type RemoveProjectNomineeMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Remove the current nominee (admin only)
+ */
+export const useRemoveProjectNominee = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof removeProjectNominee>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof removeProjectNominee>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getRemoveProjectNomineeMutationOptions(options));
 };
 
 /**
