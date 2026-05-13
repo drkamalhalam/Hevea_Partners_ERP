@@ -1,9 +1,17 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { Readable } from "stream";
+import { getAuth } from "@clerk/express";
+import { eq, and } from "drizzle-orm";
 import {
   RequestUploadUrlBody,
   RequestUploadUrlResponse,
 } from "@workspace/api-zod";
+import {
+  db,
+  usersTable,
+  expendituresTable,
+  userProjectAssignmentsTable,
+} from "@workspace/db";
 import { ObjectStorageService, ObjectNotFoundError } from "../lib/objectStorage";
 import { ObjectPermission } from "../lib/objectAcl";
 
@@ -80,32 +88,80 @@ router.get("/storage/public-objects/*filePath", async (req: Request, res: Respon
 /**
  * GET /storage/objects/*
  *
- * Serve object entities from PRIVATE_OBJECT_DIR.
- * These are served from a separate path from /public-objects and can optionally
- * be protected with authentication or ACL checks based on the use case.
+ * Serve private object entities from PRIVATE_OBJECT_DIR.
+ *
+ * Security model:
+ *   1. Clerk authentication required — anonymous access denied.
+ *   2. Invoice files are project-scoped: the requesting user must be
+ *      assigned to the project that owns the invoice, or be admin/developer.
+ *   3. All other private objects (templates, generated documents) are
+ *      accessible to any authenticated user — the GCS UUID paths are
+ *      non-discoverable, so authentication is the primary gate.
  */
 router.get("/storage/objects/*path", async (req: Request, res: Response) => {
+  // ── Step 1: Require Clerk authentication ────────────────────────────────
+  const { userId: clerkUserId } = getAuth(req);
+  if (!clerkUserId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  const [user] = await db
+    .select({ id: usersTable.id, role: usersTable.role })
+    .from(usersTable)
+    .where(
+      and(
+        eq(usersTable.clerkUserId, clerkUserId),
+        eq(usersTable.isActive, true),
+      ),
+    )
+    .limit(1);
+
+  if (!user) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
   try {
     const raw = req.params.path;
     const wildcardPath = Array.isArray(raw) ? raw.join("/") : raw;
     const objectPath = `/objects/${wildcardPath}`;
+
+    // ── Step 2: Project-level access check for invoice files ────────────────
+    // If this path is stored as an invoice on any expenditure, the requesting
+    // user must have project access to that expenditure's project.
+    if (user.role !== "admin" && user.role !== "developer") {
+      const [invoiceRow] = await db
+        .select({ projectId: expendituresTable.projectId })
+        .from(expendituresTable)
+        .where(eq(expendituresTable.invoiceObjectPath, objectPath))
+        .limit(1);
+
+      if (invoiceRow) {
+        // Invoice found — verify project assignment
+        const [assignment] = await db
+          .select({ projectId: userProjectAssignmentsTable.projectId })
+          .from(userProjectAssignmentsTable)
+          .where(
+            and(
+              eq(userProjectAssignmentsTable.userId, user.id),
+              eq(userProjectAssignmentsTable.projectId, invoiceRow.projectId),
+            ),
+          )
+          .limit(1);
+
+        if (!assignment) {
+          res.status(403).json({ error: "Forbidden" });
+          return;
+        }
+      }
+      // Non-invoice objects: any authenticated user may access.
+      // Templates and generated agreement docs are served to authenticated
+      // users — paths are non-guessable GCS UUIDs.
+    }
+
+    // ── Step 3: Serve the file ───────────────────────────────────────────────
     const objectFile = await objectStorageService.getObjectEntityFile(objectPath);
-
-    // --- Protected route example (uncomment when using replit-auth) ---
-    // if (!req.isAuthenticated()) {
-    //   res.status(401).json({ error: "Unauthorized" });
-    //   return;
-    // }
-    // const canAccess = await objectStorageService.canAccessObjectEntity({
-    //   userId: req.user.id,
-    //   objectFile,
-    //   requestedPermission: ObjectPermission.READ,
-    // });
-    // if (!canAccess) {
-    //   res.status(403).json({ error: "Forbidden" });
-    //   return;
-    // }
-
     const response = await objectStorageService.downloadObject(objectFile);
 
     res.status(response.status);

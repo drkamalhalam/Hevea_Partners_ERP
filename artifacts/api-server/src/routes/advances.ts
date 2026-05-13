@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { getAuth } from "@clerk/express";
-import { eq, and, inArray, desc } from "drizzle-orm";
+import { eq, and, inArray, desc, isNull } from "drizzle-orm";
 import {
   db,
   usersTable,
@@ -23,7 +23,12 @@ async function getAssignedProjectIds(userId: string): Promise<string[]> {
   const rows = await db
     .select({ projectId: userProjectAssignmentsTable.projectId })
     .from(userProjectAssignmentsTable)
-    .where(eq(userProjectAssignmentsTable.userId, userId));
+    .where(
+      and(
+        eq(userProjectAssignmentsTable.userId, userId),
+        isNull(userProjectAssignmentsTable.revokedAt),
+      ),
+    );
   return rows.map((r) => r.projectId);
 }
 
@@ -229,6 +234,17 @@ router.get("/advances", async (req, res) => {
   const user = await resolveActingUser(clerkUserId);
   if (!user) return res.status(401).json({ error: "User not found" });
 
+  // Advances are inter-party financial instruments — operational roles do not need them
+  if (
+    user.role === "investor" ||
+    user.role === "employee" ||
+    user.role === "operational_staff"
+  ) {
+    return res.status(403).json({
+      error: "Advance records are not accessible to your role.",
+    });
+  }
+
   const projectIdFilter = req.query.projectId as string | undefined;
   const statusFilter = req.query.status as string | undefined;
   const responsiblePartyRoleFilter = req.query.responsiblePartyRole as string | undefined;
@@ -372,6 +388,16 @@ router.get("/advances/:id", async (req, res) => {
 
   const user = await resolveActingUser(clerkUserId);
   if (!user) return res.status(401).json({ error: "User not found" });
+
+  if (
+    user.role === "investor" ||
+    user.role === "employee" ||
+    user.role === "operational_staff"
+  ) {
+    return res.status(403).json({
+      error: "Advance records are not accessible to your role.",
+    });
+  }
 
   const [row] = await db
     .select({

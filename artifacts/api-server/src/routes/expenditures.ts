@@ -113,6 +113,17 @@ router.get("/expenditures", async (req, res) => {
   const actor = await resolveActingUser(clerkUserId);
   if (!actor) return res.status(401).json({ error: "User not found" });
 
+  // Investors see summary analytics only — individual records are not accessible
+  if (actor.role === "investor") {
+    return res.status(403).json({
+      error: "Individual expenditure records are restricted to operational roles. Use the analytics summary endpoint instead.",
+    });
+  }
+
+  // Employees and operational staff are restricted to entries they recorded themselves
+  const selfOnlyRoles =
+    actor.role === "employee" || actor.role === "operational_staff";
+
   // Determine visible project IDs
   let visibleProjectIds: string[] | null = null;
   if (!canAccessAllProjects(actor.role)) {
@@ -181,6 +192,11 @@ router.get("/expenditures", async (req, res) => {
 
   if (dateTo) {
     conditions.push(lte(expendituresTable.expenditureDate, dateTo));
+  }
+
+  // Restrict employees and operational staff to their own submitted records
+  if (selfOnlyRoles) {
+    conditions.push(eq(expendituresTable.recordedById, actor.id));
   }
 
   const rows = await db
@@ -516,6 +532,24 @@ router.patch("/expenditures/:id", async (req, res) => {
     .where(eq(expendituresTable.id, String(req.params.id)))
     .returning();
 
+  // Write immutable audit event for the edit (fire-and-forget)
+  const changedFields = Object.keys(updates).filter((k) => k !== "updatedAt");
+  if (changedFields.length > 0) {
+    db.insert(expenditureVerificationEventsTable)
+      .values({
+        expenditureId: String(req.params.id),
+        eventType: "edited",
+        actorId: actor.id,
+        actorName: actor.displayName ?? "Unknown",
+        actorRole: actor.role,
+        notes: `Fields updated: ${changedFields.join(", ")}`,
+        metadata: { changedFields },
+      })
+      .catch((err: Error) =>
+        req.log.warn({ err }, "Failed to write edit audit event"),
+      );
+  }
+
   return res.json(formatEntry(updated, entry.projectName));
 });
 
@@ -635,6 +669,20 @@ router.post(
       .where(eq(expendituresTable.id, String(req.params.id)))
       .returning();
 
+    // Immutable approval audit event
+    db.insert(expenditureVerificationEventsTable)
+      .values({
+        expenditureId: String(req.params.id),
+        eventType: "approved",
+        actorId: actor.id,
+        actorName: actor.displayName ?? "Unknown",
+        actorRole: actor.role,
+        notes: notes ?? "Approved",
+      })
+      .catch((err: Error) =>
+        req.log.warn({ err }, "Failed to write approval audit event"),
+      );
+
     return res.json(formatEntry(updated, entry.projectName));
   },
 );
@@ -677,6 +725,20 @@ router.post(
       })
       .where(eq(expendituresTable.id, String(req.params.id)))
       .returning();
+
+    // Immutable rejection audit event
+    db.insert(expenditureVerificationEventsTable)
+      .values({
+        expenditureId: String(req.params.id),
+        eventType: "rejected",
+        actorId: actor.id,
+        actorName: actor.displayName ?? "Unknown",
+        actorRole: actor.role,
+        notes,
+      })
+      .catch((err: Error) =>
+        req.log.warn({ err }, "Failed to write rejection audit event"),
+      );
 
     return res.json(formatEntry(updated, entry.projectName));
   },

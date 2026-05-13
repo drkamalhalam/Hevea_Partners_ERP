@@ -476,6 +476,7 @@ export const expenditureVerificationEventTypeEnum = pgEnum(
     "rejected",
     "resubmitted",
     "cancelled",
+    "edited",
   ],
 );
 

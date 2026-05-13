@@ -259,6 +259,17 @@ router.get("/burden/summary", async (req, res) => {
   const actor = await resolveActingUser(clerkUserId);
   if (!actor) return res.status(401).json({ error: "User not found" });
 
+  // Burden data is inter-party financial — restrict to roles that need it
+  if (
+    actor.role === "employee" ||
+    actor.role === "operational_staff" ||
+    actor.role === "investor"
+  ) {
+    return res.status(403).json({
+      error: "Burden analytics are not accessible to your role.",
+    });
+  }
+
   let visibleProjectIds: string[] | null = null;
   if (!canAccessAllProjects(actor.role)) {
     visibleProjectIds = await getAssignedProjectIds(actor.id);
@@ -586,6 +597,17 @@ router.get("/burden/records", async (req, res) => {
 
   const actor = await resolveActingUser(clerkUserId);
   if (!actor) return res.status(401).json({ error: "User not found" });
+
+  // Burden records contain inter-party cost allocation — restricted to parties who need them
+  if (
+    actor.role === "employee" ||
+    actor.role === "operational_staff" ||
+    actor.role === "investor"
+  ) {
+    return res.status(403).json({
+      error: "Burden records are not accessible to your role.",
+    });
+  }
 
   const {
     projectId: filterProjectId,
