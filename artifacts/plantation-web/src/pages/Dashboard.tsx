@@ -27,6 +27,15 @@ import {
   PieChart,
   Users,
   Archive,
+  ShieldAlert,
+  Sprout,
+  Lock,
+  UserX,
+  CheckCircle2,
+  FlaskConical,
+  UserCog,
+  Leaf,
+  RefreshCw,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -377,12 +386,18 @@ function ProjectSummaryTable({ compact }: { compact?: boolean }) {
 
 // ── Project Health Panel (Developer helper) ───────────────────────────────
 
+const LIFECYCLE_PILL: Record<string, { label: string; className: string }> = {
+  prematurity: { label: "Pre", className: "bg-sky-100 text-sky-700" },
+  mature_production: { label: "Mature", className: "bg-emerald-100 text-emerald-700" },
+  closed: { label: "Closed", className: "bg-gray-100 text-gray-600" },
+};
+
 function ProjectHealthPanel({
   projects,
   governance,
   isLoading,
 }: {
-  projects: Array<{ id: string; name: string; status: string }>;
+  projects: Array<{ id: string; name: string; status: string; lifecycleStatus?: string | null }>;
   governance: GovernanceSummary | undefined;
   isLoading: boolean;
 }) {
@@ -430,9 +445,16 @@ function ProjectHealthPanel({
             return (
               <div key={p.id} className="flex items-center gap-3 py-2.5 border-b last:border-0">
                 <div className="flex-1 min-w-0">
-                  <Link href={`/projects/${p.id}`}>
-                    <p className="text-xs font-medium hover:text-primary cursor-pointer truncate">{p.name}</p>
-                  </Link>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <Link href={`/projects/${p.id}`}>
+                      <p className="text-xs font-medium hover:text-primary cursor-pointer truncate">{p.name}</p>
+                    </Link>
+                    {p.lifecycleStatus && LIFECYCLE_PILL[p.lifecycleStatus] && (
+                      <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full flex-shrink-0 ${LIFECYCLE_PILL[p.lifecycleStatus].className}`}>
+                        {LIFECYCLE_PILL[p.lifecycleStatus].label}
+                      </span>
+                    )}
+                  </div>
                   {alert && alert.issues.length > 0 && (
                     <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
                       {alert.issues[0].message}
@@ -522,6 +544,503 @@ function ClosurePendingPanel() {
   );
 }
 
+// ── Governance Task Center types ──────────────────────────────────────────
+
+type GovernanceTasks = {
+  lifecycleBreakdown: {
+    prematurity: number;
+    mature_production: number;
+    closed: number;
+    total: number;
+  };
+  pendingMaturityDeclarations: Array<{
+    declarationId: string;
+    projectId: string;
+    projectName: string;
+    status: string;
+    initiatedByName: string | null;
+    createdAt: string;
+    totalVerifications: number;
+    verifiedCount: number;
+  }>;
+  pendingNomineeActivations: Array<{
+    workflowId: string;
+    projectId: string;
+    projectName: string;
+    activationType: string;
+    status: string;
+    createdAt: string;
+  }>;
+  pendingClosureAcknowledgments: Array<{
+    workflowId: string;
+    projectId: string;
+    projectName: string;
+    status: string;
+    initiatedByName: string | null;
+    initiatedAt: string;
+  }>;
+  missingDeveloperCases: Array<{
+    caseId: string;
+    projectId: string;
+    projectName: string;
+    status: string;
+    gdEntryDate: string;
+    daysElapsed: number;
+    daysRemaining: number;
+    isNomineeEligible: boolean;
+  }>;
+};
+
+// ── Lifecycle Analytics Section ───────────────────────────────────────────
+
+function LifecycleAnalyticsSection({
+  projects,
+  isLoading,
+}: {
+  projects: Array<{ lifecycleStatus?: string | null }>;
+  isLoading: boolean;
+}) {
+  const { data: tasks } = useQuery<GovernanceTasks>({
+    queryKey: ["governance", "tasks"],
+    queryFn: () =>
+      fetch("/api/governance/tasks", { credentials: "include" }).then((r) => r.json()),
+    staleTime: 60_000,
+  });
+
+  const prematurity = projects.filter((p) => !p.lifecycleStatus || p.lifecycleStatus === "prematurity").length;
+  const mature = projects.filter((p) => p.lifecycleStatus === "mature_production").length;
+  const closed = projects.filter((p) => p.lifecycleStatus === "closed").length;
+  const total = projects.length;
+  const missingDevCount = tasks?.missingDeveloperCases.length ?? 0;
+
+  if (total === 0 && !isLoading) return null;
+
+  const barSegments: Array<{ value: number; color: string }> = [
+    { value: prematurity, color: "bg-sky-400" },
+    { value: mature, color: "bg-emerald-500" },
+    { value: closed, color: "bg-gray-400" },
+  ].filter((s) => s.value > 0);
+
+  return (
+    <Card className="border border-gray-200 shadow-none bg-white">
+      <CardHeader className="pb-3 px-5 pt-4">
+        <div className="flex items-center justify-between gap-2">
+          <div>
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <Trees className="w-4 h-4 text-emerald-600" />
+              Project Lifecycle Overview
+            </CardTitle>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              Distribution across plantation phases
+            </p>
+          </div>
+          <Link href="/projects">
+            <Button variant="outline" size="sm" className="h-6 text-xs gap-1 flex-shrink-0">
+              All Projects <ArrowUpRight className="w-3 h-3" />
+            </Button>
+          </Link>
+        </div>
+      </CardHeader>
+      <CardContent className="px-5 pb-5 space-y-4">
+        {isLoading ? (
+          <div className="space-y-3">
+            <Skeleton className="h-3 w-full rounded-full" />
+            <div className="grid grid-cols-4 gap-3">
+              {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-20 rounded-xl" />)}
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Segmented bar */}
+            <div className="flex h-3 rounded-full overflow-hidden gap-0.5 bg-gray-100">
+              {total === 0 ? (
+                <div className="flex-1 bg-gray-200 rounded-full" />
+              ) : (
+                barSegments.map((seg, i) => (
+                  <div
+                    key={i}
+                    className={`${seg.color} transition-all`}
+                    style={{ flex: seg.value }}
+                  />
+                ))
+              )}
+            </div>
+
+            {/* Phase cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-sky-50 border border-sky-100">
+                <Sprout className="w-5 h-5 text-sky-500" />
+                <span className="text-2xl font-bold text-sky-700 tabular-nums">{prematurity}</span>
+                <span className="text-[10px] font-medium text-sky-600 text-center leading-tight">
+                  Prematurity
+                </span>
+              </div>
+              <div className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-emerald-50 border border-emerald-100">
+                <Leaf className="w-5 h-5 text-emerald-500" />
+                <span className="text-2xl font-bold text-emerald-700 tabular-nums">{mature}</span>
+                <span className="text-[10px] font-medium text-emerald-600 text-center leading-tight">
+                  Mature Production
+                </span>
+              </div>
+              <div className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-gray-50 border border-gray-200">
+                <Lock className="w-5 h-5 text-gray-400" />
+                <span className="text-2xl font-bold text-gray-600 tabular-nums">{closed}</span>
+                <span className="text-[10px] font-medium text-gray-500 text-center leading-tight">
+                  Closed
+                </span>
+              </div>
+              <div
+                className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border ${
+                  missingDevCount > 0
+                    ? "bg-red-50 border-red-200"
+                    : "bg-gray-50 border-gray-200"
+                }`}
+              >
+                <UserX className={`w-5 h-5 ${missingDevCount > 0 ? "text-red-500" : "text-gray-400"}`} />
+                <span
+                  className={`text-2xl font-bold tabular-nums ${
+                    missingDevCount > 0 ? "text-red-700" : "text-gray-600"
+                  }`}
+                >
+                  {missingDevCount}
+                </span>
+                <span
+                  className={`text-[10px] font-medium text-center leading-tight ${
+                    missingDevCount > 0 ? "text-red-600" : "text-gray-500"
+                  }`}
+                >
+                  Missing Developer
+                </span>
+              </div>
+            </div>
+
+            {/* Legend */}
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[10px] text-muted-foreground pt-0.5">
+              <span className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-sky-400 flex-shrink-0" />
+                Prematurity — trees growing, pre-tapping
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 flex-shrink-0" />
+                Mature Production — actively producing latex
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-gray-400 flex-shrink-0" />
+                Closed — project concluded
+              </span>
+            </div>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ── Governance Task Center ────────────────────────────────────────────────
+
+function GovernanceTaskCenter() {
+  const { data, isLoading, refetch, isFetching } = useQuery<GovernanceTasks>({
+    queryKey: ["governance", "tasks"],
+    queryFn: () =>
+      fetch("/api/governance/tasks", { credentials: "include" }).then((r) => r.json()),
+    staleTime: 60_000,
+  });
+
+  const totalTasks =
+    (data?.pendingMaturityDeclarations.length ?? 0) +
+    (data?.pendingNomineeActivations.length ?? 0) +
+    (data?.pendingClosureAcknowledgments.length ?? 0) +
+    (data?.missingDeveloperCases.length ?? 0);
+
+  if (isLoading) {
+    return (
+      <Card className="border border-gray-200 shadow-none bg-white">
+        <CardHeader className="pb-3 px-5 pt-4">
+          <Skeleton className="h-5 w-56 rounded" />
+        </CardHeader>
+        <CardContent className="px-5 pb-5 space-y-2">
+          {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-12 w-full rounded-lg" />)}
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!data || totalTasks === 0) {
+    return (
+      <Card className="border border-gray-200 shadow-none bg-white">
+        <CardContent className="px-5 py-6 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-full bg-emerald-50 flex items-center justify-center flex-shrink-0">
+            <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-emerald-700">No pending governance tasks</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              All maturity declarations, nominee activations, closure workflows, and developer assignments are up to date.
+            </p>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="ml-auto h-7 text-xs gap-1 text-muted-foreground"
+            onClick={() => refetch()}
+            disabled={isFetching}
+          >
+            <RefreshCw className={`w-3 h-3 ${isFetching ? "animate-spin" : ""}`} />
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="border-violet-100 shadow-none bg-white">
+      <CardHeader className="pb-3 px-5 pt-4">
+        <div className="flex items-start justify-between gap-2 flex-wrap">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-violet-50 flex items-center justify-center flex-shrink-0">
+              <ShieldAlert className="w-4 h-4 text-violet-600" />
+            </div>
+            <div>
+              <CardTitle className="text-sm font-semibold">Governance Task Center</CardTitle>
+              <p className="text-[11px] text-muted-foreground mt-0.5">Pending actions requiring review</p>
+            </div>
+            <Badge className="bg-violet-100 text-violet-700 border-violet-200 text-[10px] ml-1">
+              {totalTasks} pending
+            </Badge>
+          </div>
+          <div className="flex flex-wrap items-center gap-1.5">
+            {data.pendingMaturityDeclarations.length > 0 && (
+              <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">
+                <FlaskConical className="w-3 h-3" />
+                {data.pendingMaturityDeclarations.length} Maturity
+              </span>
+            )}
+            {data.pendingNomineeActivations.length > 0 && (
+              <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 border border-blue-200">
+                <UserCog className="w-3 h-3" />
+                {data.pendingNomineeActivations.length} Nominees
+              </span>
+            )}
+            {data.pendingClosureAcknowledgments.length > 0 && (
+              <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200">
+                <Archive className="w-3 h-3" />
+                {data.pendingClosureAcknowledgments.length} Closure
+              </span>
+            )}
+            {data.missingDeveloperCases.length > 0 && (
+              <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-700 border border-red-200">
+                <UserX className="w-3 h-3" />
+                {data.missingDeveloperCases.length} Missing Dev
+              </span>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 text-xs gap-1 text-muted-foreground ml-1"
+              onClick={() => refetch()}
+              disabled={isFetching}
+            >
+              <RefreshCw className={`w-3 h-3 ${isFetching ? "animate-spin" : ""}`} />
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="px-5 pb-5 space-y-4">
+
+        {/* ── Maturity Declarations ── */}
+        {data.pendingMaturityDeclarations.length > 0 && (
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <FlaskConical className="w-3.5 h-3.5 text-emerald-600" />
+              <span className="text-[11px] font-semibold text-emerald-700 uppercase tracking-wide">
+                Pending Maturity Declarations
+              </span>
+            </div>
+            <div className="space-y-1.5">
+              {data.pendingMaturityDeclarations.map((d) => (
+                <div
+                  key={d.declarationId}
+                  className="flex items-center gap-3 rounded-lg border border-emerald-100 bg-emerald-50/40 px-3 py-2.5"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold truncate">{d.projectName}</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                      {d.initiatedByName ? `Initiated by ${d.initiatedByName}` : "Awaiting OTP verification"}
+                      {d.totalVerifications > 0 && (
+                        <span className="ml-1.5">
+                          ·{" "}
+                          <span className={d.verifiedCount === d.totalVerifications ? "text-emerald-600 font-medium" : ""}>
+                            {d.verifiedCount}/{d.totalVerifications} verified
+                          </span>
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                  {d.totalVerifications > 0 && (
+                    <div className="flex-shrink-0 w-24">
+                      <div className="flex h-1.5 rounded-full overflow-hidden bg-gray-200">
+                        <div
+                          className="bg-emerald-500 transition-all"
+                          style={{ width: `${(d.verifiedCount / d.totalVerifications) * 100}%` }}
+                        />
+                      </div>
+                      <p className="text-[9px] text-center text-muted-foreground mt-0.5">
+                        {d.verifiedCount}/{d.totalVerifications}
+                      </p>
+                    </div>
+                  )}
+                  <Link href={`/projects/${d.projectId}/maturity`}>
+                    <Button size="sm" variant="outline" className="h-7 text-xs gap-1 flex-shrink-0">
+                      Review <ChevronRight className="w-3 h-3" />
+                    </Button>
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── Nominee Activations ── */}
+        {data.pendingNomineeActivations.length > 0 && (
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <UserCog className="w-3.5 h-3.5 text-blue-600" />
+              <span className="text-[11px] font-semibold text-blue-700 uppercase tracking-wide">
+                Pending Nominee Activations
+              </span>
+            </div>
+            <div className="space-y-1.5">
+              {data.pendingNomineeActivations.map((w) => (
+                <div
+                  key={w.workflowId}
+                  className="flex items-center gap-3 rounded-lg border border-blue-100 bg-blue-50/40 px-3 py-2.5"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold truncate">{w.projectName}</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                      {w.activationType === "death_based" ? "Death-based handover" : "Voluntary handover"}
+                      <span className="mx-1">·</span>
+                      <span className={w.status === "pending_verification" ? "text-amber-600 font-medium" : "text-blue-600 font-medium"}>
+                        {w.status === "pending_verification" ? "Pending admin verification" : "Pending OTP confirmation"}
+                      </span>
+                    </p>
+                  </div>
+                  <Link href={`/projects/${w.projectId}/nominee/activation`}>
+                    <Button size="sm" variant="outline" className="h-7 text-xs gap-1 flex-shrink-0">
+                      Review <ChevronRight className="w-3 h-3" />
+                    </Button>
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── Closure Acknowledgments ── */}
+        {data.pendingClosureAcknowledgments.length > 0 && (
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <Archive className="w-3.5 h-3.5 text-amber-600" />
+              <span className="text-[11px] font-semibold text-amber-700 uppercase tracking-wide">
+                Pending Closure Acknowledgments
+              </span>
+            </div>
+            <div className="space-y-1.5">
+              {data.pendingClosureAcknowledgments.map((w) => (
+                <div
+                  key={w.workflowId}
+                  className="flex items-center gap-3 rounded-lg border border-amber-100 bg-amber-50/40 px-3 py-2.5"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold truncate">{w.projectName}</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                      {w.initiatedByName ? `Initiated by ${w.initiatedByName}` : "Awaiting acknowledgment"}
+                      <span className="mx-1">·</span>
+                      <span className={w.status === "pending_acknowledgment" ? "text-amber-600 font-medium" : "text-blue-600 font-medium"}>
+                        {w.status === "pending_acknowledgment" ? "Awaiting OTP" : "Acknowledged"}
+                      </span>
+                    </p>
+                  </div>
+                  <Link href={`/projects/${w.projectId}/closure`}>
+                    <Button size="sm" variant="outline" className="h-7 text-xs gap-1 flex-shrink-0">
+                      Review <ChevronRight className="w-3 h-3" />
+                    </Button>
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── Missing Developer Cases ── */}
+        {data.missingDeveloperCases.length > 0 && (
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <UserX className="w-3.5 h-3.5 text-red-600" />
+              <span className="text-[11px] font-semibold text-red-700 uppercase tracking-wide">
+                Missing Developer Cases
+              </span>
+            </div>
+            <div className="space-y-1.5">
+              {data.missingDeveloperCases.map((c) => (
+                <div
+                  key={c.caseId}
+                  className={`flex items-center gap-3 rounded-lg border px-3 py-2.5 ${
+                    c.isNomineeEligible
+                      ? "border-red-200 bg-red-50/50"
+                      : "border-orange-100 bg-orange-50/30"
+                  }`}
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold truncate">{c.projectName}</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                      <span className={c.isNomineeEligible ? "text-red-600 font-semibold" : ""}>
+                        {c.daysElapsed} of 45 days elapsed
+                      </span>
+                      {c.isNomineeEligible && (
+                        <span className="ml-1.5 text-red-600 font-semibold">
+                          · Nominee eligible for activation
+                        </span>
+                      )}
+                      {!c.isNomineeEligible && (
+                        <span className="ml-1.5 text-muted-foreground">
+                          · {c.daysRemaining} days remaining
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                  <div className="flex-shrink-0 w-20">
+                    <div className="flex h-1.5 rounded-full overflow-hidden bg-gray-200">
+                      <div
+                        className={`transition-all ${c.isNomineeEligible ? "bg-red-500" : "bg-orange-400"}`}
+                        style={{ width: `${Math.min(100, (c.daysElapsed / 45) * 100)}%` }}
+                      />
+                    </div>
+                    <p className="text-[9px] text-center text-muted-foreground mt-0.5">
+                      {c.daysElapsed}/45 days
+                    </p>
+                  </div>
+                  <Link href={`/projects/${c.projectId}/missing-developer`}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className={`h-7 text-xs gap-1 flex-shrink-0 ${
+                        c.isNomineeEligible ? "border-red-200 text-red-700 hover:bg-red-50" : ""
+                      }`}
+                    >
+                      View <ChevronRight className="w-3 h-3" />
+                    </Button>
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 // ── Admin Dashboard ───────────────────────────────────────────────────────
 
 function AdminDashboard() {
@@ -529,6 +1048,7 @@ function AdminDashboard() {
   const { data: users = [], isLoading: isLoadingUsers } = useListUsers();
   const { data: governance } = useGetGovernanceSummary();
   const { data: stock = [] } = useGetStockSummary();
+  const { data: projects = [], isLoading: isLoadingProjects } = useListProjects();
 
   const totalStock = stock.reduce((s, p) => s + p.currentStock, 0);
   const roleBreakdown = useMemo(() => {
@@ -602,14 +1122,19 @@ function AdminDashboard() {
         </div>
       </section>
 
+      {/* Lifecycle overview */}
+      <section>
+        <LifecycleAnalyticsSection projects={projects} isLoading={isLoadingProjects} />
+      </section>
+
       {/* Governance alerts */}
       <section>
         <GovernanceAlertPanel />
       </section>
 
-      {/* Pending closure workflows */}
+      {/* Governance task center */}
       <section>
-        <ClosurePendingPanel />
+        <GovernanceTaskCenter />
       </section>
 
       {/* User stats + Activity */}
@@ -790,14 +1315,19 @@ function DeveloperDashboard() {
         </div>
       </section>
 
+      {/* Lifecycle overview */}
+      <section>
+        <LifecycleAnalyticsSection projects={projects} isLoading={isLoadingProjects} />
+      </section>
+
       {/* Governance alerts */}
       <section>
         <GovernanceAlertPanel />
       </section>
 
-      {/* Pending closure workflows */}
+      {/* Governance task center */}
       <section>
-        <ClosurePendingPanel />
+        <GovernanceTaskCenter />
       </section>
 
       {/* Project health + Pending approvals */}

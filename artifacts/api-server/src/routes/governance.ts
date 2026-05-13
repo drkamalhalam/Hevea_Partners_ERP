@@ -9,8 +9,13 @@ import {
   projectNomineesTable,
   partnerClaimantsTable,
   missingDeveloperCasesTable,
+  maturityDeclarationsTable,
+  maturityOtpVerificationsTable,
+  nomineeActivationWorkflowsTable,
+  projectClosureWorkflowsTable,
 } from "@workspace/db";
 import { eq, inArray, isNull, and } from "drizzle-orm";
+import { requireRole } from "../middlewares/auth";
 
 const router = Router();
 
@@ -359,4 +364,174 @@ router.get("/summary", async (req, res) => {
   }
 });
 
+// GET /governance/tasks  (admin / developer only)
+router.get("/tasks", requireRole("admin", "developer"), async (req, res) => {
+  try {
+    const clerkUserId = req.userId!;
+
+    const [userRow] = await db
+      .select({ id: usersTable.id, role: usersTable.role })
+      .from(usersTable)
+      .where(eq(usersTable.clerkUserId, clerkUserId))
+      .limit(1);
+
+    if (!userRow) {
+      res.status(403).json({ error: "Forbidden" });
+      return;
+    }
+
+    const isAdminOrDev = userRow.role === "admin" || userRow.role === "developer";
+    if (!isAdminOrDev) {
+      res.status(403).json({ error: "Forbidden" });
+      return;
+    }
+
+    const allProjects = await db
+      .select({ id: projectsTable.id, name: projectsTable.name, lifecycleStatus: projectsTable.lifecycleStatus })
+      .from(projectsTable);
+
+    const projectMap = new Map(allProjects.map((p) => [p.id, p.name]));
+
+    // Lifecycle breakdown
+    const lifecycleBreakdown = {
+      prematurity: allProjects.filter((p) => p.lifecycleStatus === "prematurity").length,
+      mature_production: allProjects.filter((p) => p.lifecycleStatus === "mature_production").length,
+      closed: allProjects.filter((p) => p.lifecycleStatus === "closed").length,
+      total: allProjects.length,
+    };
+
+    // Pending maturity declarations (status = pending_otp)
+    const rawDeclarations = await db
+      .select({
+        id: maturityDeclarationsTable.id,
+        projectId: maturityDeclarationsTable.projectId,
+        status: maturityDeclarationsTable.status,
+        initiatedByName: maturityDeclarationsTable.initiatedByName,
+        createdAt: maturityDeclarationsTable.createdAt,
+      })
+      .from(maturityDeclarationsTable)
+      .where(eq(maturityDeclarationsTable.status, "pending_otp"));
+
+    let verificationCounts: Array<{ declarationId: string; status: string }> = [];
+    if (rawDeclarations.length > 0) {
+      const declarationIds = rawDeclarations.map((d) => d.id);
+      verificationCounts = await db
+        .select({
+          declarationId: maturityOtpVerificationsTable.declarationId,
+          status: maturityOtpVerificationsTable.status,
+        })
+        .from(maturityOtpVerificationsTable)
+        .where(inArray(maturityOtpVerificationsTable.declarationId, declarationIds));
+    }
+
+    const verCountMap = new Map<string, { total: number; verified: number }>();
+    for (const v of verificationCounts) {
+      const entry = verCountMap.get(v.declarationId) ?? { total: 0, verified: 0 };
+      entry.total += 1;
+      if (v.status === "verified") entry.verified += 1;
+      verCountMap.set(v.declarationId, entry);
+    }
+
+    const pendingMaturityDeclarations = rawDeclarations.map((d) => ({
+      declarationId: d.id,
+      projectId: d.projectId,
+      projectName: projectMap.get(d.projectId) ?? d.projectId,
+      status: d.status,
+      initiatedByName: d.initiatedByName,
+      createdAt: d.createdAt,
+      totalVerifications: verCountMap.get(d.id)?.total ?? 0,
+      verifiedCount: verCountMap.get(d.id)?.verified ?? 0,
+    }));
+
+    // Pending nominee activations
+    const rawNomineeActivations = await db
+      .select({
+        id: nomineeActivationWorkflowsTable.id,
+        projectId: nomineeActivationWorkflowsTable.projectId,
+        activationType: nomineeActivationWorkflowsTable.activationType,
+        status: nomineeActivationWorkflowsTable.status,
+        createdAt: nomineeActivationWorkflowsTable.createdAt,
+      })
+      .from(nomineeActivationWorkflowsTable)
+      .where(
+        inArray(nomineeActivationWorkflowsTable.status, ["pending_verification", "pending_otp"])
+      );
+
+    const pendingNomineeActivations = rawNomineeActivations.map((w) => ({
+      workflowId: w.id,
+      projectId: w.projectId,
+      projectName: projectMap.get(w.projectId) ?? w.projectId,
+      activationType: w.activationType,
+      status: w.status,
+      createdAt: w.createdAt,
+    }));
+
+    // Pending closure acknowledgments
+    const rawClosureWorkflows = await db
+      .select({
+        id: projectClosureWorkflowsTable.id,
+        projectId: projectClosureWorkflowsTable.projectId,
+        status: projectClosureWorkflowsTable.status,
+        initiatedByName: projectClosureWorkflowsTable.initiatedByName,
+        initiatedAt: projectClosureWorkflowsTable.initiatedAt,
+      })
+      .from(projectClosureWorkflowsTable)
+      .where(
+        inArray(projectClosureWorkflowsTable.status, ["pending_acknowledgment", "acknowledged"])
+      );
+
+    const pendingClosureAcknowledgments = rawClosureWorkflows.map((w) => ({
+      workflowId: w.id,
+      projectId: w.projectId,
+      projectName: projectMap.get(w.projectId) ?? w.projectId,
+      status: w.status,
+      initiatedByName: w.initiatedByName,
+      initiatedAt: w.initiatedAt,
+    }));
+
+    // Active missing developer cases
+    const rawMissingDevCases = await db
+      .select({
+        id: missingDeveloperCasesTable.id,
+        projectId: missingDeveloperCasesTable.projectId,
+        status: missingDeveloperCasesTable.status,
+        gdEntryDate: missingDeveloperCasesTable.gdEntryDate,
+      })
+      .from(missingDeveloperCasesTable)
+      .where(eq(missingDeveloperCasesTable.isActive, true));
+
+    const missingDeveloperCases = rawMissingDevCases.map((c) => {
+      const entry = new Date(c.gdEntryDate + "T00:00:00.000Z");
+      const daysElapsed = Math.max(
+        0,
+        Math.floor((Date.now() - entry.getTime()) / (1000 * 60 * 60 * 24))
+      );
+      const daysRemaining = Math.max(0, 45 - daysElapsed);
+      const isNomineeEligible = c.status === "nominee_eligible" || daysElapsed >= 45;
+      return {
+        caseId: c.id,
+        projectId: c.projectId,
+        projectName: projectMap.get(c.projectId) ?? c.projectId,
+        status: c.status,
+        gdEntryDate: c.gdEntryDate,
+        daysElapsed,
+        daysRemaining,
+        isNomineeEligible,
+      };
+    });
+
+    res.json({
+      lifecycleBreakdown,
+      pendingMaturityDeclarations,
+      pendingNomineeActivations,
+      pendingClosureAcknowledgments,
+      missingDeveloperCases,
+    });
+  } catch (err) {
+    req.log.error({ err }, "Failed to fetch governance tasks");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 export default router;
+
