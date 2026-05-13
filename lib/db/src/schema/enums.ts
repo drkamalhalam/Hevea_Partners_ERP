@@ -232,6 +232,47 @@ export const agreementActivationOtpStatusEnum = pgEnum(
   ["pending", "sent", "verified", "failed", "expired"],
 );
 
+// ── Document enums ────────────────────────────────────────────────────────
+
+/**
+ * Category of a stored document.
+ *   agreement   — signed deed, amendment, or agreement PDF
+ *   template    — reusable agreement/governance template (DOCX or PDF)
+ *   supporting  — land records, survey maps, KYC, boundary documents
+ *   governance  — board resolutions, regulatory filings, compliance docs
+ *   operational — operational reports, tapping logs, maintenance records
+ */
+export const documentCategoryEnum = pgEnum("document_category", [
+  "agreement",
+  "template",
+  "supporting",
+  "governance",
+  "operational",
+]);
+
+/**
+ * Lifecycle status of a stored document.
+ *   active   — visible and downloadable
+ *   archived — hidden from default listing; retained for audit
+ */
+export const documentStatusEnum = pgEnum("document_status", [
+  "active",
+  "archived",
+]);
+
+/**
+ * Action types logged in the document access audit trail.
+ */
+export const documentAccessActionEnum = pgEnum("document_access_action", [
+  "upload",
+  "view",
+  "download",
+  "archive",
+  "restore",
+  "delete",
+  "metadata_update",
+]);
+
 // ── Audit enums ───────────────────────────────────────────────────────────
 
 export const dbOperationEnum = pgEnum("db_operation", [

@@ -1636,6 +1636,139 @@ export interface UpdateTemplateBody {
   version?: string;
 }
 
+export type DocumentCategory =
+  (typeof DocumentCategory)[keyof typeof DocumentCategory];
+
+export const DocumentCategory = {
+  agreement: "agreement",
+  template: "template",
+  supporting: "supporting",
+  governance: "governance",
+  operational: "operational",
+} as const;
+
+export type DocumentStatus =
+  (typeof DocumentStatus)[keyof typeof DocumentStatus];
+
+export const DocumentStatus = {
+  active: "active",
+  archived: "archived",
+} as const;
+
+export interface Document {
+  id: string;
+  title: string;
+  /** @nullable */
+  description?: string | null;
+  category: DocumentCategory;
+  /** @nullable */
+  projectId?: string | null;
+  /** @nullable */
+  projectName?: string | null;
+  /** @nullable */
+  agreementId?: string | null;
+  fileObjectPath: string;
+  mimeType: string;
+  /** @nullable */
+  fileSizeBytes?: number | null;
+  originalFileName: string;
+  status: DocumentStatus;
+  isActive: boolean;
+  /** @nullable */
+  uploadedBy?: string | null;
+  /** @nullable */
+  uploadedByName?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  /** @nullable */
+  archivedAt?: string | null;
+  /** @nullable */
+  archivedBy?: string | null;
+  createdAt: string;
+  /** @nullable */
+  updatedAt?: string | null;
+}
+
+export type CreateDocumentBodyCategory =
+  (typeof CreateDocumentBodyCategory)[keyof typeof CreateDocumentBodyCategory];
+
+export const CreateDocumentBodyCategory = {
+  agreement: "agreement",
+  template: "template",
+  supporting: "supporting",
+  governance: "governance",
+  operational: "operational",
+} as const;
+
+export interface CreateDocumentBody {
+  title: string;
+  description?: string;
+  category: CreateDocumentBodyCategory;
+  projectId?: string;
+  agreementId?: string;
+  fileObjectPath: string;
+  mimeType: string;
+  fileSizeBytes?: number;
+  originalFileName: string;
+  notes?: string;
+}
+
+export type UpdateDocumentBodyCategory =
+  (typeof UpdateDocumentBodyCategory)[keyof typeof UpdateDocumentBodyCategory];
+
+export const UpdateDocumentBodyCategory = {
+  agreement: "agreement",
+  template: "template",
+  supporting: "supporting",
+  governance: "governance",
+  operational: "operational",
+} as const;
+
+export interface UpdateDocumentBody {
+  title?: string;
+  description?: string;
+  category?: UpdateDocumentBodyCategory;
+  projectId?: string;
+  agreementId?: string;
+  notes?: string;
+}
+
+export type DocumentAccessLogEntryAction =
+  (typeof DocumentAccessLogEntryAction)[keyof typeof DocumentAccessLogEntryAction];
+
+export const DocumentAccessLogEntryAction = {
+  upload: "upload",
+  view: "view",
+  download: "download",
+  archive: "archive",
+  restore: "restore",
+  delete: "delete",
+  metadata_update: "metadata_update",
+} as const;
+
+export type DocumentAccessLogEntryMetadata = { [key: string]: unknown };
+
+export interface DocumentAccessLogEntry {
+  id: string;
+  /** @nullable */
+  documentId?: string | null;
+  documentTitle: string;
+  documentCategory: string;
+  /** @nullable */
+  userId?: string | null;
+  /** @nullable */
+  userDisplayName?: string | null;
+  /** @nullable */
+  userRole?: string | null;
+  action: DocumentAccessLogEntryAction;
+  /** @nullable */
+  projectId?: string | null;
+  metadata?: DocumentAccessLogEntryMetadata;
+  /** @nullable */
+  ipAddress?: string | null;
+  createdAt: string;
+}
+
 export type GetUserActivityParams = {
   limit?: number;
 };
@@ -1658,6 +1791,38 @@ export type VerifyAgreementActivationOtp400 = {
 
 export type ListProductionRecordsParams = {
   projectId?: string;
+};
+
+export type ListDocumentsParams = {
+  category?: ListDocumentsCategory;
+  projectId?: string;
+  status?: ListDocumentsStatus;
+  agreementId?: string;
+};
+
+export type ListDocumentsCategory =
+  (typeof ListDocumentsCategory)[keyof typeof ListDocumentsCategory];
+
+export const ListDocumentsCategory = {
+  agreement: "agreement",
+  template: "template",
+  supporting: "supporting",
+  governance: "governance",
+  operational: "operational",
+} as const;
+
+export type ListDocumentsStatus =
+  (typeof ListDocumentsStatus)[keyof typeof ListDocumentsStatus];
+
+export const ListDocumentsStatus = {
+  active: "active",
+  archived: "archived",
+} as const;
+
+export type ListDocumentAccessLogParams = {
+  documentId?: string;
+  projectId?: string;
+  limit?: number;
 };
 
 export type ListTemplatesParams = {

@@ -2824,6 +2824,269 @@ export const RequestUploadUrlResponse = zod.object({
 });
 
 /**
+ * @summary List accessible documents (role + project filtered)
+ */
+export const ListDocumentsQueryParams = zod.object({
+  category: zod
+    .enum(["agreement", "template", "supporting", "governance", "operational"])
+    .optional(),
+  projectId: zod.coerce.string().uuid().optional(),
+  status: zod.enum(["active", "archived"]).optional(),
+  agreementId: zod.coerce.string().uuid().optional(),
+});
+
+export const ListDocumentsResponseItem = zod.object({
+  id: zod.string().uuid(),
+  title: zod.string(),
+  description: zod.string().nullish(),
+  category: zod.enum([
+    "agreement",
+    "template",
+    "supporting",
+    "governance",
+    "operational",
+  ]),
+  projectId: zod.string().uuid().nullish(),
+  projectName: zod.string().nullish(),
+  agreementId: zod.string().uuid().nullish(),
+  fileObjectPath: zod.string(),
+  mimeType: zod.string(),
+  fileSizeBytes: zod.number().nullish(),
+  originalFileName: zod.string(),
+  status: zod.enum(["active", "archived"]),
+  isActive: zod.boolean(),
+  uploadedBy: zod.string().uuid().nullish(),
+  uploadedByName: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  archivedAt: zod.coerce.date().nullish(),
+  archivedBy: zod.string().uuid().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date().nullish(),
+});
+export const ListDocumentsResponse = zod.array(ListDocumentsResponseItem);
+
+/**
+ * @summary Create document record post-upload (admin/developer)
+ */
+export const CreateDocumentBody = zod.object({
+  title: zod.string(),
+  description: zod.string().optional(),
+  category: zod.enum([
+    "agreement",
+    "template",
+    "supporting",
+    "governance",
+    "operational",
+  ]),
+  projectId: zod.string().uuid().optional(),
+  agreementId: zod.string().uuid().optional(),
+  fileObjectPath: zod.string(),
+  mimeType: zod.string(),
+  fileSizeBytes: zod.number().optional(),
+  originalFileName: zod.string(),
+  notes: zod.string().optional(),
+});
+
+/**
+ * @summary Document access audit log (admin/developer only)
+ */
+export const listDocumentAccessLogQueryLimitDefault = 100;
+
+export const ListDocumentAccessLogQueryParams = zod.object({
+  documentId: zod.coerce.string().uuid().optional(),
+  projectId: zod.coerce.string().uuid().optional(),
+  limit: zod.coerce.number().default(listDocumentAccessLogQueryLimitDefault),
+});
+
+export const ListDocumentAccessLogResponseItem = zod.object({
+  id: zod.string().uuid(),
+  documentId: zod.string().uuid().nullish(),
+  documentTitle: zod.string(),
+  documentCategory: zod.string(),
+  userId: zod.string().uuid().nullish(),
+  userDisplayName: zod.string().nullish(),
+  userRole: zod.string().nullish(),
+  action: zod.enum([
+    "upload",
+    "view",
+    "download",
+    "archive",
+    "restore",
+    "delete",
+    "metadata_update",
+  ]),
+  projectId: zod.string().uuid().nullish(),
+  metadata: zod.record(zod.string(), zod.unknown()).optional(),
+  ipAddress: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+});
+export const ListDocumentAccessLogResponse = zod.array(
+  ListDocumentAccessLogResponseItem,
+);
+
+/**
+ * @summary Get document metadata (access-checked)
+ */
+export const GetDocumentParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const GetDocumentResponse = zod.object({
+  id: zod.string().uuid(),
+  title: zod.string(),
+  description: zod.string().nullish(),
+  category: zod.enum([
+    "agreement",
+    "template",
+    "supporting",
+    "governance",
+    "operational",
+  ]),
+  projectId: zod.string().uuid().nullish(),
+  projectName: zod.string().nullish(),
+  agreementId: zod.string().uuid().nullish(),
+  fileObjectPath: zod.string(),
+  mimeType: zod.string(),
+  fileSizeBytes: zod.number().nullish(),
+  originalFileName: zod.string(),
+  status: zod.enum(["active", "archived"]),
+  isActive: zod.boolean(),
+  uploadedBy: zod.string().uuid().nullish(),
+  uploadedByName: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  archivedAt: zod.coerce.date().nullish(),
+  archivedBy: zod.string().uuid().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date().nullish(),
+});
+
+/**
+ * @summary Update document metadata (admin/developer)
+ */
+export const UpdateDocumentParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const UpdateDocumentBody = zod.object({
+  title: zod.string().optional(),
+  description: zod.string().optional(),
+  category: zod
+    .enum(["agreement", "template", "supporting", "governance", "operational"])
+    .optional(),
+  projectId: zod.string().uuid().optional(),
+  agreementId: zod.string().uuid().optional(),
+  notes: zod.string().optional(),
+});
+
+export const UpdateDocumentResponse = zod.object({
+  id: zod.string().uuid(),
+  title: zod.string(),
+  description: zod.string().nullish(),
+  category: zod.enum([
+    "agreement",
+    "template",
+    "supporting",
+    "governance",
+    "operational",
+  ]),
+  projectId: zod.string().uuid().nullish(),
+  projectName: zod.string().nullish(),
+  agreementId: zod.string().uuid().nullish(),
+  fileObjectPath: zod.string(),
+  mimeType: zod.string(),
+  fileSizeBytes: zod.number().nullish(),
+  originalFileName: zod.string(),
+  status: zod.enum(["active", "archived"]),
+  isActive: zod.boolean(),
+  uploadedBy: zod.string().uuid().nullish(),
+  uploadedByName: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  archivedAt: zod.coerce.date().nullish(),
+  archivedBy: zod.string().uuid().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date().nullish(),
+});
+
+/**
+ * @summary Archive a document (admin/developer)
+ */
+export const ArchiveDocumentParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const ArchiveDocumentResponse = zod.object({
+  id: zod.string().uuid(),
+  title: zod.string(),
+  description: zod.string().nullish(),
+  category: zod.enum([
+    "agreement",
+    "template",
+    "supporting",
+    "governance",
+    "operational",
+  ]),
+  projectId: zod.string().uuid().nullish(),
+  projectName: zod.string().nullish(),
+  agreementId: zod.string().uuid().nullish(),
+  fileObjectPath: zod.string(),
+  mimeType: zod.string(),
+  fileSizeBytes: zod.number().nullish(),
+  originalFileName: zod.string(),
+  status: zod.enum(["active", "archived"]),
+  isActive: zod.boolean(),
+  uploadedBy: zod.string().uuid().nullish(),
+  uploadedByName: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  archivedAt: zod.coerce.date().nullish(),
+  archivedBy: zod.string().uuid().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date().nullish(),
+});
+
+/**
+ * @summary Restore an archived document (admin only)
+ */
+export const RestoreDocumentParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const RestoreDocumentResponse = zod.object({
+  id: zod.string().uuid(),
+  title: zod.string(),
+  description: zod.string().nullish(),
+  category: zod.enum([
+    "agreement",
+    "template",
+    "supporting",
+    "governance",
+    "operational",
+  ]),
+  projectId: zod.string().uuid().nullish(),
+  projectName: zod.string().nullish(),
+  agreementId: zod.string().uuid().nullish(),
+  fileObjectPath: zod.string(),
+  mimeType: zod.string(),
+  fileSizeBytes: zod.number().nullish(),
+  originalFileName: zod.string(),
+  status: zod.enum(["active", "archived"]),
+  isActive: zod.boolean(),
+  uploadedBy: zod.string().uuid().nullish(),
+  uploadedByName: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  archivedAt: zod.coerce.date().nullish(),
+  archivedBy: zod.string().uuid().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date().nullish(),
+});
+
+/**
+ * @summary Secure document download (access-checked, audit-logged)
+ */
+export const DownloadDocumentParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+/**
  * @summary List agreement templates
  */
 export const ListTemplatesQueryParams = zod.object({

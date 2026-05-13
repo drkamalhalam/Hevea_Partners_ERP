@@ -18,6 +18,7 @@ import governanceRouter from "./governance";
 import storageRouter from "./storage";
 import templatesRouter from "./templates";
 import generationsRouter from "./generations";
+import documentsRouter from "./documents";
 import devRouter from "./dev";
 
 const router: IRouter = Router();
@@ -53,5 +54,6 @@ router.use("/governance", governanceRouter);
 router.use("/storage", storageRouter);
 router.use("/templates", templatesRouter);
 router.use("/agreements", generationsRouter);
+router.use("/documents", documentsRouter);
 
 export default router;

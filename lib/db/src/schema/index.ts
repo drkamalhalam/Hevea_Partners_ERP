@@ -21,3 +21,5 @@ export * from "./templates";
 export * from "./agreement_variables";
 export * from "./generations";
 export * from "./agreement_activation";
+export * from "./documents";
+export * from "./document_access_logs";

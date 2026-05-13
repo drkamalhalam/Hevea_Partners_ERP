@@ -2075,6 +2075,205 @@ paths:
               schema:
                 $ref: "#/components/schemas/RequestUploadUrlResponse"
 
+  # ── Documents ──────────────────────────────────────────────────────────────
+
+  /documents:
+    get:
+      operationId: listDocuments
+      tags: [documents]
+      summary: List accessible documents (role + project filtered)
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+            enum: [agreement, template, supporting, governance, operational]
+        - name: projectId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, archived]
+        - name: agreementId
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Filtered document list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Document"
+    post:
+      operationId: createDocument
+      tags: [documents]
+      summary: Create document record post-upload (admin/developer)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDocumentBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Document"
+
+  /documents/access-log:
+    get:
+      operationId: listDocumentAccessLog
+      tags: [documents]
+      summary: Document access audit log (admin/developer only)
+      parameters:
+        - name: documentId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: projectId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+      responses:
+        "200":
+          description: Access log entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DocumentAccessLogEntry"
+
+  /documents/{id}:
+    get:
+      operationId: getDocument
+      tags: [documents]
+      summary: Get document metadata (access-checked)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Document metadata
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Document"
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+    patch:
+      operationId: updateDocument
+      tags: [documents]
+      summary: Update document metadata (admin/developer)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateDocumentBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Document"
+
+  /documents/{id}/archive:
+    post:
+      operationId: archiveDocument
+      tags: [documents]
+      summary: Archive a document (admin/developer)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Archived
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Document"
+
+  /documents/{id}/restore:
+    post:
+      operationId: restoreDocument
+      tags: [documents]
+      summary: Restore an archived document (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Restored
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Document"
+
+  /documents/{id}/download:
+    get:
+      operationId: downloadDocument
+      tags: [documents]
+      summary: Secure document download (access-checked, audit-logged)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: File stream
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+
   /templates:
     get:
       tags: [templates]
@@ -4006,3 +4205,143 @@ components:
           type: string
         version:
           type: string
+
+    # ── Documents ─────────────────────────────────────────────────────────────
+
+    Document:
+      type: object
+      required: [id, title, category, fileObjectPath, mimeType, originalFileName, status, isActive, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: ["string", "null"]
+        category:
+          type: string
+          enum: [agreement, template, supporting, governance, operational]
+        projectId:
+          type: ["string", "null"]
+          format: uuid
+        projectName:
+          type: ["string", "null"]
+        agreementId:
+          type: ["string", "null"]
+          format: uuid
+        fileObjectPath:
+          type: string
+        mimeType:
+          type: string
+        fileSizeBytes:
+          type: ["integer", "null"]
+        originalFileName:
+          type: string
+        status:
+          type: string
+          enum: [active, archived]
+        isActive:
+          type: boolean
+        uploadedBy:
+          type: ["string", "null"]
+          format: uuid
+        uploadedByName:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        archivedAt:
+          type: ["string", "null"]
+          format: date-time
+        archivedBy:
+          type: ["string", "null"]
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: ["string", "null"]
+          format: date-time
+
+    CreateDocumentBody:
+      type: object
+      required: [title, category, fileObjectPath, mimeType, originalFileName]
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+          enum: [agreement, template, supporting, governance, operational]
+        projectId:
+          type: string
+          format: uuid
+        agreementId:
+          type: string
+          format: uuid
+        fileObjectPath:
+          type: string
+        mimeType:
+          type: string
+        fileSizeBytes:
+          type: integer
+        originalFileName:
+          type: string
+        notes:
+          type: string
+
+    UpdateDocumentBody:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+          enum: [agreement, template, supporting, governance, operational]
+        projectId:
+          type: string
+          format: uuid
+        agreementId:
+          type: string
+          format: uuid
+        notes:
+          type: string
+
+    DocumentAccessLogEntry:
+      type: object
+      required: [id, documentTitle, documentCategory, action, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        documentId:
+          type: ["string", "null"]
+          format: uuid
+        documentTitle:
+          type: string
+        documentCategory:
+          type: string
+        userId:
+          type: ["string", "null"]
+          format: uuid
+        userDisplayName:
+          type: ["string", "null"]
+        userRole:
+          type: ["string", "null"]
+        action:
+          type: string
+          enum: [upload, view, download, archive, restore, delete, metadata_update]
+        projectId:
+          type: ["string", "null"]
+          format: uuid
+        metadata:
+          type: object
+          additionalProperties: true
+        ipAddress:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
