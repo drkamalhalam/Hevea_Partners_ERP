@@ -364,6 +364,52 @@ export const dbOperationEnum = pgEnum("db_operation", [
   "DELETE",
 ]);
 
+// ── Burden accounting enums ───────────────────────────────────────────────────
+
+/**
+ * Who is expected to bear an operational cost.
+ *   developer    — 100% developer's responsibility
+ *   landowner    — 100% landowner's responsibility
+ *   shared       — fixed split by configured percentages
+ *   proportional — split proportional to ownership stakes
+ */
+export const burdenBearerTypeEnum = pgEnum("burden_bearer_type", [
+  "developer",
+  "landowner",
+  "shared",
+  "proportional",
+]);
+
+/**
+ * High-level characterisation of the imbalance between expected and actual payer.
+ *   balanced          — actual matches expected; no recovery needed
+ *   developer_advance — developer paid more than their share; landowner owes developer
+ *   landowner_advance — landowner paid more than their share; developer owes landowner
+ *   waived            — imbalance acknowledged and written off
+ */
+export const burdenAdjustmentStatusEnum = pgEnum("burden_adjustment_status", [
+  "balanced",
+  "developer_advance",
+  "landowner_advance",
+  "waived",
+]);
+
+/**
+ * Recovery lifecycle for a burden imbalance.
+ *   none        — no imbalance; nothing to recover
+ *   pending     — imbalance exists; recovery not yet initiated
+ *   in_recovery — partial repayment in progress
+ *   recovered   — fully recovered
+ *   waived      — parties agreed to write off the imbalance
+ */
+export const burdenRecoveryStatusEnum = pgEnum("burden_recovery_status", [
+  "none",
+  "pending",
+  "in_recovery",
+  "recovered",
+  "waived",
+]);
+
 // ── Expenditure enums ─────────────────────────────────────────────────────────
 
 /**

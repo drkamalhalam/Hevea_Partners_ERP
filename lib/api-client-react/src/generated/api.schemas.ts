@@ -2241,6 +2241,177 @@ export interface ExpenditureSummary {
   totals: ExpenditureSummaryTotals;
 }
 
+export type BurdenRuleBearerType =
+  (typeof BurdenRuleBearerType)[keyof typeof BurdenRuleBearerType];
+
+export const BurdenRuleBearerType = {
+  developer: "developer",
+  landowner: "landowner",
+  shared: "shared",
+  proportional: "proportional",
+} as const;
+
+export interface BurdenRule {
+  id: string;
+  projectId: string;
+  category?: string | null;
+  bearerType: BurdenRuleBearerType;
+  developerPct?: number | null;
+  landownerPct?: number | null;
+  lifecyclePhase: string;
+  description?: string | null;
+  effectiveFrom: string;
+  effectiveTo?: string | null;
+  isActive: boolean;
+  createdById?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type BurdenRecordAdjustmentStatus =
+  (typeof BurdenRecordAdjustmentStatus)[keyof typeof BurdenRecordAdjustmentStatus];
+
+export const BurdenRecordAdjustmentStatus = {
+  balanced: "balanced",
+  developer_advance: "developer_advance",
+  landowner_advance: "landowner_advance",
+  waived: "waived",
+} as const;
+
+export type BurdenRecordRecoveryStatus =
+  (typeof BurdenRecordRecoveryStatus)[keyof typeof BurdenRecordRecoveryStatus];
+
+export const BurdenRecordRecoveryStatus = {
+  none: "none",
+  pending: "pending",
+  in_recovery: "in_recovery",
+  recovered: "recovered",
+  waived: "waived",
+} as const;
+
+export interface BurdenRecord {
+  id: string;
+  expenditureId: string;
+  projectId?: string | null;
+  projectName?: string | null;
+  expenditureDescription?: string | null;
+  ruleId?: string | null;
+  category: string;
+  totalAmount: number;
+  lifecyclePhaseSnapshot: string;
+  expectedBearerType: string;
+  expectedDeveloperAmount: number;
+  expectedLandownerAmount: number;
+  actualPayerRole?: string | null;
+  actualPayerName?: string | null;
+  actualPayerId?: string | null;
+  actualDeveloperAmount: number;
+  actualLandownerAmount: number;
+  developerImbalanceAmount: number;
+  landownerImbalanceAmount: number;
+  adjustmentStatus: BurdenRecordAdjustmentStatus;
+  recoverableAmount: number;
+  recoveredAmount: number;
+  recoveryStatus: BurdenRecordRecoveryStatus;
+  recoveryNotes?: string | null;
+  notes?: string | null;
+  isActive: boolean;
+  createdById?: string | null;
+  createdByName?: string | null;
+  adjustedAt?: string | null;
+  adjustedById?: string | null;
+  adjustedByName?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type BurdenSummaryTotals = {
+  totalAmount: number;
+  developerAdvanceAmount: number;
+  landownerAdvanceAmount: number;
+  recoverableAmount: number;
+  recoveredAmount: number;
+  waivedAmount: number;
+  balancedAmount: number;
+  recordCount: number;
+};
+
+export type BurdenSummaryProjectsItem = {
+  projectId: string;
+  projectName: string;
+  totalAmount: number;
+  developerAdvanceAmount: number;
+  landownerAdvanceAmount: number;
+  recoverableAmount: number;
+  recoveredAmount: number;
+  waivedAmount: number;
+  balancedCount: number;
+  pendingCount: number;
+  recordCount: number;
+};
+
+export interface BurdenSummary {
+  totals: BurdenSummaryTotals;
+  projects: BurdenSummaryProjectsItem[];
+}
+
+export type CreateBurdenRuleBodyBearerType =
+  (typeof CreateBurdenRuleBodyBearerType)[keyof typeof CreateBurdenRuleBodyBearerType];
+
+export const CreateBurdenRuleBodyBearerType = {
+  developer: "developer",
+  landowner: "landowner",
+  shared: "shared",
+  proportional: "proportional",
+} as const;
+
+export interface CreateBurdenRuleBody {
+  projectId: string;
+  category?: string;
+  bearerType: CreateBurdenRuleBodyBearerType;
+  developerPct?: number;
+  landownerPct?: number;
+  lifecyclePhase?: string;
+  description?: string;
+  effectiveFrom: string;
+  effectiveTo?: string;
+}
+
+export type UpdateBurdenRuleBodyBearerType =
+  (typeof UpdateBurdenRuleBodyBearerType)[keyof typeof UpdateBurdenRuleBodyBearerType];
+
+export const UpdateBurdenRuleBodyBearerType = {
+  developer: "developer",
+  landowner: "landowner",
+  shared: "shared",
+  proportional: "proportional",
+} as const;
+
+export interface UpdateBurdenRuleBody {
+  category?: string | null;
+  bearerType?: UpdateBurdenRuleBodyBearerType;
+  developerPct?: number | null;
+  landownerPct?: number | null;
+  lifecyclePhase?: string;
+  description?: string | null;
+  effectiveFrom?: string;
+  effectiveTo?: string | null;
+  isActive?: boolean;
+}
+
+export interface CreateBurdenRecordBody {
+  expenditureId: string;
+  expectedBearerType?: string;
+  expectedDeveloperAmount?: number;
+  expectedLandownerAmount?: number;
+  notes?: string;
+}
+
+export interface UpdateBurdenRecordBody {
+  notes?: string | null;
+  recoveryNotes?: string | null;
+}
+
 export type GetUserActivityParams = {
   limit?: number;
 };
@@ -2506,4 +2677,38 @@ export type ConfirmExpenditureVerificationOtpBody = {
 export type ConfirmExpenditureVerificationOtp200 = {
   expenditure: ExpenditureEntry;
   request: ExpenditureVerificationRequest;
+};
+
+export type GetBurdenSummaryParams = {
+  projectId?: string;
+};
+
+export type ListBurdenRulesParams = {
+  projectId?: string;
+  includeInactive?: boolean;
+};
+
+export type ListBurdenRules200 = {
+  rules: BurdenRule[];
+};
+
+export type ListBurdenRecordsParams = {
+  projectId?: string;
+  adjustmentStatus?: string;
+  recoveryStatus?: string;
+  expenditureId?: string;
+};
+
+export type ListBurdenRecords200 = {
+  records: BurdenRecord[];
+};
+
+export type WaiveBurdenRecordBody = {
+  notes?: string;
+};
+
+export type MarkBurdenRecordRecoveredBody = {
+  /** Amount recovered in this payment */
+  amount: number;
+  notes?: string;
 };

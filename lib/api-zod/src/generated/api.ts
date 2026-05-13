@@ -5215,3 +5215,373 @@ export const ConfirmExpenditureVerificationOtpResponse = zod.object({
     updatedAt: zod.string(),
   }),
 });
+
+/**
+ * @summary Burden accounting summary — expected vs actual by project
+ */
+export const GetBurdenSummaryQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+});
+
+export const GetBurdenSummaryResponse = zod.object({
+  totals: zod.object({
+    totalAmount: zod.number(),
+    developerAdvanceAmount: zod.number(),
+    landownerAdvanceAmount: zod.number(),
+    recoverableAmount: zod.number(),
+    recoveredAmount: zod.number(),
+    waivedAmount: zod.number(),
+    balancedAmount: zod.number(),
+    recordCount: zod.number(),
+  }),
+  projects: zod.array(
+    zod.object({
+      projectId: zod.string().uuid(),
+      projectName: zod.string(),
+      totalAmount: zod.number(),
+      developerAdvanceAmount: zod.number(),
+      landownerAdvanceAmount: zod.number(),
+      recoverableAmount: zod.number(),
+      recoveredAmount: zod.number(),
+      waivedAmount: zod.number(),
+      balancedCount: zod.number(),
+      pendingCount: zod.number(),
+      recordCount: zod.number(),
+    }),
+  ),
+});
+
+/**
+ * @summary List burden allocation rules
+ */
+export const ListBurdenRulesQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+  includeInactive: zod.coerce.boolean().optional(),
+});
+
+export const ListBurdenRulesResponse = zod.object({
+  rules: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      projectId: zod.string().uuid(),
+      category: zod.string().nullish(),
+      bearerType: zod.enum([
+        "developer",
+        "landowner",
+        "shared",
+        "proportional",
+      ]),
+      developerPct: zod.number().nullish(),
+      landownerPct: zod.number().nullish(),
+      lifecyclePhase: zod.string(),
+      description: zod.string().nullish(),
+      effectiveFrom: zod.string(),
+      effectiveTo: zod.string().nullish(),
+      isActive: zod.boolean(),
+      createdById: zod.string().uuid().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    }),
+  ),
+});
+
+/**
+ * @summary Create a burden allocation rule
+ */
+export const CreateBurdenRuleBody = zod.object({
+  projectId: zod.string().uuid(),
+  category: zod.string().optional(),
+  bearerType: zod.enum(["developer", "landowner", "shared", "proportional"]),
+  developerPct: zod.number().optional(),
+  landownerPct: zod.number().optional(),
+  lifecyclePhase: zod.string().optional(),
+  description: zod.string().optional(),
+  effectiveFrom: zod.string(),
+  effectiveTo: zod.string().optional(),
+});
+
+/**
+ * @summary Update or deactivate a burden rule
+ */
+export const UpdateBurdenRuleParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const UpdateBurdenRuleBody = zod.object({
+  category: zod.string().nullish(),
+  bearerType: zod
+    .enum(["developer", "landowner", "shared", "proportional"])
+    .optional(),
+  developerPct: zod.number().nullish(),
+  landownerPct: zod.number().nullish(),
+  lifecyclePhase: zod.string().optional(),
+  description: zod.string().nullish(),
+  effectiveFrom: zod.string().optional(),
+  effectiveTo: zod.string().nullish(),
+  isActive: zod.boolean().optional(),
+});
+
+export const UpdateBurdenRuleResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  category: zod.string().nullish(),
+  bearerType: zod.enum(["developer", "landowner", "shared", "proportional"]),
+  developerPct: zod.number().nullish(),
+  landownerPct: zod.number().nullish(),
+  lifecyclePhase: zod.string(),
+  description: zod.string().nullish(),
+  effectiveFrom: zod.string(),
+  effectiveTo: zod.string().nullish(),
+  isActive: zod.boolean(),
+  createdById: zod.string().uuid().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary List burden allocation records
+ */
+export const ListBurdenRecordsQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+  adjustmentStatus: zod.coerce.string().optional(),
+  recoveryStatus: zod.coerce.string().optional(),
+  expenditureId: zod.coerce.string().uuid().optional(),
+});
+
+export const ListBurdenRecordsResponse = zod.object({
+  records: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      expenditureId: zod.string().uuid(),
+      projectId: zod.string().uuid().nullish(),
+      projectName: zod.string().nullish(),
+      expenditureDescription: zod.string().nullish(),
+      ruleId: zod.string().uuid().nullish(),
+      category: zod.string(),
+      totalAmount: zod.number(),
+      lifecyclePhaseSnapshot: zod.string(),
+      expectedBearerType: zod.string(),
+      expectedDeveloperAmount: zod.number(),
+      expectedLandownerAmount: zod.number(),
+      actualPayerRole: zod.string().nullish(),
+      actualPayerName: zod.string().nullish(),
+      actualPayerId: zod.string().uuid().nullish(),
+      actualDeveloperAmount: zod.number(),
+      actualLandownerAmount: zod.number(),
+      developerImbalanceAmount: zod.number(),
+      landownerImbalanceAmount: zod.number(),
+      adjustmentStatus: zod.enum([
+        "balanced",
+        "developer_advance",
+        "landowner_advance",
+        "waived",
+      ]),
+      recoverableAmount: zod.number(),
+      recoveredAmount: zod.number(),
+      recoveryStatus: zod.enum([
+        "none",
+        "pending",
+        "in_recovery",
+        "recovered",
+        "waived",
+      ]),
+      recoveryNotes: zod.string().nullish(),
+      notes: zod.string().nullish(),
+      isActive: zod.boolean(),
+      createdById: zod.string().uuid().nullish(),
+      createdByName: zod.string().nullish(),
+      adjustedAt: zod.coerce.date().nullish(),
+      adjustedById: zod.string().uuid().nullish(),
+      adjustedByName: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    }),
+  ),
+});
+
+/**
+ * @summary Create a burden record for an expenditure
+ */
+export const CreateBurdenRecordBody = zod.object({
+  expenditureId: zod.string().uuid(),
+  expectedBearerType: zod.string().optional(),
+  expectedDeveloperAmount: zod.number().optional(),
+  expectedLandownerAmount: zod.number().optional(),
+  notes: zod.string().optional(),
+});
+
+/**
+ * @summary Update notes or recovery details on a burden record
+ */
+export const UpdateBurdenRecordParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const UpdateBurdenRecordBody = zod.object({
+  notes: zod.string().nullish(),
+  recoveryNotes: zod.string().nullish(),
+});
+
+export const UpdateBurdenRecordResponse = zod.object({
+  id: zod.string().uuid(),
+  expenditureId: zod.string().uuid(),
+  projectId: zod.string().uuid().nullish(),
+  projectName: zod.string().nullish(),
+  expenditureDescription: zod.string().nullish(),
+  ruleId: zod.string().uuid().nullish(),
+  category: zod.string(),
+  totalAmount: zod.number(),
+  lifecyclePhaseSnapshot: zod.string(),
+  expectedBearerType: zod.string(),
+  expectedDeveloperAmount: zod.number(),
+  expectedLandownerAmount: zod.number(),
+  actualPayerRole: zod.string().nullish(),
+  actualPayerName: zod.string().nullish(),
+  actualPayerId: zod.string().uuid().nullish(),
+  actualDeveloperAmount: zod.number(),
+  actualLandownerAmount: zod.number(),
+  developerImbalanceAmount: zod.number(),
+  landownerImbalanceAmount: zod.number(),
+  adjustmentStatus: zod.enum([
+    "balanced",
+    "developer_advance",
+    "landowner_advance",
+    "waived",
+  ]),
+  recoverableAmount: zod.number(),
+  recoveredAmount: zod.number(),
+  recoveryStatus: zod.enum([
+    "none",
+    "pending",
+    "in_recovery",
+    "recovered",
+    "waived",
+  ]),
+  recoveryNotes: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  isActive: zod.boolean(),
+  createdById: zod.string().uuid().nullish(),
+  createdByName: zod.string().nullish(),
+  adjustedAt: zod.coerce.date().nullish(),
+  adjustedById: zod.string().uuid().nullish(),
+  adjustedByName: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Waive the imbalance on a burden record (write off recovery)
+ */
+export const WaiveBurdenRecordParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const WaiveBurdenRecordBody = zod.object({
+  notes: zod.string().optional(),
+});
+
+export const WaiveBurdenRecordResponse = zod.object({
+  id: zod.string().uuid(),
+  expenditureId: zod.string().uuid(),
+  projectId: zod.string().uuid().nullish(),
+  projectName: zod.string().nullish(),
+  expenditureDescription: zod.string().nullish(),
+  ruleId: zod.string().uuid().nullish(),
+  category: zod.string(),
+  totalAmount: zod.number(),
+  lifecyclePhaseSnapshot: zod.string(),
+  expectedBearerType: zod.string(),
+  expectedDeveloperAmount: zod.number(),
+  expectedLandownerAmount: zod.number(),
+  actualPayerRole: zod.string().nullish(),
+  actualPayerName: zod.string().nullish(),
+  actualPayerId: zod.string().uuid().nullish(),
+  actualDeveloperAmount: zod.number(),
+  actualLandownerAmount: zod.number(),
+  developerImbalanceAmount: zod.number(),
+  landownerImbalanceAmount: zod.number(),
+  adjustmentStatus: zod.enum([
+    "balanced",
+    "developer_advance",
+    "landowner_advance",
+    "waived",
+  ]),
+  recoverableAmount: zod.number(),
+  recoveredAmount: zod.number(),
+  recoveryStatus: zod.enum([
+    "none",
+    "pending",
+    "in_recovery",
+    "recovered",
+    "waived",
+  ]),
+  recoveryNotes: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  isActive: zod.boolean(),
+  createdById: zod.string().uuid().nullish(),
+  createdByName: zod.string().nullish(),
+  adjustedAt: zod.coerce.date().nullish(),
+  adjustedById: zod.string().uuid().nullish(),
+  adjustedByName: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Record a recovery payment against a burden imbalance
+ */
+export const MarkBurdenRecordRecoveredParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const MarkBurdenRecordRecoveredBody = zod.object({
+  amount: zod.number().describe("Amount recovered in this payment"),
+  notes: zod.string().optional(),
+});
+
+export const MarkBurdenRecordRecoveredResponse = zod.object({
+  id: zod.string().uuid(),
+  expenditureId: zod.string().uuid(),
+  projectId: zod.string().uuid().nullish(),
+  projectName: zod.string().nullish(),
+  expenditureDescription: zod.string().nullish(),
+  ruleId: zod.string().uuid().nullish(),
+  category: zod.string(),
+  totalAmount: zod.number(),
+  lifecyclePhaseSnapshot: zod.string(),
+  expectedBearerType: zod.string(),
+  expectedDeveloperAmount: zod.number(),
+  expectedLandownerAmount: zod.number(),
+  actualPayerRole: zod.string().nullish(),
+  actualPayerName: zod.string().nullish(),
+  actualPayerId: zod.string().uuid().nullish(),
+  actualDeveloperAmount: zod.number(),
+  actualLandownerAmount: zod.number(),
+  developerImbalanceAmount: zod.number(),
+  landownerImbalanceAmount: zod.number(),
+  adjustmentStatus: zod.enum([
+    "balanced",
+    "developer_advance",
+    "landowner_advance",
+    "waived",
+  ]),
+  recoverableAmount: zod.number(),
+  recoveredAmount: zod.number(),
+  recoveryStatus: zod.enum([
+    "none",
+    "pending",
+    "in_recovery",
+    "recovered",
+    "waived",
+  ]),
+  recoveryNotes: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  isActive: zod.boolean(),
+  createdById: zod.string().uuid().nullish(),
+  createdByName: zod.string().nullish(),
+  adjustedAt: zod.coerce.date().nullish(),
+  adjustedById: zod.string().uuid().nullish(),
+  adjustedByName: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});

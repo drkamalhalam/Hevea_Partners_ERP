@@ -34,6 +34,7 @@ import OwnershipArchive from "./pages/OwnershipArchive";
 import ParticipationDashboard from "./pages/ParticipationDashboard";
 import ContributionDisputeCenter from "./pages/ContributionDisputeCenter";
 import Expenditure from "./pages/Expenditure";
+import Burden from "./pages/Burden";
 import TemplateLibrary from "./pages/TemplateLibrary";
 
 // Pages — Operations
@@ -233,6 +234,7 @@ function AppRoutes() {
               <Route path="/ownership/archive"><ProtectedRoute component={OwnershipArchive} /></Route>
               <Route path="/ownership"><ProtectedRoute component={OwnershipGuidance} /></Route>
               <Route path="/expenditure"><ProtectedRoute component={Expenditure} /></Route>
+              <Route path="/burden"><ProtectedRoute component={Burden} /></Route>
               <Route path="/templates"><ProtectedRoute component={TemplateLibrary} /></Route>
 
               {/* Operations */}

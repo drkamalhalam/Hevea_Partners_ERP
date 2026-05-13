@@ -34,6 +34,9 @@ import type {
   ApproveExpenditureVerification200,
   ApproveExpenditureVerificationBody,
   AssignProjectInput,
+  BurdenRecord,
+  BurdenRule,
+  BurdenSummary,
   CancelAgreementActivationBody,
   CancelMaturityBody,
   ConfirmExpenditureVerificationOtp200,
@@ -41,6 +44,8 @@ import type {
   ContributionDisputeSummary,
   ContributionEntry,
   ContributionSummary,
+  CreateBurdenRecordBody,
+  CreateBurdenRuleBody,
   CreateClaimantInput,
   CreateContributionBody,
   CreateDocumentBody,
@@ -59,6 +64,7 @@ import type {
   FileMissingDeveloperCaseBody,
   GenerateAgreementDocument422,
   GenerateDocumentRequest,
+  GetBurdenSummaryParams,
   GetContributionSummaryParams,
   GetExpenditureSummaryParams,
   GetLandNotionalContributionParams,
@@ -75,6 +81,10 @@ import type {
   InitiateMaturityBody,
   InitiateNomineeActivationBody,
   LandNotionalState,
+  ListBurdenRecords200,
+  ListBurdenRecordsParams,
+  ListBurdenRules200,
+  ListBurdenRulesParams,
   ListContributionVerificationHistory200,
   ListContributions200,
   ListContributionsParams,
@@ -90,6 +100,7 @@ import type {
   ListPendingVerifications200,
   ListProductionRecordsParams,
   ListTemplatesParams,
+  MarkBurdenRecordRecoveredBody,
   MaturityBlockers,
   MaturityDeclaration,
   MaturityOtpVerification,
@@ -130,6 +141,8 @@ import type {
   TransitionLifecycleBody,
   UpdateAgreementVariablesBody,
   UpdateAssignmentInput,
+  UpdateBurdenRecordBody,
+  UpdateBurdenRuleBody,
   UpdateClaimantInput,
   UpdateClosureWorkflowBody,
   UpdateContributionBody,
@@ -148,6 +161,7 @@ import type {
   VerifyContributionBody,
   VerifyNomineeActivationBody,
   VerifyOtpBody,
+  WaiveBurdenRecordBody,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -12433,4 +12447,813 @@ export const useConfirmExpenditureVerificationOtp = <
   return useMutation(
     getConfirmExpenditureVerificationOtpMutationOptions(options),
   );
+};
+
+/**
+ * @summary Burden accounting summary — expected vs actual by project
+ */
+export const getGetBurdenSummaryUrl = (params?: GetBurdenSummaryParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/burden/summary?${stringifiedParams}`
+    : `/api/burden/summary`;
+};
+
+export const getBurdenSummary = async (
+  params?: GetBurdenSummaryParams,
+  options?: RequestInit,
+): Promise<BurdenSummary> => {
+  return customFetch<BurdenSummary>(getGetBurdenSummaryUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetBurdenSummaryQueryKey = (
+  params?: GetBurdenSummaryParams,
+) => {
+  return [`/api/burden/summary`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetBurdenSummaryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getBurdenSummary>>,
+  TError = ErrorType<void>,
+>(
+  params?: GetBurdenSummaryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getBurdenSummary>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetBurdenSummaryQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getBurdenSummary>>
+  > = ({ signal }) => getBurdenSummary(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getBurdenSummary>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetBurdenSummaryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getBurdenSummary>>
+>;
+export type GetBurdenSummaryQueryError = ErrorType<void>;
+
+/**
+ * @summary Burden accounting summary — expected vs actual by project
+ */
+
+export function useGetBurdenSummary<
+  TData = Awaited<ReturnType<typeof getBurdenSummary>>,
+  TError = ErrorType<void>,
+>(
+  params?: GetBurdenSummaryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getBurdenSummary>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetBurdenSummaryQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List burden allocation rules
+ */
+export const getListBurdenRulesUrl = (params?: ListBurdenRulesParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/burden/rules?${stringifiedParams}`
+    : `/api/burden/rules`;
+};
+
+export const listBurdenRules = async (
+  params?: ListBurdenRulesParams,
+  options?: RequestInit,
+): Promise<ListBurdenRules200> => {
+  return customFetch<ListBurdenRules200>(getListBurdenRulesUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListBurdenRulesQueryKey = (params?: ListBurdenRulesParams) => {
+  return [`/api/burden/rules`, ...(params ? [params] : [])] as const;
+};
+
+export const getListBurdenRulesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listBurdenRules>>,
+  TError = ErrorType<void>,
+>(
+  params?: ListBurdenRulesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listBurdenRules>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListBurdenRulesQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listBurdenRules>>> = ({
+    signal,
+  }) => listBurdenRules(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listBurdenRules>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListBurdenRulesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listBurdenRules>>
+>;
+export type ListBurdenRulesQueryError = ErrorType<void>;
+
+/**
+ * @summary List burden allocation rules
+ */
+
+export function useListBurdenRules<
+  TData = Awaited<ReturnType<typeof listBurdenRules>>,
+  TError = ErrorType<void>,
+>(
+  params?: ListBurdenRulesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listBurdenRules>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListBurdenRulesQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a burden allocation rule
+ */
+export const getCreateBurdenRuleUrl = () => {
+  return `/api/burden/rules`;
+};
+
+export const createBurdenRule = async (
+  createBurdenRuleBody: CreateBurdenRuleBody,
+  options?: RequestInit,
+): Promise<BurdenRule> => {
+  return customFetch<BurdenRule>(getCreateBurdenRuleUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createBurdenRuleBody),
+  });
+};
+
+export const getCreateBurdenRuleMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createBurdenRule>>,
+    TError,
+    { data: BodyType<CreateBurdenRuleBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createBurdenRule>>,
+  TError,
+  { data: BodyType<CreateBurdenRuleBody> },
+  TContext
+> => {
+  const mutationKey = ["createBurdenRule"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createBurdenRule>>,
+    { data: BodyType<CreateBurdenRuleBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createBurdenRule(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateBurdenRuleMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createBurdenRule>>
+>;
+export type CreateBurdenRuleMutationBody = BodyType<CreateBurdenRuleBody>;
+export type CreateBurdenRuleMutationError = ErrorType<void>;
+
+/**
+ * @summary Create a burden allocation rule
+ */
+export const useCreateBurdenRule = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createBurdenRule>>,
+    TError,
+    { data: BodyType<CreateBurdenRuleBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createBurdenRule>>,
+  TError,
+  { data: BodyType<CreateBurdenRuleBody> },
+  TContext
+> => {
+  return useMutation(getCreateBurdenRuleMutationOptions(options));
+};
+
+/**
+ * @summary Update or deactivate a burden rule
+ */
+export const getUpdateBurdenRuleUrl = (id: string) => {
+  return `/api/burden/rules/${id}`;
+};
+
+export const updateBurdenRule = async (
+  id: string,
+  updateBurdenRuleBody: UpdateBurdenRuleBody,
+  options?: RequestInit,
+): Promise<BurdenRule> => {
+  return customFetch<BurdenRule>(getUpdateBurdenRuleUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateBurdenRuleBody),
+  });
+};
+
+export const getUpdateBurdenRuleMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateBurdenRule>>,
+    TError,
+    { id: string; data: BodyType<UpdateBurdenRuleBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateBurdenRule>>,
+  TError,
+  { id: string; data: BodyType<UpdateBurdenRuleBody> },
+  TContext
+> => {
+  const mutationKey = ["updateBurdenRule"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateBurdenRule>>,
+    { id: string; data: BodyType<UpdateBurdenRuleBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateBurdenRule(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateBurdenRuleMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateBurdenRule>>
+>;
+export type UpdateBurdenRuleMutationBody = BodyType<UpdateBurdenRuleBody>;
+export type UpdateBurdenRuleMutationError = ErrorType<void>;
+
+/**
+ * @summary Update or deactivate a burden rule
+ */
+export const useUpdateBurdenRule = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateBurdenRule>>,
+    TError,
+    { id: string; data: BodyType<UpdateBurdenRuleBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateBurdenRule>>,
+  TError,
+  { id: string; data: BodyType<UpdateBurdenRuleBody> },
+  TContext
+> => {
+  return useMutation(getUpdateBurdenRuleMutationOptions(options));
+};
+
+/**
+ * @summary List burden allocation records
+ */
+export const getListBurdenRecordsUrl = (params?: ListBurdenRecordsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/burden/records?${stringifiedParams}`
+    : `/api/burden/records`;
+};
+
+export const listBurdenRecords = async (
+  params?: ListBurdenRecordsParams,
+  options?: RequestInit,
+): Promise<ListBurdenRecords200> => {
+  return customFetch<ListBurdenRecords200>(getListBurdenRecordsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListBurdenRecordsQueryKey = (
+  params?: ListBurdenRecordsParams,
+) => {
+  return [`/api/burden/records`, ...(params ? [params] : [])] as const;
+};
+
+export const getListBurdenRecordsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listBurdenRecords>>,
+  TError = ErrorType<void>,
+>(
+  params?: ListBurdenRecordsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listBurdenRecords>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListBurdenRecordsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listBurdenRecords>>
+  > = ({ signal }) => listBurdenRecords(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listBurdenRecords>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListBurdenRecordsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listBurdenRecords>>
+>;
+export type ListBurdenRecordsQueryError = ErrorType<void>;
+
+/**
+ * @summary List burden allocation records
+ */
+
+export function useListBurdenRecords<
+  TData = Awaited<ReturnType<typeof listBurdenRecords>>,
+  TError = ErrorType<void>,
+>(
+  params?: ListBurdenRecordsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listBurdenRecords>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListBurdenRecordsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a burden record for an expenditure
+ */
+export const getCreateBurdenRecordUrl = () => {
+  return `/api/burden/records`;
+};
+
+export const createBurdenRecord = async (
+  createBurdenRecordBody: CreateBurdenRecordBody,
+  options?: RequestInit,
+): Promise<BurdenRecord> => {
+  return customFetch<BurdenRecord>(getCreateBurdenRecordUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createBurdenRecordBody),
+  });
+};
+
+export const getCreateBurdenRecordMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createBurdenRecord>>,
+    TError,
+    { data: BodyType<CreateBurdenRecordBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createBurdenRecord>>,
+  TError,
+  { data: BodyType<CreateBurdenRecordBody> },
+  TContext
+> => {
+  const mutationKey = ["createBurdenRecord"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createBurdenRecord>>,
+    { data: BodyType<CreateBurdenRecordBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createBurdenRecord(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateBurdenRecordMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createBurdenRecord>>
+>;
+export type CreateBurdenRecordMutationBody = BodyType<CreateBurdenRecordBody>;
+export type CreateBurdenRecordMutationError = ErrorType<void>;
+
+/**
+ * @summary Create a burden record for an expenditure
+ */
+export const useCreateBurdenRecord = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createBurdenRecord>>,
+    TError,
+    { data: BodyType<CreateBurdenRecordBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createBurdenRecord>>,
+  TError,
+  { data: BodyType<CreateBurdenRecordBody> },
+  TContext
+> => {
+  return useMutation(getCreateBurdenRecordMutationOptions(options));
+};
+
+/**
+ * @summary Update notes or recovery details on a burden record
+ */
+export const getUpdateBurdenRecordUrl = (id: string) => {
+  return `/api/burden/records/${id}`;
+};
+
+export const updateBurdenRecord = async (
+  id: string,
+  updateBurdenRecordBody: UpdateBurdenRecordBody,
+  options?: RequestInit,
+): Promise<BurdenRecord> => {
+  return customFetch<BurdenRecord>(getUpdateBurdenRecordUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateBurdenRecordBody),
+  });
+};
+
+export const getUpdateBurdenRecordMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateBurdenRecord>>,
+    TError,
+    { id: string; data: BodyType<UpdateBurdenRecordBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateBurdenRecord>>,
+  TError,
+  { id: string; data: BodyType<UpdateBurdenRecordBody> },
+  TContext
+> => {
+  const mutationKey = ["updateBurdenRecord"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateBurdenRecord>>,
+    { id: string; data: BodyType<UpdateBurdenRecordBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateBurdenRecord(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateBurdenRecordMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateBurdenRecord>>
+>;
+export type UpdateBurdenRecordMutationBody = BodyType<UpdateBurdenRecordBody>;
+export type UpdateBurdenRecordMutationError = ErrorType<void>;
+
+/**
+ * @summary Update notes or recovery details on a burden record
+ */
+export const useUpdateBurdenRecord = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateBurdenRecord>>,
+    TError,
+    { id: string; data: BodyType<UpdateBurdenRecordBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateBurdenRecord>>,
+  TError,
+  { id: string; data: BodyType<UpdateBurdenRecordBody> },
+  TContext
+> => {
+  return useMutation(getUpdateBurdenRecordMutationOptions(options));
+};
+
+/**
+ * @summary Waive the imbalance on a burden record (write off recovery)
+ */
+export const getWaiveBurdenRecordUrl = (id: string) => {
+  return `/api/burden/records/${id}/waive`;
+};
+
+export const waiveBurdenRecord = async (
+  id: string,
+  waiveBurdenRecordBody: WaiveBurdenRecordBody,
+  options?: RequestInit,
+): Promise<BurdenRecord> => {
+  return customFetch<BurdenRecord>(getWaiveBurdenRecordUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(waiveBurdenRecordBody),
+  });
+};
+
+export const getWaiveBurdenRecordMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof waiveBurdenRecord>>,
+    TError,
+    { id: string; data: BodyType<WaiveBurdenRecordBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof waiveBurdenRecord>>,
+  TError,
+  { id: string; data: BodyType<WaiveBurdenRecordBody> },
+  TContext
+> => {
+  const mutationKey = ["waiveBurdenRecord"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof waiveBurdenRecord>>,
+    { id: string; data: BodyType<WaiveBurdenRecordBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return waiveBurdenRecord(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type WaiveBurdenRecordMutationResult = NonNullable<
+  Awaited<ReturnType<typeof waiveBurdenRecord>>
+>;
+export type WaiveBurdenRecordMutationBody = BodyType<WaiveBurdenRecordBody>;
+export type WaiveBurdenRecordMutationError = ErrorType<void>;
+
+/**
+ * @summary Waive the imbalance on a burden record (write off recovery)
+ */
+export const useWaiveBurdenRecord = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof waiveBurdenRecord>>,
+    TError,
+    { id: string; data: BodyType<WaiveBurdenRecordBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof waiveBurdenRecord>>,
+  TError,
+  { id: string; data: BodyType<WaiveBurdenRecordBody> },
+  TContext
+> => {
+  return useMutation(getWaiveBurdenRecordMutationOptions(options));
+};
+
+/**
+ * @summary Record a recovery payment against a burden imbalance
+ */
+export const getMarkBurdenRecordRecoveredUrl = (id: string) => {
+  return `/api/burden/records/${id}/recover`;
+};
+
+export const markBurdenRecordRecovered = async (
+  id: string,
+  markBurdenRecordRecoveredBody: MarkBurdenRecordRecoveredBody,
+  options?: RequestInit,
+): Promise<BurdenRecord> => {
+  return customFetch<BurdenRecord>(getMarkBurdenRecordRecoveredUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(markBurdenRecordRecoveredBody),
+  });
+};
+
+export const getMarkBurdenRecordRecoveredMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof markBurdenRecordRecovered>>,
+    TError,
+    { id: string; data: BodyType<MarkBurdenRecordRecoveredBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof markBurdenRecordRecovered>>,
+  TError,
+  { id: string; data: BodyType<MarkBurdenRecordRecoveredBody> },
+  TContext
+> => {
+  const mutationKey = ["markBurdenRecordRecovered"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof markBurdenRecordRecovered>>,
+    { id: string; data: BodyType<MarkBurdenRecordRecoveredBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return markBurdenRecordRecovered(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type MarkBurdenRecordRecoveredMutationResult = NonNullable<
+  Awaited<ReturnType<typeof markBurdenRecordRecovered>>
+>;
+export type MarkBurdenRecordRecoveredMutationBody =
+  BodyType<MarkBurdenRecordRecoveredBody>;
+export type MarkBurdenRecordRecoveredMutationError = ErrorType<void>;
+
+/**
+ * @summary Record a recovery payment against a burden imbalance
+ */
+export const useMarkBurdenRecordRecovered = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof markBurdenRecordRecovered>>,
+    TError,
+    { id: string; data: BodyType<MarkBurdenRecordRecoveredBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof markBurdenRecordRecovered>>,
+  TError,
+  { id: string; data: BodyType<MarkBurdenRecordRecoveredBody> },
+  TContext
+> => {
+  return useMutation(getMarkBurdenRecordRecoveredMutationOptions(options));
 };

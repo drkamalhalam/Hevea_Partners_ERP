@@ -3393,6 +3393,226 @@ paths:
         "401": { description: Unauthorized }
         "404": { description: Not found }
 
+  # ── Burden Accounting ───────────────────────────────────────────────────────
+
+  /burden/summary:
+    get:
+      tags: [Burden]
+      operationId: getBurdenSummary
+      summary: Burden accounting summary — expected vs actual by project
+      parameters:
+        - in: query
+          name: projectId
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BurdenSummary" }
+        "401": { description: Unauthorized }
+
+  /burden/rules:
+    get:
+      tags: [Burden]
+      operationId: listBurdenRules
+      summary: List burden allocation rules
+      parameters:
+        - in: query
+          name: projectId
+          schema: { type: string, format: uuid }
+        - in: query
+          name: includeInactive
+          schema: { type: boolean }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [rules]
+                properties:
+                  rules:
+                    type: array
+                    items: { $ref: "#/components/schemas/BurdenRule" }
+        "401": { description: Unauthorized }
+    post:
+      tags: [Burden]
+      operationId: createBurdenRule
+      summary: Create a burden allocation rule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateBurdenRuleBody" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BurdenRule" }
+        "400": { description: Bad request }
+        "401": { description: Unauthorized }
+
+  /burden/rules/{id}:
+    patch:
+      tags: [Burden]
+      operationId: updateBurdenRule
+      summary: Update or deactivate a burden rule
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateBurdenRuleBody" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BurdenRule" }
+        "400": { description: Bad request }
+        "401": { description: Unauthorized }
+        "404": { description: Not found }
+
+  /burden/records:
+    get:
+      tags: [Burden]
+      operationId: listBurdenRecords
+      summary: List burden allocation records
+      parameters:
+        - in: query
+          name: projectId
+          schema: { type: string, format: uuid }
+        - in: query
+          name: adjustmentStatus
+          schema: { type: string }
+        - in: query
+          name: recoveryStatus
+          schema: { type: string }
+        - in: query
+          name: expenditureId
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [records]
+                properties:
+                  records:
+                    type: array
+                    items: { $ref: "#/components/schemas/BurdenRecord" }
+        "401": { description: Unauthorized }
+    post:
+      tags: [Burden]
+      operationId: createBurdenRecord
+      summary: Create a burden record for an expenditure
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateBurdenRecordBody" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BurdenRecord" }
+        "400": { description: Bad request }
+        "401": { description: Unauthorized }
+
+  /burden/records/{id}:
+    patch:
+      tags: [Burden]
+      operationId: updateBurdenRecord
+      summary: Update notes or recovery details on a burden record
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateBurdenRecordBody" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BurdenRecord" }
+        "400": { description: Bad request }
+        "401": { description: Unauthorized }
+        "404": { description: Not found }
+
+  /burden/records/{id}/waive:
+    post:
+      tags: [Burden]
+      operationId: waiveBurdenRecord
+      summary: Waive the imbalance on a burden record (write off recovery)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                notes: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BurdenRecord" }
+        "400": { description: Bad request }
+        "401": { description: Unauthorized }
+        "404": { description: Not found }
+
+  /burden/records/{id}/recover:
+    post:
+      tags: [Burden]
+      operationId: markBurdenRecordRecovered
+      summary: Record a recovery payment against a burden imbalance
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount]
+              properties:
+                amount:
+                  type: number
+                  description: Amount recovered in this payment
+                notes: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BurdenRecord" }
+        "400": { description: Bad request }
+        "401": { description: Unauthorized }
+        "404": { description: Not found }
+
 components:
   schemas:
     HealthStatus:
@@ -5923,3 +6143,147 @@ components:
               type: number
             count:
               type: integer
+
+    BurdenRule:
+      type: object
+      required: [id, projectId, bearerType, lifecyclePhase, effectiveFrom, isActive, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        category: { type: string, nullable: true }
+        bearerType:
+          type: string
+          enum: [developer, landowner, shared, proportional]
+        developerPct: { type: number, nullable: true }
+        landownerPct: { type: number, nullable: true }
+        lifecyclePhase: { type: string }
+        description: { type: string, nullable: true }
+        effectiveFrom: { type: string }
+        effectiveTo: { type: string, nullable: true }
+        isActive: { type: boolean }
+        createdById: { type: string, format: uuid, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    BurdenRecord:
+      type: object
+      required: [id, expenditureId, category, totalAmount, lifecyclePhaseSnapshot, expectedBearerType, expectedDeveloperAmount, expectedLandownerAmount, actualDeveloperAmount, actualLandownerAmount, developerImbalanceAmount, landownerImbalanceAmount, adjustmentStatus, recoverableAmount, recoveredAmount, recoveryStatus, isActive, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        expenditureId: { type: string, format: uuid }
+        projectId: { type: string, format: uuid, nullable: true }
+        projectName: { type: string, nullable: true }
+        expenditureDescription: { type: string, nullable: true }
+        ruleId: { type: string, format: uuid, nullable: true }
+        category: { type: string }
+        totalAmount: { type: number }
+        lifecyclePhaseSnapshot: { type: string }
+        expectedBearerType: { type: string }
+        expectedDeveloperAmount: { type: number }
+        expectedLandownerAmount: { type: number }
+        actualPayerRole: { type: string, nullable: true }
+        actualPayerName: { type: string, nullable: true }
+        actualPayerId: { type: string, format: uuid, nullable: true }
+        actualDeveloperAmount: { type: number }
+        actualLandownerAmount: { type: number }
+        developerImbalanceAmount: { type: number }
+        landownerImbalanceAmount: { type: number }
+        adjustmentStatus:
+          type: string
+          enum: [balanced, developer_advance, landowner_advance, waived]
+        recoverableAmount: { type: number }
+        recoveredAmount: { type: number }
+        recoveryStatus:
+          type: string
+          enum: [none, pending, in_recovery, recovered, waived]
+        recoveryNotes: { type: string, nullable: true }
+        notes: { type: string, nullable: true }
+        isActive: { type: boolean }
+        createdById: { type: string, format: uuid, nullable: true }
+        createdByName: { type: string, nullable: true }
+        adjustedAt: { type: string, format: date-time, nullable: true }
+        adjustedById: { type: string, format: uuid, nullable: true }
+        adjustedByName: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    BurdenSummary:
+      type: object
+      required: [totals, projects]
+      properties:
+        totals:
+          type: object
+          required: [totalAmount, developerAdvanceAmount, landownerAdvanceAmount, recoverableAmount, recoveredAmount, waivedAmount, balancedAmount, recordCount]
+          properties:
+            totalAmount: { type: number }
+            developerAdvanceAmount: { type: number }
+            landownerAdvanceAmount: { type: number }
+            recoverableAmount: { type: number }
+            recoveredAmount: { type: number }
+            waivedAmount: { type: number }
+            balancedAmount: { type: number }
+            recordCount: { type: integer }
+        projects:
+          type: array
+          items:
+            type: object
+            required: [projectId, projectName, totalAmount, developerAdvanceAmount, landownerAdvanceAmount, recoverableAmount, recoveredAmount, waivedAmount, balancedCount, pendingCount, recordCount]
+            properties:
+              projectId: { type: string, format: uuid }
+              projectName: { type: string }
+              totalAmount: { type: number }
+              developerAdvanceAmount: { type: number }
+              landownerAdvanceAmount: { type: number }
+              recoverableAmount: { type: number }
+              recoveredAmount: { type: number }
+              waivedAmount: { type: number }
+              balancedCount: { type: integer }
+              pendingCount: { type: integer }
+              recordCount: { type: integer }
+
+    CreateBurdenRuleBody:
+      type: object
+      required: [projectId, bearerType, effectiveFrom]
+      properties:
+        projectId: { type: string, format: uuid }
+        category: { type: string }
+        bearerType:
+          type: string
+          enum: [developer, landowner, shared, proportional]
+        developerPct: { type: number }
+        landownerPct: { type: number }
+        lifecyclePhase: { type: string }
+        description: { type: string }
+        effectiveFrom: { type: string }
+        effectiveTo: { type: string }
+
+    UpdateBurdenRuleBody:
+      type: object
+      properties:
+        category: { type: string, nullable: true }
+        bearerType:
+          type: string
+          enum: [developer, landowner, shared, proportional]
+        developerPct: { type: number, nullable: true }
+        landownerPct: { type: number, nullable: true }
+        lifecyclePhase: { type: string }
+        description: { type: string, nullable: true }
+        effectiveFrom: { type: string }
+        effectiveTo: { type: string, nullable: true }
+        isActive: { type: boolean }
+
+    CreateBurdenRecordBody:
+      type: object
+      required: [expenditureId]
+      properties:
+        expenditureId: { type: string, format: uuid }
+        expectedBearerType: { type: string }
+        expectedDeveloperAmount: { type: number }
+        expectedLandownerAmount: { type: number }
+        notes: { type: string }
+
+    UpdateBurdenRecordBody:
+      type: object
+      properties:
+        notes: { type: string, nullable: true }
+        recoveryNotes: { type: string, nullable: true }

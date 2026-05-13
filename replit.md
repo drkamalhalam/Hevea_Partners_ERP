@@ -486,6 +486,38 @@ Aggregated single-page dashboard at `/contributions/dashboard` combining ownersh
 
 **Ownership route fix:** Routes inside `ownershipRouter` use relative paths (`/summary`, `/:projectId`, `/:projectId/snapshots`) — the `/ownership` prefix comes from `router.use("/ownership", ownershipRouter)` in index.ts.
 
+## Operational Burden Accounting Engine
+
+Tracks who was **expected** to bear each operational cost vs who **actually** paid, computes imbalances, and manages recovery. Completely separate from ownership contributions.
+
+**Core concepts:**
+- **BurdenRule** — per-project, per-category, per-lifecycle-phase rule specifying who should bear a cost (`developer` / `landowner` / `shared` % split / `proportional` from agreement ownership %). Category-specific rules beat null=all rules. More recently created rules win ties.
+- **BurdenRecord** — one record per expenditure. Auto-matched against active rules, computes `expectedDeveloperAmount`, `expectedLandownerAmount`, `actualDeveloperAmount`, `actualLandownerAmount`, imbalance, and `adjustmentStatus`.
+- **adjustmentStatus**: `balanced` | `developer_advance` (dev overpaid) | `landowner_advance` (LO overpaid) | `waived`
+- **recoveryStatus**: `none` | `pending` | `in_recovery` | `recovered` | `waived`
+
+**DB tables** (`lib/db/src/schema/burden.ts`): `burden_rules`, `burden_records` — 3 enums in `enums.ts`: `burdenBearerTypeEnum`, `burdenAdjustmentStatusEnum`, `burdenRecoveryStatusEnum`
+
+**API endpoints** (`artifacts/api-server/src/routes/burden.ts`), mounted at `/burden`:
+- `GET /burden/summary?projectId=` — totals + per-project breakdown
+- `GET /burden/rules?projectId=&includeInactive=` — list active rules
+- `POST /burden/rules` — create rule (admin/developer)
+- `PATCH /burden/rules/:id` — edit or deactivate rule (admin/developer)
+- `GET /burden/records?projectId=&adjustmentStatus=&recoveryStatus=&expenditureId=` — list records
+- `POST /burden/records { expenditureId }` — analyse expenditure, auto-match rule, compute imbalance (admin/developer/landowner)
+- `PATCH /burden/records/:id` — update notes (admin/developer)
+- `POST /burden/records/:id/waive { notes? }` — write off imbalance (admin/developer)
+- `POST /burden/records/:id/recover { amount, notes? }` — record recovery payment (admin/developer)
+
+**Frontend** (`artifacts/plantation-web/src/pages/Burden.tsx`), route `/burden`:
+- **Summary tab** — 4 KPI cards (developer advance / landowner advance / pending recovery / recovered) + per-project breakdown table
+- **Ledger tab** — records table with expected vs actual columns, expandable detail rows, waive (✗) and recover (↻) action buttons, filter by adjustment status
+- **Rules tab** — card list of active rules with edit/deactivate, "New Rule" form dialog with bearer-type-aware % split fields
+
+**Sidebar:** "Burden Accounting" in Finance group (admin/developer only), icon `ArrowLeftRight`, route `/burden`
+
+**Generated hooks:** `useGetBurdenSummary`, `useListBurdenRules`, `useCreateBurdenRule`, `useUpdateBurdenRule`, `useListBurdenRecords`, `useCreateBurdenRecord`, `useUpdateBurdenRecord`, `useWaiveBurdenRecord`, `useMarkBurdenRecordRecovered`
+
 ## Pointers
 
 - See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
