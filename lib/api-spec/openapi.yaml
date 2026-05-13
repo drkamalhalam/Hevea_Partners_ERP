@@ -26,6 +26,8 @@ tags:
     description: Agreement template library and version management
   - name: storage
     description: Object storage upload and serving endpoints
+  - name: analytics
+    description: Profitability and sustainability analytics
 
 paths:
   /me:
@@ -4557,6 +4559,32 @@ paths:
               schema:
                 $ref: "#/components/schemas/BurdenRecoveryEvent"
 
+  /analytics/landowner-profitability:
+    get:
+      operationId: getLandownerProfitabilityAnalytics
+      tags: [analytics]
+      summary: Landowner profitability and operational sustainability analytics
+      parameters:
+        - name: projectId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: partnerId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: fromYear
+          in: query
+          schema: { type: integer }
+        - name: toYear
+          in: query
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Profitability analytics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LandownerProfitabilityAnalytics"
+
 components:
   schemas:
     HealthStatus:
@@ -7903,3 +7931,112 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/BurdenRecoveryAdjustment"
+
+    LandownerProfitabilitySummary:
+      type: object
+      required: [grossEntitlement, operationalBurden, lcaIncome, recoverableAdj, netProfitability, totalLcaReceivable, costBurdenRatio, recoveryEfficiency, lcaDependencyRatio]
+      properties:
+        grossEntitlement: { type: number }
+        operationalBurden: { type: number }
+        lcaIncome: { type: number }
+        recoverableAdj: { type: number }
+        netProfitability: { type: number }
+        totalLcaReceivable: { type: number }
+        costBurdenRatio: { type: number }
+        recoveryEfficiency: { type: number }
+        lcaDependencyRatio: { type: number }
+
+    YearlyProfitabilityRow:
+      type: object
+      required: [year, grossEntitlement, operationalBurden, lcaIncome, recoverableAdj, netProfitability]
+      properties:
+        year: { type: integer }
+        grossEntitlement: { type: number }
+        operationalBurden: { type: number }
+        lcaIncome: { type: number }
+        recoverableAdj: { type: number }
+        netProfitability: { type: number }
+
+    CostCategoryBreakdown:
+      type: object
+      required: [category, amount]
+      properties:
+        category: { type: string }
+        amount: { type: number }
+
+    BurdenStatusBreakdown:
+      type: object
+      required: [pending, partial, recovered, waived]
+      properties:
+        pending: { type: integer }
+        partial: { type: integer }
+        recovered: { type: integer }
+        waived: { type: integer }
+
+    CostBurdenAnalysis:
+      type: object
+      required: [totalBurdenRecoverable, totalBurdenRecovered, totalBurdenPending, byCategory, byStatus]
+      properties:
+        totalBurdenRecoverable: { type: number }
+        totalBurdenRecovered: { type: number }
+        totalBurdenPending: { type: number }
+        byCategory:
+          type: array
+          items:
+            $ref: "#/components/schemas/CostCategoryBreakdown"
+        byStatus:
+          $ref: "#/components/schemas/BurdenStatusBreakdown"
+
+    SustainabilityIndicators:
+      type: object
+      required: [profitabilityScore, costBurdenRating, lcaComplianceRating, recoveryRating, overallSustainability]
+      properties:
+        profitabilityScore:
+          type: string
+          enum: [strong, moderate, at_risk, critical]
+        costBurdenRating:
+          type: string
+          enum: [low, moderate, high, critical]
+        lcaComplianceRating:
+          type: string
+          enum: [compliant, partial, outstanding]
+        recoveryRating:
+          type: string
+          enum: [excellent, good, lagging, critical]
+        overallSustainability:
+          type: string
+          enum: [strong, moderate, at_risk, critical]
+
+    ProjectProfitabilityRow:
+      type: object
+      required: [projectId, projectName, partnerId, partnerName, grossEntitlement, operationalBurden, lcaIncome, recoverableAdj, netProfitability, costBurdenRatio]
+      properties:
+        projectId: { type: string, format: uuid }
+        projectName: { type: string }
+        partnerId: { type: string, format: uuid }
+        partnerName: { type: string }
+        grossEntitlement: { type: number }
+        operationalBurden: { type: number }
+        lcaIncome: { type: number }
+        recoverableAdj: { type: number }
+        netProfitability: { type: number }
+        costBurdenRatio: { type: number }
+
+    LandownerProfitabilityAnalytics:
+      type: object
+      required: [summary, yearlyBreakdown, costBurdenAnalysis, sustainabilityIndicators, projects]
+      properties:
+        summary:
+          $ref: "#/components/schemas/LandownerProfitabilitySummary"
+        yearlyBreakdown:
+          type: array
+          items:
+            $ref: "#/components/schemas/YearlyProfitabilityRow"
+        costBurdenAnalysis:
+          $ref: "#/components/schemas/CostBurdenAnalysis"
+        sustainabilityIndicators:
+          $ref: "#/components/schemas/SustainabilityIndicators"
+        projects:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProjectProfitabilityRow"

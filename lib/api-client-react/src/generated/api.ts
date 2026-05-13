@@ -91,6 +91,7 @@ import type {
   GetLandNotionalHistoryParams,
   GetLandownerAccountSummaryParams,
   GetLandownerLcaReceivableParams,
+  GetLandownerProfitabilityAnalyticsParams,
   GetLcaFullLedgerParams,
   GetLcaSchedule200,
   GetLcaScheduleParams,
@@ -110,6 +111,7 @@ import type {
   LandownerAccountSummary,
   LandownerLcaReceivable,
   LandownerLedgerEntry,
+  LandownerProfitabilityAnalytics,
   LcaConfig,
   LcaFullLedger,
   LcaLedgerEntry,
@@ -16918,3 +16920,113 @@ export const useRecordBurdenRecoveryEvent = <
 > => {
   return useMutation(getRecordBurdenRecoveryEventMutationOptions(options));
 };
+
+/**
+ * @summary Landowner profitability and operational sustainability analytics
+ */
+export const getGetLandownerProfitabilityAnalyticsUrl = (
+  params?: GetLandownerProfitabilityAnalyticsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/analytics/landowner-profitability?${stringifiedParams}`
+    : `/api/analytics/landowner-profitability`;
+};
+
+export const getLandownerProfitabilityAnalytics = async (
+  params?: GetLandownerProfitabilityAnalyticsParams,
+  options?: RequestInit,
+): Promise<LandownerProfitabilityAnalytics> => {
+  return customFetch<LandownerProfitabilityAnalytics>(
+    getGetLandownerProfitabilityAnalyticsUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetLandownerProfitabilityAnalyticsQueryKey = (
+  params?: GetLandownerProfitabilityAnalyticsParams,
+) => {
+  return [
+    `/api/analytics/landowner-profitability`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetLandownerProfitabilityAnalyticsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getLandownerProfitabilityAnalytics>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetLandownerProfitabilityAnalyticsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getLandownerProfitabilityAnalytics>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getGetLandownerProfitabilityAnalyticsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getLandownerProfitabilityAnalytics>>
+  > = ({ signal }) =>
+    getLandownerProfitabilityAnalytics(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getLandownerProfitabilityAnalytics>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetLandownerProfitabilityAnalyticsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getLandownerProfitabilityAnalytics>>
+>;
+export type GetLandownerProfitabilityAnalyticsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Landowner profitability and operational sustainability analytics
+ */
+
+export function useGetLandownerProfitabilityAnalytics<
+  TData = Awaited<ReturnType<typeof getLandownerProfitabilityAnalytics>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetLandownerProfitabilityAnalyticsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getLandownerProfitabilityAnalytics>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetLandownerProfitabilityAnalyticsQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}

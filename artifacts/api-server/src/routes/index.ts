@@ -29,6 +29,7 @@ import advancesRouter from "./advances";
 import lcaRouter from "./lca";
 import landownerAccountRouter from "./landowner_account";
 import burdenRecoveryRouter from "./burden_recovery";
+import analyticsRouter from "./analytics";
 import devRouter from "./dev";
 
 const router: IRouter = Router();
@@ -75,5 +76,6 @@ router.use("/advances", advancesRouter);
 router.use("/lca", lcaRouter);
 router.use("/landowner-account", landownerAccountRouter);
 router.use("/burden-recovery", burdenRecoveryRouter);
+router.use("/analytics", analyticsRouter);
 
 export default router;

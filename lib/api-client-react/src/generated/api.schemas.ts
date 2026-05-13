@@ -3102,6 +3102,125 @@ export interface BurdenRecoverySummary {
   adjustments: BurdenRecoveryAdjustment[];
 }
 
+export interface LandownerProfitabilitySummary {
+  grossEntitlement: number;
+  operationalBurden: number;
+  lcaIncome: number;
+  recoverableAdj: number;
+  netProfitability: number;
+  totalLcaReceivable: number;
+  costBurdenRatio: number;
+  recoveryEfficiency: number;
+  lcaDependencyRatio: number;
+}
+
+export interface YearlyProfitabilityRow {
+  year: number;
+  grossEntitlement: number;
+  operationalBurden: number;
+  lcaIncome: number;
+  recoverableAdj: number;
+  netProfitability: number;
+}
+
+export interface CostCategoryBreakdown {
+  category: string;
+  amount: number;
+}
+
+export interface BurdenStatusBreakdown {
+  pending: number;
+  partial: number;
+  recovered: number;
+  waived: number;
+}
+
+export interface CostBurdenAnalysis {
+  totalBurdenRecoverable: number;
+  totalBurdenRecovered: number;
+  totalBurdenPending: number;
+  byCategory: CostCategoryBreakdown[];
+  byStatus: BurdenStatusBreakdown;
+}
+
+export type SustainabilityIndicatorsProfitabilityScore =
+  (typeof SustainabilityIndicatorsProfitabilityScore)[keyof typeof SustainabilityIndicatorsProfitabilityScore];
+
+export const SustainabilityIndicatorsProfitabilityScore = {
+  strong: "strong",
+  moderate: "moderate",
+  at_risk: "at_risk",
+  critical: "critical",
+} as const;
+
+export type SustainabilityIndicatorsCostBurdenRating =
+  (typeof SustainabilityIndicatorsCostBurdenRating)[keyof typeof SustainabilityIndicatorsCostBurdenRating];
+
+export const SustainabilityIndicatorsCostBurdenRating = {
+  low: "low",
+  moderate: "moderate",
+  high: "high",
+  critical: "critical",
+} as const;
+
+export type SustainabilityIndicatorsLcaComplianceRating =
+  (typeof SustainabilityIndicatorsLcaComplianceRating)[keyof typeof SustainabilityIndicatorsLcaComplianceRating];
+
+export const SustainabilityIndicatorsLcaComplianceRating = {
+  compliant: "compliant",
+  partial: "partial",
+  outstanding: "outstanding",
+} as const;
+
+export type SustainabilityIndicatorsRecoveryRating =
+  (typeof SustainabilityIndicatorsRecoveryRating)[keyof typeof SustainabilityIndicatorsRecoveryRating];
+
+export const SustainabilityIndicatorsRecoveryRating = {
+  excellent: "excellent",
+  good: "good",
+  lagging: "lagging",
+  critical: "critical",
+} as const;
+
+export type SustainabilityIndicatorsOverallSustainability =
+  (typeof SustainabilityIndicatorsOverallSustainability)[keyof typeof SustainabilityIndicatorsOverallSustainability];
+
+export const SustainabilityIndicatorsOverallSustainability = {
+  strong: "strong",
+  moderate: "moderate",
+  at_risk: "at_risk",
+  critical: "critical",
+} as const;
+
+export interface SustainabilityIndicators {
+  profitabilityScore: SustainabilityIndicatorsProfitabilityScore;
+  costBurdenRating: SustainabilityIndicatorsCostBurdenRating;
+  lcaComplianceRating: SustainabilityIndicatorsLcaComplianceRating;
+  recoveryRating: SustainabilityIndicatorsRecoveryRating;
+  overallSustainability: SustainabilityIndicatorsOverallSustainability;
+}
+
+export interface ProjectProfitabilityRow {
+  projectId: string;
+  projectName: string;
+  partnerId: string;
+  partnerName: string;
+  grossEntitlement: number;
+  operationalBurden: number;
+  lcaIncome: number;
+  recoverableAdj: number;
+  netProfitability: number;
+  costBurdenRatio: number;
+}
+
+export interface LandownerProfitabilityAnalytics {
+  summary: LandownerProfitabilitySummary;
+  yearlyBreakdown: YearlyProfitabilityRow[];
+  costBurdenAnalysis: CostBurdenAnalysis;
+  sustainabilityIndicators: SustainabilityIndicators;
+  projects: ProjectProfitabilityRow[];
+}
+
 export type GetUserActivityParams = {
   limit?: number;
 };
@@ -3553,4 +3672,11 @@ export type ListBurdenRecoveryAdjustmentsParams = {
   recoveryStatus?: string;
   sourcePartnerId?: string;
   targetPartnerId?: string;
+};
+
+export type GetLandownerProfitabilityAnalyticsParams = {
+  projectId?: string;
+  partnerId?: string;
+  fromYear?: number;
+  toYear?: number;
 };

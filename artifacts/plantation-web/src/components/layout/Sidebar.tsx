@@ -246,6 +246,12 @@ const navGroups: NavGroup[] = [
         icon: Files,
         roles: ["admin", "developer", "landowner", "investor"],
       },
+      {
+        name: "L/O Profitability",
+        href: "/landowner-profitability",
+        icon: TrendingUp,
+        roles: ["admin", "developer", "landowner"],
+      },
     ],
   },
   {

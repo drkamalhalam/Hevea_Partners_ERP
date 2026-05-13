@@ -6894,3 +6894,80 @@ export const RecordBurdenRecoveryEventBody = zod.object({
   recoveryRef: zod.string().optional(),
   notes: zod.string().optional(),
 });
+
+/**
+ * @summary Landowner profitability and operational sustainability analytics
+ */
+export const GetLandownerProfitabilityAnalyticsQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+  partnerId: zod.coerce.string().uuid().optional(),
+  fromYear: zod.coerce.number().optional(),
+  toYear: zod.coerce.number().optional(),
+});
+
+export const GetLandownerProfitabilityAnalyticsResponse = zod.object({
+  summary: zod.object({
+    grossEntitlement: zod.number(),
+    operationalBurden: zod.number(),
+    lcaIncome: zod.number(),
+    recoverableAdj: zod.number(),
+    netProfitability: zod.number(),
+    totalLcaReceivable: zod.number(),
+    costBurdenRatio: zod.number(),
+    recoveryEfficiency: zod.number(),
+    lcaDependencyRatio: zod.number(),
+  }),
+  yearlyBreakdown: zod.array(
+    zod.object({
+      year: zod.number(),
+      grossEntitlement: zod.number(),
+      operationalBurden: zod.number(),
+      lcaIncome: zod.number(),
+      recoverableAdj: zod.number(),
+      netProfitability: zod.number(),
+    }),
+  ),
+  costBurdenAnalysis: zod.object({
+    totalBurdenRecoverable: zod.number(),
+    totalBurdenRecovered: zod.number(),
+    totalBurdenPending: zod.number(),
+    byCategory: zod.array(
+      zod.object({
+        category: zod.string(),
+        amount: zod.number(),
+      }),
+    ),
+    byStatus: zod.object({
+      pending: zod.number(),
+      partial: zod.number(),
+      recovered: zod.number(),
+      waived: zod.number(),
+    }),
+  }),
+  sustainabilityIndicators: zod.object({
+    profitabilityScore: zod.enum(["strong", "moderate", "at_risk", "critical"]),
+    costBurdenRating: zod.enum(["low", "moderate", "high", "critical"]),
+    lcaComplianceRating: zod.enum(["compliant", "partial", "outstanding"]),
+    recoveryRating: zod.enum(["excellent", "good", "lagging", "critical"]),
+    overallSustainability: zod.enum([
+      "strong",
+      "moderate",
+      "at_risk",
+      "critical",
+    ]),
+  }),
+  projects: zod.array(
+    zod.object({
+      projectId: zod.string().uuid(),
+      projectName: zod.string(),
+      partnerId: zod.string().uuid(),
+      partnerName: zod.string(),
+      grossEntitlement: zod.number(),
+      operationalBurden: zod.number(),
+      lcaIncome: zod.number(),
+      recoverableAdj: zod.number(),
+      netProfitability: zod.number(),
+      costBurdenRatio: zod.number(),
+    }),
+  ),
+});
