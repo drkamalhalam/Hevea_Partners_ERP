@@ -2884,6 +2884,30 @@ paths:
         "403": { description: Forbidden }
         "404": { description: Not found }
 
+  /ownership/{projectId}/snapshots/{snapshotId}:
+    get:
+      operationId: getOwnershipSnapshot
+      summary: Fetch a single ownership snapshot by ID
+      tags: [Ownership]
+      parameters:
+        - in: path
+          name: projectId
+          schema: { type: string, format: uuid }
+          required: true
+        - in: path
+          name: snapshotId
+          schema: { type: string, format: uuid }
+          required: true
+      responses:
+        "200":
+          description: Single ownership snapshot
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OwnershipSnapshot" }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+        "404": { description: Not found }
+
   /ownership/{projectId}/snapshots:
     get:
       operationId: listOwnershipSnapshots
@@ -5217,7 +5241,7 @@ components:
           format: uuid
         snapshotType:
           type: string
-          enum: [manual, auto_on_verification, maturity_declaration]
+          enum: [manual, auto_on_verification, maturity_declaration, maturity_preview]
         lifecycleStatus:
           type: string
         totalRecognizedAmount:

@@ -10766,6 +10766,112 @@ export function useGetProjectOwnership<
 }
 
 /**
+ * @summary Fetch a single ownership snapshot by ID
+ */
+export const getGetOwnershipSnapshotUrl = (
+  projectId: string,
+  snapshotId: string,
+) => {
+  return `/api/ownership/${projectId}/snapshots/${snapshotId}`;
+};
+
+export const getOwnershipSnapshot = async (
+  projectId: string,
+  snapshotId: string,
+  options?: RequestInit,
+): Promise<OwnershipSnapshot> => {
+  return customFetch<OwnershipSnapshot>(
+    getGetOwnershipSnapshotUrl(projectId, snapshotId),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetOwnershipSnapshotQueryKey = (
+  projectId: string,
+  snapshotId: string,
+) => {
+  return [`/api/ownership/${projectId}/snapshots/${snapshotId}`] as const;
+};
+
+export const getGetOwnershipSnapshotQueryOptions = <
+  TData = Awaited<ReturnType<typeof getOwnershipSnapshot>>,
+  TError = ErrorType<void>,
+>(
+  projectId: string,
+  snapshotId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getOwnershipSnapshot>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getGetOwnershipSnapshotQueryKey(projectId, snapshotId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getOwnershipSnapshot>>
+  > = ({ signal }) =>
+    getOwnershipSnapshot(projectId, snapshotId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!(projectId && snapshotId),
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getOwnershipSnapshot>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetOwnershipSnapshotQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getOwnershipSnapshot>>
+>;
+export type GetOwnershipSnapshotQueryError = ErrorType<void>;
+
+/**
+ * @summary Fetch a single ownership snapshot by ID
+ */
+
+export function useGetOwnershipSnapshot<
+  TData = Awaited<ReturnType<typeof getOwnershipSnapshot>>,
+  TError = ErrorType<void>,
+>(
+  projectId: string,
+  snapshotId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getOwnershipSnapshot>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetOwnershipSnapshotQueryOptions(
+    projectId,
+    snapshotId,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
  * @summary Snapshot history for a project
  */
 export const getListOwnershipSnapshotsUrl = (

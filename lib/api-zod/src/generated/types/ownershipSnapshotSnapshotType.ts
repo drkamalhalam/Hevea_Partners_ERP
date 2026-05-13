@@ -13,4 +13,5 @@ export const OwnershipSnapshotSnapshotType = {
   manual: "manual",
   auto_on_verification: "auto_on_verification",
   maturity_declaration: "maturity_declaration",
+  maturity_preview: "maturity_preview",
 } as const;

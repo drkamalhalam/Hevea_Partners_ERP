@@ -4412,6 +4412,48 @@ export const GetProjectOwnershipResponse = zod.object({
 });
 
 /**
+ * @summary Fetch a single ownership snapshot by ID
+ */
+export const GetOwnershipSnapshotParams = zod.object({
+  projectId: zod.coerce.string().uuid(),
+  snapshotId: zod.coerce.string().uuid(),
+});
+
+export const GetOwnershipSnapshotResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  snapshotType: zod.enum([
+    "manual",
+    "auto_on_verification",
+    "maturity_declaration",
+    "maturity_preview",
+  ]),
+  lifecycleStatus: zod.string(),
+  totalRecognizedAmount: zod.number(),
+  landTotal: zod.number(),
+  economicTotal: zod.number(),
+  entries: zod.array(
+    zod.object({
+      partnerKey: zod
+        .string()
+        .describe(
+          "partnerId when linked, otherwise partnerName — stable grouping key",
+        ),
+      partnerId: zod.string().uuid().nullish(),
+      partnerName: zod.string(),
+      landAmount: zod.number(),
+      economicAmount: zod.number(),
+      totalAmount: zod.number(),
+      percentage: zod.number().describe("rounded to 2 dp"),
+    }),
+  ),
+  notes: zod.string().nullish(),
+  triggeredByName: zod.string().nullish(),
+  snapshotAt: zod.coerce.date(),
+  createdAt: zod.coerce.date(),
+});
+
+/**
  * @summary Snapshot history for a project
  */
 export const ListOwnershipSnapshotsParams = zod.object({
@@ -4433,6 +4475,7 @@ export const ListOwnershipSnapshotsResponse = zod.object({
         "manual",
         "auto_on_verification",
         "maturity_declaration",
+        "maturity_preview",
       ]),
       lifecycleStatus: zod.string(),
       totalRecognizedAmount: zod.number(),

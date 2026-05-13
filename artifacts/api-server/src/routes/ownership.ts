@@ -339,6 +339,54 @@ router.get("/:projectId/snapshots", async (req, res) => {
   });
 });
 
+// ── GET /ownership/:projectId/snapshots/:snapshotId ───────────────────────────
+
+router.get("/:projectId/snapshots/:snapshotId", async (req, res) => {
+  const { userId: clerkUserId } = getAuth(req);
+  if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
+
+  const actor = await resolveActingUser(clerkUserId);
+  if (!actor) return res.status(401).json({ error: "User not found" });
+
+  const projectId = String(req.params.projectId);
+  const snapshotId = String(req.params.snapshotId);
+
+  if (!canAccessAllProjects(actor.role)) {
+    const assigned = await getAssignedProjectIds(actor.id);
+    if (!assigned.includes(projectId)) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+  }
+
+  const [snap] = await db
+    .select()
+    .from(ownershipSnapshotsTable)
+    .where(
+      and(
+        eq(ownershipSnapshotsTable.id, snapshotId),
+        eq(ownershipSnapshotsTable.projectId, projectId),
+      ),
+    )
+    .limit(1);
+
+  if (!snap) return res.status(404).json({ error: "Snapshot not found" });
+
+  return res.json({
+    id: snap.id,
+    projectId: snap.projectId,
+    snapshotType: snap.snapshotType,
+    lifecycleStatus: snap.lifecycleStatus,
+    totalRecognizedAmount: snap.totalRecognizedAmount,
+    landTotal: snap.landTotal,
+    economicTotal: snap.economicTotal,
+    entries: snap.entries,
+    notes: snap.notes,
+    triggeredByName: snap.triggeredByName,
+    snapshotAt: snap.snapshotAt.toISOString(),
+    createdAt: snap.createdAt.toISOString(),
+  });
+});
+
 // ── POST /ownership/:projectId/snapshots ──────────────────────────────────────
 // Admin/developer only. Saves a manual snapshot of the current live calculation.
 

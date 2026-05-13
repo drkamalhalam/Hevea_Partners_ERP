@@ -30,6 +30,7 @@ import Contributions from "./pages/Contributions";
 import LandContribution from "./pages/LandContribution";
 import EconomicContributions from "./pages/EconomicContributions";
 import OwnershipGuidance from "./pages/OwnershipGuidance";
+import OwnershipArchive from "./pages/OwnershipArchive";
 import ParticipationDashboard from "./pages/ParticipationDashboard";
 import ContributionDisputeCenter from "./pages/ContributionDisputeCenter";
 import Expenditure from "./pages/Expenditure";
@@ -229,6 +230,7 @@ function AppRoutes() {
               <Route path="/contributions/dashboard"><ProtectedRoute component={ParticipationDashboard} /></Route>
               <Route path="/contributions/disputes"><ProtectedRoute component={ContributionDisputeCenter} /></Route>
               <Route path="/contributions"><ProtectedRoute component={Contributions} /></Route>
+              <Route path="/ownership/archive"><ProtectedRoute component={OwnershipArchive} /></Route>
               <Route path="/ownership"><ProtectedRoute component={OwnershipGuidance} /></Route>
               <Route path="/expenditure"><ProtectedRoute component={Expenditure} /></Route>
               <Route path="/templates"><ProtectedRoute component={TemplateLibrary} /></Route>

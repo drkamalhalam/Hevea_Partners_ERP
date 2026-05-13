@@ -436,7 +436,32 @@ Dynamic prematurity ownership percentages based on verified land_notional + econ
 
 **Sidebar**: "Ownership Guidance" entry in Finance group (roles: admin, developer, landowner, investor), icon `Scale`
 
-**Generated hooks:** `useGetOwnershipSummary`, `getGetOwnershipSummaryQueryKey`, `useGetProjectOwnership`, `getGetProjectOwnershipQueryKey`, `useListOwnershipSnapshots`, `getListOwnershipSnapshotsQueryKey`, `useCreateOwnershipSnapshot`
+**Generated hooks:** `useGetOwnershipSummary`, `getGetOwnershipSummaryQueryKey`, `useGetProjectOwnership`, `getGetProjectOwnershipQueryKey`, `useListOwnershipSnapshots`, `getListOwnershipSnapshotsQueryKey`, `useCreateOwnershipSnapshot`, `useGetOwnershipSnapshot`, `getGetOwnershipSnapshotQueryKey`
+
+## Ownership Record Archive (Foundation)
+
+Historical archive of ownership snapshots. Builds the structural foundation for the future maturity ownership record and freeze workflow. No freeze is triggered here — read-only archive only.
+
+**New enum value:** `maturity_preview` added to `ownershipSnapshotTypeEnum` (DB migration: `ALTER TYPE ownership_snapshot_type ADD VALUE IF NOT EXISTS 'maturity_preview'`). Four types: `manual`, `auto_on_verification`, `maturity_declaration`, `maturity_preview`.
+
+**New API endpoint:**
+- `GET /ownership/:projectId/snapshots/:snapshotId` — single snapshot fetch by ID (any authenticated user with project access)
+
+**Frontend:** `artifacts/plantation-web/src/pages/OwnershipArchive.tsx`, route `/ownership/archive`
+- Project selector dropdown (all visible projects)
+- 4-KPI row: total snapshots, latest snapshot date + type badge, latest total recognized, maturity preview count
+- `MaturityArchivePlaceholder` card — dashed amber border, explains what will appear here when the maturity declaration freeze workflow is built
+- `OwnershipTimeline` — vertical timeline of all snapshots newest-first; each row shows type badge (color-coded), date, lifecycle status, partner count, total amount, top partner, notes, sequence number; click-to-expand
+- `OwnershipSnapshotPreview` — expanded inline panel with full pie chart + partner breakdown table; fetches detail via `useGetOwnershipSnapshot` (lazy, only when expanded)
+- Snapshot type reference legend at bottom
+
+**Snapshot type color coding:**
+- `manual` → blue (Camera)
+- `auto_on_verification` → green (RefreshCw)
+- `maturity_declaration` → amber (Star)
+- `maturity_preview` → purple (Eye)
+
+**Sidebar:** "Ownership Archive" entry in Finance group (roles: admin, developer, landowner, investor), icon `Archive`, immediately after "Ownership Guidance"
 
 ## Prematurity Ownership & Economic Participation Dashboard
 

@@ -353,6 +353,7 @@ export const ownershipSnapshotTypeEnum = pgEnum("ownership_snapshot_type", [
   "manual",
   "auto_on_verification",
   "maturity_declaration",
+  "maturity_preview",
 ]);
 
 // ── Audit enums ───────────────────────────────────────────────────────────
