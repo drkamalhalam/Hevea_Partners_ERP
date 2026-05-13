@@ -8,9 +8,9 @@
 import type { AgreementInputRevenueModel } from "./agreementInputRevenueModel";
 
 export interface AgreementInput {
-  projectId: number;
-  landOwnerId: number;
-  projectDeveloperId: number;
+  projectId: string;
+  landOwnerId: string;
+  projectDeveloperId: string;
   executionDate: string;
   executionPlace: string;
   termYears: number;

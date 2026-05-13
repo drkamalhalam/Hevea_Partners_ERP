@@ -73,10 +73,10 @@ function UserRow({
     role: string;
     displayName?: string | null;
     email?: string | null;
-    assignedProjectIds: number[];
+    assignedProjectIds: string[];
     createdAt?: string;
   };
-  projects: Array<{ id: number; name: string }>;
+  projects: Array<{ id: string; name: string }>;
 }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -102,7 +102,7 @@ function UserRow({
     }
   };
 
-  const handleAssignProject = async (projectId: number) => {
+  const handleAssignProject = async (projectId: string) => {
     try {
       await assignProject.mutateAsync({
         clerkUserId: user.clerkUserId,
@@ -114,7 +114,7 @@ function UserRow({
     }
   };
 
-  const handleRemoveProject = async (projectId: number) => {
+  const handleRemoveProject = async (projectId: string) => {
     try {
       await removeProject.mutateAsync({ clerkUserId: user.clerkUserId, projectId });
       await queryClient.invalidateQueries({ queryKey: ["listUsers"] });

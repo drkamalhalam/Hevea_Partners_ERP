@@ -30,7 +30,7 @@ import {
 } from "recharts";
 
 const formSchema = z.object({
-  projectId: z.coerce.number().positive("Select a project"),
+  projectId: z.string().min(1, "Select a project"),
   recordedAt: z.string().min(1, "Date & time required"),
   productionKg: z.coerce.number().positive("Must be positive"),
   soldKg: z.coerce.number().positive("Must be positive"),
@@ -53,7 +53,7 @@ export default function Production() {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      projectId: 0,
+      projectId: "",
       recordedAt: new Date().toISOString().slice(0, 16),
       productionKg: 0,
       soldKg: 0,
@@ -77,7 +77,7 @@ export default function Production() {
         toast({ title: "Production record logged successfully" });
         setOpen(false);
         form.reset({
-          projectId: 0,
+          projectId: "",
           recordedAt: new Date().toISOString().slice(0, 16),
           productionKg: 0,
           soldKg: 0,
@@ -89,7 +89,7 @@ export default function Production() {
     });
   }
 
-  function handleDelete(id: number) {
+  function handleDelete(id: string) {
     if (!confirm("Delete this production record?")) return;
     deleteRecord.mutate({ id }, {
       onSuccess: () => {
@@ -140,7 +140,7 @@ export default function Production() {
                 <FormField control={form.control} name="projectId" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Project</FormLabel>
-                    <Select onValueChange={(v) => field.onChange(Number(v))} value={field.value ? String(field.value) : ""}>
+                    <Select onValueChange={(v) => field.onChange(v)} value={field.value}>
                       <FormControl>
                         <SelectTrigger data-testid="select-production-project">
                           <SelectValue placeholder="Select plantation project" />

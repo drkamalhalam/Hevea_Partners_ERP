@@ -8,19 +8,22 @@
 import type { PartnerRole } from "./partnerRole";
 
 export interface Partner {
-  id: number;
+  id: string;
   name: string;
   role: PartnerRole;
-  email: string;
   /** @nullable */
-  phone: string | null;
-  address: string;
+  email?: string | null;
+  /** @nullable */
+  phone?: string | null;
+  /** @nullable */
+  address?: string | null;
   /** @nullable */
   aadhaarLast4?: string | null;
   /** @nullable */
-  clerkUserId: string | null;
+  clerkUserId?: string | null;
   /** @nullable */
   notes?: string | null;
+  isActive?: boolean;
   createdAt: string;
   /** @nullable */
   updatedAt?: string | null;

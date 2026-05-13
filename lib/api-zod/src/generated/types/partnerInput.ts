@@ -10,9 +10,9 @@ import type { PartnerInputRole } from "./partnerInputRole";
 export interface PartnerInput {
   name: string;
   role: PartnerInputRole;
-  email: string;
+  email?: string;
   phone?: string;
-  address: string;
+  address?: string;
   aadhaarLast4?: string;
   clerkUserId?: string;
   notes?: string;

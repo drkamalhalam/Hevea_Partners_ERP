@@ -22,7 +22,7 @@ export const GetMeResponse = zod.object({
   ]),
   displayName: zod.string().nullish(),
   email: zod.string().nullish(),
-  assignedProjectIds: zod.array(zod.number()),
+  assignedProjectIds: zod.array(zod.string().uuid()),
   createdAt: zod.string().optional(),
 });
 
@@ -54,7 +54,7 @@ export const UpsertMeResponse = zod.object({
   ]),
   displayName: zod.string().nullish(),
   email: zod.string().nullish(),
-  assignedProjectIds: zod.array(zod.number()),
+  assignedProjectIds: zod.array(zod.string().uuid()),
   createdAt: zod.string().optional(),
 });
 
@@ -73,7 +73,7 @@ export const ListUsersResponseItem = zod.object({
   ]),
   displayName: zod.string().nullish(),
   email: zod.string().nullish(),
-  assignedProjectIds: zod.array(zod.number()),
+  assignedProjectIds: zod.array(zod.string().uuid()),
   createdAt: zod.string().optional(),
 });
 export const ListUsersResponse = zod.array(ListUsersResponseItem);
@@ -108,7 +108,7 @@ export const UpdateUserRoleResponse = zod.object({
   ]),
   displayName: zod.string().nullish(),
   email: zod.string().nullish(),
-  assignedProjectIds: zod.array(zod.number()),
+  assignedProjectIds: zod.array(zod.string().uuid()),
   createdAt: zod.string().optional(),
 });
 
@@ -120,7 +120,7 @@ export const AssignUserToProjectParams = zod.object({
 });
 
 export const AssignUserToProjectBody = zod.object({
-  projectId: zod.number(),
+  projectId: zod.string().uuid(),
 });
 
 export const AssignUserToProjectResponse = zod.object({
@@ -132,7 +132,7 @@ export const AssignUserToProjectResponse = zod.object({
  */
 export const RemoveUserFromProjectParams = zod.object({
   clerkUserId: zod.coerce.string(),
-  projectId: zod.coerce.number(),
+  projectId: zod.coerce.string().uuid(),
 });
 
 export const RemoveUserFromProjectResponse = zod.object({
@@ -151,8 +151,9 @@ export const HealthCheckResponse = zod.object({
  * @summary List all plantation projects
  */
 export const ListProjectsResponseItem = zod.object({
-  id: zod.number(),
+  id: zod.string().uuid(),
   name: zod.string(),
+  description: zod.string().nullish(),
   location: zod.string(),
   village: zod.string().nullish(),
   district: zod.string(),
@@ -167,11 +168,13 @@ export const ListProjectsResponseItem = zod.object({
     "maturing",
     "tapping",
     "completed",
+    "suspended",
   ]),
   startDate: zod.string(),
   expectedMaturityDate: zod.string().nullish(),
   termYears: zod.number(),
   notes: zod.string().nullish(),
+  isActive: zod.boolean(),
   createdAt: zod.string(),
   updatedAt: zod.string().nullish(),
 });
@@ -182,6 +185,7 @@ export const ListProjectsResponse = zod.array(ListProjectsResponseItem);
  */
 export const CreateProjectBody = zod.object({
   name: zod.string(),
+  description: zod.string().optional(),
   location: zod.string(),
   village: zod.string().optional(),
   district: zod.string(),
@@ -196,6 +200,7 @@ export const CreateProjectBody = zod.object({
     "maturing",
     "tapping",
     "completed",
+    "suspended",
   ]),
   startDate: zod.string(),
   expectedMaturityDate: zod.string().optional(),
@@ -207,12 +212,13 @@ export const CreateProjectBody = zod.object({
  * @summary Get a plantation project by ID
  */
 export const GetProjectParams = zod.object({
-  id: zod.coerce.number(),
+  id: zod.coerce.string().uuid(),
 });
 
 export const GetProjectResponse = zod.object({
-  id: zod.number(),
+  id: zod.string().uuid(),
   name: zod.string(),
+  description: zod.string().nullish(),
   location: zod.string(),
   village: zod.string().nullish(),
   district: zod.string(),
@@ -227,11 +233,13 @@ export const GetProjectResponse = zod.object({
     "maturing",
     "tapping",
     "completed",
+    "suspended",
   ]),
   startDate: zod.string(),
   expectedMaturityDate: zod.string().nullish(),
   termYears: zod.number(),
   notes: zod.string().nullish(),
+  isActive: zod.boolean(),
   createdAt: zod.string(),
   updatedAt: zod.string().nullish(),
 });
@@ -240,11 +248,12 @@ export const GetProjectResponse = zod.object({
  * @summary Update a plantation project
  */
 export const UpdateProjectParams = zod.object({
-  id: zod.coerce.number(),
+  id: zod.coerce.string().uuid(),
 });
 
 export const UpdateProjectBody = zod.object({
   name: zod.string().optional(),
+  description: zod.string().optional(),
   location: zod.string().optional(),
   village: zod.string().optional(),
   district: zod.string().optional(),
@@ -254,7 +263,14 @@ export const UpdateProjectBody = zod.object({
   landNotionalValue: zod.number().optional(),
   landValuePerUnit: zod.number().optional(),
   status: zod
-    .enum(["planning", "developing", "maturing", "tapping", "completed"])
+    .enum([
+      "planning",
+      "developing",
+      "maturing",
+      "tapping",
+      "completed",
+      "suspended",
+    ])
     .optional(),
   startDate: zod.string().optional(),
   expectedMaturityDate: zod.string().optional(),
@@ -263,8 +279,9 @@ export const UpdateProjectBody = zod.object({
 });
 
 export const UpdateProjectResponse = zod.object({
-  id: zod.number(),
+  id: zod.string().uuid(),
   name: zod.string(),
+  description: zod.string().nullish(),
   location: zod.string(),
   village: zod.string().nullish(),
   district: zod.string(),
@@ -279,11 +296,13 @@ export const UpdateProjectResponse = zod.object({
     "maturing",
     "tapping",
     "completed",
+    "suspended",
   ]),
   startDate: zod.string(),
   expectedMaturityDate: zod.string().nullish(),
   termYears: zod.number(),
   notes: zod.string().nullish(),
+  isActive: zod.boolean(),
   createdAt: zod.string(),
   updatedAt: zod.string().nullish(),
 });
@@ -292,22 +311,23 @@ export const UpdateProjectResponse = zod.object({
  * @summary Delete a plantation project
  */
 export const DeleteProjectParams = zod.object({
-  id: zod.coerce.number(),
+  id: zod.coerce.string().uuid(),
 });
 
 /**
  * @summary List all partners
  */
 export const ListPartnersResponseItem = zod.object({
-  id: zod.number(),
+  id: zod.string().uuid(),
   name: zod.string(),
   role: zod.enum(["project_developer", "landowner", "investor"]),
-  email: zod.string(),
-  phone: zod.string().nullable(),
-  address: zod.string(),
+  email: zod.string().nullish(),
+  phone: zod.string().nullish(),
+  address: zod.string().nullish(),
   aadhaarLast4: zod.string().nullish(),
-  clerkUserId: zod.string().nullable(),
+  clerkUserId: zod.string().nullish(),
   notes: zod.string().nullish(),
+  isActive: zod.boolean().optional(),
   createdAt: zod.string(),
   updatedAt: zod.string().nullish(),
 });
@@ -319,9 +339,9 @@ export const ListPartnersResponse = zod.array(ListPartnersResponseItem);
 export const CreatePartnerBody = zod.object({
   name: zod.string(),
   role: zod.enum(["project_developer", "landowner", "investor"]),
-  email: zod.string(),
+  email: zod.string().optional(),
   phone: zod.string().optional(),
-  address: zod.string(),
+  address: zod.string().optional(),
   aadhaarLast4: zod.string().optional(),
   clerkUserId: zod.string().optional(),
   notes: zod.string().optional(),
@@ -331,19 +351,20 @@ export const CreatePartnerBody = zod.object({
  * @summary Get a partner by ID
  */
 export const GetPartnerParams = zod.object({
-  id: zod.coerce.number(),
+  id: zod.coerce.string().uuid(),
 });
 
 export const GetPartnerResponse = zod.object({
-  id: zod.number(),
+  id: zod.string().uuid(),
   name: zod.string(),
   role: zod.enum(["project_developer", "landowner", "investor"]),
-  email: zod.string(),
-  phone: zod.string().nullable(),
-  address: zod.string(),
+  email: zod.string().nullish(),
+  phone: zod.string().nullish(),
+  address: zod.string().nullish(),
   aadhaarLast4: zod.string().nullish(),
-  clerkUserId: zod.string().nullable(),
+  clerkUserId: zod.string().nullish(),
   notes: zod.string().nullish(),
+  isActive: zod.boolean().optional(),
   createdAt: zod.string(),
   updatedAt: zod.string().nullish(),
 });
@@ -352,7 +373,7 @@ export const GetPartnerResponse = zod.object({
  * @summary Update a partner
  */
 export const UpdatePartnerParams = zod.object({
-  id: zod.coerce.number(),
+  id: zod.coerce.string().uuid(),
 });
 
 export const UpdatePartnerBody = zod.object({
@@ -366,15 +387,16 @@ export const UpdatePartnerBody = zod.object({
 });
 
 export const UpdatePartnerResponse = zod.object({
-  id: zod.number(),
+  id: zod.string().uuid(),
   name: zod.string(),
   role: zod.enum(["project_developer", "landowner", "investor"]),
-  email: zod.string(),
-  phone: zod.string().nullable(),
-  address: zod.string(),
+  email: zod.string().nullish(),
+  phone: zod.string().nullish(),
+  address: zod.string().nullish(),
   aadhaarLast4: zod.string().nullish(),
-  clerkUserId: zod.string().nullable(),
+  clerkUserId: zod.string().nullish(),
   notes: zod.string().nullish(),
+  isActive: zod.boolean().optional(),
   createdAt: zod.string(),
   updatedAt: zod.string().nullish(),
 });
@@ -383,12 +405,12 @@ export const UpdatePartnerResponse = zod.object({
  * @summary List all partnership agreements
  */
 export const ListAgreementsResponseItem = zod.object({
-  id: zod.number(),
-  projectId: zod.number(),
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
   projectName: zod.string(),
-  landOwnerId: zod.number(),
+  landOwnerId: zod.string().uuid(),
   landOwnerName: zod.string(),
-  projectDeveloperId: zod.number(),
+  projectDeveloperId: zod.string().uuid(),
   projectDeveloperName: zod.string(),
   executionDate: zod.string(),
   executionPlace: zod.string(),
@@ -419,9 +441,9 @@ export const ListAgreementsResponse = zod.array(ListAgreementsResponseItem);
  * @summary Create a new partnership agreement
  */
 export const CreateAgreementBody = zod.object({
-  projectId: zod.number(),
-  landOwnerId: zod.number(),
-  projectDeveloperId: zod.number(),
+  projectId: zod.string().uuid(),
+  landOwnerId: zod.string().uuid(),
+  projectDeveloperId: zod.string().uuid(),
   executionDate: zod.string(),
   executionPlace: zod.string(),
   termYears: zod.number(),
@@ -445,16 +467,16 @@ export const CreateAgreementBody = zod.object({
  * @summary Get an agreement by ID
  */
 export const GetAgreementParams = zod.object({
-  id: zod.coerce.number(),
+  id: zod.coerce.string().uuid(),
 });
 
 export const GetAgreementResponse = zod.object({
-  id: zod.number(),
-  projectId: zod.number(),
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
   projectName: zod.string(),
-  landOwnerId: zod.number(),
+  landOwnerId: zod.string().uuid(),
   landOwnerName: zod.string(),
-  projectDeveloperId: zod.number(),
+  projectDeveloperId: zod.string().uuid(),
   projectDeveloperName: zod.string(),
   executionDate: zod.string(),
   executionPlace: zod.string(),
@@ -484,7 +506,7 @@ export const GetAgreementResponse = zod.object({
  * @summary Update an agreement
  */
 export const UpdateAgreementParams = zod.object({
-  id: zod.coerce.number(),
+  id: zod.coerce.string().uuid(),
 });
 
 export const UpdateAgreementBody = zod.object({
@@ -511,12 +533,12 @@ export const UpdateAgreementBody = zod.object({
 });
 
 export const UpdateAgreementResponse = zod.object({
-  id: zod.number(),
-  projectId: zod.number(),
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
   projectName: zod.string(),
-  landOwnerId: zod.number(),
+  landOwnerId: zod.string().uuid(),
   landOwnerName: zod.string(),
-  projectDeveloperId: zod.number(),
+  projectDeveloperId: zod.string().uuid(),
   projectDeveloperName: zod.string(),
   executionDate: zod.string(),
   executionPlace: zod.string(),
@@ -546,7 +568,7 @@ export const UpdateAgreementResponse = zod.object({
  * @summary Get current rubber stock levels per project (produced minus sold)
  */
 export const GetStockSummaryResponseItem = zod.object({
-  projectId: zod.number(),
+  projectId: zod.string().uuid(),
   projectName: zod.string(),
   location: zod.string(),
   district: zod.string(),
@@ -561,12 +583,12 @@ export const GetStockSummaryResponse = zod.array(GetStockSummaryResponseItem);
  * @summary List all rubber production records
  */
 export const ListProductionRecordsQueryParams = zod.object({
-  projectId: zod.coerce.number().optional(),
+  projectId: zod.coerce.string().uuid().optional(),
 });
 
 export const ListProductionRecordsResponseItem = zod.object({
-  id: zod.number(),
-  projectId: zod.number(),
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
   projectName: zod.string(),
   recordedAt: zod.string(),
   productionKg: zod.number(),
@@ -584,7 +606,7 @@ export const ListProductionRecordsResponse = zod.array(
  * @summary Log a new rubber production and sale record
  */
 export const CreateProductionRecordBody = zod.object({
-  projectId: zod.number(),
+  projectId: zod.string().uuid(),
   recordedAt: zod
     .string()
     .describe("ISO datetime of when production\/sale happened"),
@@ -598,12 +620,12 @@ export const CreateProductionRecordBody = zod.object({
  * @summary Get a production record by ID
  */
 export const GetProductionRecordParams = zod.object({
-  id: zod.coerce.number(),
+  id: zod.coerce.string().uuid(),
 });
 
 export const GetProductionRecordResponse = zod.object({
-  id: zod.number(),
-  projectId: zod.number(),
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
   projectName: zod.string(),
   recordedAt: zod.string(),
   productionKg: zod.number(),
@@ -618,7 +640,7 @@ export const GetProductionRecordResponse = zod.object({
  * @summary Delete a production record
  */
 export const DeleteProductionRecordParams = zod.object({
-  id: zod.coerce.number(),
+  id: zod.coerce.string().uuid(),
 });
 
 /**
@@ -638,17 +660,17 @@ export const GetDashboardSummaryResponse = zod.object({
  * @summary Get current user's portfolio and agreements
  */
 export const GetMyPortfolioResponse = zod.object({
-  partnerId: zod.number().nullable(),
+  partnerId: zod.string().nullable(),
   partnerName: zod.string(),
   role: zod.string(),
   agreements: zod.array(
     zod.object({
-      id: zod.number(),
-      projectId: zod.number(),
+      id: zod.string().uuid(),
+      projectId: zod.string().uuid(),
       projectName: zod.string(),
-      landOwnerId: zod.number(),
+      landOwnerId: zod.string().uuid(),
       landOwnerName: zod.string(),
-      projectDeveloperId: zod.number(),
+      projectDeveloperId: zod.string().uuid(),
       projectDeveloperName: zod.string(),
       executionDate: zod.string(),
       executionPlace: zod.string(),
@@ -684,10 +706,10 @@ export const GetMyPortfolioResponse = zod.object({
  * @summary Get recent project activity feed
  */
 export const GetRecentActivityResponseItem = zod.object({
-  id: zod.number(),
+  id: zod.string().uuid(),
   type: zod.string(),
   description: zod.string(),
-  entityId: zod.number(),
+  entityId: zod.string(),
   entityType: zod.string(),
   createdAt: zod.string(),
 });
@@ -699,7 +721,7 @@ export const GetRecentActivityResponse = zod.array(
  * @summary Get revenue statistics across projects
  */
 export const GetRevenueStatsResponseItem = zod.object({
-  projectId: zod.number(),
+  projectId: zod.string().uuid(),
   projectName: zod.string(),
   year: zod.number(),
   revenue: zod.number(),

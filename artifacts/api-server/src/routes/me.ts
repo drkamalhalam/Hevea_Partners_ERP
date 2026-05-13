@@ -1,29 +1,33 @@
 import { Router } from "express";
-import { db, userRolesTable, userProjectAssignmentsTable } from "@workspace/db";
+import { db, usersTable, userProjectAssignmentsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { UpsertMeBody } from "@workspace/api-zod";
 
 const router = Router();
 
-async function buildProfile(userId: string) {
-  const [role] = await db
+async function buildProfile(clerkUserId: string) {
+  const [userRow] = await db
     .select()
-    .from(userRolesTable)
-    .where(eq(userRolesTable.clerkUserId, userId))
+    .from(usersTable)
+    .where(eq(usersTable.clerkUserId, clerkUserId))
     .limit(1);
 
-  const assignments = await db
-    .select()
-    .from(userProjectAssignmentsTable)
-    .where(eq(userProjectAssignmentsTable.clerkUserId, userId));
+  const assignments = userRow
+    ? await db
+        .select()
+        .from(userProjectAssignmentsTable)
+        .where(eq(userProjectAssignmentsTable.userId, userRow.id))
+    : [];
 
   return {
-    clerkUserId: userId,
-    role: role?.role ?? "employee",
-    displayName: role?.displayName ?? null,
-    email: role?.email ?? null,
-    assignedProjectIds: assignments.map((a) => a.projectId),
-    createdAt: (role?.createdAt ?? new Date()).toISOString(),
+    clerkUserId,
+    role: userRow?.role ?? "employee",
+    displayName: userRow?.displayName ?? null,
+    email: userRow?.email ?? null,
+    assignedProjectIds: assignments
+      .filter((a) => !a.revokedAt)
+      .map((a) => a.projectId),
+    createdAt: (userRow?.createdAt ?? new Date()).toISOString(),
   };
 }
 
@@ -49,10 +53,10 @@ router.put("/", async (req, res) => {
     const { role, displayName, email } = parsed.data;
 
     await db
-      .insert(userRolesTable)
+      .insert(usersTable)
       .values({ clerkUserId: req.userId!, role, displayName, email })
       .onConflictDoUpdate({
-        target: userRolesTable.clerkUserId,
+        target: usersTable.clerkUserId,
         set: { displayName, email, updatedAt: new Date() },
         // Note: role is NOT updated on conflict — admin must change roles via /users/:id/role
       });

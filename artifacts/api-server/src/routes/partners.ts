@@ -54,7 +54,7 @@ router.post("/", requireRole("admin", "developer"), async (req, res) => {
 
 // GET /partners/:id — all authenticated users
 router.get("/:id", async (req, res) => {
-  const parsed = GetPartnerParams.safeParse({ id: Number(req.params.id) });
+  const parsed = GetPartnerParams.safeParse({ id: req.params.id });
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid id" });
     return;
@@ -77,7 +77,7 @@ router.get("/:id", async (req, res) => {
 
 // PATCH /partners/:id — admin or developer only
 router.patch("/:id", requireRole("admin", "developer"), async (req, res) => {
-  const paramsParsed = UpdatePartnerParams.safeParse({ id: Number(req.params.id) });
+  const paramsParsed = UpdatePartnerParams.safeParse({ id: req.params.id });
   if (!paramsParsed.success) {
     res.status(400).json({ error: "Invalid id" });
     return;

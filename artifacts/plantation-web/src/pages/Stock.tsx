@@ -31,7 +31,7 @@ import {
 } from "recharts";
 
 const formSchema = z.object({
-  projectId: z.coerce.number().positive("Select a project"),
+  projectId: z.string().min(1, "Select a project"),
   recordedAt: z.string().min(1, "Date & time required"),
   productionKg: z.coerce.number().min(0, "Must be ≥ 0"),
   soldKg: z.coerce.number().min(0, "Must be ≥ 0"),
@@ -60,12 +60,12 @@ export default function Stock() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
-  const [selectedProject, setSelectedProject] = useState<number | null>(null);
+  const [selectedProject, setSelectedProject] = useState<string | null>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      projectId: 0,
+      projectId: "",
       recordedAt: new Date().toISOString().slice(0, 16),
       productionKg: 0,
       soldKg: 0,
@@ -85,13 +85,13 @@ export default function Stock() {
         queryClient.invalidateQueries({ queryKey: getGetStockSummaryQueryKey() });
         toast({ title: "Record logged — stock updated" });
         setOpen(false);
-        form.reset({ projectId: 0, recordedAt: new Date().toISOString().slice(0, 16), productionKg: 0, soldKg: 0, sellingPricePerKg: 0, notes: "" });
+        form.reset({ projectId: "", recordedAt: new Date().toISOString().slice(0, 16), productionKg: 0, soldKg: 0, sellingPricePerKg: 0, notes: "" });
       },
       onError: () => toast({ title: "Failed to log record", variant: "destructive" }),
     });
   }
 
-  function handleDelete(id: number) {
+  function handleDelete(id: string) {
     if (!confirm("Delete this record? Stock will be recalculated.")) return;
     deleteRecord.mutate({ id }, {
       onSuccess: () => {
@@ -152,7 +152,7 @@ export default function Stock() {
                 <FormField control={form.control} name="projectId" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Project</FormLabel>
-                    <Select onValueChange={(v) => field.onChange(Number(v))} value={field.value ? String(field.value) : ""}>
+                    <Select onValueChange={(v) => field.onChange(v)} value={field.value}>
                       <FormControl><SelectTrigger data-testid="select-stock-project"><SelectValue placeholder="Select plantation" /></SelectTrigger></FormControl>
                       <SelectContent>{projects?.map(p => <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>)}</SelectContent>
                     </Select>

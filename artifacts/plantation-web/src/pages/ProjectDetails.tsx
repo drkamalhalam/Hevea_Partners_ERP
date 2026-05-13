@@ -17,7 +17,7 @@ const statusColors: Record<string, string> = {
 
 export default function ProjectDetails() {
   const [, params] = useRoute("/projects/:id");
-  const id = Number(params?.id);
+  const id = params?.id ?? "";
   const { data: project, isLoading } = useGetProject(id, { query: { enabled: !!id, queryKey: getGetProjectQueryKey(id) } });
   const { data: agreements } = useListAgreements();
 

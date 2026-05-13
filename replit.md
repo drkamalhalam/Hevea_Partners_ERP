@@ -29,14 +29,18 @@ A full-stack ERP-style web platform for a multi-project natural rubber (Hevea br
 - `artifacts/plantation-web/src/pages/` — all page components (13 modules + Home)
 - `artifacts/plantation-web/src/components/layout/` — Layout, Sidebar (ERP dark), Navbar (header)
 - `artifacts/plantation-web/src/components/shared/` — ModulePlaceholder (reusable under-construction template)
-- `artifacts/plantation-web/src/contexts/RoleContext.tsx` — role + project assignment context
+- `artifacts/plantation-web/src/contexts/RoleContext.tsx` — role + project assignment context (uses `string[]` UUIDs)
+- `artifacts/plantation-web/src/contexts/ProjectFilterContext.tsx` — project filter state (`string | null` UUID)
+- `artifacts/plantation-web/src/components/auth/CanAccess.tsx` — RBAC guard (`project?: string` UUID)
 - `artifacts/api-server/src/routes/` — API routes (me, users, projects, partners, agreements, dashboard, production, stock)
 - `artifacts/api-server/src/routes/me.ts` — GET/PUT /me (current user profile + role)
 - `artifacts/api-server/src/routes/users.ts` — GET /users, PUT /users/:id/role, POST /users/:id/projects
 - `lib/api-spec/openapi.yaml` — OpenAPI spec (source of truth for API contract)
 - `lib/db/src/schema/` — Drizzle DB schema (source of truth for DB)
-  - `roles.ts` — user_roles + user_project_assignments tables
-  - `projects.ts`, `partners.ts`, `agreements.ts`, `production.ts`, `activity.ts`
+  - `users.ts` — usersTable (UUID PK, clerkUserId, role, soft delete, audit cols); exports `userRolesTable` alias
+  - `assignments.ts` — userProjectAssignmentsTable (userId UUID FK → users.id)
+  - `projects.ts`, `partners.ts`, `agreements.ts`, `production.ts`, `activity.ts`, `notifications.ts`, `audit.ts`, `stubs.ts`
+  - `enums.ts` — shared pgEnum definitions
 - `lib/api-client-react/` — generated React Query hooks (do not edit manually)
 - `lib/api-zod/src/index.ts` — only exports Zod schemas (not types) to avoid name conflicts
 
@@ -75,11 +79,14 @@ Also live: Production & Sales (/production), Stock Register (/stock), Partners, 
 ## Architecture Decisions
 
 - Contract-first API: OpenAPI spec → Orval codegen → React Query hooks + Zod schemas used in both client and server
-- Clerk auth proxy only enabled in production. `clerkProxyUrl` is `undefined` in development.
+- **All PKs are UUID** (`gen_random_uuid()` default). No serial/integer IDs anywhere in DB, API, or frontend.
+- Clerk auth proxy only enabled in production. `proxyUrl` is `undefined` in development (set dynamically in `app.ts`).
 - Server uses `getAuth(req)` from `@clerk/express` to extract userId from JWT (Clerk middleware registered in app.ts)
+- Auth middleware does two-step user lookup: clerkUserId → users.id (UUID) → project assignments
 - Role context: `RoleContext` calls `/api/me` on load, auto-upserts first-time users as "employee"
 - All protected routes use the `ProtectedRoute` wrapper (Clerk `Show when="signed-in"`)
 - `lib/api-zod/src/index.ts` only exports Zod schemas from `api.ts` (not types barrel) to avoid duplicate name conflicts when inline body schemas are used
+- `assignedProjectIds` throughout frontend is `string[]` (UUID strings), `canAccessProject(id: string)`
 
 ## Seeded Data
 
@@ -93,8 +100,10 @@ Also live: Production & Sales (/production), Stock Register (/stock), Partners, 
 - Clerk proxy returns 404 in development — intentional. Clerk JS loads from CDN in dev. Proxy used in production only.
 - Always run `pnpm --filter @workspace/api-spec run codegen` after changing `lib/api-spec/openapi.yaml`
 - `pnpm --filter @workspace/db run push` to sync schema changes to Postgres
+- `pnpm --filter @workspace/db run seed` to re-populate sample data (uses `tsx`, idempotent via onConflictDoNothing)
 - `lib/api-zod/src/index.ts` intentionally only re-exports `api.ts` (Zod schemas), NOT `types/` — avoids TS2308 duplicate name errors when inline body schemas are used in OpenAPI
-- Pre-existing TS7030 errors in old route files (production.ts, agreements.ts, partners.ts, projects.ts) — non-blocking, app runs fine; these are strict TypeScript "not all code paths return a value" warnings from early `return res.json()` patterns
+- All route params/IDs are strings in routes (no `parseInt`/`Number()` conversions — UUIDs come as strings from the URL)
+- `@clerk/shared/keys` is not bundled — `app.ts` derives publishable key and proxyUrl directly without it
 
 ## Pointers
 

@@ -7,10 +7,10 @@
  */
 
 export interface ActivityItem {
-  id: number;
+  id: string;
   type: string;
   description: string;
-  entityId: number;
+  entityId: string;
   entityType: string;
   createdAt: string;
 }

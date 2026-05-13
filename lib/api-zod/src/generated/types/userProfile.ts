@@ -14,6 +14,6 @@ export interface UserProfile {
   displayName?: string | null;
   /** @nullable */
   email?: string | null;
-  assignedProjectIds: number[];
+  assignedProjectIds: string[];
   createdAt?: string;
 }

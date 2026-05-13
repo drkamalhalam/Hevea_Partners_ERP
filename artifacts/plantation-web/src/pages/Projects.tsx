@@ -73,7 +73,7 @@ export default function Projects() {
     });
   }
 
-  function handleDelete(id: number, name: string) {
+  function handleDelete(id: string, name: string) {
     if (!confirm(`Delete project "${name}"?`)) return;
     deleteProject.mutate({ id }, {
       onSuccess: () => {

@@ -65,7 +65,7 @@ router.post("/", requireRole("admin", "developer"), async (req, res) => {
 
 // GET /agreements/:id — check project access
 router.get("/:id", async (req, res) => {
-  const parsed = GetAgreementParams.safeParse({ id: Number(req.params.id) });
+  const parsed = GetAgreementParams.safeParse({ id: req.params.id });
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid id" });
     return;
@@ -92,7 +92,7 @@ router.get("/:id", async (req, res) => {
 
 // PATCH /agreements/:id — admin or developer only
 router.patch("/:id", requireRole("admin", "developer"), async (req, res) => {
-  const paramsParsed = UpdateAgreementParams.safeParse({ id: Number(req.params.id) });
+  const paramsParsed = UpdateAgreementParams.safeParse({ id: req.params.id });
   if (!paramsParsed.success) {
     res.status(400).json({ error: "Invalid id" });
     return;

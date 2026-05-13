@@ -9,7 +9,7 @@ import type { Agreement } from "./agreement";
 
 export interface PartnerPortfolio {
   /** @nullable */
-  partnerId: number | null;
+  partnerId: string | null;
   partnerName: string;
   role: string;
   agreements: Agreement[];

@@ -17,11 +17,14 @@ export const ProjectStatus = {
   maturing: "maturing",
   tapping: "tapping",
   completed: "completed",
+  suspended: "suspended",
 } as const;
 
 export interface Project {
-  id: number;
+  id: string;
   name: string;
+  /** @nullable */
+  description?: string | null;
   location: string;
   /** @nullable */
   village?: string | null;
@@ -40,6 +43,7 @@ export interface Project {
   termYears: number;
   /** @nullable */
   notes?: string | null;
+  isActive: boolean;
   createdAt: string;
   /** @nullable */
   updatedAt?: string | null;
@@ -54,10 +58,12 @@ export const ProjectInputStatus = {
   maturing: "maturing",
   tapping: "tapping",
   completed: "completed",
+  suspended: "suspended",
 } as const;
 
 export interface ProjectInput {
   name: string;
+  description?: string;
   location: string;
   village?: string;
   district: string;
@@ -82,10 +88,12 @@ export const ProjectUpdateStatus = {
   maturing: "maturing",
   tapping: "tapping",
   completed: "completed",
+  suspended: "suspended",
 } as const;
 
 export interface ProjectUpdate {
   name?: string;
+  description?: string;
   location?: string;
   village?: string;
   district?: string;
@@ -110,19 +118,22 @@ export const PartnerRole = {
 } as const;
 
 export interface Partner {
-  id: number;
+  id: string;
   name: string;
   role: PartnerRole;
-  email: string;
   /** @nullable */
-  phone: string | null;
-  address: string;
+  email?: string | null;
+  /** @nullable */
+  phone?: string | null;
+  /** @nullable */
+  address?: string | null;
   /** @nullable */
   aadhaarLast4?: string | null;
   /** @nullable */
-  clerkUserId: string | null;
+  clerkUserId?: string | null;
   /** @nullable */
   notes?: string | null;
+  isActive?: boolean;
   createdAt: string;
   /** @nullable */
   updatedAt?: string | null;
@@ -140,9 +151,9 @@ export const PartnerInputRole = {
 export interface PartnerInput {
   name: string;
   role: PartnerInputRole;
-  email: string;
+  email?: string;
   phone?: string;
-  address: string;
+  address?: string;
   aadhaarLast4?: string;
   clerkUserId?: string;
   notes?: string;
@@ -186,12 +197,12 @@ export const AgreementStatus = {
 } as const;
 
 export interface Agreement {
-  id: number;
-  projectId: number;
+  id: string;
+  projectId: string;
   projectName: string;
-  landOwnerId: number;
+  landOwnerId: string;
   landOwnerName: string;
-  projectDeveloperId: number;
+  projectDeveloperId: string;
   projectDeveloperName: string;
   executionDate: string;
   executionPlace: string;
@@ -236,9 +247,9 @@ export const AgreementInputRevenueModel = {
 } as const;
 
 export interface AgreementInput {
-  projectId: number;
-  landOwnerId: number;
-  projectDeveloperId: number;
+  projectId: string;
+  landOwnerId: string;
+  projectDeveloperId: string;
   executionDate: string;
   executionPlace: string;
   termYears: number;
@@ -311,7 +322,7 @@ export interface DashboardSummary {
 
 export interface PartnerPortfolio {
   /** @nullable */
-  partnerId: number | null;
+  partnerId: string | null;
   partnerName: string;
   role: string;
   agreements: Agreement[];
@@ -320,16 +331,16 @@ export interface PartnerPortfolio {
 }
 
 export interface ActivityItem {
-  id: number;
+  id: string;
   type: string;
   description: string;
-  entityId: number;
+  entityId: string;
   entityType: string;
   createdAt: string;
 }
 
 export interface StockSummary {
-  projectId: number;
+  projectId: string;
   projectName: string;
   location: string;
   district: string;
@@ -341,8 +352,8 @@ export interface StockSummary {
 }
 
 export interface ProductionRecord {
-  id: number;
-  projectId: number;
+  id: string;
+  projectId: string;
   projectName: string;
   recordedAt: string;
   productionKg: number;
@@ -355,7 +366,7 @@ export interface ProductionRecord {
 }
 
 export interface ProductionInput {
-  projectId: number;
+  projectId: string;
   /** ISO datetime of when production/sale happened */
   recordedAt: string;
   /** Total rubber produced in kg */
@@ -368,7 +379,7 @@ export interface ProductionInput {
 }
 
 export interface RevenueStats {
-  projectId: number;
+  projectId: string;
   projectName: string;
   year: number;
   revenue: number;
@@ -395,7 +406,7 @@ export interface UserProfile {
   displayName?: string | null;
   /** @nullable */
   email?: string | null;
-  assignedProjectIds: number[];
+  assignedProjectIds: string[];
   createdAt?: string;
 }
 
@@ -434,7 +445,7 @@ export interface SetUserRoleInput {
 }
 
 export interface AssignProjectInput {
-  projectId: number;
+  projectId: string;
 }
 
 export interface OkResponse {
@@ -442,5 +453,5 @@ export interface OkResponse {
 }
 
 export type ListProductionRecordsParams = {
-  projectId?: number;
+  projectId?: string;
 };

@@ -15,4 +15,5 @@ export const ProjectUpdateStatus = {
   maturing: "maturing",
   tapping: "tapping",
   completed: "completed",
+  suspended: "suspended",
 } as const;

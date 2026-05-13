@@ -7,5 +7,5 @@
  */
 
 export type ListProductionRecordsParams = {
-  projectId?: number;
+  projectId?: string;
 };

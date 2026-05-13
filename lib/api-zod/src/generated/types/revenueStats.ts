@@ -7,7 +7,7 @@
  */
 
 export interface RevenueStats {
-  projectId: number;
+  projectId: string;
   projectName: string;
   year: number;
   revenue: number;

@@ -14,7 +14,7 @@ const statusColors: Record<string, string> = {
 
 export default function AgreementDetails() {
   const [, params] = useRoute("/agreements/:id");
-  const id = Number(params?.id);
+  const id = params?.id ?? "";
   const { data: agreement, isLoading } = useGetAgreement(id, { query: { enabled: !!id, queryKey: getGetAgreementQueryKey(id) } });
 
   if (isLoading) return <div className="space-y-6"><Skeleton className="h-8 w-48" /><Skeleton className="h-96 rounded-xl" /></div>;

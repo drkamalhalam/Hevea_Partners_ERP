@@ -1,8 +1,8 @@
 import { createContext, useContext, useState, ReactNode } from "react";
 
 interface ProjectFilterContextValue {
-  selectedProjectId: number | null;
-  setSelectedProjectId: (id: number | null) => void;
+  selectedProjectId: string | null;
+  setSelectedProjectId: (id: string | null) => void;
 }
 
 const ProjectFilterContext = createContext<ProjectFilterContextValue>({
@@ -11,7 +11,7 @@ const ProjectFilterContext = createContext<ProjectFilterContextValue>({
 });
 
 export function ProjectFilterProvider({ children }: { children: ReactNode }) {
-  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   return (
     <ProjectFilterContext.Provider value={{ selectedProjectId, setSelectedProjectId }}>
       {children}

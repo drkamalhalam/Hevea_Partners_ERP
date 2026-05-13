@@ -446,14 +446,14 @@ export const useAssignUserToProject = <
  */
 export const getRemoveUserFromProjectUrl = (
   clerkUserId: string,
-  projectId: number,
+  projectId: string,
 ) => {
   return `/api/users/${clerkUserId}/projects/${projectId}`;
 };
 
 export const removeUserFromProject = async (
   clerkUserId: string,
-  projectId: number,
+  projectId: string,
   options?: RequestInit,
 ): Promise<OkResponse> => {
   return customFetch<OkResponse>(
@@ -472,14 +472,14 @@ export const getRemoveUserFromProjectMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof removeUserFromProject>>,
     TError,
-    { clerkUserId: string; projectId: number },
+    { clerkUserId: string; projectId: string },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof removeUserFromProject>>,
   TError,
-  { clerkUserId: string; projectId: number },
+  { clerkUserId: string; projectId: string },
   TContext
 > => {
   const mutationKey = ["removeUserFromProject"];
@@ -493,7 +493,7 @@ export const getRemoveUserFromProjectMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof removeUserFromProject>>,
-    { clerkUserId: string; projectId: number }
+    { clerkUserId: string; projectId: string }
   > = (props) => {
     const { clerkUserId, projectId } = props ?? {};
 
@@ -519,14 +519,14 @@ export const useRemoveUserFromProject = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof removeUserFromProject>>,
     TError,
-    { clerkUserId: string; projectId: number },
+    { clerkUserId: string; projectId: string },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationResult<
   Awaited<ReturnType<typeof removeUserFromProject>>,
   TError,
-  { clerkUserId: string; projectId: number },
+  { clerkUserId: string; projectId: string },
   TContext
 > => {
   return useMutation(getRemoveUserFromProjectMutationOptions(options));
@@ -772,12 +772,12 @@ export const useCreateProject = <
 /**
  * @summary Get a plantation project by ID
  */
-export const getGetProjectUrl = (id: number) => {
+export const getGetProjectUrl = (id: string) => {
   return `/api/projects/${id}`;
 };
 
 export const getProject = async (
-  id: number,
+  id: string,
   options?: RequestInit,
 ): Promise<Project> => {
   return customFetch<Project>(getGetProjectUrl(id), {
@@ -786,7 +786,7 @@ export const getProject = async (
   });
 };
 
-export const getGetProjectQueryKey = (id: number) => {
+export const getGetProjectQueryKey = (id: string) => {
   return [`/api/projects/${id}`] as const;
 };
 
@@ -794,7 +794,7 @@ export const getGetProjectQueryOptions = <
   TData = Awaited<ReturnType<typeof getProject>>,
   TError = ErrorType<void>,
 >(
-  id: number,
+  id: string,
   options?: {
     query?: UseQueryOptions<
       Awaited<ReturnType<typeof getProject>>,
@@ -837,7 +837,7 @@ export function useGetProject<
   TData = Awaited<ReturnType<typeof getProject>>,
   TError = ErrorType<void>,
 >(
-  id: number,
+  id: string,
   options?: {
     query?: UseQueryOptions<
       Awaited<ReturnType<typeof getProject>>,
@@ -859,12 +859,12 @@ export function useGetProject<
 /**
  * @summary Update a plantation project
  */
-export const getUpdateProjectUrl = (id: number) => {
+export const getUpdateProjectUrl = (id: string) => {
   return `/api/projects/${id}`;
 };
 
 export const updateProject = async (
-  id: number,
+  id: string,
   projectUpdate: ProjectUpdate,
   options?: RequestInit,
 ): Promise<Project> => {
@@ -883,14 +883,14 @@ export const getUpdateProjectMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof updateProject>>,
     TError,
-    { id: number; data: BodyType<ProjectUpdate> },
+    { id: string; data: BodyType<ProjectUpdate> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof updateProject>>,
   TError,
-  { id: number; data: BodyType<ProjectUpdate> },
+  { id: string; data: BodyType<ProjectUpdate> },
   TContext
 > => {
   const mutationKey = ["updateProject"];
@@ -904,7 +904,7 @@ export const getUpdateProjectMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof updateProject>>,
-    { id: number; data: BodyType<ProjectUpdate> }
+    { id: string; data: BodyType<ProjectUpdate> }
   > = (props) => {
     const { id, data } = props ?? {};
 
@@ -930,14 +930,14 @@ export const useUpdateProject = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof updateProject>>,
     TError,
-    { id: number; data: BodyType<ProjectUpdate> },
+    { id: string; data: BodyType<ProjectUpdate> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationResult<
   Awaited<ReturnType<typeof updateProject>>,
   TError,
-  { id: number; data: BodyType<ProjectUpdate> },
+  { id: string; data: BodyType<ProjectUpdate> },
   TContext
 > => {
   return useMutation(getUpdateProjectMutationOptions(options));
@@ -946,12 +946,12 @@ export const useUpdateProject = <
 /**
  * @summary Delete a plantation project
  */
-export const getDeleteProjectUrl = (id: number) => {
+export const getDeleteProjectUrl = (id: string) => {
   return `/api/projects/${id}`;
 };
 
 export const deleteProject = async (
-  id: number,
+  id: string,
   options?: RequestInit,
 ): Promise<void> => {
   return customFetch<void>(getDeleteProjectUrl(id), {
@@ -967,14 +967,14 @@ export const getDeleteProjectMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof deleteProject>>,
     TError,
-    { id: number },
+    { id: string },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof deleteProject>>,
   TError,
-  { id: number },
+  { id: string },
   TContext
 > => {
   const mutationKey = ["deleteProject"];
@@ -988,7 +988,7 @@ export const getDeleteProjectMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof deleteProject>>,
-    { id: number }
+    { id: string }
   > = (props) => {
     const { id } = props ?? {};
 
@@ -1014,14 +1014,14 @@ export const useDeleteProject = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof deleteProject>>,
     TError,
-    { id: number },
+    { id: string },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationResult<
   Awaited<ReturnType<typeof deleteProject>>,
   TError,
-  { id: number },
+  { id: string },
   TContext
 > => {
   return useMutation(getDeleteProjectMutationOptions(options));
@@ -1191,12 +1191,12 @@ export const useCreatePartner = <
 /**
  * @summary Get a partner by ID
  */
-export const getGetPartnerUrl = (id: number) => {
+export const getGetPartnerUrl = (id: string) => {
   return `/api/partners/${id}`;
 };
 
 export const getPartner = async (
-  id: number,
+  id: string,
   options?: RequestInit,
 ): Promise<Partner> => {
   return customFetch<Partner>(getGetPartnerUrl(id), {
@@ -1205,7 +1205,7 @@ export const getPartner = async (
   });
 };
 
-export const getGetPartnerQueryKey = (id: number) => {
+export const getGetPartnerQueryKey = (id: string) => {
   return [`/api/partners/${id}`] as const;
 };
 
@@ -1213,7 +1213,7 @@ export const getGetPartnerQueryOptions = <
   TData = Awaited<ReturnType<typeof getPartner>>,
   TError = ErrorType<void>,
 >(
-  id: number,
+  id: string,
   options?: {
     query?: UseQueryOptions<
       Awaited<ReturnType<typeof getPartner>>,
@@ -1256,7 +1256,7 @@ export function useGetPartner<
   TData = Awaited<ReturnType<typeof getPartner>>,
   TError = ErrorType<void>,
 >(
-  id: number,
+  id: string,
   options?: {
     query?: UseQueryOptions<
       Awaited<ReturnType<typeof getPartner>>,
@@ -1278,12 +1278,12 @@ export function useGetPartner<
 /**
  * @summary Update a partner
  */
-export const getUpdatePartnerUrl = (id: number) => {
+export const getUpdatePartnerUrl = (id: string) => {
   return `/api/partners/${id}`;
 };
 
 export const updatePartner = async (
-  id: number,
+  id: string,
   partnerUpdate: PartnerUpdate,
   options?: RequestInit,
 ): Promise<Partner> => {
@@ -1302,14 +1302,14 @@ export const getUpdatePartnerMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof updatePartner>>,
     TError,
-    { id: number; data: BodyType<PartnerUpdate> },
+    { id: string; data: BodyType<PartnerUpdate> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof updatePartner>>,
   TError,
-  { id: number; data: BodyType<PartnerUpdate> },
+  { id: string; data: BodyType<PartnerUpdate> },
   TContext
 > => {
   const mutationKey = ["updatePartner"];
@@ -1323,7 +1323,7 @@ export const getUpdatePartnerMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof updatePartner>>,
-    { id: number; data: BodyType<PartnerUpdate> }
+    { id: string; data: BodyType<PartnerUpdate> }
   > = (props) => {
     const { id, data } = props ?? {};
 
@@ -1349,14 +1349,14 @@ export const useUpdatePartner = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof updatePartner>>,
     TError,
-    { id: number; data: BodyType<PartnerUpdate> },
+    { id: string; data: BodyType<PartnerUpdate> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationResult<
   Awaited<ReturnType<typeof updatePartner>>,
   TError,
-  { id: number; data: BodyType<PartnerUpdate> },
+  { id: string; data: BodyType<PartnerUpdate> },
   TContext
 > => {
   return useMutation(getUpdatePartnerMutationOptions(options));
@@ -1526,12 +1526,12 @@ export const useCreateAgreement = <
 /**
  * @summary Get an agreement by ID
  */
-export const getGetAgreementUrl = (id: number) => {
+export const getGetAgreementUrl = (id: string) => {
   return `/api/agreements/${id}`;
 };
 
 export const getAgreement = async (
-  id: number,
+  id: string,
   options?: RequestInit,
 ): Promise<Agreement> => {
   return customFetch<Agreement>(getGetAgreementUrl(id), {
@@ -1540,7 +1540,7 @@ export const getAgreement = async (
   });
 };
 
-export const getGetAgreementQueryKey = (id: number) => {
+export const getGetAgreementQueryKey = (id: string) => {
   return [`/api/agreements/${id}`] as const;
 };
 
@@ -1548,7 +1548,7 @@ export const getGetAgreementQueryOptions = <
   TData = Awaited<ReturnType<typeof getAgreement>>,
   TError = ErrorType<void>,
 >(
-  id: number,
+  id: string,
   options?: {
     query?: UseQueryOptions<
       Awaited<ReturnType<typeof getAgreement>>,
@@ -1591,7 +1591,7 @@ export function useGetAgreement<
   TData = Awaited<ReturnType<typeof getAgreement>>,
   TError = ErrorType<void>,
 >(
-  id: number,
+  id: string,
   options?: {
     query?: UseQueryOptions<
       Awaited<ReturnType<typeof getAgreement>>,
@@ -1613,12 +1613,12 @@ export function useGetAgreement<
 /**
  * @summary Update an agreement
  */
-export const getUpdateAgreementUrl = (id: number) => {
+export const getUpdateAgreementUrl = (id: string) => {
   return `/api/agreements/${id}`;
 };
 
 export const updateAgreement = async (
-  id: number,
+  id: string,
   agreementUpdate: AgreementUpdate,
   options?: RequestInit,
 ): Promise<Agreement> => {
@@ -1637,14 +1637,14 @@ export const getUpdateAgreementMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof updateAgreement>>,
     TError,
-    { id: number; data: BodyType<AgreementUpdate> },
+    { id: string; data: BodyType<AgreementUpdate> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof updateAgreement>>,
   TError,
-  { id: number; data: BodyType<AgreementUpdate> },
+  { id: string; data: BodyType<AgreementUpdate> },
   TContext
 > => {
   const mutationKey = ["updateAgreement"];
@@ -1658,7 +1658,7 @@ export const getUpdateAgreementMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof updateAgreement>>,
-    { id: number; data: BodyType<AgreementUpdate> }
+    { id: string; data: BodyType<AgreementUpdate> }
   > = (props) => {
     const { id, data } = props ?? {};
 
@@ -1684,14 +1684,14 @@ export const useUpdateAgreement = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof updateAgreement>>,
     TError,
-    { id: number; data: BodyType<AgreementUpdate> },
+    { id: string; data: BodyType<AgreementUpdate> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationResult<
   Awaited<ReturnType<typeof updateAgreement>>,
   TError,
-  { id: number; data: BodyType<AgreementUpdate> },
+  { id: string; data: BodyType<AgreementUpdate> },
   TContext
 > => {
   return useMutation(getUpdateAgreementMutationOptions(options));
@@ -1961,12 +1961,12 @@ export const useCreateProductionRecord = <
 /**
  * @summary Get a production record by ID
  */
-export const getGetProductionRecordUrl = (id: number) => {
+export const getGetProductionRecordUrl = (id: string) => {
   return `/api/production/${id}`;
 };
 
 export const getProductionRecord = async (
-  id: number,
+  id: string,
   options?: RequestInit,
 ): Promise<ProductionRecord> => {
   return customFetch<ProductionRecord>(getGetProductionRecordUrl(id), {
@@ -1975,7 +1975,7 @@ export const getProductionRecord = async (
   });
 };
 
-export const getGetProductionRecordQueryKey = (id: number) => {
+export const getGetProductionRecordQueryKey = (id: string) => {
   return [`/api/production/${id}`] as const;
 };
 
@@ -1983,7 +1983,7 @@ export const getGetProductionRecordQueryOptions = <
   TData = Awaited<ReturnType<typeof getProductionRecord>>,
   TError = ErrorType<void>,
 >(
-  id: number,
+  id: string,
   options?: {
     query?: UseQueryOptions<
       Awaited<ReturnType<typeof getProductionRecord>>,
@@ -2026,7 +2026,7 @@ export function useGetProductionRecord<
   TData = Awaited<ReturnType<typeof getProductionRecord>>,
   TError = ErrorType<void>,
 >(
-  id: number,
+  id: string,
   options?: {
     query?: UseQueryOptions<
       Awaited<ReturnType<typeof getProductionRecord>>,
@@ -2048,12 +2048,12 @@ export function useGetProductionRecord<
 /**
  * @summary Delete a production record
  */
-export const getDeleteProductionRecordUrl = (id: number) => {
+export const getDeleteProductionRecordUrl = (id: string) => {
   return `/api/production/${id}`;
 };
 
 export const deleteProductionRecord = async (
-  id: number,
+  id: string,
   options?: RequestInit,
 ): Promise<void> => {
   return customFetch<void>(getDeleteProductionRecordUrl(id), {
@@ -2069,14 +2069,14 @@ export const getDeleteProductionRecordMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof deleteProductionRecord>>,
     TError,
-    { id: number },
+    { id: string },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof deleteProductionRecord>>,
   TError,
-  { id: number },
+  { id: string },
   TContext
 > => {
   const mutationKey = ["deleteProductionRecord"];
@@ -2090,7 +2090,7 @@ export const getDeleteProductionRecordMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof deleteProductionRecord>>,
-    { id: number }
+    { id: string }
   > = (props) => {
     const { id } = props ?? {};
 
@@ -2116,14 +2116,14 @@ export const useDeleteProductionRecord = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof deleteProductionRecord>>,
     TError,
-    { id: number },
+    { id: string },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationResult<
   Awaited<ReturnType<typeof deleteProductionRecord>>,
   TError,
-  { id: number },
+  { id: string },
   TContext
 > => {
   return useMutation(getDeleteProductionRecordMutationOptions(options));

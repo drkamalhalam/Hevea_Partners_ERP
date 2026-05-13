@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db, userRolesTable, userProjectAssignmentsTable } from "@workspace/db";
+import { db, usersTable, userProjectAssignmentsTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { UpdateUserRoleBody, AssignUserToProjectBody } from "@workspace/api-zod";
 import { requireRole } from "../middlewares/auth";
@@ -7,46 +7,50 @@ import { requireRole } from "../middlewares/auth";
 const router = Router();
 
 async function buildUserProfile(clerkUserId: string) {
-  const [role] = await db
+  const [userRow] = await db
     .select()
-    .from(userRolesTable)
-    .where(eq(userRolesTable.clerkUserId, clerkUserId))
+    .from(usersTable)
+    .where(eq(usersTable.clerkUserId, clerkUserId))
     .limit(1);
 
-  const assignments = await db
-    .select()
-    .from(userProjectAssignmentsTable)
-    .where(eq(userProjectAssignmentsTable.clerkUserId, clerkUserId));
+  const assignments = userRow
+    ? await db
+        .select()
+        .from(userProjectAssignmentsTable)
+        .where(eq(userProjectAssignmentsTable.userId, userRow.id))
+    : [];
 
   return {
-    clerkUserId: role?.clerkUserId ?? clerkUserId,
-    role: role?.role ?? "employee",
-    displayName: role?.displayName ?? null,
-    email: role?.email ?? null,
-    assignedProjectIds: assignments.map((a) => a.projectId),
-    createdAt: (role?.createdAt ?? new Date()).toISOString(),
+    clerkUserId: userRow?.clerkUserId ?? clerkUserId,
+    role: userRow?.role ?? "employee",
+    displayName: userRow?.displayName ?? null,
+    email: userRow?.email ?? null,
+    assignedProjectIds: assignments
+      .filter((a) => !a.revokedAt)
+      .map((a) => a.projectId),
+    createdAt: (userRow?.createdAt ?? new Date()).toISOString(),
   };
 }
 
 // GET /users — admin only
 router.get("/", requireRole("admin"), async (req, res) => {
   try {
-    const roles = await db
+    const users = await db
       .select()
-      .from(userRolesTable)
-      .orderBy(userRolesTable.createdAt);
+      .from(usersTable)
+      .orderBy(usersTable.createdAt);
 
     const assignments = await db.select().from(userProjectAssignmentsTable);
 
-    const profiles = roles.map((r) => ({
-      clerkUserId: r.clerkUserId,
-      role: r.role,
-      displayName: r.displayName,
-      email: r.email,
+    const profiles = users.map((u) => ({
+      clerkUserId: u.clerkUserId,
+      role: u.role,
+      displayName: u.displayName,
+      email: u.email,
       assignedProjectIds: assignments
-        .filter((a) => a.clerkUserId === r.clerkUserId)
+        .filter((a) => a.userId === u.id && !a.revokedAt)
         .map((a) => a.projectId),
-      createdAt: r.createdAt.toISOString(),
+      createdAt: u.createdAt.toISOString(),
     }));
 
     res.json(profiles);
@@ -68,10 +72,10 @@ router.put("/:clerkUserId/role", requireRole("admin"), async (req, res) => {
 
   try {
     await db
-      .insert(userRolesTable)
+      .insert(usersTable)
       .values({ clerkUserId, role: parsed.data.role })
       .onConflictDoUpdate({
-        target: userRolesTable.clerkUserId,
+        target: usersTable.clerkUserId,
         set: { role: parsed.data.role, updatedAt: new Date() },
       });
 
@@ -94,9 +98,21 @@ router.post("/:clerkUserId/projects", requireRole("admin"), async (req, res) => 
   const { projectId } = parsed.data;
 
   try {
+    // Resolve internal user UUID from clerkUserId
+    const [userRow] = await db
+      .select({ id: usersTable.id })
+      .from(usersTable)
+      .where(eq(usersTable.clerkUserId, clerkUserId))
+      .limit(1);
+
+    if (!userRow) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+
     await db
       .insert(userProjectAssignmentsTable)
-      .values({ clerkUserId, projectId })
+      .values({ userId: userRow.id, projectId })
       .onConflictDoNothing();
 
     res.json({ ok: true });
@@ -112,19 +128,25 @@ router.delete(
   requireRole("admin"),
   async (req, res) => {
     const clerkUserId = String(req.params.clerkUserId);
-    const projectId = Number(req.params.projectId);
-
-    if (isNaN(projectId)) {
-      res.status(400).json({ error: "Invalid projectId" });
-      return;
-    }
+    const projectId = String(req.params.projectId);
 
     try {
+      const [userRow] = await db
+        .select({ id: usersTable.id })
+        .from(usersTable)
+        .where(eq(usersTable.clerkUserId, clerkUserId))
+        .limit(1);
+
+      if (!userRow) {
+        res.status(404).json({ error: "User not found" });
+        return;
+      }
+
       await db
         .delete(userProjectAssignmentsTable)
         .where(
           and(
-            eq(userProjectAssignmentsTable.clerkUserId, clerkUserId),
+            eq(userProjectAssignmentsTable.userId, userRow.id),
             eq(userProjectAssignmentsTable.projectId, projectId),
           ),
         );

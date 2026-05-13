@@ -134,7 +134,8 @@ paths:
           name: projectId
           required: true
           schema:
-            type: integer
+            type: string
+            format: uuid
       responses:
         "200":
           description: Removed
@@ -199,7 +200,8 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
+            format: uuid
       responses:
         "200":
           description: Project details
@@ -218,7 +220,8 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
+            format: uuid
       requestBody:
         required: true
         content:
@@ -241,7 +244,8 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
+            format: uuid
       responses:
         "204":
           description: Deleted
@@ -288,7 +292,8 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
+            format: uuid
       responses:
         "200":
           description: Partner details
@@ -307,7 +312,8 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
+            format: uuid
       requestBody:
         required: true
         content:
@@ -364,7 +370,8 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
+            format: uuid
       responses:
         "200":
           description: Agreement details
@@ -383,7 +390,8 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
+            format: uuid
       requestBody:
         required: true
         content:
@@ -423,7 +431,8 @@ paths:
           in: query
           required: false
           schema:
-            type: integer
+            type: string
+            format: uuid
       responses:
         "200":
           description: List of production records
@@ -461,7 +470,8 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
+            format: uuid
       responses:
         "200":
           description: Production record
@@ -480,7 +490,8 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
+            format: uuid
       responses:
         "204":
           description: Deleted
@@ -552,12 +563,15 @@ components:
 
     Project:
       type: object
-      required: [id, name, location, district, state, landArea, landAreaUnit, status, startDate, termYears, createdAt]
+      required: [id, name, location, district, state, landArea, landAreaUnit, status, startDate, termYears, isActive, createdAt]
       properties:
         id:
-          type: integer
+          type: string
+          format: uuid
         name:
           type: string
+        description:
+          type: ["string", "null"]
         location:
           type: string
         village:
@@ -576,7 +590,7 @@ components:
           type: ["number", "null"]
         status:
           type: string
-          enum: [planning, developing, maturing, tapping, completed]
+          enum: [planning, developing, maturing, tapping, completed, suspended]
         startDate:
           type: string
         expectedMaturityDate:
@@ -585,6 +599,8 @@ components:
           type: integer
         notes:
           type: ["string", "null"]
+        isActive:
+          type: boolean
         createdAt:
           type: string
         updatedAt:
@@ -596,6 +612,8 @@ components:
       properties:
         name:
           type: string
+        description:
+          type: string
         location:
           type: string
         village:
@@ -614,7 +632,7 @@ components:
           type: number
         status:
           type: string
-          enum: [planning, developing, maturing, tapping, completed]
+          enum: [planning, developing, maturing, tapping, completed, suspended]
         startDate:
           type: string
         expectedMaturityDate:
@@ -629,6 +647,8 @@ components:
       properties:
         name:
           type: string
+        description:
+          type: string
         location:
           type: string
         village:
@@ -647,7 +667,7 @@ components:
           type: number
         status:
           type: string
-          enum: [planning, developing, maturing, tapping, completed]
+          enum: [planning, developing, maturing, tapping, completed, suspended]
         startDate:
           type: string
         expectedMaturityDate:
@@ -659,27 +679,30 @@ components:
 
     Partner:
       type: object
-      required: [id, name, role, email, phone, address, clerkUserId, createdAt]
+      required: [id, name, role, createdAt]
       properties:
         id:
-          type: integer
+          type: string
+          format: uuid
         name:
           type: string
         role:
           type: string
           enum: [project_developer, landowner, investor]
         email:
-          type: string
+          type: ["string", "null"]
         phone:
           type: ["string", "null"]
         address:
-          type: string
+          type: ["string", "null"]
         aadhaarLast4:
           type: ["string", "null"]
         clerkUserId:
           type: ["string", "null"]
         notes:
           type: ["string", "null"]
+        isActive:
+          type: boolean
         createdAt:
           type: string
         updatedAt:
@@ -687,7 +710,7 @@ components:
 
     PartnerInput:
       type: object
-      required: [name, role, email, address]
+      required: [name, role]
       properties:
         name:
           type: string
@@ -731,17 +754,21 @@ components:
       required: [id, projectId, projectName, landOwnerId, landOwnerName, projectDeveloperId, projectDeveloperName, executionDate, executionPlace, termYears, landArea, landAreaUnit, landNotionalValue, landValuePerUnit, landContributionAdjustment, yearlyEscalation, status, createdAt]
       properties:
         id:
-          type: integer
+          type: string
+          format: uuid
         projectId:
-          type: integer
+          type: string
+          format: uuid
         projectName:
           type: string
         landOwnerId:
-          type: integer
+          type: string
+          format: uuid
         landOwnerName:
           type: string
         projectDeveloperId:
-          type: integer
+          type: string
+          format: uuid
         projectDeveloperName:
           type: string
         executionDate:
@@ -796,11 +823,14 @@ components:
       required: [projectId, landOwnerId, projectDeveloperId, executionDate, executionPlace, termYears, landArea, landAreaUnit, landNotionalValue, landValuePerUnit, landContributionAdjustment, yearlyEscalation]
       properties:
         projectId:
-          type: integer
+          type: string
+          format: uuid
         landOwnerId:
-          type: integer
+          type: string
+          format: uuid
         projectDeveloperId:
-          type: integer
+          type: string
+          format: uuid
         executionDate:
           type: string
         executionPlace:
@@ -907,7 +937,7 @@ components:
       required: [partnerId, partnerName, role, agreements, totalLandArea, totalOwnershipShare]
       properties:
         partnerId:
-          type: ["integer", "null"]
+          type: ["string", "null"]
         partnerName:
           type: string
         role:
@@ -926,13 +956,14 @@ components:
       required: [id, type, description, entityId, entityType, createdAt]
       properties:
         id:
-          type: integer
+          type: string
+          format: uuid
         type:
           type: string
         description:
           type: string
         entityId:
-          type: integer
+          type: string
         entityType:
           type: string
         createdAt:
@@ -943,7 +974,8 @@ components:
       required: [projectId, projectName, location, district, totalProducedKg, totalSoldKg, currentStockKg]
       properties:
         projectId:
-          type: integer
+          type: string
+          format: uuid
         projectName:
           type: string
         location:
@@ -964,9 +996,11 @@ components:
       required: [id, projectId, projectName, recordedAt, productionKg, soldKg, sellingPricePerKg, revenue, createdAt]
       properties:
         id:
-          type: integer
+          type: string
+          format: uuid
         projectId:
-          type: integer
+          type: string
+          format: uuid
         projectName:
           type: string
         recordedAt:
@@ -989,7 +1023,8 @@ components:
       required: [projectId, recordedAt, productionKg, soldKg, sellingPricePerKg]
       properties:
         projectId:
-          type: integer
+          type: string
+          format: uuid
         recordedAt:
           type: string
           description: ISO datetime of when production/sale happened
@@ -1010,7 +1045,8 @@ components:
       required: [projectId, projectName, year, revenue, landContributionAdjustment, profit]
       properties:
         projectId:
-          type: integer
+          type: string
+          format: uuid
         projectName:
           type: string
         year:
@@ -1038,7 +1074,8 @@ components:
         assignedProjectIds:
           type: array
           items:
-            type: integer
+            type: string
+            format: uuid
         createdAt:
           type: string
 
@@ -1067,7 +1104,8 @@ components:
       required: [projectId]
       properties:
         projectId:
-          type: integer
+          type: string
+          format: uuid
 
     OkResponse:
       type: object

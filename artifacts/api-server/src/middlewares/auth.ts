@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { getAuth } from "@clerk/express";
-import { db, userRolesTable, userProjectAssignmentsTable } from "@workspace/db";
+import { db, usersTable, userProjectAssignmentsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 
 export type UserRoleEnum =
@@ -16,7 +16,7 @@ declare global {
     interface Request {
       userId?: string;
       userRole?: UserRoleEnum;
-      userProjectIds?: number[];
+      userProjectIds?: string[];
       canAccessAllProjects?: boolean;
     }
   }
@@ -26,6 +26,10 @@ declare global {
  * requireAuth — verifies Clerk JWT, then loads role + project assignments from DB.
  * Attaches req.userId, req.userRole, req.userProjectIds, req.canAccessAllProjects.
  * Returns 401 if unauthenticated.
+ *
+ * Two-step project-assignment lookup:
+ *   1. Resolve users.id (UUID) from clerkUserId
+ *   2. Fetch user_project_assignments by userId FK
  */
 export async function requireAuth(
   req: Request,
@@ -40,19 +44,27 @@ export async function requireAuth(
   req.userId = userId;
 
   try {
-    const [roleRow] = await db
+    const [userRow] = await db
       .select()
-      .from(userRolesTable)
-      .where(eq(userRolesTable.clerkUserId, userId))
+      .from(usersTable)
+      .where(eq(usersTable.clerkUserId, userId))
       .limit(1);
 
-    const assignments = await db
-      .select()
-      .from(userProjectAssignmentsTable)
-      .where(eq(userProjectAssignmentsTable.clerkUserId, userId));
+    if (userRow) {
+      const assignments = await db
+        .select()
+        .from(userProjectAssignmentsTable)
+        .where(eq(userProjectAssignmentsTable.userId, userRow.id));
 
-    req.userRole = (roleRow?.role ?? "employee") as UserRoleEnum;
-    req.userProjectIds = assignments.map((a) => a.projectId);
+      req.userRole = (userRow.role ?? "employee") as UserRoleEnum;
+      req.userProjectIds = assignments
+        .filter((a) => !a.revokedAt)
+        .map((a) => a.projectId);
+    } else {
+      req.userRole = "employee";
+      req.userProjectIds = [];
+    }
+
     req.canAccessAllProjects =
       req.userRole === "admin" || req.userRole === "developer";
   } catch (err) {
@@ -86,10 +98,10 @@ export function requireRole(...roles: UserRoleEnum[]) {
 }
 
 /**
- * canAccessProject — helper used inline in route handlers.
- * Returns true if the user can access the given project.
+ * canAccessProject — inline helper used in route handlers.
+ * Returns true if the user can access the given project (UUID string).
  */
-export function canAccessProject(req: Request, projectId: number): boolean {
+export function canAccessProject(req: Request, projectId: string): boolean {
   return (
     req.canAccessAllProjects === true ||
     (req.userProjectIds ?? []).includes(projectId)

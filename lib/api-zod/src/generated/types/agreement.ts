@@ -9,12 +9,12 @@ import type { AgreementRevenueModel } from "./agreementRevenueModel";
 import type { AgreementStatus } from "./agreementStatus";
 
 export interface Agreement {
-  id: number;
-  projectId: number;
+  id: string;
+  projectId: string;
   projectName: string;
-  landOwnerId: number;
+  landOwnerId: string;
   landOwnerName: string;
-  projectDeveloperId: number;
+  projectDeveloperId: string;
   projectDeveloperName: string;
   executionDate: string;
   executionPlace: string;

@@ -7,7 +7,7 @@
  */
 
 export interface StockSummary {
-  projectId: number;
+  projectId: string;
   projectName: string;
   location: string;
   district: string;

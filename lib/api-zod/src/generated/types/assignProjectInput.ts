@@ -7,5 +7,5 @@
  */
 
 export interface AssignProjectInput {
-  projectId: number;
+  projectId: string;
 }

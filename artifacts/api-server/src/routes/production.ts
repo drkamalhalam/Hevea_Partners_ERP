@@ -14,10 +14,10 @@ const router = Router();
 router.get("/", async (req, res) => {
   try {
     const projectIdRaw = req.query.projectId;
-    const projectId = projectIdRaw ? Number(projectIdRaw) : undefined;
+    const projectId = projectIdRaw ? String(projectIdRaw) : undefined;
 
     // If a specific projectId is requested, check access first
-    if (projectId !== undefined && !canAccessProject(req, projectId)) {
+    if (projectId && !canAccessProject(req, projectId)) {
       res.status(403).json({ error: "Forbidden: no access to this project" });
       return;
     }
@@ -118,7 +118,7 @@ router.post("/", requireRole("admin", "developer", "employee"), async (req, res)
 
 // GET /production/:id — check project access
 router.get("/:id", async (req, res) => {
-  const parsed = GetProductionRecordParams.safeParse({ id: Number(req.params.id) });
+  const parsed = GetProductionRecordParams.safeParse({ id: req.params.id });
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid id" });
     return;
@@ -164,7 +164,7 @@ router.get("/:id", async (req, res) => {
 
 // DELETE /production/:id — admin or developer only
 router.delete("/:id", requireRole("admin", "developer"), async (req, res) => {
-  const parsed = DeleteProductionRecordParams.safeParse({ id: Number(req.params.id) });
+  const parsed = DeleteProductionRecordParams.safeParse({ id: req.params.id });
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid id" });
     return;

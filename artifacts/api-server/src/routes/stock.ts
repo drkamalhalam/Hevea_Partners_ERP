@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, productionRecordsTable, projectsTable } from "@workspace/db";
-import { eq, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { canAccessProject } from "../middlewares/auth";
 
 const router = Router();

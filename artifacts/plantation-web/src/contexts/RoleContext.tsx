@@ -30,10 +30,10 @@ export const ROLE_COLORS: Record<UserRole, string> = {
 
 interface RoleContextValue {
   role: UserRole;
-  assignedProjectIds: number[];
+  assignedProjectIds: string[];
   isAdmin: boolean;
   isDeveloper: boolean;
-  canAccessProject: (projectId: number) => boolean;
+  canAccessProject: (projectId: string) => boolean;
   canAccessAllProjects: boolean;
   isLoading: boolean;
 }

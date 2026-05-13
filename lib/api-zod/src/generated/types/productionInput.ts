@@ -7,7 +7,7 @@
  */
 
 export interface ProductionInput {
-  projectId: number;
+  projectId: string;
   /** ISO datetime of when production/sale happened */
   recordedAt: string;
   /** Total rubber produced in kg */

@@ -13,7 +13,7 @@ interface CanAccessProps {
   /** If provided, only renders children if the current user has this permission */
   permission?: Permission;
   /** If provided, only renders children if the user can access this project ID */
-  project?: number;
+  project?: string;
   /** Rendered when access is denied. Defaults to null. */
   fallback?: ReactNode;
 }
@@ -60,7 +60,7 @@ export function useCanAccess({
 }: {
   roles?: UserRole[];
   permission?: Permission;
-  project?: number;
+  project?: string;
 }): boolean {
   const { role, canAccessProject } = useRole();
   if (roles && !roles.includes(role)) return false;

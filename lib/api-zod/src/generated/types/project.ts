@@ -8,8 +8,10 @@
 import type { ProjectStatus } from "./projectStatus";
 
 export interface Project {
-  id: number;
+  id: string;
   name: string;
+  /** @nullable */
+  description?: string | null;
   location: string;
   /** @nullable */
   village?: string | null;
@@ -28,6 +30,7 @@ export interface Project {
   termYears: number;
   /** @nullable */
   notes?: string | null;
+  isActive: boolean;
   createdAt: string;
   /** @nullable */
   updatedAt?: string | null;

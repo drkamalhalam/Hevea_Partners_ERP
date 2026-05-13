@@ -9,6 +9,7 @@ import type { ProjectInputStatus } from "./projectInputStatus";
 
 export interface ProjectInput {
   name: string;
+  description?: string;
   location: string;
   village?: string;
   district: string;

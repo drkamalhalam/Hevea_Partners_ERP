@@ -7,8 +7,8 @@
  */
 
 export interface ProductionRecord {
-  id: number;
-  projectId: number;
+  id: string;
+  projectId: string;
   projectName: string;
   recordedAt: string;
   productionKg: number;

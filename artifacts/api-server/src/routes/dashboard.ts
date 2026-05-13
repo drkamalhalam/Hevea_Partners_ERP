@@ -55,7 +55,7 @@ router.get("/my-portfolio", async (req, res) => {
     const allAgreements = await db.select().from(agreementsTable);
     const allProjects = await db.select().from(projectsTable);
 
-    let myAgreements = partner
+    const myAgreements = partner
       ? allAgreements.filter(
           (a) => a.landOwnerId === partner.id || a.projectDeveloperId === partner.id,
         )

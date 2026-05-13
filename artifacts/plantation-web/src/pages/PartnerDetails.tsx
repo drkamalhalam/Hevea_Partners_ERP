@@ -13,7 +13,7 @@ const roleColors: Record<string, string> = {
 
 export default function PartnerDetails() {
   const [, params] = useRoute("/partners/:id");
-  const id = Number(params?.id);
+  const id = params?.id ?? "";
   const { data: partner, isLoading } = useGetPartner(id, { query: { enabled: !!id, queryKey: getGetPartnerQueryKey(id) } });
   const { data: agreements } = useListAgreements();
 
