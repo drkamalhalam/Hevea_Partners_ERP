@@ -2567,6 +2567,126 @@ export const VerifyAgreementActivationOtpResponse = zod.object({
 });
 
 /**
+ * @summary Get or auto-initialize the accounting profile for an agreement
+ */
+export const GetAgreementAccountingProfileParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const GetAgreementAccountingProfileResponse = zod.object({
+  id: zod.string().uuid(),
+  agreementId: zod.string().uuid(),
+  accountingModel: zod.enum(["contribution", "fifty_percent_revenue"]),
+  costsChargedBeforeDistribution: zod.boolean(),
+  lcaChargedBeforeDistribution: zod.boolean(),
+  grossSplitPctLandowner: zod.number(),
+  grossSplitPctDeveloper: zod.number(),
+  landownerBearsCostSeparately: zod.boolean(),
+  developerBearsCostSeparately: zod.boolean(),
+  lcaApplicable: zod.boolean(),
+  validationStatus: zod.enum(["pending", "valid", "warning", "invalid"]),
+  validationNotes: zod.string().optional(),
+  validatedAt: zod.string().optional(),
+  validatedByName: zod.string().optional(),
+  configuredByName: zod.string(),
+  updatedByName: zod.string().optional(),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
+});
+
+/**
+ * @summary Create or update the accounting profile flags for an agreement (admin/developer)
+ */
+export const UpsertAgreementAccountingProfileParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const upsertAgreementAccountingProfileBodyGrossSplitPctLandownerMin = 0;
+export const upsertAgreementAccountingProfileBodyGrossSplitPctLandownerMax = 100;
+
+export const upsertAgreementAccountingProfileBodyGrossSplitPctDeveloperMin = 0;
+export const upsertAgreementAccountingProfileBodyGrossSplitPctDeveloperMax = 100;
+
+export const UpsertAgreementAccountingProfileBody = zod.object({
+  costsChargedBeforeDistribution: zod.boolean().optional(),
+  lcaChargedBeforeDistribution: zod.boolean().optional(),
+  grossSplitPctLandowner: zod
+    .number()
+    .min(upsertAgreementAccountingProfileBodyGrossSplitPctLandownerMin)
+    .max(upsertAgreementAccountingProfileBodyGrossSplitPctLandownerMax)
+    .optional(),
+  grossSplitPctDeveloper: zod
+    .number()
+    .min(upsertAgreementAccountingProfileBodyGrossSplitPctDeveloperMin)
+    .max(upsertAgreementAccountingProfileBodyGrossSplitPctDeveloperMax)
+    .optional(),
+  landownerBearsCostSeparately: zod.boolean().optional(),
+  developerBearsCostSeparately: zod.boolean().optional(),
+});
+
+export const UpsertAgreementAccountingProfileResponse = zod.object({
+  id: zod.string().uuid(),
+  agreementId: zod.string().uuid(),
+  accountingModel: zod.enum(["contribution", "fifty_percent_revenue"]),
+  costsChargedBeforeDistribution: zod.boolean(),
+  lcaChargedBeforeDistribution: zod.boolean(),
+  grossSplitPctLandowner: zod.number(),
+  grossSplitPctDeveloper: zod.number(),
+  landownerBearsCostSeparately: zod.boolean(),
+  developerBearsCostSeparately: zod.boolean(),
+  lcaApplicable: zod.boolean(),
+  validationStatus: zod.enum(["pending", "valid", "warning", "invalid"]),
+  validationNotes: zod.string().optional(),
+  validatedAt: zod.string().optional(),
+  validatedByName: zod.string().optional(),
+  configuredByName: zod.string(),
+  updatedByName: zod.string().optional(),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
+});
+
+/**
+ * @summary Run model-consistency validation checks on an accounting profile (admin/developer)
+ */
+export const ValidateAgreementAccountingProfileParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const ValidateAgreementAccountingProfileResponse = zod.object({
+  agreementId: zod.string().uuid(),
+  accountingModel: zod.enum(["contribution", "fifty_percent_revenue"]),
+  overallStatus: zod.enum(["valid", "warning", "invalid"]),
+  checks: zod.array(
+    zod.object({
+      checkId: zod.string(),
+      label: zod.string(),
+      status: zod.enum(["pass", "warn", "fail"]),
+      message: zod.string(),
+    }),
+  ),
+  profile: zod.object({
+    id: zod.string().uuid(),
+    agreementId: zod.string().uuid(),
+    accountingModel: zod.enum(["contribution", "fifty_percent_revenue"]),
+    costsChargedBeforeDistribution: zod.boolean(),
+    lcaChargedBeforeDistribution: zod.boolean(),
+    grossSplitPctLandowner: zod.number(),
+    grossSplitPctDeveloper: zod.number(),
+    landownerBearsCostSeparately: zod.boolean(),
+    developerBearsCostSeparately: zod.boolean(),
+    lcaApplicable: zod.boolean(),
+    validationStatus: zod.enum(["pending", "valid", "warning", "invalid"]),
+    validationNotes: zod.string().optional(),
+    validatedAt: zod.string().optional(),
+    validatedByName: zod.string().optional(),
+    configuredByName: zod.string(),
+    updatedByName: zod.string().optional(),
+    createdAt: zod.string(),
+    updatedAt: zod.string(),
+  }),
+});
+
+/**
  * @summary Get governance completeness summary for the current user
  */
 export const GetGovernanceSummaryResponse = zod.object({

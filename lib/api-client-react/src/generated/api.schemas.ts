@@ -841,6 +841,103 @@ export interface AgreementActivationSummary {
   activation: AgreementActivation;
 }
 
+export type AgreementAccountingProfileAccountingModel =
+  (typeof AgreementAccountingProfileAccountingModel)[keyof typeof AgreementAccountingProfileAccountingModel];
+
+export const AgreementAccountingProfileAccountingModel = {
+  contribution: "contribution",
+  fifty_percent_revenue: "fifty_percent_revenue",
+} as const;
+
+export type AgreementAccountingProfileValidationStatus =
+  (typeof AgreementAccountingProfileValidationStatus)[keyof typeof AgreementAccountingProfileValidationStatus];
+
+export const AgreementAccountingProfileValidationStatus = {
+  pending: "pending",
+  valid: "valid",
+  warning: "warning",
+  invalid: "invalid",
+} as const;
+
+export interface AgreementAccountingProfile {
+  id: string;
+  agreementId: string;
+  accountingModel: AgreementAccountingProfileAccountingModel;
+  costsChargedBeforeDistribution: boolean;
+  lcaChargedBeforeDistribution: boolean;
+  grossSplitPctLandowner: number;
+  grossSplitPctDeveloper: number;
+  landownerBearsCostSeparately: boolean;
+  developerBearsCostSeparately: boolean;
+  lcaApplicable: boolean;
+  validationStatus: AgreementAccountingProfileValidationStatus;
+  validationNotes?: string;
+  validatedAt?: string;
+  validatedByName?: string;
+  configuredByName: string;
+  updatedByName?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UpsertAccountingProfileBody {
+  costsChargedBeforeDistribution?: boolean;
+  lcaChargedBeforeDistribution?: boolean;
+  /**
+   * @minimum 0
+   * @maximum 100
+   */
+  grossSplitPctLandowner?: number;
+  /**
+   * @minimum 0
+   * @maximum 100
+   */
+  grossSplitPctDeveloper?: number;
+  landownerBearsCostSeparately?: boolean;
+  developerBearsCostSeparately?: boolean;
+}
+
+export type AccountingProfileValidationCheckStatus =
+  (typeof AccountingProfileValidationCheckStatus)[keyof typeof AccountingProfileValidationCheckStatus];
+
+export const AccountingProfileValidationCheckStatus = {
+  pass: "pass",
+  warn: "warn",
+  fail: "fail",
+} as const;
+
+export interface AccountingProfileValidationCheck {
+  checkId: string;
+  label: string;
+  status: AccountingProfileValidationCheckStatus;
+  message: string;
+}
+
+export type AccountingProfileValidationResultAccountingModel =
+  (typeof AccountingProfileValidationResultAccountingModel)[keyof typeof AccountingProfileValidationResultAccountingModel];
+
+export const AccountingProfileValidationResultAccountingModel = {
+  contribution: "contribution",
+  fifty_percent_revenue: "fifty_percent_revenue",
+} as const;
+
+export type AccountingProfileValidationResultOverallStatus =
+  (typeof AccountingProfileValidationResultOverallStatus)[keyof typeof AccountingProfileValidationResultOverallStatus];
+
+export const AccountingProfileValidationResultOverallStatus = {
+  valid: "valid",
+  warning: "warning",
+  invalid: "invalid",
+} as const;
+
+export interface AccountingProfileValidationResult {
+  agreementId: string;
+  accountingModel: AccountingProfileValidationResultAccountingModel;
+  overallStatus: AccountingProfileValidationResultOverallStatus;
+  checks: AccountingProfileValidationCheck[];
+  profile: AgreementAccountingProfile;
+}
+
 export interface InitiateAgreementActivationBody {
   notes?: string;
 }

@@ -17,12 +17,14 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
+  AccountingProfileValidationResult,
   AcknowledgeAdvanceBody,
   AcknowledgeClosureBody,
   ActivityItem,
   AddParticipantInput,
   AdvanceSummary,
   Agreement,
+  AgreementAccountingProfile,
   AgreementActivation,
   AgreementActivationOtp,
   AgreementActivationSummary,
@@ -211,6 +213,7 @@ import type {
   UpdateParticipantInput,
   UpdateProfileInput,
   UpdateTemplateBody,
+  UpsertAccountingProfileBody,
   UpsertUserInput,
   UserProfile,
   VerifyAgreementActivationOtp400,
@@ -6951,6 +6954,283 @@ export const useVerifyAgreementActivationOtp = <
   TContext
 > => {
   return useMutation(getVerifyAgreementActivationOtpMutationOptions(options));
+};
+
+/**
+ * @summary Get or auto-initialize the accounting profile for an agreement
+ */
+export const getGetAgreementAccountingProfileUrl = (id: string) => {
+  return `/api/agreements/${id}/accounting-profile`;
+};
+
+export const getAgreementAccountingProfile = async (
+  id: string,
+  options?: RequestInit,
+): Promise<AgreementAccountingProfile> => {
+  return customFetch<AgreementAccountingProfile>(
+    getGetAgreementAccountingProfileUrl(id),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetAgreementAccountingProfileQueryKey = (id: string) => {
+  return [`/api/agreements/${id}/accounting-profile`] as const;
+};
+
+export const getGetAgreementAccountingProfileQueryOptions = <
+  TData = Awaited<ReturnType<typeof getAgreementAccountingProfile>>,
+  TError = ErrorType<void>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getAgreementAccountingProfile>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetAgreementAccountingProfileQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getAgreementAccountingProfile>>
+  > = ({ signal }) =>
+    getAgreementAccountingProfile(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getAgreementAccountingProfile>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetAgreementAccountingProfileQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getAgreementAccountingProfile>>
+>;
+export type GetAgreementAccountingProfileQueryError = ErrorType<void>;
+
+/**
+ * @summary Get or auto-initialize the accounting profile for an agreement
+ */
+
+export function useGetAgreementAccountingProfile<
+  TData = Awaited<ReturnType<typeof getAgreementAccountingProfile>>,
+  TError = ErrorType<void>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getAgreementAccountingProfile>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetAgreementAccountingProfileQueryOptions(
+    id,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create or update the accounting profile flags for an agreement (admin/developer)
+ */
+export const getUpsertAgreementAccountingProfileUrl = (id: string) => {
+  return `/api/agreements/${id}/accounting-profile`;
+};
+
+export const upsertAgreementAccountingProfile = async (
+  id: string,
+  upsertAccountingProfileBody: UpsertAccountingProfileBody,
+  options?: RequestInit,
+): Promise<AgreementAccountingProfile> => {
+  return customFetch<AgreementAccountingProfile>(
+    getUpsertAgreementAccountingProfileUrl(id),
+    {
+      ...options,
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(upsertAccountingProfileBody),
+    },
+  );
+};
+
+export const getUpsertAgreementAccountingProfileMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof upsertAgreementAccountingProfile>>,
+    TError,
+    { id: string; data: BodyType<UpsertAccountingProfileBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof upsertAgreementAccountingProfile>>,
+  TError,
+  { id: string; data: BodyType<UpsertAccountingProfileBody> },
+  TContext
+> => {
+  const mutationKey = ["upsertAgreementAccountingProfile"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof upsertAgreementAccountingProfile>>,
+    { id: string; data: BodyType<UpsertAccountingProfileBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return upsertAgreementAccountingProfile(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpsertAgreementAccountingProfileMutationResult = NonNullable<
+  Awaited<ReturnType<typeof upsertAgreementAccountingProfile>>
+>;
+export type UpsertAgreementAccountingProfileMutationBody =
+  BodyType<UpsertAccountingProfileBody>;
+export type UpsertAgreementAccountingProfileMutationError = ErrorType<void>;
+
+/**
+ * @summary Create or update the accounting profile flags for an agreement (admin/developer)
+ */
+export const useUpsertAgreementAccountingProfile = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof upsertAgreementAccountingProfile>>,
+    TError,
+    { id: string; data: BodyType<UpsertAccountingProfileBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof upsertAgreementAccountingProfile>>,
+  TError,
+  { id: string; data: BodyType<UpsertAccountingProfileBody> },
+  TContext
+> => {
+  return useMutation(
+    getUpsertAgreementAccountingProfileMutationOptions(options),
+  );
+};
+
+/**
+ * @summary Run model-consistency validation checks on an accounting profile (admin/developer)
+ */
+export const getValidateAgreementAccountingProfileUrl = (id: string) => {
+  return `/api/agreements/${id}/accounting-profile/validate`;
+};
+
+export const validateAgreementAccountingProfile = async (
+  id: string,
+  options?: RequestInit,
+): Promise<AccountingProfileValidationResult> => {
+  return customFetch<AccountingProfileValidationResult>(
+    getValidateAgreementAccountingProfileUrl(id),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getValidateAgreementAccountingProfileMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof validateAgreementAccountingProfile>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof validateAgreementAccountingProfile>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["validateAgreementAccountingProfile"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof validateAgreementAccountingProfile>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return validateAgreementAccountingProfile(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ValidateAgreementAccountingProfileMutationResult = NonNullable<
+  Awaited<ReturnType<typeof validateAgreementAccountingProfile>>
+>;
+
+export type ValidateAgreementAccountingProfileMutationError = ErrorType<void>;
+
+/**
+ * @summary Run model-consistency validation checks on an accounting profile (admin/developer)
+ */
+export const useValidateAgreementAccountingProfile = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof validateAgreementAccountingProfile>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof validateAgreementAccountingProfile>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(
+    getValidateAgreementAccountingProfileMutationOptions(options),
+  );
 };
 
 /**

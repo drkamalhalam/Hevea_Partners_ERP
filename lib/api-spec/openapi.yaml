@@ -1899,6 +1899,73 @@ paths:
                   error:
                     type: string
 
+  /agreements/{id}/accounting-profile:
+    get:
+      operationId: getAgreementAccountingProfile
+      summary: Get or auto-initialize the accounting profile for an agreement
+      tags: [agreements]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Accounting profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgreementAccountingProfile"
+        "401": { description: Unauthorized }
+        "404": { description: Agreement not found }
+    put:
+      operationId: upsertAgreementAccountingProfile
+      summary: Create or update the accounting profile flags for an agreement (admin/developer)
+      tags: [agreements]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertAccountingProfileBody"
+      responses:
+        "200":
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgreementAccountingProfile"
+        "400": { description: Validation error }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+        "404": { description: Agreement not found }
+
+  /agreements/{id}/accounting-profile/validate:
+    post:
+      operationId: validateAgreementAccountingProfile
+      summary: Run model-consistency validation checks on an accounting profile (admin/developer)
+      tags: [agreements]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Validation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountingProfileValidationResult"
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+        "404": { description: Agreement not found }
+
   /governance/summary:
     get:
       operationId: getGovernanceSummary
@@ -5545,6 +5612,72 @@ components:
           type: string
         activation:
           $ref: "#/components/schemas/AgreementActivation"
+
+    AgreementAccountingProfile:
+      type: object
+      required: [id, agreementId, accountingModel, costsChargedBeforeDistribution, lcaChargedBeforeDistribution, grossSplitPctLandowner, grossSplitPctDeveloper, landownerBearsCostSeparately, developerBearsCostSeparately, lcaApplicable, validationStatus, configuredByName, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        agreementId: { type: string, format: uuid }
+        accountingModel:
+          type: string
+          enum: [contribution, fifty_percent_revenue]
+        costsChargedBeforeDistribution: { type: boolean }
+        lcaChargedBeforeDistribution: { type: boolean }
+        grossSplitPctLandowner: { type: number }
+        grossSplitPctDeveloper: { type: number }
+        landownerBearsCostSeparately: { type: boolean }
+        developerBearsCostSeparately: { type: boolean }
+        lcaApplicable: { type: boolean }
+        validationStatus:
+          type: string
+          enum: [pending, valid, warning, invalid]
+        validationNotes: { type: string }
+        validatedAt: { type: string }
+        validatedByName: { type: string }
+        configuredByName: { type: string }
+        updatedByName: { type: string }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+
+    UpsertAccountingProfileBody:
+      type: object
+      properties:
+        costsChargedBeforeDistribution: { type: boolean }
+        lcaChargedBeforeDistribution: { type: boolean }
+        grossSplitPctLandowner: { type: number, minimum: 0, maximum: 100 }
+        grossSplitPctDeveloper: { type: number, minimum: 0, maximum: 100 }
+        landownerBearsCostSeparately: { type: boolean }
+        developerBearsCostSeparately: { type: boolean }
+
+    AccountingProfileValidationCheck:
+      type: object
+      required: [checkId, label, status, message]
+      properties:
+        checkId: { type: string }
+        label: { type: string }
+        status:
+          type: string
+          enum: [pass, warn, fail]
+        message: { type: string }
+
+    AccountingProfileValidationResult:
+      type: object
+      required: [agreementId, accountingModel, overallStatus, checks, profile]
+      properties:
+        agreementId: { type: string, format: uuid }
+        accountingModel:
+          type: string
+          enum: [contribution, fifty_percent_revenue]
+        overallStatus:
+          type: string
+          enum: [valid, warning, invalid]
+        checks:
+          type: array
+          items:
+            $ref: "#/components/schemas/AccountingProfileValidationCheck"
+        profile:
+          $ref: "#/components/schemas/AgreementAccountingProfile"
 
     InitiateAgreementActivationBody:
       type: object
