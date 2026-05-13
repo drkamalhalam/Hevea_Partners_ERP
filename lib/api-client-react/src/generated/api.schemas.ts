@@ -389,6 +389,11 @@ export interface AgreementVariablesResponse {
   totalCount: number;
 }
 
+export interface GenerateDocumentRequest {
+  /** ID of the agreement template to use for generation */
+  templateId: string;
+}
+
 export type UpdateAgreementVariablesBodyOverridesItem = {
   name: string;
   /** Set to null to clear the override */
@@ -1454,6 +1459,10 @@ export type GetUserActivityParams = {
 
 export type ListPartnerClaimantsParams = {
   projectId?: string;
+};
+
+export type GenerateAgreementDocument422 = {
+  error: string;
 };
 
 export type ListProductionRecordsParams = {

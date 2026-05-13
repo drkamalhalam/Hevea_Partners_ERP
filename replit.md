@@ -227,14 +227,18 @@ Dynamic placeholder substitution system for agreement templates. Replaces `{{VAR
 | Group | Variables |
 |---|---|
 | Project | `PROJECT_NAME`, `PROJECT_LOCATION` |
-| Parties | `LANDOWNER_NAME`, `DEVELOPER_NAME`, `LANDOWNER_ADDRESS` |
+| Parties | `LANDOWNER_NAME`, `DEVELOPER_NAME`, `LANDOWNER_ADDRESS`, `DEVELOPER_ADDRESS` |
 | Dates & Place | `DATE`, `EXECUTION_PLACE` |
-| Financial | `TERM_YEARS`, `LAND_AREA`, `OWNERSHIP_SHARE`, `DEVELOPER_OWNERSHIP_SHARE`, `LAND_VALUE_PER_UNIT`, `NOTIONAL_LAND_VALUE`, `YEARLY_ESCALATION`, `AMOUNT_IN_WORDS` (manual), `REVENUE_MODEL` |
+| Financial | `TERM_YEARS`, `LAND_AREA`, `OWNERSHIP_SHARE`, `DEVELOPER_OWNERSHIP_SHARE`, `LAND_VALUE_PER_UNIT`, `NOTIONAL_LAND_VALUE`, `YEARLY_ESCALATION`, `AMOUNT_IN_WORDS` (auto-computed), `REVENUE_MODEL` |
+
+**All 16 variables are now auto-resolved** — `AMOUNT_IN_WORDS` is computed from `NOTIONAL_LAND_VALUE` using `formatRupeesLegal()` (e.g. `Rs. 1,25,000/- (Rupees One Lakh Twenty-Five Thousand Only)`). No variable requires `dataSource: "manual"` any longer; all can still be overridden via the variable panel.
 
 **Server libs** (`artifacts/api-server/src/lib/`):
-- `variableRegistry.ts` — `VARIABLE_REGISTRY` typed map: name, label, description, dataSource (`project|partner|agreement|ownership|manual`), fieldPath, example, group
+- `variableRegistry.ts` — `VARIABLE_REGISTRY` typed map: name, label, description, dataSource, fieldPath, example, group
+- `formatters.ts` — pure legal formatting utilities: `amountInWords`, `formatRupeesLegal`, `formatINR`, `legalDate`, `ownershipShareLegal`, `landAreaLegal`, `escalationLegal`, `formatPercent`
 - `placeholderParser.ts` — `parsePlaceholders(text)` returns `{ all, known, unknown }`; `replacePlaceholders(text, values, fallback)` for substitution
-- `variableResolver.ts` — `resolveAgreementVariables(agreement)` fetches project/partner rows, maps all registry variables to resolved values; manual variables return null
+- `variableResolver.ts` — `resolveAgreementVariables(agreement)` fetches project/partner rows, applies legal formatters to all values
+- `documentGenerator.ts` — DOCX generation engine: loads template from GCS, builds variable map from DB, renders via docxtemplater, returns Buffer
 
 **DB table:** `agreementVariableValuesTable` (`lib/db/src/schema/agreement_variables.ts`) — UUID PK, agreementId FK (cascade), variableName, resolvedValue (auto), overrideValue (manual precedence), dataSourceType, isAutoResolved, resolvedAt; unique on (agreementId, variableName)
 
@@ -257,8 +261,41 @@ Dynamic placeholder substitution system for agreement templates. Replaces `{{VAR
 **Generated hooks:** `useListAgreementVariables`, `useUpdateAgreementVariables`, `useResolveAgreementVariables`, `getListAgreementVariablesQueryKey`
 
 **Extension points:**
-- Add new variables: extend `VARIABLE_REGISTRY`, add a case to `resolveVariable()` in `variableResolver.ts`
+- Add new variables: extend `VARIABLE_REGISTRY`, add a case to `resolveVariable()` in `variableResolver.ts`, add a formatter to `formatters.ts` if needed
 - Add new data sources (contributions, ownership): create a resolver context and add cases for the new `dataSourceType`
+
+## Legal Document Generation Engine
+
+Generates filled DOCX documents from stored templates by substituting `{{VARIABLE_NAME}}` tokens with the agreement's effective variable values. Preserves all original formatting: legal numbering, paragraph structure, tables, signature blocks, witness sections, headers/footers, and page layout.
+
+**Tech:** `docxtemplater` + `pizzip` — operates on the DOCX ZIP XML directly; only tagged tokens change, everything else is untouched.
+
+**Legal formatting utilities** (`artifacts/api-server/src/lib/formatters.ts`):
+- `amountInWords(n)` — Indian place-value system: crore / lakh / thousand (e.g. `125000` → `"One Lakh Twenty-Five Thousand"`)
+- `formatRupeesLegal(n)` — full legal expression: `"Rs. 1,25,000/- (Rupees One Lakh Twenty-Five Thousand Only)"`
+- `formatINR(n)` — figure only: `"Rs. 1,25,000/-"`
+- `legalDate(str)` — `"2026-05-13"` → `"13th day of May, 2026"`
+- `ownershipShareLegal(pct)` — `85` → `"85.00% (Eighty-Five Percent)"`
+- `landAreaLegal(area, unit)` — `"2.50 Kani"`
+- `escalationLegal(pct)` — `"5% per annum"`
+
+**Generation flow:**
+1. Admin/developer selects a template from the active DOCX template library
+2. `POST /agreements/:id/generate-document { templateId }` — server fetches template from GCS, reads all effectiveValues from `agreementVariableValuesTable`, renders via docxtemplater
+3. Unresolved variables render as `[PENDING: VARIABLE_NAME]` — visible in the document so the operator knows what still needs filling
+4. Response is `application/vnd.openxmlformats-officedocument.wordprocessingml.document` streamed as an attachment download
+
+**PDF templates:** not supported for generation (PDFs cannot be modified in-place). Users should upload DOCX versions for templates that need variable substitution.
+
+**Frontend:** `AgreementGeneratePanel` (`artifacts/plantation-web/src/pages/AgreementGeneratePanel.tsx`) — embedded below `AgreementVariablePanel` in `AgreementDetails.tsx`
+- Variable completion progress bar (amber when pending, green when all resolved)
+- Warning showing count of `[PENDING]` variables if any
+- Template dropdown (active DOCX templates only)
+- "Generate & Download DOCX" button — raw `fetch` call, triggers browser file save
+- Success confirmation with filename; error display on failure
+- Visible to admin/developer only
+
+**API endpoint:** `POST /agreements/{id}/generate-document` → binary DOCX (in `agreements.ts` route, uses `DocumentGenerationError` for typed error responses with HTTP status codes)
 
 ## Seeded Data
 

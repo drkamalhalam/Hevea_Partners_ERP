@@ -8,15 +8,15 @@
  * To add a new variable:
  *   1. Add an entry to VARIABLE_REGISTRY
  *   2. Add resolution logic to variableResolver.ts
- *   3. Use {{VARIABLE_NAME}} in the DOCX/PDF template
+ *   3. Use {{VARIABLE_NAME}} in the DOCX template
  */
 
 export type VariableDataSource =
-  | "project"     // resolved from the linked projectsTable row
-  | "partner"     // resolved from a linked partnersTable row
-  | "agreement"   // resolved from the agreementsTable row itself
-  | "ownership"   // resolved from ownership / assignment data
-  | "manual";     // must be entered manually (no automatic source)
+  | "project" // resolved from the linked projectsTable row
+  | "partner" // resolved from a linked partnersTable row
+  | "agreement" // resolved from the agreementsTable row itself
+  | "ownership" // resolved from ownership / assignment data
+  | "manual"; // must be entered manually (no automatic source)
 
 export interface VariableDefinition {
   name: string;
@@ -74,13 +74,23 @@ export const VARIABLE_REGISTRY: Record<string, VariableDefinition> = {
     example: "Village Manu, P.O. Manu, West Tripura – 799 290",
     group: "parties",
   },
+  DEVELOPER_ADDRESS: {
+    name: "DEVELOPER_ADDRESS",
+    label: "Developer Address",
+    description: "Registered address of the project developer",
+    dataSource: "partner",
+    fieldPath: "developer.address",
+    example: "Agartala, Tripura – 799 001",
+    group: "parties",
+  },
   DATE: {
     name: "DATE",
     label: "Execution Date",
-    description: "Date on which the agreement is executed",
+    description:
+      'Date on which the agreement is executed — formatted as "13th day of May, 2026"',
     dataSource: "agreement",
     fieldPath: "executionDate",
-    example: "13th day of May 2026",
+    example: "13th day of May, 2026",
     group: "dates",
   },
   EXECUTION_PLACE: {
@@ -104,63 +114,68 @@ export const VARIABLE_REGISTRY: Record<string, VariableDefinition> = {
   LAND_AREA: {
     name: "LAND_AREA",
     label: "Land Area",
-    description: "Area of land covered by this agreement",
+    description: 'Area of land covered by this agreement — e.g. "2.50 Kani"',
     dataSource: "agreement",
     fieldPath: "landArea",
-    example: "2.50 kani",
+    example: "2.50 Kani",
     group: "financial",
   },
   OWNERSHIP_SHARE: {
     name: "OWNERSHIP_SHARE",
-    label: "Landowner Ownership Share (%)",
-    description: "Post-maturity ownership percentage for the landowner",
+    label: "Landowner Ownership Share",
+    description:
+      'Post-maturity ownership percentage for the landowner — e.g. "15.00% (Fifteen Percent)"',
     dataSource: "agreement",
     fieldPath: "ownershipShareLandowner",
-    example: "15.00%",
+    example: "15.00% (Fifteen Percent)",
     group: "financial",
   },
   DEVELOPER_OWNERSHIP_SHARE: {
     name: "DEVELOPER_OWNERSHIP_SHARE",
-    label: "Developer Ownership Share (%)",
-    description: "Post-maturity ownership percentage for the developer",
+    label: "Developer Ownership Share",
+    description:
+      'Post-maturity ownership percentage for the developer — e.g. "85.00% (Eighty-Five Percent)"',
     dataSource: "agreement",
     fieldPath: "ownershipShareDeveloper",
-    example: "85.00%",
+    example: "85.00% (Eighty-Five Percent)",
     group: "financial",
   },
   LAND_VALUE_PER_UNIT: {
     name: "LAND_VALUE_PER_UNIT",
     label: "Land Value Per Unit",
-    description: "Agreed value per unit (kani) of land",
+    description: 'Agreed value per unit (kani) of land — e.g. "Rs. 50,000/-"',
     dataSource: "agreement",
     fieldPath: "landValuePerUnit",
-    example: "₹50,000",
+    example: "Rs. 50,000/-",
     group: "financial",
   },
   NOTIONAL_LAND_VALUE: {
     name: "NOTIONAL_LAND_VALUE",
     label: "Notional Land Value",
-    description: "Total notional value of the land parcel",
+    description: 'Total notional value of the land parcel — e.g. "Rs. 1,25,000/-"',
     dataSource: "agreement",
     fieldPath: "landNotionalValue",
-    example: "₹1,25,000",
+    example: "Rs. 1,25,000/-",
     group: "financial",
   },
   AMOUNT_IN_WORDS: {
     name: "AMOUNT_IN_WORDS",
     label: "Amount in Words",
-    description: "Rupee amount written out in full (manually entered)",
-    dataSource: "manual",
-    example: "Rupees One Lakh Twenty-Five Thousand Only",
+    description:
+      'Notional land value written in full legal form — auto-computed from Notional Land Value; e.g. "Rs. 1,25,000/- (Rupees One Lakh Twenty-Five Thousand Only)"',
+    dataSource: "agreement",
+    fieldPath: "landNotionalValue",
+    example: "Rs. 1,25,000/- (Rupees One Lakh Twenty-Five Thousand Only)",
     group: "financial",
   },
   YEARLY_ESCALATION: {
     name: "YEARLY_ESCALATION",
-    label: "Yearly Escalation (%)",
-    description: "Annual escalation percentage on land contribution",
+    label: "Yearly Escalation",
+    description:
+      'Annual escalation percentage on land contribution — e.g. "5% per annum"',
     dataSource: "agreement",
     fieldPath: "yearlyEscalation",
-    example: "5%",
+    example: "5% per annum",
     group: "financial",
   },
   REVENUE_MODEL: {

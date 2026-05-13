@@ -17,6 +17,7 @@ import {
 import { requireRole, canAccessProject } from "../middlewares/auth";
 import { VARIABLE_REGISTRY } from "../lib/variableRegistry";
 import { resolveAgreementVariables } from "../lib/variableResolver";
+import { generateDocument, DocumentGenerationError } from "../lib/documentGenerator";
 
 const router = Router();
 
@@ -273,6 +274,36 @@ router.post("/:id/variables/resolve", requireRole("admin", "developer"), async (
     res.json(buildVariablesResponse(id, stored));
   } catch (err) {
     req.log.error({ err }, "Failed to resolve agreement variables");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// POST /agreements/:id/generate-document — fill a DOCX template with resolved variables
+router.post("/:id/generate-document", requireRole("admin", "developer"), async (req, res) => {
+  const id = String(req.params.id);
+  const { templateId } = req.body as { templateId?: string };
+
+  if (!templateId) {
+    res.status(400).json({ error: "templateId is required" });
+    return;
+  }
+
+  try {
+    const result = await generateDocument({ agreementId: id, templateId });
+
+    res.setHeader("Content-Type", result.mimeType);
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${result.filename}"`,
+    );
+    res.setHeader("Content-Length", result.buffer.length);
+    res.send(result.buffer);
+  } catch (err) {
+    if (err instanceof DocumentGenerationError) {
+      res.status(err.statusCode).json({ error: err.message });
+      return;
+    }
+    req.log.error({ err }, "Failed to generate agreement document");
     res.status(500).json({ error: "Internal server error" });
   }
 });

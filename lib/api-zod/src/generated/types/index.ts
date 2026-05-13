@@ -37,6 +37,8 @@ export * from "./createTemplateBodyFileFormat";
 export * from "./dashboardSummary";
 export * from "./errorResponse";
 export * from "./fileMissingDeveloperCaseBody";
+export * from "./generateAgreementDocument422";
+export * from "./generateDocumentRequest";
 export * from "./getUserActivityParams";
 export * from "./governanceAlert";
 export * from "./governanceAlertCode";

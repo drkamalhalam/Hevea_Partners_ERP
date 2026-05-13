@@ -33,6 +33,8 @@ import type {
   DashboardSummary,
   ErrorResponse,
   FileMissingDeveloperCaseBody,
+  GenerateAgreementDocument422,
+  GenerateDocumentRequest,
   GetUserActivityParams,
   GovernanceSummary,
   HealthStatus,
@@ -5657,6 +5659,95 @@ export const useResolveAgreementVariables = <
   TContext
 > => {
   return useMutation(getResolveAgreementVariablesMutationOptions(options));
+};
+
+/**
+ * @summary Generate a filled DOCX document by substituting template variables
+ */
+export const getGenerateAgreementDocumentUrl = (id: string) => {
+  return `/api/agreements/${id}/generate-document`;
+};
+
+export const generateAgreementDocument = async (
+  id: string,
+  generateDocumentRequest: GenerateDocumentRequest,
+  options?: RequestInit,
+): Promise<Blob> => {
+  return customFetch<Blob>(getGenerateAgreementDocumentUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(generateDocumentRequest),
+  });
+};
+
+export const getGenerateAgreementDocumentMutationOptions = <
+  TError = ErrorType<void | GenerateAgreementDocument422>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof generateAgreementDocument>>,
+    TError,
+    { id: string; data: BodyType<GenerateDocumentRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof generateAgreementDocument>>,
+  TError,
+  { id: string; data: BodyType<GenerateDocumentRequest> },
+  TContext
+> => {
+  const mutationKey = ["generateAgreementDocument"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof generateAgreementDocument>>,
+    { id: string; data: BodyType<GenerateDocumentRequest> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return generateAgreementDocument(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type GenerateAgreementDocumentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof generateAgreementDocument>>
+>;
+export type GenerateAgreementDocumentMutationBody =
+  BodyType<GenerateDocumentRequest>;
+export type GenerateAgreementDocumentMutationError =
+  ErrorType<void | GenerateAgreementDocument422>;
+
+/**
+ * @summary Generate a filled DOCX document by substituting template variables
+ */
+export const useGenerateAgreementDocument = <
+  TError = ErrorType<void | GenerateAgreementDocument422>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof generateAgreementDocument>>,
+    TError,
+    { id: string; data: BodyType<GenerateDocumentRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof generateAgreementDocument>>,
+  TError,
+  { id: string; data: BodyType<GenerateDocumentRequest> },
+  TContext
+> => {
+  return useMutation(getGenerateAgreementDocumentMutationOptions(options));
 };
 
 /**

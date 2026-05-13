@@ -2147,6 +2147,20 @@ export const ResolveAgreementVariablesResponse = zod.object({
 });
 
 /**
+ * @summary Generate a filled DOCX document by substituting template variables
+ */
+export const GenerateAgreementDocumentParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const GenerateAgreementDocumentBody = zod.object({
+  templateId: zod
+    .string()
+    .uuid()
+    .describe("ID of the agreement template to use for generation"),
+});
+
+/**
  * @summary Get governance completeness summary for the current user
  */
 export const GetGovernanceSummaryResponse = zod.object({

@@ -1521,6 +1521,49 @@ paths:
         "404":
           description: Agreement not found
 
+  /agreements/{id}/generate-document:
+    post:
+      operationId: generateAgreementDocument
+      tags: [agreements]
+      summary: Generate a filled DOCX document by substituting template variables
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateDocumentRequest"
+      responses:
+        "200":
+          description: Generated DOCX file
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+          content:
+            application/vnd.openxmlformats-officedocument.wordprocessingml.document:
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: Agreement or template not found
+        "422":
+          description: Template is archived or not a DOCX format
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [error]
+                properties:
+                  error:
+                    type: string
+
   /governance/summary:
     get:
       operationId: getGovernanceSummary
@@ -2249,6 +2292,15 @@ components:
           description: Number of variables still without any value
         totalCount:
           type: integer
+
+    GenerateDocumentRequest:
+      type: object
+      required: [templateId]
+      properties:
+        templateId:
+          type: string
+          format: uuid
+          description: ID of the agreement template to use for generation
 
     UpdateAgreementVariablesBody:
       type: object
