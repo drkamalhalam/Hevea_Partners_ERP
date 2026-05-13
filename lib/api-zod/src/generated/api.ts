@@ -3235,3 +3235,404 @@ export const RestoreTemplateResponse = zod.object({
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date().nullish(),
 });
+
+/**
+ * @summary List contribution ledger entries
+ */
+export const ListContributionsQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+  partnerId: zod.coerce.string().uuid().optional(),
+  contributionType: zod
+    .enum([
+      "land_notional",
+      "economic_investment",
+      "operational_cost",
+      "recoverable_advance",
+      "manual_adjustment",
+    ])
+    .optional(),
+  verificationStatus: zod
+    .enum(["draft", "pending_verification", "verified", "rejected"])
+    .optional(),
+});
+
+export const ListContributionsResponse = zod.object({
+  contributions: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      projectId: zod.string().uuid(),
+      projectName: zod.string().nullish(),
+      partnerId: zod.string().uuid().nullish(),
+      partnerName: zod.string(),
+      contributionType: zod.enum([
+        "land_notional",
+        "economic_investment",
+        "operational_cost",
+        "recoverable_advance",
+        "manual_adjustment",
+      ]),
+      amount: zod.number().describe("Amount in INR"),
+      contributionDate: zod.coerce.date(),
+      lifecyclePhaseSnapshot: zod
+        .string()
+        .describe("Project lifecycle phase at time of recording"),
+      agreementId: zod.string().uuid().nullish(),
+      referenceNumber: zod.string().nullish(),
+      remarks: zod.string().nullish(),
+      affectsOwnership: zod
+        .boolean()
+        .describe(
+          "Whether this contribution is eligible to influence ownership guidance",
+        ),
+      verificationStatus: zod.enum([
+        "draft",
+        "pending_verification",
+        "verified",
+        "rejected",
+      ]),
+      verifiedAt: zod.coerce.date().nullish(),
+      verifiedBy: zod.string().uuid().nullish(),
+      verifiedByName: zod.string().nullish(),
+      verifierNotes: zod.string().nullish(),
+      recordedBy: zod.string().uuid().nullish(),
+      recordedByName: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date().nullish(),
+    }),
+  ),
+});
+
+/**
+ * @summary Record a new contribution entry
+ */
+export const CreateContributionBody = zod.object({
+  projectId: zod.string().uuid(),
+  partnerId: zod.string().uuid().optional(),
+  partnerName: zod.string(),
+  contributionType: zod.enum([
+    "land_notional",
+    "economic_investment",
+    "operational_cost",
+    "recoverable_advance",
+    "manual_adjustment",
+  ]),
+  amount: zod.number(),
+  contributionDate: zod.coerce.date(),
+  lifecyclePhaseSnapshot: zod.string().optional(),
+  agreementId: zod.string().uuid().optional(),
+  referenceNumber: zod.string().optional(),
+  remarks: zod.string().optional(),
+  affectsOwnership: zod.boolean().optional(),
+});
+
+/**
+ * @summary Aggregated contribution summary per project
+ */
+export const GetContributionSummaryQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+});
+
+export const GetContributionSummaryResponse = zod.object({
+  projects: zod.array(
+    zod.object({
+      projectId: zod.string().uuid(),
+      projectName: zod.string(),
+      totalAmount: zod.number(),
+      verifiedAmount: zod.number(),
+      ownershipEligibleAmount: zod
+        .number()
+        .describe(
+          "Sum of verified prematurity contributions that affect ownership",
+        ),
+      byType: zod.record(zod.string(), zod.number()),
+      draftCount: zod.number().optional(),
+      pendingCount: zod.number().optional(),
+      verifiedCount: zod.number().optional(),
+      rejectedCount: zod.number().optional(),
+    }),
+  ),
+  totals: zod.object({
+    totalAmount: zod.number(),
+    verifiedAmount: zod.number(),
+    ownershipEligibleAmount: zod.number(),
+    count: zod.number(),
+  }),
+});
+
+/**
+ * @summary Get a single contribution entry
+ */
+export const GetContributionParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const GetContributionResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  projectName: zod.string().nullish(),
+  partnerId: zod.string().uuid().nullish(),
+  partnerName: zod.string(),
+  contributionType: zod.enum([
+    "land_notional",
+    "economic_investment",
+    "operational_cost",
+    "recoverable_advance",
+    "manual_adjustment",
+  ]),
+  amount: zod.number().describe("Amount in INR"),
+  contributionDate: zod.coerce.date(),
+  lifecyclePhaseSnapshot: zod
+    .string()
+    .describe("Project lifecycle phase at time of recording"),
+  agreementId: zod.string().uuid().nullish(),
+  referenceNumber: zod.string().nullish(),
+  remarks: zod.string().nullish(),
+  affectsOwnership: zod
+    .boolean()
+    .describe(
+      "Whether this contribution is eligible to influence ownership guidance",
+    ),
+  verificationStatus: zod.enum([
+    "draft",
+    "pending_verification",
+    "verified",
+    "rejected",
+  ]),
+  verifiedAt: zod.coerce.date().nullish(),
+  verifiedBy: zod.string().uuid().nullish(),
+  verifiedByName: zod.string().nullish(),
+  verifierNotes: zod.string().nullish(),
+  recordedBy: zod.string().uuid().nullish(),
+  recordedByName: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date().nullish(),
+});
+
+/**
+ * @summary Update contribution metadata (admin/developer only)
+ */
+export const UpdateContributionParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const UpdateContributionBody = zod.object({
+  amount: zod.number().optional(),
+  contributionDate: zod.coerce.date().optional(),
+  contributionType: zod
+    .enum([
+      "land_notional",
+      "economic_investment",
+      "operational_cost",
+      "recoverable_advance",
+      "manual_adjustment",
+    ])
+    .optional(),
+  agreementId: zod.string().uuid().optional(),
+  referenceNumber: zod.string().optional(),
+  remarks: zod.string().optional(),
+  affectsOwnership: zod.boolean().optional(),
+});
+
+export const UpdateContributionResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  projectName: zod.string().nullish(),
+  partnerId: zod.string().uuid().nullish(),
+  partnerName: zod.string(),
+  contributionType: zod.enum([
+    "land_notional",
+    "economic_investment",
+    "operational_cost",
+    "recoverable_advance",
+    "manual_adjustment",
+  ]),
+  amount: zod.number().describe("Amount in INR"),
+  contributionDate: zod.coerce.date(),
+  lifecyclePhaseSnapshot: zod
+    .string()
+    .describe("Project lifecycle phase at time of recording"),
+  agreementId: zod.string().uuid().nullish(),
+  referenceNumber: zod.string().nullish(),
+  remarks: zod.string().nullish(),
+  affectsOwnership: zod
+    .boolean()
+    .describe(
+      "Whether this contribution is eligible to influence ownership guidance",
+    ),
+  verificationStatus: zod.enum([
+    "draft",
+    "pending_verification",
+    "verified",
+    "rejected",
+  ]),
+  verifiedAt: zod.coerce.date().nullish(),
+  verifiedBy: zod.string().uuid().nullish(),
+  verifiedByName: zod.string().nullish(),
+  verifierNotes: zod.string().nullish(),
+  recordedBy: zod.string().uuid().nullish(),
+  recordedByName: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date().nullish(),
+});
+
+/**
+ * @summary Soft-delete a contribution entry (admin only)
+ */
+export const DeleteContributionParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+/**
+ * @summary Submit a draft contribution for admin verification
+ */
+export const SubmitContributionForVerificationParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const SubmitContributionForVerificationResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  projectName: zod.string().nullish(),
+  partnerId: zod.string().uuid().nullish(),
+  partnerName: zod.string(),
+  contributionType: zod.enum([
+    "land_notional",
+    "economic_investment",
+    "operational_cost",
+    "recoverable_advance",
+    "manual_adjustment",
+  ]),
+  amount: zod.number().describe("Amount in INR"),
+  contributionDate: zod.coerce.date(),
+  lifecyclePhaseSnapshot: zod
+    .string()
+    .describe("Project lifecycle phase at time of recording"),
+  agreementId: zod.string().uuid().nullish(),
+  referenceNumber: zod.string().nullish(),
+  remarks: zod.string().nullish(),
+  affectsOwnership: zod
+    .boolean()
+    .describe(
+      "Whether this contribution is eligible to influence ownership guidance",
+    ),
+  verificationStatus: zod.enum([
+    "draft",
+    "pending_verification",
+    "verified",
+    "rejected",
+  ]),
+  verifiedAt: zod.coerce.date().nullish(),
+  verifiedBy: zod.string().uuid().nullish(),
+  verifiedByName: zod.string().nullish(),
+  verifierNotes: zod.string().nullish(),
+  recordedBy: zod.string().uuid().nullish(),
+  recordedByName: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date().nullish(),
+});
+
+/**
+ * @summary Verify a contribution entry (admin only)
+ */
+export const VerifyContributionParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const VerifyContributionBody = zod.object({
+  notes: zod.string().optional(),
+});
+
+export const VerifyContributionResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  projectName: zod.string().nullish(),
+  partnerId: zod.string().uuid().nullish(),
+  partnerName: zod.string(),
+  contributionType: zod.enum([
+    "land_notional",
+    "economic_investment",
+    "operational_cost",
+    "recoverable_advance",
+    "manual_adjustment",
+  ]),
+  amount: zod.number().describe("Amount in INR"),
+  contributionDate: zod.coerce.date(),
+  lifecyclePhaseSnapshot: zod
+    .string()
+    .describe("Project lifecycle phase at time of recording"),
+  agreementId: zod.string().uuid().nullish(),
+  referenceNumber: zod.string().nullish(),
+  remarks: zod.string().nullish(),
+  affectsOwnership: zod
+    .boolean()
+    .describe(
+      "Whether this contribution is eligible to influence ownership guidance",
+    ),
+  verificationStatus: zod.enum([
+    "draft",
+    "pending_verification",
+    "verified",
+    "rejected",
+  ]),
+  verifiedAt: zod.coerce.date().nullish(),
+  verifiedBy: zod.string().uuid().nullish(),
+  verifiedByName: zod.string().nullish(),
+  verifierNotes: zod.string().nullish(),
+  recordedBy: zod.string().uuid().nullish(),
+  recordedByName: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date().nullish(),
+});
+
+/**
+ * @summary Reject a contribution entry (admin only)
+ */
+export const RejectContributionParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const RejectContributionBody = zod.object({
+  notes: zod.string().optional(),
+});
+
+export const RejectContributionResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  projectName: zod.string().nullish(),
+  partnerId: zod.string().uuid().nullish(),
+  partnerName: zod.string(),
+  contributionType: zod.enum([
+    "land_notional",
+    "economic_investment",
+    "operational_cost",
+    "recoverable_advance",
+    "manual_adjustment",
+  ]),
+  amount: zod.number().describe("Amount in INR"),
+  contributionDate: zod.coerce.date(),
+  lifecyclePhaseSnapshot: zod
+    .string()
+    .describe("Project lifecycle phase at time of recording"),
+  agreementId: zod.string().uuid().nullish(),
+  referenceNumber: zod.string().nullish(),
+  remarks: zod.string().nullish(),
+  affectsOwnership: zod
+    .boolean()
+    .describe(
+      "Whether this contribution is eligible to influence ownership guidance",
+    ),
+  verificationStatus: zod.enum([
+    "draft",
+    "pending_verification",
+    "verified",
+    "rejected",
+  ]),
+  verifiedAt: zod.coerce.date().nullish(),
+  verifiedBy: zod.string().uuid().nullish(),
+  verifiedByName: zod.string().nullish(),
+  verifierNotes: zod.string().nullish(),
+  recordedBy: zod.string().uuid().nullish(),
+  recordedByName: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date().nullish(),
+});

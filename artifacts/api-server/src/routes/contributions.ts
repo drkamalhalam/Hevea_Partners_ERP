@@ -1,0 +1,613 @@
+import { Router } from "express";
+import { getAuth } from "@clerk/express";
+import { eq, and, isNull, inArray, desc, sql } from "drizzle-orm";
+import {
+  db,
+  contributionsTable,
+  projectsTable,
+  partnersTable,
+  usersTable,
+  userProjectAssignmentsTable,
+} from "@workspace/db";
+import { requireRole } from "../middlewares/auth";
+
+const router = Router();
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+const VALID_CONTRIBUTION_TYPES = [
+  "land_notional",
+  "economic_investment",
+  "operational_cost",
+  "recoverable_advance",
+  "manual_adjustment",
+] as const;
+type ContributionType = (typeof VALID_CONTRIBUTION_TYPES)[number];
+
+const VALID_VERIFICATION_STATUSES = [
+  "draft",
+  "pending_verification",
+  "verified",
+  "rejected",
+] as const;
+type VerificationStatus = (typeof VALID_VERIFICATION_STATUSES)[number];
+
+/**
+ * Types that automatically affect ownership (default affectsOwnership=true).
+ * operational_cost is excluded — it NEVER creates ownership rights.
+ */
+const OWNERSHIP_AFFECTING_TYPES: ContributionType[] = [
+  "land_notional",
+  "economic_investment",
+  "recoverable_advance",
+  "manual_adjustment",
+];
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+interface ActingUser {
+  id: string;
+  name: string | null;
+  role: string;
+}
+
+async function resolveActingUser(clerkUserId: string): Promise<ActingUser | null> {
+  const rows = await db
+    .select({ id: usersTable.id, displayName: usersTable.displayName, role: usersTable.role })
+    .from(usersTable)
+    .where(eq(usersTable.clerkUserId, clerkUserId))
+    .limit(1);
+  if (!rows[0]) return null;
+  return { id: rows[0].id, name: rows[0].displayName, role: rows[0].role };
+}
+
+async function getAssignedProjectIds(userId: string): Promise<string[]> {
+  const rows = await db
+    .select({ projectId: userProjectAssignmentsTable.projectId })
+    .from(userProjectAssignmentsTable)
+    .where(eq(userProjectAssignmentsTable.userId, userId));
+  return rows.map((r) => r.projectId);
+}
+
+function canAccessAllProjects(role: string): boolean {
+  return role === "admin" || role === "developer";
+}
+
+function parseAmount(v: unknown): number | null {
+  if (typeof v === "number" && v > 0 && isFinite(v)) return v;
+  return null;
+}
+
+function isValidDate(s: unknown): s is string {
+  if (typeof s !== "string") return false;
+  return /^\d{4}-\d{2}-\d{2}$/.test(s);
+}
+
+// ── Format contribution row for API response ──────────────────────────────────
+
+function formatContribution(
+  row: typeof contributionsTable.$inferSelect & { projectName?: string | null },
+) {
+  return {
+    id: row.id,
+    projectId: row.projectId,
+    projectName: row.projectName ?? null,
+    partnerId: row.partnerId,
+    partnerName: row.partnerName,
+    contributionType: row.contributionType,
+    amount: row.amount,
+    contributionDate: row.contributionDate,
+    lifecyclePhaseSnapshot: row.lifecyclePhaseSnapshot,
+    agreementId: row.agreementId,
+    referenceNumber: row.referenceNumber,
+    remarks: row.remarks,
+    affectsOwnership: row.affectsOwnership,
+    verificationStatus: row.verificationStatus,
+    verifiedAt: row.verifiedAt?.toISOString() ?? null,
+    verifiedBy: row.verifiedBy,
+    verifiedByName: row.verifiedByName,
+    verifierNotes: row.verifierNotes,
+    recordedBy: row.recordedBy,
+    recordedByName: row.recordedByName,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt?.toISOString() ?? null,
+  };
+}
+
+// ── GET /contributions/summary ────────────────────────────────────────────────
+
+router.get("/contributions/summary", async (req, res) => {
+  const { userId: clerkUserId } = getAuth(req);
+  if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
+
+  const actor = await resolveActingUser(clerkUserId);
+  if (!actor) return res.status(401).json({ error: "User not found" });
+
+  // Determine visible project IDs
+  let visibleProjectIds: string[] | null = null; // null = all
+  if (!canAccessAllProjects(actor.role)) {
+    visibleProjectIds = await getAssignedProjectIds(actor.id);
+    if (visibleProjectIds.length === 0) {
+      return res.json({ projects: [], totals: { totalAmount: 0, verifiedAmount: 0, ownershipEligibleAmount: 0, count: 0 } });
+    }
+  }
+
+  // Filter by optional projectId query param
+  const filterProjectId = typeof req.query.projectId === "string" ? req.query.projectId : null;
+  if (filterProjectId) {
+    if (visibleProjectIds !== null && !visibleProjectIds.includes(filterProjectId)) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+    visibleProjectIds = [filterProjectId];
+  }
+
+  // Fetch all non-deleted contributions
+  const conditions = [isNull(contributionsTable.deletedAt)];
+  if (visibleProjectIds !== null) {
+    conditions.push(inArray(contributionsTable.projectId, visibleProjectIds));
+  }
+
+  const rows = await db
+    .select({
+      id: contributionsTable.id,
+      projectId: contributionsTable.projectId,
+      amount: contributionsTable.amount,
+      contributionType: contributionsTable.contributionType,
+      verificationStatus: contributionsTable.verificationStatus,
+      lifecyclePhaseSnapshot: contributionsTable.lifecyclePhaseSnapshot,
+      affectsOwnership: contributionsTable.affectsOwnership,
+      projectName: projectsTable.name,
+    })
+    .from(contributionsTable)
+    .leftJoin(projectsTable, eq(contributionsTable.projectId, projectsTable.id))
+    .where(and(...conditions))
+    .orderBy(desc(contributionsTable.createdAt));
+
+  // Aggregate per project
+  const projectMap = new Map<
+    string,
+    {
+      projectId: string;
+      projectName: string;
+      totalAmount: number;
+      verifiedAmount: number;
+      ownershipEligibleAmount: number;
+      byType: Record<string, number>;
+      draftCount: number;
+      pendingCount: number;
+      verifiedCount: number;
+      rejectedCount: number;
+    }
+  >();
+
+  let grandTotal = 0;
+  let grandVerified = 0;
+  let grandOwnership = 0;
+  let grandCount = 0;
+
+  for (const row of rows) {
+    if (!projectMap.has(row.projectId)) {
+      projectMap.set(row.projectId, {
+        projectId: row.projectId,
+        projectName: row.projectName ?? "Unknown Project",
+        totalAmount: 0,
+        verifiedAmount: 0,
+        ownershipEligibleAmount: 0,
+        byType: {},
+        draftCount: 0,
+        pendingCount: 0,
+        verifiedCount: 0,
+        rejectedCount: 0,
+      });
+    }
+    const p = projectMap.get(row.projectId)!;
+    p.totalAmount += row.amount;
+    p.byType[row.contributionType] = (p.byType[row.contributionType] ?? 0) + row.amount;
+
+    if (row.verificationStatus === "verified") {
+      p.verifiedAmount += row.amount;
+      grandVerified += row.amount;
+      if (row.affectsOwnership && row.lifecyclePhaseSnapshot === "prematurity") {
+        p.ownershipEligibleAmount += row.amount;
+        grandOwnership += row.amount;
+      }
+    }
+
+    if (row.verificationStatus === "draft") p.draftCount++;
+    if (row.verificationStatus === "pending_verification") p.pendingCount++;
+    if (row.verificationStatus === "verified") p.verifiedCount++;
+    if (row.verificationStatus === "rejected") p.rejectedCount++;
+
+    grandTotal += row.amount;
+    grandCount++;
+  }
+
+  return res.json({
+    projects: Array.from(projectMap.values()),
+    totals: {
+      totalAmount: grandTotal,
+      verifiedAmount: grandVerified,
+      ownershipEligibleAmount: grandOwnership,
+      count: grandCount,
+    },
+  });
+});
+
+// ── GET /contributions ────────────────────────────────────────────────────────
+
+router.get("/contributions", async (req, res) => {
+  const { userId: clerkUserId } = getAuth(req);
+  if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
+
+  const actor = await resolveActingUser(clerkUserId);
+  if (!actor) return res.status(401).json({ error: "User not found" });
+
+  let visibleProjectIds: string[] | null = null;
+  if (!canAccessAllProjects(actor.role)) {
+    visibleProjectIds = await getAssignedProjectIds(actor.id);
+    if (visibleProjectIds.length === 0) return res.json({ contributions: [] });
+  }
+
+  const conditions: ReturnType<typeof eq>[] = [isNull(contributionsTable.deletedAt) as unknown as ReturnType<typeof eq>];
+
+  // Optional filters
+  if (typeof req.query.projectId === "string") {
+    const pid = req.query.projectId;
+    if (visibleProjectIds !== null && !visibleProjectIds.includes(pid)) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+    conditions.push(eq(contributionsTable.projectId, pid) as unknown as ReturnType<typeof eq>);
+  } else if (visibleProjectIds !== null) {
+    conditions.push(inArray(contributionsTable.projectId, visibleProjectIds) as unknown as ReturnType<typeof eq>);
+  }
+
+  if (typeof req.query.partnerId === "string") {
+    conditions.push(eq(contributionsTable.partnerId, req.query.partnerId) as unknown as ReturnType<typeof eq>);
+  }
+  if (typeof req.query.contributionType === "string" && VALID_CONTRIBUTION_TYPES.includes(req.query.contributionType as ContributionType)) {
+    conditions.push(eq(contributionsTable.contributionType, req.query.contributionType as ContributionType) as unknown as ReturnType<typeof eq>);
+  }
+  if (typeof req.query.verificationStatus === "string" && VALID_VERIFICATION_STATUSES.includes(req.query.verificationStatus as VerificationStatus)) {
+    conditions.push(eq(contributionsTable.verificationStatus, req.query.verificationStatus as VerificationStatus) as unknown as ReturnType<typeof eq>);
+  }
+
+  const rows = await db
+    .select({
+      contribution: contributionsTable,
+      projectName: projectsTable.name,
+    })
+    .from(contributionsTable)
+    .leftJoin(projectsTable, eq(contributionsTable.projectId, projectsTable.id))
+    .where(and(...(conditions as Parameters<typeof and>)))
+    .orderBy(desc(contributionsTable.createdAt));
+
+  return res.json({
+    contributions: rows.map((r) =>
+      formatContribution({ ...r.contribution, projectName: r.projectName }),
+    ),
+  });
+});
+
+// ── POST /contributions ────────────────────────────────────────────────────────
+
+router.post(
+  "/contributions",
+  requireRole("admin", "developer"),
+  async (req, res) => {
+    const { userId: clerkUserId } = getAuth(req);
+    if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
+
+    const actor = await resolveActingUser(clerkUserId);
+    if (!actor) return res.status(401).json({ error: "User not found" });
+
+    const b = req.body as Record<string, unknown>;
+
+    if (!b.projectId || typeof b.projectId !== "string") {
+      return res.status(400).json({ error: "projectId is required" });
+    }
+    if (!b.contributionType || !VALID_CONTRIBUTION_TYPES.includes(b.contributionType as ContributionType)) {
+      return res.status(400).json({ error: "contributionType must be one of: " + VALID_CONTRIBUTION_TYPES.join(", ") });
+    }
+    const amount = parseAmount(b.amount);
+    if (!amount) return res.status(400).json({ error: "amount must be a positive number" });
+    if (!isValidDate(b.contributionDate)) {
+      return res.status(400).json({ error: "contributionDate must be YYYY-MM-DD" });
+    }
+    if (!b.partnerName || typeof b.partnerName !== "string") {
+      return res.status(400).json({ error: "partnerName is required" });
+    }
+
+    const cType = b.contributionType as ContributionType;
+
+    // Auto-determine affectsOwnership: false for operational_cost, true for others
+    // Allow explicit override only for manual_adjustment
+    let affectsOwnership = OWNERSHIP_AFFECTING_TYPES.includes(cType);
+    if (cType === "manual_adjustment" && typeof b.affectsOwnership === "boolean") {
+      affectsOwnership = b.affectsOwnership;
+    }
+
+    // Fetch current project lifecycle phase for the snapshot
+    const projectRows = await db
+      .select({ lifecycleStatus: projectsTable.lifecycleStatus, name: projectsTable.name })
+      .from(projectsTable)
+      .where(eq(projectsTable.id, String(b.projectId)))
+      .limit(1);
+    if (!projectRows[0]) return res.status(400).json({ error: "Project not found" });
+
+    const lifecyclePhaseSnapshot =
+      typeof b.lifecyclePhaseSnapshot === "string"
+        ? b.lifecyclePhaseSnapshot
+        : (projectRows[0].lifecycleStatus ?? "prematurity");
+
+    const [inserted] = await db
+      .insert(contributionsTable)
+      .values({
+        projectId: String(b.projectId),
+        partnerId: typeof b.partnerId === "string" ? b.partnerId : null,
+        partnerName: b.partnerName,
+        contributionType: cType,
+        amount,
+        contributionDate: b.contributionDate,
+        lifecyclePhaseSnapshot,
+        agreementId: typeof b.agreementId === "string" ? b.agreementId : null,
+        referenceNumber: typeof b.referenceNumber === "string" ? b.referenceNumber : null,
+        remarks: typeof b.remarks === "string" ? b.remarks : null,
+        affectsOwnership,
+        verificationStatus: "draft",
+        recordedBy: actor.id,
+        recordedByName: actor.name,
+      })
+      .returning();
+
+    return res.status(201).json(formatContribution({ ...inserted, projectName: projectRows[0].name }));
+  },
+);
+
+// ── GET /contributions/:id ─────────────────────────────────────────────────────
+
+router.get("/contributions/:id", async (req, res) => {
+  const { userId: clerkUserId } = getAuth(req);
+  if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
+
+  const actor = await resolveActingUser(clerkUserId);
+  if (!actor) return res.status(401).json({ error: "User not found" });
+
+  const id = String(req.params.id);
+  const rows = await db
+    .select({ contribution: contributionsTable, projectName: projectsTable.name })
+    .from(contributionsTable)
+    .leftJoin(projectsTable, eq(contributionsTable.projectId, projectsTable.id))
+    .where(and(eq(contributionsTable.id, id), isNull(contributionsTable.deletedAt)))
+    .limit(1);
+
+  if (!rows[0]) return res.status(404).json({ error: "Contribution not found" });
+
+  const row = rows[0];
+  // Role-based project visibility check
+  if (!canAccessAllProjects(actor.role)) {
+    const assigned = await getAssignedProjectIds(actor.id);
+    if (!assigned.includes(row.contribution.projectId)) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+  }
+
+  return res.json(formatContribution({ ...row.contribution, projectName: row.projectName }));
+});
+
+// ── PATCH /contributions/:id ───────────────────────────────────────────────────
+
+router.patch(
+  "/contributions/:id",
+  requireRole("admin", "developer"),
+  async (req, res) => {
+    const { userId: clerkUserId } = getAuth(req);
+    if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
+
+    const actor = await resolveActingUser(clerkUserId);
+    if (!actor) return res.status(401).json({ error: "User not found" });
+
+    const id = String(req.params.id);
+    const existing = await db
+      .select()
+      .from(contributionsTable)
+      .where(and(eq(contributionsTable.id, id), isNull(contributionsTable.deletedAt)))
+      .limit(1);
+    if (!existing[0]) return res.status(404).json({ error: "Contribution not found" });
+
+    const current = existing[0];
+
+    // Cannot edit verified or rejected entries (only admin can correct via new manual_adjustment)
+    if (current.verificationStatus === "verified" && actor.role !== "admin") {
+      return res.status(403).json({ error: "Cannot edit a verified contribution" });
+    }
+
+    const b = req.body as Record<string, unknown>;
+    const updates: Partial<typeof contributionsTable.$inferInsert> = {};
+
+    if ("amount" in b) {
+      const amt = parseAmount(b.amount);
+      if (!amt) return res.status(400).json({ error: "amount must be a positive number" });
+      updates.amount = amt;
+    }
+    if ("contributionDate" in b) {
+      if (!isValidDate(b.contributionDate)) return res.status(400).json({ error: "contributionDate must be YYYY-MM-DD" });
+      updates.contributionDate = b.contributionDate;
+    }
+    if ("contributionType" in b) {
+      if (!VALID_CONTRIBUTION_TYPES.includes(b.contributionType as ContributionType)) {
+        return res.status(400).json({ error: "Invalid contributionType" });
+      }
+      updates.contributionType = b.contributionType as ContributionType;
+      // Re-derive affectsOwnership when type changes
+      if ((b.contributionType as ContributionType) !== "manual_adjustment") {
+        updates.affectsOwnership = OWNERSHIP_AFFECTING_TYPES.includes(b.contributionType as ContributionType);
+      }
+    }
+    if ("agreementId" in b) updates.agreementId = b.agreementId === null ? null : (typeof b.agreementId === "string" ? b.agreementId : undefined);
+    if ("referenceNumber" in b && typeof b.referenceNumber === "string") updates.referenceNumber = b.referenceNumber;
+    if ("remarks" in b && typeof b.remarks === "string") updates.remarks = b.remarks;
+    // affectsOwnership override only for manual_adjustment and admin
+    if ("affectsOwnership" in b && typeof b.affectsOwnership === "boolean") {
+      if (current.contributionType === "manual_adjustment" || actor.role === "admin") {
+        updates.affectsOwnership = b.affectsOwnership;
+      }
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ error: "No valid fields to update" });
+    }
+
+    const [updated] = await db
+      .update(contributionsTable)
+      .set(updates)
+      .where(eq(contributionsTable.id, id))
+      .returning();
+
+    const projectRows = await db
+      .select({ name: projectsTable.name })
+      .from(projectsTable)
+      .where(eq(projectsTable.id, updated.projectId))
+      .limit(1);
+
+    return res.json(formatContribution({ ...updated, projectName: projectRows[0]?.name }));
+  },
+);
+
+// ── POST /contributions/:id/submit ─────────────────────────────────────────────
+
+router.post(
+  "/contributions/:id/submit",
+  requireRole("admin", "developer"),
+  async (req, res) => {
+    const { userId: clerkUserId } = getAuth(req);
+    if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
+
+    const id = String(req.params.id);
+    const existing = await db
+      .select()
+      .from(contributionsTable)
+      .where(and(eq(contributionsTable.id, id), isNull(contributionsTable.deletedAt)))
+      .limit(1);
+    if (!existing[0]) return res.status(404).json({ error: "Contribution not found" });
+
+    if (existing[0].verificationStatus !== "draft") {
+      return res.status(400).json({ error: "Only draft contributions can be submitted for verification" });
+    }
+
+    const [updated] = await db
+      .update(contributionsTable)
+      .set({ verificationStatus: "pending_verification" })
+      .where(eq(contributionsTable.id, id))
+      .returning();
+
+    const projectRows = await db.select({ name: projectsTable.name }).from(projectsTable).where(eq(projectsTable.id, updated.projectId)).limit(1);
+    return res.json(formatContribution({ ...updated, projectName: projectRows[0]?.name }));
+  },
+);
+
+// ── POST /contributions/:id/verify ─────────────────────────────────────────────
+
+router.post(
+  "/contributions/:id/verify",
+  requireRole("admin"),
+  async (req, res) => {
+    const { userId: clerkUserId } = getAuth(req);
+    if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
+
+    const actor = await resolveActingUser(clerkUserId);
+    if (!actor) return res.status(401).json({ error: "User not found" });
+
+    const id = String(req.params.id);
+    const existing = await db
+      .select()
+      .from(contributionsTable)
+      .where(and(eq(contributionsTable.id, id), isNull(contributionsTable.deletedAt)))
+      .limit(1);
+    if (!existing[0]) return res.status(404).json({ error: "Contribution not found" });
+    if (existing[0].verificationStatus === "verified") {
+      return res.status(400).json({ error: "Already verified" });
+    }
+
+    const b = req.body as Record<string, unknown>;
+    const [updated] = await db
+      .update(contributionsTable)
+      .set({
+        verificationStatus: "verified",
+        verifiedAt: new Date(),
+        verifiedBy: actor.id,
+        verifiedByName: actor.name,
+        verifierNotes: typeof b.notes === "string" ? b.notes : null,
+      })
+      .where(eq(contributionsTable.id, id))
+      .returning();
+
+    const projectRows = await db.select({ name: projectsTable.name }).from(projectsTable).where(eq(projectsTable.id, updated.projectId)).limit(1);
+    return res.json(formatContribution({ ...updated, projectName: projectRows[0]?.name }));
+  },
+);
+
+// ── POST /contributions/:id/reject ─────────────────────────────────────────────
+
+router.post(
+  "/contributions/:id/reject",
+  requireRole("admin"),
+  async (req, res) => {
+    const { userId: clerkUserId } = getAuth(req);
+    if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
+
+    const actor = await resolveActingUser(clerkUserId);
+    if (!actor) return res.status(401).json({ error: "User not found" });
+
+    const id = String(req.params.id);
+    const existing = await db
+      .select()
+      .from(contributionsTable)
+      .where(and(eq(contributionsTable.id, id), isNull(contributionsTable.deletedAt)))
+      .limit(1);
+    if (!existing[0]) return res.status(404).json({ error: "Contribution not found" });
+    if (existing[0].verificationStatus === "rejected") {
+      return res.status(400).json({ error: "Already rejected" });
+    }
+
+    const b = req.body as Record<string, unknown>;
+    const [updated] = await db
+      .update(contributionsTable)
+      .set({
+        verificationStatus: "rejected",
+        verifiedAt: new Date(),
+        verifiedBy: actor.id,
+        verifiedByName: actor.name,
+        verifierNotes: typeof b.notes === "string" ? b.notes : null,
+      })
+      .where(eq(contributionsTable.id, id))
+      .returning();
+
+    const projectRows = await db.select({ name: projectsTable.name }).from(projectsTable).where(eq(projectsTable.id, updated.projectId)).limit(1);
+    return res.json(formatContribution({ ...updated, projectName: projectRows[0]?.name }));
+  },
+);
+
+// ── DELETE /contributions/:id ──────────────────────────────────────────────────
+
+router.delete(
+  "/contributions/:id",
+  requireRole("admin"),
+  async (req, res) => {
+    const id = String(req.params.id);
+    const existing = await db
+      .select()
+      .from(contributionsTable)
+      .where(and(eq(contributionsTable.id, id), isNull(contributionsTable.deletedAt)))
+      .limit(1);
+    if (!existing[0]) return res.status(404).json({ error: "Contribution not found" });
+
+    await db
+      .update(contributionsTable)
+      .set({ isActive: false, deletedAt: new Date() })
+      .where(eq(contributionsTable.id, id));
+
+    return res.status(204).send();
+  },
+);
+
+export default router;

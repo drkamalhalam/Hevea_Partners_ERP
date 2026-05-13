@@ -45,27 +45,6 @@ const auditCols = (users: typeof usersTable) => ({
   }),
 });
 
-// ── Contributions ─────────────────────────────────────────────────────────
-// Capital, labour, equipment, or land contributed by a partner to a project.
-
-export const contributionsTable = pgTable("contributions", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  projectId: uuid("project_id")
-    .notNull()
-    .references(() => projectsTable.id, { onDelete: "restrict" }),
-  partnerId: uuid("partner_id").references(() => partnersTable.id, {
-    onDelete: "set null",
-  }),
-  // "cash" | "labour" | "equipment" | "land" | "other"
-  type: text("type").notNull().default("cash"),
-  amount: real("amount"),
-  description: text("description"),
-  contributionDate: text("contribution_date"),
-  status: text("status").notNull().default("pending"), // pending | verified | rejected
-  notes: text("notes"),
-  ...auditCols(usersTable),
-});
-
 // ── Expenditure ───────────────────────────────────────────────────────────
 // Plantation operating and capital expenditure items.
 
@@ -199,7 +178,6 @@ export const governanceRecordsTable = pgTable("governance_records", {
 
 // ── Exported types ────────────────────────────────────────────────────────
 
-export type Contribution = typeof contributionsTable.$inferSelect;
 export type Expenditure = typeof expendituresTable.$inferSelect;
 export type InventoryItem = typeof inventoryItemsTable.$inferSelect;
 export type SalesRecord = typeof salesRecordsTable.$inferSelect;

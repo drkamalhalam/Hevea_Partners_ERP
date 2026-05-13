@@ -33,7 +33,10 @@ import type {
   AssignProjectInput,
   CancelAgreementActivationBody,
   CancelMaturityBody,
+  ContributionEntry,
+  ContributionSummary,
   CreateClaimantInput,
+  CreateContributionBody,
   CreateDocumentBody,
   CreateGenerationBody,
   CreateNomineeInput,
@@ -45,6 +48,7 @@ import type {
   FileMissingDeveloperCaseBody,
   GenerateAgreementDocument422,
   GenerateDocumentRequest,
+  GetContributionSummaryParams,
   GetUserActivityParams,
   GovernanceSummary,
   HealthStatus,
@@ -53,6 +57,8 @@ import type {
   InitiateClosureBody,
   InitiateMaturityBody,
   InitiateNomineeActivationBody,
+  ListContributions200,
+  ListContributionsParams,
   ListDocumentAccessLogParams,
   ListDocumentsParams,
   ListPartnerClaimantsParams,
@@ -80,6 +86,7 @@ import type {
   ProjectNominee,
   ProjectParticipant,
   ProjectUpdate,
+  RejectContributionBody,
   RequestUploadUrlBody,
   RequestUploadUrlResponse,
   RevenueStats,
@@ -90,6 +97,7 @@ import type {
   UpdateAssignmentInput,
   UpdateClaimantInput,
   UpdateClosureWorkflowBody,
+  UpdateContributionBody,
   UpdateDocumentBody,
   UpdateMissingDeveloperCaseBody,
   UpdateNomineeActivationBody,
@@ -101,6 +109,7 @@ import type {
   UserProfile,
   VerifyAgreementActivationOtp400,
   VerifyAgreementActivationOtpBody,
+  VerifyContributionBody,
   VerifyNomineeActivationBody,
   VerifyOtpBody,
 } from "./api.schemas";
@@ -8961,4 +8970,811 @@ export const useRestoreTemplate = <
   TContext
 > => {
   return useMutation(getRestoreTemplateMutationOptions(options));
+};
+
+/**
+ * @summary List contribution ledger entries
+ */
+export const getListContributionsUrl = (params?: ListContributionsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/contributions?${stringifiedParams}`
+    : `/api/contributions`;
+};
+
+export const listContributions = async (
+  params?: ListContributionsParams,
+  options?: RequestInit,
+): Promise<ListContributions200> => {
+  return customFetch<ListContributions200>(getListContributionsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListContributionsQueryKey = (
+  params?: ListContributionsParams,
+) => {
+  return [`/api/contributions`, ...(params ? [params] : [])] as const;
+};
+
+export const getListContributionsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listContributions>>,
+  TError = ErrorType<void>,
+>(
+  params?: ListContributionsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listContributions>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListContributionsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listContributions>>
+  > = ({ signal }) => listContributions(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listContributions>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListContributionsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listContributions>>
+>;
+export type ListContributionsQueryError = ErrorType<void>;
+
+/**
+ * @summary List contribution ledger entries
+ */
+
+export function useListContributions<
+  TData = Awaited<ReturnType<typeof listContributions>>,
+  TError = ErrorType<void>,
+>(
+  params?: ListContributionsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listContributions>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListContributionsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Record a new contribution entry
+ */
+export const getCreateContributionUrl = () => {
+  return `/api/contributions`;
+};
+
+export const createContribution = async (
+  createContributionBody: CreateContributionBody,
+  options?: RequestInit,
+): Promise<ContributionEntry> => {
+  return customFetch<ContributionEntry>(getCreateContributionUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createContributionBody),
+  });
+};
+
+export const getCreateContributionMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createContribution>>,
+    TError,
+    { data: BodyType<CreateContributionBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createContribution>>,
+  TError,
+  { data: BodyType<CreateContributionBody> },
+  TContext
+> => {
+  const mutationKey = ["createContribution"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createContribution>>,
+    { data: BodyType<CreateContributionBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createContribution(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateContributionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createContribution>>
+>;
+export type CreateContributionMutationBody = BodyType<CreateContributionBody>;
+export type CreateContributionMutationError = ErrorType<void>;
+
+/**
+ * @summary Record a new contribution entry
+ */
+export const useCreateContribution = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createContribution>>,
+    TError,
+    { data: BodyType<CreateContributionBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createContribution>>,
+  TError,
+  { data: BodyType<CreateContributionBody> },
+  TContext
+> => {
+  return useMutation(getCreateContributionMutationOptions(options));
+};
+
+/**
+ * @summary Aggregated contribution summary per project
+ */
+export const getGetContributionSummaryUrl = (
+  params?: GetContributionSummaryParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/contributions/summary?${stringifiedParams}`
+    : `/api/contributions/summary`;
+};
+
+export const getContributionSummary = async (
+  params?: GetContributionSummaryParams,
+  options?: RequestInit,
+): Promise<ContributionSummary> => {
+  return customFetch<ContributionSummary>(
+    getGetContributionSummaryUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetContributionSummaryQueryKey = (
+  params?: GetContributionSummaryParams,
+) => {
+  return [`/api/contributions/summary`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetContributionSummaryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getContributionSummary>>,
+  TError = ErrorType<void>,
+>(
+  params?: GetContributionSummaryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getContributionSummary>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetContributionSummaryQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getContributionSummary>>
+  > = ({ signal }) =>
+    getContributionSummary(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getContributionSummary>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetContributionSummaryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getContributionSummary>>
+>;
+export type GetContributionSummaryQueryError = ErrorType<void>;
+
+/**
+ * @summary Aggregated contribution summary per project
+ */
+
+export function useGetContributionSummary<
+  TData = Awaited<ReturnType<typeof getContributionSummary>>,
+  TError = ErrorType<void>,
+>(
+  params?: GetContributionSummaryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getContributionSummary>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetContributionSummaryQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get a single contribution entry
+ */
+export const getGetContributionUrl = (id: string) => {
+  return `/api/contributions/${id}`;
+};
+
+export const getContribution = async (
+  id: string,
+  options?: RequestInit,
+): Promise<ContributionEntry> => {
+  return customFetch<ContributionEntry>(getGetContributionUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetContributionQueryKey = (id: string) => {
+  return [`/api/contributions/${id}`] as const;
+};
+
+export const getGetContributionQueryOptions = <
+  TData = Awaited<ReturnType<typeof getContribution>>,
+  TError = ErrorType<void>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getContribution>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetContributionQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getContribution>>> = ({
+    signal,
+  }) => getContribution(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getContribution>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetContributionQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getContribution>>
+>;
+export type GetContributionQueryError = ErrorType<void>;
+
+/**
+ * @summary Get a single contribution entry
+ */
+
+export function useGetContribution<
+  TData = Awaited<ReturnType<typeof getContribution>>,
+  TError = ErrorType<void>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getContribution>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetContributionQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Update contribution metadata (admin/developer only)
+ */
+export const getUpdateContributionUrl = (id: string) => {
+  return `/api/contributions/${id}`;
+};
+
+export const updateContribution = async (
+  id: string,
+  updateContributionBody: UpdateContributionBody,
+  options?: RequestInit,
+): Promise<ContributionEntry> => {
+  return customFetch<ContributionEntry>(getUpdateContributionUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateContributionBody),
+  });
+};
+
+export const getUpdateContributionMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateContribution>>,
+    TError,
+    { id: string; data: BodyType<UpdateContributionBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateContribution>>,
+  TError,
+  { id: string; data: BodyType<UpdateContributionBody> },
+  TContext
+> => {
+  const mutationKey = ["updateContribution"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateContribution>>,
+    { id: string; data: BodyType<UpdateContributionBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateContribution(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateContributionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateContribution>>
+>;
+export type UpdateContributionMutationBody = BodyType<UpdateContributionBody>;
+export type UpdateContributionMutationError = ErrorType<void>;
+
+/**
+ * @summary Update contribution metadata (admin/developer only)
+ */
+export const useUpdateContribution = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateContribution>>,
+    TError,
+    { id: string; data: BodyType<UpdateContributionBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateContribution>>,
+  TError,
+  { id: string; data: BodyType<UpdateContributionBody> },
+  TContext
+> => {
+  return useMutation(getUpdateContributionMutationOptions(options));
+};
+
+/**
+ * @summary Soft-delete a contribution entry (admin only)
+ */
+export const getDeleteContributionUrl = (id: string) => {
+  return `/api/contributions/${id}`;
+};
+
+export const deleteContribution = async (
+  id: string,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteContributionUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteContributionMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteContribution>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteContribution>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["deleteContribution"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteContribution>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteContribution(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteContributionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteContribution>>
+>;
+
+export type DeleteContributionMutationError = ErrorType<void>;
+
+/**
+ * @summary Soft-delete a contribution entry (admin only)
+ */
+export const useDeleteContribution = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteContribution>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteContribution>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getDeleteContributionMutationOptions(options));
+};
+
+/**
+ * @summary Submit a draft contribution for admin verification
+ */
+export const getSubmitContributionForVerificationUrl = (id: string) => {
+  return `/api/contributions/${id}/submit`;
+};
+
+export const submitContributionForVerification = async (
+  id: string,
+  options?: RequestInit,
+): Promise<ContributionEntry> => {
+  return customFetch<ContributionEntry>(
+    getSubmitContributionForVerificationUrl(id),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getSubmitContributionForVerificationMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof submitContributionForVerification>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof submitContributionForVerification>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["submitContributionForVerification"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof submitContributionForVerification>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return submitContributionForVerification(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SubmitContributionForVerificationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof submitContributionForVerification>>
+>;
+
+export type SubmitContributionForVerificationMutationError = ErrorType<void>;
+
+/**
+ * @summary Submit a draft contribution for admin verification
+ */
+export const useSubmitContributionForVerification = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof submitContributionForVerification>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof submitContributionForVerification>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(
+    getSubmitContributionForVerificationMutationOptions(options),
+  );
+};
+
+/**
+ * @summary Verify a contribution entry (admin only)
+ */
+export const getVerifyContributionUrl = (id: string) => {
+  return `/api/contributions/${id}/verify`;
+};
+
+export const verifyContribution = async (
+  id: string,
+  verifyContributionBody: VerifyContributionBody,
+  options?: RequestInit,
+): Promise<ContributionEntry> => {
+  return customFetch<ContributionEntry>(getVerifyContributionUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(verifyContributionBody),
+  });
+};
+
+export const getVerifyContributionMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof verifyContribution>>,
+    TError,
+    { id: string; data: BodyType<VerifyContributionBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof verifyContribution>>,
+  TError,
+  { id: string; data: BodyType<VerifyContributionBody> },
+  TContext
+> => {
+  const mutationKey = ["verifyContribution"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof verifyContribution>>,
+    { id: string; data: BodyType<VerifyContributionBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return verifyContribution(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type VerifyContributionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof verifyContribution>>
+>;
+export type VerifyContributionMutationBody = BodyType<VerifyContributionBody>;
+export type VerifyContributionMutationError = ErrorType<void>;
+
+/**
+ * @summary Verify a contribution entry (admin only)
+ */
+export const useVerifyContribution = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof verifyContribution>>,
+    TError,
+    { id: string; data: BodyType<VerifyContributionBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof verifyContribution>>,
+  TError,
+  { id: string; data: BodyType<VerifyContributionBody> },
+  TContext
+> => {
+  return useMutation(getVerifyContributionMutationOptions(options));
+};
+
+/**
+ * @summary Reject a contribution entry (admin only)
+ */
+export const getRejectContributionUrl = (id: string) => {
+  return `/api/contributions/${id}/reject`;
+};
+
+export const rejectContribution = async (
+  id: string,
+  rejectContributionBody: RejectContributionBody,
+  options?: RequestInit,
+): Promise<ContributionEntry> => {
+  return customFetch<ContributionEntry>(getRejectContributionUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(rejectContributionBody),
+  });
+};
+
+export const getRejectContributionMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof rejectContribution>>,
+    TError,
+    { id: string; data: BodyType<RejectContributionBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof rejectContribution>>,
+  TError,
+  { id: string; data: BodyType<RejectContributionBody> },
+  TContext
+> => {
+  const mutationKey = ["rejectContribution"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof rejectContribution>>,
+    { id: string; data: BodyType<RejectContributionBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return rejectContribution(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RejectContributionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof rejectContribution>>
+>;
+export type RejectContributionMutationBody = BodyType<RejectContributionBody>;
+export type RejectContributionMutationError = ErrorType<void>;
+
+/**
+ * @summary Reject a contribution entry (admin only)
+ */
+export const useRejectContribution = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof rejectContribution>>,
+    TError,
+    { id: string; data: BodyType<RejectContributionBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof rejectContribution>>,
+  TError,
+  { id: string; data: BodyType<RejectContributionBody> },
+  TContext
+> => {
+  return useMutation(getRejectContributionMutationOptions(options));
 };

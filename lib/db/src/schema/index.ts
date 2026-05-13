@@ -23,3 +23,4 @@ export * from "./generations";
 export * from "./agreement_activation";
 export * from "./documents";
 export * from "./document_access_logs";
+export * from "./contributions";

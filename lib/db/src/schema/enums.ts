@@ -273,6 +273,42 @@ export const documentAccessActionEnum = pgEnum("document_access_action", [
   "metadata_update",
 ]);
 
+// ── Contribution enums ────────────────────────────────────────────────────
+
+/**
+ * Five contribution types with distinct ownership and accounting treatment.
+ *
+ *   land_notional       — landowner's land value monetised as capital contribution;
+ *                         affects ownership guidance when verified in prematurity phase
+ *   economic_investment — cash/in-kind capital invested by any partner;
+ *                         affects ownership guidance when verified in prematurity phase
+ *   operational_cost    — costs of running the plantation (inputs, labour, etc.);
+ *                         does NOT create ownership rights
+ *   recoverable_advance — bridge funding that is expected to be recovered from revenue;
+ *                         affects ownership guidance when verified in prematurity phase
+ *   manual_adjustment   — admin-initiated correction or reconciliation entry;
+ *                         ownership impact governed by affectsOwnership flag
+ */
+export const contributionTypeEnum = pgEnum("contribution_type", [
+  "land_notional",
+  "economic_investment",
+  "operational_cost",
+  "recoverable_advance",
+  "manual_adjustment",
+]);
+
+/**
+ * Verification lifecycle of a single contribution record.
+ *   draft                — entry saved; not yet submitted for verification
+ *   pending_verification — submitted; awaiting admin review
+ *   verified             — admin-confirmed; eligible to affect ownership guidance
+ *   rejected             — admin rejected; does not affect ownership guidance
+ */
+export const contributionVerificationStatusEnum = pgEnum(
+  "contribution_verification_status",
+  ["draft", "pending_verification", "verified", "rejected"],
+);
+
 // ── Audit enums ───────────────────────────────────────────────────────────
 
 export const dbOperationEnum = pgEnum("db_operation", [

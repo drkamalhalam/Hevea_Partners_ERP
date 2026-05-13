@@ -1769,6 +1769,141 @@ export interface DocumentAccessLogEntry {
   createdAt: string;
 }
 
+export type ContributionEntryContributionType =
+  (typeof ContributionEntryContributionType)[keyof typeof ContributionEntryContributionType];
+
+export const ContributionEntryContributionType = {
+  land_notional: "land_notional",
+  economic_investment: "economic_investment",
+  operational_cost: "operational_cost",
+  recoverable_advance: "recoverable_advance",
+  manual_adjustment: "manual_adjustment",
+} as const;
+
+export type ContributionEntryVerificationStatus =
+  (typeof ContributionEntryVerificationStatus)[keyof typeof ContributionEntryVerificationStatus];
+
+export const ContributionEntryVerificationStatus = {
+  draft: "draft",
+  pending_verification: "pending_verification",
+  verified: "verified",
+  rejected: "rejected",
+} as const;
+
+export interface ContributionEntry {
+  id: string;
+  projectId: string;
+  /** @nullable */
+  projectName?: string | null;
+  /** @nullable */
+  partnerId?: string | null;
+  partnerName: string;
+  contributionType: ContributionEntryContributionType;
+  /** Amount in INR */
+  amount: number;
+  contributionDate: string;
+  /** Project lifecycle phase at time of recording */
+  lifecyclePhaseSnapshot: string;
+  /** @nullable */
+  agreementId?: string | null;
+  /** @nullable */
+  referenceNumber?: string | null;
+  /** @nullable */
+  remarks?: string | null;
+  /** Whether this contribution is eligible to influence ownership guidance */
+  affectsOwnership: boolean;
+  verificationStatus: ContributionEntryVerificationStatus;
+  /** @nullable */
+  verifiedAt?: string | null;
+  /** @nullable */
+  verifiedBy?: string | null;
+  /** @nullable */
+  verifiedByName?: string | null;
+  /** @nullable */
+  verifierNotes?: string | null;
+  /** @nullable */
+  recordedBy?: string | null;
+  /** @nullable */
+  recordedByName?: string | null;
+  createdAt: string;
+  /** @nullable */
+  updatedAt?: string | null;
+}
+
+export type CreateContributionBodyContributionType =
+  (typeof CreateContributionBodyContributionType)[keyof typeof CreateContributionBodyContributionType];
+
+export const CreateContributionBodyContributionType = {
+  land_notional: "land_notional",
+  economic_investment: "economic_investment",
+  operational_cost: "operational_cost",
+  recoverable_advance: "recoverable_advance",
+  manual_adjustment: "manual_adjustment",
+} as const;
+
+export interface CreateContributionBody {
+  projectId: string;
+  partnerId?: string;
+  partnerName: string;
+  contributionType: CreateContributionBodyContributionType;
+  amount: number;
+  contributionDate: string;
+  lifecyclePhaseSnapshot?: string;
+  agreementId?: string;
+  referenceNumber?: string;
+  remarks?: string;
+  affectsOwnership?: boolean;
+}
+
+export type UpdateContributionBodyContributionType =
+  (typeof UpdateContributionBodyContributionType)[keyof typeof UpdateContributionBodyContributionType];
+
+export const UpdateContributionBodyContributionType = {
+  land_notional: "land_notional",
+  economic_investment: "economic_investment",
+  operational_cost: "operational_cost",
+  recoverable_advance: "recoverable_advance",
+  manual_adjustment: "manual_adjustment",
+} as const;
+
+export interface UpdateContributionBody {
+  amount?: number;
+  contributionDate?: string;
+  contributionType?: UpdateContributionBodyContributionType;
+  agreementId?: string;
+  referenceNumber?: string;
+  remarks?: string;
+  affectsOwnership?: boolean;
+}
+
+export type ContributionSummaryProjectsItemByType = { [key: string]: number };
+
+export type ContributionSummaryProjectsItem = {
+  projectId: string;
+  projectName: string;
+  totalAmount: number;
+  verifiedAmount: number;
+  /** Sum of verified prematurity contributions that affect ownership */
+  ownershipEligibleAmount: number;
+  byType: ContributionSummaryProjectsItemByType;
+  draftCount?: number;
+  pendingCount?: number;
+  verifiedCount?: number;
+  rejectedCount?: number;
+};
+
+export type ContributionSummaryTotals = {
+  totalAmount: number;
+  verifiedAmount: number;
+  ownershipEligibleAmount: number;
+  count: number;
+};
+
+export interface ContributionSummary {
+  projects: ContributionSummaryProjectsItem[];
+  totals: ContributionSummaryTotals;
+}
+
 export type GetUserActivityParams = {
   limit?: number;
 };
@@ -1836,3 +1971,47 @@ export const ListTemplatesStatus = {
   active: "active",
   archived: "archived",
 } as const;
+
+export type ListContributionsParams = {
+  projectId?: string;
+  partnerId?: string;
+  contributionType?: ListContributionsContributionType;
+  verificationStatus?: ListContributionsVerificationStatus;
+};
+
+export type ListContributionsContributionType =
+  (typeof ListContributionsContributionType)[keyof typeof ListContributionsContributionType];
+
+export const ListContributionsContributionType = {
+  land_notional: "land_notional",
+  economic_investment: "economic_investment",
+  operational_cost: "operational_cost",
+  recoverable_advance: "recoverable_advance",
+  manual_adjustment: "manual_adjustment",
+} as const;
+
+export type ListContributionsVerificationStatus =
+  (typeof ListContributionsVerificationStatus)[keyof typeof ListContributionsVerificationStatus];
+
+export const ListContributionsVerificationStatus = {
+  draft: "draft",
+  pending_verification: "pending_verification",
+  verified: "verified",
+  rejected: "rejected",
+} as const;
+
+export type ListContributions200 = {
+  contributions: ContributionEntry[];
+};
+
+export type GetContributionSummaryParams = {
+  projectId?: string;
+};
+
+export type VerifyContributionBody = {
+  notes?: string;
+};
+
+export type RejectContributionBody = {
+  notes?: string;
+};

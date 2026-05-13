@@ -19,6 +19,7 @@ import storageRouter from "./storage";
 import templatesRouter from "./templates";
 import generationsRouter from "./generations";
 import documentsRouter from "./documents";
+import contributionsRouter from "./contributions";
 import devRouter from "./dev";
 
 const router: IRouter = Router();
@@ -55,5 +56,6 @@ router.use("/storage", storageRouter);
 router.use("/templates", templatesRouter);
 router.use("/agreements", generationsRouter);
 router.use("/documents", documentsRouter);
+router.use("/contributions", contributionsRouter);
 
 export default router;

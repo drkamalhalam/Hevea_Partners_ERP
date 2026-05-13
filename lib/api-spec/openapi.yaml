@@ -2396,6 +2396,226 @@ paths:
               schema:
                 $ref: "#/components/schemas/AgreementTemplate"
 
+
+  /contributions:
+    get:
+      operationId: listContributions
+      summary: List contribution ledger entries
+      tags: [Contributions]
+      parameters:
+        - name: projectId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: partnerId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: contributionType
+          in: query
+          schema:
+            type: string
+            enum: [land_notional, economic_investment, operational_cost, recoverable_advance, manual_adjustment]
+        - name: verificationStatus
+          in: query
+          schema:
+            type: string
+            enum: [draft, pending_verification, verified, rejected]
+      responses:
+        "200":
+          description: List of contribution entries
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [contributions]
+                properties:
+                  contributions:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ContributionEntry"
+        "401": { description: Unauthorized }
+    post:
+      operationId: createContribution
+      summary: Record a new contribution entry
+      tags: [Contributions]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateContributionBody"
+      responses:
+        "201":
+          description: Contribution created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContributionEntry"
+        "400": { description: Validation error }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+
+  /contributions/summary:
+    get:
+      operationId: getContributionSummary
+      summary: Aggregated contribution summary per project
+      tags: [Contributions]
+      parameters:
+        - name: projectId
+          in: query
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Summary aggregates
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContributionSummary"
+        "401": { description: Unauthorized }
+
+  /contributions/{id}:
+    get:
+      operationId: getContribution
+      summary: Get a single contribution entry
+      tags: [Contributions]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Contribution entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContributionEntry"
+        "401": { description: Unauthorized }
+        "404": { description: Not found }
+    patch:
+      operationId: updateContribution
+      summary: Update contribution metadata (admin/developer only)
+      tags: [Contributions]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateContributionBody"
+      responses:
+        "200":
+          description: Updated contribution entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContributionEntry"
+        "400": { description: Validation error }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+        "404": { description: Not found }
+    delete:
+      operationId: deleteContribution
+      summary: Soft-delete a contribution entry (admin only)
+      tags: [Contributions]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "204": { description: Deleted }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+        "404": { description: Not found }
+
+  /contributions/{id}/submit:
+    post:
+      operationId: submitContributionForVerification
+      summary: Submit a draft contribution for admin verification
+      tags: [Contributions]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Contribution submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContributionEntry"
+        "400": { description: Already submitted or verified }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+        "404": { description: Not found }
+
+  /contributions/{id}/verify:
+    post:
+      operationId: verifyContribution
+      summary: Verify a contribution entry (admin only)
+      tags: [Contributions]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                notes:
+                  type: string
+      responses:
+        "200":
+          description: Contribution verified
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContributionEntry"
+        "400": { description: Already verified }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+        "404": { description: Not found }
+
+  /contributions/{id}/reject:
+    post:
+      operationId: rejectContribution
+      summary: Reject a contribution entry (admin only)
+      tags: [Contributions]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                notes:
+                  type: string
+      responses:
+        "200":
+          description: Contribution rejected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContributionEntry"
+        "400": { description: Already in terminal state }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+        "404": { description: Not found }
+
 components:
   schemas:
     HealthStatus:
@@ -4345,3 +4565,178 @@ components:
         createdAt:
           type: string
           format: date-time
+
+
+    ContributionEntry:
+      type: object
+      required:
+        - id
+        - projectId
+        - partnerName
+        - contributionType
+        - amount
+        - contributionDate
+        - lifecyclePhaseSnapshot
+        - affectsOwnership
+        - verificationStatus
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        projectId:
+          type: string
+          format: uuid
+        projectName:
+          type: ["string", "null"]
+        partnerId:
+          type: ["string", "null"]
+          format: uuid
+        partnerName:
+          type: string
+        contributionType:
+          type: string
+          enum: [land_notional, economic_investment, operational_cost, recoverable_advance, manual_adjustment]
+        amount:
+          type: number
+          description: Amount in INR
+        contributionDate:
+          type: string
+          format: date
+        lifecyclePhaseSnapshot:
+          type: string
+          description: Project lifecycle phase at time of recording
+        agreementId:
+          type: ["string", "null"]
+          format: uuid
+        referenceNumber:
+          type: ["string", "null"]
+        remarks:
+          type: ["string", "null"]
+        affectsOwnership:
+          type: boolean
+          description: Whether this contribution is eligible to influence ownership guidance
+        verificationStatus:
+          type: string
+          enum: [draft, pending_verification, verified, rejected]
+        verifiedAt:
+          type: ["string", "null"]
+          format: date-time
+        verifiedBy:
+          type: ["string", "null"]
+          format: uuid
+        verifiedByName:
+          type: ["string", "null"]
+        verifierNotes:
+          type: ["string", "null"]
+        recordedBy:
+          type: ["string", "null"]
+          format: uuid
+        recordedByName:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: ["string", "null"]
+          format: date-time
+
+    CreateContributionBody:
+      type: object
+      required: [projectId, partnerName, contributionType, amount, contributionDate]
+      properties:
+        projectId:
+          type: string
+          format: uuid
+        partnerId:
+          type: string
+          format: uuid
+        partnerName:
+          type: string
+        contributionType:
+          type: string
+          enum: [land_notional, economic_investment, operational_cost, recoverable_advance, manual_adjustment]
+        amount:
+          type: number
+        contributionDate:
+          type: string
+          format: date
+        lifecyclePhaseSnapshot:
+          type: string
+        agreementId:
+          type: string
+          format: uuid
+        referenceNumber:
+          type: string
+        remarks:
+          type: string
+        affectsOwnership:
+          type: boolean
+
+    UpdateContributionBody:
+      type: object
+      properties:
+        amount:
+          type: number
+        contributionDate:
+          type: string
+          format: date
+        contributionType:
+          type: string
+          enum: [land_notional, economic_investment, operational_cost, recoverable_advance, manual_adjustment]
+        agreementId:
+          type: string
+          format: uuid
+        referenceNumber:
+          type: string
+        remarks:
+          type: string
+        affectsOwnership:
+          type: boolean
+
+    ContributionSummary:
+      type: object
+      required: [projects, totals]
+      properties:
+        projects:
+          type: array
+          items:
+            type: object
+            required: [projectId, projectName, totalAmount, verifiedAmount, byType, ownershipEligibleAmount]
+            properties:
+              projectId:
+                type: string
+                format: uuid
+              projectName:
+                type: string
+              totalAmount:
+                type: number
+              verifiedAmount:
+                type: number
+              ownershipEligibleAmount:
+                type: number
+                description: Sum of verified prematurity contributions that affect ownership
+              byType:
+                type: object
+                additionalProperties:
+                  type: number
+              draftCount:
+                type: integer
+              pendingCount:
+                type: integer
+              verifiedCount:
+                type: integer
+              rejectedCount:
+                type: integer
+        totals:
+          type: object
+          required: [totalAmount, verifiedAmount, ownershipEligibleAmount, count]
+          properties:
+            totalAmount:
+              type: number
+            verifiedAmount:
+              type: number
+            ownershipEligibleAmount:
+              type: number
+            count:
+              type: integer
