@@ -1,4 +1,5 @@
 import { useUser } from "@clerk/react";
+import { GovernanceAlertPanel } from "@/components/governance";
 import { Link } from "wouter";
 import { format, isThisMonth } from "date-fns";
 import {
@@ -395,6 +396,11 @@ function AdminDeveloperDashboard() {
             iconColor="bg-teal-50 text-teal-600"
           />
         </div>
+      </section>
+
+      {/* Governance Status */}
+      <section>
+        <GovernanceAlertPanel />
       </section>
 
       {/* Analytics row 1 */}

@@ -1266,6 +1266,100 @@ export const UpdateAgreementResponse = zod.object({
 });
 
 /**
+ * @summary Get governance completeness summary for the current user
+ */
+export const GetGovernanceSummaryResponse = zod.object({
+  overallStatus: zod.enum([
+    "attention_required",
+    "incomplete",
+    "pending",
+    "complete",
+  ]),
+  totalIssues: zod.number(),
+  projectAlerts: zod.array(
+    zod.object({
+      projectId: zod.string().uuid(),
+      projectName: zod.string(),
+      status: zod.enum([
+        "attention_required",
+        "incomplete",
+        "pending",
+        "complete",
+      ]),
+      issues: zod.array(
+        zod.object({
+          code: zod.enum([
+            "MISSING_NOMINEE",
+            "NO_PARTICIPANTS",
+            "NO_AGREEMENTS",
+            "INCOMPLETE_PROFILE",
+            "INCOMPLETE_PARTNER",
+            "NO_CLAIMANTS",
+          ]),
+          severity: zod.enum([
+            "attention_required",
+            "incomplete",
+            "pending",
+            "complete",
+          ]),
+          message: zod.string(),
+        }),
+      ),
+    }),
+  ),
+  profileAlerts: zod.array(
+    zod.object({
+      code: zod.enum([
+        "MISSING_NOMINEE",
+        "NO_PARTICIPANTS",
+        "NO_AGREEMENTS",
+        "INCOMPLETE_PROFILE",
+        "INCOMPLETE_PARTNER",
+        "NO_CLAIMANTS",
+      ]),
+      severity: zod.enum([
+        "attention_required",
+        "incomplete",
+        "pending",
+        "complete",
+      ]),
+      message: zod.string(),
+    }),
+  ),
+  partnerAlerts: zod.array(
+    zod.object({
+      partnerId: zod.string().uuid(),
+      partnerName: zod.string(),
+      status: zod.enum([
+        "attention_required",
+        "incomplete",
+        "pending",
+        "complete",
+      ]),
+      issues: zod.array(
+        zod.object({
+          code: zod.enum([
+            "MISSING_NOMINEE",
+            "NO_PARTICIPANTS",
+            "NO_AGREEMENTS",
+            "INCOMPLETE_PROFILE",
+            "INCOMPLETE_PARTNER",
+            "NO_CLAIMANTS",
+          ]),
+          severity: zod.enum([
+            "attention_required",
+            "incomplete",
+            "pending",
+            "complete",
+          ]),
+          message: zod.string(),
+        }),
+      ),
+    }),
+  ),
+});
+
+/**
  * @summary Get current rubber stock levels per project (produced minus sold)
  */
 export const GetStockSummaryResponseItem = zod.object({

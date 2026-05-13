@@ -27,6 +27,7 @@ import type {
   CreateNomineeInput,
   DashboardSummary,
   GetUserActivityParams,
+  GovernanceSummary,
   HealthStatus,
   ListPartnerClaimantsParams,
   ListProductionRecordsParams,
@@ -3390,6 +3391,81 @@ export const useUpdateAgreement = <
 > => {
   return useMutation(getUpdateAgreementMutationOptions(options));
 };
+
+/**
+ * @summary Get governance completeness summary for the current user
+ */
+export const getGetGovernanceSummaryUrl = () => {
+  return `/api/governance/summary`;
+};
+
+export const getGovernanceSummary = async (
+  options?: RequestInit,
+): Promise<GovernanceSummary> => {
+  return customFetch<GovernanceSummary>(getGetGovernanceSummaryUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetGovernanceSummaryQueryKey = () => {
+  return [`/api/governance/summary`] as const;
+};
+
+export const getGetGovernanceSummaryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getGovernanceSummary>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getGovernanceSummary>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetGovernanceSummaryQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getGovernanceSummary>>
+  > = ({ signal }) => getGovernanceSummary({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getGovernanceSummary>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetGovernanceSummaryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getGovernanceSummary>>
+>;
+export type GetGovernanceSummaryQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get governance completeness summary for the current user
+ */
+
+export function useGetGovernanceSummary<
+  TData = Awaited<ReturnType<typeof getGovernanceSummary>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getGovernanceSummary>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetGovernanceSummaryQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary Get current rubber stock levels per project (produced minus sold)

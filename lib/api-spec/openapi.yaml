@@ -854,6 +854,19 @@ paths:
               schema:
                 $ref: "#/components/schemas/Agreement"
 
+  /governance/summary:
+    get:
+      operationId: getGovernanceSummary
+      tags: [governance]
+      summary: Get governance completeness summary for the current user
+      responses:
+        "200":
+          description: Governance and profile completeness summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GovernanceSummary"
+
   /stock:
     get:
       operationId: getStockSummary
@@ -1837,6 +1850,75 @@ components:
           type: string
         isActive:
           type: boolean
+
+    GovernanceAlert:
+      type: object
+      required: [code, severity, message]
+      properties:
+        code:
+          type: string
+          enum: [MISSING_NOMINEE, NO_PARTICIPANTS, NO_AGREEMENTS, INCOMPLETE_PROFILE, INCOMPLETE_PARTNER, NO_CLAIMANTS]
+        severity:
+          type: string
+          enum: [attention_required, incomplete, pending, complete]
+        message:
+          type: string
+
+    ProjectGovernanceStatus:
+      type: object
+      required: [projectId, projectName, status, issues]
+      properties:
+        projectId:
+          type: string
+          format: uuid
+        projectName:
+          type: string
+        status:
+          type: string
+          enum: [attention_required, incomplete, pending, complete]
+        issues:
+          type: array
+          items:
+            $ref: "#/components/schemas/GovernanceAlert"
+
+    PartnerGovernanceStatus:
+      type: object
+      required: [partnerId, partnerName, status, issues]
+      properties:
+        partnerId:
+          type: string
+          format: uuid
+        partnerName:
+          type: string
+        status:
+          type: string
+          enum: [attention_required, incomplete, pending, complete]
+        issues:
+          type: array
+          items:
+            $ref: "#/components/schemas/GovernanceAlert"
+
+    GovernanceSummary:
+      type: object
+      required: [overallStatus, totalIssues, projectAlerts, profileAlerts, partnerAlerts]
+      properties:
+        overallStatus:
+          type: string
+          enum: [attention_required, incomplete, pending, complete]
+        totalIssues:
+          type: integer
+        projectAlerts:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProjectGovernanceStatus"
+        profileAlerts:
+          type: array
+          items:
+            $ref: "#/components/schemas/GovernanceAlert"
+        partnerAlerts:
+          type: array
+          items:
+            $ref: "#/components/schemas/PartnerGovernanceStatus"
 
     OkResponse:
       type: object

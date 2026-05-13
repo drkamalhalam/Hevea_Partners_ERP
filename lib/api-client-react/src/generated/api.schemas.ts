@@ -728,6 +728,86 @@ export interface UpdateClaimantInput {
   isActive?: boolean;
 }
 
+export type GovernanceAlertCode =
+  (typeof GovernanceAlertCode)[keyof typeof GovernanceAlertCode];
+
+export const GovernanceAlertCode = {
+  MISSING_NOMINEE: "MISSING_NOMINEE",
+  NO_PARTICIPANTS: "NO_PARTICIPANTS",
+  NO_AGREEMENTS: "NO_AGREEMENTS",
+  INCOMPLETE_PROFILE: "INCOMPLETE_PROFILE",
+  INCOMPLETE_PARTNER: "INCOMPLETE_PARTNER",
+  NO_CLAIMANTS: "NO_CLAIMANTS",
+} as const;
+
+export type GovernanceAlertSeverity =
+  (typeof GovernanceAlertSeverity)[keyof typeof GovernanceAlertSeverity];
+
+export const GovernanceAlertSeverity = {
+  attention_required: "attention_required",
+  incomplete: "incomplete",
+  pending: "pending",
+  complete: "complete",
+} as const;
+
+export interface GovernanceAlert {
+  code: GovernanceAlertCode;
+  severity: GovernanceAlertSeverity;
+  message: string;
+}
+
+export type ProjectGovernanceStatusStatus =
+  (typeof ProjectGovernanceStatusStatus)[keyof typeof ProjectGovernanceStatusStatus];
+
+export const ProjectGovernanceStatusStatus = {
+  attention_required: "attention_required",
+  incomplete: "incomplete",
+  pending: "pending",
+  complete: "complete",
+} as const;
+
+export interface ProjectGovernanceStatus {
+  projectId: string;
+  projectName: string;
+  status: ProjectGovernanceStatusStatus;
+  issues: GovernanceAlert[];
+}
+
+export type PartnerGovernanceStatusStatus =
+  (typeof PartnerGovernanceStatusStatus)[keyof typeof PartnerGovernanceStatusStatus];
+
+export const PartnerGovernanceStatusStatus = {
+  attention_required: "attention_required",
+  incomplete: "incomplete",
+  pending: "pending",
+  complete: "complete",
+} as const;
+
+export interface PartnerGovernanceStatus {
+  partnerId: string;
+  partnerName: string;
+  status: PartnerGovernanceStatusStatus;
+  issues: GovernanceAlert[];
+}
+
+export type GovernanceSummaryOverallStatus =
+  (typeof GovernanceSummaryOverallStatus)[keyof typeof GovernanceSummaryOverallStatus];
+
+export const GovernanceSummaryOverallStatus = {
+  attention_required: "attention_required",
+  incomplete: "incomplete",
+  pending: "pending",
+  complete: "complete",
+} as const;
+
+export interface GovernanceSummary {
+  overallStatus: GovernanceSummaryOverallStatus;
+  totalIssues: number;
+  projectAlerts: ProjectGovernanceStatus[];
+  profileAlerts: GovernanceAlert[];
+  partnerAlerts: PartnerGovernanceStatus[];
+}
+
 export interface OkResponse {
   ok?: boolean;
 }

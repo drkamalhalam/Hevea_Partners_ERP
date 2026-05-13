@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link } from "wouter";
-import { useListProjects, useCreateProject, useDeleteProject, getListProjectsQueryKey } from "@workspace/api-client-react";
+import { useListProjects, useCreateProject, useDeleteProject, getListProjectsQueryKey, useGetGovernanceSummary } from "@workspace/api-client-react";
+import { useRole } from "@/contexts/RoleContext";
+import { GovernanceStatusBadge } from "@/components/governance";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -50,6 +52,12 @@ export default function Projects() {
   const deleteProject = useDeleteProject();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { canAccessAllProjects } = useRole();
+  const { data: governance } = useGetGovernanceSummary();
+  const govProjectMap = useMemo(
+    () => new Map(governance?.projectAlerts.map((a) => [a.projectId, a.status]) ?? []),
+    [governance]
+  );
   const [open, setOpen] = useState(false);
 
   const form = useForm<FormValues>({
@@ -240,9 +248,17 @@ export default function Projects() {
               <CardHeader className="pb-2">
                 <div className="flex items-start justify-between gap-2">
                   <CardTitle className="font-serif text-lg leading-tight">{project.name}</CardTitle>
-                  <span className={`text-xs px-2 py-1 rounded-full border font-medium capitalize whitespace-nowrap ${statusColors[project.status] ?? ""}`}>
-                    {project.status}
-                  </span>
+                  <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                    <span className={`text-xs px-2 py-1 rounded-full border font-medium capitalize whitespace-nowrap ${statusColors[project.status] ?? ""}`}>
+                      {project.status}
+                    </span>
+                    {canAccessAllProjects && governance && (
+                      <GovernanceStatusBadge
+                        status={govProjectMap.get(project.id) ?? "complete"}
+                        size="xs"
+                      />
+                    )}
+                  </div>
                 </div>
                 <div className="flex items-center gap-1 text-sm text-muted-foreground">
                   <MapPin className="w-3 h-3" />

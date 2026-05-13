@@ -9,6 +9,7 @@ import agreementsRouter from "./agreements";
 import dashboardRouter from "./dashboard";
 import productionRouter from "./production";
 import stockRouter from "./stock";
+import governanceRouter from "./governance";
 import devRouter from "./dev";
 
 const router: IRouter = Router();
@@ -35,5 +36,6 @@ router.use("/agreements", agreementsRouter);
 router.use("/dashboard", dashboardRouter);
 router.use("/production", productionRouter);
 router.use("/stock", stockRouter);
+router.use("/governance", governanceRouter);
 
 export default router;
