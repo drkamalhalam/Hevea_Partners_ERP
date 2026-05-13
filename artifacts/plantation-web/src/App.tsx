@@ -37,6 +37,7 @@ import Expenditure from "./pages/Expenditure";
 import Burden from "./pages/Burden";
 import RecoverableAdvances from "./pages/RecoverableAdvances";
 import ExpenditureGovernance from "./pages/ExpenditureGovernance";
+import ExpenditureAnalytics from "./pages/ExpenditureAnalytics";
 import TemplateLibrary from "./pages/TemplateLibrary";
 
 // Pages — Operations
@@ -239,6 +240,7 @@ function AppRoutes() {
               <Route path="/burden"><ProtectedRoute component={Burden} /></Route>
               <Route path="/advances"><ProtectedRoute component={RecoverableAdvances} /></Route>
               <Route path="/expenditure-governance"><ProtectedRoute component={ExpenditureGovernance} /></Route>
+              <Route path="/expenditure-analytics"><ProtectedRoute component={ExpenditureAnalytics} /></Route>
               <Route path="/templates"><ProtectedRoute component={TemplateLibrary} /></Route>
 
               {/* Operations */}

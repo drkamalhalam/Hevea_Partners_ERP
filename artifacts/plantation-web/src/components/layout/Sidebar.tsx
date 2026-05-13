@@ -158,6 +158,12 @@ const navGroups: NavGroup[] = [
         roles: ["admin", "developer"],
       },
       {
+        name: "Exp. Analytics",
+        href: "/expenditure-analytics",
+        icon: BarChart3,
+        roles: ["admin", "developer"],
+      },
+      {
         name: "Exp. Governance",
         href: "/expenditure-governance",
         icon: ShieldAlert,
