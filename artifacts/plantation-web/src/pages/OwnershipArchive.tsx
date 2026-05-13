@@ -47,6 +47,7 @@ import {
   History,
   Landmark,
   TrendingUp,
+  TrendingDown,
   Eye,
   RefreshCw,
   Layers,
@@ -55,6 +56,7 @@ import {
   Info,
   Users,
   CalendarDays,
+  ArrowUpDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -416,6 +418,165 @@ function OwnershipSnapshotPreview({ snapshot }: { snapshot: OwnershipSnapshot })
   );
 }
 
+// ── Snapshot diff types ───────────────────────────────────────────────────────
+
+interface PartnerDiff {
+  partnerKey: string;
+  partnerName: string;
+  prevPct: number | null;
+  currPct: number | null;
+  pctDelta: number | null;
+  status: "new" | "removed" | "changed" | "same";
+}
+
+function computeSnapshotDiff(
+  curr: OwnershipPartnerEntry[],
+  prev: OwnershipPartnerEntry[],
+): PartnerDiff[] {
+  const prevMap = new Map(prev.map((e) => [e.partnerKey, e]));
+  const currMap = new Map(curr.map((e) => [e.partnerKey, e]));
+  const allKeys = new Set([...currMap.keys(), ...prevMap.keys()]);
+
+  return Array.from(allKeys)
+    .map((key): PartnerDiff => {
+      const c = currMap.get(key);
+      const p = prevMap.get(key);
+      const pctDelta = c && p ? c.percentage - p.percentage : null;
+      let status: PartnerDiff["status"];
+      if (!p) status = "new";
+      else if (!c) status = "removed";
+      else if (pctDelta !== null && Math.abs(pctDelta) >= 0.001) status = "changed";
+      else status = "same";
+      return {
+        partnerKey: key,
+        partnerName: c?.partnerName ?? p?.partnerName ?? key,
+        prevPct: p?.percentage ?? null,
+        currPct: c?.percentage ?? null,
+        pctDelta,
+        status,
+      };
+    })
+    .sort((a, b) => {
+      const order: Record<string, number> = { new: 0, removed: 1, changed: 2, same: 3 };
+      return (order[a.status] ?? 4) - (order[b.status] ?? 4);
+    });
+}
+
+// ── Snapshot diff panel ───────────────────────────────────────────────────────
+
+function SnapshotDiffPanel({
+  curr,
+  prev,
+}: {
+  curr: OwnershipPartnerEntry[];
+  prev: OwnershipPartnerEntry[];
+}) {
+  const diffs = computeSnapshotDiff(curr, prev);
+  const hasChanges = diffs.some((d) => d.status !== "same");
+  const currTotal = curr.reduce((s, e) => s + e.totalAmount, 0);
+  const prevTotal = prev.reduce((s, e) => s + e.totalAmount, 0);
+  const totalDelta = currTotal - prevTotal;
+
+  return (
+    <div className="border-t">
+      <div className="flex items-center gap-2 px-3 py-2 bg-muted/30">
+        <ArrowUpDown className="w-3.5 h-3.5 text-muted-foreground" />
+        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+          Changes vs Previous Snapshot
+        </span>
+        {!hasChanges && (
+          <Badge variant="secondary" className="text-[10px] ml-auto">No changes</Badge>
+        )}
+        {hasChanges && totalDelta !== 0 && (
+          <span
+            className={cn(
+              "ml-auto text-xs font-semibold tabular-nums",
+              totalDelta > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400",
+            )}
+          >
+            {totalDelta > 0 ? "+" : ""}
+            {formatINR(totalDelta)}
+          </span>
+        )}
+      </div>
+      {hasChanges && (
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b bg-muted/10">
+                <th className="text-left p-2 pl-3 font-medium text-muted-foreground">Partner</th>
+                <th className="text-right p-2 font-medium text-muted-foreground">Previous %</th>
+                <th className="text-right p-2 font-medium text-muted-foreground">Current %</th>
+                <th className="text-right p-2 pr-3 font-medium text-muted-foreground">Change</th>
+              </tr>
+            </thead>
+            <tbody>
+              {diffs
+                .filter((d) => d.status !== "same")
+                .map((d) => (
+                  <tr
+                    key={d.partnerKey}
+                    className={cn(
+                      "border-b last:border-0",
+                      d.status === "new" && "bg-emerald-50/50 dark:bg-emerald-950/20",
+                      d.status === "removed" && "bg-red-50/50 dark:bg-red-950/20",
+                    )}
+                  >
+                    <td className="p-2 pl-3 font-medium">
+                      <span className="flex items-center gap-1.5">
+                        {d.status === "new" && (
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] h-4 px-1 border-emerald-400 text-emerald-700 dark:text-emerald-400"
+                          >
+                            New
+                          </Badge>
+                        )}
+                        {d.status === "removed" && (
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] h-4 px-1 border-red-400 text-red-700 dark:text-red-400"
+                          >
+                            Removed
+                          </Badge>
+                        )}
+                        {d.partnerName}
+                      </span>
+                    </td>
+                    <td className="p-2 text-right tabular-nums text-muted-foreground">
+                      {d.prevPct !== null ? formatPct(d.prevPct) : "—"}
+                    </td>
+                    <td className="p-2 text-right tabular-nums">
+                      {d.currPct !== null ? formatPct(d.currPct) : "—"}
+                    </td>
+                    <td className="p-2 pr-3 text-right tabular-nums">
+                      {d.pctDelta !== null ? (
+                        <span
+                          className={cn(
+                            "inline-flex items-center justify-end gap-0.5",
+                            d.pctDelta > 0.001 && "text-emerald-600 dark:text-emerald-400",
+                            d.pctDelta < -0.001 && "text-red-600 dark:text-red-400",
+                          )}
+                        >
+                          {d.pctDelta > 0.001 && <TrendingUp className="w-3 h-3" />}
+                          {d.pctDelta < -0.001 && <TrendingDown className="w-3 h-3" />}
+                          {d.pctDelta > 0 ? "+" : ""}
+                          {d.pctDelta.toFixed(2)}%
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Timeline row ──────────────────────────────────────────────────────────────
 
 function TimelineRow({
@@ -423,11 +584,13 @@ function TimelineRow({
   projectId,
   isLast,
   index,
+  prevSnapshot,
 }: {
   snapshot: OwnershipSnapshot;
   projectId: string;
   isLast: boolean;
   index: number;
+  prevSnapshot?: OwnershipSnapshot;
 }) {
   const [expanded, setExpanded] = useState(false);
   const meta = getTypeMeta(snapshot.snapshotType);
@@ -523,7 +686,15 @@ function TimelineRow({
           {detailQuery.isLoading ? (
             <div className="p-6 text-center text-muted-foreground text-sm">Loading…</div>
           ) : detailQuery.data ? (
-            <OwnershipSnapshotPreview snapshot={detailQuery.data} />
+            <>
+              <OwnershipSnapshotPreview snapshot={detailQuery.data} />
+              {prevSnapshot && (
+                <SnapshotDiffPanel
+                  curr={(snapshot.entries ?? []) as OwnershipPartnerEntry[]}
+                  prev={(prevSnapshot.entries ?? []) as OwnershipPartnerEntry[]}
+                />
+              )}
+            </>
           ) : (
             <div className="p-4 text-sm text-muted-foreground">Could not load snapshot detail.</div>
           )}
@@ -565,6 +736,7 @@ function OwnershipTimeline({
           projectId={projectId}
           isLast={idx === snapshots.length - 1}
           index={idx}
+          prevSnapshot={snapshots[idx + 1]}
         />
       ))}
     </div>

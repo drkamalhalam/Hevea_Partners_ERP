@@ -53,6 +53,21 @@ function canAccessAllProjects(role: string): boolean {
   return role === "admin" || role === "developer";
 }
 
+/**
+ * Ownership data (calculations, percentages, snapshots) is restricted to roles
+ * with a financial stake in or governance responsibility over the project.
+ * Employees and operational_staff perform day-to-day work and must not have
+ * access to ownership-sensitive financial data.
+ */
+function canViewOwnership(role: string): boolean {
+  return (
+    role === "admin" ||
+    role === "developer" ||
+    role === "landowner" ||
+    role === "investor"
+  );
+}
+
 async function resolveActingUser(clerkUserId: string) {
   const [user] = await db
     .select({ id: usersTable.id, role: usersTable.role, displayName: usersTable.displayName })
@@ -206,6 +221,10 @@ router.get("/summary", async (req, res) => {
   const actor = await resolveActingUser(clerkUserId);
   if (!actor) return res.status(401).json({ error: "User not found" });
 
+  if (!canViewOwnership(actor.role)) {
+    return res.status(403).json({ error: "Ownership data is not accessible to your role." });
+  }
+
   const filterProjectId =
     typeof req.query.projectId === "string" ? req.query.projectId : null;
 
@@ -259,6 +278,10 @@ router.get("/:projectId", async (req, res) => {
   const actor = await resolveActingUser(clerkUserId);
   if (!actor) return res.status(401).json({ error: "User not found" });
 
+  if (!canViewOwnership(actor.role)) {
+    return res.status(403).json({ error: "Ownership data is not accessible to your role." });
+  }
+
   const projectId = String(req.params.projectId);
 
   if (!canAccessAllProjects(actor.role)) {
@@ -292,6 +315,10 @@ router.get("/:projectId/snapshots", async (req, res) => {
 
   const actor = await resolveActingUser(clerkUserId);
   if (!actor) return res.status(401).json({ error: "User not found" });
+
+  if (!canViewOwnership(actor.role)) {
+    return res.status(403).json({ error: "Ownership data is not accessible to your role." });
+  }
 
   const projectId = String(req.params.projectId);
 
@@ -347,6 +374,10 @@ router.get("/:projectId/snapshots/:snapshotId", async (req, res) => {
 
   const actor = await resolveActingUser(clerkUserId);
   if (!actor) return res.status(401).json({ error: "User not found" });
+
+  if (!canViewOwnership(actor.role)) {
+    return res.status(403).json({ error: "Ownership data is not accessible to your role." });
+  }
 
   const projectId = String(req.params.projectId);
   const snapshotId = String(req.params.snapshotId);

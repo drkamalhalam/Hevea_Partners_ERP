@@ -153,6 +153,21 @@ function EventTypeBadge({ type }: { type: string }) {
       icon: <ShieldCheck className="w-3 h-3" />,
       className: "text-sky-700 dark:text-sky-400",
     },
+    dispute_raised: {
+      label: "Dispute Raised",
+      icon: <AlertTriangle className="w-3 h-3" />,
+      className: "text-amber-700 dark:text-amber-400",
+    },
+    dispute_resolved: {
+      label: "Dispute Resolved",
+      icon: <CheckCircle2 className="w-3 h-3" />,
+      className: "text-emerald-700 dark:text-emerald-400",
+    },
+    dispute_overridden: {
+      label: "Admin Override",
+      icon: <AlertCircle className="w-3 h-3" />,
+      className: "text-red-700 dark:text-red-400",
+    },
   };
   const config = configs[type] ?? { label: type, icon: null, className: "" };
   return (

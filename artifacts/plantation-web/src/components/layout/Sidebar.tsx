@@ -124,13 +124,13 @@ const navGroups: NavGroup[] = [
         name: "Ownership Guidance",
         href: "/ownership",
         icon: Scale,
-        roles: ["admin", "developer", "landowner", "investor"],
+        roles: ["admin", "developer", "landowner", "investor"] as UserRole[],
       },
       {
         name: "Ownership Archive",
         href: "/ownership/archive",
         icon: Archive,
-        roles: ["admin", "developer", "landowner", "investor"],
+        roles: ["admin", "developer", "landowner", "investor"] as UserRole[],
       },
       {
         name: "Dispute Centre",

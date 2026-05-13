@@ -1957,6 +1957,9 @@ export const ContributionVerificationEventEventType = {
   verifier_changed: "verifier_changed",
   otp_sent: "otp_sent",
   otp_verified: "otp_verified",
+  dispute_raised: "dispute_raised",
+  dispute_resolved: "dispute_resolved",
+  dispute_overridden: "dispute_overridden",
 } as const;
 
 export interface ContributionVerificationEvent {

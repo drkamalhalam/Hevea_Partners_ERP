@@ -167,6 +167,10 @@ router.get("/contributions/summary", async (req, res) => {
   const actor = await resolveActingUser(clerkUserId);
   if (!actor) return res.status(401).json({ error: "User not found" });
 
+  if (actor.role === "employee" || actor.role === "operational_staff") {
+    return res.status(403).json({ error: "Contribution analytics are not accessible to your role." });
+  }
+
   // Determine visible project IDs
   let visibleProjectIds: string[] | null = null; // null = all
   if (!canAccessAllProjects(actor.role)) {
@@ -992,7 +996,7 @@ router.get("/contributions/:id/verification-history", async (req, res) => {
 // Counts of disputed / pending / rejected contributions per visible project.
 // Placed before /:id to avoid route shadowing.
 
-router.get("/contributions/dispute-summary", async (req, res) => {
+router.get("/contributions/dispute-summary", requireRole("admin", "developer"), async (req, res) => {
   const { userId: clerkUserId } = getAuth(req);
   if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
 
