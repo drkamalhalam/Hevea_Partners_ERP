@@ -1,5 +1,7 @@
 import { useUser } from "@clerk/react";
-import { GovernanceAlertPanel } from "@/components/governance";
+import { useMemo } from "react";
+import type { GovernanceSummary } from "@workspace/api-client-react";
+import { GovernanceAlertPanel, GovernanceStatusBadge } from "@/components/governance";
 import { Link } from "wouter";
 import { format, isThisMonth } from "date-fns";
 import {
@@ -22,6 +24,7 @@ import {
   Clock,
   TrendingUp,
   PieChart,
+  Users,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -38,6 +41,8 @@ import {
   useListProductionRecords,
   useGetMyPortfolio,
   useListAgreements,
+  useListUsers,
+  useGetGovernanceSummary,
 } from "@workspace/api-client-react";
 import {
   AreaChart,
@@ -368,13 +373,104 @@ function ProjectSummaryTable({ compact }: { compact?: boolean }) {
   );
 }
 
-// ── Admin / Developer Dashboard ───────────────────────────────────────────
+// ── Project Health Panel (Developer helper) ───────────────────────────────
 
-function AdminDeveloperDashboard() {
+function ProjectHealthPanel({
+  projects,
+  governance,
+  isLoading,
+}: {
+  projects: Array<{ id: string; name: string; status: string }>;
+  governance: GovernanceSummary | undefined;
+  isLoading: boolean;
+}) {
+  const govMap = useMemo(
+    () => new Map(governance?.projectAlerts.map((a) => [a.projectId, a]) ?? []),
+    [governance],
+  );
+  const sorted = useMemo(() => {
+    const ORDER: Record<string, number> = { attention_required: 0, incomplete: 1, pending: 2, complete: 3 };
+    return [...projects].sort((a, b) => {
+      const as = govMap.get(a.id)?.status ?? "complete";
+      const bs = govMap.get(b.id)?.status ?? "complete";
+      return (ORDER[as] ?? 3) - (ORDER[bs] ?? 3);
+    });
+  }, [projects, govMap]);
+
+  return (
+    <InfoPanel
+      title="Project Health Summary"
+      subtitle="Governance status per project"
+      icon={Trees}
+      iconColor="bg-blue-50 text-blue-600"
+      action={
+        <Link href="/projects">
+          <Button variant="outline" size="sm" className="h-6 text-xs gap-1">
+            All Projects <ArrowUpRight className="w-3 h-3" />
+          </Button>
+        </Link>
+      }
+    >
+      {isLoading ? (
+        <div className="space-y-2">
+          {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-10 w-full rounded" />)}
+        </div>
+      ) : sorted.length === 0 ? (
+        <div className="flex flex-col items-center justify-center h-24 text-muted-foreground">
+          <Trees className="w-7 h-7 mb-1.5 opacity-25" />
+          <p className="text-xs">No projects assigned</p>
+        </div>
+      ) : (
+        <div className="overflow-y-auto max-h-[280px] pr-0.5">
+          {sorted.map((p) => {
+            const alert = govMap.get(p.id);
+            const govStatus = alert?.status ?? "complete";
+            return (
+              <div key={p.id} className="flex items-center gap-3 py-2.5 border-b last:border-0">
+                <div className="flex-1 min-w-0">
+                  <Link href={`/projects/${p.id}`}>
+                    <p className="text-xs font-medium hover:text-primary cursor-pointer truncate">{p.name}</p>
+                  </Link>
+                  {alert && alert.issues.length > 0 && (
+                    <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
+                      {alert.issues[0].message}
+                      {alert.issues.length > 1 ? ` · +${alert.issues.length - 1} more` : ""}
+                    </p>
+                  )}
+                </div>
+                <GovernanceStatusBadge status={govStatus} size="xs" />
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </InfoPanel>
+  );
+}
+
+// ── Admin Dashboard ───────────────────────────────────────────────────────
+
+function AdminDashboard() {
   const { data: summary, isLoading: isLoadingSummary } = useGetDashboardSummary();
+  const { data: users = [], isLoading: isLoadingUsers } = useListUsers();
+  const { data: governance } = useGetGovernanceSummary();
   const { data: stock = [] } = useGetStockSummary();
 
   const totalStock = stock.reduce((s, p) => s + p.currentStock, 0);
+  const roleBreakdown = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const u of users) counts[u.role] = (counts[u.role] ?? 0) + 1;
+    return Object.entries(counts).sort(([, a], [, b]) => b - a);
+  }, [users]);
+
+  const ROLE_BADGE: Record<string, string> = {
+    admin: "bg-red-100 text-red-700",
+    developer: "bg-violet-100 text-violet-700",
+    landowner: "bg-emerald-100 text-emerald-700",
+    investor: "bg-blue-100 text-blue-700",
+    employee: "bg-amber-100 text-amber-700",
+    operational_staff: "bg-gray-100 text-gray-700",
+  };
 
   return (
     <div className="space-y-6 max-w-[1600px]">
@@ -383,27 +479,109 @@ function AdminDeveloperDashboard() {
       {/* KPI Cards */}
       <section>
         <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
-          <MetricCard label="Total Projects" value={summary?.totalProjects ?? "—"} sub={summary ? `${summary.tappingProjectsCount} tapping` : undefined} icon={Trees} iconColor="bg-blue-50 text-blue-600" trend={{ value: 0 }} isLoading={isLoadingSummary} />
-          <MetricCard label="Total Revenue" value="₹24.5L" sub="YTD estimate" icon={Wallet} iconColor="bg-emerald-50 text-emerald-600" trend={{ value: 12 }} />
-          <MetricCard label="Total Expenditure" value="₹8.2L" sub="YTD estimate" icon={Receipt} iconColor="bg-rose-50 text-rose-500" trend={{ value: -3 }} />
-          <MetricCard label="Pending Approvals" value={MOCK_APPROVALS.length} sub="2 overdue" icon={ClipboardCheck} iconColor="bg-amber-50 text-amber-600" trend={{ value: 1 }} />
-          <MetricCard label="Pending Tasks" value={MOCK_TASKS.length} sub="3 high priority" icon={CheckSquare} iconColor="bg-violet-50 text-violet-600" trend={{ value: -2 }} />
+          <MetricCard
+            label="Total Projects"
+            value={summary?.totalProjects ?? "—"}
+            sub={summary ? `${summary.tappingProjectsCount} tapping` : undefined}
+            icon={Trees}
+            iconColor="bg-blue-50 text-blue-600"
+            isLoading={isLoadingSummary}
+          />
+          <MetricCard
+            label="Total Partners"
+            value={summary?.totalPartners ?? "—"}
+            sub="registered"
+            icon={Users}
+            iconColor="bg-emerald-50 text-emerald-600"
+            isLoading={isLoadingSummary}
+          />
+          <MetricCard
+            label="Agreements"
+            value={summary?.totalAgreements ?? "—"}
+            sub="active agreements"
+            icon={FileSignature}
+            iconColor="bg-amber-50 text-amber-600"
+            isLoading={isLoadingSummary}
+          />
+          <MetricCard
+            label="System Users"
+            value={isLoadingUsers ? "—" : users.length}
+            sub={roleBreakdown.length > 0 ? `${roleBreakdown.length} roles` : "all roles"}
+            icon={Users}
+            iconColor="bg-violet-50 text-violet-600"
+            isLoading={isLoadingUsers}
+          />
+          <MetricCard
+            label="Governance Issues"
+            value={governance ? governance.totalIssues : "—"}
+            sub={governance?.overallStatus === "complete" ? "all checks passed" : governance?.overallStatus?.replace(/_/g, " ") ?? "loading..."}
+            icon={AlertCircle}
+            iconColor={governance?.totalIssues ? "bg-red-50 text-red-500" : "bg-emerald-50 text-emerald-600"}
+          />
           <MetricCard
             label="Stock on Hand"
             value={totalStock > 0 ? `${totalStock.toLocaleString("en-IN", { maximumFractionDigits: 0 })} kg` : "—"}
-            sub="Current inventory"
+            sub="current inventory"
             icon={Warehouse}
             iconColor="bg-teal-50 text-teal-600"
           />
         </div>
       </section>
 
-      {/* Governance Status */}
+      {/* Governance alerts */}
       <section>
         <GovernanceAlertPanel />
       </section>
 
-      {/* Analytics row 1 */}
+      {/* User stats + Activity */}
+      <section className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <div className="lg:col-span-7">
+          <InfoPanel
+            title="System Users"
+            subtitle="Registered users by role"
+            icon={Users}
+            iconColor="bg-violet-50 text-violet-600"
+            action={
+              <Link href="/admin">
+                <Button variant="outline" size="sm" className="h-6 text-xs gap-1">
+                  Manage Users <ArrowUpRight className="w-3 h-3" />
+                </Button>
+              </Link>
+            }
+          >
+            {isLoadingUsers ? (
+              <div className="space-y-1.5">
+                {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-9 w-full rounded" />)}
+              </div>
+            ) : users.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-24 text-muted-foreground">
+                <Users className="w-7 h-7 mb-1.5 opacity-25" />
+                <p className="text-xs">No users registered</p>
+              </div>
+            ) : (
+              <div className="space-y-1">
+                {roleBreakdown.map(([role, count]) => (
+                  <div key={role} className="flex items-center justify-between p-2.5 rounded-lg hover:bg-gray-50/80 transition-colors">
+                    <span className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full capitalize ${ROLE_BADGE[role] ?? "bg-gray-100 text-gray-700"}`}>
+                      {ROLE_LABELS[role as keyof typeof ROLE_LABELS] ?? role}
+                    </span>
+                    <span className="text-sm font-bold tabular-nums">{count}</span>
+                  </div>
+                ))}
+                <div className="flex items-center justify-between p-2.5 rounded-lg bg-gray-50/80 border-t mt-0.5">
+                  <span className="text-xs font-semibold text-muted-foreground">Total</span>
+                  <span className="text-sm font-bold">{users.length}</span>
+                </div>
+              </div>
+            )}
+          </InfoPanel>
+        </div>
+        <div className="lg:col-span-5">
+          <ActivityPanel />
+        </div>
+      </section>
+
+      {/* Revenue chart + Approvals / Tasks */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         <div className="lg:col-span-7">
           <ChartCard title="Revenue & Expenditure" subtitle="Monthly trend — current financial year" badge="Placeholder data" minHeight={220}>
@@ -430,32 +608,7 @@ function AdminDeveloperDashboard() {
             </ResponsiveContainer>
           </ChartCard>
         </div>
-        <div className="lg:col-span-5">
-          <ActivityPanel />
-        </div>
-      </section>
-
-      {/* Analytics row 2 */}
-      <section className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        <div className="lg:col-span-7">
-          <ChartCard title="Project Performance" subtitle="Production vs sales — current season" badge="Placeholder data" minHeight={200}>
-            <ResponsiveContainer width="100%" height={190}>
-              <BarChart data={MOCK_PROJECT_PERF} margin={{ top: 4, right: 4, left: -10, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-gray-100" vertical={false} />
-                <XAxis dataKey="project" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
-                <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={(v) => `${v} kg`} />
-                <Tooltip contentStyle={{ borderRadius: "8px", border: "1px solid #e5e7eb", fontSize: "11px" }} formatter={(v: number, name: string) => [`${v} kg`, name === "production" ? "Produced" : name === "sales" ? "Sold" : "Target"]} />
-                <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: "11px", paddingTop: "8px" }} />
-                <Bar dataKey="production" name="Produced" fill="#059669" radius={[3, 3, 0, 0]} />
-                <Bar dataKey="sales" name="Sold" fill="#0ea5e9" radius={[3, 3, 0, 0]} />
-                <Bar dataKey="target" name="Target" fill="#e5e7eb" radius={[3, 3, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </ChartCard>
-        </div>
-
         <div className="lg:col-span-5 space-y-4">
-          {/* Pending Approvals */}
           <InfoPanel title="Pending Approvals" subtitle={`${MOCK_APPROVALS.filter(a => a.due === "Overdue").length} overdue`} icon={AlertCircle} iconColor="bg-amber-50 text-amber-500">
             <div className="space-y-2">
               {MOCK_APPROVALS.map((item) => (
@@ -469,8 +622,6 @@ function AdminDeveloperDashboard() {
               ))}
             </div>
           </InfoPanel>
-
-          {/* Pending Tasks */}
           <InfoPanel title="Pending Tasks" icon={Clock} iconColor="bg-violet-50 text-violet-500">
             <div className="space-y-2">
               {MOCK_TASKS.map((task) => (
@@ -496,6 +647,131 @@ function AdminDeveloperDashboard() {
   );
 }
 
+// ── Developer Dashboard ───────────────────────────────────────────────────
+
+function DeveloperDashboard() {
+  const { data: summary } = useGetDashboardSummary();
+  const { data: governance, isLoading: isLoadingGovernance } = useGetGovernanceSummary();
+  const { data: projects = [], isLoading: isLoadingProjects } = useListProjects();
+  const { data: stock = [] } = useGetStockSummary();
+  const { data: production = [] } = useListProductionRecords();
+
+  const totalStock = stock.reduce((s, p) => s + p.currentStock, 0);
+  const govIssues = governance?.totalIssues ?? 0;
+  const attentionCount = governance?.projectAlerts.filter(a => a.status === "attention_required").length ?? 0;
+  const thisMonthKg = production
+    .filter(p => { try { return isThisMonth(new Date(p.recordedAt)); } catch { return false; } })
+    .reduce((sum, p) => sum + p.productionKg, 0);
+
+  return (
+    <div className="space-y-6 max-w-[1600px]">
+      <WelcomeHeader />
+
+      {/* KPI Cards */}
+      <section>
+        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3">
+          <MetricCard
+            label="My Projects"
+            value={projects.length}
+            sub={summary ? `${summary.tappingProjectsCount} tapping` : undefined}
+            icon={Trees}
+            iconColor="bg-blue-50 text-blue-600"
+            isLoading={isLoadingProjects}
+          />
+          <MetricCard
+            label="Governance Issues"
+            value={govIssues > 0 ? govIssues : governance ? "✓" : "—"}
+            sub={govIssues === 0 && governance ? "all checks passed" : govIssues > 0 ? `${attentionCount} need immediate action` : "checking..."}
+            icon={AlertCircle}
+            iconColor={govIssues > 0 ? "bg-red-50 text-red-500" : "bg-emerald-50 text-emerald-600"}
+            isLoading={isLoadingGovernance}
+          />
+          <MetricCard
+            label="Projects at Risk"
+            value={attentionCount > 0 ? attentionCount : governance ? "None" : "—"}
+            sub="attention required"
+            icon={ClipboardCheck}
+            iconColor={attentionCount > 0 ? "bg-amber-50 text-amber-600" : "bg-emerald-50 text-emerald-600"}
+            isLoading={isLoadingGovernance}
+          />
+          <MetricCard
+            label="Production This Month"
+            value={thisMonthKg > 0 ? `${thisMonthKg.toLocaleString()} kg` : "—"}
+            sub="rubber produced"
+            icon={Scale}
+            iconColor="bg-emerald-50 text-emerald-600"
+          />
+          <MetricCard
+            label="Stock on Hand"
+            value={totalStock > 0 ? `${totalStock.toLocaleString("en-IN", { maximumFractionDigits: 0 })} kg` : "—"}
+            sub="current inventory"
+            icon={Warehouse}
+            iconColor="bg-teal-50 text-teal-600"
+          />
+        </div>
+      </section>
+
+      {/* Governance alerts */}
+      <section>
+        <GovernanceAlertPanel />
+      </section>
+
+      {/* Project health + Pending approvals */}
+      <section className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <div className="lg:col-span-7">
+          <ProjectHealthPanel
+            projects={projects}
+            governance={governance}
+            isLoading={isLoadingProjects || isLoadingGovernance}
+          />
+        </div>
+        <div className="lg:col-span-5 space-y-4">
+          <InfoPanel
+            title="Pending Approvals"
+            subtitle={`${MOCK_APPROVALS.filter(a => a.due === "Overdue").length} overdue`}
+            icon={AlertCircle}
+            iconColor="bg-amber-50 text-amber-500"
+          >
+            <div className="space-y-2">
+              {MOCK_APPROVALS.slice(0, 3).map((item) => (
+                <div key={item.id} className="flex items-center gap-3 p-2 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium truncate">{item.title}</p>
+                    <p className="text-[10px] text-muted-foreground truncate">{item.detail}</p>
+                  </div>
+                  <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border flex-shrink-0 ${PRIORITY_COLORS[item.priority]}`}>{item.due}</span>
+                </div>
+              ))}
+            </div>
+          </InfoPanel>
+          <ChartCard title="Project Performance" subtitle="Production vs sales — current season" badge="Placeholder" minHeight={170}>
+            <ResponsiveContainer width="100%" height={150}>
+              <BarChart data={MOCK_PROJECT_PERF} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-gray-100" vertical={false} />
+                <XAxis dataKey="project" tick={{ fontSize: 9 }} tickLine={false} axisLine={false} />
+                <YAxis tick={{ fontSize: 9 }} tickLine={false} axisLine={false} />
+                <Tooltip contentStyle={{ borderRadius: "8px", border: "1px solid #e5e7eb", fontSize: "11px" }} formatter={(v: number, name: string) => [`${v} kg`, name === "production" ? "Produced" : "Sold"]} />
+                <Bar dataKey="production" name="Produced" fill="#059669" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="sales" name="Sold" fill="#0ea5e9" radius={[3, 3, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </ChartCard>
+        </div>
+      </section>
+
+      {/* Project summary + Activity */}
+      <section className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <div className="lg:col-span-8">
+          <ProjectSummaryTable compact />
+        </div>
+        <div className="lg:col-span-4">
+          <ActivityPanel />
+        </div>
+      </section>
+    </div>
+  );
+}
+
 // ── Landowner Dashboard ───────────────────────────────────────────────────
 
 function LandownerDashboard() {
@@ -503,8 +779,14 @@ function LandownerDashboard() {
   const { data: projects = [], isLoading: isLoadingProjects } = useListProjects();
 
   const agreements = portfolio?.agreements ?? [];
-  const totalLand = portfolio?.projects?.length ?? 0;
-  const ownershipShare = portfolio?.agreements?.length ?? 0;
+  const activeAgreements = agreements.filter((a) => a.status === "active");
+  const pendingAgreements = agreements.filter((a) => a.status !== "active");
+  const totalLandKani = agreements.reduce((sum, a) => sum + (a.landArea ?? 0), 0);
+  const avgOwnership =
+    activeAgreements.length > 0
+      ? activeAgreements.reduce((sum, a) => sum + (a.ownershipShareLandowner ?? 0), 0) /
+        activeAgreements.length
+      : 0;
 
   return (
     <div className="space-y-6 max-w-[1400px]">
@@ -513,12 +795,76 @@ function LandownerDashboard() {
       {/* KPI Cards */}
       <section>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <MetricCard label="My Projects" value={projects.length} icon={Trees} iconColor="bg-blue-50 text-blue-600" isLoading={isLoadingProjects} />
-          <MetricCard label="My Agreements" value={agreements.length} icon={FileSignature} iconColor="bg-amber-50 text-amber-600" isLoading={isLoadingPortfolio} />
-          <MetricCard label="Land Under Agreement" value={totalLand > 0 ? `${totalLand} kani` : "—"} sub="total area" icon={MapPin} iconColor="bg-emerald-50 text-emerald-600" isLoading={isLoadingPortfolio} />
-          <MetricCard label="Ownership Share" value={ownershipShare > 0 ? `${ownershipShare.toFixed(1)}%` : "—"} sub="avg across agreements" icon={PieChart} iconColor="bg-violet-50 text-violet-600" isLoading={isLoadingPortfolio} />
+          <MetricCard
+            label="My Projects"
+            value={projects.length}
+            icon={Trees}
+            iconColor="bg-blue-50 text-blue-600"
+            isLoading={isLoadingProjects}
+          />
+          <MetricCard
+            label="Active Agreements"
+            value={activeAgreements.length}
+            icon={FileSignature}
+            iconColor="bg-emerald-50 text-emerald-600"
+            isLoading={isLoadingPortfolio}
+          />
+          <MetricCard
+            label="Pending Verification"
+            value={pendingAgreements.length > 0 ? pendingAgreements.length : "None"}
+            sub={pendingAgreements.length > 0 ? "requires attention" : "all up to date"}
+            icon={ClipboardCheck}
+            iconColor={pendingAgreements.length > 0 ? "bg-amber-50 text-amber-600" : "bg-emerald-50 text-emerald-600"}
+            isLoading={isLoadingPortfolio}
+          />
+          <MetricCard
+            label="Land Under Agreement"
+            value={totalLandKani > 0 ? `${totalLandKani} kani` : "—"}
+            sub={avgOwnership > 0 ? `${avgOwnership.toFixed(1)}% avg ownership` : "total land area"}
+            icon={MapPin}
+            iconColor="bg-violet-50 text-violet-600"
+            isLoading={isLoadingPortfolio}
+          />
         </div>
       </section>
+
+      {/* Pending Verifications (only shown when relevant) */}
+      {pendingAgreements.length > 0 && (
+        <section>
+          <InfoPanel
+            title="Pending Verifications"
+            subtitle="Agreements awaiting your attention"
+            icon={ClipboardCheck}
+            iconColor="bg-amber-50 text-amber-600"
+          >
+            <div className="space-y-2">
+              {pendingAgreements.map((a) => (
+                <div
+                  key={a.id}
+                  className="flex items-center justify-between gap-3 p-3 rounded-lg border border-amber-100 bg-amber-50/40 hover:bg-amber-50/70 transition-colors"
+                >
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold truncate">{a.projectName}</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                      {a.landArea} {a.landAreaUnit} · {a.termYears}yr term
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 capitalize">
+                      {a.status.replace(/_/g, " ")}
+                    </span>
+                    <Link href="/agreements">
+                      <Button variant="ghost" size="sm" className="h-6 text-xs gap-1 text-primary px-2">
+                        View <ChevronRight className="w-3 h-3" />
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </InfoPanel>
+        </section>
+      )}
 
       {/* Agreements + Activity */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-4">
@@ -567,7 +913,7 @@ function LandownerDashboard() {
                           {a.ownershipShareLandowner != null ? `${a.ownershipShareLandowner}%` : "—"}
                         </td>
                         <td className="py-2.5 pl-3">
-                          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full capitalize ${a.status === "active" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"}`}>
+                          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full capitalize ${a.status === "active" ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}>
                             {a.status}
                           </span>
                         </td>
@@ -579,7 +925,6 @@ function LandownerDashboard() {
             )}
           </InfoPanel>
         </div>
-
         <div className="lg:col-span-5">
           <ActivityPanel />
         </div>
@@ -601,10 +946,8 @@ function InvestorDashboard() {
   const { data: revenueStats = [] } = useGetRevenueStats();
 
   const agreements = portfolio?.agreements ?? [];
-  const totalLand = portfolio?.projects?.length ?? 0;
-  const ownershipShare = portfolio?.agreements?.length ?? 0;
-
-  const projectedRevenue = totalLand > 0 ? `₹${(totalLand * 12).toFixed(0)}k` : "—";
+  const totalLandKani = agreements.reduce((sum, a) => sum + (a.landArea ?? 0), 0);
+  const totalOwnership = agreements.reduce((sum, a) => sum + (a.ownershipShareDeveloper ?? 0), 0);
 
   const revenueChartData = revenueStats.map((s) => ({
     project: s.projectName.split(" ")[0],
@@ -619,19 +962,46 @@ function InvestorDashboard() {
       {/* KPI Cards */}
       <section>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <MetricCard label="My Projects" value={projects.length} icon={Trees} iconColor="bg-blue-50 text-blue-600" isLoading={isLoadingProjects} />
-          <MetricCard label="Agreements" value={agreements.length} icon={FileSignature} iconColor="bg-amber-50 text-amber-600" isLoading={isLoadingPortfolio} />
-          <MetricCard label="Land Portfolio" value={totalLand > 0 ? `${totalLand} kani` : "—"} sub="across agreements" icon={MapPin} iconColor="bg-emerald-50 text-emerald-600" isLoading={isLoadingPortfolio} />
-          <MetricCard label="Projected Revenue" value={projectedRevenue} sub="annual estimate" icon={TrendingUp} iconColor="bg-violet-50 text-violet-600" isLoading={isLoadingPortfolio} />
+          <MetricCard
+            label="My Projects"
+            value={projects.length}
+            icon={Trees}
+            iconColor="bg-blue-50 text-blue-600"
+            isLoading={isLoadingProjects}
+          />
+          <MetricCard
+            label="Agreements"
+            value={agreements.length}
+            sub="investment agreements"
+            icon={FileSignature}
+            iconColor="bg-amber-50 text-amber-600"
+            isLoading={isLoadingPortfolio}
+          />
+          <MetricCard
+            label="Land Portfolio"
+            value={totalLandKani > 0 ? `${totalLandKani} kani` : "—"}
+            sub="total land area"
+            icon={MapPin}
+            iconColor="bg-emerald-50 text-emerald-600"
+            isLoading={isLoadingPortfolio}
+          />
+          <MetricCard
+            label="Total Ownership Share"
+            value={totalOwnership > 0 ? `${totalOwnership.toFixed(1)}%` : "—"}
+            sub="across all agreements"
+            icon={TrendingUp}
+            iconColor="bg-violet-50 text-violet-600"
+            isLoading={isLoadingPortfolio}
+          />
         </div>
       </section>
 
-      {/* Investment details + Revenue chart */}
+      {/* Participation overview + Revenue chart */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         <div className="lg:col-span-5">
           <InfoPanel
-            title="Investment Details"
-            subtitle="Your project agreements"
+            title="Participation Overview"
+            subtitle="Your investment agreements"
             icon={FileSignature}
             iconColor="bg-amber-50 text-amber-600"
             action={
@@ -644,7 +1014,7 @@ function InvestorDashboard() {
           >
             {isLoadingPortfolio ? (
               <div className="space-y-2">
-                {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-10 w-full rounded-lg" />)}
+                {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-14 w-full rounded-lg" />)}
               </div>
             ) : agreements.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-24 text-muted-foreground">
@@ -654,16 +1024,19 @@ function InvestorDashboard() {
             ) : (
               <div className="space-y-2">
                 {agreements.map((a) => (
-                  <div key={a.id} className="p-3 rounded-lg border bg-gray-50 hover:bg-gray-100 transition-colors">
+                  <div key={a.id} className="p-3 rounded-lg border bg-gray-50/60 hover:bg-gray-50 transition-colors">
                     <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <p className="text-xs font-semibold">{a.projectName}</p>
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold truncate">{a.projectName}</p>
                         <p className="text-[10px] text-muted-foreground mt-0.5">
                           {a.landArea} {a.landAreaUnit} · {a.termYears}yr term
                         </p>
+                        <span className={`mt-1 inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded-full capitalize ${a.status === "active" ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}>
+                          {a.status}
+                        </span>
                       </div>
                       <div className="text-right flex-shrink-0">
-                        <p className="text-sm font-bold text-emerald-700">
+                        <p className="text-base font-bold text-emerald-700">
                           {a.ownershipShareDeveloper != null ? `${a.ownershipShareDeveloper}%` : "—"}
                         </p>
                         <p className="text-[10px] text-muted-foreground">ownership</p>
@@ -712,7 +1085,7 @@ function InvestorDashboard() {
         </div>
       </section>
 
-      {/* Activity */}
+      {/* Project table + Activity */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         <div className="lg:col-span-8">
           <ProjectSummaryTable compact />
@@ -1006,7 +1379,8 @@ export default function Dashboard() {
     );
   }
 
-  if (canAccessAllProjects) return <AdminDeveloperDashboard />;
+  if (role === "admin") return <AdminDashboard />;
+  if (role === "developer") return <DeveloperDashboard />;
   if (role === "landowner") return <LandownerDashboard />;
   if (role === "investor") return <InvestorDashboard />;
   if (role === "employee") return <EmployeeDashboard />;
