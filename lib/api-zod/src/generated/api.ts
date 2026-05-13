@@ -941,6 +941,169 @@ export const TransitionProjectLifecycleBody = zod.object({
 });
 
 /**
+ * @summary Get active or latest maturity declaration for a project
+ */
+export const GetProjectMaturityParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const GetProjectMaturityResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  status: zod.enum(["pending_otp", "completed", "cancelled"]),
+  initiatedBy: zod.string().uuid().nullish(),
+  initiatedByName: zod.string().nullish(),
+  blockerSnapshot: zod.object({}).passthrough().nullish(),
+  ownershipSnapshotPlaceholder: zod.object({}).passthrough().nullish(),
+  cancelledBy: zod.string().uuid().nullish(),
+  cancelledAt: zod.string().nullish(),
+  cancellationReason: zod.string().nullish(),
+  completedAt: zod.string().nullish(),
+  createdAt: zod.string(),
+  updatedAt: zod.string().nullish(),
+  otpVerifications: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      declarationId: zod.string().uuid(),
+      partyRole: zod.enum(["developer", "landowner"]),
+      partyUserId: zod.string().uuid().nullish(),
+      partyName: zod.string(),
+      partyPhone: zod.string().nullish(),
+      partnerId: zod.string().uuid().nullish(),
+      status: zod.enum(["pending", "sent", "verified", "failed", "expired"]),
+      otpCodePlaceholder: zod.string().nullish(),
+      sentAt: zod.string().nullish(),
+      verifiedAt: zod.string().nullish(),
+      expiresAt: zod.string().nullish(),
+      attempts: zod.number(),
+      createdAt: zod.string(),
+    }),
+  ),
+});
+
+/**
+ * @summary Initiate maturity declaration workflow (developer/admin only)
+ */
+export const InitiateMaturityDeclarationParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const InitiateMaturityDeclarationBody = zod.object({
+  remarks: zod.string().optional(),
+});
+
+/**
+ * @summary Cancel the active maturity declaration
+ */
+export const CancelMaturityDeclarationParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const CancelMaturityDeclarationBody = zod.object({
+  reason: zod.string().optional(),
+});
+
+export const CancelMaturityDeclarationResponse = zod.object({
+  ok: zod.boolean().optional(),
+});
+
+/**
+ * @summary Check real-time blockers for maturity declaration
+ */
+export const GetMaturityBlockersParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const GetMaturityBlockersResponse = zod.object({
+  canProceed: zod.boolean(),
+  blockers: zod.array(
+    zod.object({
+      type: zod.enum([
+        "already_mature",
+        "active_declaration",
+        "pending_agreement",
+        "disputed_claimant",
+        "no_agreements",
+      ]),
+      message: zod.string(),
+      severity: zod.enum(["error", "warning"]),
+      count: zod.number().nullish(),
+    }),
+  ),
+});
+
+/**
+ * @summary Send (or resend) OTP to a party — placeholder returns code in response
+ */
+export const SendMaturityOtpParams = zod.object({
+  id: zod.coerce.string().uuid(),
+  verificationId: zod.coerce.string().uuid(),
+});
+
+export const SendMaturityOtpResponse = zod.object({
+  id: zod.string().uuid(),
+  declarationId: zod.string().uuid(),
+  partyRole: zod.enum(["developer", "landowner"]),
+  partyUserId: zod.string().uuid().nullish(),
+  partyName: zod.string(),
+  partyPhone: zod.string().nullish(),
+  partnerId: zod.string().uuid().nullish(),
+  status: zod.enum(["pending", "sent", "verified", "failed", "expired"]),
+  otpCodePlaceholder: zod.string().nullish(),
+  sentAt: zod.string().nullish(),
+  verifiedAt: zod.string().nullish(),
+  expiresAt: zod.string().nullish(),
+  attempts: zod.number(),
+  createdAt: zod.string(),
+});
+
+/**
+ * @summary Verify OTP code for a party; completes declaration when all verified
+ */
+export const VerifyMaturityOtpParams = zod.object({
+  id: zod.coerce.string().uuid(),
+  verificationId: zod.coerce.string().uuid(),
+});
+
+export const VerifyMaturityOtpBody = zod.object({
+  otpCode: zod.string(),
+});
+
+export const VerifyMaturityOtpResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  status: zod.enum(["pending_otp", "completed", "cancelled"]),
+  initiatedBy: zod.string().uuid().nullish(),
+  initiatedByName: zod.string().nullish(),
+  blockerSnapshot: zod.object({}).passthrough().nullish(),
+  ownershipSnapshotPlaceholder: zod.object({}).passthrough().nullish(),
+  cancelledBy: zod.string().uuid().nullish(),
+  cancelledAt: zod.string().nullish(),
+  cancellationReason: zod.string().nullish(),
+  completedAt: zod.string().nullish(),
+  createdAt: zod.string(),
+  updatedAt: zod.string().nullish(),
+  otpVerifications: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      declarationId: zod.string().uuid(),
+      partyRole: zod.enum(["developer", "landowner"]),
+      partyUserId: zod.string().uuid().nullish(),
+      partyName: zod.string(),
+      partyPhone: zod.string().nullish(),
+      partnerId: zod.string().uuid().nullish(),
+      status: zod.enum(["pending", "sent", "verified", "failed", "expired"]),
+      otpCodePlaceholder: zod.string().nullish(),
+      sentAt: zod.string().nullish(),
+      verifiedAt: zod.string().nullish(),
+      expiresAt: zod.string().nullish(),
+      attempts: zod.number(),
+      createdAt: zod.string(),
+    }),
+  ),
+});
+
+/**
  * @summary List all partners
  */
 export const ListPartnersResponseItem = zod.object({

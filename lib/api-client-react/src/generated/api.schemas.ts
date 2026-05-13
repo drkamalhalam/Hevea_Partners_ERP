@@ -593,6 +593,142 @@ export interface TransitionLifecycleBody {
   remarks?: string;
 }
 
+export type MaturityDeclarationStatus =
+  (typeof MaturityDeclarationStatus)[keyof typeof MaturityDeclarationStatus];
+
+export const MaturityDeclarationStatus = {
+  pending_otp: "pending_otp",
+  completed: "completed",
+  cancelled: "cancelled",
+} as const;
+
+/**
+ * @nullable
+ */
+export type MaturityDeclarationBlockerSnapshot = {
+  [key: string]: unknown;
+} | null;
+
+/**
+ * @nullable
+ */
+export type MaturityDeclarationOwnershipSnapshotPlaceholder = {
+  [key: string]: unknown;
+} | null;
+
+export type MaturityOtpVerificationPartyRole =
+  (typeof MaturityOtpVerificationPartyRole)[keyof typeof MaturityOtpVerificationPartyRole];
+
+export const MaturityOtpVerificationPartyRole = {
+  developer: "developer",
+  landowner: "landowner",
+} as const;
+
+export type MaturityOtpVerificationStatus =
+  (typeof MaturityOtpVerificationStatus)[keyof typeof MaturityOtpVerificationStatus];
+
+export const MaturityOtpVerificationStatus = {
+  pending: "pending",
+  sent: "sent",
+  verified: "verified",
+  failed: "failed",
+  expired: "expired",
+} as const;
+
+export interface MaturityOtpVerification {
+  id: string;
+  declarationId: string;
+  partyRole: MaturityOtpVerificationPartyRole;
+  /** @nullable */
+  partyUserId?: string | null;
+  partyName: string;
+  /** @nullable */
+  partyPhone?: string | null;
+  /** @nullable */
+  partnerId?: string | null;
+  status: MaturityOtpVerificationStatus;
+  /** @nullable */
+  otpCodePlaceholder?: string | null;
+  /** @nullable */
+  sentAt?: string | null;
+  /** @nullable */
+  verifiedAt?: string | null;
+  /** @nullable */
+  expiresAt?: string | null;
+  attempts: number;
+  createdAt: string;
+}
+
+export interface MaturityDeclaration {
+  id: string;
+  projectId: string;
+  status: MaturityDeclarationStatus;
+  /** @nullable */
+  initiatedBy?: string | null;
+  /** @nullable */
+  initiatedByName?: string | null;
+  /** @nullable */
+  blockerSnapshot?: MaturityDeclarationBlockerSnapshot;
+  /** @nullable */
+  ownershipSnapshotPlaceholder?: MaturityDeclarationOwnershipSnapshotPlaceholder;
+  /** @nullable */
+  cancelledBy?: string | null;
+  /** @nullable */
+  cancelledAt?: string | null;
+  /** @nullable */
+  cancellationReason?: string | null;
+  /** @nullable */
+  completedAt?: string | null;
+  createdAt: string;
+  /** @nullable */
+  updatedAt?: string | null;
+  otpVerifications: MaturityOtpVerification[];
+}
+
+export type MaturityBlockerItemType =
+  (typeof MaturityBlockerItemType)[keyof typeof MaturityBlockerItemType];
+
+export const MaturityBlockerItemType = {
+  already_mature: "already_mature",
+  active_declaration: "active_declaration",
+  pending_agreement: "pending_agreement",
+  disputed_claimant: "disputed_claimant",
+  no_agreements: "no_agreements",
+} as const;
+
+export type MaturityBlockerItemSeverity =
+  (typeof MaturityBlockerItemSeverity)[keyof typeof MaturityBlockerItemSeverity];
+
+export const MaturityBlockerItemSeverity = {
+  error: "error",
+  warning: "warning",
+} as const;
+
+export interface MaturityBlockerItem {
+  type: MaturityBlockerItemType;
+  message: string;
+  severity: MaturityBlockerItemSeverity;
+  /** @nullable */
+  count?: number | null;
+}
+
+export interface MaturityBlockers {
+  canProceed: boolean;
+  blockers: MaturityBlockerItem[];
+}
+
+export interface InitiateMaturityBody {
+  remarks?: string;
+}
+
+export interface CancelMaturityBody {
+  reason?: string;
+}
+
+export interface VerifyOtpBody {
+  otpCode: string;
+}
+
 export type ProjectNomineeActivationStatus =
   (typeof ProjectNomineeActivationStatus)[keyof typeof ProjectNomineeActivationStatus];
 

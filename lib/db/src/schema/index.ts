@@ -11,4 +11,5 @@ export * from "./notifications";
 export * from "./activity";
 export * from "./audit";
 export * from "./lifecycle";
+export * from "./maturity";
 export * from "./stubs";

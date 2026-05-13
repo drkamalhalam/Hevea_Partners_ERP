@@ -23,6 +23,7 @@ import type {
   AgreementInput,
   AgreementUpdate,
   AssignProjectInput,
+  CancelMaturityBody,
   CreateClaimantInput,
   CreateNomineeInput,
   DashboardSummary,
@@ -30,8 +31,12 @@ import type {
   GetUserActivityParams,
   GovernanceSummary,
   HealthStatus,
+  InitiateMaturityBody,
   ListPartnerClaimantsParams,
   ListProductionRecordsParams,
+  MaturityBlockers,
+  MaturityDeclaration,
+  MaturityOtpVerification,
   OkResponse,
   Partner,
   PartnerClaimant,
@@ -58,6 +63,7 @@ import type {
   UpdateProfileInput,
   UpsertUserInput,
   UserProfile,
+  VerifyOtpBody,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -2523,6 +2529,539 @@ export const useTransitionProjectLifecycle = <
   TContext
 > => {
   return useMutation(getTransitionProjectLifecycleMutationOptions(options));
+};
+
+/**
+ * @summary Get active or latest maturity declaration for a project
+ */
+export const getGetProjectMaturityUrl = (id: string) => {
+  return `/api/projects/${id}/maturity`;
+};
+
+export const getProjectMaturity = async (
+  id: string,
+  options?: RequestInit,
+): Promise<MaturityDeclaration> => {
+  return customFetch<MaturityDeclaration>(getGetProjectMaturityUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetProjectMaturityQueryKey = (id: string) => {
+  return [`/api/projects/${id}/maturity`] as const;
+};
+
+export const getGetProjectMaturityQueryOptions = <
+  TData = Awaited<ReturnType<typeof getProjectMaturity>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getProjectMaturity>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetProjectMaturityQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getProjectMaturity>>
+  > = ({ signal }) => getProjectMaturity(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getProjectMaturity>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetProjectMaturityQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getProjectMaturity>>
+>;
+export type GetProjectMaturityQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Get active or latest maturity declaration for a project
+ */
+
+export function useGetProjectMaturity<
+  TData = Awaited<ReturnType<typeof getProjectMaturity>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getProjectMaturity>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetProjectMaturityQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Initiate maturity declaration workflow (developer/admin only)
+ */
+export const getInitiateMaturityDeclarationUrl = (id: string) => {
+  return `/api/projects/${id}/maturity`;
+};
+
+export const initiateMaturityDeclaration = async (
+  id: string,
+  initiateMaturityBody: InitiateMaturityBody,
+  options?: RequestInit,
+): Promise<MaturityDeclaration> => {
+  return customFetch<MaturityDeclaration>(
+    getInitiateMaturityDeclarationUrl(id),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(initiateMaturityBody),
+    },
+  );
+};
+
+export const getInitiateMaturityDeclarationMutationOptions = <
+  TError = ErrorType<MaturityBlockers>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof initiateMaturityDeclaration>>,
+    TError,
+    { id: string; data: BodyType<InitiateMaturityBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof initiateMaturityDeclaration>>,
+  TError,
+  { id: string; data: BodyType<InitiateMaturityBody> },
+  TContext
+> => {
+  const mutationKey = ["initiateMaturityDeclaration"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof initiateMaturityDeclaration>>,
+    { id: string; data: BodyType<InitiateMaturityBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return initiateMaturityDeclaration(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type InitiateMaturityDeclarationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof initiateMaturityDeclaration>>
+>;
+export type InitiateMaturityDeclarationMutationBody =
+  BodyType<InitiateMaturityBody>;
+export type InitiateMaturityDeclarationMutationError =
+  ErrorType<MaturityBlockers>;
+
+/**
+ * @summary Initiate maturity declaration workflow (developer/admin only)
+ */
+export const useInitiateMaturityDeclaration = <
+  TError = ErrorType<MaturityBlockers>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof initiateMaturityDeclaration>>,
+    TError,
+    { id: string; data: BodyType<InitiateMaturityBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof initiateMaturityDeclaration>>,
+  TError,
+  { id: string; data: BodyType<InitiateMaturityBody> },
+  TContext
+> => {
+  return useMutation(getInitiateMaturityDeclarationMutationOptions(options));
+};
+
+/**
+ * @summary Cancel the active maturity declaration
+ */
+export const getCancelMaturityDeclarationUrl = (id: string) => {
+  return `/api/projects/${id}/maturity`;
+};
+
+export const cancelMaturityDeclaration = async (
+  id: string,
+  cancelMaturityBody: CancelMaturityBody,
+  options?: RequestInit,
+): Promise<OkResponse> => {
+  return customFetch<OkResponse>(getCancelMaturityDeclarationUrl(id), {
+    ...options,
+    method: "DELETE",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(cancelMaturityBody),
+  });
+};
+
+export const getCancelMaturityDeclarationMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof cancelMaturityDeclaration>>,
+    TError,
+    { id: string; data: BodyType<CancelMaturityBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof cancelMaturityDeclaration>>,
+  TError,
+  { id: string; data: BodyType<CancelMaturityBody> },
+  TContext
+> => {
+  const mutationKey = ["cancelMaturityDeclaration"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof cancelMaturityDeclaration>>,
+    { id: string; data: BodyType<CancelMaturityBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return cancelMaturityDeclaration(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CancelMaturityDeclarationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof cancelMaturityDeclaration>>
+>;
+export type CancelMaturityDeclarationMutationBody =
+  BodyType<CancelMaturityBody>;
+export type CancelMaturityDeclarationMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Cancel the active maturity declaration
+ */
+export const useCancelMaturityDeclaration = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof cancelMaturityDeclaration>>,
+    TError,
+    { id: string; data: BodyType<CancelMaturityBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof cancelMaturityDeclaration>>,
+  TError,
+  { id: string; data: BodyType<CancelMaturityBody> },
+  TContext
+> => {
+  return useMutation(getCancelMaturityDeclarationMutationOptions(options));
+};
+
+/**
+ * @summary Check real-time blockers for maturity declaration
+ */
+export const getGetMaturityBlockersUrl = (id: string) => {
+  return `/api/projects/${id}/maturity/blockers`;
+};
+
+export const getMaturityBlockers = async (
+  id: string,
+  options?: RequestInit,
+): Promise<MaturityBlockers> => {
+  return customFetch<MaturityBlockers>(getGetMaturityBlockersUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetMaturityBlockersQueryKey = (id: string) => {
+  return [`/api/projects/${id}/maturity/blockers`] as const;
+};
+
+export const getGetMaturityBlockersQueryOptions = <
+  TData = Awaited<ReturnType<typeof getMaturityBlockers>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getMaturityBlockers>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetMaturityBlockersQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getMaturityBlockers>>
+  > = ({ signal }) => getMaturityBlockers(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getMaturityBlockers>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetMaturityBlockersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getMaturityBlockers>>
+>;
+export type GetMaturityBlockersQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Check real-time blockers for maturity declaration
+ */
+
+export function useGetMaturityBlockers<
+  TData = Awaited<ReturnType<typeof getMaturityBlockers>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getMaturityBlockers>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetMaturityBlockersQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Send (or resend) OTP to a party — placeholder returns code in response
+ */
+export const getSendMaturityOtpUrl = (id: string, verificationId: string) => {
+  return `/api/projects/${id}/maturity/otp/${verificationId}/send`;
+};
+
+export const sendMaturityOtp = async (
+  id: string,
+  verificationId: string,
+  options?: RequestInit,
+): Promise<MaturityOtpVerification> => {
+  return customFetch<MaturityOtpVerification>(
+    getSendMaturityOtpUrl(id, verificationId),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getSendMaturityOtpMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof sendMaturityOtp>>,
+    TError,
+    { id: string; verificationId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof sendMaturityOtp>>,
+  TError,
+  { id: string; verificationId: string },
+  TContext
+> => {
+  const mutationKey = ["sendMaturityOtp"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof sendMaturityOtp>>,
+    { id: string; verificationId: string }
+  > = (props) => {
+    const { id, verificationId } = props ?? {};
+
+    return sendMaturityOtp(id, verificationId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SendMaturityOtpMutationResult = NonNullable<
+  Awaited<ReturnType<typeof sendMaturityOtp>>
+>;
+
+export type SendMaturityOtpMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Send (or resend) OTP to a party — placeholder returns code in response
+ */
+export const useSendMaturityOtp = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof sendMaturityOtp>>,
+    TError,
+    { id: string; verificationId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof sendMaturityOtp>>,
+  TError,
+  { id: string; verificationId: string },
+  TContext
+> => {
+  return useMutation(getSendMaturityOtpMutationOptions(options));
+};
+
+/**
+ * @summary Verify OTP code for a party; completes declaration when all verified
+ */
+export const getVerifyMaturityOtpUrl = (id: string, verificationId: string) => {
+  return `/api/projects/${id}/maturity/otp/${verificationId}/verify`;
+};
+
+export const verifyMaturityOtp = async (
+  id: string,
+  verificationId: string,
+  verifyOtpBody: VerifyOtpBody,
+  options?: RequestInit,
+): Promise<MaturityDeclaration> => {
+  return customFetch<MaturityDeclaration>(
+    getVerifyMaturityOtpUrl(id, verificationId),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(verifyOtpBody),
+    },
+  );
+};
+
+export const getVerifyMaturityOtpMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof verifyMaturityOtp>>,
+    TError,
+    { id: string; verificationId: string; data: BodyType<VerifyOtpBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof verifyMaturityOtp>>,
+  TError,
+  { id: string; verificationId: string; data: BodyType<VerifyOtpBody> },
+  TContext
+> => {
+  const mutationKey = ["verifyMaturityOtp"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof verifyMaturityOtp>>,
+    { id: string; verificationId: string; data: BodyType<VerifyOtpBody> }
+  > = (props) => {
+    const { id, verificationId, data } = props ?? {};
+
+    return verifyMaturityOtp(id, verificationId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type VerifyMaturityOtpMutationResult = NonNullable<
+  Awaited<ReturnType<typeof verifyMaturityOtp>>
+>;
+export type VerifyMaturityOtpMutationBody = BodyType<VerifyOtpBody>;
+export type VerifyMaturityOtpMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Verify OTP code for a party; completes declaration when all verified
+ */
+export const useVerifyMaturityOtp = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof verifyMaturityOtp>>,
+    TError,
+    { id: string; verificationId: string; data: BodyType<VerifyOtpBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof verifyMaturityOtp>>,
+  TError,
+  { id: string; verificationId: string; data: BodyType<VerifyOtpBody> },
+  TContext
+> => {
+  return useMutation(getVerifyMaturityOtpMutationOptions(options));
 };
 
 /**

@@ -78,6 +78,43 @@ export const projectLifecycleStatusEnum = pgEnum("project_lifecycle_status", [
   "closed",
 ]);
 
+// ── Maturity declaration enums ────────────────────────────────────────────
+
+/**
+ * Overall status of a maturity declaration workflow instance.
+ *   pending_otp  — declaration created, waiting for all parties to verify OTP
+ *   completed    — all OTPs verified; lifecycle transitioned to mature_production
+ *   cancelled    — cancelled before completion by developer or admin
+ */
+export const maturityDeclarationStatusEnum = pgEnum(
+  "maturity_declaration_status",
+  ["pending_otp", "completed", "cancelled"],
+);
+
+/**
+ * Which party is responsible for an OTP verification row.
+ */
+export const maturityOtpPartyEnum = pgEnum("maturity_otp_party", [
+  "developer",
+  "landowner",
+]);
+
+/**
+ * Lifecycle of a single OTP verification.
+ *   pending  — generated, not yet sent
+ *   sent     — dispatched (mock: code is visible in response)
+ *   verified — correct code entered
+ *   failed   — max attempts exceeded; resend required
+ *   expired  — sentAt + 30 min elapsed without verification
+ */
+export const maturityOtpStatusEnum = pgEnum("maturity_otp_status", [
+  "pending",
+  "sent",
+  "verified",
+  "failed",
+  "expired",
+]);
+
 // ── Audit enums ───────────────────────────────────────────────────────────
 
 export const dbOperationEnum = pgEnum("db_operation", [

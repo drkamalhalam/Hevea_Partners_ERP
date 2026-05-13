@@ -652,6 +652,168 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /projects/{id}/maturity:
+    get:
+      operationId: getProjectMaturity
+      summary: Get active or latest maturity declaration for a project
+      tags: [projects]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Maturity declaration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MaturityDeclaration"
+        "404":
+          description: No declaration found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: initiateMaturityDeclaration
+      summary: Initiate maturity declaration workflow (developer/admin only)
+      tags: [projects]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InitiateMaturityBody"
+      responses:
+        "201":
+          description: Declaration created and OTP verifications generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MaturityDeclaration"
+        "409":
+          description: Blocked — one or more conditions prevent maturity
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MaturityBlockers"
+    delete:
+      operationId: cancelMaturityDeclaration
+      summary: Cancel the active maturity declaration
+      tags: [projects]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CancelMaturityBody"
+      responses:
+        "200":
+          description: Cancelled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  /projects/{id}/maturity/blockers:
+    get:
+      operationId: getMaturityBlockers
+      summary: Check real-time blockers for maturity declaration
+      tags: [projects]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Blocker check result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MaturityBlockers"
+
+  /projects/{id}/maturity/otp/{verificationId}/send:
+    post:
+      operationId: sendMaturityOtp
+      summary: Send (or resend) OTP to a party — placeholder returns code in response
+      tags: [projects]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: verificationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OTP dispatched
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MaturityOtpVerification"
+
+  /projects/{id}/maturity/otp/{verificationId}/verify:
+    post:
+      operationId: verifyMaturityOtp
+      summary: Verify OTP code for a party; completes declaration when all verified
+      tags: [projects]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: verificationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VerifyOtpBody"
+      responses:
+        "200":
+          description: OTP result — returns updated full declaration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MaturityDeclaration"
+        "400":
+          description: Wrong code, expired, or already verified
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /partners:
     get:
       operationId: listPartners
@@ -1745,6 +1907,130 @@ components:
           type: string
           enum: [mature_production, closed]
         remarks:
+          type: string
+
+    MaturityDeclaration:
+      type: object
+      required: [id, projectId, status, createdAt, otpVerifications]
+      properties:
+        id:
+          type: string
+          format: uuid
+        projectId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [pending_otp, completed, cancelled]
+        initiatedBy:
+          type: ["string", "null"]
+          format: uuid
+        initiatedByName:
+          type: ["string", "null"]
+        blockerSnapshot:
+          type: ["object", "null"]
+        ownershipSnapshotPlaceholder:
+          type: ["object", "null"]
+        cancelledBy:
+          type: ["string", "null"]
+          format: uuid
+        cancelledAt:
+          type: ["string", "null"]
+        cancellationReason:
+          type: ["string", "null"]
+        completedAt:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: ["string", "null"]
+        otpVerifications:
+          type: array
+          items:
+            $ref: "#/components/schemas/MaturityOtpVerification"
+
+    MaturityOtpVerification:
+      type: object
+      required: [id, declarationId, partyRole, partyName, status, attempts, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        declarationId:
+          type: string
+          format: uuid
+        partyRole:
+          type: string
+          enum: [developer, landowner]
+        partyUserId:
+          type: ["string", "null"]
+          format: uuid
+        partyName:
+          type: string
+        partyPhone:
+          type: ["string", "null"]
+        partnerId:
+          type: ["string", "null"]
+          format: uuid
+        status:
+          type: string
+          enum: [pending, sent, verified, failed, expired]
+        otpCodePlaceholder:
+          type: ["string", "null"]
+        sentAt:
+          type: ["string", "null"]
+        verifiedAt:
+          type: ["string", "null"]
+        expiresAt:
+          type: ["string", "null"]
+        attempts:
+          type: integer
+        createdAt:
+          type: string
+
+    MaturityBlockers:
+      type: object
+      required: [canProceed, blockers]
+      properties:
+        canProceed:
+          type: boolean
+        blockers:
+          type: array
+          items:
+            $ref: "#/components/schemas/MaturityBlockerItem"
+
+    MaturityBlockerItem:
+      type: object
+      required: [type, message, severity]
+      properties:
+        type:
+          type: string
+          enum: [already_mature, active_declaration, pending_agreement, disputed_claimant, no_agreements]
+        message:
+          type: string
+        severity:
+          type: string
+          enum: [error, warning]
+        count:
+          type: ["integer", "null"]
+
+    InitiateMaturityBody:
+      type: object
+      properties:
+        remarks:
+          type: string
+
+    CancelMaturityBody:
+      type: object
+      properties:
+        reason:
+          type: string
+
+    VerifyOtpBody:
+      type: object
+      required: [otpCode]
+      properties:
+        otpCode:
           type: string
 
     ProjectNominee:

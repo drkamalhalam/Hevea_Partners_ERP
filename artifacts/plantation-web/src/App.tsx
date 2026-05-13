@@ -41,6 +41,7 @@ import Documents from "./pages/Documents";
 import Governance from "./pages/Governance";
 import Notifications from "./pages/Notifications";
 
+import ProjectMaturityDeclaration from "./pages/ProjectMaturityDeclaration";
 // Layout
 import NotFound from "@/pages/not-found";
 import Layout from "./components/layout/Layout";
@@ -190,6 +191,7 @@ function AppRoutes() {
               <Route path="/dashboard"><ProtectedRoute component={Dashboard} /></Route>
               <Route path="/projects"><ProtectedRoute component={Projects} /></Route>
               <Route path="/projects/:id"><ProtectedRoute component={ProjectDetails} /></Route>
+              <Route path="/projects/:id/maturity"><ProtectedRoute component={ProjectMaturityDeclaration} /></Route>
               <Route path="/partners"><ProtectedRoute component={Partners} /></Route>
               <Route path="/partners/:id"><ProtectedRoute component={PartnerDetails} /></Route>
               <Route path="/my-portfolio"><ProtectedRoute component={MyPortfolio} /></Route>

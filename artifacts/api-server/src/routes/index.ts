@@ -3,6 +3,7 @@ import { requireAuth } from "../middlewares/auth";
 import healthRouter from "./health";
 import meRouter from "./me";
 import usersRouter from "./users";
+import maturityRouter from "./maturity";
 import projectsRouter from "./projects";
 import partnersRouter from "./partners";
 import agreementsRouter from "./agreements";
@@ -30,6 +31,7 @@ router.use("/me", meRouter);
 router.use("/users", usersRouter);
 
 // Core business resources
+router.use("/projects", maturityRouter);
 router.use("/projects", projectsRouter);
 router.use("/partners", partnersRouter);
 router.use("/agreements", agreementsRouter);
