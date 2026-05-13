@@ -2,6 +2,9 @@ import {
   pgTable,
   uuid,
   timestamp,
+  date,
+  text,
+  boolean,
   unique,
 } from "drizzle-orm/pg-core";
 import { usersTable } from "./users";
@@ -14,6 +17,8 @@ import { userRoleEnum } from "./enums";
  * operational_staff). Admin and developer bypass this table.
  *
  * `revokedAt` supports soft-revocation without deleting the audit trail.
+ * `isActive` reflects current participation status (can be toggled by admin/developer).
+ * `joinDate`, `remarks`, `participationNotes` support the partner relationship system.
  */
 export const userProjectAssignmentsTable = pgTable(
   "user_project_assignments",
@@ -26,6 +31,10 @@ export const userProjectAssignmentsTable = pgTable(
       .notNull()
       .references(() => projectsTable.id, { onDelete: "cascade" }),
     projectRole: userRoleEnum("project_role"),
+    isActive: boolean("is_active").notNull().default(true),
+    joinDate: date("join_date"),
+    remarks: text("remarks"),
+    participationNotes: text("participation_notes"),
     assignedBy: uuid("assigned_by").references(() => usersTable.id, {
       onDelete: "set null",
     }),

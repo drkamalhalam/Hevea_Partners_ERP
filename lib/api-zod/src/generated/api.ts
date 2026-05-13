@@ -622,6 +622,119 @@ export const DeleteProjectParams = zod.object({
 });
 
 /**
+ * @summary List all participants in a project
+ */
+export const ListProjectParticipantsParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const ListProjectParticipantsResponseItem = zod.object({
+  id: zod.string().uuid(),
+  userId: zod.string().uuid(),
+  clerkUserId: zod.string(),
+  displayName: zod.string().nullish(),
+  email: zod.string().nullish(),
+  avatarUrl: zod.string().nullish(),
+  projectId: zod.string().uuid(),
+  projectRole: zod.enum([
+    "developer",
+    "landowner",
+    "investor",
+    "employee",
+    "operational_staff",
+  ]),
+  isActive: zod.boolean(),
+  joinDate: zod.string().nullish(),
+  remarks: zod.string().nullish(),
+  participationNotes: zod.string().nullish(),
+  assignedBy: zod.string().nullish(),
+  createdAt: zod.string(),
+});
+export const ListProjectParticipantsResponse = zod.array(
+  ListProjectParticipantsResponseItem,
+);
+
+/**
+ * @summary Add a user as a participant in a project (admin or developer)
+ */
+export const AddProjectParticipantParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const AddProjectParticipantBody = zod.object({
+  clerkUserId: zod.string(),
+  projectRole: zod.enum([
+    "developer",
+    "landowner",
+    "investor",
+    "employee",
+    "operational_staff",
+  ]),
+  joinDate: zod.string().optional(),
+  remarks: zod.string().optional(),
+  participationNotes: zod.string().optional(),
+});
+
+/**
+ * @summary Update a participant's role, status, join date, or notes
+ */
+export const UpdateProjectParticipantParams = zod.object({
+  id: zod.coerce.string().uuid(),
+  assignmentId: zod.coerce.string().uuid(),
+});
+
+export const UpdateProjectParticipantBody = zod.object({
+  projectRole: zod
+    .enum([
+      "developer",
+      "landowner",
+      "investor",
+      "employee",
+      "operational_staff",
+    ])
+    .optional(),
+  isActive: zod.boolean().optional(),
+  joinDate: zod.string().optional(),
+  remarks: zod.string().optional(),
+  participationNotes: zod.string().optional(),
+});
+
+export const UpdateProjectParticipantResponse = zod.object({
+  id: zod.string().uuid(),
+  userId: zod.string().uuid(),
+  clerkUserId: zod.string(),
+  displayName: zod.string().nullish(),
+  email: zod.string().nullish(),
+  avatarUrl: zod.string().nullish(),
+  projectId: zod.string().uuid(),
+  projectRole: zod.enum([
+    "developer",
+    "landowner",
+    "investor",
+    "employee",
+    "operational_staff",
+  ]),
+  isActive: zod.boolean(),
+  joinDate: zod.string().nullish(),
+  remarks: zod.string().nullish(),
+  participationNotes: zod.string().nullish(),
+  assignedBy: zod.string().nullish(),
+  createdAt: zod.string(),
+});
+
+/**
+ * @summary Remove a participant from a project
+ */
+export const RemoveProjectParticipantParams = zod.object({
+  id: zod.coerce.string().uuid(),
+  assignmentId: zod.coerce.string().uuid(),
+});
+
+export const RemoveProjectParticipantResponse = zod.object({
+  ok: zod.boolean().optional(),
+});
+
+/**
  * @summary List all partners
  */
 export const ListPartnersResponseItem = zod.object({

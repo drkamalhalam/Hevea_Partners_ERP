@@ -18,6 +18,7 @@ import type {
 
 import type {
   ActivityItem,
+  AddParticipantInput,
   Agreement,
   AgreementInput,
   AgreementUpdate,
@@ -35,11 +36,13 @@ import type {
   ProductionRecord,
   Project,
   ProjectInput,
+  ProjectParticipant,
   ProjectUpdate,
   RevenueStats,
   SetUserRoleInput,
   StockSummary,
   UpdateAssignmentInput,
+  UpdateParticipantInput,
   UpdateProfileInput,
   UpsertUserInput,
   UserProfile,
@@ -1528,6 +1531,376 @@ export const useDeleteProject = <
   TContext
 > => {
   return useMutation(getDeleteProjectMutationOptions(options));
+};
+
+/**
+ * @summary List all participants in a project
+ */
+export const getListProjectParticipantsUrl = (id: string) => {
+  return `/api/projects/${id}/participants`;
+};
+
+export const listProjectParticipants = async (
+  id: string,
+  options?: RequestInit,
+): Promise<ProjectParticipant[]> => {
+  return customFetch<ProjectParticipant[]>(getListProjectParticipantsUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListProjectParticipantsQueryKey = (id: string) => {
+  return [`/api/projects/${id}/participants`] as const;
+};
+
+export const getListProjectParticipantsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listProjectParticipants>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listProjectParticipants>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListProjectParticipantsQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listProjectParticipants>>
+  > = ({ signal }) =>
+    listProjectParticipants(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listProjectParticipants>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListProjectParticipantsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listProjectParticipants>>
+>;
+export type ListProjectParticipantsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List all participants in a project
+ */
+
+export function useListProjectParticipants<
+  TData = Awaited<ReturnType<typeof listProjectParticipants>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listProjectParticipants>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListProjectParticipantsQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Add a user as a participant in a project (admin or developer)
+ */
+export const getAddProjectParticipantUrl = (id: string) => {
+  return `/api/projects/${id}/participants`;
+};
+
+export const addProjectParticipant = async (
+  id: string,
+  addParticipantInput: AddParticipantInput,
+  options?: RequestInit,
+): Promise<ProjectParticipant> => {
+  return customFetch<ProjectParticipant>(getAddProjectParticipantUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(addParticipantInput),
+  });
+};
+
+export const getAddProjectParticipantMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof addProjectParticipant>>,
+    TError,
+    { id: string; data: BodyType<AddParticipantInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof addProjectParticipant>>,
+  TError,
+  { id: string; data: BodyType<AddParticipantInput> },
+  TContext
+> => {
+  const mutationKey = ["addProjectParticipant"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof addProjectParticipant>>,
+    { id: string; data: BodyType<AddParticipantInput> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return addProjectParticipant(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AddProjectParticipantMutationResult = NonNullable<
+  Awaited<ReturnType<typeof addProjectParticipant>>
+>;
+export type AddProjectParticipantMutationBody = BodyType<AddParticipantInput>;
+export type AddProjectParticipantMutationError = ErrorType<void>;
+
+/**
+ * @summary Add a user as a participant in a project (admin or developer)
+ */
+export const useAddProjectParticipant = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof addProjectParticipant>>,
+    TError,
+    { id: string; data: BodyType<AddParticipantInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof addProjectParticipant>>,
+  TError,
+  { id: string; data: BodyType<AddParticipantInput> },
+  TContext
+> => {
+  return useMutation(getAddProjectParticipantMutationOptions(options));
+};
+
+/**
+ * @summary Update a participant's role, status, join date, or notes
+ */
+export const getUpdateProjectParticipantUrl = (
+  id: string,
+  assignmentId: string,
+) => {
+  return `/api/projects/${id}/participants/${assignmentId}`;
+};
+
+export const updateProjectParticipant = async (
+  id: string,
+  assignmentId: string,
+  updateParticipantInput: UpdateParticipantInput,
+  options?: RequestInit,
+): Promise<ProjectParticipant> => {
+  return customFetch<ProjectParticipant>(
+    getUpdateProjectParticipantUrl(id, assignmentId),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(updateParticipantInput),
+    },
+  );
+};
+
+export const getUpdateProjectParticipantMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateProjectParticipant>>,
+    TError,
+    {
+      id: string;
+      assignmentId: string;
+      data: BodyType<UpdateParticipantInput>;
+    },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateProjectParticipant>>,
+  TError,
+  { id: string; assignmentId: string; data: BodyType<UpdateParticipantInput> },
+  TContext
+> => {
+  const mutationKey = ["updateProjectParticipant"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateProjectParticipant>>,
+    { id: string; assignmentId: string; data: BodyType<UpdateParticipantInput> }
+  > = (props) => {
+    const { id, assignmentId, data } = props ?? {};
+
+    return updateProjectParticipant(id, assignmentId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateProjectParticipantMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateProjectParticipant>>
+>;
+export type UpdateProjectParticipantMutationBody =
+  BodyType<UpdateParticipantInput>;
+export type UpdateProjectParticipantMutationError = ErrorType<void>;
+
+/**
+ * @summary Update a participant's role, status, join date, or notes
+ */
+export const useUpdateProjectParticipant = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateProjectParticipant>>,
+    TError,
+    {
+      id: string;
+      assignmentId: string;
+      data: BodyType<UpdateParticipantInput>;
+    },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateProjectParticipant>>,
+  TError,
+  { id: string; assignmentId: string; data: BodyType<UpdateParticipantInput> },
+  TContext
+> => {
+  return useMutation(getUpdateProjectParticipantMutationOptions(options));
+};
+
+/**
+ * @summary Remove a participant from a project
+ */
+export const getRemoveProjectParticipantUrl = (
+  id: string,
+  assignmentId: string,
+) => {
+  return `/api/projects/${id}/participants/${assignmentId}`;
+};
+
+export const removeProjectParticipant = async (
+  id: string,
+  assignmentId: string,
+  options?: RequestInit,
+): Promise<OkResponse> => {
+  return customFetch<OkResponse>(
+    getRemoveProjectParticipantUrl(id, assignmentId),
+    {
+      ...options,
+      method: "DELETE",
+    },
+  );
+};
+
+export const getRemoveProjectParticipantMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof removeProjectParticipant>>,
+    TError,
+    { id: string; assignmentId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof removeProjectParticipant>>,
+  TError,
+  { id: string; assignmentId: string },
+  TContext
+> => {
+  const mutationKey = ["removeProjectParticipant"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof removeProjectParticipant>>,
+    { id: string; assignmentId: string }
+  > = (props) => {
+    const { id, assignmentId } = props ?? {};
+
+    return removeProjectParticipant(id, assignmentId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RemoveProjectParticipantMutationResult = NonNullable<
+  Awaited<ReturnType<typeof removeProjectParticipant>>
+>;
+
+export type RemoveProjectParticipantMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Remove a participant from a project
+ */
+export const useRemoveProjectParticipant = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof removeProjectParticipant>>,
+    TError,
+    { id: string; assignmentId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof removeProjectParticipant>>,
+  TError,
+  { id: string; assignmentId: string },
+  TContext
+> => {
+  return useMutation(getRemoveProjectParticipantMutationOptions(options));
 };
 
 /**

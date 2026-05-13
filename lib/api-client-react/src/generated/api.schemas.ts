@@ -527,6 +527,79 @@ export interface UpdateAssignmentInput {
   projectRole: UpdateAssignmentInputProjectRole;
 }
 
+export type ProjectParticipantProjectRole =
+  (typeof ProjectParticipantProjectRole)[keyof typeof ProjectParticipantProjectRole];
+
+export const ProjectParticipantProjectRole = {
+  developer: "developer",
+  landowner: "landowner",
+  investor: "investor",
+  employee: "employee",
+  operational_staff: "operational_staff",
+} as const;
+
+export interface ProjectParticipant {
+  id: string;
+  userId: string;
+  clerkUserId: string;
+  /** @nullable */
+  displayName?: string | null;
+  /** @nullable */
+  email?: string | null;
+  /** @nullable */
+  avatarUrl?: string | null;
+  projectId: string;
+  projectRole: ProjectParticipantProjectRole;
+  isActive: boolean;
+  /** @nullable */
+  joinDate?: string | null;
+  /** @nullable */
+  remarks?: string | null;
+  /** @nullable */
+  participationNotes?: string | null;
+  /** @nullable */
+  assignedBy?: string | null;
+  createdAt: string;
+}
+
+export type AddParticipantInputProjectRole =
+  (typeof AddParticipantInputProjectRole)[keyof typeof AddParticipantInputProjectRole];
+
+export const AddParticipantInputProjectRole = {
+  developer: "developer",
+  landowner: "landowner",
+  investor: "investor",
+  employee: "employee",
+  operational_staff: "operational_staff",
+} as const;
+
+export interface AddParticipantInput {
+  clerkUserId: string;
+  projectRole: AddParticipantInputProjectRole;
+  joinDate?: string;
+  remarks?: string;
+  participationNotes?: string;
+}
+
+export type UpdateParticipantInputProjectRole =
+  (typeof UpdateParticipantInputProjectRole)[keyof typeof UpdateParticipantInputProjectRole];
+
+export const UpdateParticipantInputProjectRole = {
+  developer: "developer",
+  landowner: "landowner",
+  investor: "investor",
+  employee: "employee",
+  operational_staff: "operational_staff",
+} as const;
+
+export interface UpdateParticipantInput {
+  projectRole?: UpdateParticipantInputProjectRole;
+  isActive?: boolean;
+  joinDate?: string;
+  remarks?: string;
+  participationNotes?: string;
+}
+
 export interface OkResponse {
   ok?: boolean;
 }

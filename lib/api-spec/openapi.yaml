@@ -368,6 +368,112 @@ paths:
         "204":
           description: Deleted
 
+  /projects/{id}/participants:
+    get:
+      operationId: listProjectParticipants
+      tags: [projects]
+      summary: List all participants in a project
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: List of project participants
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProjectParticipant"
+    post:
+      operationId: addProjectParticipant
+      tags: [projects]
+      summary: Add a user as a participant in a project (admin or developer)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddParticipantInput"
+      responses:
+        "201":
+          description: Participant added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectParticipant"
+        "409":
+          description: Conflict — landowner or developer slot already filled
+
+  /projects/{id}/participants/{assignmentId}:
+    patch:
+      operationId: updateProjectParticipant
+      tags: [projects]
+      summary: Update a participant's role, status, join date, or notes
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: assignmentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateParticipantInput"
+      responses:
+        "200":
+          description: Updated participant
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectParticipant"
+        "409":
+          description: Conflict — role slot already filled
+    delete:
+      operationId: removeProjectParticipant
+      tags: [projects]
+      summary: Remove a participant from a project
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: assignmentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
   /partners:
     get:
       operationId: listPartners
@@ -1278,6 +1384,74 @@ components:
         projectRole:
           type: string
           enum: [admin, developer, landowner, investor, employee, operational_staff]
+
+    ProjectParticipant:
+      type: object
+      required: [id, userId, clerkUserId, projectId, projectRole, isActive, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        clerkUserId:
+          type: string
+        displayName:
+          type: ["string", "null"]
+        email:
+          type: ["string", "null"]
+        avatarUrl:
+          type: ["string", "null"]
+        projectId:
+          type: string
+          format: uuid
+        projectRole:
+          type: string
+          enum: [developer, landowner, investor, employee, operational_staff]
+        isActive:
+          type: boolean
+        joinDate:
+          type: ["string", "null"]
+        remarks:
+          type: ["string", "null"]
+        participationNotes:
+          type: ["string", "null"]
+        assignedBy:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    AddParticipantInput:
+      type: object
+      required: [clerkUserId, projectRole]
+      properties:
+        clerkUserId:
+          type: string
+        projectRole:
+          type: string
+          enum: [developer, landowner, investor, employee, operational_staff]
+        joinDate:
+          type: string
+        remarks:
+          type: string
+        participationNotes:
+          type: string
+
+    UpdateParticipantInput:
+      type: object
+      properties:
+        projectRole:
+          type: string
+          enum: [developer, landowner, investor, employee, operational_staff]
+        isActive:
+          type: boolean
+        joinDate:
+          type: string
+        remarks:
+          type: string
+        participationNotes:
+          type: string
 
     OkResponse:
       type: object

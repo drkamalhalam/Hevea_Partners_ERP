@@ -7,6 +7,8 @@
  */
 
 export * from "./activityItem";
+export * from "./addParticipantInput";
+export * from "./addParticipantInputProjectRole";
 export * from "./agreement";
 export * from "./agreementInput";
 export * from "./agreementInputRevenueModel";
@@ -37,6 +39,8 @@ export * from "./projectAssignmentItem";
 export * from "./projectAssignmentItemProjectRole";
 export * from "./projectInput";
 export * from "./projectInputStatus";
+export * from "./projectParticipant";
+export * from "./projectParticipantProjectRole";
 export * from "./projectStatus";
 export * from "./projectUpdate";
 export * from "./projectUpdateStatus";
@@ -46,6 +50,8 @@ export * from "./setUserRoleInputRole";
 export * from "./stockSummary";
 export * from "./updateAssignmentInput";
 export * from "./updateAssignmentInputProjectRole";
+export * from "./updateParticipantInput";
+export * from "./updateParticipantInputProjectRole";
 export * from "./updateProfileInput";
 export * from "./upsertUserInput";
 export * from "./upsertUserInputRole";

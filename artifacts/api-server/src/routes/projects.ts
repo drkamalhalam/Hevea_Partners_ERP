@@ -1,12 +1,24 @@
 import { Router } from "express";
-import { db, projectsTable, activityTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import {
+  db,
+  projectsTable,
+  activityTable,
+  usersTable,
+  userProjectAssignmentsTable,
+} from "@workspace/db";
+import { eq, and, inArray } from "drizzle-orm";
 import {
   CreateProjectBody,
   UpdateProjectBody,
   GetProjectParams,
   UpdateProjectParams,
   DeleteProjectParams,
+  ListProjectParticipantsParams,
+  AddProjectParticipantParams,
+  AddProjectParticipantBody,
+  UpdateProjectParticipantParams,
+  UpdateProjectParticipantBody,
+  RemoveProjectParticipantParams,
 } from "@workspace/api-zod";
 import { requireRole, canAccessProject } from "../middlewares/auth";
 
@@ -21,10 +33,38 @@ function formatProject(p: typeof projectsTable.$inferSelect) {
   };
 }
 
+type AssignmentRow = typeof userProjectAssignmentsTable.$inferSelect;
+type UserRow = typeof usersTable.$inferSelect;
+
+function formatParticipant(a: AssignmentRow, user: UserRow | undefined) {
+  return {
+    id: a.id,
+    userId: a.userId,
+    clerkUserId: user?.clerkUserId ?? "",
+    displayName: user?.displayName ?? null,
+    email: user?.email ?? null,
+    avatarUrl: user?.avatarUrl ?? null,
+    projectId: a.projectId,
+    projectRole: a.projectRole,
+    isActive: a.isActive,
+    joinDate: a.joinDate ?? null,
+    remarks: a.remarks ?? null,
+    participationNotes: a.participationNotes ?? null,
+    assignedBy: a.assignedBy ?? null,
+    createdAt: a.createdAt.toISOString(),
+  };
+}
+
+/** Roles that may only have one assignment per project */
+const EXCLUSIVE_ROLES = ["landowner", "developer"] as const;
+
 // GET /projects — admin/developer get all; others get only assigned projects
 router.get("/", async (req, res) => {
   try {
-    const projects = await db.select().from(projectsTable).orderBy(projectsTable.createdAt);
+    const projects = await db
+      .select()
+      .from(projectsTable)
+      .orderBy(projectsTable.createdAt);
     if (req.canAccessAllProjects) {
       res.json(projects.map(formatProject));
     } else {
@@ -48,7 +88,10 @@ router.post("/", requireRole("admin", "developer"), async (req, res) => {
     return;
   }
   try {
-    const [project] = await db.insert(projectsTable).values(parsed.data).returning();
+    const [project] = await db
+      .insert(projectsTable)
+      .values(parsed.data)
+      .returning();
     await db.insert(activityTable).values({
       type: "project_created",
       description: `New project "${project.name}" created`,
@@ -136,12 +179,335 @@ router.delete("/:id", requireRole("admin"), async (req, res) => {
     return;
   }
   try {
-    await db.delete(projectsTable).where(eq(projectsTable.id, parsed.data.id));
+    await db
+      .delete(projectsTable)
+      .where(eq(projectsTable.id, parsed.data.id));
     res.status(204).send();
   } catch (err) {
     req.log.error({ err }, "Failed to delete project");
     res.status(500).json({ error: "Internal server error" });
   }
 });
+
+// ─────────────────────────────────────────────
+//  Project Participant Sub-Routes
+// ─────────────────────────────────────────────
+
+// GET /projects/:id/participants — any user with project access
+router.get("/:id/participants", async (req, res) => {
+  const parsed = ListProjectParticipantsParams.safeParse({ id: req.params.id });
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid project id" });
+    return;
+  }
+  if (!canAccessProject(req, parsed.data.id)) {
+    res.status(403).json({ error: "Forbidden: no access to this project" });
+    return;
+  }
+  try {
+    const assignments = await db
+      .select()
+      .from(userProjectAssignmentsTable)
+      .where(eq(userProjectAssignmentsTable.projectId, parsed.data.id));
+
+    const userIds = assignments.map((a) => a.userId);
+    const users =
+      userIds.length > 0
+        ? await db
+            .select()
+            .from(usersTable)
+            .where(inArray(usersTable.id, userIds))
+        : [];
+
+    res.json(
+      assignments.map((a) =>
+        formatParticipant(
+          a,
+          users.find((u) => u.id === a.userId),
+        ),
+      ),
+    );
+  } catch (err) {
+    req.log.error({ err }, "Failed to list project participants");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// POST /projects/:id/participants — admin or developer only
+router.post(
+  "/:id/participants",
+  requireRole("admin", "developer"),
+  async (req, res) => {
+    const paramsParsed = AddProjectParticipantParams.safeParse({
+      id: req.params.id,
+    });
+    if (!paramsParsed.success) {
+      res.status(400).json({ error: "Invalid project id" });
+      return;
+    }
+    const bodyParsed = AddProjectParticipantBody.safeParse(req.body);
+    if (!bodyParsed.success) {
+      res.status(400).json({ error: bodyParsed.error.message });
+      return;
+    }
+
+    const projectId = paramsParsed.data.id;
+    const { clerkUserId, projectRole, joinDate, remarks, participationNotes } =
+      bodyParsed.data;
+
+    try {
+      // Resolve clerkUserId → users.id (UUID)
+      const [targetUser] = await db
+        .select()
+        .from(usersTable)
+        .where(eq(usersTable.clerkUserId, clerkUserId))
+        .limit(1);
+
+      if (!targetUser) {
+        res.status(404).json({ error: "User not found" });
+        return;
+      }
+
+      // Enforce exclusive-role constraints (landowner / developer: 1 per project)
+      if (
+        EXCLUSIVE_ROLES.includes(
+          projectRole as (typeof EXCLUSIVE_ROLES)[number],
+        )
+      ) {
+        const existing = await db
+          .select()
+          .from(userProjectAssignmentsTable)
+          .where(
+            and(
+              eq(userProjectAssignmentsTable.projectId, projectId),
+              eq(
+                userProjectAssignmentsTable.projectRole,
+                projectRole as
+                  | "admin"
+                  | "developer"
+                  | "landowner"
+                  | "investor"
+                  | "employee"
+                  | "operational_staff",
+              ),
+            ),
+          )
+          .limit(1);
+
+        if (existing.length > 0 && existing[0].userId !== targetUser.id) {
+          res.status(409).json({
+            error: `A ${projectRole} is already assigned to this project`,
+          });
+          return;
+        }
+      }
+
+      // Look up the assigning user's DB UUID from their Clerk userId
+      let assignedById: string | undefined;
+      if (req.userId) {
+        const [assignerRow] = await db
+          .select({ id: usersTable.id })
+          .from(usersTable)
+          .where(eq(usersTable.clerkUserId, req.userId))
+          .limit(1);
+        assignedById = assignerRow?.id;
+      }
+
+      // Upsert: if the user is already assigned to this project, update their role/data
+      const [assignment] = await db
+        .insert(userProjectAssignmentsTable)
+        .values({
+          userId: targetUser.id,
+          projectId,
+          projectRole: projectRole as
+            | "admin"
+            | "developer"
+            | "landowner"
+            | "investor"
+            | "employee"
+            | "operational_staff",
+          isActive: true,
+          joinDate: joinDate ?? null,
+          remarks: remarks ?? null,
+          participationNotes: participationNotes ?? null,
+          assignedBy: assignedById ?? null,
+        })
+        .onConflictDoUpdate({
+          target: [
+            userProjectAssignmentsTable.userId,
+            userProjectAssignmentsTable.projectId,
+          ],
+          set: {
+            projectRole: projectRole as
+              | "admin"
+              | "developer"
+              | "landowner"
+              | "investor"
+              | "employee"
+              | "operational_staff",
+            isActive: true,
+            joinDate: joinDate ?? null,
+            remarks: remarks ?? null,
+            participationNotes: participationNotes ?? null,
+            assignedBy: assignedById ?? null,
+            revokedAt: null,
+          },
+        })
+        .returning();
+
+      res.status(201).json(formatParticipant(assignment, targetUser));
+    } catch (err) {
+      req.log.error({ err }, "Failed to add project participant");
+      res.status(500).json({ error: "Internal server error" });
+    }
+  },
+);
+
+// PATCH /projects/:id/participants/:assignmentId — admin or developer only
+router.patch(
+  "/:id/participants/:assignmentId",
+  requireRole("admin", "developer"),
+  async (req, res) => {
+    const paramsParsed = UpdateProjectParticipantParams.safeParse({
+      id: req.params.id,
+      assignmentId: req.params.assignmentId,
+    });
+    if (!paramsParsed.success) {
+      res.status(400).json({ error: "Invalid params" });
+      return;
+    }
+    const bodyParsed = UpdateProjectParticipantBody.safeParse(req.body);
+    if (!bodyParsed.success) {
+      res.status(400).json({ error: bodyParsed.error.message });
+      return;
+    }
+
+    const { id: projectId, assignmentId } = paramsParsed.data;
+    const updates = bodyParsed.data;
+
+    try {
+      // Fetch existing assignment first
+      const [existing] = await db
+        .select()
+        .from(userProjectAssignmentsTable)
+        .where(
+          and(
+            eq(userProjectAssignmentsTable.id, assignmentId),
+            eq(userProjectAssignmentsTable.projectId, projectId),
+          ),
+        )
+        .limit(1);
+
+      if (!existing) {
+        res.status(404).json({ error: "Participant assignment not found" });
+        return;
+      }
+
+      // Check exclusive-role constraint if changing role
+      if (
+        updates.projectRole &&
+        updates.projectRole !== existing.projectRole &&
+        EXCLUSIVE_ROLES.includes(
+          updates.projectRole as (typeof EXCLUSIVE_ROLES)[number],
+        )
+      ) {
+        const conflict = await db
+          .select()
+          .from(userProjectAssignmentsTable)
+          .where(
+            and(
+              eq(userProjectAssignmentsTable.projectId, projectId),
+              eq(
+                userProjectAssignmentsTable.projectRole,
+                updates.projectRole as
+                  | "admin"
+                  | "developer"
+                  | "landowner"
+                  | "investor"
+                  | "employee"
+                  | "operational_staff",
+              ),
+            ),
+          )
+          .limit(1);
+
+        if (conflict.length > 0 && conflict[0].id !== assignmentId) {
+          res.status(409).json({
+            error: `A ${updates.projectRole} is already assigned to this project`,
+          });
+          return;
+        }
+      }
+
+      const [updated] = await db
+        .update(userProjectAssignmentsTable)
+        .set({
+          ...(updates.projectRole && {
+            projectRole: updates.projectRole as
+              | "admin"
+              | "developer"
+              | "landowner"
+              | "investor"
+              | "employee"
+              | "operational_staff",
+          }),
+          ...(updates.isActive !== undefined && { isActive: updates.isActive }),
+          ...(updates.joinDate !== undefined && { joinDate: updates.joinDate }),
+          ...(updates.remarks !== undefined && { remarks: updates.remarks }),
+          ...(updates.participationNotes !== undefined && {
+            participationNotes: updates.participationNotes,
+          }),
+        })
+        .where(eq(userProjectAssignmentsTable.id, assignmentId))
+        .returning();
+
+      if (!updated) {
+        res.status(404).json({ error: "Not found" });
+        return;
+      }
+
+      const [user] = await db
+        .select()
+        .from(usersTable)
+        .where(eq(usersTable.id, updated.userId))
+        .limit(1);
+
+      res.json(formatParticipant(updated, user));
+    } catch (err) {
+      req.log.error({ err }, "Failed to update project participant");
+      res.status(500).json({ error: "Internal server error" });
+    }
+  },
+);
+
+// DELETE /projects/:id/participants/:assignmentId — admin or developer only
+router.delete(
+  "/:id/participants/:assignmentId",
+  requireRole("admin", "developer"),
+  async (req, res) => {
+    const parsed = RemoveProjectParticipantParams.safeParse({
+      id: req.params.id,
+      assignmentId: req.params.assignmentId,
+    });
+    if (!parsed.success) {
+      res.status(400).json({ error: "Invalid params" });
+      return;
+    }
+    try {
+      await db
+        .delete(userProjectAssignmentsTable)
+        .where(
+          and(
+            eq(userProjectAssignmentsTable.id, parsed.data.assignmentId),
+            eq(userProjectAssignmentsTable.projectId, parsed.data.id),
+          ),
+        );
+      res.json({ ok: true });
+    } catch (err) {
+      req.log.error({ err }, "Failed to remove project participant");
+      res.status(500).json({ error: "Internal server error" });
+    }
+  },
+);
 
 export default router;

@@ -47,8 +47,8 @@ async function buildUserProfile(clerkUserId: string) {
   };
 }
 
-// GET /users — admin only
-router.get("/", requireRole("admin"), async (req, res) => {
+// GET /users — admin or developer (developers need user list to assign project participants)
+router.get("/", requireRole("admin", "developer"), async (req, res) => {
   try {
     const users = await db
       .select()

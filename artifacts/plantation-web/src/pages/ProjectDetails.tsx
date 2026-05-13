@@ -1,11 +1,10 @@
 import { useRoute, Link } from "wouter";
-import { useGetProject, useUpdateProject, useListAgreements, getGetProjectQueryKey } from "@workspace/api-client-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useGetProject, useListAgreements, getGetProjectQueryKey } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, MapPin, Calendar, Trees } from "lucide-react";
+import { ArrowLeft, MapPin } from "lucide-react";
+import ProjectParticipants from "./ProjectParticipants";
 
 const statusColors: Record<string, string> = {
   planning: "bg-blue-100 text-blue-800",
@@ -123,6 +122,8 @@ export default function ProjectDetails() {
           )}
         </CardContent>
       </Card>
+
+      <ProjectParticipants projectId={id} />
     </div>
   );
 }
