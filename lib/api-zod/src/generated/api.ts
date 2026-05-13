@@ -1838,7 +1838,13 @@ export const ListAgreementsResponseItem = zod.object({
   ownershipShareLandowner: zod.number().nullish(),
   ownershipShareDeveloper: zod.number().nullish(),
   revenueModel: zod.enum(["contribution", "fifty_percent_revenue"]).optional(),
-  status: zod.enum(["draft", "active", "matured", "terminated"]),
+  status: zod.enum([
+    "draft",
+    "active",
+    "pending_activation",
+    "matured",
+    "terminated",
+  ]),
   northBoundary: zod.string().nullish(),
   southBoundary: zod.string().nullish(),
   eastBoundary: zod.string().nullish(),
@@ -1870,7 +1876,9 @@ export const CreateAgreementBody = zod.object({
   ownershipShareLandowner: zod.number().optional(),
   ownershipShareDeveloper: zod.number().optional(),
   revenueModel: zod.enum(["contribution", "fifty_percent_revenue"]).optional(),
-  status: zod.enum(["draft", "active", "matured", "terminated"]).optional(),
+  status: zod
+    .enum(["draft", "active", "pending_activation", "matured", "terminated"])
+    .optional(),
   northBoundary: zod.string().optional(),
   southBoundary: zod.string().optional(),
   eastBoundary: zod.string().optional(),
@@ -1907,7 +1915,13 @@ export const GetAgreementResponse = zod.object({
   ownershipShareLandowner: zod.number().nullish(),
   ownershipShareDeveloper: zod.number().nullish(),
   revenueModel: zod.enum(["contribution", "fifty_percent_revenue"]).optional(),
-  status: zod.enum(["draft", "active", "matured", "terminated"]),
+  status: zod.enum([
+    "draft",
+    "active",
+    "pending_activation",
+    "matured",
+    "terminated",
+  ]),
   northBoundary: zod.string().nullish(),
   southBoundary: zod.string().nullish(),
   eastBoundary: zod.string().nullish(),
@@ -1939,7 +1953,9 @@ export const UpdateAgreementBody = zod.object({
   ownershipShareLandowner: zod.number().optional(),
   ownershipShareDeveloper: zod.number().optional(),
   revenueModel: zod.enum(["contribution", "fifty_percent_revenue"]).optional(),
-  status: zod.enum(["draft", "active", "matured", "terminated"]).optional(),
+  status: zod
+    .enum(["draft", "active", "pending_activation", "matured", "terminated"])
+    .optional(),
   northBoundary: zod.string().optional(),
   southBoundary: zod.string().optional(),
   eastBoundary: zod.string().optional(),
@@ -1969,7 +1985,13 @@ export const UpdateAgreementResponse = zod.object({
   ownershipShareLandowner: zod.number().nullish(),
   ownershipShareDeveloper: zod.number().nullish(),
   revenueModel: zod.enum(["contribution", "fifty_percent_revenue"]).optional(),
-  status: zod.enum(["draft", "active", "matured", "terminated"]),
+  status: zod.enum([
+    "draft",
+    "active",
+    "pending_activation",
+    "matured",
+    "terminated",
+  ]),
   northBoundary: zod.string().nullish(),
   southBoundary: zod.string().nullish(),
   eastBoundary: zod.string().nullish(),
@@ -2703,7 +2725,13 @@ export const GetMyPortfolioResponse = zod.object({
       revenueModel: zod
         .enum(["contribution", "fifty_percent_revenue"])
         .optional(),
-      status: zod.enum(["draft", "active", "matured", "terminated"]),
+      status: zod.enum([
+        "draft",
+        "active",
+        "pending_activation",
+        "matured",
+        "terminated",
+      ]),
       northBoundary: zod.string().nullish(),
       southBoundary: zod.string().nullish(),
       eastBoundary: zod.string().nullish(),

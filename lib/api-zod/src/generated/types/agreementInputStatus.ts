@@ -12,6 +12,7 @@ export type AgreementInputStatus =
 export const AgreementInputStatus = {
   draft: "draft",
   active: "active",
+  pending_activation: "pending_activation",
   matured: "matured",
   terminated: "terminated",
 } as const;

@@ -2448,7 +2448,7 @@ components:
           enum: [contribution, fifty_percent_revenue]
         status:
           type: string
-          enum: [draft, active, matured, terminated]
+          enum: [draft, active, pending_activation, matured, terminated]
         northBoundary:
           type: ["string", "null"]
         southBoundary:
@@ -2508,7 +2508,7 @@ components:
           enum: [contribution, fifty_percent_revenue]
         status:
           type: string
-          enum: [draft, active, matured, terminated]
+          enum: [draft, active, pending_activation, matured, terminated]
         northBoundary:
           type: string
         southBoundary:
@@ -2554,7 +2554,7 @@ components:
           enum: [contribution, fifty_percent_revenue]
         status:
           type: string
-          enum: [draft, active, matured, terminated]
+          enum: [draft, active, pending_activation, matured, terminated]
         northBoundary:
           type: string
         southBoundary:
