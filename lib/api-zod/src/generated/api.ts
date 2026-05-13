@@ -7639,6 +7639,92 @@ export const DeleteStockMovementResponse = zod.object({
 });
 
 /**
+ * @summary Comprehensive analytics — monthly trends, valuation, batch summary, low-stock alerts
+ */
+export const GetInventoryAnalyticsQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+});
+
+export const GetInventoryAnalyticsResponse = zod.object({
+  stockValuation: zod.array(
+    zod.object({
+      stockType: zod.enum(["latex", "rubber_sheet", "rubber_scrap"]),
+      unit: zod.string(),
+      balance: zod.number(),
+      totalIn: zod.number(),
+      totalOut: zod.number(),
+      totalWastage: zod.number(),
+      totalProductionIn: zod.number(),
+      totalSaleOut: zod.number(),
+      lastSaleRate: zod.number().optional(),
+      lastSaleDate: zod.coerce.date().optional(),
+      estimatedValue: zod.number(),
+      alertLevel: zod.enum(["ok", "low", "critical", "empty"]),
+      threshold: zod.number(),
+    }),
+  ),
+  monthlyTrends: zod.array(
+    zod.object({
+      month: zod.string(),
+      latexProdIn: zod.number().optional(),
+      latexSaleOut: zod.number().optional(),
+      latexWastage: zod.number().optional(),
+      latexOtherIn: zod.number().optional(),
+      latexOtherOut: zod.number().optional(),
+      sheetProdIn: zod.number().optional(),
+      sheetSaleOut: zod.number().optional(),
+      sheetWastage: zod.number().optional(),
+      sheetOtherIn: zod.number().optional(),
+      sheetOtherOut: zod.number().optional(),
+      scrapProdIn: zod.number().optional(),
+      scrapSaleOut: zod.number().optional(),
+      scrapWastage: zod.number().optional(),
+      scrapOtherIn: zod.number().optional(),
+      scrapOtherOut: zod.number().optional(),
+    }),
+  ),
+  salesTrends: zod.array(
+    zod.object({
+      month: zod.string(),
+      revenue: zod.number(),
+      netRevenue: zod.number(),
+      salesCount: zod.number(),
+    }),
+  ),
+  batchSummary: zod.object({
+    totalBatches: zod.number(),
+    openBatches: zod.number(),
+    closedBatches: zod.number(),
+    voidedBatches: zod.number(),
+    recentBatches: zod.array(
+      zod.object({
+        id: zod.string().uuid(),
+        batchNumber: zod.string(),
+        batchDate: zod.coerce.date(),
+        projectId: zod.string().uuid(),
+        projectName: zod.string().optional(),
+        status: zod.string(),
+        totalLatexLitres: zod.number().optional(),
+        totalSheetKg: zod.number().optional(),
+        totalScrapKg: zod.number().optional(),
+        entryCount: zod.number(),
+        createdByName: zod.string(),
+        createdAt: zod.coerce.date(),
+      }),
+    ),
+  }),
+  lowStockAlerts: zod.array(
+    zod.object({
+      stockType: zod.string(),
+      unit: zod.string(),
+      balance: zod.number(),
+      threshold: zod.number(),
+      alertLevel: zod.enum(["low", "critical", "empty"]),
+    }),
+  ),
+});
+
+/**
  * @summary List all inventory movements linked to a production batch
  */
 export const GetBatchMovementsParams = zod.object({

@@ -725,6 +725,35 @@ Full rubber sales recording system with buyer registry, multi-product line items
 
 **Distribution engine hook:** `distributionId` UUID column on `salesTransactionsTable` is a FK placeholder — no constraint yet; set when linking to a future distribution record.
 
+## Inventory Analytics System
+
+Comprehensive analytics dashboard for stock valuation, production/sales trends, wastage analysis, and batch summaries. Accessible to admin and developer roles only.
+
+**API endpoint:** `GET /inventory-stock/analytics?projectId=`
+- Monthly time-series (last 13 months): production_in, sale_out, wastage per stock type, grouped by calendar month using `date_trunc`
+- Per-type stock valuation: current confirmed balance + last sale rate from `sales_line_items` (confirmed only) → estimated portfolio value
+- Batch summary: total/open/closed/voided counts + 10 most recent batches with per-batch production totals
+- Sales revenue trends: monthly gross + net revenue aggregated from confirmed `sales_transactions`
+- Low stock alerts: flags per stock type with threshold checks (latex < 500L, sheet < 200kg, scrap < 100kg); levels: ok/low/critical/empty
+
+**Frontend page:** `artifacts/plantation-web/src/pages/InventoryAnalytics.tsx` at `/inventory-analytics`
+- **Header**: sticky project filter dropdown (all projects or specific project)
+- **Low-stock alert banner**: amber banner with per-type progress bars + alert level badges (conditional, only when alerts exist)
+- **KPI strip** (4 cards): Est. Portfolio Value (INR, formatted lakh/K), Total Batches (+ open count), Confirmed Sales count, Net Sales Revenue
+- **Stock Valuation Cards** (3, one per type): balance with color-coded alert level, estimated INR value, last sale rate + date, totalIn/Out/Wastage breakdown, wastage rate %, utilization %
+- **Production vs Sales chart**: ComposedChart — stacked bars for production (latex/sheet/scrap), line overlays for sales outflows
+- **Sales Revenue Trend**: dual-area chart (gross + net revenue), Y-axis formatted as ₹K/₹L
+- **Wastage Analytics**: bar chart by month (3 types) + PieChart breakdown by type (conditional on data)
+- **Per-type Stock Flow**: 3 small AreaCharts (one per type) showing Prod In / Sale Out / Wastage over time
+- **Batch Summary**: 4 KPI pills + recent-batches table (batchNumber, date, project, status badge, latex/sheet/scrap totals, entry count)
+- **Empty state**: shown when no movements or all-zero balances
+
+**Sidebar:** "Inv. Analytics" added to Operations group (admin/developer only), icon: BarChart3, href: `/inventory-analytics`
+
+**Generated types:** `InventoryAnalytics`, `StockValuationItem`, `MonthlyStockTrend`, `MonthlySalesTrend`, `RecentBatch`, `InventoryBatchSummary`, `LowStockAlert`
+
+**Generated hook:** `useGetInventoryAnalytics`, `getGetInventoryAnalyticsQueryKey`
+
 ## Pointers
 
 - See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details

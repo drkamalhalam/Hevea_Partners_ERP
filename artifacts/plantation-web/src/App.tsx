@@ -53,6 +53,7 @@ import ProductionLog from "./pages/ProductionLog";
 import BatchDetail from "./pages/BatchDetail";
 import Stock from "./pages/Stock";
 import Inventory from "./pages/Inventory";
+import InventoryAnalytics from "./pages/InventoryAnalytics";
 import Sales from "./pages/Sales";
 import Distribution from "./pages/Distribution";
 
@@ -263,6 +264,7 @@ function AppRoutes() {
               <Route path="/production-log/batches/:id"><ProtectedRoute component={BatchDetail} /></Route>
               <Route path="/stock"><ProtectedRoute component={Stock} /></Route>
               <Route path="/inventory"><ProtectedRoute component={Inventory} /></Route>
+              <Route path="/inventory-analytics"><ProtectedRoute component={InventoryAnalytics} /></Route>
               <Route path="/sales"><ProtectedRoute component={Sales} /></Route>
               <Route path="/distribution"><ProtectedRoute component={Distribution} /></Route>
 

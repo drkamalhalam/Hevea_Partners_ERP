@@ -5070,6 +5070,24 @@ paths:
                   success: { type: boolean }
         "404": { description: Not found }
 
+  /inventory-stock/analytics:
+    get:
+      operationId: getInventoryAnalytics
+      tags: [inventory]
+      summary: Comprehensive analytics — monthly trends, valuation, batch summary, low-stock alerts
+      parameters:
+        - name: projectId
+          in: query
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Analytics data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryAnalytics"
+        "401": { description: Unauthorized }
+
   /production-log/batches/{id}/movements:
     get:
       operationId: getBatchMovements
@@ -9510,6 +9528,117 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/SalesSummaryProject"
+
+    StockValuationItem:
+      type: object
+      required: [stockType, unit, balance, totalIn, totalOut, totalWastage, totalProductionIn, totalSaleOut, estimatedValue, alertLevel, threshold]
+      properties:
+        stockType: { type: string, enum: [latex, rubber_sheet, rubber_scrap] }
+        unit: { type: string }
+        balance: { type: number }
+        totalIn: { type: number }
+        totalOut: { type: number }
+        totalWastage: { type: number }
+        totalProductionIn: { type: number }
+        totalSaleOut: { type: number }
+        lastSaleRate: { type: number }
+        lastSaleDate: { type: string, format: date }
+        estimatedValue: { type: number }
+        alertLevel: { type: string, enum: [ok, low, critical, empty] }
+        threshold: { type: number }
+
+    MonthlyStockTrend:
+      type: object
+      required: [month]
+      properties:
+        month: { type: string }
+        latexProdIn: { type: number }
+        latexSaleOut: { type: number }
+        latexWastage: { type: number }
+        latexOtherIn: { type: number }
+        latexOtherOut: { type: number }
+        sheetProdIn: { type: number }
+        sheetSaleOut: { type: number }
+        sheetWastage: { type: number }
+        sheetOtherIn: { type: number }
+        sheetOtherOut: { type: number }
+        scrapProdIn: { type: number }
+        scrapSaleOut: { type: number }
+        scrapWastage: { type: number }
+        scrapOtherIn: { type: number }
+        scrapOtherOut: { type: number }
+
+    MonthlySalesTrend:
+      type: object
+      required: [month, revenue, netRevenue, salesCount]
+      properties:
+        month: { type: string }
+        revenue: { type: number }
+        netRevenue: { type: number }
+        salesCount: { type: integer }
+
+    RecentBatch:
+      type: object
+      required: [id, batchNumber, batchDate, projectId, status, entryCount, createdByName, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        batchNumber: { type: string }
+        batchDate: { type: string, format: date }
+        projectId: { type: string, format: uuid }
+        projectName: { type: string }
+        status: { type: string }
+        totalLatexLitres: { type: number }
+        totalSheetKg: { type: number }
+        totalScrapKg: { type: number }
+        entryCount: { type: integer }
+        createdByName: { type: string }
+        createdAt: { type: string, format: date-time }
+
+    InventoryBatchSummary:
+      type: object
+      required: [totalBatches, openBatches, closedBatches, voidedBatches, recentBatches]
+      properties:
+        totalBatches: { type: integer }
+        openBatches: { type: integer }
+        closedBatches: { type: integer }
+        voidedBatches: { type: integer }
+        recentBatches:
+          type: array
+          items:
+            $ref: "#/components/schemas/RecentBatch"
+
+    LowStockAlert:
+      type: object
+      required: [stockType, unit, balance, threshold, alertLevel]
+      properties:
+        stockType: { type: string }
+        unit: { type: string }
+        balance: { type: number }
+        threshold: { type: number }
+        alertLevel: { type: string, enum: [low, critical, empty] }
+
+    InventoryAnalytics:
+      type: object
+      required: [stockValuation, monthlyTrends, salesTrends, batchSummary, lowStockAlerts]
+      properties:
+        stockValuation:
+          type: array
+          items:
+            $ref: "#/components/schemas/StockValuationItem"
+        monthlyTrends:
+          type: array
+          items:
+            $ref: "#/components/schemas/MonthlyStockTrend"
+        salesTrends:
+          type: array
+          items:
+            $ref: "#/components/schemas/MonthlySalesTrend"
+        batchSummary:
+          $ref: "#/components/schemas/InventoryBatchSummary"
+        lowStockAlerts:
+          type: array
+          items:
+            $ref: "#/components/schemas/LowStockAlert"
 
     SuccessResponse:
       type: object

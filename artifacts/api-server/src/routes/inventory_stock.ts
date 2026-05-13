@@ -5,7 +5,10 @@ import {
   db,
   inventoryStockMovementsTable,
   productionBatchesTable,
+  productionEntriesTable,
   projectsTable,
+  salesTransactionsTable,
+  salesLineItemsTable,
   userProjectAssignmentsTable,
   usersTable,
 } from "@workspace/db";
@@ -511,5 +514,308 @@ router.delete(
     return res.json({ success: true });
   },
 );
+
+// ── GET /inventory-stock/analytics ────────────────────────────────────────────
+// Comprehensive analytics: monthly trends, stock valuation, batch summary, low-stock alerts.
+
+router.get("/analytics", async (req, res) => {
+  const { userId: clerkUserId } = getAuth(req);
+  if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
+  const actor = await resolveActor(clerkUserId);
+  if (!actor) return res.status(401).json({ error: "User not found" });
+
+  const { projectId } = req.query as Record<string, string>;
+
+  let visibleIds: string[] | null = null;
+  if (!canViewAll(actor.role)) {
+    visibleIds = await getVisibleProjectIds(actor.id);
+    if (projectId && !visibleIds.includes(projectId)) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+  }
+
+  const projectFilter = projectId
+    ? sql`AND m.project_id = ${projectId}::uuid`
+    : visibleIds && visibleIds.length > 0
+      ? sql`AND m.project_id = ANY(ARRAY[${sql.join(visibleIds.map((id) => sql`${id}::uuid`), sql`, `)}])`
+      : visibleIds && visibleIds.length === 0
+        ? sql`AND FALSE`
+        : sql``;
+
+  const salesProjectFilter = projectId
+    ? sql`AND st.project_id = ${projectId}::uuid`
+    : visibleIds && visibleIds.length > 0
+      ? sql`AND st.project_id = ANY(ARRAY[${sql.join(visibleIds.map((id) => sql`${id}::uuid`), sql`, `)}])`
+      : visibleIds && visibleIds.length === 0
+        ? sql`AND FALSE`
+        : sql``;
+
+  const batchProjectFilter = projectId
+    ? sql`AND pb.project_id = ${projectId}::uuid`
+    : visibleIds && visibleIds.length > 0
+      ? sql`AND pb.project_id = ANY(ARRAY[${sql.join(visibleIds.map((id) => sql`${id}::uuid`), sql`, `)}])`
+      : visibleIds && visibleIds.length === 0
+        ? sql`AND FALSE`
+        : sql``;
+
+  // ── 1. Monthly stock movement time-series (last 13 months) ──────────────────
+  const monthlyRaw = await db.execute(sql`
+    SELECT
+      to_char(date_trunc('month', m.movement_date::timestamp), 'YYYY-MM') AS month,
+      m.stock_type,
+      m.movement_type,
+      m.direction,
+      COALESCE(SUM(m.quantity::numeric), 0)::float AS total_qty
+    FROM inventory_stock_movements m
+    WHERE
+      m.status = 'confirmed'
+      AND m.is_active = true
+      AND m.movement_date >= (NOW() - INTERVAL '13 months')
+      ${projectFilter}
+    GROUP BY month, m.stock_type, m.movement_type, m.direction
+    ORDER BY month
+  `);
+
+  // ── 2. Current balance per stock type ────────────────────────────────────────
+  const balanceRaw = await db.execute(sql`
+    SELECT
+      m.stock_type,
+      m.unit,
+      COALESCE(SUM(CASE WHEN m.direction = 'in' THEN m.quantity::numeric ELSE 0 END), 0)::float AS total_in,
+      COALESCE(SUM(CASE WHEN m.direction = 'out' THEN m.quantity::numeric ELSE 0 END), 0)::float AS total_out,
+      COALESCE(SUM(CASE WHEN m.movement_type = 'wastage' THEN m.quantity::numeric ELSE 0 END), 0)::float AS total_wastage,
+      COALESCE(SUM(CASE WHEN m.movement_type = 'production_in' THEN m.quantity::numeric ELSE 0 END), 0)::float AS total_production_in,
+      COALESCE(SUM(CASE WHEN m.movement_type = 'sale_out' THEN m.quantity::numeric ELSE 0 END), 0)::float AS total_sale_out
+    FROM inventory_stock_movements m
+    WHERE
+      m.status = 'confirmed'
+      AND m.is_active = true
+      ${projectFilter}
+    GROUP BY m.stock_type, m.unit
+  `);
+
+  // ── 3. Latest sale rate per product type ─────────────────────────────────────
+  const rateRaw = await db.execute(sql`
+    SELECT DISTINCT ON (li.product_type)
+      li.product_type,
+      li.unit,
+      li.sale_rate::float AS sale_rate,
+      st.sale_date
+    FROM sales_line_items li
+    JOIN sales_transactions st ON st.id = li.transaction_id
+    WHERE
+      st.status = 'confirmed'
+      AND st.is_active = true
+      AND li.sale_rate IS NOT NULL
+      ${salesProjectFilter}
+    ORDER BY li.product_type, st.sale_date DESC
+  `);
+
+  // ── 4. Batch summary ─────────────────────────────────────────────────────────
+  const batchCountRaw = await db.execute(sql`
+    SELECT
+      pb.status,
+      COUNT(*)::int AS cnt
+    FROM production_batches pb
+    WHERE TRUE ${batchProjectFilter}
+    GROUP BY pb.status
+  `);
+
+  const recentBatchesRaw = await db.execute(sql`
+    SELECT
+      pb.id,
+      pb.batch_number,
+      pb.batch_date,
+      pb.project_id,
+      p.name AS project_name,
+      pb.status,
+      pb.total_latex_litres::float AS total_latex_litres,
+      pb.total_sheet_kg::float AS total_sheet_kg,
+      pb.total_scrap_kg::float AS total_scrap_kg,
+      pb.entry_count,
+      pb.created_by_name,
+      pb.created_at
+    FROM production_batches pb
+    LEFT JOIN projects p ON p.id = pb.project_id
+    WHERE TRUE ${batchProjectFilter}
+    ORDER BY pb.batch_date DESC, pb.created_at DESC
+    LIMIT 10
+  `);
+
+  // ── 5. Monthly sales trends ──────────────────────────────────────────────────
+  const salesTrendRaw = await db.execute(sql`
+    SELECT
+      to_char(date_trunc('month', st.sale_date::timestamp), 'YYYY-MM') AS month,
+      COALESCE(SUM(st.total_gross_revenue::numeric), 0)::float AS revenue,
+      COALESCE(SUM(st.total_net_revenue::numeric), 0)::float AS net_revenue,
+      COUNT(*)::int AS sales_count
+    FROM sales_transactions st
+    WHERE
+      st.status = 'confirmed'
+      AND st.is_active = true
+      AND st.sale_date >= (NOW() - INTERVAL '13 months')
+      ${salesProjectFilter}
+    GROUP BY month
+    ORDER BY month
+  `);
+
+  // ── Assemble stock valuation ─────────────────────────────────────────────────
+  const rateMap: Record<string, { rate: number; date: string }> = {};
+  for (const r of rateRaw.rows) {
+    const row = r as { product_type: string; sale_rate: number; sale_date: string };
+    rateMap[row.product_type] = { rate: row.sale_rate, date: row.sale_date };
+  }
+
+  const LOW_STOCK_THRESHOLDS: Record<string, number> = {
+    latex: 500,
+    rubber_sheet: 200,
+    rubber_scrap: 100,
+  };
+
+  const allTypes = ["latex", "rubber_sheet", "rubber_scrap"];
+  const balanceMap: Record<string, { unit: string; totalIn: number; totalOut: number; wastage: number; prodIn: number; saleOut: number }> = {};
+  for (const r of balanceRaw.rows) {
+    const row = r as { stock_type: string; unit: string; total_in: number; total_out: number; total_wastage: number; total_production_in: number; total_sale_out: number };
+    balanceMap[row.stock_type] = {
+      unit: row.unit,
+      totalIn: row.total_in,
+      totalOut: row.total_out,
+      wastage: row.total_wastage,
+      prodIn: row.total_production_in,
+      saleOut: row.total_sale_out,
+    };
+  }
+
+  const stockValuation = allTypes.map((st) => {
+    const b = balanceMap[st];
+    const balance = b ? b.totalIn - b.totalOut : 0;
+    const unit = b?.unit ?? (st === "latex" ? "litres" : "kg");
+    const rateInfo = rateMap[st];
+    const lastSaleRate = rateInfo?.rate ?? 0;
+    const estimatedValue = lastSaleRate > 0 ? balance * lastSaleRate : 0;
+    const threshold = LOW_STOCK_THRESHOLDS[st] ?? 100;
+    const alertLevel =
+      balance <= 0 ? "empty" :
+      balance < threshold * 0.5 ? "critical" :
+      balance < threshold ? "low" : "ok";
+
+    return {
+      stockType: st,
+      unit,
+      balance,
+      totalIn: b?.totalIn ?? 0,
+      totalOut: b?.totalOut ?? 0,
+      totalWastage: b?.wastage ?? 0,
+      totalProductionIn: b?.prodIn ?? 0,
+      totalSaleOut: b?.saleOut ?? 0,
+      lastSaleRate,
+      lastSaleDate: rateInfo?.date ?? null,
+      estimatedValue,
+      alertLevel,
+      threshold,
+    };
+  });
+
+  // ── Assemble monthly trends ───────────────────────────────────────────────────
+  const monthMap: Record<string, Record<string, number>> = {};
+  for (const r of monthlyRaw.rows) {
+    const row = r as { month: string; stock_type: string; movement_type: string; direction: string; total_qty: number };
+    if (!monthMap[row.month]) monthMap[row.month] = {};
+    const prefix = row.stock_type === "latex" ? "l" : row.stock_type === "rubber_sheet" ? "s" : "sc";
+    const mt = row.movement_type;
+    if (mt === "production_in") monthMap[row.month][`${prefix}_prod_in`] = (monthMap[row.month][`${prefix}_prod_in`] ?? 0) + row.total_qty;
+    else if (mt === "sale_out") monthMap[row.month][`${prefix}_sale_out`] = (monthMap[row.month][`${prefix}_sale_out`] ?? 0) + row.total_qty;
+    else if (mt === "wastage") monthMap[row.month][`${prefix}_wastage`] = (monthMap[row.month][`${prefix}_wastage`] ?? 0) + row.total_qty;
+    else if (row.direction === "in") monthMap[row.month][`${prefix}_other_in`] = (monthMap[row.month][`${prefix}_other_in`] ?? 0) + row.total_qty;
+    else monthMap[row.month][`${prefix}_other_out`] = (monthMap[row.month][`${prefix}_other_out`] ?? 0) + row.total_qty;
+  }
+
+  const monthlyTrends = Object.entries(monthMap)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([month, d]) => ({
+      month,
+      latexProdIn: d.l_prod_in ?? 0,
+      latexSaleOut: d.l_sale_out ?? 0,
+      latexWastage: d.l_wastage ?? 0,
+      latexOtherIn: d.l_other_in ?? 0,
+      latexOtherOut: d.l_other_out ?? 0,
+      sheetProdIn: d.s_prod_in ?? 0,
+      sheetSaleOut: d.s_sale_out ?? 0,
+      sheetWastage: d.s_wastage ?? 0,
+      sheetOtherIn: d.s_other_in ?? 0,
+      sheetOtherOut: d.s_other_out ?? 0,
+      scrapProdIn: d.sc_prod_in ?? 0,
+      scrapSaleOut: d.sc_sale_out ?? 0,
+      scrapWastage: d.sc_wastage ?? 0,
+      scrapOtherIn: d.sc_other_in ?? 0,
+      scrapOtherOut: d.sc_other_out ?? 0,
+    }));
+
+  // ── Assemble batch summary ───────────────────────────────────────────────────
+  const batchCounts: Record<string, number> = {};
+  for (const r of batchCountRaw.rows) {
+    const row = r as { status: string; cnt: number };
+    batchCounts[row.status] = row.cnt;
+  }
+  const totalBatches = Object.values(batchCounts).reduce((a, b) => a + b, 0);
+
+  const recentBatches = recentBatchesRaw.rows.map((r) => {
+    const row = r as {
+      id: string; batch_number: string; batch_date: string; project_id: string; project_name: string | null;
+      status: string; total_latex_litres: number; total_sheet_kg: number; total_scrap_kg: number;
+      entry_count: number; created_by_name: string; created_at: string;
+    };
+    return {
+      id: row.id,
+      batchNumber: row.batch_number,
+      batchDate: row.batch_date,
+      projectId: row.project_id,
+      projectName: row.project_name ?? undefined,
+      status: row.status,
+      totalLatexLitres: row.total_latex_litres,
+      totalSheetKg: row.total_sheet_kg,
+      totalScrapKg: row.total_scrap_kg,
+      entryCount: row.entry_count,
+      createdByName: row.created_by_name,
+      createdAt: typeof row.created_at === "string" ? row.created_at : (row.created_at as Date).toISOString(),
+    };
+  });
+
+  // ── Assemble sales trends ───────────────────────────────────────────────────
+  const salesTrends = salesTrendRaw.rows.map((r) => {
+    const row = r as { month: string; revenue: number; net_revenue: number; sales_count: number };
+    return {
+      month: row.month,
+      revenue: row.revenue,
+      netRevenue: row.net_revenue,
+      salesCount: row.sales_count,
+    };
+  });
+
+  // ── Low stock alerts ─────────────────────────────────────────────────────────
+  const lowStockAlerts = stockValuation
+    .filter((v) => v.alertLevel !== "ok")
+    .map((v) => ({
+      stockType: v.stockType,
+      unit: v.unit,
+      balance: v.balance,
+      threshold: v.threshold,
+      alertLevel: v.alertLevel,
+    }));
+
+  return res.json({
+    stockValuation,
+    monthlyTrends,
+    salesTrends,
+    batchSummary: {
+      totalBatches,
+      openBatches: batchCounts.open ?? 0,
+      closedBatches: batchCounts.closed ?? 0,
+      voidedBatches: batchCounts.voided ?? 0,
+      recentBatches,
+    },
+    lowStockAlerts,
+  });
+});
 
 export default router;

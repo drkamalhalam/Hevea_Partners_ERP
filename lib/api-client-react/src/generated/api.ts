@@ -101,6 +101,7 @@ import type {
   GetExpenditureSummaryParams,
   GetImbalancePartnerSummary200,
   GetImbalanceSummaryParams,
+  GetInventoryAnalyticsParams,
   GetInventoryStockBalanceParams,
   GetInventoryStockSummaryParams,
   GetLandNotionalContributionParams,
@@ -127,6 +128,7 @@ import type {
   InitiateClosureBody,
   InitiateMaturityBody,
   InitiateNomineeActivationBody,
+  InventoryAnalytics,
   InventoryStockSummary,
   LandNotionalState,
   LandownerAccountSummary,
@@ -19106,6 +19108,109 @@ export const useDeleteStockMovement = <
 > => {
   return useMutation(getDeleteStockMovementMutationOptions(options));
 };
+
+/**
+ * @summary Comprehensive analytics — monthly trends, valuation, batch summary, low-stock alerts
+ */
+export const getGetInventoryAnalyticsUrl = (
+  params?: GetInventoryAnalyticsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/inventory-stock/analytics?${stringifiedParams}`
+    : `/api/inventory-stock/analytics`;
+};
+
+export const getInventoryAnalytics = async (
+  params?: GetInventoryAnalyticsParams,
+  options?: RequestInit,
+): Promise<InventoryAnalytics> => {
+  return customFetch<InventoryAnalytics>(getGetInventoryAnalyticsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetInventoryAnalyticsQueryKey = (
+  params?: GetInventoryAnalyticsParams,
+) => {
+  return [
+    `/api/inventory-stock/analytics`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetInventoryAnalyticsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getInventoryAnalytics>>,
+  TError = ErrorType<void>,
+>(
+  params?: GetInventoryAnalyticsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getInventoryAnalytics>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetInventoryAnalyticsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getInventoryAnalytics>>
+  > = ({ signal }) =>
+    getInventoryAnalytics(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getInventoryAnalytics>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetInventoryAnalyticsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getInventoryAnalytics>>
+>;
+export type GetInventoryAnalyticsQueryError = ErrorType<void>;
+
+/**
+ * @summary Comprehensive analytics — monthly trends, valuation, batch summary, low-stock alerts
+ */
+
+export function useGetInventoryAnalytics<
+  TData = Awaited<ReturnType<typeof getInventoryAnalytics>>,
+  TError = ErrorType<void>,
+>(
+  params?: GetInventoryAnalyticsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getInventoryAnalytics>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetInventoryAnalyticsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary List all inventory movements linked to a production batch

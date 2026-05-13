@@ -3899,6 +3899,115 @@ export interface SalesSummary {
   projects: SalesSummaryProject[];
 }
 
+export type StockValuationItemStockType =
+  (typeof StockValuationItemStockType)[keyof typeof StockValuationItemStockType];
+
+export const StockValuationItemStockType = {
+  latex: "latex",
+  rubber_sheet: "rubber_sheet",
+  rubber_scrap: "rubber_scrap",
+} as const;
+
+export type StockValuationItemAlertLevel =
+  (typeof StockValuationItemAlertLevel)[keyof typeof StockValuationItemAlertLevel];
+
+export const StockValuationItemAlertLevel = {
+  ok: "ok",
+  low: "low",
+  critical: "critical",
+  empty: "empty",
+} as const;
+
+export interface StockValuationItem {
+  stockType: StockValuationItemStockType;
+  unit: string;
+  balance: number;
+  totalIn: number;
+  totalOut: number;
+  totalWastage: number;
+  totalProductionIn: number;
+  totalSaleOut: number;
+  lastSaleRate?: number;
+  lastSaleDate?: string;
+  estimatedValue: number;
+  alertLevel: StockValuationItemAlertLevel;
+  threshold: number;
+}
+
+export interface MonthlyStockTrend {
+  month: string;
+  latexProdIn?: number;
+  latexSaleOut?: number;
+  latexWastage?: number;
+  latexOtherIn?: number;
+  latexOtherOut?: number;
+  sheetProdIn?: number;
+  sheetSaleOut?: number;
+  sheetWastage?: number;
+  sheetOtherIn?: number;
+  sheetOtherOut?: number;
+  scrapProdIn?: number;
+  scrapSaleOut?: number;
+  scrapWastage?: number;
+  scrapOtherIn?: number;
+  scrapOtherOut?: number;
+}
+
+export interface MonthlySalesTrend {
+  month: string;
+  revenue: number;
+  netRevenue: number;
+  salesCount: number;
+}
+
+export interface RecentBatch {
+  id: string;
+  batchNumber: string;
+  batchDate: string;
+  projectId: string;
+  projectName?: string;
+  status: string;
+  totalLatexLitres?: number;
+  totalSheetKg?: number;
+  totalScrapKg?: number;
+  entryCount: number;
+  createdByName: string;
+  createdAt: string;
+}
+
+export interface InventoryBatchSummary {
+  totalBatches: number;
+  openBatches: number;
+  closedBatches: number;
+  voidedBatches: number;
+  recentBatches: RecentBatch[];
+}
+
+export type LowStockAlertAlertLevel =
+  (typeof LowStockAlertAlertLevel)[keyof typeof LowStockAlertAlertLevel];
+
+export const LowStockAlertAlertLevel = {
+  low: "low",
+  critical: "critical",
+  empty: "empty",
+} as const;
+
+export interface LowStockAlert {
+  stockType: string;
+  unit: string;
+  balance: number;
+  threshold: number;
+  alertLevel: LowStockAlertAlertLevel;
+}
+
+export interface InventoryAnalytics {
+  stockValuation: StockValuationItem[];
+  monthlyTrends: MonthlyStockTrend[];
+  salesTrends: MonthlySalesTrend[];
+  batchSummary: InventoryBatchSummary;
+  lowStockAlerts: LowStockAlert[];
+}
+
 export interface SuccessResponse {
   success: boolean;
 }
@@ -4463,6 +4572,10 @@ export const ListStockMovementsStatus = {
 
 export type DeleteStockMovement200 = {
   success?: boolean;
+};
+
+export type GetInventoryAnalyticsParams = {
+  projectId?: string;
 };
 
 export type ListBuyersParams = {
