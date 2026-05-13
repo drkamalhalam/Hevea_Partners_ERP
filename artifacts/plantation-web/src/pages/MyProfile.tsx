@@ -333,19 +333,17 @@ export default function MyProfile() {
                           )}
                         />
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <FormItem>
-                            <FormLabel>Email</FormLabel>
-                            <FormControl>
-                              <Input
-                                value={profile?.email ?? ""}
-                                disabled
-                                className="bg-muted"
-                              />
-                            </FormControl>
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium leading-none">Email</label>
+                            <Input
+                              value={profile?.email ?? ""}
+                              disabled
+                              className="bg-muted"
+                            />
                             <p className="text-xs text-muted-foreground">
                               Email is managed by your account provider
                             </p>
-                          </FormItem>
+                          </div>
                           <FormField
                             control={form.control}
                             name="phone"

@@ -472,16 +472,14 @@ export default function UserProfile() {
                               </FormItem>
                             )}
                           />
-                          <FormItem>
-                            <FormLabel>Email</FormLabel>
-                            <FormControl>
-                              <Input
-                                value={profile?.email ?? ""}
-                                disabled
-                                className="bg-muted"
-                              />
-                            </FormControl>
-                          </FormItem>
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium leading-none">Email</label>
+                            <Input
+                              value={profile?.email ?? ""}
+                              disabled
+                              className="bg-muted"
+                            />
+                          </div>
                         </div>
                         <FormField
                           control={form.control}
