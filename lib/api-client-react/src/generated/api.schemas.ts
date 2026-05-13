@@ -376,6 +376,71 @@ export interface RevenueStats {
   profit: number;
 }
 
+export type UserProfileRole =
+  (typeof UserProfileRole)[keyof typeof UserProfileRole];
+
+export const UserProfileRole = {
+  admin: "admin",
+  developer: "developer",
+  landowner: "landowner",
+  investor: "investor",
+  employee: "employee",
+  operational_staff: "operational_staff",
+} as const;
+
+export interface UserProfile {
+  clerkUserId: string;
+  role: UserProfileRole;
+  /** @nullable */
+  displayName?: string | null;
+  /** @nullable */
+  email?: string | null;
+  assignedProjectIds: number[];
+  createdAt?: string;
+}
+
+export type UpsertUserInputRole =
+  (typeof UpsertUserInputRole)[keyof typeof UpsertUserInputRole];
+
+export const UpsertUserInputRole = {
+  admin: "admin",
+  developer: "developer",
+  landowner: "landowner",
+  investor: "investor",
+  employee: "employee",
+  operational_staff: "operational_staff",
+} as const;
+
+export interface UpsertUserInput {
+  role: UpsertUserInputRole;
+  displayName?: string;
+  email?: string;
+}
+
+export type SetUserRoleInputRole =
+  (typeof SetUserRoleInputRole)[keyof typeof SetUserRoleInputRole];
+
+export const SetUserRoleInputRole = {
+  admin: "admin",
+  developer: "developer",
+  landowner: "landowner",
+  investor: "investor",
+  employee: "employee",
+  operational_staff: "operational_staff",
+} as const;
+
+export interface SetUserRoleInput {
+  role: SetUserRoleInputRole;
+}
+
+export interface AssignProjectInput {
+  projectId: number;
+}
+
+export interface OkResponse {
+  ok?: boolean;
+}
+
 export type ListProductionRecordsParams = {
   projectId?: number;
 };

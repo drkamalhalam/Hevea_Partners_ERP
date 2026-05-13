@@ -27,7 +27,8 @@ router.get("/", async (req, res) => {
 router.post("/", async (req, res) => {
   const parsed = CreatePartnerBody.safeParse(req.body);
   if (!parsed.success) {
-    return res.status(400).json({ error: parsed.error.message });
+    res.status(400).json({ error: parsed.error.message });
+    return;
   }
   try {
     const [partner] = await db.insert(partnersTable).values(parsed.data).returning();
@@ -50,10 +51,16 @@ router.post("/", async (req, res) => {
 
 router.get("/:id", async (req, res) => {
   const parsed = GetPartnerParams.safeParse({ id: Number(req.params.id) });
-  if (!parsed.success) return res.status(400).json({ error: "Invalid id" });
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid id" });
+    return;
+  }
   try {
     const [partner] = await db.select().from(partnersTable).where(eq(partnersTable.id, parsed.data.id));
-    if (!partner) return res.status(404).json({ error: "Not found" });
+    if (!partner) {
+      res.status(404).json({ error: "Not found" });
+      return;
+    }
     res.json({
       ...partner,
       createdAt: partner.createdAt.toISOString(),
@@ -67,15 +74,24 @@ router.get("/:id", async (req, res) => {
 
 router.patch("/:id", async (req, res) => {
   const paramsParsed = UpdatePartnerParams.safeParse({ id: Number(req.params.id) });
-  if (!paramsParsed.success) return res.status(400).json({ error: "Invalid id" });
+  if (!paramsParsed.success) {
+    res.status(400).json({ error: "Invalid id" });
+    return;
+  }
   const bodyParsed = UpdatePartnerBody.safeParse(req.body);
-  if (!bodyParsed.success) return res.status(400).json({ error: bodyParsed.error.message });
+  if (!bodyParsed.success) {
+    res.status(400).json({ error: bodyParsed.error.message });
+    return;
+  }
   try {
     const [partner] = await db.update(partnersTable)
       .set(bodyParsed.data)
       .where(eq(partnersTable.id, paramsParsed.data.id))
       .returning();
-    if (!partner) return res.status(404).json({ error: "Not found" });
+    if (!partner) {
+      res.status(404).json({ error: "Not found" });
+      return;
+    }
     res.json({
       ...partner,
       createdAt: partner.createdAt.toISOString(),

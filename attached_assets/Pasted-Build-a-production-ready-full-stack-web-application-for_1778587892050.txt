@@ -1,0 +1,122 @@
+Build a production-ready full-stack web application for a multi-project rubber plantation partnership management system.
+
+TECH REQUIREMENTS:
+- Modern responsive UI
+- Mobile-friendly
+- Clean ERP-style dashboard
+- Sidebar navigation
+- Role-based authentication
+- PostgreSQL database
+- Backend API architecture
+- Modular scalable structure
+- Dark/light mode support
+- Clean professional accounting-style design
+- Use modern best practices
+
+MAIN PURPOSE:
+This system manages:
+- multiple plantation projects
+- multiple partners
+- project-wise accounting
+- governance workflows
+- operational records
+
+IMPORTANT:
+Do NOT generate fake/sample financial logic yet.
+Only create architecture and UI foundation.
+
+CREATE:
+
+1. Authentication System
+- Login page
+- Mobile OTP placeholder
+- Password login
+- Session management
+- Role-based access
+
+2. User Roles
+- Admin
+- Project Developer
+- Landowner
+- Investor
+- Operational Partner
+- Staff
+
+3. Main Layout
+Desktop:
+- Left sidebar
+- Top header
+- Main content area
+
+Mobile:
+- Collapsible sidebar
+- Bottom quick actions
+
+4. Sidebar Navigation
+Dashboard
+Projects
+Partners
+Agreements
+Expenditure
+Production
+Inventory
+Sales
+Distribution
+Ledger
+Reports
+Documents
+Approvals
+Notifications
+Admin
+
+5. Top Header
+- Project selector dropdown
+- Search
+- Notifications
+- User profile
+- Dark/light toggle
+
+6. Dashboard Design
+Top summary cards:
+- Total Revenue
+- Total Expenditure
+- Net Position
+- Pending Approvals
+- Active Projects
+- Stock Value
+
+Second section:
+- Revenue chart placeholder
+- Expenditure chart placeholder
+- Pending task panel
+- Operational alerts panel
+
+Third section:
+Project performance table:
+Project | Revenue | Expense | Status
+
+7. Architecture Rules
+- Everything must be project-wise
+- All database tables should support project_id relationships
+- Use scalable modular structure
+- Prepare for future legal/accounting workflows
+
+8. Database Foundation
+Create basic database schema for:
+- users
+- roles
+- projects
+- partners
+- notifications
+- activity logs
+
+IMPORTANT:
+Do NOT build financial logic yet.
+Do NOT build agreement generation yet.
+Do NOT build ownership logic yet.
+
+Focus on:
+- stable architecture
+- responsive UI
+- scalable ERP foundation
+- clean database structure

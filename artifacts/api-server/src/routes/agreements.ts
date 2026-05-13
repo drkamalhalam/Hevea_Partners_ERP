@@ -38,7 +38,8 @@ router.get("/", async (req, res) => {
 router.post("/", async (req, res) => {
   const parsed = CreateAgreementBody.safeParse(req.body);
   if (!parsed.success) {
-    return res.status(400).json({ error: parsed.error.message });
+    res.status(400).json({ error: parsed.error.message });
+    return;
   }
   try {
     const [agreement] = await db.insert(agreementsTable).values(parsed.data).returning();
@@ -58,10 +59,16 @@ router.post("/", async (req, res) => {
 
 router.get("/:id", async (req, res) => {
   const parsed = GetAgreementParams.safeParse({ id: Number(req.params.id) });
-  if (!parsed.success) return res.status(400).json({ error: "Invalid id" });
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid id" });
+    return;
+  }
   try {
     const [agreement] = await db.select().from(agreementsTable).where(eq(agreementsTable.id, parsed.data.id));
-    if (!agreement) return res.status(404).json({ error: "Not found" });
+    if (!agreement) {
+      res.status(404).json({ error: "Not found" });
+      return;
+    }
     res.json(await enrichAgreement(agreement));
   } catch (err) {
     req.log.error({ err }, "Failed to get agreement");
@@ -71,15 +78,24 @@ router.get("/:id", async (req, res) => {
 
 router.patch("/:id", async (req, res) => {
   const paramsParsed = UpdateAgreementParams.safeParse({ id: Number(req.params.id) });
-  if (!paramsParsed.success) return res.status(400).json({ error: "Invalid id" });
+  if (!paramsParsed.success) {
+    res.status(400).json({ error: "Invalid id" });
+    return;
+  }
   const bodyParsed = UpdateAgreementBody.safeParse(req.body);
-  if (!bodyParsed.success) return res.status(400).json({ error: bodyParsed.error.message });
+  if (!bodyParsed.success) {
+    res.status(400).json({ error: bodyParsed.error.message });
+    return;
+  }
   try {
     const [agreement] = await db.update(agreementsTable)
       .set(bodyParsed.data)
       .where(eq(agreementsTable.id, paramsParsed.data.id))
       .returning();
-    if (!agreement) return res.status(404).json({ error: "Not found" });
+    if (!agreement) {
+      res.status(404).json({ error: "Not found" });
+      return;
+    }
     res.json(await enrichAgreement(agreement));
   } catch (err) {
     req.log.error({ err }, "Failed to update agreement");

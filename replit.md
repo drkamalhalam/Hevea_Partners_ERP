@@ -1,6 +1,6 @@
-# Hevea Partners
+# Hevea Partners — Multi-Project Plantation ERP
 
-A full-stack web platform for a natural rubber (Hevea brasiliensis) plantation joint-venture business in Tripura, India. It features a public marketing landing page and a private partner portal where landowners, project developers, and investors can log in, view 35-year partnership agreements, track ownership shares, and management can oversee all plantations.
+A full-stack ERP-style web platform for a multi-project natural rubber (Hevea brasiliensis) plantation joint-venture business in Tripura, India. Features a public marketing landing page and a private partner portal with role-based access across 6 user roles and 13 planned modules.
 
 ## Run & Operate
 
@@ -16,52 +16,85 @@ A full-stack web platform for a natural rubber (Hevea brasiliensis) plantation j
 
 - pnpm workspaces, Node.js 24, TypeScript 5.9
 - Frontend: React 18 + Vite + Tailwind CSS + shadcn/ui + wouter + @tanstack/react-query
-- API: Express 5
+- API: Express 5 + Clerk JWT middleware (`@clerk/express`)
 - DB: PostgreSQL + Drizzle ORM
 - Auth: Clerk (Replit-managed whitelabel)
-- Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
+- Validation: Zod, `drizzle-zod`
+- API codegen: Orval (contract-first: OpenAPI spec → React Query hooks + Zod schemas)
 - Build: esbuild (CJS bundle)
 - Charts: Recharts
 
 ## Where things live
 
-- `artifacts/plantation-web/src/pages/` — all page components (Home, Dashboard, Projects, Partners, Agreements, etc.)
-- `artifacts/plantation-web/src/components/layout/` — Layout, Sidebar, Navbar
-- `artifacts/api-server/src/routes/` — API routes: projects, partners, agreements, dashboard
+- `artifacts/plantation-web/src/pages/` — all page components (13 modules + Home)
+- `artifacts/plantation-web/src/components/layout/` — Layout, Sidebar (ERP dark), Navbar (header)
+- `artifacts/plantation-web/src/components/shared/` — ModulePlaceholder (reusable under-construction template)
+- `artifacts/plantation-web/src/contexts/RoleContext.tsx` — role + project assignment context
+- `artifacts/api-server/src/routes/` — API routes (me, users, projects, partners, agreements, dashboard, production, stock)
+- `artifacts/api-server/src/routes/me.ts` — GET/PUT /me (current user profile + role)
+- `artifacts/api-server/src/routes/users.ts` — GET /users, PUT /users/:id/role, POST /users/:id/projects
 - `lib/api-spec/openapi.yaml` — OpenAPI spec (source of truth for API contract)
-- `lib/db/src/schema/index.ts` — Drizzle DB schema (source of truth for DB)
+- `lib/db/src/schema/` — Drizzle DB schema (source of truth for DB)
+  - `roles.ts` — user_roles + user_project_assignments tables
+  - `projects.ts`, `partners.ts`, `agreements.ts`, `production.ts`, `activity.ts`
 - `lib/api-client-react/` — generated React Query hooks (do not edit manually)
+- `lib/api-zod/src/index.ts` — only exports Zod schemas (not types) to avoid name conflicts
 
-## Architecture decisions
+## User Roles
+
+Six roles stored in `user_roles` table:
+- `admin` — full access to all modules and all projects
+- `developer` — full access to all projects
+- `landowner` — access only to assigned projects
+- `investor` — access only to assigned projects
+- `employee` — access only to assigned projects
+- `operational_staff` — access only to assigned projects
+
+Admin and developer roles have `canAccessAllProjects = true`. Others are restricted to `userProjectAssignments`.
+
+## Sidebar Modules (13 total, grouped)
+
+| Group | Module | Route | Status |
+|---|---|---|---|
+| Core | Dashboard | /dashboard | Live |
+| Core | Projects | /projects | Live |
+| Finance | Agreements | /agreements | Live |
+| Finance | Contributions | /contributions | Placeholder |
+| Finance | Expenditure | /expenditure | Placeholder |
+| Operations | Inventory | /inventory | Placeholder |
+| Operations | Sales | /sales | Placeholder |
+| Operations | Distribution | /distribution | Placeholder |
+| Analytics | Reports | /reports | Placeholder |
+| Analytics | Documents | /documents | Placeholder |
+| Governance | Governance | /governance | Placeholder |
+| Governance | Notifications | /notifications | Placeholder |
+| System | Admin | /admin | Live (admin only) |
+
+Also live: Production & Sales (/production), Stock Register (/stock), Partners, My Portfolio.
+
+## Architecture Decisions
 
 - Contract-first API: OpenAPI spec → Orval codegen → React Query hooks + Zod schemas used in both client and server
-- Clerk auth proxy only enabled in production (dev instances don't support proxying). `clerkProxyUrl` is `undefined` in development.
+- Clerk auth proxy only enabled in production. `clerkProxyUrl` is `undefined` in development.
+- Server uses `getAuth(req)` from `@clerk/express` to extract userId from JWT (Clerk middleware registered in app.ts)
+- Role context: `RoleContext` calls `/api/me` on load, auto-upserts first-time users as "employee"
 - All protected routes use the `ProtectedRoute` wrapper (Clerk `Show when="signed-in"`)
-- The 35-year deed model is stored in the `agreements` table with fields matching the actual Tripura deed template (land boundaries, notional value, LCA, yearly escalation, revenue model)
-
-## Product
-
-- **Public landing page**: Marketing page explaining the plantation partnership model, stats, and CTAs
-- **Partner portal** (authenticated):
-  - Dashboard: KPI cards (projects, partners, agreements, land area) + revenue chart + activity feed
-  - Projects: List/create/delete rubber plantation projects with status tracking
-  - Partners: Register landowners, developers, and investors
-  - Agreements: Create and view 35-year partnership deeds with full boundary and financial details
-  - My Portfolio: Personal view of agreements linked to the logged-in user
-  - Admin: Management overview of all data + recent activity log
+- `lib/api-zod/src/index.ts` only exports Zod schemas from `api.ts` (not types barrel) to avoid duplicate name conflicts when inline body schemas are used
 
 ## Seeded Data
 
 - Partners: Ramesh Debbarma (developer), Sukumar Tripura (landowner), Birendra Reang (landowner), Dilip Jamatia (investor)
 - Projects: Manu Valley Plantation (developing), Gandacherra Block B (planning), Ambassa Northern Plot (maturing)
 - Agreements: 3 active agreements linking the above partners to projects
+- Production: 6 records across Ambassa Northern Plot and Manu Valley
 
 ## Gotchas
 
-- Clerk proxy returns 404 in development — that's intentional. Clerk JS loads directly from CDN in dev. The proxy is only used in production.
+- Clerk proxy returns 404 in development — intentional. Clerk JS loads from CDN in dev. Proxy used in production only.
 - Always run `pnpm --filter @workspace/api-spec run codegen` after changing `lib/api-spec/openapi.yaml`
 - `pnpm --filter @workspace/db run push` to sync schema changes to Postgres
+- `lib/api-zod/src/index.ts` intentionally only re-exports `api.ts` (Zod schemas), NOT `types/` — avoids TS2308 duplicate name errors when inline body schemas are used in OpenAPI
+- Pre-existing TS7030 errors in old route files (production.ts, agreements.ts, partners.ts, projects.ts) — non-blocking, app runs fine; these are strict TypeScript "not all code paths return a value" warnings from early `return res.json()` patterns
 
 ## Pointers
 

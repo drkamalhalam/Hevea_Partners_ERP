@@ -6,7 +6,6 @@ import {
   GetProductionRecordParams,
   DeleteProductionRecordParams,
 } from "@workspace/api-zod";
-import { z } from "zod/v4";
 
 const router = Router();
 
@@ -47,7 +46,8 @@ router.get("/", async (req, res) => {
 router.post("/", async (req, res) => {
   const parsed = CreateProductionRecordBody.safeParse(req.body);
   if (!parsed.success) {
-    return res.status(400).json({ error: parsed.error.message });
+    res.status(400).json({ error: parsed.error.message });
+    return;
   }
 
   const { projectId, recordedAt, productionKg, soldKg, sellingPricePerKg, notes } = parsed.data;
@@ -55,7 +55,10 @@ router.post("/", async (req, res) => {
 
   try {
     const [project] = await db.select({ name: projectsTable.name }).from(projectsTable).where(eq(projectsTable.id, projectId));
-    if (!project) return res.status(404).json({ error: "Project not found" });
+    if (!project) {
+      res.status(404).json({ error: "Project not found" });
+      return;
+    }
 
     const [record] = await db
       .insert(productionRecordsTable)
@@ -91,7 +94,10 @@ router.post("/", async (req, res) => {
 
 router.get("/:id", async (req, res) => {
   const parsed = GetProductionRecordParams.safeParse({ id: Number(req.params.id) });
-  if (!parsed.success) return res.status(400).json({ error: "Invalid id" });
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid id" });
+    return;
+  }
 
   try {
     const [row] = await db
@@ -111,7 +117,10 @@ router.get("/:id", async (req, res) => {
       .innerJoin(projectsTable, eq(productionRecordsTable.projectId, projectsTable.id))
       .where(eq(productionRecordsTable.id, parsed.data.id));
 
-    if (!row) return res.status(404).json({ error: "Not found" });
+    if (!row) {
+      res.status(404).json({ error: "Not found" });
+      return;
+    }
 
     res.json({
       ...row,
@@ -126,7 +135,10 @@ router.get("/:id", async (req, res) => {
 
 router.delete("/:id", async (req, res) => {
   const parsed = DeleteProductionRecordParams.safeParse({ id: Number(req.params.id) });
-  if (!parsed.success) return res.status(400).json({ error: "Invalid id" });
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid id" });
+    return;
+  }
 
   try {
     await db.delete(productionRecordsTable).where(eq(productionRecordsTable.id, parsed.data.id));

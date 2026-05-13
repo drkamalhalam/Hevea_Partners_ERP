@@ -4,14 +4,16 @@ import Navbar from "./Navbar";
 
 export default function Layout({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-[100dvh] flex flex-col md:flex-row bg-background">
-      <div className="hidden md:flex md:w-64 md:flex-col fixed inset-y-0 z-50">
+    <div className="min-h-[100dvh] flex bg-gray-50">
+      {/* Fixed sidebar */}
+      <div className="hidden md:flex md:w-60 md:flex-col fixed inset-y-0 z-50">
         <Sidebar />
       </div>
-      
-      <div className="flex-1 md:pl-64 flex flex-col">
+
+      {/* Main content */}
+      <div className="flex-1 md:pl-60 flex flex-col min-h-[100dvh]">
         <Navbar />
-        <main className="flex-1 p-6 lg:p-8">
+        <main className="flex-1 p-5 lg:p-7 overflow-auto">
           {children}
         </main>
       </div>

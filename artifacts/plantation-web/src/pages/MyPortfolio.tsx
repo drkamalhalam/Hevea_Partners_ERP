@@ -79,7 +79,7 @@ export default function MyPortfolio() {
                       <span>·</span>
                       <span>₹{a.landNotionalValue.toLocaleString("en-IN")} notional value</span>
                       <span>·</span>
-                      <span className="capitalize">{a.revenueModel.replace(/_/g, " ")}</span>
+                      <span className="capitalize">{a.revenueModel?.replace(/_/g, " ")}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">

@@ -222,7 +222,7 @@ export default function Agreements() {
                     </div>
                     <div className="text-xs text-muted-foreground mt-1">
                       Notional Value: <strong className="text-foreground">₹{a.landNotionalValue.toLocaleString("en-IN")}</strong> ·
-                      Model: <strong className="text-foreground capitalize">{a.revenueModel.replace("_", " ")}</strong>
+                      Model: <strong className="text-foreground capitalize">{a.revenueModel?.replace("_", " ")}</strong>
                     </div>
                   </div>
                   <Link href={`/agreements/${a.id}`}>

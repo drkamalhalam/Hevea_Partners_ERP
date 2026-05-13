@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: users
+    description: User profile, role, and project assignment operations
   - name: projects
     description: Plantation project operations
   - name: partners
@@ -22,6 +24,101 @@ tags:
     description: Rubber production and sales records
 
 paths:
+  /me:
+    get:
+      operationId: getMe
+      tags: [users]
+      summary: Get current user role and assigned projects
+      responses:
+        "200":
+          description: Current user profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+    put:
+      operationId: upsertMe
+      tags: [users]
+      summary: Upsert current user role record (called on first login)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertUserInput"
+      responses:
+        "200":
+          description: Updated user profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+
+  /users:
+    get:
+      operationId: listUsers
+      tags: [users]
+      summary: List all users with roles (admin only)
+      responses:
+        "200":
+          description: All users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UserProfile"
+
+  /users/{clerkUserId}/role:
+    put:
+      operationId: updateUserRole
+      tags: [users]
+      summary: Update a user's role (admin only)
+      parameters:
+        - in: path
+          name: clerkUserId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetUserRoleInput"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+
+  /users/{clerkUserId}/projects:
+    post:
+      operationId: assignUserToProject
+      tags: [users]
+      summary: Assign a user to a project
+      parameters:
+        - in: path
+          name: clerkUserId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssignProjectInput"
+      responses:
+        "200":
+          description: Assignment created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
   /healthz:
     get:
       operationId: healthCheck
@@ -900,3 +997,56 @@ components:
           type: number
         profit:
           type: number
+
+    UserProfile:
+      type: object
+      required: [clerkUserId, role, assignedProjectIds]
+      properties:
+        clerkUserId:
+          type: string
+        role:
+          type: string
+          enum: [admin, developer, landowner, investor, employee, operational_staff]
+        displayName:
+          type: ["string", "null"]
+        email:
+          type: ["string", "null"]
+        assignedProjectIds:
+          type: array
+          items:
+            type: integer
+        createdAt:
+          type: string
+
+    UpsertUserInput:
+      type: object
+      required: [role]
+      properties:
+        role:
+          type: string
+          enum: [admin, developer, landowner, investor, employee, operational_staff]
+        displayName:
+          type: string
+        email:
+          type: string
+
+    SetUserRoleInput:
+      type: object
+      required: [role]
+      properties:
+        role:
+          type: string
+          enum: [admin, developer, landowner, investor, employee, operational_staff]
+
+    AssignProjectInput:
+      type: object
+      required: [projectId]
+      properties:
+        projectId:
+          type: integer
+
+    OkResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean

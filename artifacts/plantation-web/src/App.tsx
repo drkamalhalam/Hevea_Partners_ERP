@@ -5,27 +5,47 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useEffect, useRef } from "react";
 
-// Pages
+// Contexts
+import { RoleProvider } from "@/contexts/RoleContext";
+
+// Pages — Core
 import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
 import Projects from "./pages/Projects";
 import ProjectDetails from "./pages/ProjectDetails";
 import Partners from "./pages/Partners";
 import PartnerDetails from "./pages/PartnerDetails";
-import Agreements from "./pages/Agreements";
-import AgreementDetails from "./pages/AgreementDetails";
 import MyPortfolio from "./pages/MyPortfolio";
 import Admin from "./pages/Admin";
+
+// Pages — Finance
+import Agreements from "./pages/Agreements";
+import AgreementDetails from "./pages/AgreementDetails";
+import Contributions from "./pages/Contributions";
+import Expenditure from "./pages/Expenditure";
+
+// Pages — Operations
 import Production from "./pages/Production";
 import Stock from "./pages/Stock";
+import Inventory from "./pages/Inventory";
+import Sales from "./pages/Sales";
+import Distribution from "./pages/Distribution";
+
+// Pages — Analytics
+import Reports from "./pages/Reports";
+import Documents from "./pages/Documents";
+
+// Pages — Governance
+import Governance from "./pages/Governance";
+import Notifications from "./pages/Notifications";
+
+// Layout
 import NotFound from "@/pages/not-found";
 import Layout from "./components/layout/Layout";
 
 const queryClient = new QueryClient();
 
-// Clerk configuration
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || "";
-// Only use proxy in production; dev instances don't support proxying
 const isProd = import.meta.env.PROD;
 const clerkProxyUrl = isProd
   ? (import.meta.env.VITE_CLERK_PROXY_URL || `${window.location.origin}/api/__clerk`)
@@ -46,10 +66,7 @@ function ClerkQueryClientCacheInvalidator() {
   useEffect(() => {
     const unsubscribe = addListener(({ user }) => {
       const userId = user?.id ?? null;
-      if (
-        prevUserIdRef.current !== undefined &&
-        prevUserIdRef.current !== userId
-      ) {
+      if (prevUserIdRef.current !== undefined && prevUserIdRef.current !== userId) {
         queryClient.clear();
       }
       prevUserIdRef.current = userId;
@@ -63,17 +80,13 @@ function ClerkQueryClientCacheInvalidator() {
 function HomeRedirect() {
   return (
     <>
-      <Show when="signed-in">
-        <Redirect to="/dashboard" />
-      </Show>
-      <Show when="signed-out">
-        <Home />
-      </Show>
+      <Show when="signed-in"><Redirect to="/dashboard" /></Show>
+      <Show when="signed-out"><Home /></Show>
     </>
   );
 }
 
-function ProtectedRoute({ component: Component }: { component: any }) {
+function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
   return (
     <>
       <Show when="signed-in">
@@ -90,7 +103,7 @@ function ProtectedRoute({ component: Component }: { component: any }) {
 
 function SignInPage() {
   return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4">
+    <div className="flex min-h-[100dvh] items-center justify-center bg-gray-50 px-4">
       <SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} />
     </div>
   );
@@ -98,7 +111,7 @@ function SignInPage() {
 
 function SignUpPage() {
   return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4">
+    <div className="flex min-h-[100dvh] items-center justify-center bg-gray-50 px-4">
       <SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} />
     </div>
   );
@@ -122,28 +135,50 @@ function AppRoutes() {
     >
       <QueryClientProvider client={queryClient}>
         <ClerkQueryClientCacheInvalidator />
-        <TooltipProvider>
-          <Switch>
-            <Route path="/" component={HomeRedirect} />
-            <Route path="/sign-in/*?" component={SignInPage} />
-            <Route path="/sign-up/*?" component={SignUpPage} />
-            
-            <Route path="/dashboard"><ProtectedRoute component={Dashboard} /></Route>
-            <Route path="/projects"><ProtectedRoute component={Projects} /></Route>
-            <Route path="/projects/:id"><ProtectedRoute component={ProjectDetails} /></Route>
-            <Route path="/partners"><ProtectedRoute component={Partners} /></Route>
-            <Route path="/partners/:id"><ProtectedRoute component={PartnerDetails} /></Route>
-            <Route path="/agreements"><ProtectedRoute component={Agreements} /></Route>
-            <Route path="/agreements/:id"><ProtectedRoute component={AgreementDetails} /></Route>
-            <Route path="/my-portfolio"><ProtectedRoute component={MyPortfolio} /></Route>
-            <Route path="/production"><ProtectedRoute component={Production} /></Route>
-            <Route path="/stock"><ProtectedRoute component={Stock} /></Route>
-            <Route path="/admin"><ProtectedRoute component={Admin} /></Route>
-            
-            <Route component={NotFound} />
-          </Switch>
-          <Toaster />
-        </TooltipProvider>
+        <RoleProvider>
+          <TooltipProvider>
+            <Switch>
+              <Route path="/" component={HomeRedirect} />
+              <Route path="/sign-in/*?" component={SignInPage} />
+              <Route path="/sign-up/*?" component={SignUpPage} />
+
+              {/* Core */}
+              <Route path="/dashboard"><ProtectedRoute component={Dashboard} /></Route>
+              <Route path="/projects"><ProtectedRoute component={Projects} /></Route>
+              <Route path="/projects/:id"><ProtectedRoute component={ProjectDetails} /></Route>
+              <Route path="/partners"><ProtectedRoute component={Partners} /></Route>
+              <Route path="/partners/:id"><ProtectedRoute component={PartnerDetails} /></Route>
+              <Route path="/my-portfolio"><ProtectedRoute component={MyPortfolio} /></Route>
+
+              {/* Finance */}
+              <Route path="/agreements"><ProtectedRoute component={Agreements} /></Route>
+              <Route path="/agreements/:id"><ProtectedRoute component={AgreementDetails} /></Route>
+              <Route path="/contributions"><ProtectedRoute component={Contributions} /></Route>
+              <Route path="/expenditure"><ProtectedRoute component={Expenditure} /></Route>
+
+              {/* Operations */}
+              <Route path="/production"><ProtectedRoute component={Production} /></Route>
+              <Route path="/stock"><ProtectedRoute component={Stock} /></Route>
+              <Route path="/inventory"><ProtectedRoute component={Inventory} /></Route>
+              <Route path="/sales"><ProtectedRoute component={Sales} /></Route>
+              <Route path="/distribution"><ProtectedRoute component={Distribution} /></Route>
+
+              {/* Analytics */}
+              <Route path="/reports"><ProtectedRoute component={Reports} /></Route>
+              <Route path="/documents"><ProtectedRoute component={Documents} /></Route>
+
+              {/* Governance */}
+              <Route path="/governance"><ProtectedRoute component={Governance} /></Route>
+              <Route path="/notifications"><ProtectedRoute component={Notifications} /></Route>
+
+              {/* System */}
+              <Route path="/admin"><ProtectedRoute component={Admin} /></Route>
+
+              <Route component={NotFound} />
+            </Switch>
+            <Toaster />
+          </TooltipProvider>
+        </RoleProvider>
       </QueryClientProvider>
     </ClerkProvider>
   );

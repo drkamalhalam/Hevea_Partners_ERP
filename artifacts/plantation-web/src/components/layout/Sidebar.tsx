@@ -1,73 +1,152 @@
 import { Link, useLocation } from "wouter";
-import { 
-  LayoutDashboard, 
-  Trees, 
-  Users, 
-  FileText, 
-  Briefcase, 
+import {
+  LayoutDashboard,
+  FolderKanban,
+  FileSignature,
+  HandCoins,
+  Receipt,
+  PackageOpen,
+  ShoppingCart,
+  Truck,
+  BarChart3,
+  Files,
+  Building2,
+  Bell,
   ShieldCheck,
   Sprout,
-  Scale,
-  Warehouse
+  ChevronRight,
 } from "lucide-react";
-import { useUser } from "@clerk/react";
+import { useRole, ROLE_LABELS, ROLE_COLORS } from "@/contexts/RoleContext";
+import { cn } from "@/lib/utils";
+
+interface NavItem {
+  name: string;
+  href: string;
+  icon: React.ElementType;
+  adminOnly?: boolean;
+}
+
+interface NavGroup {
+  label: string;
+  items: NavItem[];
+}
+
+const navGroups: NavGroup[] = [
+  {
+    label: "Core",
+    items: [
+      { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+      { name: "Projects", href: "/projects", icon: FolderKanban },
+    ],
+  },
+  {
+    label: "Finance",
+    items: [
+      { name: "Agreements", href: "/agreements", icon: FileSignature },
+      { name: "Contributions", href: "/contributions", icon: HandCoins },
+      { name: "Expenditure", href: "/expenditure", icon: Receipt },
+    ],
+  },
+  {
+    label: "Operations",
+    items: [
+      { name: "Inventory", href: "/inventory", icon: PackageOpen },
+      { name: "Sales", href: "/sales", icon: ShoppingCart },
+      { name: "Distribution", href: "/distribution", icon: Truck },
+    ],
+  },
+  {
+    label: "Analytics",
+    items: [
+      { name: "Reports", href: "/reports", icon: BarChart3 },
+      { name: "Documents", href: "/documents", icon: Files },
+    ],
+  },
+  {
+    label: "Governance",
+    items: [
+      { name: "Governance", href: "/governance", icon: Building2 },
+      { name: "Notifications", href: "/notifications", icon: Bell },
+    ],
+  },
+  {
+    label: "System",
+    items: [
+      { name: "Admin", href: "/admin", icon: ShieldCheck, adminOnly: true },
+    ],
+  },
+];
 
 export default function Sidebar() {
   const [location] = useLocation();
-  const { user } = useUser();
-
-  const navigation = [
-    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { name: "My Portfolio", href: "/my-portfolio", icon: Briefcase },
-    { name: "Projects", href: "/projects", icon: Trees },
-    { name: "Partners", href: "/partners", icon: Users },
-    { name: "Agreements", href: "/agreements", icon: FileText },
-    { name: "Production & Sales", href: "/production", icon: Scale },
-    { name: "Stock Register", href: "/stock", icon: Warehouse },
-  ];
+  const { role, isAdmin } = useRole();
 
   return (
-    <div className="flex flex-col h-full bg-sidebar border-r border-sidebar-border text-sidebar-foreground">
-      <div className="p-6 flex items-center gap-3">
-        <div className="bg-sidebar-primary text-sidebar-primary-foreground p-2 rounded-md">
-          <Sprout className="w-5 h-5" />
+    <div className="flex flex-col h-full bg-gray-950 text-gray-100 overflow-y-auto">
+      {/* Brand */}
+      <div className="px-4 py-5 flex items-center gap-3 border-b border-gray-800">
+        <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-600 flex-shrink-0">
+          <Sprout className="w-4 h-4 text-white" />
         </div>
-        <span className="font-serif font-bold text-lg tracking-tight">Hevea Partners</span>
+        <div className="min-w-0">
+          <p className="text-sm font-bold text-white leading-tight">Hevea Partners</p>
+          <p className="text-[10px] text-gray-400 leading-tight truncate">Plantation ERP</p>
+        </div>
       </div>
 
-      <div className="px-4 pb-4">
-        <p className="text-xs font-semibold text-sidebar-foreground/50 uppercase tracking-wider mb-4 px-2">Menu</p>
-        <nav className="flex flex-col gap-1">
-          {navigation.map((item) => {
-            const isActive = location.startsWith(item.href);
-            const Icon = item.icon;
-            return (
-              <Link key={item.name} href={item.href}>
-                <span className={`flex items-center gap-3 px-3 py-2 rounded-md transition-colors cursor-pointer text-sm font-medium ${
-                  isActive 
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground" 
-                    : "hover:bg-sidebar-accent/50 text-sidebar-foreground/80 hover:text-sidebar-foreground"
-                }`}>
-                  <Icon className="w-4 h-4" />
-                  {item.name}
-                </span>
-              </Link>
-            );
-          })}
-        </nav>
-      </div>
-
-      <div className="mt-auto p-4 border-t border-sidebar-border">
-        <Link href="/admin">
-          <span className={`flex items-center gap-3 px-3 py-2 rounded-md transition-colors cursor-pointer text-sm font-medium ${
-            location.startsWith("/admin")
-              ? "bg-sidebar-accent text-sidebar-accent-foreground"
-              : "hover:bg-sidebar-accent/50 text-sidebar-foreground/80 hover:text-sidebar-foreground"
-          }`}>
-            <ShieldCheck className="w-4 h-4" />
-            Admin Overview
+      {/* Role badge */}
+      <div className="px-4 py-3 border-b border-gray-800">
+        <div className="flex items-center gap-2">
+          <span className={cn("text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide", ROLE_COLORS[role])}>
+            {ROLE_LABELS[role]}
           </span>
-        </Link>
+        </div>
+      </div>
+
+      {/* Navigation */}
+      <nav className="flex-1 px-3 py-4 space-y-5">
+        {navGroups.map((group) => {
+          const visibleItems = group.items.filter(
+            (item) => !item.adminOnly || isAdmin
+          );
+          if (visibleItems.length === 0) return null;
+
+          return (
+            <div key={group.label}>
+              <p className="px-2 mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-gray-500">
+                {group.label}
+              </p>
+              <div className="space-y-0.5">
+                {visibleItems.map((item) => {
+                  const isActive =
+                    location === item.href || location.startsWith(item.href + "/");
+                  const Icon = item.icon;
+                  return (
+                    <Link key={item.name} href={item.href}>
+                      <span
+                        className={cn(
+                          "flex items-center gap-3 px-2 py-2 rounded-lg text-sm font-medium cursor-pointer transition-all group",
+                          isActive
+                            ? "bg-emerald-600 text-white shadow-sm"
+                            : "text-gray-400 hover:text-white hover:bg-gray-800"
+                        )}
+                      >
+                        <Icon className={cn("w-4 h-4 flex-shrink-0", isActive ? "text-white" : "text-gray-500 group-hover:text-gray-300")} />
+                        <span className="flex-1 truncate">{item.name}</span>
+                        {isActive && <ChevronRight className="w-3 h-3 text-white/60 flex-shrink-0" />}
+                      </span>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </nav>
+
+      {/* Footer */}
+      <div className="px-4 py-3 border-t border-gray-800">
+        <p className="text-[10px] text-gray-600 text-center">v2.0 · Multi-project ERP</p>
       </div>
     </div>
   );

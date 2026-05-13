@@ -8,6 +8,126 @@
 import * as zod from "zod";
 
 /**
+ * @summary Get current user role and assigned projects
+ */
+export const GetMeResponse = zod.object({
+  clerkUserId: zod.string(),
+  role: zod.enum([
+    "admin",
+    "developer",
+    "landowner",
+    "investor",
+    "employee",
+    "operational_staff",
+  ]),
+  displayName: zod.string().nullish(),
+  email: zod.string().nullish(),
+  assignedProjectIds: zod.array(zod.number()),
+  createdAt: zod.string().optional(),
+});
+
+/**
+ * @summary Upsert current user role record (called on first login)
+ */
+export const UpsertMeBody = zod.object({
+  role: zod.enum([
+    "admin",
+    "developer",
+    "landowner",
+    "investor",
+    "employee",
+    "operational_staff",
+  ]),
+  displayName: zod.string().optional(),
+  email: zod.string().optional(),
+});
+
+export const UpsertMeResponse = zod.object({
+  clerkUserId: zod.string(),
+  role: zod.enum([
+    "admin",
+    "developer",
+    "landowner",
+    "investor",
+    "employee",
+    "operational_staff",
+  ]),
+  displayName: zod.string().nullish(),
+  email: zod.string().nullish(),
+  assignedProjectIds: zod.array(zod.number()),
+  createdAt: zod.string().optional(),
+});
+
+/**
+ * @summary List all users with roles (admin only)
+ */
+export const ListUsersResponseItem = zod.object({
+  clerkUserId: zod.string(),
+  role: zod.enum([
+    "admin",
+    "developer",
+    "landowner",
+    "investor",
+    "employee",
+    "operational_staff",
+  ]),
+  displayName: zod.string().nullish(),
+  email: zod.string().nullish(),
+  assignedProjectIds: zod.array(zod.number()),
+  createdAt: zod.string().optional(),
+});
+export const ListUsersResponse = zod.array(ListUsersResponseItem);
+
+/**
+ * @summary Update a user's role (admin only)
+ */
+export const UpdateUserRoleParams = zod.object({
+  clerkUserId: zod.coerce.string(),
+});
+
+export const UpdateUserRoleBody = zod.object({
+  role: zod.enum([
+    "admin",
+    "developer",
+    "landowner",
+    "investor",
+    "employee",
+    "operational_staff",
+  ]),
+});
+
+export const UpdateUserRoleResponse = zod.object({
+  clerkUserId: zod.string(),
+  role: zod.enum([
+    "admin",
+    "developer",
+    "landowner",
+    "investor",
+    "employee",
+    "operational_staff",
+  ]),
+  displayName: zod.string().nullish(),
+  email: zod.string().nullish(),
+  assignedProjectIds: zod.array(zod.number()),
+  createdAt: zod.string().optional(),
+});
+
+/**
+ * @summary Assign a user to a project
+ */
+export const AssignUserToProjectParams = zod.object({
+  clerkUserId: zod.coerce.string(),
+});
+
+export const AssignUserToProjectBody = zod.object({
+  projectId: zod.number(),
+});
+
+export const AssignUserToProjectResponse = zod.object({
+  ok: zod.boolean().optional(),
+});
+
+/**
  * Returns server health status
  * @summary Health check
  */

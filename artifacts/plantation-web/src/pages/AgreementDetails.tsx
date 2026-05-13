@@ -46,7 +46,7 @@ export default function AgreementDetails() {
         <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Notional Land Value</CardTitle></CardHeader>
           <CardContent><p className="text-2xl font-bold">₹{agreement.landNotionalValue.toLocaleString("en-IN")}</p></CardContent></Card>
         <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Revenue Model</CardTitle></CardHeader>
-          <CardContent><p className="text-lg font-semibold capitalize">{agreement.revenueModel.replace(/_/g, " ")}</p></CardContent></Card>
+          <CardContent><p className="text-lg font-semibold capitalize">{agreement.revenueModel?.replace(/_/g, " ")}</p></CardContent></Card>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
