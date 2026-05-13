@@ -1,4 +1,5 @@
 import { Router, type IRouter } from "express";
+import { requireAuth } from "../middlewares/auth";
 import healthRouter from "./health";
 import meRouter from "./me";
 import usersRouter from "./users";
@@ -8,12 +9,26 @@ import agreementsRouter from "./agreements";
 import dashboardRouter from "./dashboard";
 import productionRouter from "./production";
 import stockRouter from "./stock";
+import devRouter from "./dev";
 
 const router: IRouter = Router();
 
+// Public — no auth required
 router.use(healthRouter);
+
+// Apply auth middleware to all routes below this point
+router.use(requireAuth);
+
+// Dev tools (auth required but no role restriction, disabled in prod)
+router.use("/dev", devRouter);
+
+// User profile (self)
 router.use("/me", meRouter);
+
+// Admin-managed user list & role assignments
 router.use("/users", usersRouter);
+
+// Core business resources
 router.use("/projects", projectsRouter);
 router.use("/partners", partnersRouter);
 router.use("/agreements", agreementsRouter);

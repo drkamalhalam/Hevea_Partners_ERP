@@ -1,15 +1,41 @@
 import { Router } from "express";
-import { getAuth } from "@clerk/express";
 import { db, userRolesTable, userProjectAssignmentsTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { UpdateUserRoleBody, AssignUserToProjectBody } from "@workspace/api-zod";
+import { requireRole } from "../middlewares/auth";
 
 const router = Router();
 
-// GET /users — list all users
-router.get("/", async (req, res) => {
+async function buildUserProfile(clerkUserId: string) {
+  const [role] = await db
+    .select()
+    .from(userRolesTable)
+    .where(eq(userRolesTable.clerkUserId, clerkUserId))
+    .limit(1);
+
+  const assignments = await db
+    .select()
+    .from(userProjectAssignmentsTable)
+    .where(eq(userProjectAssignmentsTable.clerkUserId, clerkUserId));
+
+  return {
+    clerkUserId: role?.clerkUserId ?? clerkUserId,
+    role: role?.role ?? "employee",
+    displayName: role?.displayName ?? null,
+    email: role?.email ?? null,
+    assignedProjectIds: assignments.map((a) => a.projectId),
+    createdAt: (role?.createdAt ?? new Date()).toISOString(),
+  };
+}
+
+// GET /users — admin only
+router.get("/", requireRole("admin"), async (req, res) => {
   try {
-    const roles = await db.select().from(userRolesTable).orderBy(userRolesTable.createdAt);
+    const roles = await db
+      .select()
+      .from(userRolesTable)
+      .orderBy(userRolesTable.createdAt);
+
     const assignments = await db.select().from(userProjectAssignmentsTable);
 
     const profiles = roles.map((r) => ({
@@ -30,23 +56,17 @@ router.get("/", async (req, res) => {
   }
 });
 
-// PUT /users/:clerkUserId/role — update a user's role
-router.put("/:clerkUserId/role", async (req, res) => {
+// PUT /users/:clerkUserId/role — admin only
+router.put("/:clerkUserId/role", requireRole("admin"), async (req, res) => {
+  const parsed = UpdateUserRoleBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error });
+    return;
+  }
+
+  const clerkUserId = String(req.params.clerkUserId);
+
   try {
-    const { userId } = getAuth(req);
-    if (!userId) {
-      res.status(401).json({ error: "Unauthorized" });
-      return;
-    }
-
-    const parsed = UpdateUserRoleBody.safeParse(req.body);
-    if (!parsed.success) {
-      res.status(400).json({ error: parsed.error });
-      return;
-    }
-
-    const { clerkUserId } = req.params;
-
     await db
       .insert(userRolesTable)
       .values({ clerkUserId, role: parsed.data.role })
@@ -55,49 +75,25 @@ router.put("/:clerkUserId/role", async (req, res) => {
         set: { role: parsed.data.role, updatedAt: new Date() },
       });
 
-    const [updated] = await db
-      .select()
-      .from(userRolesTable)
-      .where(eq(userRolesTable.clerkUserId, clerkUserId))
-      .limit(1);
-
-    const assignments = await db
-      .select()
-      .from(userProjectAssignmentsTable)
-      .where(eq(userProjectAssignmentsTable.clerkUserId, clerkUserId));
-
-    res.json({
-      clerkUserId: updated.clerkUserId,
-      role: updated.role,
-      displayName: updated.displayName,
-      email: updated.email,
-      assignedProjectIds: assignments.map((a) => a.projectId),
-      createdAt: updated.createdAt.toISOString(),
-    });
+    res.json(await buildUserProfile(clerkUserId));
   } catch (err) {
     req.log.error({ err }, "Failed to update user role");
     res.status(500).json({ error: "Internal server error" });
   }
 });
 
-// POST /users/:clerkUserId/projects — assign user to project
-router.post("/:clerkUserId/projects", async (req, res) => {
+// POST /users/:clerkUserId/projects — admin only
+router.post("/:clerkUserId/projects", requireRole("admin"), async (req, res) => {
+  const parsed = AssignUserToProjectBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error });
+    return;
+  }
+
+  const clerkUserId = String(req.params.clerkUserId);
+  const { projectId } = parsed.data;
+
   try {
-    const { userId } = getAuth(req);
-    if (!userId) {
-      res.status(401).json({ error: "Unauthorized" });
-      return;
-    }
-
-    const parsed = AssignUserToProjectBody.safeParse(req.body);
-    if (!parsed.success) {
-      res.status(400).json({ error: parsed.error });
-      return;
-    }
-
-    const { clerkUserId } = req.params;
-    const { projectId } = parsed.data;
-
     await db
       .insert(userProjectAssignmentsTable)
       .values({ clerkUserId, projectId })
@@ -109,5 +105,35 @@ router.post("/:clerkUserId/projects", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
+
+// DELETE /users/:clerkUserId/projects/:projectId — admin only
+router.delete(
+  "/:clerkUserId/projects/:projectId",
+  requireRole("admin"),
+  async (req, res) => {
+    const clerkUserId = String(req.params.clerkUserId);
+    const projectId = Number(req.params.projectId);
+
+    if (isNaN(projectId)) {
+      res.status(400).json({ error: "Invalid projectId" });
+      return;
+    }
+
+    try {
+      await db
+        .delete(userProjectAssignmentsTable)
+        .where(
+          and(
+            eq(userProjectAssignmentsTable.clerkUserId, clerkUserId),
+            eq(userProjectAssignmentsTable.projectId, projectId),
+          ),
+        );
+      res.json({ ok: true });
+    } catch (err) {
+      req.log.error({ err }, "Failed to remove user from project");
+      res.status(500).json({ error: "Internal server error" });
+    }
+  },
+);
 
 export default router;

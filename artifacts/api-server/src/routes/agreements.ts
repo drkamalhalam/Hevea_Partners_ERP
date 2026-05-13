@@ -7,6 +7,7 @@ import {
   GetAgreementParams,
   UpdateAgreementParams,
 } from "@workspace/api-zod";
+import { requireRole, canAccessProject } from "../middlewares/auth";
 
 const router = Router();
 
@@ -24,10 +25,14 @@ async function enrichAgreement(a: typeof agreementsTable.$inferSelect) {
   };
 }
 
+// GET /agreements — filter by project access
 router.get("/", async (req, res) => {
   try {
     const agreements = await db.select().from(agreementsTable).orderBy(agreementsTable.createdAt);
-    const enriched = await Promise.all(agreements.map(enrichAgreement));
+    const accessible = req.canAccessAllProjects
+      ? agreements
+      : agreements.filter((a) => canAccessProject(req, a.projectId));
+    const enriched = await Promise.all(accessible.map(enrichAgreement));
     res.json(enriched);
   } catch (err) {
     req.log.error({ err }, "Failed to list agreements");
@@ -35,7 +40,8 @@ router.get("/", async (req, res) => {
   }
 });
 
-router.post("/", async (req, res) => {
+// POST /agreements — admin or developer only
+router.post("/", requireRole("admin", "developer"), async (req, res) => {
   const parsed = CreateAgreementBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -57,6 +63,7 @@ router.post("/", async (req, res) => {
   }
 });
 
+// GET /agreements/:id — check project access
 router.get("/:id", async (req, res) => {
   const parsed = GetAgreementParams.safeParse({ id: Number(req.params.id) });
   if (!parsed.success) {
@@ -64,9 +71,16 @@ router.get("/:id", async (req, res) => {
     return;
   }
   try {
-    const [agreement] = await db.select().from(agreementsTable).where(eq(agreementsTable.id, parsed.data.id));
+    const [agreement] = await db
+      .select()
+      .from(agreementsTable)
+      .where(eq(agreementsTable.id, parsed.data.id));
     if (!agreement) {
       res.status(404).json({ error: "Not found" });
+      return;
+    }
+    if (!canAccessProject(req, agreement.projectId)) {
+      res.status(403).json({ error: "Forbidden: no access to this project" });
       return;
     }
     res.json(await enrichAgreement(agreement));
@@ -76,7 +90,8 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-router.patch("/:id", async (req, res) => {
+// PATCH /agreements/:id — admin or developer only
+router.patch("/:id", requireRole("admin", "developer"), async (req, res) => {
   const paramsParsed = UpdateAgreementParams.safeParse({ id: Number(req.params.id) });
   if (!paramsParsed.success) {
     res.status(400).json({ error: "Invalid id" });
@@ -88,7 +103,8 @@ router.patch("/:id", async (req, res) => {
     return;
   }
   try {
-    const [agreement] = await db.update(agreementsTable)
+    const [agreement] = await db
+      .update(agreementsTable)
       .set(bodyParsed.data)
       .where(eq(agreementsTable.id, paramsParsed.data.id))
       .returning();

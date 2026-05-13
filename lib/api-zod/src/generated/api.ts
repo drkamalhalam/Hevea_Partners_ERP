@@ -128,6 +128,18 @@ export const AssignUserToProjectResponse = zod.object({
 });
 
 /**
+ * @summary Remove a user from a project assignment (admin only)
+ */
+export const RemoveUserFromProjectParams = zod.object({
+  clerkUserId: zod.coerce.string(),
+  projectId: zod.coerce.number(),
+});
+
+export const RemoveUserFromProjectResponse = zod.object({
+  ok: zod.boolean().optional(),
+});
+
+/**
  * Returns server health status
  * @summary Health check
  */

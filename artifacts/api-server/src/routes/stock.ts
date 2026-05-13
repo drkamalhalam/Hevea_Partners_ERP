@@ -1,12 +1,13 @@
 import { Router } from "express";
 import { db, productionRecordsTable, projectsTable } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
+import { canAccessProject } from "../middlewares/auth";
 
 const router = Router();
 
+// GET /stock — aggregate production data, filtered by project access
 router.get("/", async (req, res) => {
   try {
-    // All projects, left-joined with aggregated production data
     const projects = await db.select().from(projectsTable).orderBy(projectsTable.name);
 
     const agg = await db
@@ -19,9 +20,13 @@ router.get("/", async (req, res) => {
       .from(productionRecordsTable)
       .groupBy(productionRecordsTable.projectId);
 
-    const aggMap = new Map(agg.map(r => [r.projectId, r]));
+    const aggMap = new Map(agg.map((r) => [r.projectId, r]));
 
-    const result = projects.map(p => {
+    const accessible = req.canAccessAllProjects
+      ? projects
+      : projects.filter((p) => canAccessProject(req, p.id));
+
+    const result = accessible.map((p) => {
       const data = aggMap.get(p.id);
       const totalProducedKg = data ? Number(data.totalProducedKg) : 0;
       const totalSoldKg = data ? Number(data.totalSoldKg) : 0;

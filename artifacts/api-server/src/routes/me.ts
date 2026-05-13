@@ -1,5 +1,4 @@
 import { Router } from "express";
-import { getAuth } from "@clerk/express";
 import { db, userRolesTable, userProjectAssignmentsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { UpsertMeBody } from "@workspace/api-zod";
@@ -28,28 +27,19 @@ async function buildProfile(userId: string) {
   };
 }
 
+// GET /me — current user profile (requireAuth applied globally in index.ts)
 router.get("/", async (req, res) => {
   try {
-    const { userId } = getAuth(req);
-    if (!userId) {
-      res.status(401).json({ error: "Unauthorized" });
-      return;
-    }
-    res.json(await buildProfile(userId));
+    res.json(await buildProfile(req.userId!));
   } catch (err) {
     req.log.error({ err }, "Failed to get user profile");
     res.status(500).json({ error: "Internal server error" });
   }
 });
 
+// PUT /me — upsert current user (auto-called on first login by RoleContext)
 router.put("/", async (req, res) => {
   try {
-    const { userId } = getAuth(req);
-    if (!userId) {
-      res.status(401).json({ error: "Unauthorized" });
-      return;
-    }
-
     const parsed = UpsertMeBody.safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({ error: parsed.error });
@@ -60,13 +50,14 @@ router.put("/", async (req, res) => {
 
     await db
       .insert(userRolesTable)
-      .values({ clerkUserId: userId, role, displayName, email })
+      .values({ clerkUserId: req.userId!, role, displayName, email })
       .onConflictDoUpdate({
         target: userRolesTable.clerkUserId,
-        set: { role, displayName, email, updatedAt: new Date() },
+        set: { displayName, email, updatedAt: new Date() },
+        // Note: role is NOT updated on conflict — admin must change roles via /users/:id/role
       });
 
-    res.json(await buildProfile(userId));
+    res.json(await buildProfile(req.userId!));
   } catch (err) {
     req.log.error({ err }, "Failed to upsert user profile");
     res.status(500).json({ error: "Internal server error" });

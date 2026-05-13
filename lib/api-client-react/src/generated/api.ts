@@ -442,6 +442,97 @@ export const useAssignUserToProject = <
 };
 
 /**
+ * @summary Remove a user from a project assignment (admin only)
+ */
+export const getRemoveUserFromProjectUrl = (
+  clerkUserId: string,
+  projectId: number,
+) => {
+  return `/api/users/${clerkUserId}/projects/${projectId}`;
+};
+
+export const removeUserFromProject = async (
+  clerkUserId: string,
+  projectId: number,
+  options?: RequestInit,
+): Promise<OkResponse> => {
+  return customFetch<OkResponse>(
+    getRemoveUserFromProjectUrl(clerkUserId, projectId),
+    {
+      ...options,
+      method: "DELETE",
+    },
+  );
+};
+
+export const getRemoveUserFromProjectMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof removeUserFromProject>>,
+    TError,
+    { clerkUserId: string; projectId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof removeUserFromProject>>,
+  TError,
+  { clerkUserId: string; projectId: number },
+  TContext
+> => {
+  const mutationKey = ["removeUserFromProject"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof removeUserFromProject>>,
+    { clerkUserId: string; projectId: number }
+  > = (props) => {
+    const { clerkUserId, projectId } = props ?? {};
+
+    return removeUserFromProject(clerkUserId, projectId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RemoveUserFromProjectMutationResult = NonNullable<
+  Awaited<ReturnType<typeof removeUserFromProject>>
+>;
+
+export type RemoveUserFromProjectMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Remove a user from a project assignment (admin only)
+ */
+export const useRemoveUserFromProject = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof removeUserFromProject>>,
+    TError,
+    { clerkUserId: string; projectId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof removeUserFromProject>>,
+  TError,
+  { clerkUserId: string; projectId: number },
+  TContext
+> => {
+  return useMutation(getRemoveUserFromProjectMutationOptions(options));
+};
+
+/**
  * Returns server health status
  * @summary Health check
  */

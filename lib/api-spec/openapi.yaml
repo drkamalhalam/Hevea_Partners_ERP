@@ -119,6 +119,30 @@ paths:
               schema:
                 $ref: "#/components/schemas/OkResponse"
 
+  /users/{clerkUserId}/projects/{projectId}:
+    delete:
+      operationId: removeUserFromProject
+      tags: [users]
+      summary: Remove a user from a project assignment (admin only)
+      parameters:
+        - in: path
+          name: clerkUserId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: projectId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
   /healthz:
     get:
       operationId: healthCheck

@@ -6,7 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useEffect, useRef } from "react";
 
 // Contexts
-import { RoleProvider } from "@/contexts/RoleContext";
+import { RoleProvider, useRole } from "@/contexts/RoleContext";
 
 // Pages — Core
 import Home from "./pages/Home";
@@ -101,6 +101,48 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
   );
 }
 
+function AdminRoute({ component: Component }: { component: React.ComponentType }) {
+  const { isAdmin, isLoading } = useRole();
+
+  if (isLoading) {
+    return (
+      <Show when="signed-in">
+        <Layout>
+          <div className="flex items-center justify-center h-64">
+            <div className="text-muted-foreground text-sm">Checking permissions…</div>
+          </div>
+        </Layout>
+      </Show>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <>
+        <Show when="signed-in">
+          <Redirect to="/dashboard" />
+        </Show>
+        <Show when="signed-out">
+          <Redirect to="/sign-in" />
+        </Show>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <Show when="signed-in">
+        <Layout>
+          <Component />
+        </Layout>
+      </Show>
+      <Show when="signed-out">
+        <Redirect to="/sign-in" />
+      </Show>
+    </>
+  );
+}
+
 function SignInPage() {
   return (
     <div className="flex min-h-[100dvh] items-center justify-center bg-gray-50 px-4">
@@ -172,7 +214,7 @@ function AppRoutes() {
               <Route path="/notifications"><ProtectedRoute component={Notifications} /></Route>
 
               {/* System */}
-              <Route path="/admin"><ProtectedRoute component={Admin} /></Route>
+              <Route path="/admin"><AdminRoute component={Admin} /></Route>
 
               <Route component={NotFound} />
             </Switch>

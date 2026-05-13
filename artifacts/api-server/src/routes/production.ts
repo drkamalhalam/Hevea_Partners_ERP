@@ -6,13 +6,21 @@ import {
   GetProductionRecordParams,
   DeleteProductionRecordParams,
 } from "@workspace/api-zod";
+import { requireRole, canAccessProject } from "../middlewares/auth";
 
 const router = Router();
 
+// GET /production — filter by project access
 router.get("/", async (req, res) => {
   try {
     const projectIdRaw = req.query.projectId;
     const projectId = projectIdRaw ? Number(projectIdRaw) : undefined;
+
+    // If a specific projectId is requested, check access first
+    if (projectId !== undefined && !canAccessProject(req, projectId)) {
+      res.status(403).json({ error: "Forbidden: no access to this project" });
+      return;
+    }
 
     const rows = await db
       .select({
@@ -32,18 +40,25 @@ router.get("/", async (req, res) => {
       .where(projectId ? eq(productionRecordsTable.projectId, projectId) : undefined)
       .orderBy(desc(productionRecordsTable.recordedAt));
 
-    res.json(rows.map(r => ({
+    const formatted = rows.map((r) => ({
       ...r,
       recordedAt: r.recordedAt.toISOString(),
       createdAt: r.createdAt.toISOString(),
-    })));
+    }));
+
+    if (req.canAccessAllProjects) {
+      res.json(formatted);
+    } else {
+      res.json(formatted.filter((r) => canAccessProject(req, r.projectId)));
+    }
   } catch (err) {
     req.log.error({ err }, "Failed to list production records");
     res.status(500).json({ error: "Internal server error" });
   }
 });
 
-router.post("/", async (req, res) => {
+// POST /production — admin, developer, or employee
+router.post("/", requireRole("admin", "developer", "employee"), async (req, res) => {
   const parsed = CreateProductionRecordBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -51,10 +66,19 @@ router.post("/", async (req, res) => {
   }
 
   const { projectId, recordedAt, productionKg, soldKg, sellingPricePerKg, notes } = parsed.data;
+
+  if (!canAccessProject(req, projectId)) {
+    res.status(403).json({ error: "Forbidden: no access to this project" });
+    return;
+  }
+
   const revenue = soldKg * sellingPricePerKg;
 
   try {
-    const [project] = await db.select({ name: projectsTable.name }).from(projectsTable).where(eq(projectsTable.id, projectId));
+    const [project] = await db
+      .select({ name: projectsTable.name })
+      .from(projectsTable)
+      .where(eq(projectsTable.id, projectId));
     if (!project) {
       res.status(404).json({ error: "Project not found" });
       return;
@@ -92,6 +116,7 @@ router.post("/", async (req, res) => {
   }
 });
 
+// GET /production/:id — check project access
 router.get("/:id", async (req, res) => {
   const parsed = GetProductionRecordParams.safeParse({ id: Number(req.params.id) });
   if (!parsed.success) {
@@ -121,6 +146,10 @@ router.get("/:id", async (req, res) => {
       res.status(404).json({ error: "Not found" });
       return;
     }
+    if (!canAccessProject(req, row.projectId)) {
+      res.status(403).json({ error: "Forbidden: no access to this project" });
+      return;
+    }
 
     res.json({
       ...row,
@@ -133,7 +162,8 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-router.delete("/:id", async (req, res) => {
+// DELETE /production/:id — admin or developer only
+router.delete("/:id", requireRole("admin", "developer"), async (req, res) => {
   const parsed = DeleteProductionRecordParams.safeParse({ id: Number(req.params.id) });
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid id" });
@@ -141,7 +171,9 @@ router.delete("/:id", async (req, res) => {
   }
 
   try {
-    await db.delete(productionRecordsTable).where(eq(productionRecordsTable.id, parsed.data.id));
+    await db
+      .delete(productionRecordsTable)
+      .where(eq(productionRecordsTable.id, parsed.data.id));
     res.status(204).send();
   } catch (err) {
     req.log.error({ err }, "Failed to delete production record");

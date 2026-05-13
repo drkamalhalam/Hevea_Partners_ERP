@@ -1,29 +1,42 @@
 import { Router } from "express";
-import { db, projectsTable, partnersTable, agreementsTable, activityTable } from "@workspace/db";
-import { count, sum } from "drizzle-orm";
-import { getAuth } from "@clerk/express";
+import {
+  db,
+  projectsTable,
+  partnersTable,
+  agreementsTable,
+  activityTable,
+} from "@workspace/db";
+import { eq } from "drizzle-orm";
+import { canAccessProject } from "../middlewares/auth";
 
 const router = Router();
 
+// GET /dashboard/summary — KPI counts, filtered by project access
 router.get("/summary", async (req, res) => {
   try {
-    const [projectCount] = await db.select({ count: count() }).from(projectsTable);
-    const [partnerCount] = await db.select({ count: count() }).from(partnersTable);
-    const [agreementCount] = await db.select({ count: count() }).from(agreementsTable);
-    const projects = await db.select().from(projectsTable);
-    const totalLandArea = projects.reduce((sum, p) => sum + (p.landArea || 0), 0);
-    const activeCount = projects.filter(p => p.status === "developing").length;
-    const maturingCount = projects.filter(p => p.status === "maturing").length;
-    const tappingCount = projects.filter(p => p.status === "tapping").length;
+    const allProjects = await db.select().from(projectsTable);
+    const projects = req.canAccessAllProjects
+      ? allProjects
+      : allProjects.filter((p) => canAccessProject(req, p.id));
+
+    const accessibleIds = new Set(projects.map((p) => p.id));
+
+    const allAgreements = await db.select().from(agreementsTable);
+    const agreements = req.canAccessAllProjects
+      ? allAgreements
+      : allAgreements.filter((a) => accessibleIds.has(a.projectId));
+
+    const totalPartners = (await db.select().from(partnersTable)).length;
+    const totalLandArea = projects.reduce((s, p) => s + (p.landArea || 0), 0);
 
     res.json({
-      totalProjects: projectCount.count,
-      totalPartners: partnerCount.count,
-      totalAgreements: agreementCount.count,
+      totalProjects: projects.length,
+      totalPartners,
+      totalAgreements: agreements.length,
       totalLandArea,
-      activeProjectsCount: activeCount,
-      maturingProjectsCount: maturingCount,
-      tappingProjectsCount: tappingCount,
+      activeProjectsCount: projects.filter((p) => p.status === "developing").length,
+      maturingProjectsCount: projects.filter((p) => p.status === "maturing").length,
+      tappingProjectsCount: projects.filter((p) => p.status === "tapping").length,
     });
   } catch (err) {
     req.log.error({ err }, "Failed to get dashboard summary");
@@ -31,28 +44,29 @@ router.get("/summary", async (req, res) => {
   }
 });
 
+// GET /dashboard/my-portfolio — agreements linked to the logged-in user's partner record
 router.get("/my-portfolio", async (req, res) => {
   try {
-    const { userId } = getAuth(req);
-    let partner = null;
-    if (userId) {
-      const partners = await db.select().from(partnersTable);
-      partner = partners.find(p => p.clerkUserId === userId) ?? null;
-    }
+    const allPartners = await db.select().from(partnersTable);
+    const partner = req.userId
+      ? (allPartners.find((p) => p.clerkUserId === req.userId) ?? null)
+      : null;
 
-    const agreements = await db.select().from(agreementsTable);
-    const projects = await db.select().from(projectsTable);
+    const allAgreements = await db.select().from(agreementsTable);
+    const allProjects = await db.select().from(projectsTable);
 
-    let myAgreements = agreements;
-    if (partner) {
-      myAgreements = agreements.filter(a => a.landOwnerId === partner!.id || a.projectDeveloperId === partner!.id);
-    }
+    let myAgreements = partner
+      ? allAgreements.filter(
+          (a) => a.landOwnerId === partner.id || a.projectDeveloperId === partner.id,
+        )
+      : req.canAccessAllProjects
+        ? allAgreements
+        : allAgreements.filter((a) => canAccessProject(req, a.projectId));
 
-    const enriched = await Promise.all(myAgreements.map(async (a) => {
-      const project = projects.find(p => p.id === a.projectId);
-      const partners = await db.select().from(partnersTable);
-      const landOwner = partners.find(p => p.id === a.landOwnerId);
-      const developer = partners.find(p => p.id === a.projectDeveloperId);
+    const enriched = myAgreements.map((a) => {
+      const project = allProjects.find((p) => p.id === a.projectId);
+      const landOwner = allPartners.find((p) => p.id === a.landOwnerId);
+      const developer = allPartners.find((p) => p.id === a.projectDeveloperId);
       return {
         ...a,
         projectName: project?.name ?? "Unknown",
@@ -61,7 +75,7 @@ router.get("/my-portfolio", async (req, res) => {
         createdAt: a.createdAt.toISOString(),
         updatedAt: a.updatedAt?.toISOString() ?? null,
       };
-    }));
+    });
 
     const totalLandArea = myAgreements.reduce((s, a) => s + (a.landArea || 0), 0);
     const totalOwnershipShare = myAgreements.reduce((s, a) => {
@@ -84,29 +98,38 @@ router.get("/my-portfolio", async (req, res) => {
   }
 });
 
+// GET /dashboard/activity — all authenticated users can see the activity feed
 router.get("/activity", async (req, res) => {
   try {
-    const activities = await db.select().from(activityTable)
+    const activities = await db
+      .select()
+      .from(activityTable)
       .orderBy(activityTable.createdAt)
       .limit(20);
-    res.json(activities.map(a => ({
-      ...a,
-      createdAt: a.createdAt.toISOString(),
-    })).reverse());
+    res.json(
+      activities
+        .map((a) => ({ ...a, createdAt: a.createdAt.toISOString() }))
+        .reverse(),
+    );
   } catch (err) {
     req.log.error({ err }, "Failed to get activity");
     res.status(500).json({ error: "Internal server error" });
   }
 });
 
+// GET /dashboard/revenue — filter by project access
 router.get("/revenue", async (req, res) => {
   try {
-    const projects = await db.select().from(projectsTable);
+    const allProjects = await db.select().from(projectsTable);
+    const projects = req.canAccessAllProjects
+      ? allProjects
+      : allProjects.filter((p) => canAccessProject(req, p.id));
+
     const agreements = await db.select().from(agreementsTable);
     const currentYear = new Date().getFullYear();
 
-    const stats = projects.map(p => {
-      const projectAgreements = agreements.filter(a => a.projectId === p.id);
+    const stats = projects.map((p) => {
+      const projectAgreements = agreements.filter((a) => a.projectId === p.id);
       const totalLand = projectAgreements.reduce((s, a) => s + (a.landArea || 0), 0);
       const lca = projectAgreements.reduce((s, a) => s + (a.landContributionAdjustment || 0), 0);
       const estimatedRevenue = totalLand * 12000;
