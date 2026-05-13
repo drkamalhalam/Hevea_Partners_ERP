@@ -1423,6 +1423,196 @@ export const UpdateMissingDeveloperCaseResponse = zod.object({
 });
 
 /**
+ * @summary Get the current closure workflow for a project
+ */
+export const GetProjectClosureWorkflowParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const GetProjectClosureWorkflowResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  status: zod.enum([
+    "pending_acknowledgment",
+    "acknowledged",
+    "closed",
+    "cancelled",
+  ]),
+  closureReason: zod.string(),
+  closureRemarks: zod.string().nullish(),
+  initiatedBy: zod.string().uuid().nullish(),
+  initiatedByName: zod.string().nullable(),
+  initiatedAt: zod.coerce.date(),
+  otpCode: zod.string().nullish(),
+  otpSentAt: zod.coerce.date().nullish(),
+  otpExpiresAt: zod.coerce.date().nullish(),
+  otpVerifiedAt: zod.coerce.date().nullish(),
+  acknowledgedBy: zod.string().uuid().nullish(),
+  acknowledgedByName: zod.string().nullish(),
+  acknowledgedAt: zod.coerce.date().nullish(),
+  acknowledgmentNotes: zod.string().nullish(),
+  acknowledgmentWaived: zod.boolean(),
+  waivedBy: zod.string().uuid().nullish(),
+  waivedByName: zod.string().nullish(),
+  waivedAt: zod.coerce.date().nullish(),
+  waivedReason: zod.string().nullish(),
+  cancelledBy: zod.string().uuid().nullish(),
+  cancelledByName: zod.string().nullish(),
+  cancelledAt: zod.coerce.date().nullish(),
+  cancellationReason: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date().nullish(),
+});
+
+/**
+ * @summary Initiate project closure workflow (admin/developer only)
+ */
+export const InitiateProjectClosureParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const InitiateProjectClosureBody = zod.object({
+  closureReason: zod.string(),
+  closureRemarks: zod.string().optional(),
+});
+
+/**
+ * @summary Cancel workflow or waive acknowledgment (admin only)
+ */
+export const UpdateProjectClosureWorkflowParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const UpdateProjectClosureWorkflowBody = zod.object({
+  action: zod.enum(["cancel", "waive"]),
+  reason: zod.string().optional(),
+});
+
+export const UpdateProjectClosureWorkflowResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  status: zod.enum([
+    "pending_acknowledgment",
+    "acknowledged",
+    "closed",
+    "cancelled",
+  ]),
+  closureReason: zod.string(),
+  closureRemarks: zod.string().nullish(),
+  initiatedBy: zod.string().uuid().nullish(),
+  initiatedByName: zod.string().nullable(),
+  initiatedAt: zod.coerce.date(),
+  otpCode: zod.string().nullish(),
+  otpSentAt: zod.coerce.date().nullish(),
+  otpExpiresAt: zod.coerce.date().nullish(),
+  otpVerifiedAt: zod.coerce.date().nullish(),
+  acknowledgedBy: zod.string().uuid().nullish(),
+  acknowledgedByName: zod.string().nullish(),
+  acknowledgedAt: zod.coerce.date().nullish(),
+  acknowledgmentNotes: zod.string().nullish(),
+  acknowledgmentWaived: zod.boolean(),
+  waivedBy: zod.string().uuid().nullish(),
+  waivedByName: zod.string().nullish(),
+  waivedAt: zod.coerce.date().nullish(),
+  waivedReason: zod.string().nullish(),
+  cancelledBy: zod.string().uuid().nullish(),
+  cancelledByName: zod.string().nullish(),
+  cancelledAt: zod.coerce.date().nullish(),
+  cancellationReason: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date().nullish(),
+});
+
+/**
+ * @summary Send or resend acknowledgment OTP to landowner for closure
+ */
+export const SendClosureAcknowledgmentOtpParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const SendClosureAcknowledgmentOtpResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  status: zod.enum([
+    "pending_acknowledgment",
+    "acknowledged",
+    "closed",
+    "cancelled",
+  ]),
+  closureReason: zod.string(),
+  closureRemarks: zod.string().nullish(),
+  initiatedBy: zod.string().uuid().nullish(),
+  initiatedByName: zod.string().nullable(),
+  initiatedAt: zod.coerce.date(),
+  otpCode: zod.string().nullish(),
+  otpSentAt: zod.coerce.date().nullish(),
+  otpExpiresAt: zod.coerce.date().nullish(),
+  otpVerifiedAt: zod.coerce.date().nullish(),
+  acknowledgedBy: zod.string().uuid().nullish(),
+  acknowledgedByName: zod.string().nullish(),
+  acknowledgedAt: zod.coerce.date().nullish(),
+  acknowledgmentNotes: zod.string().nullish(),
+  acknowledgmentWaived: zod.boolean(),
+  waivedBy: zod.string().uuid().nullish(),
+  waivedByName: zod.string().nullish(),
+  waivedAt: zod.coerce.date().nullish(),
+  waivedReason: zod.string().nullish(),
+  cancelledBy: zod.string().uuid().nullish(),
+  cancelledByName: zod.string().nullish(),
+  cancelledAt: zod.coerce.date().nullish(),
+  cancellationReason: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date().nullish(),
+});
+
+/**
+ * @summary Acknowledge project closure with OTP
+ */
+export const AcknowledgeProjectClosureParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const AcknowledgeProjectClosureBody = zod.object({
+  otpCode: zod.string(),
+  acknowledgmentNotes: zod.string().optional(),
+});
+
+export const AcknowledgeProjectClosureResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  status: zod.enum([
+    "pending_acknowledgment",
+    "acknowledged",
+    "closed",
+    "cancelled",
+  ]),
+  closureReason: zod.string(),
+  closureRemarks: zod.string().nullish(),
+  initiatedBy: zod.string().uuid().nullish(),
+  initiatedByName: zod.string().nullable(),
+  initiatedAt: zod.coerce.date(),
+  otpCode: zod.string().nullish(),
+  otpSentAt: zod.coerce.date().nullish(),
+  otpExpiresAt: zod.coerce.date().nullish(),
+  otpVerifiedAt: zod.coerce.date().nullish(),
+  acknowledgedBy: zod.string().uuid().nullish(),
+  acknowledgedByName: zod.string().nullish(),
+  acknowledgedAt: zod.coerce.date().nullish(),
+  acknowledgmentNotes: zod.string().nullish(),
+  acknowledgmentWaived: zod.boolean(),
+  waivedBy: zod.string().uuid().nullish(),
+  waivedByName: zod.string().nullish(),
+  waivedAt: zod.coerce.date().nullish(),
+  waivedReason: zod.string().nullish(),
+  cancelledBy: zod.string().uuid().nullish(),
+  cancelledByName: zod.string().nullish(),
+  cancelledAt: zod.coerce.date().nullish(),
+  cancellationReason: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date().nullish(),
+});
+
+/**
  * @summary List all partners
  */
 export const ListPartnersResponseItem = zod.object({

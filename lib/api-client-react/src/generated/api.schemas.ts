@@ -1212,6 +1212,89 @@ export interface GovernanceSummary {
   partnerAlerts: PartnerGovernanceStatus[];
 }
 
+export type ProjectClosureWorkflowStatus =
+  (typeof ProjectClosureWorkflowStatus)[keyof typeof ProjectClosureWorkflowStatus];
+
+export const ProjectClosureWorkflowStatus = {
+  pending_acknowledgment: "pending_acknowledgment",
+  acknowledged: "acknowledged",
+  closed: "closed",
+  cancelled: "cancelled",
+} as const;
+
+export interface ProjectClosureWorkflow {
+  id: string;
+  projectId: string;
+  status: ProjectClosureWorkflowStatus;
+  closureReason: string;
+  /** @nullable */
+  closureRemarks?: string | null;
+  /** @nullable */
+  initiatedBy?: string | null;
+  /** @nullable */
+  initiatedByName: string | null;
+  initiatedAt: string;
+  /** @nullable */
+  otpCode?: string | null;
+  /** @nullable */
+  otpSentAt?: string | null;
+  /** @nullable */
+  otpExpiresAt?: string | null;
+  /** @nullable */
+  otpVerifiedAt?: string | null;
+  /** @nullable */
+  acknowledgedBy?: string | null;
+  /** @nullable */
+  acknowledgedByName?: string | null;
+  /** @nullable */
+  acknowledgedAt?: string | null;
+  /** @nullable */
+  acknowledgmentNotes?: string | null;
+  acknowledgmentWaived: boolean;
+  /** @nullable */
+  waivedBy?: string | null;
+  /** @nullable */
+  waivedByName?: string | null;
+  /** @nullable */
+  waivedAt?: string | null;
+  /** @nullable */
+  waivedReason?: string | null;
+  /** @nullable */
+  cancelledBy?: string | null;
+  /** @nullable */
+  cancelledByName?: string | null;
+  /** @nullable */
+  cancelledAt?: string | null;
+  /** @nullable */
+  cancellationReason?: string | null;
+  createdAt: string;
+  /** @nullable */
+  updatedAt?: string | null;
+}
+
+export interface InitiateClosureBody {
+  closureReason: string;
+  closureRemarks?: string;
+}
+
+export interface AcknowledgeClosureBody {
+  otpCode: string;
+  acknowledgmentNotes?: string;
+}
+
+export type UpdateClosureWorkflowBodyAction =
+  (typeof UpdateClosureWorkflowBodyAction)[keyof typeof UpdateClosureWorkflowBodyAction];
+
+export const UpdateClosureWorkflowBodyAction = {
+  cancel: "cancel",
+  waive: "waive",
+} as const;
+
+export interface UpdateClosureWorkflowBody {
+  action: UpdateClosureWorkflowBodyAction;
+  reason?: string;
+}
+
 export interface ErrorResponse {
   error?: string;
 }

@@ -1,5 +1,6 @@
 import { useUser } from "@clerk/react";
 import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import type { GovernanceSummary } from "@workspace/api-client-react";
 import { GovernanceAlertPanel, GovernanceStatusBadge } from "@/components/governance";
 import { Link } from "wouter";
@@ -25,6 +26,7 @@ import {
   TrendingUp,
   PieChart,
   Users,
+  Archive,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -448,6 +450,78 @@ function ProjectHealthPanel({
   );
 }
 
+// ── Closure Pending Panel (Admin/Developer helper) ────────────────────────
+
+type PendingClosureEntry = {
+  id: string;
+  projectId: string;
+  projectName: string;
+  status: string;
+  initiatedByName: string | null;
+  initiatedAt: string;
+  closureReason: string;
+  otpSentAt: string | null;
+};
+
+function ClosurePendingPanel() {
+  const { data = [], isLoading } = useQuery<PendingClosureEntry[]>({
+    queryKey: ["projects", "closure", "pending"],
+    queryFn: () =>
+      fetch("/api/projects/closure/pending", { credentials: "include" }).then((r) => r.json()),
+    staleTime: 60_000,
+  });
+
+  if (isLoading || data.length === 0) return null;
+
+  return (
+    <Card className="border-amber-200 bg-amber-50/30">
+      <CardHeader className="pb-3">
+        <CardTitle className="font-serif text-base flex items-center gap-2">
+          <Archive className="w-4 h-4 text-amber-600" />
+          Pending Project Closures
+          <span className="ml-1 bg-amber-600 text-white text-xs font-semibold px-1.5 py-0.5 rounded-full">
+            {data.length}
+          </span>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="pt-0">
+        <div className="space-y-2">
+          {data.map((w) => (
+            <div
+              key={w.id}
+              className="flex items-center justify-between gap-3 rounded-lg border border-amber-100 bg-white px-3 py-2"
+            >
+              <div className="min-w-0">
+                <p className="text-sm font-medium truncate">{w.projectName}</p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {w.closureReason} · by {w.initiatedByName ?? "unknown"}
+                </p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <span
+                  className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                    w.status === "pending_acknowledgment"
+                      ? "bg-amber-100 text-amber-800"
+                      : "bg-blue-100 text-blue-800"
+                  }`}
+                >
+                  {w.status === "pending_acknowledgment" ? "Awaiting OTP" : "Acknowledged"}
+                </span>
+                <Link href={`/projects/${w.projectId}/closure`}>
+                  <Button size="sm" variant="outline" className="h-7 text-xs gap-1">
+                    Review
+                    <ChevronRight className="w-3 h-3" />
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 // ── Admin Dashboard ───────────────────────────────────────────────────────
 
 function AdminDashboard() {
@@ -531,6 +605,11 @@ function AdminDashboard() {
       {/* Governance alerts */}
       <section>
         <GovernanceAlertPanel />
+      </section>
+
+      {/* Pending closure workflows */}
+      <section>
+        <ClosurePendingPanel />
       </section>
 
       {/* User stats + Activity */}
@@ -714,6 +793,11 @@ function DeveloperDashboard() {
       {/* Governance alerts */}
       <section>
         <GovernanceAlertPanel />
+      </section>
+
+      {/* Pending closure workflows */}
+      <section>
+        <ClosurePendingPanel />
       </section>
 
       {/* Project health + Pending approvals */}

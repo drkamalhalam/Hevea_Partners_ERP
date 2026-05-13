@@ -15,4 +15,5 @@ export * from "./maturity";
 export * from "./missing_developer";
 export * from "./nominee_activation_workflow";
 export * from "./ownership_freeze";
+export * from "./project_closure_workflow";
 export * from "./stubs";

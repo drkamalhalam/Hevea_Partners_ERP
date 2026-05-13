@@ -3,7 +3,7 @@ import { useGetProject, useListAgreements, getGetProjectQueryKey } from "@worksp
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, MapPin, ChevronRight, Lock } from "lucide-react";
+import { ArrowLeft, MapPin, ChevronRight, Lock, Archive } from "lucide-react";
 import ProjectParticipants from "./ProjectParticipants";
 import ProjectNomineeSection from "./ProjectNominee";
 import ProjectLifecycleSection from "./ProjectLifecycleSection";
@@ -158,6 +158,31 @@ export default function ProjectDetails() {
               </div>
               <Link href={`/projects/${id}/maturity`}>
                 <Button size="sm" variant="outline" className="gap-1.5 border-amber-300">
+                  <ChevronRight className="w-4 h-4" />
+                  Manage
+                </Button>
+              </Link>
+            </div>
+          </CardHeader>
+        </Card>
+      )}
+
+      {/* Project Closure — only visible for non-closed projects */}
+      {project.lifecycleStatus !== "closed" && (
+        <Card className="border-gray-200">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="font-serif text-base flex items-center gap-2">
+                  <Archive className="w-4 h-4 text-gray-500" />
+                  Project Closure
+                </CardTitle>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Governance workflow for operational closure with landowner acknowledgment
+                </p>
+              </div>
+              <Link href={`/projects/${id}/closure`}>
+                <Button size="sm" variant="outline" className="gap-1.5">
                   <ChevronRight className="w-4 h-4" />
                   Manage
                 </Button>

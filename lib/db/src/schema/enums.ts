@@ -144,6 +144,20 @@ export const nomineeActivationWorkflowStatusEnum = pgEnum(
   ],
 );
 
+// ── Project closure workflow enums ───────────────────────────────────────
+
+/**
+ * Status of a project closure workflow.
+ *   pending_acknowledgment — closure initiated; waiting for landowner OTP acknowledgment
+ *   acknowledged           — landowner confirmed or admin waived; lifecycle transitions to closed
+ *   closed                 — workflow complete; project lifecycle = closed
+ *   cancelled              — workflow cancelled before completion
+ */
+export const projectClosureWorkflowStatusEnum = pgEnum(
+  "project_closure_workflow_status",
+  ["pending_acknowledgment", "acknowledged", "closed", "cancelled"],
+);
+
 // ── Ownership freeze enums ────────────────────────────────────────────────
 
 /**

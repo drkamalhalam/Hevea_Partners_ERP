@@ -17,6 +17,7 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
+  AcknowledgeClosureBody,
   ActivityItem,
   AddParticipantInput,
   Agreement,
@@ -32,6 +33,7 @@ import type {
   GetUserActivityParams,
   GovernanceSummary,
   HealthStatus,
+  InitiateClosureBody,
   InitiateMaturityBody,
   InitiateNomineeActivationBody,
   ListPartnerClaimantsParams,
@@ -51,6 +53,7 @@ import type {
   ProductionInput,
   ProductionRecord,
   Project,
+  ProjectClosureWorkflow,
   ProjectInput,
   ProjectLifecycle,
   ProjectLifecycleHistoryEntry,
@@ -63,6 +66,7 @@ import type {
   TransitionLifecycleBody,
   UpdateAssignmentInput,
   UpdateClaimantInput,
+  UpdateClosureWorkflowBody,
   UpdateMissingDeveloperCaseBody,
   UpdateNomineeActivationBody,
   UpdateNomineeInput,
@@ -3879,6 +3883,454 @@ export const useUpdateMissingDeveloperCase = <
   TContext
 > => {
   return useMutation(getUpdateMissingDeveloperCaseMutationOptions(options));
+};
+
+/**
+ * @summary Get the current closure workflow for a project
+ */
+export const getGetProjectClosureWorkflowUrl = (id: string) => {
+  return `/api/projects/${id}/closure`;
+};
+
+export const getProjectClosureWorkflow = async (
+  id: string,
+  options?: RequestInit,
+): Promise<ProjectClosureWorkflow> => {
+  return customFetch<ProjectClosureWorkflow>(
+    getGetProjectClosureWorkflowUrl(id),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetProjectClosureWorkflowQueryKey = (id: string) => {
+  return [`/api/projects/${id}/closure`] as const;
+};
+
+export const getGetProjectClosureWorkflowQueryOptions = <
+  TData = Awaited<ReturnType<typeof getProjectClosureWorkflow>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getProjectClosureWorkflow>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetProjectClosureWorkflowQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getProjectClosureWorkflow>>
+  > = ({ signal }) =>
+    getProjectClosureWorkflow(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getProjectClosureWorkflow>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetProjectClosureWorkflowQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getProjectClosureWorkflow>>
+>;
+export type GetProjectClosureWorkflowQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Get the current closure workflow for a project
+ */
+
+export function useGetProjectClosureWorkflow<
+  TData = Awaited<ReturnType<typeof getProjectClosureWorkflow>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getProjectClosureWorkflow>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetProjectClosureWorkflowQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Initiate project closure workflow (admin/developer only)
+ */
+export const getInitiateProjectClosureUrl = (id: string) => {
+  return `/api/projects/${id}/closure`;
+};
+
+export const initiateProjectClosure = async (
+  id: string,
+  initiateClosureBody: InitiateClosureBody,
+  options?: RequestInit,
+): Promise<ProjectClosureWorkflow> => {
+  return customFetch<ProjectClosureWorkflow>(getInitiateProjectClosureUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(initiateClosureBody),
+  });
+};
+
+export const getInitiateProjectClosureMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof initiateProjectClosure>>,
+    TError,
+    { id: string; data: BodyType<InitiateClosureBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof initiateProjectClosure>>,
+  TError,
+  { id: string; data: BodyType<InitiateClosureBody> },
+  TContext
+> => {
+  const mutationKey = ["initiateProjectClosure"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof initiateProjectClosure>>,
+    { id: string; data: BodyType<InitiateClosureBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return initiateProjectClosure(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type InitiateProjectClosureMutationResult = NonNullable<
+  Awaited<ReturnType<typeof initiateProjectClosure>>
+>;
+export type InitiateProjectClosureMutationBody = BodyType<InitiateClosureBody>;
+export type InitiateProjectClosureMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Initiate project closure workflow (admin/developer only)
+ */
+export const useInitiateProjectClosure = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof initiateProjectClosure>>,
+    TError,
+    { id: string; data: BodyType<InitiateClosureBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof initiateProjectClosure>>,
+  TError,
+  { id: string; data: BodyType<InitiateClosureBody> },
+  TContext
+> => {
+  return useMutation(getInitiateProjectClosureMutationOptions(options));
+};
+
+/**
+ * @summary Cancel workflow or waive acknowledgment (admin only)
+ */
+export const getUpdateProjectClosureWorkflowUrl = (id: string) => {
+  return `/api/projects/${id}/closure`;
+};
+
+export const updateProjectClosureWorkflow = async (
+  id: string,
+  updateClosureWorkflowBody: UpdateClosureWorkflowBody,
+  options?: RequestInit,
+): Promise<ProjectClosureWorkflow> => {
+  return customFetch<ProjectClosureWorkflow>(
+    getUpdateProjectClosureWorkflowUrl(id),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(updateClosureWorkflowBody),
+    },
+  );
+};
+
+export const getUpdateProjectClosureWorkflowMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateProjectClosureWorkflow>>,
+    TError,
+    { id: string; data: BodyType<UpdateClosureWorkflowBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateProjectClosureWorkflow>>,
+  TError,
+  { id: string; data: BodyType<UpdateClosureWorkflowBody> },
+  TContext
+> => {
+  const mutationKey = ["updateProjectClosureWorkflow"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateProjectClosureWorkflow>>,
+    { id: string; data: BodyType<UpdateClosureWorkflowBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateProjectClosureWorkflow(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateProjectClosureWorkflowMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateProjectClosureWorkflow>>
+>;
+export type UpdateProjectClosureWorkflowMutationBody =
+  BodyType<UpdateClosureWorkflowBody>;
+export type UpdateProjectClosureWorkflowMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Cancel workflow or waive acknowledgment (admin only)
+ */
+export const useUpdateProjectClosureWorkflow = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateProjectClosureWorkflow>>,
+    TError,
+    { id: string; data: BodyType<UpdateClosureWorkflowBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateProjectClosureWorkflow>>,
+  TError,
+  { id: string; data: BodyType<UpdateClosureWorkflowBody> },
+  TContext
+> => {
+  return useMutation(getUpdateProjectClosureWorkflowMutationOptions(options));
+};
+
+/**
+ * @summary Send or resend acknowledgment OTP to landowner for closure
+ */
+export const getSendClosureAcknowledgmentOtpUrl = (id: string) => {
+  return `/api/projects/${id}/closure/send-otp`;
+};
+
+export const sendClosureAcknowledgmentOtp = async (
+  id: string,
+  options?: RequestInit,
+): Promise<ProjectClosureWorkflow> => {
+  return customFetch<ProjectClosureWorkflow>(
+    getSendClosureAcknowledgmentOtpUrl(id),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getSendClosureAcknowledgmentOtpMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof sendClosureAcknowledgmentOtp>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof sendClosureAcknowledgmentOtp>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["sendClosureAcknowledgmentOtp"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof sendClosureAcknowledgmentOtp>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return sendClosureAcknowledgmentOtp(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SendClosureAcknowledgmentOtpMutationResult = NonNullable<
+  Awaited<ReturnType<typeof sendClosureAcknowledgmentOtp>>
+>;
+
+export type SendClosureAcknowledgmentOtpMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Send or resend acknowledgment OTP to landowner for closure
+ */
+export const useSendClosureAcknowledgmentOtp = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof sendClosureAcknowledgmentOtp>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof sendClosureAcknowledgmentOtp>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getSendClosureAcknowledgmentOtpMutationOptions(options));
+};
+
+/**
+ * @summary Acknowledge project closure with OTP
+ */
+export const getAcknowledgeProjectClosureUrl = (id: string) => {
+  return `/api/projects/${id}/closure/acknowledge`;
+};
+
+export const acknowledgeProjectClosure = async (
+  id: string,
+  acknowledgeClosureBody: AcknowledgeClosureBody,
+  options?: RequestInit,
+): Promise<ProjectClosureWorkflow> => {
+  return customFetch<ProjectClosureWorkflow>(
+    getAcknowledgeProjectClosureUrl(id),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(acknowledgeClosureBody),
+    },
+  );
+};
+
+export const getAcknowledgeProjectClosureMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof acknowledgeProjectClosure>>,
+    TError,
+    { id: string; data: BodyType<AcknowledgeClosureBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof acknowledgeProjectClosure>>,
+  TError,
+  { id: string; data: BodyType<AcknowledgeClosureBody> },
+  TContext
+> => {
+  const mutationKey = ["acknowledgeProjectClosure"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof acknowledgeProjectClosure>>,
+    { id: string; data: BodyType<AcknowledgeClosureBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return acknowledgeProjectClosure(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AcknowledgeProjectClosureMutationResult = NonNullable<
+  Awaited<ReturnType<typeof acknowledgeProjectClosure>>
+>;
+export type AcknowledgeProjectClosureMutationBody =
+  BodyType<AcknowledgeClosureBody>;
+export type AcknowledgeProjectClosureMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Acknowledge project closure with OTP
+ */
+export const useAcknowledgeProjectClosure = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof acknowledgeProjectClosure>>,
+    TError,
+    { id: string; data: BodyType<AcknowledgeClosureBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof acknowledgeProjectClosure>>,
+  TError,
+  { id: string; data: BodyType<AcknowledgeClosureBody> },
+  TContext
+> => {
+  return useMutation(getAcknowledgeProjectClosureMutationOptions(options));
 };
 
 /**

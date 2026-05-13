@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from "./acknowledgeClosureBody";
 export * from "./activityItem";
 export * from "./addParticipantInput";
 export * from "./addParticipantInputProjectRole";
@@ -34,6 +35,7 @@ export * from "./governanceAlertSeverity";
 export * from "./governanceSummary";
 export * from "./governanceSummaryOverallStatus";
 export * from "./healthStatus";
+export * from "./initiateClosureBody";
 export * from "./initiateMaturityBody";
 export * from "./initiateNomineeActivationBody";
 export * from "./initiateNomineeActivationBodyActivationType";
@@ -74,6 +76,8 @@ export * from "./productionRecord";
 export * from "./project";
 export * from "./projectAssignmentItem";
 export * from "./projectAssignmentItemProjectRole";
+export * from "./projectClosureWorkflow";
+export * from "./projectClosureWorkflowStatus";
 export * from "./projectGovernanceStatus";
 export * from "./projectGovernanceStatusStatus";
 export * from "./projectInput";
@@ -100,6 +104,8 @@ export * from "./updateAssignmentInput";
 export * from "./updateAssignmentInputProjectRole";
 export * from "./updateClaimantInput";
 export * from "./updateClaimantInputStatus";
+export * from "./updateClosureWorkflowBody";
+export * from "./updateClosureWorkflowBodyAction";
 export * from "./updateMissingDeveloperCaseBody";
 export * from "./updateMissingDeveloperCaseBodyStatus";
 export * from "./updateNomineeActivationBody";
