@@ -23,6 +23,7 @@ import {
   UserCircle,
   LibraryBig,
   Scroll,
+  ClipboardList,
   Landmark,
   TrendingUp,
   Archive,
@@ -205,6 +206,12 @@ const navGroups: NavGroup[] = [
   {
     label: "Operations",
     items: [
+      {
+        name: "Production Log",
+        href: "/production-log",
+        icon: ClipboardList,
+        roles: ["admin", "developer", "employee", "operational_staff", "landowner", "investor"],
+      },
       {
         name: "Production",
         href: "/production",

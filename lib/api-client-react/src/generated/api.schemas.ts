@@ -3405,6 +3405,140 @@ export interface LandownerProfitabilityAnalytics {
   projects: ProjectProfitabilityRow[];
 }
 
+export type ProductionBatchStatus =
+  (typeof ProductionBatchStatus)[keyof typeof ProductionBatchStatus];
+
+export const ProductionBatchStatus = {
+  open: "open",
+  closed: "closed",
+  voided: "voided",
+} as const;
+
+export interface ProductionBatch {
+  id: string;
+  projectId: string;
+  projectName?: string;
+  batchNumber: string;
+  batchDate: string;
+  status: ProductionBatchStatus;
+  notes?: string;
+  entryCount: number;
+  totalLatexLitres: number;
+  totalSheetKg: number;
+  totalScrapKg: number;
+  createdByName: string;
+  closedAt?: string;
+  closedByName?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type ProductionEntryProductionType =
+  (typeof ProductionEntryProductionType)[keyof typeof ProductionEntryProductionType];
+
+export const ProductionEntryProductionType = {
+  latex: "latex",
+  rubber_sheet: "rubber_sheet",
+  rubber_scrap: "rubber_scrap",
+} as const;
+
+export type ProductionEntryUnit =
+  (typeof ProductionEntryUnit)[keyof typeof ProductionEntryUnit];
+
+export const ProductionEntryUnit = {
+  litres: "litres",
+  kg: "kg",
+} as const;
+
+export interface ProductionEntry {
+  id: string;
+  batchId: string;
+  projectId: string;
+  projectName?: string;
+  productionType: ProductionEntryProductionType;
+  quantity: number;
+  unit: ProductionEntryUnit;
+  productionDate: string;
+  enteredByName: string;
+  remarks?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type ProductionBatchDetail = ProductionBatch & {
+  entries: ProductionEntry[];
+};
+
+export interface CreateProductionBatchBody {
+  projectId: string;
+  batchDate: string;
+  notes?: string;
+}
+
+export type CreateProductionEntryBodyProductionType =
+  (typeof CreateProductionEntryBodyProductionType)[keyof typeof CreateProductionEntryBodyProductionType];
+
+export const CreateProductionEntryBodyProductionType = {
+  latex: "latex",
+  rubber_sheet: "rubber_sheet",
+  rubber_scrap: "rubber_scrap",
+} as const;
+
+export type CreateProductionEntryBodyUnit =
+  (typeof CreateProductionEntryBodyUnit)[keyof typeof CreateProductionEntryBodyUnit];
+
+export const CreateProductionEntryBodyUnit = {
+  litres: "litres",
+  kg: "kg",
+} as const;
+
+export interface CreateProductionEntryBody {
+  batchId: string;
+  projectId: string;
+  productionType: CreateProductionEntryBodyProductionType;
+  /** @minimum 0.001 */
+  quantity: number;
+  unit?: CreateProductionEntryBodyUnit;
+  productionDate: string;
+  remarks?: string;
+}
+
+export type UpdateProductionEntryBodyUnit =
+  (typeof UpdateProductionEntryBodyUnit)[keyof typeof UpdateProductionEntryBodyUnit];
+
+export const UpdateProductionEntryBodyUnit = {
+  litres: "litres",
+  kg: "kg",
+} as const;
+
+export interface UpdateProductionEntryBody {
+  /** @minimum 0.001 */
+  quantity?: number;
+  unit?: UpdateProductionEntryBodyUnit;
+  remarks?: string;
+  productionDate?: string;
+}
+
+export interface ProductionLogProjectSummary {
+  projectId: string;
+  projectName?: string;
+  totalLatexLitres: number;
+  totalSheetKg: number;
+  totalScrapKg: number;
+  totalEntries: number;
+  batchCount: number;
+  openBatchCount: number;
+}
+
+export interface ProductionLogSummary {
+  totalLatexLitres: number;
+  totalSheetKg: number;
+  totalScrapKg: number;
+  totalBatches: number;
+  projects: ProductionLogProjectSummary[];
+}
+
 export type GetUserActivityParams = {
   limit?: number;
 };
@@ -3880,4 +4014,42 @@ export type GetLandownerProfitabilityAnalyticsParams = {
   partnerId?: string;
   fromYear?: number;
   toYear?: number;
+};
+
+export type ListProductionBatchesParams = {
+  projectId?: string;
+  date?: string;
+  status?: ListProductionBatchesStatus;
+};
+
+export type ListProductionBatchesStatus =
+  (typeof ListProductionBatchesStatus)[keyof typeof ListProductionBatchesStatus];
+
+export const ListProductionBatchesStatus = {
+  open: "open",
+  closed: "closed",
+  voided: "voided",
+} as const;
+
+export type ListProductionEntriesParams = {
+  projectId?: string;
+  batchId?: string;
+  productionType?: ListProductionEntriesProductionType;
+};
+
+export type ListProductionEntriesProductionType =
+  (typeof ListProductionEntriesProductionType)[keyof typeof ListProductionEntriesProductionType];
+
+export const ListProductionEntriesProductionType = {
+  latex: "latex",
+  rubber_sheet: "rubber_sheet",
+  rubber_scrap: "rubber_scrap",
+} as const;
+
+export type DeleteProductionEntry200 = {
+  success?: boolean;
+};
+
+export type GetProductionLogSummaryParams = {
+  projectId?: string;
 };

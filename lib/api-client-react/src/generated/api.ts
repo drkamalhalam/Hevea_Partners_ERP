@@ -70,8 +70,11 @@ import type {
   CreateLcaLedgerEntryBody,
   CreateNomineeInput,
   CreateOwnershipSnapshotBody,
+  CreateProductionBatchBody,
+  CreateProductionEntryBody,
   CreateTemplateBody,
   DashboardSummary,
+  DeleteProductionEntry200,
   Document,
   DocumentAccessLogEntry,
   ErrorResponse,
@@ -102,6 +105,7 @@ import type {
   GetLcaSummaryParams,
   GetOwnershipSummary200,
   GetOwnershipSummaryParams,
+  GetProductionLogSummaryParams,
   GetUserActivityParams,
   GovernanceSummary,
   HealthStatus,
@@ -147,6 +151,8 @@ import type {
   ListPendingVerificationContributions200,
   ListPendingVerificationContributionsParams,
   ListPendingVerifications200,
+  ListProductionBatchesParams,
+  ListProductionEntriesParams,
   ListProductionRecordsParams,
   ListTemplatesParams,
   MarkBurdenRecordRecoveredBody,
@@ -164,7 +170,11 @@ import type {
   PartnerPortfolio,
   PartnerUpdate,
   PatchBurdenRecoveryAdjustment,
+  ProductionBatch,
+  ProductionBatchDetail,
+  ProductionEntry,
   ProductionInput,
+  ProductionLogSummary,
   ProductionRecord,
   Project,
   ProjectClosureWorkflow,
@@ -213,6 +223,7 @@ import type {
   UpdateNomineeActivationBody,
   UpdateNomineeInput,
   UpdateParticipantInput,
+  UpdateProductionEntryBody,
   UpdateProfileInput,
   UpdateTemplateBody,
   UpsertAccountingProfileBody,
@@ -17513,6 +17524,913 @@ export function useGetLandownerProfitabilityAnalytics<
     params,
     options,
   );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List production batches with project filtering
+ */
+export const getListProductionBatchesUrl = (
+  params?: ListProductionBatchesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/production-log/batches?${stringifiedParams}`
+    : `/api/production-log/batches`;
+};
+
+export const listProductionBatches = async (
+  params?: ListProductionBatchesParams,
+  options?: RequestInit,
+): Promise<ProductionBatch[]> => {
+  return customFetch<ProductionBatch[]>(getListProductionBatchesUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListProductionBatchesQueryKey = (
+  params?: ListProductionBatchesParams,
+) => {
+  return [`/api/production-log/batches`, ...(params ? [params] : [])] as const;
+};
+
+export const getListProductionBatchesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listProductionBatches>>,
+  TError = ErrorType<void>,
+>(
+  params?: ListProductionBatchesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listProductionBatches>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListProductionBatchesQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listProductionBatches>>
+  > = ({ signal }) =>
+    listProductionBatches(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listProductionBatches>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListProductionBatchesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listProductionBatches>>
+>;
+export type ListProductionBatchesQueryError = ErrorType<void>;
+
+/**
+ * @summary List production batches with project filtering
+ */
+
+export function useListProductionBatches<
+  TData = Awaited<ReturnType<typeof listProductionBatches>>,
+  TError = ErrorType<void>,
+>(
+  params?: ListProductionBatchesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listProductionBatches>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListProductionBatchesQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a new production batch (auto-generates batch number)
+ */
+export const getCreateProductionBatchUrl = () => {
+  return `/api/production-log/batches`;
+};
+
+export const createProductionBatch = async (
+  createProductionBatchBody: CreateProductionBatchBody,
+  options?: RequestInit,
+): Promise<ProductionBatch> => {
+  return customFetch<ProductionBatch>(getCreateProductionBatchUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createProductionBatchBody),
+  });
+};
+
+export const getCreateProductionBatchMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createProductionBatch>>,
+    TError,
+    { data: BodyType<CreateProductionBatchBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createProductionBatch>>,
+  TError,
+  { data: BodyType<CreateProductionBatchBody> },
+  TContext
+> => {
+  const mutationKey = ["createProductionBatch"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createProductionBatch>>,
+    { data: BodyType<CreateProductionBatchBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createProductionBatch(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateProductionBatchMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createProductionBatch>>
+>;
+export type CreateProductionBatchMutationBody =
+  BodyType<CreateProductionBatchBody>;
+export type CreateProductionBatchMutationError = ErrorType<void>;
+
+/**
+ * @summary Create a new production batch (auto-generates batch number)
+ */
+export const useCreateProductionBatch = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createProductionBatch>>,
+    TError,
+    { data: BodyType<CreateProductionBatchBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createProductionBatch>>,
+  TError,
+  { data: BodyType<CreateProductionBatchBody> },
+  TContext
+> => {
+  return useMutation(getCreateProductionBatchMutationOptions(options));
+};
+
+/**
+ * @summary Get a production batch with all its entries
+ */
+export const getGetProductionBatchUrl = (id: string) => {
+  return `/api/production-log/batches/${id}`;
+};
+
+export const getProductionBatch = async (
+  id: string,
+  options?: RequestInit,
+): Promise<ProductionBatchDetail> => {
+  return customFetch<ProductionBatchDetail>(getGetProductionBatchUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetProductionBatchQueryKey = (id: string) => {
+  return [`/api/production-log/batches/${id}`] as const;
+};
+
+export const getGetProductionBatchQueryOptions = <
+  TData = Awaited<ReturnType<typeof getProductionBatch>>,
+  TError = ErrorType<void>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getProductionBatch>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetProductionBatchQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getProductionBatch>>
+  > = ({ signal }) => getProductionBatch(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getProductionBatch>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetProductionBatchQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getProductionBatch>>
+>;
+export type GetProductionBatchQueryError = ErrorType<void>;
+
+/**
+ * @summary Get a production batch with all its entries
+ */
+
+export function useGetProductionBatch<
+  TData = Awaited<ReturnType<typeof getProductionBatch>>,
+  TError = ErrorType<void>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getProductionBatch>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetProductionBatchQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Close a production batch (admin/developer)
+ */
+export const getCloseProductionBatchUrl = (id: string) => {
+  return `/api/production-log/batches/${id}/close`;
+};
+
+export const closeProductionBatch = async (
+  id: string,
+  options?: RequestInit,
+): Promise<ProductionBatch> => {
+  return customFetch<ProductionBatch>(getCloseProductionBatchUrl(id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getCloseProductionBatchMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof closeProductionBatch>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof closeProductionBatch>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["closeProductionBatch"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof closeProductionBatch>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return closeProductionBatch(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CloseProductionBatchMutationResult = NonNullable<
+  Awaited<ReturnType<typeof closeProductionBatch>>
+>;
+
+export type CloseProductionBatchMutationError = ErrorType<void>;
+
+/**
+ * @summary Close a production batch (admin/developer)
+ */
+export const useCloseProductionBatch = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof closeProductionBatch>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof closeProductionBatch>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getCloseProductionBatchMutationOptions(options));
+};
+
+/**
+ * @summary Reopen a closed batch (admin only)
+ */
+export const getReopenProductionBatchUrl = (id: string) => {
+  return `/api/production-log/batches/${id}/reopen`;
+};
+
+export const reopenProductionBatch = async (
+  id: string,
+  options?: RequestInit,
+): Promise<ProductionBatch> => {
+  return customFetch<ProductionBatch>(getReopenProductionBatchUrl(id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getReopenProductionBatchMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reopenProductionBatch>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof reopenProductionBatch>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["reopenProductionBatch"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof reopenProductionBatch>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return reopenProductionBatch(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ReopenProductionBatchMutationResult = NonNullable<
+  Awaited<ReturnType<typeof reopenProductionBatch>>
+>;
+
+export type ReopenProductionBatchMutationError = ErrorType<void>;
+
+/**
+ * @summary Reopen a closed batch (admin only)
+ */
+export const useReopenProductionBatch = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reopenProductionBatch>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof reopenProductionBatch>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getReopenProductionBatchMutationOptions(options));
+};
+
+/**
+ * @summary List production entries with optional filters
+ */
+export const getListProductionEntriesUrl = (
+  params?: ListProductionEntriesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/production-log/entries?${stringifiedParams}`
+    : `/api/production-log/entries`;
+};
+
+export const listProductionEntries = async (
+  params?: ListProductionEntriesParams,
+  options?: RequestInit,
+): Promise<ProductionEntry[]> => {
+  return customFetch<ProductionEntry[]>(getListProductionEntriesUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListProductionEntriesQueryKey = (
+  params?: ListProductionEntriesParams,
+) => {
+  return [`/api/production-log/entries`, ...(params ? [params] : [])] as const;
+};
+
+export const getListProductionEntriesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listProductionEntries>>,
+  TError = ErrorType<void>,
+>(
+  params?: ListProductionEntriesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listProductionEntries>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListProductionEntriesQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listProductionEntries>>
+  > = ({ signal }) =>
+    listProductionEntries(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listProductionEntries>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListProductionEntriesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listProductionEntries>>
+>;
+export type ListProductionEntriesQueryError = ErrorType<void>;
+
+/**
+ * @summary List production entries with optional filters
+ */
+
+export function useListProductionEntries<
+  TData = Awaited<ReturnType<typeof listProductionEntries>>,
+  TError = ErrorType<void>,
+>(
+  params?: ListProductionEntriesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listProductionEntries>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListProductionEntriesQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Add a production entry to an open batch
+ */
+export const getCreateProductionEntryUrl = () => {
+  return `/api/production-log/entries`;
+};
+
+export const createProductionEntry = async (
+  createProductionEntryBody: CreateProductionEntryBody,
+  options?: RequestInit,
+): Promise<ProductionEntry> => {
+  return customFetch<ProductionEntry>(getCreateProductionEntryUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createProductionEntryBody),
+  });
+};
+
+export const getCreateProductionEntryMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createProductionEntry>>,
+    TError,
+    { data: BodyType<CreateProductionEntryBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createProductionEntry>>,
+  TError,
+  { data: BodyType<CreateProductionEntryBody> },
+  TContext
+> => {
+  const mutationKey = ["createProductionEntry"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createProductionEntry>>,
+    { data: BodyType<CreateProductionEntryBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createProductionEntry(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateProductionEntryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createProductionEntry>>
+>;
+export type CreateProductionEntryMutationBody =
+  BodyType<CreateProductionEntryBody>;
+export type CreateProductionEntryMutationError = ErrorType<void>;
+
+/**
+ * @summary Add a production entry to an open batch
+ */
+export const useCreateProductionEntry = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createProductionEntry>>,
+    TError,
+    { data: BodyType<CreateProductionEntryBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createProductionEntry>>,
+  TError,
+  { data: BodyType<CreateProductionEntryBody> },
+  TContext
+> => {
+  return useMutation(getCreateProductionEntryMutationOptions(options));
+};
+
+/**
+ * @summary Update a production entry
+ */
+export const getUpdateProductionEntryUrl = (id: string) => {
+  return `/api/production-log/entries/${id}`;
+};
+
+export const updateProductionEntry = async (
+  id: string,
+  updateProductionEntryBody: UpdateProductionEntryBody,
+  options?: RequestInit,
+): Promise<ProductionEntry> => {
+  return customFetch<ProductionEntry>(getUpdateProductionEntryUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateProductionEntryBody),
+  });
+};
+
+export const getUpdateProductionEntryMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateProductionEntry>>,
+    TError,
+    { id: string; data: BodyType<UpdateProductionEntryBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateProductionEntry>>,
+  TError,
+  { id: string; data: BodyType<UpdateProductionEntryBody> },
+  TContext
+> => {
+  const mutationKey = ["updateProductionEntry"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateProductionEntry>>,
+    { id: string; data: BodyType<UpdateProductionEntryBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateProductionEntry(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateProductionEntryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateProductionEntry>>
+>;
+export type UpdateProductionEntryMutationBody =
+  BodyType<UpdateProductionEntryBody>;
+export type UpdateProductionEntryMutationError = ErrorType<void>;
+
+/**
+ * @summary Update a production entry
+ */
+export const useUpdateProductionEntry = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateProductionEntry>>,
+    TError,
+    { id: string; data: BodyType<UpdateProductionEntryBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateProductionEntry>>,
+  TError,
+  { id: string; data: BodyType<UpdateProductionEntryBody> },
+  TContext
+> => {
+  return useMutation(getUpdateProductionEntryMutationOptions(options));
+};
+
+/**
+ * @summary Soft-delete a production entry (admin/developer)
+ */
+export const getDeleteProductionEntryUrl = (id: string) => {
+  return `/api/production-log/entries/${id}`;
+};
+
+export const deleteProductionEntry = async (
+  id: string,
+  options?: RequestInit,
+): Promise<DeleteProductionEntry200> => {
+  return customFetch<DeleteProductionEntry200>(
+    getDeleteProductionEntryUrl(id),
+    {
+      ...options,
+      method: "DELETE",
+    },
+  );
+};
+
+export const getDeleteProductionEntryMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteProductionEntry>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteProductionEntry>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["deleteProductionEntry"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteProductionEntry>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteProductionEntry(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteProductionEntryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteProductionEntry>>
+>;
+
+export type DeleteProductionEntryMutationError = ErrorType<void>;
+
+/**
+ * @summary Soft-delete a production entry (admin/developer)
+ */
+export const useDeleteProductionEntry = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteProductionEntry>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteProductionEntry>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getDeleteProductionEntryMutationOptions(options));
+};
+
+/**
+ * @summary Project-wise aggregated production summary
+ */
+export const getGetProductionLogSummaryUrl = (
+  params?: GetProductionLogSummaryParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/production-log/summary?${stringifiedParams}`
+    : `/api/production-log/summary`;
+};
+
+export const getProductionLogSummary = async (
+  params?: GetProductionLogSummaryParams,
+  options?: RequestInit,
+): Promise<ProductionLogSummary> => {
+  return customFetch<ProductionLogSummary>(
+    getGetProductionLogSummaryUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetProductionLogSummaryQueryKey = (
+  params?: GetProductionLogSummaryParams,
+) => {
+  return [`/api/production-log/summary`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetProductionLogSummaryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getProductionLogSummary>>,
+  TError = ErrorType<void>,
+>(
+  params?: GetProductionLogSummaryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getProductionLogSummary>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetProductionLogSummaryQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getProductionLogSummary>>
+  > = ({ signal }) =>
+    getProductionLogSummary(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getProductionLogSummary>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetProductionLogSummaryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getProductionLogSummary>>
+>;
+export type GetProductionLogSummaryQueryError = ErrorType<void>;
+
+/**
+ * @summary Project-wise aggregated production summary
+ */
+
+export function useGetProductionLogSummary<
+  TData = Awaited<ReturnType<typeof getProductionLogSummary>>,
+  TError = ErrorType<void>,
+>(
+  params?: GetProductionLogSummaryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getProductionLogSummary>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetProductionLogSummaryQueryOptions(params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

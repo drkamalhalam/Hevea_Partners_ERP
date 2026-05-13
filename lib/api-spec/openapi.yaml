@@ -4708,6 +4708,218 @@ paths:
               schema:
                 $ref: "#/components/schemas/LandownerProfitabilityAnalytics"
 
+  /production-log/batches:
+    get:
+      operationId: listProductionBatches
+      tags: [production-log]
+      summary: List production batches with project filtering
+      parameters:
+        - name: projectId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: date
+          in: query
+          schema: { type: string, format: date }
+        - name: status
+          in: query
+          schema: { type: string, enum: [open, closed, voided] }
+      responses:
+        "200":
+          description: List of production batches
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProductionBatch"
+        "401": { description: Unauthorized }
+    post:
+      operationId: createProductionBatch
+      tags: [production-log]
+      summary: Create a new production batch (auto-generates batch number)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProductionBatchBody"
+      responses:
+        "201":
+          description: Created batch
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductionBatch"
+        "400": { description: Validation error }
+        "403": { description: Forbidden }
+
+  /production-log/batches/{id}:
+    get:
+      operationId: getProductionBatch
+      tags: [production-log]
+      summary: Get a production batch with all its entries
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Batch with entries
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductionBatchDetail"
+        "404": { description: Not found }
+
+  /production-log/batches/{id}/close:
+    post:
+      operationId: closeProductionBatch
+      tags: [production-log]
+      summary: Close a production batch (admin/developer)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Updated batch
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductionBatch"
+        "400": { description: Already closed/voided }
+        "403": { description: Forbidden }
+
+  /production-log/batches/{id}/reopen:
+    post:
+      operationId: reopenProductionBatch
+      tags: [production-log]
+      summary: Reopen a closed batch (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Reopened batch
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductionBatch"
+        "400": { description: Cannot reopen }
+        "403": { description: Forbidden }
+
+  /production-log/entries:
+    get:
+      operationId: listProductionEntries
+      tags: [production-log]
+      summary: List production entries with optional filters
+      parameters:
+        - name: projectId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: batchId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: productionType
+          in: query
+          schema: { type: string, enum: [latex, rubber_sheet, rubber_scrap] }
+      responses:
+        "200":
+          description: List of production entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProductionEntry"
+        "401": { description: Unauthorized }
+    post:
+      operationId: createProductionEntry
+      tags: [production-log]
+      summary: Add a production entry to an open batch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProductionEntryBody"
+      responses:
+        "201":
+          description: Created entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductionEntry"
+        "400": { description: Validation error or batch not open }
+        "403": { description: Forbidden }
+
+  /production-log/entries/{id}:
+    patch:
+      operationId: updateProductionEntry
+      tags: [production-log]
+      summary: Update a production entry
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProductionEntryBody"
+      responses:
+        "200":
+          description: Updated entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductionEntry"
+        "404": { description: Not found }
+    delete:
+      operationId: deleteProductionEntry
+      tags: [production-log]
+      summary: Soft-delete a production entry (admin/developer)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+        "404": { description: Not found }
+
+  /production-log/summary:
+    get:
+      operationId: getProductionLogSummary
+      tags: [production-log]
+      summary: Project-wise aggregated production summary
+      parameters:
+        - name: projectId
+          in: query
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Production summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductionLogSummary"
+        "401": { description: Unauthorized }
+
+
 components:
   schemas:
     HealthStatus:
@@ -8316,3 +8528,107 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ProjectProfitabilityRow"
+
+    ProductionBatch:
+      type: object
+      required: [id, projectId, batchNumber, batchDate, status, entryCount, totalLatexLitres, totalSheetKg, totalScrapKg, createdByName, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        projectName: { type: string }
+        batchNumber: { type: string }
+        batchDate: { type: string, format: date }
+        status: { type: string, enum: [open, closed, voided] }
+        notes: { type: string }
+        entryCount: { type: integer }
+        totalLatexLitres: { type: number }
+        totalSheetKg: { type: number }
+        totalScrapKg: { type: number }
+        createdByName: { type: string }
+        closedAt: { type: string, format: date-time }
+        closedByName: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    ProductionEntry:
+      type: object
+      required: [id, batchId, projectId, productionType, quantity, unit, productionDate, enteredByName, isActive, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        batchId: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        projectName: { type: string }
+        productionType: { type: string, enum: [latex, rubber_sheet, rubber_scrap] }
+        quantity: { type: number }
+        unit: { type: string, enum: [litres, kg] }
+        productionDate: { type: string, format: date }
+        enteredByName: { type: string }
+        remarks: { type: string }
+        isActive: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    ProductionBatchDetail:
+      allOf:
+        - $ref: "#/components/schemas/ProductionBatch"
+        - type: object
+          required: [entries]
+          properties:
+            entries:
+              type: array
+              items:
+                $ref: "#/components/schemas/ProductionEntry"
+
+    CreateProductionBatchBody:
+      type: object
+      required: [projectId, batchDate]
+      properties:
+        projectId: { type: string, format: uuid }
+        batchDate: { type: string, format: date }
+        notes: { type: string }
+
+    CreateProductionEntryBody:
+      type: object
+      required: [batchId, projectId, productionType, quantity, productionDate]
+      properties:
+        batchId: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        productionType: { type: string, enum: [latex, rubber_sheet, rubber_scrap] }
+        quantity: { type: number, minimum: 0.001 }
+        unit: { type: string, enum: [litres, kg] }
+        productionDate: { type: string, format: date }
+        remarks: { type: string }
+
+    UpdateProductionEntryBody:
+      type: object
+      properties:
+        quantity: { type: number, minimum: 0.001 }
+        unit: { type: string, enum: [litres, kg] }
+        remarks: { type: string }
+        productionDate: { type: string, format: date }
+
+    ProductionLogProjectSummary:
+      type: object
+      required: [projectId, totalLatexLitres, totalSheetKg, totalScrapKg, totalEntries, batchCount, openBatchCount]
+      properties:
+        projectId: { type: string, format: uuid }
+        projectName: { type: string }
+        totalLatexLitres: { type: number }
+        totalSheetKg: { type: number }
+        totalScrapKg: { type: number }
+        totalEntries: { type: integer }
+        batchCount: { type: integer }
+        openBatchCount: { type: integer }
+
+    ProductionLogSummary:
+      type: object
+      required: [totalLatexLitres, totalSheetKg, totalScrapKg, totalBatches, projects]
+      properties:
+        totalLatexLitres: { type: number }
+        totalSheetKg: { type: number }
+        totalScrapKg: { type: number }
+        totalBatches: { type: integer }
+        projects:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProductionLogProjectSummary"

@@ -49,6 +49,7 @@ import TemplateLibrary from "./pages/TemplateLibrary";
 
 // Pages — Operations
 import Production from "./pages/Production";
+import ProductionLog from "./pages/ProductionLog";
 import Stock from "./pages/Stock";
 import Inventory from "./pages/Inventory";
 import Sales from "./pages/Sales";
@@ -257,6 +258,7 @@ function AppRoutes() {
 
               {/* Operations */}
               <Route path="/production"><ProtectedRoute component={Production} /></Route>
+              <Route path="/production-log"><ProtectedRoute component={ProductionLog} /></Route>
               <Route path="/stock"><ProtectedRoute component={Stock} /></Route>
               <Route path="/inventory"><ProtectedRoute component={Inventory} /></Route>
               <Route path="/sales"><ProtectedRoute component={Sales} /></Route>

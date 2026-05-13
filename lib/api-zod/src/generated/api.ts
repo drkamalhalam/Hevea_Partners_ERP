@@ -7191,3 +7191,257 @@ export const GetLandownerProfitabilityAnalyticsResponse = zod.object({
     }),
   ),
 });
+
+/**
+ * @summary List production batches with project filtering
+ */
+export const ListProductionBatchesQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+  date: zod.date().optional(),
+  status: zod.enum(["open", "closed", "voided"]).optional(),
+});
+
+export const ListProductionBatchesResponseItem = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  projectName: zod.string().optional(),
+  batchNumber: zod.string(),
+  batchDate: zod.coerce.date(),
+  status: zod.enum(["open", "closed", "voided"]),
+  notes: zod.string().optional(),
+  entryCount: zod.number(),
+  totalLatexLitres: zod.number(),
+  totalSheetKg: zod.number(),
+  totalScrapKg: zod.number(),
+  createdByName: zod.string(),
+  closedAt: zod.coerce.date().optional(),
+  closedByName: zod.string().optional(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const ListProductionBatchesResponse = zod.array(
+  ListProductionBatchesResponseItem,
+);
+
+/**
+ * @summary Create a new production batch (auto-generates batch number)
+ */
+export const CreateProductionBatchBody = zod.object({
+  projectId: zod.string().uuid(),
+  batchDate: zod.coerce.date(),
+  notes: zod.string().optional(),
+});
+
+/**
+ * @summary Get a production batch with all its entries
+ */
+export const GetProductionBatchParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const GetProductionBatchResponse = zod
+  .object({
+    id: zod.string().uuid(),
+    projectId: zod.string().uuid(),
+    projectName: zod.string().optional(),
+    batchNumber: zod.string(),
+    batchDate: zod.coerce.date(),
+    status: zod.enum(["open", "closed", "voided"]),
+    notes: zod.string().optional(),
+    entryCount: zod.number(),
+    totalLatexLitres: zod.number(),
+    totalSheetKg: zod.number(),
+    totalScrapKg: zod.number(),
+    createdByName: zod.string(),
+    closedAt: zod.coerce.date().optional(),
+    closedByName: zod.string().optional(),
+    createdAt: zod.coerce.date(),
+    updatedAt: zod.coerce.date(),
+  })
+  .and(
+    zod.object({
+      entries: zod.array(
+        zod.object({
+          id: zod.string().uuid(),
+          batchId: zod.string().uuid(),
+          projectId: zod.string().uuid(),
+          projectName: zod.string().optional(),
+          productionType: zod.enum(["latex", "rubber_sheet", "rubber_scrap"]),
+          quantity: zod.number(),
+          unit: zod.enum(["litres", "kg"]),
+          productionDate: zod.coerce.date(),
+          enteredByName: zod.string(),
+          remarks: zod.string().optional(),
+          isActive: zod.boolean(),
+          createdAt: zod.coerce.date(),
+          updatedAt: zod.coerce.date(),
+        }),
+      ),
+    }),
+  );
+
+/**
+ * @summary Close a production batch (admin/developer)
+ */
+export const CloseProductionBatchParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const CloseProductionBatchResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  projectName: zod.string().optional(),
+  batchNumber: zod.string(),
+  batchDate: zod.coerce.date(),
+  status: zod.enum(["open", "closed", "voided"]),
+  notes: zod.string().optional(),
+  entryCount: zod.number(),
+  totalLatexLitres: zod.number(),
+  totalSheetKg: zod.number(),
+  totalScrapKg: zod.number(),
+  createdByName: zod.string(),
+  closedAt: zod.coerce.date().optional(),
+  closedByName: zod.string().optional(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Reopen a closed batch (admin only)
+ */
+export const ReopenProductionBatchParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const ReopenProductionBatchResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  projectName: zod.string().optional(),
+  batchNumber: zod.string(),
+  batchDate: zod.coerce.date(),
+  status: zod.enum(["open", "closed", "voided"]),
+  notes: zod.string().optional(),
+  entryCount: zod.number(),
+  totalLatexLitres: zod.number(),
+  totalSheetKg: zod.number(),
+  totalScrapKg: zod.number(),
+  createdByName: zod.string(),
+  closedAt: zod.coerce.date().optional(),
+  closedByName: zod.string().optional(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary List production entries with optional filters
+ */
+export const ListProductionEntriesQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+  batchId: zod.coerce.string().uuid().optional(),
+  productionType: zod
+    .enum(["latex", "rubber_sheet", "rubber_scrap"])
+    .optional(),
+});
+
+export const ListProductionEntriesResponseItem = zod.object({
+  id: zod.string().uuid(),
+  batchId: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  projectName: zod.string().optional(),
+  productionType: zod.enum(["latex", "rubber_sheet", "rubber_scrap"]),
+  quantity: zod.number(),
+  unit: zod.enum(["litres", "kg"]),
+  productionDate: zod.coerce.date(),
+  enteredByName: zod.string(),
+  remarks: zod.string().optional(),
+  isActive: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const ListProductionEntriesResponse = zod.array(
+  ListProductionEntriesResponseItem,
+);
+
+/**
+ * @summary Add a production entry to an open batch
+ */
+export const createProductionEntryBodyQuantityMin = 0.001;
+
+export const CreateProductionEntryBody = zod.object({
+  batchId: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  productionType: zod.enum(["latex", "rubber_sheet", "rubber_scrap"]),
+  quantity: zod.number().min(createProductionEntryBodyQuantityMin),
+  unit: zod.enum(["litres", "kg"]).optional(),
+  productionDate: zod.coerce.date(),
+  remarks: zod.string().optional(),
+});
+
+/**
+ * @summary Update a production entry
+ */
+export const UpdateProductionEntryParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const updateProductionEntryBodyQuantityMin = 0.001;
+
+export const UpdateProductionEntryBody = zod.object({
+  quantity: zod.number().min(updateProductionEntryBodyQuantityMin).optional(),
+  unit: zod.enum(["litres", "kg"]).optional(),
+  remarks: zod.string().optional(),
+  productionDate: zod.coerce.date().optional(),
+});
+
+export const UpdateProductionEntryResponse = zod.object({
+  id: zod.string().uuid(),
+  batchId: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  projectName: zod.string().optional(),
+  productionType: zod.enum(["latex", "rubber_sheet", "rubber_scrap"]),
+  quantity: zod.number(),
+  unit: zod.enum(["litres", "kg"]),
+  productionDate: zod.coerce.date(),
+  enteredByName: zod.string(),
+  remarks: zod.string().optional(),
+  isActive: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Soft-delete a production entry (admin/developer)
+ */
+export const DeleteProductionEntryParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const DeleteProductionEntryResponse = zod.object({
+  success: zod.boolean().optional(),
+});
+
+/**
+ * @summary Project-wise aggregated production summary
+ */
+export const GetProductionLogSummaryQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+});
+
+export const GetProductionLogSummaryResponse = zod.object({
+  totalLatexLitres: zod.number(),
+  totalSheetKg: zod.number(),
+  totalScrapKg: zod.number(),
+  totalBatches: zod.number(),
+  projects: zod.array(
+    zod.object({
+      projectId: zod.string().uuid(),
+      projectName: zod.string().optional(),
+      totalLatexLitres: zod.number(),
+      totalSheetKg: zod.number(),
+      totalScrapKg: zod.number(),
+      totalEntries: zod.number(),
+      batchCount: zod.number(),
+      openBatchCount: zod.number(),
+    }),
+  ),
+});
