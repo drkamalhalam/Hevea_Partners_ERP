@@ -100,6 +100,32 @@ router.put("/", async (req, res) => {
 
     const { role, displayName, email, phone, address } = parsed.data;
 
+    // If a pre-created record exists for this email (e.g. admin pre-provisioning),
+    // link the real Clerk user ID to it and preserve the existing role.
+    if (email) {
+      const [preCreated] = await db
+        .select({ id: usersTable.id, clerkUserId: usersTable.clerkUserId, role: usersTable.role })
+        .from(usersTable)
+        .where(eq(usersTable.email, email))
+        .limit(1);
+
+      if (preCreated && preCreated.clerkUserId !== req.userId!) {
+        await db
+          .update(usersTable)
+          .set({
+            clerkUserId: req.userId!,
+            displayName: displayName ?? preCreated.role,
+            ...(phone !== undefined && { phone }),
+            ...(address !== undefined && { address }),
+            updatedAt: new Date(),
+          })
+          .where(eq(usersTable.id, preCreated.id));
+
+        res.json(await buildProfile(req.userId!));
+        return;
+      }
+    }
+
     await db
       .insert(usersTable)
       .values({ clerkUserId: req.userId!, role, displayName, email, phone, address })
