@@ -49,6 +49,9 @@ import type {
   GenerateAgreementDocument422,
   GenerateDocumentRequest,
   GetContributionSummaryParams,
+  GetLandNotionalContributionParams,
+  GetLandNotionalHistory200,
+  GetLandNotionalHistoryParams,
   GetUserActivityParams,
   GovernanceSummary,
   HealthStatus,
@@ -57,6 +60,7 @@ import type {
   InitiateClosureBody,
   InitiateMaturityBody,
   InitiateNomineeActivationBody,
+  LandNotionalState,
   ListContributions200,
   ListContributionsParams,
   ListDocumentAccessLogParams,
@@ -8971,6 +8975,221 @@ export const useRestoreTemplate = <
 > => {
   return useMutation(getRestoreTemplateMutationOptions(options));
 };
+
+/**
+ * @summary Get the active land notional contribution for a project
+ */
+export const getGetLandNotionalContributionUrl = (
+  params: GetLandNotionalContributionParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/contributions/land-notional?${stringifiedParams}`
+    : `/api/contributions/land-notional`;
+};
+
+export const getLandNotionalContribution = async (
+  params: GetLandNotionalContributionParams,
+  options?: RequestInit,
+): Promise<LandNotionalState> => {
+  return customFetch<LandNotionalState>(
+    getGetLandNotionalContributionUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetLandNotionalContributionQueryKey = (
+  params?: GetLandNotionalContributionParams,
+) => {
+  return [
+    `/api/contributions/land-notional`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetLandNotionalContributionQueryOptions = <
+  TData = Awaited<ReturnType<typeof getLandNotionalContribution>>,
+  TError = ErrorType<void>,
+>(
+  params: GetLandNotionalContributionParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getLandNotionalContribution>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetLandNotionalContributionQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getLandNotionalContribution>>
+  > = ({ signal }) =>
+    getLandNotionalContribution(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getLandNotionalContribution>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetLandNotionalContributionQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getLandNotionalContribution>>
+>;
+export type GetLandNotionalContributionQueryError = ErrorType<void>;
+
+/**
+ * @summary Get the active land notional contribution for a project
+ */
+
+export function useGetLandNotionalContribution<
+  TData = Awaited<ReturnType<typeof getLandNotionalContribution>>,
+  TError = ErrorType<void>,
+>(
+  params: GetLandNotionalContributionParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getLandNotionalContribution>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetLandNotionalContributionQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Full history of all land notional entries for a project (including rejected)
+ */
+export const getGetLandNotionalHistoryUrl = (
+  params: GetLandNotionalHistoryParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/contributions/land-notional/history?${stringifiedParams}`
+    : `/api/contributions/land-notional/history`;
+};
+
+export const getLandNotionalHistory = async (
+  params: GetLandNotionalHistoryParams,
+  options?: RequestInit,
+): Promise<GetLandNotionalHistory200> => {
+  return customFetch<GetLandNotionalHistory200>(
+    getGetLandNotionalHistoryUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetLandNotionalHistoryQueryKey = (
+  params?: GetLandNotionalHistoryParams,
+) => {
+  return [
+    `/api/contributions/land-notional/history`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetLandNotionalHistoryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getLandNotionalHistory>>,
+  TError = ErrorType<void>,
+>(
+  params: GetLandNotionalHistoryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getLandNotionalHistory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetLandNotionalHistoryQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getLandNotionalHistory>>
+  > = ({ signal }) =>
+    getLandNotionalHistory(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getLandNotionalHistory>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetLandNotionalHistoryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getLandNotionalHistory>>
+>;
+export type GetLandNotionalHistoryQueryError = ErrorType<void>;
+
+/**
+ * @summary Full history of all land notional entries for a project (including rejected)
+ */
+
+export function useGetLandNotionalHistory<
+  TData = Awaited<ReturnType<typeof getLandNotionalHistory>>,
+  TError = ErrorType<void>,
+>(
+  params: GetLandNotionalHistoryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getLandNotionalHistory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetLandNotionalHistoryQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary List contribution ledger entries

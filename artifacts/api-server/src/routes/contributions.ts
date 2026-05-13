@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { getAuth } from "@clerk/express";
-import { eq, and, isNull, inArray, desc, sql } from "drizzle-orm";
+import { eq, and, isNull, ne, inArray, desc, sql } from "drizzle-orm";
 import {
   db,
   contributionsTable,
@@ -334,10 +334,46 @@ router.post(
       .limit(1);
     if (!projectRows[0]) return res.status(400).json({ error: "Project not found" });
 
-    const lifecyclePhaseSnapshot =
-      typeof b.lifecyclePhaseSnapshot === "string"
+    // ── Land notional rules ───────────────────────────────────────────────────
+    // 1. Must be recorded during prematurity phase only
+    // 2. Only one active (non-rejected, non-deleted) land_notional per project
+    // 3. affectsOwnership is always true (cannot be overridden)
+    // 4. lifecyclePhaseSnapshot is always "prematurity" (fixed, not current project state)
+    if (cType === "land_notional") {
+      const currentPhase = projectRows[0].lifecycleStatus ?? "prematurity";
+      if (currentPhase !== "prematurity") {
+        return res.status(409).json({
+          error: "Land notional contributions can only be recorded during the prematurity phase. This project has already advanced beyond prematurity.",
+          code: "LAND_NOTIONAL_PHASE_LOCKED",
+        });
+      }
+      const existing = await db
+        .select({ id: contributionsTable.id, verificationStatus: contributionsTable.verificationStatus })
+        .from(contributionsTable)
+        .where(and(
+          eq(contributionsTable.projectId, String(b.projectId)),
+          eq(contributionsTable.contributionType, "land_notional"),
+          isNull(contributionsTable.deletedAt),
+          ne(contributionsTable.verificationStatus, "rejected"),
+        ))
+        .limit(1);
+      if (existing[0]) {
+        return res.status(409).json({
+          error: "A land notional contribution already exists for this project. Only one land notional contribution is allowed per project.",
+          code: "LAND_NOTIONAL_EXISTS",
+          existingId: existing[0].id,
+        });
+      }
+      // Force: always affects ownership, always prematurity snapshot
+      affectsOwnership = true;
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
+    const lifecyclePhaseSnapshot = cType === "land_notional"
+      ? "prematurity"
+      : (typeof b.lifecyclePhaseSnapshot === "string"
         ? b.lifecyclePhaseSnapshot
-        : (projectRows[0].lifecycleStatus ?? "prematurity");
+        : (projectRows[0].lifecycleStatus ?? "prematurity"));
 
     const [inserted] = await db
       .insert(contributionsTable)
@@ -362,6 +398,98 @@ router.post(
     return res.status(201).json(formatContribution({ ...inserted, projectName: projectRows[0].name }));
   },
 );
+
+// ── GET /contributions/land-notional ──────────────────────────────────────────
+// Returns the single active (non-rejected, non-deleted) land_notional for a
+// project, plus project context (lifecycle status, canRecord flag).
+
+router.get("/contributions/land-notional", async (req, res) => {
+  const { userId: clerkUserId } = getAuth(req);
+  if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
+
+  const actor = await resolveActingUser(clerkUserId);
+  if (!actor) return res.status(401).json({ error: "User not found" });
+
+  const projectId = typeof req.query.projectId === "string" ? req.query.projectId : null;
+  if (!projectId) return res.status(400).json({ error: "projectId is required" });
+
+  if (!canAccessAllProjects(actor.role)) {
+    const assigned = await getAssignedProjectIds(actor.id);
+    if (!assigned.includes(projectId)) return res.status(403).json({ error: "Forbidden" });
+  }
+
+  const [projectRow] = await db
+    .select({ id: projectsTable.id, name: projectsTable.name, lifecycleStatus: projectsTable.lifecycleStatus })
+    .from(projectsTable)
+    .where(eq(projectsTable.id, projectId))
+    .limit(1);
+  if (!projectRow) return res.status(404).json({ error: "Project not found" });
+
+  const rows = await db
+    .select({ contribution: contributionsTable, projectName: projectsTable.name })
+    .from(contributionsTable)
+    .leftJoin(projectsTable, eq(contributionsTable.projectId, projectsTable.id))
+    .where(and(
+      eq(contributionsTable.projectId, projectId),
+      eq(contributionsTable.contributionType, "land_notional"),
+      isNull(contributionsTable.deletedAt),
+      ne(contributionsTable.verificationStatus, "rejected"),
+    ))
+    .orderBy(desc(contributionsTable.createdAt))
+    .limit(1);
+
+  const entry = rows[0]
+    ? formatContribution({ ...rows[0].contribution, projectName: rows[0].projectName })
+    : null;
+
+  const currentPhase = projectRow.lifecycleStatus ?? "prematurity";
+
+  return res.json({
+    entry,
+    projectId,
+    projectName: projectRow.name,
+    lifecycleStatus: currentPhase,
+    // canRecord: true only when no active entry exists AND project is still in prematurity
+    canRecord: !entry && currentPhase === "prematurity",
+    isLocked: currentPhase !== "prematurity",
+  });
+});
+
+// ── GET /contributions/land-notional/history ───────────────────────────────────
+// Returns ALL land_notional entries for a project (including rejected),
+// ordered newest-first. Used to display the immutable audit trail.
+
+router.get("/contributions/land-notional/history", async (req, res) => {
+  const { userId: clerkUserId } = getAuth(req);
+  if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
+
+  const actor = await resolveActingUser(clerkUserId);
+  if (!actor) return res.status(401).json({ error: "User not found" });
+
+  const projectId = typeof req.query.projectId === "string" ? req.query.projectId : null;
+  if (!projectId) return res.status(400).json({ error: "projectId is required" });
+
+  if (!canAccessAllProjects(actor.role)) {
+    const assigned = await getAssignedProjectIds(actor.id);
+    if (!assigned.includes(projectId)) return res.status(403).json({ error: "Forbidden" });
+  }
+
+  const rows = await db
+    .select({ contribution: contributionsTable, projectName: projectsTable.name })
+    .from(contributionsTable)
+    .leftJoin(projectsTable, eq(contributionsTable.projectId, projectsTable.id))
+    .where(and(
+      eq(contributionsTable.projectId, projectId),
+      eq(contributionsTable.contributionType, "land_notional"),
+    ))
+    .orderBy(desc(contributionsTable.createdAt));
+
+  return res.json({
+    history: rows.map((r) =>
+      formatContribution({ ...r.contribution, projectName: r.projectName }),
+    ),
+  });
+});
 
 // ── GET /contributions/:id ─────────────────────────────────────────────────────
 

@@ -3237,6 +3237,130 @@ export const RestoreTemplateResponse = zod.object({
 });
 
 /**
+ * @summary Get the active land notional contribution for a project
+ */
+export const GetLandNotionalContributionQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid(),
+});
+
+export const GetLandNotionalContributionResponse = zod.object({
+  entry: zod
+    .union([
+      zod.object({
+        id: zod.string().uuid(),
+        projectId: zod.string().uuid(),
+        projectName: zod.string().nullish(),
+        partnerId: zod.string().uuid().nullish(),
+        partnerName: zod.string(),
+        contributionType: zod.enum([
+          "land_notional",
+          "economic_investment",
+          "operational_cost",
+          "recoverable_advance",
+          "manual_adjustment",
+        ]),
+        amount: zod.number().describe("Amount in INR"),
+        contributionDate: zod.coerce.date(),
+        lifecyclePhaseSnapshot: zod
+          .string()
+          .describe("Project lifecycle phase at time of recording"),
+        agreementId: zod.string().uuid().nullish(),
+        referenceNumber: zod.string().nullish(),
+        remarks: zod.string().nullish(),
+        affectsOwnership: zod
+          .boolean()
+          .describe(
+            "Whether this contribution is eligible to influence ownership guidance",
+          ),
+        verificationStatus: zod.enum([
+          "draft",
+          "pending_verification",
+          "verified",
+          "rejected",
+        ]),
+        verifiedAt: zod.coerce.date().nullish(),
+        verifiedBy: zod.string().uuid().nullish(),
+        verifiedByName: zod.string().nullish(),
+        verifierNotes: zod.string().nullish(),
+        recordedBy: zod.string().uuid().nullish(),
+        recordedByName: zod.string().nullish(),
+        createdAt: zod.coerce.date(),
+        updatedAt: zod.coerce.date().nullish(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  projectId: zod.string().uuid(),
+  projectName: zod.string().nullable(),
+  lifecycleStatus: zod
+    .string()
+    .describe("Current lifecycle phase of the project"),
+  canRecord: zod
+    .boolean()
+    .describe(
+      "True when no active entry exists and project is still in prematurity",
+    ),
+  isLocked: zod
+    .boolean()
+    .describe(
+      "True when the project has advanced beyond prematurity (new entries blocked)",
+    ),
+});
+
+/**
+ * @summary Full history of all land notional entries for a project (including rejected)
+ */
+export const GetLandNotionalHistoryQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid(),
+});
+
+export const GetLandNotionalHistoryResponse = zod.object({
+  history: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      projectId: zod.string().uuid(),
+      projectName: zod.string().nullish(),
+      partnerId: zod.string().uuid().nullish(),
+      partnerName: zod.string(),
+      contributionType: zod.enum([
+        "land_notional",
+        "economic_investment",
+        "operational_cost",
+        "recoverable_advance",
+        "manual_adjustment",
+      ]),
+      amount: zod.number().describe("Amount in INR"),
+      contributionDate: zod.coerce.date(),
+      lifecyclePhaseSnapshot: zod
+        .string()
+        .describe("Project lifecycle phase at time of recording"),
+      agreementId: zod.string().uuid().nullish(),
+      referenceNumber: zod.string().nullish(),
+      remarks: zod.string().nullish(),
+      affectsOwnership: zod
+        .boolean()
+        .describe(
+          "Whether this contribution is eligible to influence ownership guidance",
+        ),
+      verificationStatus: zod.enum([
+        "draft",
+        "pending_verification",
+        "verified",
+        "rejected",
+      ]),
+      verifiedAt: zod.coerce.date().nullish(),
+      verifiedBy: zod.string().uuid().nullish(),
+      verifiedByName: zod.string().nullish(),
+      verifierNotes: zod.string().nullish(),
+      recordedBy: zod.string().uuid().nullish(),
+      recordedByName: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date().nullish(),
+    }),
+  ),
+});
+
+/**
  * @summary List contribution ledger entries
  */
 export const ListContributionsQueryParams = zod.object({

@@ -27,6 +27,7 @@ import GenerateAgreement from "./pages/GenerateAgreement";
 import GenerationViewer from "./pages/GenerationViewer";
 import ActivationDashboard from "./pages/ActivationDashboard";
 import Contributions from "./pages/Contributions";
+import LandContribution from "./pages/LandContribution";
 import Expenditure from "./pages/Expenditure";
 import TemplateLibrary from "./pages/TemplateLibrary";
 
@@ -219,6 +220,7 @@ function AppRoutes() {
               <Route path="/agreements/:id/generations/:genId"><ProtectedRoute component={GenerationViewer} /></Route>
               <Route path="/activation"><ProtectedRoute component={ActivationDashboard} /></Route>
               <Route path="/generate-agreement"><ProtectedRoute component={GenerateAgreement} /></Route>
+              <Route path="/contributions/land"><ProtectedRoute component={LandContribution} /></Route>
               <Route path="/contributions"><ProtectedRoute component={Contributions} /></Route>
               <Route path="/expenditure"><ProtectedRoute component={Expenditure} /></Route>
               <Route path="/templates"><ProtectedRoute component={TemplateLibrary} /></Route>

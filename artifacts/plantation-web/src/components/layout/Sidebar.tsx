@@ -22,6 +22,7 @@ import {
   UserCircle,
   LibraryBig,
   Scroll,
+  Landmark,
 } from "lucide-react";
 import { useRole, ROLE_LABELS, ROLE_COLORS } from "@/contexts/RoleContext";
 import type { UserRole } from "@/contexts/RoleContext";
@@ -96,6 +97,12 @@ const navGroups: NavGroup[] = [
         name: "Contributions",
         href: "/contributions",
         icon: HandCoins,
+        roles: ["admin", "developer"],
+      },
+      {
+        name: "Land Notional",
+        href: "/contributions/land",
+        icon: Landmark,
         roles: ["admin", "developer"],
       },
       {

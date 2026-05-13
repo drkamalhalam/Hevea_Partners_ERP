@@ -1904,6 +1904,19 @@ export interface ContributionSummary {
   totals: ContributionSummaryTotals;
 }
 
+export interface LandNotionalState {
+  entry?: ContributionEntry | null;
+  projectId: string;
+  /** @nullable */
+  projectName: string | null;
+  /** Current lifecycle phase of the project */
+  lifecycleStatus: string;
+  /** True when no active entry exists and project is still in prematurity */
+  canRecord: boolean;
+  /** True when the project has advanced beyond prematurity (new entries blocked) */
+  isLocked: boolean;
+}
+
 export type GetUserActivityParams = {
   limit?: number;
 };
@@ -1971,6 +1984,18 @@ export const ListTemplatesStatus = {
   active: "active",
   archived: "archived",
 } as const;
+
+export type GetLandNotionalContributionParams = {
+  projectId: string;
+};
+
+export type GetLandNotionalHistoryParams = {
+  projectId: string;
+};
+
+export type GetLandNotionalHistory200 = {
+  history: ContributionEntry[];
+};
 
 export type ListContributionsParams = {
   projectId?: string;
