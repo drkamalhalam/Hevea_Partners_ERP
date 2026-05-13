@@ -157,6 +157,12 @@ const navGroups: NavGroup[] = [
         icon: HandCoins,
         roles: ["admin", "developer"],
       },
+      {
+        name: "Exp. Governance",
+        href: "/expenditure-governance",
+        icon: ShieldAlert,
+        roles: ["admin", "developer"],
+      },
     ],
   },
   {

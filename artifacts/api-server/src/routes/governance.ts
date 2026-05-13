@@ -15,6 +15,7 @@ import {
   projectClosureWorkflowsTable,
   contributionsTable,
   expenditureVerificationRequestsTable,
+  burdenRecordsTable,
 } from "@workspace/db";
 import { eq, inArray, isNull, and } from "drizzle-orm";
 import { requireRole } from "../middlewares/auth";
@@ -35,7 +36,8 @@ type GovernanceIssueCode =
   | "DISPUTED_CONTRIBUTION"
   | "PENDING_CONTRIBUTIONS"
   | "REJECTED_EXPENDITURE"
-  | "PENDING_EXPENDITURE_VERIFICATION";
+  | "PENDING_EXPENDITURE_VERIFICATION"
+  | "UNRESOLVED_BURDEN_IMBALANCE";
 
 interface GovernanceAlert {
   code: GovernanceIssueCode;
@@ -570,6 +572,67 @@ router.get("/summary", async (req, res) => {
               projectId: pid,
               projectName: proj.name,
               status: "incomplete",
+              issues: [alert],
+            });
+          }
+        }
+      }
+    }
+
+    // ── Unresolved burden imbalances (admin / developer) ─────────────────
+    // Projects where one party has advanced funds on behalf of another
+    // and the recovery is still open (none/pending/in_recovery) surface
+    // an attention_required alert so admins know real money is at stake.
+    if (isAdminOrDev && visibleProjects.length > 0) {
+      const projectIds = visibleProjects.map((p) => p.id);
+      const unresolvedBurden = await db
+        .select({
+          projectId: burdenRecordsTable.projectId,
+          adjustmentStatus: burdenRecordsTable.adjustmentStatus,
+        })
+        .from(burdenRecordsTable)
+        .where(
+          and(
+            inArray(burdenRecordsTable.projectId, projectIds),
+            inArray(burdenRecordsTable.adjustmentStatus, [
+              "developer_advance",
+              "landowner_advance",
+            ]),
+            inArray(burdenRecordsTable.recoveryStatus, [
+              "none",
+              "pending",
+              "in_recovery",
+            ]),
+            eq(burdenRecordsTable.isActive, true),
+          ),
+        );
+
+      const imbalanceByProject = new Map<string, number>();
+      for (const r of unresolvedBurden) {
+        if (!r.projectId) continue;
+        imbalanceByProject.set(
+          r.projectId,
+          (imbalanceByProject.get(r.projectId) ?? 0) + 1,
+        );
+      }
+
+      for (const [pid, count] of imbalanceByProject.entries()) {
+        const existing = projectAlerts.find((p) => p.projectId === pid);
+        const alert: GovernanceAlert = {
+          code: "UNRESOLVED_BURDEN_IMBALANCE",
+          severity: "attention_required",
+          message: `${count} unresolved operational burden imbalance${count > 1 ? "s" : ""} — one party has advanced funds on behalf of another with no recovery recorded`,
+        };
+        if (existing) {
+          existing.issues.push(alert);
+          existing.status = worstSeverity(existing.issues);
+        } else {
+          const proj = visibleProjects.find((p) => p.id === pid);
+          if (proj) {
+            projectAlerts.push({
+              projectId: pid,
+              projectName: proj.name,
+              status: "attention_required",
               issues: [alert],
             });
           }
