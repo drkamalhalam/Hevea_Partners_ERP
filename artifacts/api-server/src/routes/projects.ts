@@ -7,8 +7,9 @@ import {
   userProjectAssignmentsTable,
   projectNomineesTable,
   projectLifecycleHistoryTable,
+  contributionsTable,
 } from "@workspace/db";
-import { eq, and, inArray, desc } from "drizzle-orm";
+import { eq, and, inArray, desc, isNull } from "drizzle-orm";
 import {
   CreateProjectBody,
   UpdateProjectBody,
@@ -894,6 +895,29 @@ router.post(
 
       const currentStatus = project.lifecycleStatus;
       const allowed = LIFECYCLE_TRANSITIONS[currentStatus] ?? [];
+
+      // ── Maturity block: reject transition if any contributions are disputed ──
+      if (toStatus === "mature_production") {
+        const disputedRows = await db
+          .select({ id: contributionsTable.id })
+          .from(contributionsTable)
+          .where(
+            and(
+              eq(contributionsTable.projectId, projectId),
+              eq(contributionsTable.verificationStatus, "disputed"),
+              isNull(contributionsTable.deletedAt),
+            ),
+          )
+          .limit(1);
+
+        if (disputedRows.length > 0) {
+          res.status(409).json({
+            error:
+              "This project has unresolved contribution disputes. All disputes must be resolved before declaring maturity.",
+          });
+          return;
+        }
+      }
 
       if (!allowed.includes(toStatus)) {
         if (currentStatus === toStatus) {

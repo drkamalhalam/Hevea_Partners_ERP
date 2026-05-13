@@ -496,6 +496,7 @@ function ContributionTimeline({ contributions }: { contributions: ContributionEn
           pending_verification: "bg-amber-400",
           draft: "bg-slate-400",
           rejected: "bg-red-500",
+          disputed: "bg-red-600",
           submitted: "bg-blue-400",
         }[c.verificationStatus] ?? "bg-slate-400";
 

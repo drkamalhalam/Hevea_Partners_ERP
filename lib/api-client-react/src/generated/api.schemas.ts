@@ -1397,6 +1397,9 @@ export const GovernanceAlertCode = {
   INCOMPLETE_PROFILE: "INCOMPLETE_PROFILE",
   INCOMPLETE_PARTNER: "INCOMPLETE_PARTNER",
   NO_CLAIMANTS: "NO_CLAIMANTS",
+  REJECTED_CONTRIBUTION: "REJECTED_CONTRIBUTION",
+  DISPUTED_CONTRIBUTION: "DISPUTED_CONTRIBUTION",
+  PENDING_CONTRIBUTIONS: "PENDING_CONTRIBUTIONS",
 } as const;
 
 export type GovernanceAlertSeverity =
@@ -1790,6 +1793,7 @@ export const ContributionEntryVerificationStatus = {
   pending_verification: "pending_verification",
   verified: "verified",
   rejected: "rejected",
+  disputed: "disputed",
 } as const;
 
 export interface ContributionEntry {
@@ -1823,6 +1827,17 @@ export interface ContributionEntry {
   verifiedByName?: string | null;
   /** @nullable */
   verifierNotes?: string | null;
+  /**
+   * Reason given when the contribution was disputed
+   * @nullable
+   */
+  disputeNotes?: string | null;
+  /** @nullable */
+  disputedAt?: string | null;
+  /** @nullable */
+  disputedBy?: string | null;
+  /** @nullable */
+  disputedByName?: string | null;
   /**
    * DB UUID of the counterparty user assigned to verify this contribution
    * @nullable
@@ -2018,6 +2033,25 @@ export interface OwnershipSnapshot {
   createdAt: string;
 }
 
+export type ContributionDisputeSummaryProjectsItem = {
+  projectId: string;
+  disputed: number;
+  pending: number;
+  rejected: number;
+};
+
+export interface ContributionDisputeSummary {
+  /** Total disputed contributions across all visible projects */
+  totalDisputed: number;
+  /** Total pending_verification contributions across all visible projects */
+  totalPending: number;
+  /** Total rejected contributions across all visible projects */
+  totalRejected: number;
+  projects: ContributionDisputeSummaryProjectsItem[];
+  /** Project IDs blocked from maturity declaration due to disputed contributions */
+  blockedProjectIds: string[];
+}
+
 export type GetUserActivityParams = {
   limit?: number;
 };
@@ -2142,6 +2176,7 @@ export const ListContributionsVerificationStatus = {
   pending_verification: "pending_verification",
   verified: "verified",
   rejected: "rejected",
+  disputed: "disputed",
 } as const;
 
 export type ListContributions200 = {
@@ -2157,6 +2192,28 @@ export type VerifyContributionBody = {
 };
 
 export type RejectContributionBody = {
+  notes?: string;
+};
+
+export type RaiseContributionDisputeBody = {
+  /** Reason for raising the dispute */
+  disputeNotes: string;
+};
+
+/**
+ * re_verify restores to verified; reject closes the dispute as rejected
+ */
+export type ResolveContributionDisputeBodyAction =
+  (typeof ResolveContributionDisputeBodyAction)[keyof typeof ResolveContributionDisputeBodyAction];
+
+export const ResolveContributionDisputeBodyAction = {
+  re_verify: "re_verify",
+  reject: "reject",
+} as const;
+
+export type ResolveContributionDisputeBody = {
+  /** re_verify restores to verified; reject closes the dispute as rejected */
+  action: ResolveContributionDisputeBodyAction;
   notes?: string;
 };
 

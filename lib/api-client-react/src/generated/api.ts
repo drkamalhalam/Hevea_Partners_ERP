@@ -33,6 +33,7 @@ import type {
   AssignProjectInput,
   CancelAgreementActivationBody,
   CancelMaturityBody,
+  ContributionDisputeSummary,
   ContributionEntry,
   ContributionSummary,
   CreateClaimantInput,
@@ -100,10 +101,12 @@ import type {
   ProjectOwnershipDetail,
   ProjectParticipant,
   ProjectUpdate,
+  RaiseContributionDisputeBody,
   RejectContributionBody,
   RequestContributionVerificationBody,
   RequestUploadUrlBody,
   RequestUploadUrlResponse,
+  ResolveContributionDisputeBody,
   RevenueStats,
   SetUserRoleInput,
   StockSummary,
@@ -10307,6 +10310,264 @@ export const useRejectContribution = <
   TContext
 > => {
   return useMutation(getRejectContributionMutationOptions(options));
+};
+
+/**
+ * @summary Counts of disputed, pending, and rejected contributions per visible project
+ */
+export const getGetContributionDisputeSummaryUrl = () => {
+  return `/api/contributions/dispute-summary`;
+};
+
+export const getContributionDisputeSummary = async (
+  options?: RequestInit,
+): Promise<ContributionDisputeSummary> => {
+  return customFetch<ContributionDisputeSummary>(
+    getGetContributionDisputeSummaryUrl(),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetContributionDisputeSummaryQueryKey = () => {
+  return [`/api/contributions/dispute-summary`] as const;
+};
+
+export const getGetContributionDisputeSummaryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getContributionDisputeSummary>>,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getContributionDisputeSummary>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetContributionDisputeSummaryQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getContributionDisputeSummary>>
+  > = ({ signal }) =>
+    getContributionDisputeSummary({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getContributionDisputeSummary>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetContributionDisputeSummaryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getContributionDisputeSummary>>
+>;
+export type GetContributionDisputeSummaryQueryError = ErrorType<void>;
+
+/**
+ * @summary Counts of disputed, pending, and rejected contributions per visible project
+ */
+
+export function useGetContributionDisputeSummary<
+  TData = Awaited<ReturnType<typeof getContributionDisputeSummary>>,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getContributionDisputeSummary>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetContributionDisputeSummaryQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Marks a verified contribution as disputed, triggering a governance alert and blocking the project from maturity declaration.
+ * @summary Raise a dispute on a verified contribution (admin/developer only)
+ */
+export const getRaiseContributionDisputeUrl = (id: string) => {
+  return `/api/contributions/${id}/dispute`;
+};
+
+export const raiseContributionDispute = async (
+  id: string,
+  raiseContributionDisputeBody: RaiseContributionDisputeBody,
+  options?: RequestInit,
+): Promise<ContributionEntry> => {
+  return customFetch<ContributionEntry>(getRaiseContributionDisputeUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(raiseContributionDisputeBody),
+  });
+};
+
+export const getRaiseContributionDisputeMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof raiseContributionDispute>>,
+    TError,
+    { id: string; data: BodyType<RaiseContributionDisputeBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof raiseContributionDispute>>,
+  TError,
+  { id: string; data: BodyType<RaiseContributionDisputeBody> },
+  TContext
+> => {
+  const mutationKey = ["raiseContributionDispute"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof raiseContributionDispute>>,
+    { id: string; data: BodyType<RaiseContributionDisputeBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return raiseContributionDispute(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RaiseContributionDisputeMutationResult = NonNullable<
+  Awaited<ReturnType<typeof raiseContributionDispute>>
+>;
+export type RaiseContributionDisputeMutationBody =
+  BodyType<RaiseContributionDisputeBody>;
+export type RaiseContributionDisputeMutationError = ErrorType<void>;
+
+/**
+ * @summary Raise a dispute on a verified contribution (admin/developer only)
+ */
+export const useRaiseContributionDispute = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof raiseContributionDispute>>,
+    TError,
+    { id: string; data: BodyType<RaiseContributionDisputeBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof raiseContributionDispute>>,
+  TError,
+  { id: string; data: BodyType<RaiseContributionDisputeBody> },
+  TContext
+> => {
+  return useMutation(getRaiseContributionDisputeMutationOptions(options));
+};
+
+/**
+ * Resolves a disputed contribution by re-verifying or rejecting it. Both actions clear the governance alert and maturity block.
+ * @summary Resolve a disputed contribution (admin/developer only)
+ */
+export const getResolveContributionDisputeUrl = (id: string) => {
+  return `/api/contributions/${id}/resolve-dispute`;
+};
+
+export const resolveContributionDispute = async (
+  id: string,
+  resolveContributionDisputeBody: ResolveContributionDisputeBody,
+  options?: RequestInit,
+): Promise<ContributionEntry> => {
+  return customFetch<ContributionEntry>(getResolveContributionDisputeUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(resolveContributionDisputeBody),
+  });
+};
+
+export const getResolveContributionDisputeMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof resolveContributionDispute>>,
+    TError,
+    { id: string; data: BodyType<ResolveContributionDisputeBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof resolveContributionDispute>>,
+  TError,
+  { id: string; data: BodyType<ResolveContributionDisputeBody> },
+  TContext
+> => {
+  const mutationKey = ["resolveContributionDispute"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof resolveContributionDispute>>,
+    { id: string; data: BodyType<ResolveContributionDisputeBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return resolveContributionDispute(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ResolveContributionDisputeMutationResult = NonNullable<
+  Awaited<ReturnType<typeof resolveContributionDispute>>
+>;
+export type ResolveContributionDisputeMutationBody =
+  BodyType<ResolveContributionDisputeBody>;
+export type ResolveContributionDisputeMutationError = ErrorType<void>;
+
+/**
+ * @summary Resolve a disputed contribution (admin/developer only)
+ */
+export const useResolveContributionDispute = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof resolveContributionDispute>>,
+    TError,
+    { id: string; data: BodyType<ResolveContributionDisputeBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof resolveContributionDispute>>,
+  TError,
+  { id: string; data: BodyType<ResolveContributionDisputeBody> },
+  TContext
+> => {
+  return useMutation(getResolveContributionDisputeMutationOptions(options));
 };
 
 /**

@@ -30,7 +30,9 @@ type GovernanceIssueCode =
   | "INCOMPLETE_PARTNER"
   | "NO_CLAIMANTS"
   | "MISSING_DEVELOPER"
-  | "REJECTED_CONTRIBUTION";
+  | "REJECTED_CONTRIBUTION"
+  | "DISPUTED_CONTRIBUTION"
+  | "PENDING_CONTRIBUTIONS";
 
 interface GovernanceAlert {
   code: GovernanceIssueCode;
@@ -386,6 +388,97 @@ router.get("/summary", async (req, res) => {
               projectId: pid,
               projectName: proj.name,
               status: "attention_required",
+              issues: [alert],
+            });
+          }
+        }
+      }
+    }
+
+    // ── Disputed contributions (admin / developer) ────────────────────────
+    // Projects with ANY disputed contribution raise an attention_required alert.
+    // Disputed contributions also block lifecycle transition to mature_production.
+    if (isAdminOrDev && visibleProjects.length > 0) {
+      const projectIds = visibleProjects.map((p) => p.id);
+      const disputedContribs = await db
+        .select({ projectId: contributionsTable.projectId })
+        .from(contributionsTable)
+        .where(
+          and(
+            inArray(contributionsTable.projectId, projectIds),
+            eq(contributionsTable.verificationStatus, "disputed"),
+            isNull(contributionsTable.deletedAt),
+          ),
+        );
+
+      const disputedByProject = new Map<string, number>();
+      for (const r of disputedContribs) {
+        disputedByProject.set(r.projectId, (disputedByProject.get(r.projectId) ?? 0) + 1);
+      }
+
+      for (const [pid, count] of disputedByProject.entries()) {
+        const existing = projectAlerts.find((p) => p.projectId === pid);
+        const alert: GovernanceAlert = {
+          code: "DISPUTED_CONTRIBUTION",
+          severity: "attention_required",
+          message: `${count} contribution${count > 1 ? "s are" : " is"} disputed — maturity declaration is blocked until resolved`,
+        };
+        if (existing) {
+          existing.issues.push(alert);
+          existing.status = worstSeverity(existing.issues);
+        } else {
+          const proj = visibleProjects.find((p) => p.id === pid);
+          if (proj) {
+            projectAlerts.push({
+              projectId: pid,
+              projectName: proj.name,
+              status: "attention_required",
+              issues: [alert],
+            });
+          }
+        }
+      }
+    }
+
+    // ── Projects with many pending contributions (admin / developer) ──────
+    // Projects with 3+ pending_verification contributions get an "incomplete"
+    // alert so admins know they have a verification backlog.
+    if (isAdminOrDev && visibleProjects.length > 0) {
+      const projectIds = visibleProjects.map((p) => p.id);
+      const pendingContribs = await db
+        .select({ projectId: contributionsTable.projectId })
+        .from(contributionsTable)
+        .where(
+          and(
+            inArray(contributionsTable.projectId, projectIds),
+            eq(contributionsTable.verificationStatus, "pending_verification"),
+            isNull(contributionsTable.deletedAt),
+          ),
+        );
+
+      const pendingByProject = new Map<string, number>();
+      for (const r of pendingContribs) {
+        pendingByProject.set(r.projectId, (pendingByProject.get(r.projectId) ?? 0) + 1);
+      }
+
+      for (const [pid, count] of pendingByProject.entries()) {
+        if (count < 3) continue; // only surface significant backlogs
+        const existing = projectAlerts.find((p) => p.projectId === pid);
+        const alert: GovernanceAlert = {
+          code: "PENDING_CONTRIBUTIONS",
+          severity: "incomplete",
+          message: `${count} contribution${count > 1 ? "s are" : " is"} awaiting verification`,
+        };
+        if (existing) {
+          existing.issues.push(alert);
+          existing.status = worstSeverity(existing.issues);
+        } else {
+          const proj = visibleProjects.find((p) => p.id === pid);
+          if (proj) {
+            projectAlerts.push({
+              projectId: pid,
+              projectName: proj.name,
+              status: "incomplete",
               issues: [alert],
             });
           }

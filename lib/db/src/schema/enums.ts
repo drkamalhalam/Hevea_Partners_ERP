@@ -303,10 +303,11 @@ export const contributionTypeEnum = pgEnum("contribution_type", [
  *   pending_verification — submitted; awaiting admin review
  *   verified             — admin-confirmed; eligible to affect ownership guidance
  *   rejected             — admin rejected; does not affect ownership guidance
+ *   disputed             — a verified contribution has been contested; blocks maturity declaration
  */
 export const contributionVerificationStatusEnum = pgEnum(
   "contribution_verification_status",
-  ["draft", "pending_verification", "verified", "rejected"],
+  ["draft", "pending_verification", "verified", "rejected", "disputed"],
 );
 
 // ── Contribution verification event enums ─────────────────────────────────
@@ -320,6 +321,9 @@ export const contributionVerificationStatusEnum = pgEnum(
  *   verifier_changed       — verifier assignment changed (records old → new verifier)
  *   otp_sent               — OTP challenge dispatched (placeholder for future flow)
  *   otp_verified           — OTP confirmed by counterparty (placeholder)
+ *   dispute_raised         — a verified contribution has been contested; governance alert raised
+ *   dispute_resolved       — dispute resolved by re-verifying the contribution
+ *   dispute_overridden     — dispute administratively closed without re-verification
  */
 export const contributionVerificationEventTypeEnum = pgEnum(
   "contribution_verification_event_type",
@@ -331,6 +335,9 @@ export const contributionVerificationEventTypeEnum = pgEnum(
     "verifier_changed",
     "otp_sent",
     "otp_verified",
+    "dispute_raised",
+    "dispute_resolved",
+    "dispute_overridden",
   ],
 );
 

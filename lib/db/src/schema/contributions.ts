@@ -94,6 +94,17 @@ export const contributionsTable = pgTable("contributions", {
   verifiedByName: text("verified_by_name"), // denormalized snapshot
   verifierNotes: text("verifier_notes"),
 
+  // ── Dispute fields ────────────────────────────────────────────────────────
+  // Populated when status transitions to 'disputed'. A disputed contribution
+  // blocks the project from being declared mature (lifecycle prematurity →
+  // mature_production). Resolved by re-verifying or rejecting via admin action.
+  disputeNotes: text("dispute_notes"),
+  disputedAt: timestamp("disputed_at", { withTimezone: true }),
+  disputedBy: uuid("disputed_by").references(() => usersTable.id, {
+    onDelete: "set null",
+  }),
+  disputedByName: text("disputed_by_name"), // denormalized snapshot
+
   // ── Counterparty verifier (designated responsible party) ──────────────────
   // The user designated to verify this contribution on behalf of the
   // counterparty. When set, this user (and admin/developer) can approve/reject.

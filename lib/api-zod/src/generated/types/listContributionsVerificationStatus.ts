@@ -14,4 +14,5 @@ export const ListContributionsVerificationStatus = {
   pending_verification: "pending_verification",
   verified: "verified",
   rejected: "rejected",
+  disputed: "disputed",
 } as const;

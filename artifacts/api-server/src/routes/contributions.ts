@@ -30,6 +30,7 @@ const VALID_VERIFICATION_STATUSES = [
   "pending_verification",
   "verified",
   "rejected",
+  "disputed",
 ] as const;
 type VerificationStatus = (typeof VALID_VERIFICATION_STATUSES)[number];
 
@@ -110,6 +111,10 @@ function formatContribution(
     verifierNotes: row.verifierNotes,
     designatedVerifierId: row.designatedVerifierId ?? null,
     designatedVerifierName: row.designatedVerifierName ?? null,
+    disputeNotes: row.disputeNotes ?? null,
+    disputedAt: row.disputedAt?.toISOString() ?? null,
+    disputedBy: row.disputedBy ?? null,
+    disputedByName: row.disputedByName ?? null,
     recordedBy: row.recordedBy,
     recordedByName: row.recordedByName,
     createdAt: row.createdAt.toISOString(),
@@ -128,7 +133,10 @@ async function writeVerificationEvent(params: {
     | "re_approved"
     | "verifier_changed"
     | "otp_sent"
-    | "otp_verified";
+    | "otp_verified"
+    | "dispute_raised"
+    | "dispute_resolved"
+    | "dispute_overridden";
   actorId?: string | null;
   actorName?: string | null;
   targetUserId?: string | null;
@@ -979,6 +987,197 @@ router.get("/contributions/:id/verification-history", async (req, res) => {
     })),
   });
 });
+
+// ── POST /contributions/dispute-summary ────────────────────────────────────────
+// Counts of disputed / pending / rejected contributions per visible project.
+// Placed before /:id to avoid route shadowing.
+
+router.get("/contributions/dispute-summary", async (req, res) => {
+  const { userId: clerkUserId } = getAuth(req);
+  if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
+
+  const actor = await resolveActingUser(clerkUserId);
+  if (!actor) return res.status(401).json({ error: "User not found" });
+
+  let visibleProjectIds: string[] | null = null;
+  if (!canAccessAllProjects(actor.role)) {
+    visibleProjectIds = await getAssignedProjectIds(actor.id);
+    if (visibleProjectIds.length === 0) {
+      return res.json({
+        totalDisputed: 0, totalPending: 0, totalRejected: 0,
+        projects: [], blockedProjectIds: [],
+      });
+    }
+  }
+
+  const statusFilter = inArray(contributionsTable.verificationStatus, [
+    "pending_verification" as const,
+    "rejected" as const,
+    "disputed" as const,
+  ]);
+  const baseWhere = visibleProjectIds
+    ? and(
+        inArray(contributionsTable.projectId, visibleProjectIds),
+        statusFilter,
+        isNull(contributionsTable.deletedAt),
+      )
+    : and(statusFilter, isNull(contributionsTable.deletedAt));
+
+  const rows = await db
+    .select({
+      projectId: contributionsTable.projectId,
+      verificationStatus: contributionsTable.verificationStatus,
+    })
+    .from(contributionsTable)
+    .where(baseWhere);
+
+  const projectMap = new Map<string, { disputed: number; pending: number; rejected: number }>();
+  for (const row of rows) {
+    if (!projectMap.has(row.projectId)) {
+      projectMap.set(row.projectId, { disputed: 0, pending: 0, rejected: 0 });
+    }
+    const entry = projectMap.get(row.projectId)!;
+    if (row.verificationStatus === "disputed") entry.disputed++;
+    else if (row.verificationStatus === "pending_verification") entry.pending++;
+    else if (row.verificationStatus === "rejected") entry.rejected++;
+  }
+
+  const projects = Array.from(projectMap.entries()).map(([projectId, counts]) => ({
+    projectId,
+    ...counts,
+  }));
+  const blockedProjectIds = projects.filter((p) => p.disputed > 0).map((p) => p.projectId);
+
+  return res.json({
+    totalDisputed: rows.filter((r) => r.verificationStatus === "disputed").length,
+    totalPending: rows.filter((r) => r.verificationStatus === "pending_verification").length,
+    totalRejected: rows.filter((r) => r.verificationStatus === "rejected").length,
+    projects,
+    blockedProjectIds,
+  });
+});
+
+// ── POST /contributions/:id/dispute ────────────────────────────────────────────
+// Admin/developer only. Raises a dispute on a verified contribution.
+// Triggers governance alert and blocks project from declaring maturity.
+
+router.post(
+  "/contributions/:id/dispute",
+  requireRole("admin", "developer"),
+  async (req, res) => {
+    const { userId: clerkUserId } = getAuth(req);
+    if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
+
+    const actor = await resolveActingUser(clerkUserId);
+    if (!actor) return res.status(401).json({ error: "User not found" });
+
+    const id = String(req.params.id);
+    const b = req.body as Record<string, unknown>;
+
+    if (!b.disputeNotes || typeof b.disputeNotes !== "string" || b.disputeNotes.trim() === "") {
+      return res.status(400).json({ error: "disputeNotes is required" });
+    }
+
+    const existing = await db
+      .select()
+      .from(contributionsTable)
+      .where(and(eq(contributionsTable.id, id), isNull(contributionsTable.deletedAt)))
+      .limit(1);
+    if (!existing[0]) return res.status(404).json({ error: "Contribution not found" });
+
+    if (existing[0].verificationStatus !== "verified") {
+      return res.status(400).json({
+        error: `Only verified contributions can be disputed. Current status: ${existing[0].verificationStatus}`,
+      });
+    }
+
+    const [updated] = await db
+      .update(contributionsTable)
+      .set({
+        verificationStatus: "disputed",
+        disputeNotes: b.disputeNotes.trim(),
+        disputedAt: new Date(),
+        disputedBy: actor.id,
+        disputedByName: actor.name,
+      })
+      .where(eq(contributionsTable.id, id))
+      .returning();
+
+    void writeVerificationEvent({
+      contributionId: id,
+      eventType: "dispute_raised",
+      actorId: actor.id,
+      actorName: actor.name,
+      notes: b.disputeNotes.trim(),
+    });
+
+    const projectRows = await db.select({ name: projectsTable.name }).from(projectsTable).where(eq(projectsTable.id, updated.projectId)).limit(1);
+    return res.json(formatContribution({ ...updated, projectName: projectRows[0]?.name }));
+  },
+);
+
+// ── POST /contributions/:id/resolve-dispute ────────────────────────────────────
+// Admin/developer only. Resolves a disputed contribution.
+// action = "re_verify" → status becomes verified (clears the maturity block)
+// action = "reject"    → status becomes rejected (closes dispute without re-approving)
+
+router.post(
+  "/contributions/:id/resolve-dispute",
+  requireRole("admin", "developer"),
+  async (req, res) => {
+    const { userId: clerkUserId } = getAuth(req);
+    if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
+
+    const actor = await resolveActingUser(clerkUserId);
+    if (!actor) return res.status(401).json({ error: "User not found" });
+
+    const id = String(req.params.id);
+    const b = req.body as Record<string, unknown>;
+
+    if (b.action !== "re_verify" && b.action !== "reject") {
+      return res.status(400).json({ error: "action must be 're_verify' or 'reject'" });
+    }
+
+    const existing = await db
+      .select()
+      .from(contributionsTable)
+      .where(and(eq(contributionsTable.id, id), isNull(contributionsTable.deletedAt)))
+      .limit(1);
+    if (!existing[0]) return res.status(404).json({ error: "Contribution not found" });
+
+    if (existing[0].verificationStatus !== "disputed") {
+      return res.status(400).json({
+        error: `Contribution is not in disputed status. Current status: ${existing[0].verificationStatus}`,
+      });
+    }
+
+    const newStatus = b.action === "re_verify" ? "verified" : "rejected";
+    const eventType = b.action === "re_verify" ? "dispute_resolved" : "dispute_overridden";
+
+    const [updated] = await db
+      .update(contributionsTable)
+      .set({
+        verificationStatus: newStatus,
+        verifiedAt: new Date(),
+        verifiedBy: actor.id,
+        verifiedByName: actor.name,
+        verifierNotes: typeof b.notes === "string" ? b.notes : null,
+      })
+      .where(eq(contributionsTable.id, id))
+      .returning();
+
+    void writeVerificationEvent({
+      contributionId: id,
+      eventType,
+      actorId: actor.id,
+      actorName: actor.name,
+      notes: typeof b.notes === "string" ? b.notes : null,
+    });
+
+    const projectRows = await db.select({ name: projectsTable.name }).from(projectsTable).where(eq(projectsTable.id, updated.projectId)).limit(1);
+    return res.json(formatContribution({ ...updated, projectName: projectRows[0]?.name }));
+  },
+);
 
 // ── DELETE /contributions/:id ──────────────────────────────────────────────────
 

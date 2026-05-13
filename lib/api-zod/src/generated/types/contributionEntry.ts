@@ -40,6 +40,17 @@ export interface ContributionEntry {
   /** @nullable */
   verifierNotes?: string | null;
   /**
+   * Reason given when the contribution was disputed
+   * @nullable
+   */
+  disputeNotes?: string | null;
+  /** @nullable */
+  disputedAt?: Date | null;
+  /** @nullable */
+  disputedBy?: string | null;
+  /** @nullable */
+  disputedByName?: string | null;
+  /**
    * DB UUID of the counterparty user assigned to verify this contribution
    * @nullable
    */

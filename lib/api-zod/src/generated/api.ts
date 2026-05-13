@@ -2596,6 +2596,9 @@ export const GetGovernanceSummaryResponse = zod.object({
             "INCOMPLETE_PROFILE",
             "INCOMPLETE_PARTNER",
             "NO_CLAIMANTS",
+            "REJECTED_CONTRIBUTION",
+            "DISPUTED_CONTRIBUTION",
+            "PENDING_CONTRIBUTIONS",
           ]),
           severity: zod.enum([
             "attention_required",
@@ -2617,6 +2620,9 @@ export const GetGovernanceSummaryResponse = zod.object({
         "INCOMPLETE_PROFILE",
         "INCOMPLETE_PARTNER",
         "NO_CLAIMANTS",
+        "REJECTED_CONTRIBUTION",
+        "DISPUTED_CONTRIBUTION",
+        "PENDING_CONTRIBUTIONS",
       ]),
       severity: zod.enum([
         "attention_required",
@@ -2646,6 +2652,9 @@ export const GetGovernanceSummaryResponse = zod.object({
             "INCOMPLETE_PROFILE",
             "INCOMPLETE_PARTNER",
             "NO_CLAIMANTS",
+            "REJECTED_CONTRIBUTION",
+            "DISPUTED_CONTRIBUTION",
+            "PENDING_CONTRIBUTIONS",
           ]),
           severity: zod.enum([
             "attention_required",
@@ -3326,11 +3335,19 @@ export const ListPendingVerificationContributionsResponse = zod.object({
         "pending_verification",
         "verified",
         "rejected",
+        "disputed",
       ]),
       verifiedAt: zod.coerce.date().nullish(),
       verifiedBy: zod.string().uuid().nullish(),
       verifiedByName: zod.string().nullish(),
       verifierNotes: zod.string().nullish(),
+      disputeNotes: zod
+        .string()
+        .nullish()
+        .describe("Reason given when the contribution was disputed"),
+      disputedAt: zod.coerce.date().nullish(),
+      disputedBy: zod.string().uuid().nullish(),
+      disputedByName: zod.string().nullish(),
       designatedVerifierId: zod
         .string()
         .uuid()
@@ -3394,11 +3411,19 @@ export const RequestContributionVerificationResponse = zod.object({
     "pending_verification",
     "verified",
     "rejected",
+    "disputed",
   ]),
   verifiedAt: zod.coerce.date().nullish(),
   verifiedBy: zod.string().uuid().nullish(),
   verifiedByName: zod.string().nullish(),
   verifierNotes: zod.string().nullish(),
+  disputeNotes: zod
+    .string()
+    .nullish()
+    .describe("Reason given when the contribution was disputed"),
+  disputedAt: zod.coerce.date().nullish(),
+  disputedBy: zod.string().uuid().nullish(),
+  disputedByName: zod.string().nullish(),
   designatedVerifierId: zod
     .string()
     .uuid()
@@ -3490,11 +3515,19 @@ export const GetLandNotionalContributionResponse = zod.object({
           "pending_verification",
           "verified",
           "rejected",
+          "disputed",
         ]),
         verifiedAt: zod.coerce.date().nullish(),
         verifiedBy: zod.string().uuid().nullish(),
         verifiedByName: zod.string().nullish(),
         verifierNotes: zod.string().nullish(),
+        disputeNotes: zod
+          .string()
+          .nullish()
+          .describe("Reason given when the contribution was disputed"),
+        disputedAt: zod.coerce.date().nullish(),
+        disputedBy: zod.string().uuid().nullish(),
+        disputedByName: zod.string().nullish(),
         designatedVerifierId: zod
           .string()
           .uuid()
@@ -3571,11 +3604,19 @@ export const GetLandNotionalHistoryResponse = zod.object({
         "pending_verification",
         "verified",
         "rejected",
+        "disputed",
       ]),
       verifiedAt: zod.coerce.date().nullish(),
       verifiedBy: zod.string().uuid().nullish(),
       verifiedByName: zod.string().nullish(),
       verifierNotes: zod.string().nullish(),
+      disputeNotes: zod
+        .string()
+        .nullish()
+        .describe("Reason given when the contribution was disputed"),
+      disputedAt: zod.coerce.date().nullish(),
+      disputedBy: zod.string().uuid().nullish(),
+      disputedByName: zod.string().nullish(),
       designatedVerifierId: zod
         .string()
         .uuid()
@@ -3611,7 +3652,7 @@ export const ListContributionsQueryParams = zod.object({
     ])
     .optional(),
   verificationStatus: zod
-    .enum(["draft", "pending_verification", "verified", "rejected"])
+    .enum(["draft", "pending_verification", "verified", "rejected", "disputed"])
     .optional(),
 });
 
@@ -3648,11 +3689,19 @@ export const ListContributionsResponse = zod.object({
         "pending_verification",
         "verified",
         "rejected",
+        "disputed",
       ]),
       verifiedAt: zod.coerce.date().nullish(),
       verifiedBy: zod.string().uuid().nullish(),
       verifiedByName: zod.string().nullish(),
       verifierNotes: zod.string().nullish(),
+      disputeNotes: zod
+        .string()
+        .nullish()
+        .describe("Reason given when the contribution was disputed"),
+      disputedAt: zod.coerce.date().nullish(),
+      disputedBy: zod.string().uuid().nullish(),
+      disputedByName: zod.string().nullish(),
       designatedVerifierId: zod
         .string()
         .uuid()
@@ -3772,11 +3821,19 @@ export const GetContributionResponse = zod.object({
     "pending_verification",
     "verified",
     "rejected",
+    "disputed",
   ]),
   verifiedAt: zod.coerce.date().nullish(),
   verifiedBy: zod.string().uuid().nullish(),
   verifiedByName: zod.string().nullish(),
   verifierNotes: zod.string().nullish(),
+  disputeNotes: zod
+    .string()
+    .nullish()
+    .describe("Reason given when the contribution was disputed"),
+  disputedAt: zod.coerce.date().nullish(),
+  disputedBy: zod.string().uuid().nullish(),
+  disputedByName: zod.string().nullish(),
   designatedVerifierId: zod
     .string()
     .uuid()
@@ -3850,11 +3907,19 @@ export const UpdateContributionResponse = zod.object({
     "pending_verification",
     "verified",
     "rejected",
+    "disputed",
   ]),
   verifiedAt: zod.coerce.date().nullish(),
   verifiedBy: zod.string().uuid().nullish(),
   verifiedByName: zod.string().nullish(),
   verifierNotes: zod.string().nullish(),
+  disputeNotes: zod
+    .string()
+    .nullish()
+    .describe("Reason given when the contribution was disputed"),
+  disputedAt: zod.coerce.date().nullish(),
+  disputedBy: zod.string().uuid().nullish(),
+  disputedByName: zod.string().nullish(),
   designatedVerifierId: zod
     .string()
     .uuid()
@@ -3917,11 +3982,19 @@ export const SubmitContributionForVerificationResponse = zod.object({
     "pending_verification",
     "verified",
     "rejected",
+    "disputed",
   ]),
   verifiedAt: zod.coerce.date().nullish(),
   verifiedBy: zod.string().uuid().nullish(),
   verifiedByName: zod.string().nullish(),
   verifierNotes: zod.string().nullish(),
+  disputeNotes: zod
+    .string()
+    .nullish()
+    .describe("Reason given when the contribution was disputed"),
+  disputedAt: zod.coerce.date().nullish(),
+  disputedBy: zod.string().uuid().nullish(),
+  disputedByName: zod.string().nullish(),
   designatedVerifierId: zod
     .string()
     .uuid()
@@ -3981,11 +4054,19 @@ export const VerifyContributionResponse = zod.object({
     "pending_verification",
     "verified",
     "rejected",
+    "disputed",
   ]),
   verifiedAt: zod.coerce.date().nullish(),
   verifiedBy: zod.string().uuid().nullish(),
   verifiedByName: zod.string().nullish(),
   verifierNotes: zod.string().nullish(),
+  disputeNotes: zod
+    .string()
+    .nullish()
+    .describe("Reason given when the contribution was disputed"),
+  disputedAt: zod.coerce.date().nullish(),
+  disputedBy: zod.string().uuid().nullish(),
+  disputedByName: zod.string().nullish(),
   designatedVerifierId: zod
     .string()
     .uuid()
@@ -4045,11 +4126,200 @@ export const RejectContributionResponse = zod.object({
     "pending_verification",
     "verified",
     "rejected",
+    "disputed",
   ]),
   verifiedAt: zod.coerce.date().nullish(),
   verifiedBy: zod.string().uuid().nullish(),
   verifiedByName: zod.string().nullish(),
   verifierNotes: zod.string().nullish(),
+  disputeNotes: zod
+    .string()
+    .nullish()
+    .describe("Reason given when the contribution was disputed"),
+  disputedAt: zod.coerce.date().nullish(),
+  disputedBy: zod.string().uuid().nullish(),
+  disputedByName: zod.string().nullish(),
+  designatedVerifierId: zod
+    .string()
+    .uuid()
+    .nullish()
+    .describe(
+      "DB UUID of the counterparty user assigned to verify this contribution",
+    ),
+  designatedVerifierName: zod
+    .string()
+    .nullish()
+    .describe("Denormalised display name of the designated verifier"),
+  recordedBy: zod.string().uuid().nullish(),
+  recordedByName: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date().nullish(),
+});
+
+/**
+ * @summary Counts of disputed, pending, and rejected contributions per visible project
+ */
+export const GetContributionDisputeSummaryResponse = zod.object({
+  totalDisputed: zod
+    .number()
+    .describe("Total disputed contributions across all visible projects"),
+  totalPending: zod
+    .number()
+    .describe(
+      "Total pending_verification contributions across all visible projects",
+    ),
+  totalRejected: zod
+    .number()
+    .describe("Total rejected contributions across all visible projects"),
+  projects: zod.array(
+    zod.object({
+      projectId: zod.string().uuid(),
+      disputed: zod.number(),
+      pending: zod.number(),
+      rejected: zod.number(),
+    }),
+  ),
+  blockedProjectIds: zod
+    .array(zod.string().uuid())
+    .describe(
+      "Project IDs blocked from maturity declaration due to disputed contributions",
+    ),
+});
+
+/**
+ * Marks a verified contribution as disputed, triggering a governance alert and blocking the project from maturity declaration.
+ * @summary Raise a dispute on a verified contribution (admin/developer only)
+ */
+export const RaiseContributionDisputeParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const RaiseContributionDisputeBody = zod.object({
+  disputeNotes: zod.string().describe("Reason for raising the dispute"),
+});
+
+export const RaiseContributionDisputeResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  projectName: zod.string().nullish(),
+  partnerId: zod.string().uuid().nullish(),
+  partnerName: zod.string(),
+  contributionType: zod.enum([
+    "land_notional",
+    "economic_investment",
+    "operational_cost",
+    "recoverable_advance",
+    "manual_adjustment",
+  ]),
+  amount: zod.number().describe("Amount in INR"),
+  contributionDate: zod.coerce.date(),
+  lifecyclePhaseSnapshot: zod
+    .string()
+    .describe("Project lifecycle phase at time of recording"),
+  agreementId: zod.string().uuid().nullish(),
+  referenceNumber: zod.string().nullish(),
+  remarks: zod.string().nullish(),
+  affectsOwnership: zod
+    .boolean()
+    .describe(
+      "Whether this contribution is eligible to influence ownership guidance",
+    ),
+  verificationStatus: zod.enum([
+    "draft",
+    "pending_verification",
+    "verified",
+    "rejected",
+    "disputed",
+  ]),
+  verifiedAt: zod.coerce.date().nullish(),
+  verifiedBy: zod.string().uuid().nullish(),
+  verifiedByName: zod.string().nullish(),
+  verifierNotes: zod.string().nullish(),
+  disputeNotes: zod
+    .string()
+    .nullish()
+    .describe("Reason given when the contribution was disputed"),
+  disputedAt: zod.coerce.date().nullish(),
+  disputedBy: zod.string().uuid().nullish(),
+  disputedByName: zod.string().nullish(),
+  designatedVerifierId: zod
+    .string()
+    .uuid()
+    .nullish()
+    .describe(
+      "DB UUID of the counterparty user assigned to verify this contribution",
+    ),
+  designatedVerifierName: zod
+    .string()
+    .nullish()
+    .describe("Denormalised display name of the designated verifier"),
+  recordedBy: zod.string().uuid().nullish(),
+  recordedByName: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date().nullish(),
+});
+
+/**
+ * Resolves a disputed contribution by re-verifying or rejecting it. Both actions clear the governance alert and maturity block.
+ * @summary Resolve a disputed contribution (admin/developer only)
+ */
+export const ResolveContributionDisputeParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const ResolveContributionDisputeBody = zod.object({
+  action: zod
+    .enum(["re_verify", "reject"])
+    .describe(
+      "re_verify restores to verified; reject closes the dispute as rejected",
+    ),
+  notes: zod.string().optional(),
+});
+
+export const ResolveContributionDisputeResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  projectName: zod.string().nullish(),
+  partnerId: zod.string().uuid().nullish(),
+  partnerName: zod.string(),
+  contributionType: zod.enum([
+    "land_notional",
+    "economic_investment",
+    "operational_cost",
+    "recoverable_advance",
+    "manual_adjustment",
+  ]),
+  amount: zod.number().describe("Amount in INR"),
+  contributionDate: zod.coerce.date(),
+  lifecyclePhaseSnapshot: zod
+    .string()
+    .describe("Project lifecycle phase at time of recording"),
+  agreementId: zod.string().uuid().nullish(),
+  referenceNumber: zod.string().nullish(),
+  remarks: zod.string().nullish(),
+  affectsOwnership: zod
+    .boolean()
+    .describe(
+      "Whether this contribution is eligible to influence ownership guidance",
+    ),
+  verificationStatus: zod.enum([
+    "draft",
+    "pending_verification",
+    "verified",
+    "rejected",
+    "disputed",
+  ]),
+  verifiedAt: zod.coerce.date().nullish(),
+  verifiedBy: zod.string().uuid().nullish(),
+  verifiedByName: zod.string().nullish(),
+  verifierNotes: zod.string().nullish(),
+  disputeNotes: zod
+    .string()
+    .nullish()
+    .describe("Reason given when the contribution was disputed"),
+  disputedAt: zod.coerce.date().nullish(),
+  disputedBy: zod.string().uuid().nullish(),
+  disputedByName: zod.string().nullish(),
   designatedVerifierId: zod
     .string()
     .uuid()

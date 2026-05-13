@@ -16,6 +16,7 @@ import {
   Building2,
   Bell,
   ShieldCheck,
+  ShieldAlert,
   Sprout,
   ChevronLeft,
   ChevronRight,
@@ -123,6 +124,12 @@ const navGroups: NavGroup[] = [
         href: "/ownership",
         icon: Scale,
         roles: ["admin", "developer", "landowner", "investor"],
+      },
+      {
+        name: "Dispute Centre",
+        href: "/contributions/disputes",
+        icon: ShieldAlert,
+        roles: ["admin", "developer"],
       },
       {
         name: "Expenditure",
