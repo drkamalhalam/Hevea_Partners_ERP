@@ -216,6 +216,50 @@ Master agreement template library with secure GCS-backed file storage. Admin and
 
 **Object storage env vars:** `DEFAULT_OBJECT_STORAGE_BUCKET_ID`, `PUBLIC_OBJECT_SEARCH_PATHS`, `PRIVATE_OBJECT_DIR` (set by Replit sidecar auth, auto-configured)
 
+## Agreement Variable Replacement Engine
+
+Dynamic placeholder substitution system for agreement templates. Replaces `{{VARIABLE_NAME}}` tokens in DOCX/PDF templates with real data from the linked project, partners, and agreement record. No business calculations — pure field-read architecture.
+
+**Placeholder format:** `{{UPPERCASE_WITH_UNDERSCORES}}` (e.g. `{{PROJECT_NAME}}`, `{{LANDOWNER_NAME}}`)
+
+**14 built-in variables across 5 groups:**
+
+| Group | Variables |
+|---|---|
+| Project | `PROJECT_NAME`, `PROJECT_LOCATION` |
+| Parties | `LANDOWNER_NAME`, `DEVELOPER_NAME`, `LANDOWNER_ADDRESS` |
+| Dates & Place | `DATE`, `EXECUTION_PLACE` |
+| Financial | `TERM_YEARS`, `LAND_AREA`, `OWNERSHIP_SHARE`, `DEVELOPER_OWNERSHIP_SHARE`, `LAND_VALUE_PER_UNIT`, `NOTIONAL_LAND_VALUE`, `YEARLY_ESCALATION`, `AMOUNT_IN_WORDS` (manual), `REVENUE_MODEL` |
+
+**Server libs** (`artifacts/api-server/src/lib/`):
+- `variableRegistry.ts` — `VARIABLE_REGISTRY` typed map: name, label, description, dataSource (`project|partner|agreement|ownership|manual`), fieldPath, example, group
+- `placeholderParser.ts` — `parsePlaceholders(text)` returns `{ all, known, unknown }`; `replacePlaceholders(text, values, fallback)` for substitution
+- `variableResolver.ts` — `resolveAgreementVariables(agreement)` fetches project/partner rows, maps all registry variables to resolved values; manual variables return null
+
+**DB table:** `agreementVariableValuesTable` (`lib/db/src/schema/agreement_variables.ts`) — UUID PK, agreementId FK (cascade), variableName, resolvedValue (auto), overrideValue (manual precedence), dataSourceType, isAutoResolved, resolvedAt; unique on (agreementId, variableName)
+
+**API endpoints** (in `artifacts/api-server/src/routes/agreements.ts`):
+- `GET /agreements/:id/variables` — returns `AgreementVariablesResponse` with full registry + stored values; any authenticated user with project access
+- `PUT /agreements/:id/variables` — batch upsert `{ overrides: [{name, value}] }` (admin/developer)
+- `POST /agreements/:id/variables/resolve` — auto-resolves all variables from linked DB data, upserts into the table (admin/developer)
+
+**Response shape:** `{ agreementId, variables[], resolvedCount, pendingCount, totalCount }` — each variable has `resolvedValue`, `overrideValue`, `effectiveValue` (override takes precedence), `isAutoResolved`
+
+**Frontend:** `AgreementVariablePanel` (`artifacts/plantation-web/src/pages/AgreementVariablePanel.tsx`) — embedded in `AgreementDetails.tsx`
+- Completion progress bar (resolved/total with % label)
+- Variables grouped by category (Project / Parties / Dates & Place / Financial)
+- Per-row: status dot, label + `{{TOKEN}}` monospace, source badge (colored by type), effective value with override indicator
+- Inline editing: hover to reveal pencil → edit draft → Enter/✓ to save, ✗ to cancel; "×" button clears override back to auto-resolved
+- "Auto-Resolve from Data" button: calls `POST /resolve`, invalidates query cache
+- Tooltips on variable descriptions, override indicator, manual-only hint
+- Read-only view for non-admin/developer roles
+
+**Generated hooks:** `useListAgreementVariables`, `useUpdateAgreementVariables`, `useResolveAgreementVariables`, `getListAgreementVariablesQueryKey`
+
+**Extension points:**
+- Add new variables: extend `VARIABLE_REGISTRY`, add a case to `resolveVariable()` in `variableResolver.ts`
+- Add new data sources (contributions, ownership): create a resolver context and add cases for the new `dataSourceType`
+
 ## Seeded Data
 
 - Partners: Ramesh Debbarma (developer), Sukumar Tripura (landowner), Birendra Reang (landowner), Dilip Jamatia (investor)

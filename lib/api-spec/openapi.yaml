@@ -1453,6 +1453,74 @@ paths:
               schema:
                 $ref: "#/components/schemas/Agreement"
 
+  /agreements/{id}/variables:
+    get:
+      operationId: listAgreementVariables
+      tags: [agreements]
+      summary: List all template variables for an agreement with their resolved values
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Agreement variables with resolved and override values
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgreementVariablesResponse"
+        "404":
+          description: Agreement not found
+    put:
+      operationId: updateAgreementVariables
+      tags: [agreements]
+      summary: Batch upsert manual override values for agreement variables
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAgreementVariablesBody"
+      responses:
+        "200":
+          description: Updated variables
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgreementVariablesResponse"
+
+  /agreements/{id}/variables/resolve:
+    post:
+      operationId: resolveAgreementVariables
+      tags: [agreements]
+      summary: Auto-resolve all variables for an agreement from linked project and partner data
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Resolved variables
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgreementVariablesResponse"
+        "404":
+          description: Agreement not found
+
   /governance/summary:
     get:
       operationId: getGovernanceSummary
@@ -2125,6 +2193,79 @@ components:
           type: number
         notes:
           type: string
+
+    AgreementVariable:
+      type: object
+      required: [name, label, description, dataSource, group, example, effectiveValue, isAutoResolved]
+      properties:
+        name:
+          type: string
+          description: Variable identifier e.g. PROJECT_NAME
+        label:
+          type: string
+          description: Human-readable label
+        description:
+          type: string
+        dataSource:
+          type: string
+          enum: [project, partner, agreement, ownership, manual]
+        group:
+          type: string
+          enum: [project, parties, financial, dates, other]
+        example:
+          type: string
+        resolvedValue:
+          type: string
+          nullable: true
+          description: Auto-resolved value from linked data
+        overrideValue:
+          type: string
+          nullable: true
+          description: Manually entered override (takes precedence)
+        effectiveValue:
+          type: string
+          nullable: true
+          description: The value that will be used in the document (override if set, else resolved)
+        isAutoResolved:
+          type: boolean
+          description: Whether the resolved value was auto-populated
+
+    AgreementVariablesResponse:
+      type: object
+      required: [agreementId, variables, resolvedCount, pendingCount, totalCount]
+      properties:
+        agreementId:
+          type: string
+          format: uuid
+        variables:
+          type: array
+          items:
+            $ref: "#/components/schemas/AgreementVariable"
+        resolvedCount:
+          type: integer
+          description: Number of variables with an effective value
+        pendingCount:
+          type: integer
+          description: Number of variables still without any value
+        totalCount:
+          type: integer
+
+    UpdateAgreementVariablesBody:
+      type: object
+      required: [overrides]
+      properties:
+        overrides:
+          type: array
+          items:
+            type: object
+            required: [name, value]
+            properties:
+              name:
+                type: string
+              value:
+                type: string
+                nullable: true
+                description: Set to null to clear the override
 
     DashboardSummary:
       type: object

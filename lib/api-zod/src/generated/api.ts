@@ -1977,6 +1977,171 @@ export const UpdateAgreementResponse = zod.object({
 });
 
 /**
+ * @summary List all template variables for an agreement with their resolved values
+ */
+export const ListAgreementVariablesParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const ListAgreementVariablesResponse = zod.object({
+  agreementId: zod.string().uuid(),
+  variables: zod.array(
+    zod.object({
+      name: zod.string().describe("Variable identifier e.g. PROJECT_NAME"),
+      label: zod.string().describe("Human-readable label"),
+      description: zod.string(),
+      dataSource: zod.enum([
+        "project",
+        "partner",
+        "agreement",
+        "ownership",
+        "manual",
+      ]),
+      group: zod.enum(["project", "parties", "financial", "dates", "other"]),
+      example: zod.string(),
+      resolvedValue: zod
+        .string()
+        .nullish()
+        .describe("Auto-resolved value from linked data"),
+      overrideValue: zod
+        .string()
+        .nullish()
+        .describe("Manually entered override (takes precedence)"),
+      effectiveValue: zod
+        .string()
+        .nullable()
+        .describe(
+          "The value that will be used in the document (override if set, else resolved)",
+        ),
+      isAutoResolved: zod
+        .boolean()
+        .describe("Whether the resolved value was auto-populated"),
+    }),
+  ),
+  resolvedCount: zod
+    .number()
+    .describe("Number of variables with an effective value"),
+  pendingCount: zod
+    .number()
+    .describe("Number of variables still without any value"),
+  totalCount: zod.number(),
+});
+
+/**
+ * @summary Batch upsert manual override values for agreement variables
+ */
+export const UpdateAgreementVariablesParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const UpdateAgreementVariablesBody = zod.object({
+  overrides: zod.array(
+    zod.object({
+      name: zod.string(),
+      value: zod
+        .string()
+        .nullable()
+        .describe("Set to null to clear the override"),
+    }),
+  ),
+});
+
+export const UpdateAgreementVariablesResponse = zod.object({
+  agreementId: zod.string().uuid(),
+  variables: zod.array(
+    zod.object({
+      name: zod.string().describe("Variable identifier e.g. PROJECT_NAME"),
+      label: zod.string().describe("Human-readable label"),
+      description: zod.string(),
+      dataSource: zod.enum([
+        "project",
+        "partner",
+        "agreement",
+        "ownership",
+        "manual",
+      ]),
+      group: zod.enum(["project", "parties", "financial", "dates", "other"]),
+      example: zod.string(),
+      resolvedValue: zod
+        .string()
+        .nullish()
+        .describe("Auto-resolved value from linked data"),
+      overrideValue: zod
+        .string()
+        .nullish()
+        .describe("Manually entered override (takes precedence)"),
+      effectiveValue: zod
+        .string()
+        .nullable()
+        .describe(
+          "The value that will be used in the document (override if set, else resolved)",
+        ),
+      isAutoResolved: zod
+        .boolean()
+        .describe("Whether the resolved value was auto-populated"),
+    }),
+  ),
+  resolvedCount: zod
+    .number()
+    .describe("Number of variables with an effective value"),
+  pendingCount: zod
+    .number()
+    .describe("Number of variables still without any value"),
+  totalCount: zod.number(),
+});
+
+/**
+ * @summary Auto-resolve all variables for an agreement from linked project and partner data
+ */
+export const ResolveAgreementVariablesParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const ResolveAgreementVariablesResponse = zod.object({
+  agreementId: zod.string().uuid(),
+  variables: zod.array(
+    zod.object({
+      name: zod.string().describe("Variable identifier e.g. PROJECT_NAME"),
+      label: zod.string().describe("Human-readable label"),
+      description: zod.string(),
+      dataSource: zod.enum([
+        "project",
+        "partner",
+        "agreement",
+        "ownership",
+        "manual",
+      ]),
+      group: zod.enum(["project", "parties", "financial", "dates", "other"]),
+      example: zod.string(),
+      resolvedValue: zod
+        .string()
+        .nullish()
+        .describe("Auto-resolved value from linked data"),
+      overrideValue: zod
+        .string()
+        .nullish()
+        .describe("Manually entered override (takes precedence)"),
+      effectiveValue: zod
+        .string()
+        .nullable()
+        .describe(
+          "The value that will be used in the document (override if set, else resolved)",
+        ),
+      isAutoResolved: zod
+        .boolean()
+        .describe("Whether the resolved value was auto-populated"),
+    }),
+  ),
+  resolvedCount: zod
+    .number()
+    .describe("Number of variables with an effective value"),
+  pendingCount: zod
+    .number()
+    .describe("Number of variables still without any value"),
+  totalCount: zod.number(),
+});
+
+/**
  * @summary Get governance completeness summary for the current user
  */
 export const GetGovernanceSummaryResponse = zod.object({

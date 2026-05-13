@@ -338,6 +338,67 @@ export interface AgreementUpdate {
   notes?: string;
 }
 
+export type AgreementVariableDataSource =
+  (typeof AgreementVariableDataSource)[keyof typeof AgreementVariableDataSource];
+
+export const AgreementVariableDataSource = {
+  project: "project",
+  partner: "partner",
+  agreement: "agreement",
+  ownership: "ownership",
+  manual: "manual",
+} as const;
+
+export type AgreementVariableGroup =
+  (typeof AgreementVariableGroup)[keyof typeof AgreementVariableGroup];
+
+export const AgreementVariableGroup = {
+  project: "project",
+  parties: "parties",
+  financial: "financial",
+  dates: "dates",
+  other: "other",
+} as const;
+
+export interface AgreementVariable {
+  /** Variable identifier e.g. PROJECT_NAME */
+  name: string;
+  /** Human-readable label */
+  label: string;
+  description: string;
+  dataSource: AgreementVariableDataSource;
+  group: AgreementVariableGroup;
+  example: string;
+  /** Auto-resolved value from linked data */
+  resolvedValue?: string | null;
+  /** Manually entered override (takes precedence) */
+  overrideValue?: string | null;
+  /** The value that will be used in the document (override if set, else resolved) */
+  effectiveValue: string | null;
+  /** Whether the resolved value was auto-populated */
+  isAutoResolved: boolean;
+}
+
+export interface AgreementVariablesResponse {
+  agreementId: string;
+  variables: AgreementVariable[];
+  /** Number of variables with an effective value */
+  resolvedCount: number;
+  /** Number of variables still without any value */
+  pendingCount: number;
+  totalCount: number;
+}
+
+export type UpdateAgreementVariablesBodyOverridesItem = {
+  name: string;
+  /** Set to null to clear the override */
+  value: string | null;
+};
+
+export interface UpdateAgreementVariablesBody {
+  overrides: UpdateAgreementVariablesBodyOverridesItem[];
+}
+
 export interface DashboardSummary {
   totalProjects: number;
   totalPartners: number;

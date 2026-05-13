@@ -24,6 +24,7 @@ import type {
   AgreementInput,
   AgreementTemplate,
   AgreementUpdate,
+  AgreementVariablesResponse,
   AssignProjectInput,
   CancelMaturityBody,
   CreateClaimantInput,
@@ -69,6 +70,7 @@ import type {
   SetUserRoleInput,
   StockSummary,
   TransitionLifecycleBody,
+  UpdateAgreementVariablesBody,
   UpdateAssignmentInput,
   UpdateClaimantInput,
   UpdateClosureWorkflowBody,
@@ -5386,6 +5388,275 @@ export const useUpdateAgreement = <
   TContext
 > => {
   return useMutation(getUpdateAgreementMutationOptions(options));
+};
+
+/**
+ * @summary List all template variables for an agreement with their resolved values
+ */
+export const getListAgreementVariablesUrl = (id: string) => {
+  return `/api/agreements/${id}/variables`;
+};
+
+export const listAgreementVariables = async (
+  id: string,
+  options?: RequestInit,
+): Promise<AgreementVariablesResponse> => {
+  return customFetch<AgreementVariablesResponse>(
+    getListAgreementVariablesUrl(id),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListAgreementVariablesQueryKey = (id: string) => {
+  return [`/api/agreements/${id}/variables`] as const;
+};
+
+export const getListAgreementVariablesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listAgreementVariables>>,
+  TError = ErrorType<void>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listAgreementVariables>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListAgreementVariablesQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listAgreementVariables>>
+  > = ({ signal }) => listAgreementVariables(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listAgreementVariables>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListAgreementVariablesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listAgreementVariables>>
+>;
+export type ListAgreementVariablesQueryError = ErrorType<void>;
+
+/**
+ * @summary List all template variables for an agreement with their resolved values
+ */
+
+export function useListAgreementVariables<
+  TData = Awaited<ReturnType<typeof listAgreementVariables>>,
+  TError = ErrorType<void>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listAgreementVariables>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListAgreementVariablesQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Batch upsert manual override values for agreement variables
+ */
+export const getUpdateAgreementVariablesUrl = (id: string) => {
+  return `/api/agreements/${id}/variables`;
+};
+
+export const updateAgreementVariables = async (
+  id: string,
+  updateAgreementVariablesBody: UpdateAgreementVariablesBody,
+  options?: RequestInit,
+): Promise<AgreementVariablesResponse> => {
+  return customFetch<AgreementVariablesResponse>(
+    getUpdateAgreementVariablesUrl(id),
+    {
+      ...options,
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(updateAgreementVariablesBody),
+    },
+  );
+};
+
+export const getUpdateAgreementVariablesMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateAgreementVariables>>,
+    TError,
+    { id: string; data: BodyType<UpdateAgreementVariablesBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateAgreementVariables>>,
+  TError,
+  { id: string; data: BodyType<UpdateAgreementVariablesBody> },
+  TContext
+> => {
+  const mutationKey = ["updateAgreementVariables"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateAgreementVariables>>,
+    { id: string; data: BodyType<UpdateAgreementVariablesBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateAgreementVariables(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateAgreementVariablesMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateAgreementVariables>>
+>;
+export type UpdateAgreementVariablesMutationBody =
+  BodyType<UpdateAgreementVariablesBody>;
+export type UpdateAgreementVariablesMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Batch upsert manual override values for agreement variables
+ */
+export const useUpdateAgreementVariables = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateAgreementVariables>>,
+    TError,
+    { id: string; data: BodyType<UpdateAgreementVariablesBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateAgreementVariables>>,
+  TError,
+  { id: string; data: BodyType<UpdateAgreementVariablesBody> },
+  TContext
+> => {
+  return useMutation(getUpdateAgreementVariablesMutationOptions(options));
+};
+
+/**
+ * @summary Auto-resolve all variables for an agreement from linked project and partner data
+ */
+export const getResolveAgreementVariablesUrl = (id: string) => {
+  return `/api/agreements/${id}/variables/resolve`;
+};
+
+export const resolveAgreementVariables = async (
+  id: string,
+  options?: RequestInit,
+): Promise<AgreementVariablesResponse> => {
+  return customFetch<AgreementVariablesResponse>(
+    getResolveAgreementVariablesUrl(id),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getResolveAgreementVariablesMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof resolveAgreementVariables>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof resolveAgreementVariables>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["resolveAgreementVariables"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof resolveAgreementVariables>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return resolveAgreementVariables(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ResolveAgreementVariablesMutationResult = NonNullable<
+  Awaited<ReturnType<typeof resolveAgreementVariables>>
+>;
+
+export type ResolveAgreementVariablesMutationError = ErrorType<void>;
+
+/**
+ * @summary Auto-resolve all variables for an agreement from linked project and partner data
+ */
+export const useResolveAgreementVariables = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof resolveAgreementVariables>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof resolveAgreementVariables>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getResolveAgreementVariablesMutationOptions(options));
 };
 
 /**

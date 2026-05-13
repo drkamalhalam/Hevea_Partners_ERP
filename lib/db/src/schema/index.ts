@@ -18,3 +18,4 @@ export * from "./ownership_freeze";
 export * from "./project_closure_workflow";
 export * from "./stubs";
 export * from "./templates";
+export * from "./agreement_variables";

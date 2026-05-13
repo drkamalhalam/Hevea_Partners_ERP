@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, MapPin } from "lucide-react";
+import AgreementVariablePanel from "./AgreementVariablePanel";
 
 const statusColors: Record<string, string> = {
   draft: "bg-gray-100 text-gray-800",
@@ -96,6 +97,8 @@ export default function AgreementDetails() {
           </CardContent>
         </Card>
       )}
+
+      <AgreementVariablePanel agreementId={id} />
 
       {(agreement.northBoundary || agreement.southBoundary || agreement.eastBoundary || agreement.westBoundary) && (
         <Card>
