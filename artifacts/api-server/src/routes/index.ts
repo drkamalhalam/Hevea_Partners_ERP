@@ -5,6 +5,7 @@ import meRouter from "./me";
 import usersRouter from "./users";
 import maturityRouter from "./maturity";
 import missingDeveloperRouter from "./missing_developer";
+import nomineeActivationRouter from "./nominee_activation";
 import projectsRouter from "./projects";
 import partnersRouter from "./partners";
 import agreementsRouter from "./agreements";
@@ -34,6 +35,7 @@ router.use("/users", usersRouter);
 // Core business resources
 router.use("/projects", maturityRouter);
 router.use("/projects", missingDeveloperRouter);
+router.use("/projects", nomineeActivationRouter);
 router.use("/projects", projectsRouter);
 router.use("/partners", partnersRouter);
 router.use("/agreements", agreementsRouter);

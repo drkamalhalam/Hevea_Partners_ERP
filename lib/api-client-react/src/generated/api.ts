@@ -33,12 +33,14 @@ import type {
   GovernanceSummary,
   HealthStatus,
   InitiateMaturityBody,
+  InitiateNomineeActivationBody,
   ListPartnerClaimantsParams,
   ListProductionRecordsParams,
   MaturityBlockers,
   MaturityDeclaration,
   MaturityOtpVerification,
   MissingDeveloperCase,
+  NomineeActivationWorkflow,
   OkResponse,
   OwnershipFreeze,
   Partner,
@@ -62,11 +64,13 @@ import type {
   UpdateAssignmentInput,
   UpdateClaimantInput,
   UpdateMissingDeveloperCaseBody,
+  UpdateNomineeActivationBody,
   UpdateNomineeInput,
   UpdateParticipantInput,
   UpdateProfileInput,
   UpsertUserInput,
   UserProfile,
+  VerifyNomineeActivationBody,
   VerifyOtpBody,
 } from "./api.schemas";
 
@@ -2355,6 +2359,460 @@ export const useRemoveProjectNominee = <
   TContext
 > => {
   return useMutation(getRemoveProjectNomineeMutationOptions(options));
+};
+
+/**
+ * @summary Get the current nominee activation workflow for a project
+ */
+export const getGetNomineeActivationWorkflowUrl = (id: string) => {
+  return `/api/projects/${id}/nominee/activation`;
+};
+
+export const getNomineeActivationWorkflow = async (
+  id: string,
+  options?: RequestInit,
+): Promise<NomineeActivationWorkflow> => {
+  return customFetch<NomineeActivationWorkflow>(
+    getGetNomineeActivationWorkflowUrl(id),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetNomineeActivationWorkflowQueryKey = (id: string) => {
+  return [`/api/projects/${id}/nominee/activation`] as const;
+};
+
+export const getGetNomineeActivationWorkflowQueryOptions = <
+  TData = Awaited<ReturnType<typeof getNomineeActivationWorkflow>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getNomineeActivationWorkflow>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetNomineeActivationWorkflowQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getNomineeActivationWorkflow>>
+  > = ({ signal }) =>
+    getNomineeActivationWorkflow(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getNomineeActivationWorkflow>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetNomineeActivationWorkflowQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getNomineeActivationWorkflow>>
+>;
+export type GetNomineeActivationWorkflowQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Get the current nominee activation workflow for a project
+ */
+
+export function useGetNomineeActivationWorkflow<
+  TData = Awaited<ReturnType<typeof getNomineeActivationWorkflow>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getNomineeActivationWorkflow>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetNomineeActivationWorkflowQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Initiate nominee activation workflow (admin/developer only)
+ */
+export const getInitiateNomineeActivationUrl = (id: string) => {
+  return `/api/projects/${id}/nominee/activation`;
+};
+
+export const initiateNomineeActivation = async (
+  id: string,
+  initiateNomineeActivationBody: InitiateNomineeActivationBody,
+  options?: RequestInit,
+): Promise<NomineeActivationWorkflow> => {
+  return customFetch<NomineeActivationWorkflow>(
+    getInitiateNomineeActivationUrl(id),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(initiateNomineeActivationBody),
+    },
+  );
+};
+
+export const getInitiateNomineeActivationMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof initiateNomineeActivation>>,
+    TError,
+    { id: string; data: BodyType<InitiateNomineeActivationBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof initiateNomineeActivation>>,
+  TError,
+  { id: string; data: BodyType<InitiateNomineeActivationBody> },
+  TContext
+> => {
+  const mutationKey = ["initiateNomineeActivation"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof initiateNomineeActivation>>,
+    { id: string; data: BodyType<InitiateNomineeActivationBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return initiateNomineeActivation(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type InitiateNomineeActivationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof initiateNomineeActivation>>
+>;
+export type InitiateNomineeActivationMutationBody =
+  BodyType<InitiateNomineeActivationBody>;
+export type InitiateNomineeActivationMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Initiate nominee activation workflow (admin/developer only)
+ */
+export const useInitiateNomineeActivation = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof initiateNomineeActivation>>,
+    TError,
+    { id: string; data: BodyType<InitiateNomineeActivationBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof initiateNomineeActivation>>,
+  TError,
+  { id: string; data: BodyType<InitiateNomineeActivationBody> },
+  TContext
+> => {
+  return useMutation(getInitiateNomineeActivationMutationOptions(options));
+};
+
+/**
+ * @summary Reject or cancel an activation workflow (admin only)
+ */
+export const getUpdateNomineeActivationWorkflowUrl = (id: string) => {
+  return `/api/projects/${id}/nominee/activation`;
+};
+
+export const updateNomineeActivationWorkflow = async (
+  id: string,
+  updateNomineeActivationBody: UpdateNomineeActivationBody,
+  options?: RequestInit,
+): Promise<NomineeActivationWorkflow> => {
+  return customFetch<NomineeActivationWorkflow>(
+    getUpdateNomineeActivationWorkflowUrl(id),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(updateNomineeActivationBody),
+    },
+  );
+};
+
+export const getUpdateNomineeActivationWorkflowMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateNomineeActivationWorkflow>>,
+    TError,
+    { id: string; data: BodyType<UpdateNomineeActivationBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateNomineeActivationWorkflow>>,
+  TError,
+  { id: string; data: BodyType<UpdateNomineeActivationBody> },
+  TContext
+> => {
+  const mutationKey = ["updateNomineeActivationWorkflow"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateNomineeActivationWorkflow>>,
+    { id: string; data: BodyType<UpdateNomineeActivationBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateNomineeActivationWorkflow(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateNomineeActivationWorkflowMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateNomineeActivationWorkflow>>
+>;
+export type UpdateNomineeActivationWorkflowMutationBody =
+  BodyType<UpdateNomineeActivationBody>;
+export type UpdateNomineeActivationWorkflowMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Reject or cancel an activation workflow (admin only)
+ */
+export const useUpdateNomineeActivationWorkflow = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateNomineeActivationWorkflow>>,
+    TError,
+    { id: string; data: BodyType<UpdateNomineeActivationBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateNomineeActivationWorkflow>>,
+  TError,
+  { id: string; data: BodyType<UpdateNomineeActivationBody> },
+  TContext
+> => {
+  return useMutation(
+    getUpdateNomineeActivationWorkflowMutationOptions(options),
+  );
+};
+
+/**
+ * @summary Send or resend OTP for voluntary handover verification
+ */
+export const getSendNomineeActivationOtpUrl = (id: string) => {
+  return `/api/projects/${id}/nominee/activation/send-otp`;
+};
+
+export const sendNomineeActivationOtp = async (
+  id: string,
+  options?: RequestInit,
+): Promise<NomineeActivationWorkflow> => {
+  return customFetch<NomineeActivationWorkflow>(
+    getSendNomineeActivationOtpUrl(id),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getSendNomineeActivationOtpMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof sendNomineeActivationOtp>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof sendNomineeActivationOtp>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["sendNomineeActivationOtp"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof sendNomineeActivationOtp>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return sendNomineeActivationOtp(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SendNomineeActivationOtpMutationResult = NonNullable<
+  Awaited<ReturnType<typeof sendNomineeActivationOtp>>
+>;
+
+export type SendNomineeActivationOtpMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Send or resend OTP for voluntary handover verification
+ */
+export const useSendNomineeActivationOtp = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof sendNomineeActivationOtp>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof sendNomineeActivationOtp>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getSendNomineeActivationOtpMutationOptions(options));
+};
+
+/**
+ * @summary Verify activation — admin confirms docs (death-based) or submits OTP (voluntary)
+ */
+export const getVerifyNomineeActivationUrl = (id: string) => {
+  return `/api/projects/${id}/nominee/activation/verify`;
+};
+
+export const verifyNomineeActivation = async (
+  id: string,
+  verifyNomineeActivationBody: VerifyNomineeActivationBody,
+  options?: RequestInit,
+): Promise<NomineeActivationWorkflow> => {
+  return customFetch<NomineeActivationWorkflow>(
+    getVerifyNomineeActivationUrl(id),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(verifyNomineeActivationBody),
+    },
+  );
+};
+
+export const getVerifyNomineeActivationMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof verifyNomineeActivation>>,
+    TError,
+    { id: string; data: BodyType<VerifyNomineeActivationBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof verifyNomineeActivation>>,
+  TError,
+  { id: string; data: BodyType<VerifyNomineeActivationBody> },
+  TContext
+> => {
+  const mutationKey = ["verifyNomineeActivation"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof verifyNomineeActivation>>,
+    { id: string; data: BodyType<VerifyNomineeActivationBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return verifyNomineeActivation(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type VerifyNomineeActivationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof verifyNomineeActivation>>
+>;
+export type VerifyNomineeActivationMutationBody =
+  BodyType<VerifyNomineeActivationBody>;
+export type VerifyNomineeActivationMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Verify activation — admin confirms docs (death-based) or submits OTP (voluntary)
+ */
+export const useVerifyNomineeActivation = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof verifyNomineeActivation>>,
+    TError,
+    { id: string; data: BodyType<VerifyNomineeActivationBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof verifyNomineeActivation>>,
+  TError,
+  { id: string; data: BodyType<VerifyNomineeActivationBody> },
+  TContext
+> => {
+  return useMutation(getVerifyNomineeActivationMutationOptions(options));
 };
 
 /**

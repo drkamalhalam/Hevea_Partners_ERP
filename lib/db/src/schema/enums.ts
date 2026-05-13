@@ -116,6 +116,34 @@ export const maturityOtpStatusEnum = pgEnum("maturity_otp_status", [
   "expired",
 ]);
 
+// ── Nominee activation workflow enums ────────────────────────────────────
+
+export const nomineeActivationTypeEnum = pgEnum("nominee_activation_type", [
+  "death_based",
+  "voluntary_handover",
+]);
+
+/**
+ * Status of a nominee activation *workflow* record (distinct from
+ * nomineeActivationStatusEnum which lives on the projectNomineesTable row).
+ *
+ *   pending_verification — death-based: documents submitted, awaiting admin approval
+ *   pending_otp          — voluntary: OTP sent to current developer, awaiting entry
+ *   activated            — workflow complete; nominee record has been activated
+ *   rejected             — admin rejected the activation request
+ *   cancelled            — initiator cancelled before completion
+ */
+export const nomineeActivationWorkflowStatusEnum = pgEnum(
+  "nominee_activation_workflow_status",
+  [
+    "pending_verification",
+    "pending_otp",
+    "activated",
+    "rejected",
+    "cancelled",
+  ],
+);
+
 // ── Ownership freeze enums ────────────────────────────────────────────────
 
 /**

@@ -913,6 +913,214 @@ export const RemoveProjectNomineeResponse = zod.object({
 });
 
 /**
+ * @summary Get the current nominee activation workflow for a project
+ */
+export const GetNomineeActivationWorkflowParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const GetNomineeActivationWorkflowResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  nomineeId: zod.string().uuid(),
+  nomineeName: zod.string(),
+  activationType: zod.enum(["death_based", "voluntary_handover"]),
+  status: zod.enum([
+    "pending_verification",
+    "pending_otp",
+    "activated",
+    "rejected",
+    "cancelled",
+  ]),
+  deathCertificateUrl: zod.string().nullish(),
+  declarationDeedUrl: zod.string().nullish(),
+  otpCode: zod.string().nullish(),
+  otpSentAt: zod.string().nullish(),
+  otpExpiresAt: zod.string().nullish(),
+  otpVerifiedAt: zod.string().nullish(),
+  otpVerifiedBy: zod.string().uuid().nullish(),
+  otpVerifiedByName: zod.string().nullish(),
+  verifiedBy: zod.string().uuid().nullish(),
+  verifiedByName: zod.string().nullish(),
+  verifiedAt: zod.string().nullish(),
+  verificationNotes: zod.string().nullish(),
+  activatedBy: zod.string().uuid().nullish(),
+  activatedByName: zod.string().nullish(),
+  activatedAt: zod.string().nullish(),
+  rejectedBy: zod.string().uuid().nullish(),
+  rejectedByName: zod.string().nullish(),
+  rejectedAt: zod.string().nullish(),
+  rejectionReason: zod.string().nullish(),
+  governanceRemarks: zod.string().nullish(),
+  createdBy: zod.string().uuid().nullish(),
+  createdByName: zod.string().nullish(),
+  createdAt: zod.string(),
+  updatedAt: zod.string().nullish(),
+});
+
+/**
+ * @summary Initiate nominee activation workflow (admin/developer only)
+ */
+export const InitiateNomineeActivationParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const InitiateNomineeActivationBody = zod.object({
+  activationType: zod.enum(["death_based", "voluntary_handover"]),
+  deathCertificateUrl: zod.string().optional(),
+  declarationDeedUrl: zod.string().optional(),
+  governanceRemarks: zod.string().optional(),
+});
+
+/**
+ * @summary Reject or cancel an activation workflow (admin only)
+ */
+export const UpdateNomineeActivationWorkflowParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const UpdateNomineeActivationWorkflowBody = zod.object({
+  status: zod.enum(["rejected", "cancelled"]).optional(),
+  rejectionReason: zod.string().optional(),
+});
+
+export const UpdateNomineeActivationWorkflowResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  nomineeId: zod.string().uuid(),
+  nomineeName: zod.string(),
+  activationType: zod.enum(["death_based", "voluntary_handover"]),
+  status: zod.enum([
+    "pending_verification",
+    "pending_otp",
+    "activated",
+    "rejected",
+    "cancelled",
+  ]),
+  deathCertificateUrl: zod.string().nullish(),
+  declarationDeedUrl: zod.string().nullish(),
+  otpCode: zod.string().nullish(),
+  otpSentAt: zod.string().nullish(),
+  otpExpiresAt: zod.string().nullish(),
+  otpVerifiedAt: zod.string().nullish(),
+  otpVerifiedBy: zod.string().uuid().nullish(),
+  otpVerifiedByName: zod.string().nullish(),
+  verifiedBy: zod.string().uuid().nullish(),
+  verifiedByName: zod.string().nullish(),
+  verifiedAt: zod.string().nullish(),
+  verificationNotes: zod.string().nullish(),
+  activatedBy: zod.string().uuid().nullish(),
+  activatedByName: zod.string().nullish(),
+  activatedAt: zod.string().nullish(),
+  rejectedBy: zod.string().uuid().nullish(),
+  rejectedByName: zod.string().nullish(),
+  rejectedAt: zod.string().nullish(),
+  rejectionReason: zod.string().nullish(),
+  governanceRemarks: zod.string().nullish(),
+  createdBy: zod.string().uuid().nullish(),
+  createdByName: zod.string().nullish(),
+  createdAt: zod.string(),
+  updatedAt: zod.string().nullish(),
+});
+
+/**
+ * @summary Send or resend OTP for voluntary handover verification
+ */
+export const SendNomineeActivationOtpParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const SendNomineeActivationOtpResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  nomineeId: zod.string().uuid(),
+  nomineeName: zod.string(),
+  activationType: zod.enum(["death_based", "voluntary_handover"]),
+  status: zod.enum([
+    "pending_verification",
+    "pending_otp",
+    "activated",
+    "rejected",
+    "cancelled",
+  ]),
+  deathCertificateUrl: zod.string().nullish(),
+  declarationDeedUrl: zod.string().nullish(),
+  otpCode: zod.string().nullish(),
+  otpSentAt: zod.string().nullish(),
+  otpExpiresAt: zod.string().nullish(),
+  otpVerifiedAt: zod.string().nullish(),
+  otpVerifiedBy: zod.string().uuid().nullish(),
+  otpVerifiedByName: zod.string().nullish(),
+  verifiedBy: zod.string().uuid().nullish(),
+  verifiedByName: zod.string().nullish(),
+  verifiedAt: zod.string().nullish(),
+  verificationNotes: zod.string().nullish(),
+  activatedBy: zod.string().uuid().nullish(),
+  activatedByName: zod.string().nullish(),
+  activatedAt: zod.string().nullish(),
+  rejectedBy: zod.string().uuid().nullish(),
+  rejectedByName: zod.string().nullish(),
+  rejectedAt: zod.string().nullish(),
+  rejectionReason: zod.string().nullish(),
+  governanceRemarks: zod.string().nullish(),
+  createdBy: zod.string().uuid().nullish(),
+  createdByName: zod.string().nullish(),
+  createdAt: zod.string(),
+  updatedAt: zod.string().nullish(),
+});
+
+/**
+ * @summary Verify activation — admin confirms docs (death-based) or submits OTP (voluntary)
+ */
+export const VerifyNomineeActivationParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const VerifyNomineeActivationBody = zod.object({
+  otpCode: zod.string().optional(),
+  verificationNotes: zod.string().optional(),
+});
+
+export const VerifyNomineeActivationResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  nomineeId: zod.string().uuid(),
+  nomineeName: zod.string(),
+  activationType: zod.enum(["death_based", "voluntary_handover"]),
+  status: zod.enum([
+    "pending_verification",
+    "pending_otp",
+    "activated",
+    "rejected",
+    "cancelled",
+  ]),
+  deathCertificateUrl: zod.string().nullish(),
+  declarationDeedUrl: zod.string().nullish(),
+  otpCode: zod.string().nullish(),
+  otpSentAt: zod.string().nullish(),
+  otpExpiresAt: zod.string().nullish(),
+  otpVerifiedAt: zod.string().nullish(),
+  otpVerifiedBy: zod.string().uuid().nullish(),
+  otpVerifiedByName: zod.string().nullish(),
+  verifiedBy: zod.string().uuid().nullish(),
+  verifiedByName: zod.string().nullish(),
+  verifiedAt: zod.string().nullish(),
+  verificationNotes: zod.string().nullish(),
+  activatedBy: zod.string().uuid().nullish(),
+  activatedByName: zod.string().nullish(),
+  activatedAt: zod.string().nullish(),
+  rejectedBy: zod.string().uuid().nullish(),
+  rejectedByName: zod.string().nullish(),
+  rejectedAt: zod.string().nullish(),
+  rejectionReason: zod.string().nullish(),
+  governanceRemarks: zod.string().nullish(),
+  createdBy: zod.string().uuid().nullish(),
+  createdByName: zod.string().nullish(),
+  createdAt: zod.string(),
+  updatedAt: zod.string().nullish(),
+});
+
+/**
  * @summary Get project lifecycle status and history
  */
 export const GetProjectLifecycleParams = zod.object({

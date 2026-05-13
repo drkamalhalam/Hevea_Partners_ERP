@@ -13,5 +13,6 @@ export * from "./audit";
 export * from "./lifecycle";
 export * from "./maturity";
 export * from "./missing_developer";
+export * from "./nominee_activation_workflow";
 export * from "./ownership_freeze";
 export * from "./stubs";

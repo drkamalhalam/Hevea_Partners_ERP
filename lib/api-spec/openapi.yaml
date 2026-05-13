@@ -590,6 +590,138 @@ paths:
               schema:
                 $ref: "#/components/schemas/OkResponse"
 
+  /projects/{id}/nominee/activation:
+    get:
+      operationId: getNomineeActivationWorkflow
+      summary: Get the current nominee activation workflow for a project
+      tags: [projects]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Current activation workflow record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NomineeActivationWorkflow"
+        "404":
+          description: No active activation workflow
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: initiateNomineeActivation
+      summary: Initiate nominee activation workflow (admin/developer only)
+      tags: [projects]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InitiateNomineeActivationBody"
+      responses:
+        "201":
+          description: Workflow initiated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NomineeActivationWorkflow"
+        "409":
+          description: An active workflow already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateNomineeActivationWorkflow
+      summary: Reject or cancel an activation workflow (admin only)
+      tags: [projects]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateNomineeActivationBody"
+      responses:
+        "200":
+          description: Workflow updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NomineeActivationWorkflow"
+
+  /projects/{id}/nominee/activation/send-otp:
+    post:
+      operationId: sendNomineeActivationOtp
+      summary: Send or resend OTP for voluntary handover verification
+      tags: [projects]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OTP sent (code visible in dev mode)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NomineeActivationWorkflow"
+
+  /projects/{id}/nominee/activation/verify:
+    post:
+      operationId: verifyNomineeActivation
+      summary: Verify activation — admin confirms docs (death-based) or submits OTP (voluntary)
+      tags: [projects]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VerifyNomineeActivationBody"
+      responses:
+        "200":
+          description: Verified and activated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NomineeActivationWorkflow"
+        "400":
+          description: Invalid OTP or missing input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /projects/{id}/lifecycle:
     get:
       operationId: getProjectLifecycle
@@ -2477,6 +2609,112 @@ components:
         remarks:
           type: string
         resolutionNotes:
+          type: string
+
+    NomineeActivationWorkflow:
+      type: object
+      required: [id, projectId, nomineeId, nomineeName, activationType, status, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        projectId:
+          type: string
+          format: uuid
+        nomineeId:
+          type: string
+          format: uuid
+        nomineeName:
+          type: string
+        activationType:
+          type: string
+          enum: [death_based, voluntary_handover]
+        status:
+          type: string
+          enum: [pending_verification, pending_otp, activated, rejected, cancelled]
+        deathCertificateUrl:
+          type: ["string", "null"]
+        declarationDeedUrl:
+          type: ["string", "null"]
+        otpCode:
+          type: ["string", "null"]
+        otpSentAt:
+          type: ["string", "null"]
+        otpExpiresAt:
+          type: ["string", "null"]
+        otpVerifiedAt:
+          type: ["string", "null"]
+        otpVerifiedBy:
+          type: ["string", "null"]
+          format: uuid
+        otpVerifiedByName:
+          type: ["string", "null"]
+        verifiedBy:
+          type: ["string", "null"]
+          format: uuid
+        verifiedByName:
+          type: ["string", "null"]
+        verifiedAt:
+          type: ["string", "null"]
+        verificationNotes:
+          type: ["string", "null"]
+        activatedBy:
+          type: ["string", "null"]
+          format: uuid
+        activatedByName:
+          type: ["string", "null"]
+        activatedAt:
+          type: ["string", "null"]
+        rejectedBy:
+          type: ["string", "null"]
+          format: uuid
+        rejectedByName:
+          type: ["string", "null"]
+        rejectedAt:
+          type: ["string", "null"]
+        rejectionReason:
+          type: ["string", "null"]
+        governanceRemarks:
+          type: ["string", "null"]
+        createdBy:
+          type: ["string", "null"]
+          format: uuid
+        createdByName:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: ["string", "null"]
+
+    InitiateNomineeActivationBody:
+      type: object
+      required: [activationType]
+      properties:
+        activationType:
+          type: string
+          enum: [death_based, voluntary_handover]
+        deathCertificateUrl:
+          type: string
+        declarationDeedUrl:
+          type: string
+        governanceRemarks:
+          type: string
+
+    VerifyNomineeActivationBody:
+      type: object
+      properties:
+        otpCode:
+          type: string
+        verificationNotes:
+          type: string
+
+    UpdateNomineeActivationBody:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [rejected, cancelled]
+        rejectionReason:
           type: string
 
     GovernanceAlert:

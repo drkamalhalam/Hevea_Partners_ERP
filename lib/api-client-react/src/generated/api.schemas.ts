@@ -1024,6 +1024,114 @@ export interface UpdateMissingDeveloperCaseBody {
   resolutionNotes?: string;
 }
 
+export type NomineeActivationWorkflowActivationType =
+  (typeof NomineeActivationWorkflowActivationType)[keyof typeof NomineeActivationWorkflowActivationType];
+
+export const NomineeActivationWorkflowActivationType = {
+  death_based: "death_based",
+  voluntary_handover: "voluntary_handover",
+} as const;
+
+export type NomineeActivationWorkflowStatus =
+  (typeof NomineeActivationWorkflowStatus)[keyof typeof NomineeActivationWorkflowStatus];
+
+export const NomineeActivationWorkflowStatus = {
+  pending_verification: "pending_verification",
+  pending_otp: "pending_otp",
+  activated: "activated",
+  rejected: "rejected",
+  cancelled: "cancelled",
+} as const;
+
+export interface NomineeActivationWorkflow {
+  id: string;
+  projectId: string;
+  nomineeId: string;
+  nomineeName: string;
+  activationType: NomineeActivationWorkflowActivationType;
+  status: NomineeActivationWorkflowStatus;
+  /** @nullable */
+  deathCertificateUrl?: string | null;
+  /** @nullable */
+  declarationDeedUrl?: string | null;
+  /** @nullable */
+  otpCode?: string | null;
+  /** @nullable */
+  otpSentAt?: string | null;
+  /** @nullable */
+  otpExpiresAt?: string | null;
+  /** @nullable */
+  otpVerifiedAt?: string | null;
+  /** @nullable */
+  otpVerifiedBy?: string | null;
+  /** @nullable */
+  otpVerifiedByName?: string | null;
+  /** @nullable */
+  verifiedBy?: string | null;
+  /** @nullable */
+  verifiedByName?: string | null;
+  /** @nullable */
+  verifiedAt?: string | null;
+  /** @nullable */
+  verificationNotes?: string | null;
+  /** @nullable */
+  activatedBy?: string | null;
+  /** @nullable */
+  activatedByName?: string | null;
+  /** @nullable */
+  activatedAt?: string | null;
+  /** @nullable */
+  rejectedBy?: string | null;
+  /** @nullable */
+  rejectedByName?: string | null;
+  /** @nullable */
+  rejectedAt?: string | null;
+  /** @nullable */
+  rejectionReason?: string | null;
+  /** @nullable */
+  governanceRemarks?: string | null;
+  /** @nullable */
+  createdBy?: string | null;
+  /** @nullable */
+  createdByName?: string | null;
+  createdAt: string;
+  /** @nullable */
+  updatedAt?: string | null;
+}
+
+export type InitiateNomineeActivationBodyActivationType =
+  (typeof InitiateNomineeActivationBodyActivationType)[keyof typeof InitiateNomineeActivationBodyActivationType];
+
+export const InitiateNomineeActivationBodyActivationType = {
+  death_based: "death_based",
+  voluntary_handover: "voluntary_handover",
+} as const;
+
+export interface InitiateNomineeActivationBody {
+  activationType: InitiateNomineeActivationBodyActivationType;
+  deathCertificateUrl?: string;
+  declarationDeedUrl?: string;
+  governanceRemarks?: string;
+}
+
+export interface VerifyNomineeActivationBody {
+  otpCode?: string;
+  verificationNotes?: string;
+}
+
+export type UpdateNomineeActivationBodyStatus =
+  (typeof UpdateNomineeActivationBodyStatus)[keyof typeof UpdateNomineeActivationBodyStatus];
+
+export const UpdateNomineeActivationBodyStatus = {
+  rejected: "rejected",
+  cancelled: "cancelled",
+} as const;
+
+export interface UpdateNomineeActivationBody {
+  status?: UpdateNomineeActivationBodyStatus;
+  rejectionReason?: string;
+}
+
 export type GovernanceAlertCode =
   (typeof GovernanceAlertCode)[keyof typeof GovernanceAlertCode];
 

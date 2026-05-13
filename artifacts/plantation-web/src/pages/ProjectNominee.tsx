@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "wouter";
 import {
   useGetProjectNominee,
   useAddProjectNominee,
@@ -47,6 +48,7 @@ import {
   MapPin,
   FileText,
   Heart,
+  ArrowRight,
 } from "lucide-react";
 
 const ACTIVATION_LABELS: Record<string, string> = {
@@ -508,6 +510,18 @@ export default function ProjectNomineeSection({
                   Activation is a separate administrative action and will only
                   be triggered in a governance continuity event.
                 </p>
+              )}
+
+              {canManage && activationStatus === "pending" && (
+                <div className="pt-1">
+                  <Link href={`/projects/${projectId}/nominee/activation`}>
+                    <Button variant="outline" size="sm" className="gap-1.5 text-xs h-7">
+                      <ShieldAlert className="w-3.5 h-3.5" />
+                      Manage Nominee Activation
+                      <ArrowRight className="w-3 h-3" />
+                    </Button>
+                  </Link>
+                </div>
               )}
             </div>
           )}
