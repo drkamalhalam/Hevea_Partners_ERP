@@ -41,6 +41,7 @@ import ExpenditureAnalytics from "./pages/ExpenditureAnalytics";
 import LCAConfig from "./pages/LCAConfig";
 import LCALedger from "./pages/LCALedger";
 import LandownerAccount from "./pages/LandownerAccount";
+import BurdenRecovery from "./pages/BurdenRecovery";
 import TemplateLibrary from "./pages/TemplateLibrary";
 
 // Pages — Operations
@@ -247,6 +248,7 @@ function AppRoutes() {
               <Route path="/lca"><ProtectedRoute component={LCAConfig} /></Route>
               <Route path="/lca/ledger"><ProtectedRoute component={LCALedger} /></Route>
               <Route path="/landowner-account"><ProtectedRoute component={LandownerAccount} /></Route>
+              <Route path="/burden-recovery"><ProtectedRoute component={BurdenRecovery} /></Route>
               <Route path="/templates"><ProtectedRoute component={TemplateLibrary} /></Route>
 
               {/* Operations */}

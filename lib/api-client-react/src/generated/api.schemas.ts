@@ -3007,6 +3007,101 @@ export interface LcaFullLedger {
   totals: LcaFullLedgerTotals;
 }
 
+export type BurdenRecoveryAdjustmentRecoveryStatus =
+  (typeof BurdenRecoveryAdjustmentRecoveryStatus)[keyof typeof BurdenRecoveryAdjustmentRecoveryStatus];
+
+export const BurdenRecoveryAdjustmentRecoveryStatus = {
+  pending: "pending",
+  partial: "partial",
+  recovered: "recovered",
+  waived: "waived",
+} as const;
+
+export interface BurdenRecoveryAdjustment {
+  id: string;
+  projectId: string;
+  projectName?: string;
+  sourcePartnerId: string;
+  sourcePartnerName?: string;
+  targetPartnerId: string;
+  targetPartnerName?: string;
+  description: string;
+  costCategory?: string;
+  totalAmount: number;
+  recoverableAmount: number;
+  recoveredAmount: number;
+  remainingAmount?: number;
+  revenueModelType: string;
+  periodLabel: string;
+  periodStart: string;
+  periodEnd: string;
+  recoveryStatus: BurdenRecoveryAdjustmentRecoveryStatus;
+  linkedLedgerEntryId?: string;
+  isOwnershipCreating: boolean;
+  notes?: string;
+  recordedByName: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateBurdenRecoveryAdjustment {
+  projectId: string;
+  sourcePartnerId: string;
+  targetPartnerId: string;
+  description: string;
+  costCategory?: string;
+  totalAmount: number;
+  recoverableAmount: number;
+  periodLabel: string;
+  periodStart: string;
+  periodEnd: string;
+  linkedLedgerEntryId?: string;
+  notes?: string;
+}
+
+export interface PatchBurdenRecoveryAdjustment {
+  description?: string;
+  costCategory?: string;
+  totalAmount?: number;
+  recoverableAmount?: number;
+  periodLabel?: string;
+  periodStart?: string;
+  periodEnd?: string;
+  recoveryStatus?: string;
+  linkedLedgerEntryId?: string;
+  notes?: string;
+}
+
+export interface BurdenRecoveryEvent {
+  id: string;
+  adjustmentId: string;
+  projectId: string;
+  amountRecovered: number;
+  recoveryDate: string;
+  recoveryRef?: string;
+  notes?: string;
+  recordedByName: string;
+  createdAt: string;
+}
+
+export interface CreateBurdenRecoveryEvent {
+  amountRecovered: number;
+  recoveryDate: string;
+  recoveryRef?: string;
+  notes?: string;
+}
+
+export interface BurdenRecoverySummary {
+  totalRecoverable: number;
+  totalRecovered: number;
+  totalRemaining: number;
+  pendingCount: number;
+  partialCount: number;
+  recoveredCount: number;
+  waivedCount: number;
+  adjustments: BurdenRecoveryAdjustment[];
+}
+
 export type GetUserActivityParams = {
   limit?: number;
 };
@@ -3445,4 +3540,17 @@ export type ReverseLandownerLedgerEntry200 = {
 
 export type GetLandownerLcaReceivableParams = {
   projectId?: string;
+};
+
+export type GetBurdenRecoverySummaryParams = {
+  projectId?: string;
+  sourcePartnerId?: string;
+  targetPartnerId?: string;
+};
+
+export type ListBurdenRecoveryAdjustmentsParams = {
+  projectId?: string;
+  recoveryStatus?: string;
+  sourcePartnerId?: string;
+  targetPartnerId?: string;
 };

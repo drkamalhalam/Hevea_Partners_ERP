@@ -28,6 +28,7 @@ import burdenImbalancesRouter from "./burden_imbalances";
 import advancesRouter from "./advances";
 import lcaRouter from "./lca";
 import landownerAccountRouter from "./landowner_account";
+import burdenRecoveryRouter from "./burden_recovery";
 import devRouter from "./dev";
 
 const router: IRouter = Router();
@@ -73,5 +74,6 @@ router.use("/burden", burdenImbalancesRouter);
 router.use("/advances", advancesRouter);
 router.use("/lca", lcaRouter);
 router.use("/landowner-account", landownerAccountRouter);
+router.use("/burden-recovery", burdenRecoveryRouter);
 
 export default router;

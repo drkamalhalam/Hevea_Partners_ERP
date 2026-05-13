@@ -35,3 +35,4 @@ export * from "./lca_configs";
 export * from "./lca_ledger";
 export * from "./lca_payment_events";
 export * from "./landowner_accounting";
+export * from "./burden_recovery";

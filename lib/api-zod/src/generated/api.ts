@@ -6706,3 +6706,191 @@ export const GetLandownerLcaReceivableResponse = zod.object({
     }),
   ),
 });
+
+/**
+ * @summary Get burden recovery summary
+ */
+export const GetBurdenRecoverySummaryQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+  sourcePartnerId: zod.coerce.string().uuid().optional(),
+  targetPartnerId: zod.coerce.string().uuid().optional(),
+});
+
+export const GetBurdenRecoverySummaryResponse = zod.object({
+  totalRecoverable: zod.number(),
+  totalRecovered: zod.number(),
+  totalRemaining: zod.number(),
+  pendingCount: zod.number(),
+  partialCount: zod.number(),
+  recoveredCount: zod.number(),
+  waivedCount: zod.number(),
+  adjustments: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      projectId: zod.string().uuid(),
+      projectName: zod.string().optional(),
+      sourcePartnerId: zod.string().uuid(),
+      sourcePartnerName: zod.string().optional(),
+      targetPartnerId: zod.string().uuid(),
+      targetPartnerName: zod.string().optional(),
+      description: zod.string(),
+      costCategory: zod.string().optional(),
+      totalAmount: zod.number(),
+      recoverableAmount: zod.number(),
+      recoveredAmount: zod.number(),
+      remainingAmount: zod.number().optional(),
+      revenueModelType: zod.string(),
+      periodLabel: zod.string(),
+      periodStart: zod.string(),
+      periodEnd: zod.string(),
+      recoveryStatus: zod.enum(["pending", "partial", "recovered", "waived"]),
+      linkedLedgerEntryId: zod.string().uuid().optional(),
+      isOwnershipCreating: zod.boolean(),
+      notes: zod.string().optional(),
+      recordedByName: zod.string(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    }),
+  ),
+});
+
+/**
+ * @summary List burden recovery adjustments
+ */
+export const ListBurdenRecoveryAdjustmentsQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+  recoveryStatus: zod.coerce.string().optional(),
+  sourcePartnerId: zod.coerce.string().uuid().optional(),
+  targetPartnerId: zod.coerce.string().uuid().optional(),
+});
+
+export const ListBurdenRecoveryAdjustmentsResponseItem = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  projectName: zod.string().optional(),
+  sourcePartnerId: zod.string().uuid(),
+  sourcePartnerName: zod.string().optional(),
+  targetPartnerId: zod.string().uuid(),
+  targetPartnerName: zod.string().optional(),
+  description: zod.string(),
+  costCategory: zod.string().optional(),
+  totalAmount: zod.number(),
+  recoverableAmount: zod.number(),
+  recoveredAmount: zod.number(),
+  remainingAmount: zod.number().optional(),
+  revenueModelType: zod.string(),
+  periodLabel: zod.string(),
+  periodStart: zod.string(),
+  periodEnd: zod.string(),
+  recoveryStatus: zod.enum(["pending", "partial", "recovered", "waived"]),
+  linkedLedgerEntryId: zod.string().uuid().optional(),
+  isOwnershipCreating: zod.boolean(),
+  notes: zod.string().optional(),
+  recordedByName: zod.string(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const ListBurdenRecoveryAdjustmentsResponse = zod.array(
+  ListBurdenRecoveryAdjustmentsResponseItem,
+);
+
+/**
+ * @summary Create a burden recovery adjustment
+ */
+export const CreateBurdenRecoveryAdjustmentBody = zod.object({
+  projectId: zod.string().uuid(),
+  sourcePartnerId: zod.string().uuid(),
+  targetPartnerId: zod.string().uuid(),
+  description: zod.string(),
+  costCategory: zod.string().optional(),
+  totalAmount: zod.number(),
+  recoverableAmount: zod.number(),
+  periodLabel: zod.string(),
+  periodStart: zod.string(),
+  periodEnd: zod.string(),
+  linkedLedgerEntryId: zod.string().uuid().optional(),
+  notes: zod.string().optional(),
+});
+
+/**
+ * @summary Update a burden recovery adjustment
+ */
+export const UpdateBurdenRecoveryAdjustmentParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const UpdateBurdenRecoveryAdjustmentBody = zod.object({
+  description: zod.string().optional(),
+  costCategory: zod.string().optional(),
+  totalAmount: zod.number().optional(),
+  recoverableAmount: zod.number().optional(),
+  periodLabel: zod.string().optional(),
+  periodStart: zod.string().optional(),
+  periodEnd: zod.string().optional(),
+  recoveryStatus: zod.string().optional(),
+  linkedLedgerEntryId: zod.string().uuid().optional(),
+  notes: zod.string().optional(),
+});
+
+export const UpdateBurdenRecoveryAdjustmentResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  projectName: zod.string().optional(),
+  sourcePartnerId: zod.string().uuid(),
+  sourcePartnerName: zod.string().optional(),
+  targetPartnerId: zod.string().uuid(),
+  targetPartnerName: zod.string().optional(),
+  description: zod.string(),
+  costCategory: zod.string().optional(),
+  totalAmount: zod.number(),
+  recoverableAmount: zod.number(),
+  recoveredAmount: zod.number(),
+  remainingAmount: zod.number().optional(),
+  revenueModelType: zod.string(),
+  periodLabel: zod.string(),
+  periodStart: zod.string(),
+  periodEnd: zod.string(),
+  recoveryStatus: zod.enum(["pending", "partial", "recovered", "waived"]),
+  linkedLedgerEntryId: zod.string().uuid().optional(),
+  isOwnershipCreating: zod.boolean(),
+  notes: zod.string().optional(),
+  recordedByName: zod.string(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary List recovery events for an adjustment
+ */
+export const ListBurdenRecoveryEventsParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const ListBurdenRecoveryEventsResponseItem = zod.object({
+  id: zod.string().uuid(),
+  adjustmentId: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  amountRecovered: zod.number(),
+  recoveryDate: zod.string(),
+  recoveryRef: zod.string().optional(),
+  notes: zod.string().optional(),
+  recordedByName: zod.string(),
+  createdAt: zod.coerce.date(),
+});
+export const ListBurdenRecoveryEventsResponse = zod.array(
+  ListBurdenRecoveryEventsResponseItem,
+);
+
+/**
+ * @summary Record a recovery event
+ */
+export const RecordBurdenRecoveryEventParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const RecordBurdenRecoveryEventBody = zod.object({
+  amountRecovered: zod.number(),
+  recoveryDate: zod.string(),
+  recoveryRef: zod.string().optional(),
+  notes: zod.string().optional(),
+});

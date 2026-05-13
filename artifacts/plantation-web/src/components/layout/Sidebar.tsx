@@ -188,6 +188,12 @@ const navGroups: NavGroup[] = [
         icon: Landmark,
         roles: ["admin", "developer", "landowner"],
       },
+      {
+        name: "Burden Recovery",
+        href: "/burden-recovery",
+        icon: Scale,
+        roles: ["admin", "developer", "landowner"],
+      },
     ],
   },
   {

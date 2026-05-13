@@ -39,6 +39,9 @@ import type {
   AutoGenerateLcaLedgerBody,
   AutoGenerateLcaResult,
   BurdenRecord,
+  BurdenRecoveryAdjustment,
+  BurdenRecoveryEvent,
+  BurdenRecoverySummary,
   BurdenRule,
   BurdenSummary,
   CancelAgreementActivationBody,
@@ -50,6 +53,8 @@ import type {
   ContributionSummary,
   CreateAdvanceBody,
   CreateBurdenRecordBody,
+  CreateBurdenRecoveryAdjustment,
+  CreateBurdenRecoveryEvent,
   CreateBurdenRuleBody,
   CreateClaimantInput,
   CreateContributionBody,
@@ -75,6 +80,7 @@ import type {
   GenerateAgreementDocument422,
   GenerateDocumentRequest,
   GetAdvanceSummaryParams,
+  GetBurdenRecoverySummaryParams,
   GetBurdenSummaryParams,
   GetContributionSummaryParams,
   GetExpenditureSummaryParams,
@@ -112,6 +118,7 @@ import type {
   ListAdvancesParams,
   ListBurdenRecords200,
   ListBurdenRecordsParams,
+  ListBurdenRecoveryAdjustmentsParams,
   ListBurdenRules200,
   ListBurdenRulesParams,
   ListContributionVerificationHistory200,
@@ -148,6 +155,7 @@ import type {
   PartnerInput,
   PartnerPortfolio,
   PartnerUpdate,
+  PatchBurdenRecoveryAdjustment,
   ProductionInput,
   ProductionRecord,
   Project,
@@ -16337,3 +16345,576 @@ export function useGetLandownerLcaReceivable<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Get burden recovery summary
+ */
+export const getGetBurdenRecoverySummaryUrl = (
+  params?: GetBurdenRecoverySummaryParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/burden-recovery/summary?${stringifiedParams}`
+    : `/api/burden-recovery/summary`;
+};
+
+export const getBurdenRecoverySummary = async (
+  params?: GetBurdenRecoverySummaryParams,
+  options?: RequestInit,
+): Promise<BurdenRecoverySummary> => {
+  return customFetch<BurdenRecoverySummary>(
+    getGetBurdenRecoverySummaryUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetBurdenRecoverySummaryQueryKey = (
+  params?: GetBurdenRecoverySummaryParams,
+) => {
+  return [`/api/burden-recovery/summary`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetBurdenRecoverySummaryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getBurdenRecoverySummary>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetBurdenRecoverySummaryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getBurdenRecoverySummary>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetBurdenRecoverySummaryQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getBurdenRecoverySummary>>
+  > = ({ signal }) =>
+    getBurdenRecoverySummary(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getBurdenRecoverySummary>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetBurdenRecoverySummaryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getBurdenRecoverySummary>>
+>;
+export type GetBurdenRecoverySummaryQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get burden recovery summary
+ */
+
+export function useGetBurdenRecoverySummary<
+  TData = Awaited<ReturnType<typeof getBurdenRecoverySummary>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetBurdenRecoverySummaryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getBurdenRecoverySummary>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetBurdenRecoverySummaryQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List burden recovery adjustments
+ */
+export const getListBurdenRecoveryAdjustmentsUrl = (
+  params?: ListBurdenRecoveryAdjustmentsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/burden-recovery/adjustments?${stringifiedParams}`
+    : `/api/burden-recovery/adjustments`;
+};
+
+export const listBurdenRecoveryAdjustments = async (
+  params?: ListBurdenRecoveryAdjustmentsParams,
+  options?: RequestInit,
+): Promise<BurdenRecoveryAdjustment[]> => {
+  return customFetch<BurdenRecoveryAdjustment[]>(
+    getListBurdenRecoveryAdjustmentsUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListBurdenRecoveryAdjustmentsQueryKey = (
+  params?: ListBurdenRecoveryAdjustmentsParams,
+) => {
+  return [
+    `/api/burden-recovery/adjustments`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListBurdenRecoveryAdjustmentsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listBurdenRecoveryAdjustments>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListBurdenRecoveryAdjustmentsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listBurdenRecoveryAdjustments>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListBurdenRecoveryAdjustmentsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listBurdenRecoveryAdjustments>>
+  > = ({ signal }) =>
+    listBurdenRecoveryAdjustments(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listBurdenRecoveryAdjustments>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListBurdenRecoveryAdjustmentsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listBurdenRecoveryAdjustments>>
+>;
+export type ListBurdenRecoveryAdjustmentsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List burden recovery adjustments
+ */
+
+export function useListBurdenRecoveryAdjustments<
+  TData = Awaited<ReturnType<typeof listBurdenRecoveryAdjustments>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListBurdenRecoveryAdjustmentsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listBurdenRecoveryAdjustments>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListBurdenRecoveryAdjustmentsQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a burden recovery adjustment
+ */
+export const getCreateBurdenRecoveryAdjustmentUrl = () => {
+  return `/api/burden-recovery/adjustments`;
+};
+
+export const createBurdenRecoveryAdjustment = async (
+  createBurdenRecoveryAdjustment: CreateBurdenRecoveryAdjustment,
+  options?: RequestInit,
+): Promise<BurdenRecoveryAdjustment> => {
+  return customFetch<BurdenRecoveryAdjustment>(
+    getCreateBurdenRecoveryAdjustmentUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(createBurdenRecoveryAdjustment),
+    },
+  );
+};
+
+export const getCreateBurdenRecoveryAdjustmentMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createBurdenRecoveryAdjustment>>,
+    TError,
+    { data: BodyType<CreateBurdenRecoveryAdjustment> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createBurdenRecoveryAdjustment>>,
+  TError,
+  { data: BodyType<CreateBurdenRecoveryAdjustment> },
+  TContext
+> => {
+  const mutationKey = ["createBurdenRecoveryAdjustment"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createBurdenRecoveryAdjustment>>,
+    { data: BodyType<CreateBurdenRecoveryAdjustment> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createBurdenRecoveryAdjustment(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateBurdenRecoveryAdjustmentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createBurdenRecoveryAdjustment>>
+>;
+export type CreateBurdenRecoveryAdjustmentMutationBody =
+  BodyType<CreateBurdenRecoveryAdjustment>;
+export type CreateBurdenRecoveryAdjustmentMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create a burden recovery adjustment
+ */
+export const useCreateBurdenRecoveryAdjustment = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createBurdenRecoveryAdjustment>>,
+    TError,
+    { data: BodyType<CreateBurdenRecoveryAdjustment> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createBurdenRecoveryAdjustment>>,
+  TError,
+  { data: BodyType<CreateBurdenRecoveryAdjustment> },
+  TContext
+> => {
+  return useMutation(getCreateBurdenRecoveryAdjustmentMutationOptions(options));
+};
+
+/**
+ * @summary Update a burden recovery adjustment
+ */
+export const getUpdateBurdenRecoveryAdjustmentUrl = (id: string) => {
+  return `/api/burden-recovery/adjustments/${id}`;
+};
+
+export const updateBurdenRecoveryAdjustment = async (
+  id: string,
+  patchBurdenRecoveryAdjustment: PatchBurdenRecoveryAdjustment,
+  options?: RequestInit,
+): Promise<BurdenRecoveryAdjustment> => {
+  return customFetch<BurdenRecoveryAdjustment>(
+    getUpdateBurdenRecoveryAdjustmentUrl(id),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(patchBurdenRecoveryAdjustment),
+    },
+  );
+};
+
+export const getUpdateBurdenRecoveryAdjustmentMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateBurdenRecoveryAdjustment>>,
+    TError,
+    { id: string; data: BodyType<PatchBurdenRecoveryAdjustment> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateBurdenRecoveryAdjustment>>,
+  TError,
+  { id: string; data: BodyType<PatchBurdenRecoveryAdjustment> },
+  TContext
+> => {
+  const mutationKey = ["updateBurdenRecoveryAdjustment"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateBurdenRecoveryAdjustment>>,
+    { id: string; data: BodyType<PatchBurdenRecoveryAdjustment> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateBurdenRecoveryAdjustment(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateBurdenRecoveryAdjustmentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateBurdenRecoveryAdjustment>>
+>;
+export type UpdateBurdenRecoveryAdjustmentMutationBody =
+  BodyType<PatchBurdenRecoveryAdjustment>;
+export type UpdateBurdenRecoveryAdjustmentMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update a burden recovery adjustment
+ */
+export const useUpdateBurdenRecoveryAdjustment = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateBurdenRecoveryAdjustment>>,
+    TError,
+    { id: string; data: BodyType<PatchBurdenRecoveryAdjustment> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateBurdenRecoveryAdjustment>>,
+  TError,
+  { id: string; data: BodyType<PatchBurdenRecoveryAdjustment> },
+  TContext
+> => {
+  return useMutation(getUpdateBurdenRecoveryAdjustmentMutationOptions(options));
+};
+
+/**
+ * @summary List recovery events for an adjustment
+ */
+export const getListBurdenRecoveryEventsUrl = (id: string) => {
+  return `/api/burden-recovery/adjustments/${id}/events`;
+};
+
+export const listBurdenRecoveryEvents = async (
+  id: string,
+  options?: RequestInit,
+): Promise<BurdenRecoveryEvent[]> => {
+  return customFetch<BurdenRecoveryEvent[]>(
+    getListBurdenRecoveryEventsUrl(id),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListBurdenRecoveryEventsQueryKey = (id: string) => {
+  return [`/api/burden-recovery/adjustments/${id}/events`] as const;
+};
+
+export const getListBurdenRecoveryEventsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listBurdenRecoveryEvents>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listBurdenRecoveryEvents>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListBurdenRecoveryEventsQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listBurdenRecoveryEvents>>
+  > = ({ signal }) =>
+    listBurdenRecoveryEvents(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listBurdenRecoveryEvents>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListBurdenRecoveryEventsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listBurdenRecoveryEvents>>
+>;
+export type ListBurdenRecoveryEventsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List recovery events for an adjustment
+ */
+
+export function useListBurdenRecoveryEvents<
+  TData = Awaited<ReturnType<typeof listBurdenRecoveryEvents>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listBurdenRecoveryEvents>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListBurdenRecoveryEventsQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Record a recovery event
+ */
+export const getRecordBurdenRecoveryEventUrl = (id: string) => {
+  return `/api/burden-recovery/adjustments/${id}/events`;
+};
+
+export const recordBurdenRecoveryEvent = async (
+  id: string,
+  createBurdenRecoveryEvent: CreateBurdenRecoveryEvent,
+  options?: RequestInit,
+): Promise<BurdenRecoveryEvent> => {
+  return customFetch<BurdenRecoveryEvent>(getRecordBurdenRecoveryEventUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createBurdenRecoveryEvent),
+  });
+};
+
+export const getRecordBurdenRecoveryEventMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof recordBurdenRecoveryEvent>>,
+    TError,
+    { id: string; data: BodyType<CreateBurdenRecoveryEvent> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof recordBurdenRecoveryEvent>>,
+  TError,
+  { id: string; data: BodyType<CreateBurdenRecoveryEvent> },
+  TContext
+> => {
+  const mutationKey = ["recordBurdenRecoveryEvent"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof recordBurdenRecoveryEvent>>,
+    { id: string; data: BodyType<CreateBurdenRecoveryEvent> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return recordBurdenRecoveryEvent(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RecordBurdenRecoveryEventMutationResult = NonNullable<
+  Awaited<ReturnType<typeof recordBurdenRecoveryEvent>>
+>;
+export type RecordBurdenRecoveryEventMutationBody =
+  BodyType<CreateBurdenRecoveryEvent>;
+export type RecordBurdenRecoveryEventMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Record a recovery event
+ */
+export const useRecordBurdenRecoveryEvent = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof recordBurdenRecoveryEvent>>,
+    TError,
+    { id: string; data: BodyType<CreateBurdenRecoveryEvent> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof recordBurdenRecoveryEvent>>,
+  TError,
+  { id: string; data: BodyType<CreateBurdenRecoveryEvent> },
+  TContext
+> => {
+  return useMutation(getRecordBurdenRecoveryEventMutationOptions(options));
+};
