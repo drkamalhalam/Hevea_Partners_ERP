@@ -11,6 +11,8 @@ export interface AgreementGeneration {
   id: string;
   agreementId: string;
   /** @nullable */
+  projectId?: string | null;
+  /** @nullable */
   templateId?: string | null;
   templateName: string;
   /** @nullable */
@@ -22,6 +24,16 @@ export interface AgreementGeneration {
    * @nullable
    */
   fileObjectPath?: string | null;
+  /**
+   * Project lifecycle stage captured at generation time
+   * @nullable
+   */
+  lifecycleStatusSnapshot?: string | null;
+  /**
+   * Agreement status captured at generation time
+   * @nullable
+   */
+  agreementStatusSnapshot?: string | null;
   /** @nullable */
   generatedBy?: string | null;
   /** @nullable */

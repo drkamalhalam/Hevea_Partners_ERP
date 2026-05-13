@@ -7,6 +7,7 @@ import { ArrowLeft, MapPin } from "lucide-react";
 import AgreementVariablePanel from "./AgreementVariablePanel";
 import AgreementGeneratePanel from "./AgreementGeneratePanel";
 import AgreementGenerationsPanel from "./AgreementGenerationsPanel";
+import AgreementAuditLog from "./AgreementAuditLog";
 
 const statusColors: Record<string, string> = {
   draft: "bg-gray-100 text-gray-800",
@@ -105,6 +106,8 @@ export default function AgreementDetails() {
       <AgreementGeneratePanel agreementId={id} />
 
       <AgreementGenerationsPanel agreementId={id} />
+
+      <AgreementAuditLog agreementId={id} />
 
       {(agreement.northBoundary || agreement.southBoundary || agreement.eastBoundary || agreement.westBoundary) && (
         <Card>

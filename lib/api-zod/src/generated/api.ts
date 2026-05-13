@@ -2156,6 +2156,7 @@ export const ListAgreementGenerationsParams = zod.object({
 export const ListAgreementGenerationsResponseItem = zod.object({
   id: zod.string().uuid(),
   agreementId: zod.string().uuid(),
+  projectId: zod.string().uuid().nullish(),
   templateId: zod.string().uuid().nullish(),
   templateName: zod.string(),
   templateVersion: zod.string().nullish(),
@@ -2168,6 +2169,14 @@ export const ListAgreementGenerationsResponseItem = zod.object({
     .string()
     .nullish()
     .describe("Path to permanently stored DOCX in object storage"),
+  lifecycleStatusSnapshot: zod
+    .string()
+    .nullish()
+    .describe("Project lifecycle stage captured at generation time"),
+  agreementStatusSnapshot: zod
+    .string()
+    .nullish()
+    .describe("Agreement status captured at generation time"),
   generatedBy: zod.string().uuid().nullish(),
   generatedByName: zod.string().nullish(),
   generatedAt: zod.coerce.date(),
@@ -2188,6 +2197,66 @@ export const CreateAgreementGenerationBody = zod.object({
   templateId: zod.string().uuid(),
   notes: zod.string().optional(),
 });
+
+/**
+ * @summary Fetch a single generation snapshot (for the immutable viewer)
+ */
+export const GetAgreementGenerationParams = zod.object({
+  id: zod.coerce.string().uuid(),
+  genId: zod.coerce.string().uuid(),
+});
+
+export const GetAgreementGenerationResponse = zod.object({
+  id: zod.string().uuid(),
+  agreementId: zod.string().uuid(),
+  projectId: zod.string().uuid().nullish(),
+  templateId: zod.string().uuid().nullish(),
+  templateName: zod.string(),
+  templateVersion: zod.string().nullish(),
+  variableSnapshot: zod
+    .record(zod.string(), zod.string())
+    .describe(
+      "Complete key-value map of all variable effective values at generation time",
+    ),
+  fileObjectPath: zod
+    .string()
+    .nullish()
+    .describe("Path to permanently stored DOCX in object storage"),
+  lifecycleStatusSnapshot: zod
+    .string()
+    .nullish()
+    .describe("Project lifecycle stage captured at generation time"),
+  agreementStatusSnapshot: zod
+    .string()
+    .nullish()
+    .describe("Agreement status captured at generation time"),
+  generatedBy: zod.string().uuid().nullish(),
+  generatedByName: zod.string().nullish(),
+  generatedAt: zod.coerce.date(),
+  notes: zod.string().nullish(),
+});
+
+/**
+ * @summary Immutable audit trail for all events on this agreement and its generations
+ */
+export const ListAgreementAuditLogParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const ListAgreementAuditLogResponseItem = zod.object({
+  id: zod.string().uuid(),
+  operation: zod.enum(["INSERT", "UPDATE", "DELETE"]),
+  tableName: zod.string(),
+  recordId: zod.string().uuid(),
+  performedByName: zod.string().nullish(),
+  summary: zod.string().describe("Human-readable description of what happened"),
+  oldData: zod.record(zod.string(), zod.unknown()).nullish(),
+  newData: zod.record(zod.string(), zod.unknown()).nullish(),
+  createdAt: zod.coerce.date(),
+});
+export const ListAgreementAuditLogResponse = zod.array(
+  ListAgreementAuditLogResponseItem,
+);
 
 /**
  * @summary Re-download the permanently stored DOCX for a historical generation

@@ -1573,6 +1573,58 @@ paths:
         "422":
           description: Template is not a DOCX or is archived
 
+  /agreements/{id}/generations/{genId}:
+    get:
+      operationId: getAgreementGeneration
+      tags: [agreements]
+      summary: Fetch a single generation snapshot (for the immutable viewer)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: genId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Single generation snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgreementGeneration"
+        "404":
+          description: Generation not found
+
+  /agreements/{id}/audit-log:
+    get:
+      operationId: listAgreementAuditLog
+      tags: [agreements]
+      summary: Immutable audit trail for all events on this agreement and its generations
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Audit entries sorted newest-first
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AgreementAuditEntry"
+        "404":
+          description: Agreement not found
+
   /agreements/{id}/generations/{genId}/download:
     get:
       operationId: downloadAgreementGeneration
@@ -2384,6 +2436,9 @@ components:
         agreementId:
           type: string
           format: uuid
+        projectId:
+          type: ["string", "null"]
+          format: uuid
         templateId:
           type: ["string", "null"]
           format: uuid
@@ -2399,6 +2454,12 @@ components:
         fileObjectPath:
           type: ["string", "null"]
           description: Path to permanently stored DOCX in object storage
+        lifecycleStatusSnapshot:
+          type: ["string", "null"]
+          description: Project lifecycle stage captured at generation time
+        agreementStatusSnapshot:
+          type: ["string", "null"]
+          description: Agreement status captured at generation time
         generatedBy:
           type: ["string", "null"]
           format: uuid
@@ -2409,6 +2470,36 @@ components:
           format: date-time
         notes:
           type: ["string", "null"]
+
+    AgreementAuditEntry:
+      type: object
+      required: [id, operation, tableName, recordId, createdAt, summary]
+      properties:
+        id:
+          type: string
+          format: uuid
+        operation:
+          type: string
+          enum: [INSERT, UPDATE, DELETE]
+        tableName:
+          type: string
+        recordId:
+          type: string
+          format: uuid
+        performedByName:
+          type: ["string", "null"]
+        summary:
+          type: string
+          description: Human-readable description of what happened
+        oldData:
+          type: ["object", "null"]
+          additionalProperties: true
+        newData:
+          type: ["object", "null"]
+          additionalProperties: true
+        createdAt:
+          type: string
+          format: date-time
 
     CreateGenerationBody:
       type: object

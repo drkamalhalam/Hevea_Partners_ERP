@@ -21,6 +21,7 @@ import type {
   ActivityItem,
   AddParticipantInput,
   Agreement,
+  AgreementAuditEntry,
   AgreementGeneration,
   AgreementInput,
   AgreementTemplate,
@@ -5842,6 +5843,196 @@ export const useCreateAgreementGeneration = <
 > => {
   return useMutation(getCreateAgreementGenerationMutationOptions(options));
 };
+
+/**
+ * @summary Fetch a single generation snapshot (for the immutable viewer)
+ */
+export const getGetAgreementGenerationUrl = (id: string, genId: string) => {
+  return `/api/agreements/${id}/generations/${genId}`;
+};
+
+export const getAgreementGeneration = async (
+  id: string,
+  genId: string,
+  options?: RequestInit,
+): Promise<AgreementGeneration> => {
+  return customFetch<AgreementGeneration>(
+    getGetAgreementGenerationUrl(id, genId),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetAgreementGenerationQueryKey = (
+  id: string,
+  genId: string,
+) => {
+  return [`/api/agreements/${id}/generations/${genId}`] as const;
+};
+
+export const getGetAgreementGenerationQueryOptions = <
+  TData = Awaited<ReturnType<typeof getAgreementGeneration>>,
+  TError = ErrorType<void>,
+>(
+  id: string,
+  genId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getAgreementGeneration>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetAgreementGenerationQueryKey(id, genId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getAgreementGeneration>>
+  > = ({ signal }) =>
+    getAgreementGeneration(id, genId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!(id && genId),
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getAgreementGeneration>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetAgreementGenerationQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getAgreementGeneration>>
+>;
+export type GetAgreementGenerationQueryError = ErrorType<void>;
+
+/**
+ * @summary Fetch a single generation snapshot (for the immutable viewer)
+ */
+
+export function useGetAgreementGeneration<
+  TData = Awaited<ReturnType<typeof getAgreementGeneration>>,
+  TError = ErrorType<void>,
+>(
+  id: string,
+  genId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getAgreementGeneration>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetAgreementGenerationQueryOptions(
+    id,
+    genId,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Immutable audit trail for all events on this agreement and its generations
+ */
+export const getListAgreementAuditLogUrl = (id: string) => {
+  return `/api/agreements/${id}/audit-log`;
+};
+
+export const listAgreementAuditLog = async (
+  id: string,
+  options?: RequestInit,
+): Promise<AgreementAuditEntry[]> => {
+  return customFetch<AgreementAuditEntry[]>(getListAgreementAuditLogUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListAgreementAuditLogQueryKey = (id: string) => {
+  return [`/api/agreements/${id}/audit-log`] as const;
+};
+
+export const getListAgreementAuditLogQueryOptions = <
+  TData = Awaited<ReturnType<typeof listAgreementAuditLog>>,
+  TError = ErrorType<void>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listAgreementAuditLog>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListAgreementAuditLogQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listAgreementAuditLog>>
+  > = ({ signal }) => listAgreementAuditLog(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listAgreementAuditLog>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListAgreementAuditLogQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listAgreementAuditLog>>
+>;
+export type ListAgreementAuditLogQueryError = ErrorType<void>;
+
+/**
+ * @summary Immutable audit trail for all events on this agreement and its generations
+ */
+
+export function useListAgreementAuditLog<
+  TData = Awaited<ReturnType<typeof listAgreementAuditLog>>,
+  TError = ErrorType<void>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listAgreementAuditLog>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListAgreementAuditLogQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary Re-download the permanently stored DOCX for a historical generation

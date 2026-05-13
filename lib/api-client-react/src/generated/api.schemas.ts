@@ -398,6 +398,8 @@ export interface AgreementGeneration {
   id: string;
   agreementId: string;
   /** @nullable */
+  projectId?: string | null;
+  /** @nullable */
   templateId?: string | null;
   templateName: string;
   /** @nullable */
@@ -409,6 +411,16 @@ export interface AgreementGeneration {
    * @nullable
    */
   fileObjectPath?: string | null;
+  /**
+   * Project lifecycle stage captured at generation time
+   * @nullable
+   */
+  lifecycleStatusSnapshot?: string | null;
+  /**
+   * Agreement status captured at generation time
+   * @nullable
+   */
+  agreementStatusSnapshot?: string | null;
   /** @nullable */
   generatedBy?: string | null;
   /** @nullable */
@@ -416,6 +428,41 @@ export interface AgreementGeneration {
   generatedAt: string;
   /** @nullable */
   notes?: string | null;
+}
+
+export type AgreementAuditEntryOperation =
+  (typeof AgreementAuditEntryOperation)[keyof typeof AgreementAuditEntryOperation];
+
+export const AgreementAuditEntryOperation = {
+  INSERT: "INSERT",
+  UPDATE: "UPDATE",
+  DELETE: "DELETE",
+} as const;
+
+/**
+ * @nullable
+ */
+export type AgreementAuditEntryOldData = { [key: string]: unknown } | null;
+
+/**
+ * @nullable
+ */
+export type AgreementAuditEntryNewData = { [key: string]: unknown } | null;
+
+export interface AgreementAuditEntry {
+  id: string;
+  operation: AgreementAuditEntryOperation;
+  tableName: string;
+  recordId: string;
+  /** @nullable */
+  performedByName?: string | null;
+  /** Human-readable description of what happened */
+  summary: string;
+  /** @nullable */
+  oldData?: AgreementAuditEntryOldData;
+  /** @nullable */
+  newData?: AgreementAuditEntryNewData;
+  createdAt: string;
 }
 
 export interface CreateGenerationBody {

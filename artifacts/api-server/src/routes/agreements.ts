@@ -6,7 +6,10 @@ import {
   partnersTable,
   activityTable,
   agreementVariableValuesTable,
+  auditLogsTable,
+  usersTable,
 } from "@workspace/db";
+import { getAuth } from "@clerk/express";
 import { eq } from "drizzle-orm";
 import {
   CreateAgreementBody,
@@ -223,6 +226,28 @@ router.put("/:id/variables", requireRole("admin", "developer"), async (req, res)
       .select()
       .from(agreementVariableValuesTable)
       .where(eq(agreementVariableValuesTable.agreementId, id));
+
+    // Write audit log for each override (non-fatal)
+    const { userId: clerkUserId } = getAuth(req);
+    const [actingUser] = clerkUserId
+      ? await db.select({ id: usersTable.id }).from(usersTable).where(eq(usersTable.clerkUserId, clerkUserId))
+      : [null];
+    for (const { name, value } of overrides) {
+      const row = stored.find((s) => s.variableName === name);
+      if (!row) continue;
+      db.insert(auditLogsTable)
+        .values({
+          userId: actingUser?.id ?? undefined,
+          tableName: "agreement_variable_values",
+          recordId: row.id,
+          operation: "UPDATE",
+          newData: { agreementId: id, variableName: name, overrideValue: value } as Record<string, unknown>,
+          ipAddress: req.ip ?? null,
+          userAgent: req.get("user-agent") ?? null,
+        })
+        .catch((err: unknown) => req.log.error({ err }, "Failed to write audit log for variable override"));
+    }
+
     res.json(buildVariablesResponse(id, stored));
   } catch (err) {
     req.log.error({ err }, "Failed to update agreement variables");
