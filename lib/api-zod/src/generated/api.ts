@@ -2147,6 +2147,57 @@ export const ResolveAgreementVariablesResponse = zod.object({
 });
 
 /**
+ * @summary List all generation history snapshots for an agreement
+ */
+export const ListAgreementGenerationsParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const ListAgreementGenerationsResponseItem = zod.object({
+  id: zod.string().uuid(),
+  agreementId: zod.string().uuid(),
+  templateId: zod.string().uuid().nullish(),
+  templateName: zod.string(),
+  templateVersion: zod.string().nullish(),
+  variableSnapshot: zod
+    .record(zod.string(), zod.string())
+    .describe(
+      "Complete key-value map of all variable effective values at generation time",
+    ),
+  fileObjectPath: zod
+    .string()
+    .nullish()
+    .describe("Path to permanently stored DOCX in object storage"),
+  generatedBy: zod.string().uuid().nullish(),
+  generatedByName: zod.string().nullish(),
+  generatedAt: zod.coerce.date(),
+  notes: zod.string().nullish(),
+});
+export const ListAgreementGenerationsResponse = zod.array(
+  ListAgreementGenerationsResponseItem,
+);
+
+/**
+ * @summary Generate a filled DOCX, store it permanently, and save an immutable variable snapshot
+ */
+export const CreateAgreementGenerationParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const CreateAgreementGenerationBody = zod.object({
+  templateId: zod.string().uuid(),
+  notes: zod.string().optional(),
+});
+
+/**
+ * @summary Re-download the permanently stored DOCX for a historical generation
+ */
+export const DownloadAgreementGenerationParams = zod.object({
+  id: zod.coerce.string().uuid(),
+  genId: zod.coerce.string().uuid(),
+});
+
+/**
  * @summary Generate a filled DOCX document by substituting template variables
  */
 export const GenerateAgreementDocumentParams = zod.object({

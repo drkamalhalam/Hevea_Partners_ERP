@@ -189,6 +189,25 @@ export class ObjectStorageService {
     return normalizedPath;
   }
 
+  /**
+   * Upload a Buffer directly to a private object storage path.
+   * Returns the normalised /objects/... path for DB storage.
+   */
+  async saveBuffer(
+    buffer: Buffer,
+    contentType: string,
+    filename: string,
+  ): Promise<string> {
+    const privateObjectDir = this.getPrivateObjectDir();
+    const objectId = randomUUID();
+    const fullPath = `${privateObjectDir}/generated/${objectId}/${filename}`;
+    const { bucketName, objectName } = parseObjectPath(fullPath);
+    const bucket = objectStorageClient.bucket(bucketName);
+    const file = bucket.file(objectName);
+    await file.save(buffer, { contentType, resumable: false });
+    return `/objects/generated/${objectId}/${filename}`;
+  }
+
   async canAccessObjectEntity({
     userId,
     objectFile,

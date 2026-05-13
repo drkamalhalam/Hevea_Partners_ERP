@@ -264,6 +264,34 @@ Dynamic placeholder substitution system for agreement templates. Replaces `{{VAR
 - Add new variables: extend `VARIABLE_REGISTRY`, add a case to `resolveVariable()` in `variableResolver.ts`, add a formatter to `formatters.ts` if needed
 - Add new data sources (contributions, ownership): create a resolver context and add cases for the new `dataSourceType`
 
+## Agreement Generation Workflow System
+
+5-step wizard for creating immutable, permanently-stored agreement documents with full generation history.
+
+**Routes:**
+- `GET /api/agreements/:id/generations` — list generation history (newest first)
+- `POST /api/agreements/:id/generations` — generate, store, and snapshot (admin/developer only)
+- `GET /api/agreements/:id/generations/:genId/download` — re-download stored DOCX
+
+**DB table:** `agreementGenerationsTable` (`lib/db/src/schema/generations.ts`) — UUID PK, agreementId FK (restrict on delete), templateId FK (set null on delete), templateName/Version (denormalized snapshot), variableSnapshot JSONB (immutable key→value of all effective values at generation time), fileObjectPath (GCS path), generatedBy FK (set null), generatedByName (denormalized), generatedAt, notes
+
+**Architecture:** Rows in this table are WRITE-ONCE — no UPDATE or DELETE through the application. Each row is a permanent historical record.
+
+**Object storage:** `ObjectStorageService.saveBuffer(buffer, contentType, filename)` — server-side Buffer upload to GCS private dir, returns `/objects/generated/{uuid}/{filename}` path.
+
+**Wizard steps (`artifacts/plantation-web/src/pages/GenerateAgreement.tsx`):**
+1. **Select Agreement** — grouped by project, card picker
+2. **Select Template** — active DOCX templates only (PDF blocked with explanation)
+3. **Review Variables** — inline progress bar + per-variable status + Auto-Resolve button; own CTA (doesn't use shared nav)
+4. **Document Preview** — full styled HTML preview of filled agreement (parties, project details, financials, ownership table, signature block); Print to PDF button via `window.print()`
+5. **Confirm & Save** — notes input, bullet summary of what will happen, calls `POST /generations`, auto-triggers DOCX download on success
+
+**History panel (`artifacts/plantation-web/src/pages/AgreementGenerationsPanel.tsx`):** Embedded at the bottom of `AgreementDetails.tsx` — lists all generations newest-first with template name, version, timestamp, generated-by name, variables-filled count, and per-row re-download button.
+
+**Sidebar:** "Generate Deed" added to Finance group (admin/developer only), route `/generate-agreement`, icon `Scroll`.
+
+**Generated hooks:** `useListAgreementGenerations`, `useCreateAgreementGeneration`, `getListAgreementGenerationsQueryKey`
+
 ## Legal Document Generation Engine
 
 Generates filled DOCX documents from stored templates by substituting `{{VARIABLE_NAME}}` tokens with the agreement's effective variable values. Preserves all original formatting: legal numbering, paragraph structure, tables, signature blocks, witness sections, headers/footers, and page layout.

@@ -1521,6 +1521,87 @@ paths:
         "404":
           description: Agreement not found
 
+  /agreements/{id}/generations:
+    get:
+      operationId: listAgreementGenerations
+      tags: [agreements]
+      summary: List all generation history snapshots for an agreement
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: List of generation records (newest first)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AgreementGeneration"
+        "404":
+          description: Agreement not found
+    post:
+      operationId: createAgreementGeneration
+      tags: [agreements]
+      summary: Generate a filled DOCX, store it permanently, and save an immutable variable snapshot
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateGenerationBody"
+      responses:
+        "201":
+          description: Generation snapshot created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgreementGeneration"
+        "404":
+          description: Agreement or template not found
+        "422":
+          description: Template is not a DOCX or is archived
+
+  /agreements/{id}/generations/{genId}/download:
+    get:
+      operationId: downloadAgreementGeneration
+      tags: [agreements]
+      summary: Re-download the permanently stored DOCX for a historical generation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: genId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Stored DOCX file
+          content:
+            application/vnd.openxmlformats-officedocument.wordprocessingml.document:
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: Generation not found or file not stored
+
   /agreements/{id}/generate-document:
     post:
       operationId: generateAgreementDocument
@@ -2292,6 +2373,52 @@ components:
           description: Number of variables still without any value
         totalCount:
           type: integer
+
+    AgreementGeneration:
+      type: object
+      required: [id, agreementId, templateName, variableSnapshot, generatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        agreementId:
+          type: string
+          format: uuid
+        templateId:
+          type: ["string", "null"]
+          format: uuid
+        templateName:
+          type: string
+        templateVersion:
+          type: ["string", "null"]
+        variableSnapshot:
+          type: object
+          additionalProperties:
+            type: string
+          description: Complete key-value map of all variable effective values at generation time
+        fileObjectPath:
+          type: ["string", "null"]
+          description: Path to permanently stored DOCX in object storage
+        generatedBy:
+          type: ["string", "null"]
+          format: uuid
+        generatedByName:
+          type: ["string", "null"]
+        generatedAt:
+          type: string
+          format: date-time
+        notes:
+          type: ["string", "null"]
+
+    CreateGenerationBody:
+      type: object
+      required: [templateId]
+      properties:
+        templateId:
+          type: string
+          format: uuid
+        notes:
+          type: string
 
     GenerateDocumentRequest:
       type: object

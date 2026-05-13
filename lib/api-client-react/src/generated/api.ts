@@ -21,6 +21,7 @@ import type {
   ActivityItem,
   AddParticipantInput,
   Agreement,
+  AgreementGeneration,
   AgreementInput,
   AgreementTemplate,
   AgreementUpdate,
@@ -28,6 +29,7 @@ import type {
   AssignProjectInput,
   CancelMaturityBody,
   CreateClaimantInput,
+  CreateGenerationBody,
   CreateNomineeInput,
   CreateTemplateBody,
   DashboardSummary,
@@ -5660,6 +5662,288 @@ export const useResolveAgreementVariables = <
 > => {
   return useMutation(getResolveAgreementVariablesMutationOptions(options));
 };
+
+/**
+ * @summary List all generation history snapshots for an agreement
+ */
+export const getListAgreementGenerationsUrl = (id: string) => {
+  return `/api/agreements/${id}/generations`;
+};
+
+export const listAgreementGenerations = async (
+  id: string,
+  options?: RequestInit,
+): Promise<AgreementGeneration[]> => {
+  return customFetch<AgreementGeneration[]>(
+    getListAgreementGenerationsUrl(id),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListAgreementGenerationsQueryKey = (id: string) => {
+  return [`/api/agreements/${id}/generations`] as const;
+};
+
+export const getListAgreementGenerationsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listAgreementGenerations>>,
+  TError = ErrorType<void>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listAgreementGenerations>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListAgreementGenerationsQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listAgreementGenerations>>
+  > = ({ signal }) =>
+    listAgreementGenerations(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listAgreementGenerations>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListAgreementGenerationsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listAgreementGenerations>>
+>;
+export type ListAgreementGenerationsQueryError = ErrorType<void>;
+
+/**
+ * @summary List all generation history snapshots for an agreement
+ */
+
+export function useListAgreementGenerations<
+  TData = Awaited<ReturnType<typeof listAgreementGenerations>>,
+  TError = ErrorType<void>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listAgreementGenerations>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListAgreementGenerationsQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Generate a filled DOCX, store it permanently, and save an immutable variable snapshot
+ */
+export const getCreateAgreementGenerationUrl = (id: string) => {
+  return `/api/agreements/${id}/generations`;
+};
+
+export const createAgreementGeneration = async (
+  id: string,
+  createGenerationBody: CreateGenerationBody,
+  options?: RequestInit,
+): Promise<AgreementGeneration> => {
+  return customFetch<AgreementGeneration>(getCreateAgreementGenerationUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createGenerationBody),
+  });
+};
+
+export const getCreateAgreementGenerationMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createAgreementGeneration>>,
+    TError,
+    { id: string; data: BodyType<CreateGenerationBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createAgreementGeneration>>,
+  TError,
+  { id: string; data: BodyType<CreateGenerationBody> },
+  TContext
+> => {
+  const mutationKey = ["createAgreementGeneration"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createAgreementGeneration>>,
+    { id: string; data: BodyType<CreateGenerationBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return createAgreementGeneration(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateAgreementGenerationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createAgreementGeneration>>
+>;
+export type CreateAgreementGenerationMutationBody =
+  BodyType<CreateGenerationBody>;
+export type CreateAgreementGenerationMutationError = ErrorType<void>;
+
+/**
+ * @summary Generate a filled DOCX, store it permanently, and save an immutable variable snapshot
+ */
+export const useCreateAgreementGeneration = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createAgreementGeneration>>,
+    TError,
+    { id: string; data: BodyType<CreateGenerationBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createAgreementGeneration>>,
+  TError,
+  { id: string; data: BodyType<CreateGenerationBody> },
+  TContext
+> => {
+  return useMutation(getCreateAgreementGenerationMutationOptions(options));
+};
+
+/**
+ * @summary Re-download the permanently stored DOCX for a historical generation
+ */
+export const getDownloadAgreementGenerationUrl = (
+  id: string,
+  genId: string,
+) => {
+  return `/api/agreements/${id}/generations/${genId}/download`;
+};
+
+export const downloadAgreementGeneration = async (
+  id: string,
+  genId: string,
+  options?: RequestInit,
+): Promise<Blob> => {
+  return customFetch<Blob>(getDownloadAgreementGenerationUrl(id, genId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getDownloadAgreementGenerationQueryKey = (
+  id: string,
+  genId: string,
+) => {
+  return [`/api/agreements/${id}/generations/${genId}/download`] as const;
+};
+
+export const getDownloadAgreementGenerationQueryOptions = <
+  TData = Awaited<ReturnType<typeof downloadAgreementGeneration>>,
+  TError = ErrorType<void>,
+>(
+  id: string,
+  genId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof downloadAgreementGeneration>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getDownloadAgreementGenerationQueryKey(id, genId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof downloadAgreementGeneration>>
+  > = ({ signal }) =>
+    downloadAgreementGeneration(id, genId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!(id && genId),
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof downloadAgreementGeneration>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type DownloadAgreementGenerationQueryResult = NonNullable<
+  Awaited<ReturnType<typeof downloadAgreementGeneration>>
+>;
+export type DownloadAgreementGenerationQueryError = ErrorType<void>;
+
+/**
+ * @summary Re-download the permanently stored DOCX for a historical generation
+ */
+
+export function useDownloadAgreementGeneration<
+  TData = Awaited<ReturnType<typeof downloadAgreementGeneration>>,
+  TError = ErrorType<void>,
+>(
+  id: string,
+  genId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof downloadAgreementGeneration>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getDownloadAgreementGenerationQueryOptions(
+    id,
+    genId,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary Generate a filled DOCX document by substituting template variables

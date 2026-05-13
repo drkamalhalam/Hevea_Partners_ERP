@@ -389,6 +389,40 @@ export interface AgreementVariablesResponse {
   totalCount: number;
 }
 
+/**
+ * Complete key-value map of all variable effective values at generation time
+ */
+export type AgreementGenerationVariableSnapshot = { [key: string]: string };
+
+export interface AgreementGeneration {
+  id: string;
+  agreementId: string;
+  /** @nullable */
+  templateId?: string | null;
+  templateName: string;
+  /** @nullable */
+  templateVersion?: string | null;
+  /** Complete key-value map of all variable effective values at generation time */
+  variableSnapshot: AgreementGenerationVariableSnapshot;
+  /**
+   * Path to permanently stored DOCX in object storage
+   * @nullable
+   */
+  fileObjectPath?: string | null;
+  /** @nullable */
+  generatedBy?: string | null;
+  /** @nullable */
+  generatedByName?: string | null;
+  generatedAt: string;
+  /** @nullable */
+  notes?: string | null;
+}
+
+export interface CreateGenerationBody {
+  templateId: string;
+  notes?: string;
+}
+
 export interface GenerateDocumentRequest {
   /** ID of the agreement template to use for generation */
   templateId: string;

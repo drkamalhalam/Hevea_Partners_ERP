@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, MapPin } from "lucide-react";
 import AgreementVariablePanel from "./AgreementVariablePanel";
 import AgreementGeneratePanel from "./AgreementGeneratePanel";
+import AgreementGenerationsPanel from "./AgreementGenerationsPanel";
 
 const statusColors: Record<string, string> = {
   draft: "bg-gray-100 text-gray-800",
@@ -102,6 +103,8 @@ export default function AgreementDetails() {
       <AgreementVariablePanel agreementId={id} />
 
       <AgreementGeneratePanel agreementId={id} />
+
+      <AgreementGenerationsPanel agreementId={id} />
 
       {(agreement.northBoundary || agreement.southBoundary || agreement.eastBoundary || agreement.westBoundary) && (
         <Card>
