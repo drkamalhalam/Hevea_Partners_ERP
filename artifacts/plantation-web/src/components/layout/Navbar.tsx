@@ -34,6 +34,7 @@ import {
 } from "lucide-react";
 import Sidebar from "./Sidebar";
 import { useRole, ROLE_LABELS, ROLE_COLORS } from "@/contexts/RoleContext";
+import { useProjectFilter } from "@/contexts/ProjectFilterContext";
 import { useListProjects } from "@workspace/api-client-react";
 import { cn } from "@/lib/utils";
 import {
@@ -41,6 +42,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+
+// ── Page title map ────────────────────────────────────────────────────────
 
 const PAGE_TITLES: Record<string, { label: string; parent?: string }> = {
   "/dashboard": { label: "Dashboard" },
@@ -62,19 +65,40 @@ const PAGE_TITLES: Record<string, { label: string; parent?: string }> = {
   "/stock": { label: "Stock Register", parent: "Operations" },
 };
 
-// Mock notifications
+// ── Mock notifications ─────────────────────────────────────────────────────
+
 const MOCK_NOTIFICATIONS = [
-  { id: 1, title: "Agreement renewal due", desc: "Manu Valley Plantation — overdue by 2 days", time: "2h ago", unread: true },
-  { id: 2, title: "New production record logged", desc: "180 kg sold @ ₹220/kg — Ambassa Northern", time: "5h ago", unread: true },
-  { id: 3, title: "Quarterly report ready", desc: "Q1 2026 plantation report is available", time: "1d ago", unread: false },
+  {
+    id: 1,
+    title: "Agreement renewal due",
+    desc: "Manu Valley Plantation — overdue by 2 days",
+    time: "2h ago",
+    unread: true,
+  },
+  {
+    id: 2,
+    title: "New production record logged",
+    desc: "180 kg sold @ ₹220/kg — Ambassa Northern",
+    time: "5h ago",
+    unread: true,
+  },
+  {
+    id: 3,
+    title: "Quarterly report ready",
+    desc: "Q1 2026 plantation report is available",
+    time: "1d ago",
+    unread: false,
+  },
 ];
+
+// ── Project selector ───────────────────────────────────────────────────────
 
 function ProjectSelector() {
   const { data: projects = [] } = useListProjects();
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const { selectedProjectId, setSelectedProjectId } = useProjectFilter();
   const [open, setOpen] = useState(false);
 
-  const selected = projects.find((p) => p.id === selectedId);
+  const selected = projects.find((p) => p.id === selectedProjectId);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -93,21 +117,29 @@ function ProjectSelector() {
       </PopoverTrigger>
       <PopoverContent className="w-56 p-1" align="start">
         <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 py-1.5">
-          Switch Project
+          Filter by Project
         </p>
         <button
           className="w-full flex items-center gap-2 px-2 py-1.5 rounded text-sm hover:bg-accent transition-colors"
-          onClick={() => { setSelectedId(null); setOpen(false); }}
+          onClick={() => {
+            setSelectedProjectId(null);
+            setOpen(false);
+          }}
         >
           <Trees className="w-3.5 h-3.5 text-muted-foreground" />
           <span className="flex-1 text-left">All Projects</span>
-          {selectedId === null && <Check className="w-3 h-3 text-emerald-600" />}
+          {selectedProjectId === null && (
+            <Check className="w-3 h-3 text-emerald-600" />
+          )}
         </button>
         {projects.map((p) => (
           <button
             key={p.id}
             className="w-full flex items-center gap-2 px-2 py-1.5 rounded text-sm hover:bg-accent transition-colors"
-            onClick={() => { setSelectedId(p.id); setOpen(false); }}
+            onClick={() => {
+              setSelectedProjectId(p.id);
+              setOpen(false);
+            }}
           >
             <span
               className={cn(
@@ -122,13 +154,17 @@ function ProjectSelector() {
               )}
             />
             <span className="flex-1 text-left truncate">{p.name}</span>
-            {selectedId === p.id && <Check className="w-3 h-3 text-emerald-600" />}
+            {selectedProjectId === p.id && (
+              <Check className="w-3 h-3 text-emerald-600" />
+            )}
           </button>
         ))}
       </PopoverContent>
     </Popover>
   );
 }
+
+// ── Notifications dropdown ─────────────────────────────────────────────────
 
 function NotificationsDropdown() {
   const unreadCount = MOCK_NOTIFICATIONS.filter((n) => n.unread).length;
@@ -165,11 +201,24 @@ function NotificationsDropdown() {
             )}
           >
             <div className="flex items-center gap-2 w-full">
-              {n.unread && <span className="w-1.5 h-1.5 rounded-full bg-blue-500 flex-shrink-0" />}
-              <span className={cn("text-xs font-medium", !n.unread && "ml-3.5")}>{n.title}</span>
-              <span className="ml-auto text-[10px] text-muted-foreground whitespace-nowrap">{n.time}</span>
+              {n.unread && (
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 flex-shrink-0" />
+              )}
+              <span
+                className={cn(
+                  "text-xs font-medium",
+                  !n.unread && "ml-3.5"
+                )}
+              >
+                {n.title}
+              </span>
+              <span className="ml-auto text-[10px] text-muted-foreground whitespace-nowrap">
+                {n.time}
+              </span>
             </div>
-            <p className="text-[11px] text-muted-foreground ml-3.5 leading-tight">{n.desc}</p>
+            <p className="text-[11px] text-muted-foreground ml-3.5 leading-tight">
+              {n.desc}
+            </p>
           </DropdownMenuItem>
         ))}
         <DropdownMenuSeparator />
@@ -180,6 +229,8 @@ function NotificationsDropdown() {
     </DropdownMenu>
   );
 }
+
+// ── Navbar ─────────────────────────────────────────────────────────────────
 
 export default function Navbar() {
   const { user } = useUser();
@@ -202,7 +253,11 @@ export default function Navbar() {
       {/* Mobile hamburger */}
       <Sheet>
         <SheetTrigger asChild>
-          <Button variant="ghost" size="icon" className="md:hidden -ml-1 h-8 w-8 flex-shrink-0">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden -ml-1 h-8 w-8 flex-shrink-0"
+          >
             <Menu className="h-5 w-5" />
             <span className="sr-only">Open menu</span>
           </Button>
@@ -219,14 +274,16 @@ export default function Navbar() {
           {page?.label ?? "Hevea Partners"}
         </span>
         {page?.parent && (
-          <span className="text-muted-foreground/50 text-xs">/ {page.parent}</span>
+          <span className="text-muted-foreground/50 text-xs">
+            / {page.parent}
+          </span>
         )}
       </div>
 
       {/* Project selector */}
       <ProjectSelector />
 
-      {/* Search — expands on click */}
+      {/* Search bar — desktop */}
       <div className="flex-1 hidden md:flex justify-center max-w-xs mx-auto">
         <div className="relative w-full">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
@@ -237,12 +294,12 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Spacer on mobile */}
+      {/* Spacer — mobile */}
       <div className="flex-1 md:hidden" />
 
       {/* Right actions */}
       <div className="flex items-center gap-1">
-        {/* Mobile search button */}
+        {/* Mobile search */}
         <Button
           variant="ghost"
           size="icon"
@@ -252,7 +309,7 @@ export default function Navbar() {
           <Search className="h-4 w-4" />
         </Button>
 
-        {/* Theme toggle placeholder */}
+        {/* Theme toggle (placeholder) */}
         <Button
           variant="ghost"
           size="icon"
@@ -263,13 +320,15 @@ export default function Navbar() {
           {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
         </Button>
 
-        {/* Notifications */}
         <NotificationsDropdown />
 
-        {/* User profile dropdown */}
+        {/* User profile */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 flex items-center gap-2 px-2 rounded-lg">
+            <Button
+              variant="ghost"
+              className="h-8 flex items-center gap-2 px-2 rounded-lg"
+            >
               <Avatar className="h-6 w-6">
                 <AvatarImage src={user?.imageUrl} alt={user?.fullName ?? ""} />
                 <AvatarFallback className="text-[10px] font-bold bg-emerald-100 text-emerald-800">
@@ -284,11 +343,12 @@ export default function Navbar() {
               <ChevronDown className="h-3 w-3 text-muted-foreground hidden sm:block" />
             </Button>
           </DropdownMenuTrigger>
-
           <DropdownMenuContent align="end" className="w-60">
             <DropdownMenuLabel className="font-normal py-2.5">
               <div className="space-y-1">
-                <p className="text-sm font-semibold leading-none">{user?.fullName ?? "User"}</p>
+                <p className="text-sm font-semibold leading-none">
+                  {user?.fullName ?? "User"}
+                </p>
                 <p className="text-xs text-muted-foreground leading-none truncate">
                   {user?.primaryEmailAddress?.emailAddress}
                 </p>
@@ -323,7 +383,7 @@ export default function Navbar() {
         </DropdownMenu>
       </div>
 
-      {/* Mobile search bar (expands below header) */}
+      {/* Mobile search bar — expands below header */}
       {searchOpen && (
         <div className="absolute top-14 left-0 right-0 bg-white border-b px-4 py-2 md:hidden z-40">
           <div className="relative">

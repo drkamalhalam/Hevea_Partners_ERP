@@ -2,10 +2,13 @@ import { Link, useLocation } from "wouter";
 import {
   LayoutDashboard,
   FolderKanban,
+  Briefcase,
   FileSignature,
   HandCoins,
   Receipt,
+  Scale,
   PackageOpen,
+  Warehouse,
   ShoppingCart,
   Truck,
   BarChart3,
@@ -18,7 +21,10 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { useRole, ROLE_LABELS, ROLE_COLORS } from "@/contexts/RoleContext";
+import type { UserRole } from "@/contexts/RoleContext";
 import { useSidebar } from "@/contexts/SidebarContext";
+import { useProjectFilter } from "@/contexts/ProjectFilterContext";
+import { useListProjects } from "@workspace/api-client-react";
 import { cn } from "@/lib/utils";
 import {
   Tooltip,
@@ -27,11 +33,13 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
+// ── Nav item definition ───────────────────────────────────────────────────
+
 interface NavItem {
   name: string;
   href: string;
   icon: React.ElementType;
-  adminOnly?: boolean;
+  roles?: UserRole[];
 }
 
 interface NavGroup {
@@ -45,59 +53,135 @@ const navGroups: NavGroup[] = [
     items: [
       { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
       { name: "Projects", href: "/projects", icon: FolderKanban },
+      {
+        name: "My Portfolio",
+        href: "/my-portfolio",
+        icon: Briefcase,
+        roles: ["landowner", "investor", "employee", "operational_staff"],
+      },
     ],
   },
   {
     label: "Finance",
     items: [
-      { name: "Agreements", href: "/agreements", icon: FileSignature },
-      { name: "Contributions", href: "/contributions", icon: HandCoins },
-      { name: "Expenditure", href: "/expenditure", icon: Receipt },
+      {
+        name: "Agreements",
+        href: "/agreements",
+        icon: FileSignature,
+        roles: ["admin", "developer", "landowner", "investor"],
+      },
+      {
+        name: "Contributions",
+        href: "/contributions",
+        icon: HandCoins,
+        roles: ["admin", "developer"],
+      },
+      {
+        name: "Expenditure",
+        href: "/expenditure",
+        icon: Receipt,
+        roles: ["admin", "developer", "landowner"],
+      },
     ],
   },
   {
     label: "Operations",
     items: [
-      { name: "Inventory", href: "/inventory", icon: PackageOpen },
-      { name: "Sales", href: "/sales", icon: ShoppingCart },
-      { name: "Distribution", href: "/distribution", icon: Truck },
+      {
+        name: "Production",
+        href: "/production",
+        icon: Scale,
+        roles: ["admin", "developer", "employee"],
+      },
+      {
+        name: "Inventory",
+        href: "/inventory",
+        icon: PackageOpen,
+        roles: ["admin", "developer", "employee", "operational_staff"],
+      },
+      {
+        name: "Stock",
+        href: "/stock",
+        icon: Warehouse,
+        roles: ["admin", "developer", "employee", "operational_staff"],
+      },
+      {
+        name: "Sales",
+        href: "/sales",
+        icon: ShoppingCart,
+        roles: ["admin", "developer"],
+      },
+      {
+        name: "Distribution",
+        href: "/distribution",
+        icon: Truck,
+        roles: ["admin", "developer", "landowner", "operational_staff"],
+      },
     ],
   },
   {
     label: "Analytics",
     items: [
-      { name: "Reports", href: "/reports", icon: BarChart3 },
-      { name: "Documents", href: "/documents", icon: Files },
+      {
+        name: "Reports",
+        href: "/reports",
+        icon: BarChart3,
+        roles: ["admin", "developer", "investor"],
+      },
+      {
+        name: "Documents",
+        href: "/documents",
+        icon: Files,
+        roles: ["admin", "developer", "landowner", "investor"],
+      },
     ],
   },
   {
     label: "Governance",
     items: [
-      { name: "Governance", href: "/governance", icon: Building2 },
+      {
+        name: "Governance",
+        href: "/governance",
+        icon: Building2,
+        roles: ["admin", "developer"],
+      },
       { name: "Notifications", href: "/notifications", icon: Bell },
     ],
   },
   {
     label: "System",
     items: [
-      { name: "Admin", href: "/admin", icon: ShieldCheck, adminOnly: true },
+      { name: "Admin", href: "/admin", icon: ShieldCheck, roles: ["admin"] },
     ],
   },
 ];
 
+const PROJECT_STATUS_DOT: Record<string, string> = {
+  planning: "bg-blue-400",
+  developing: "bg-amber-400",
+  maturing: "bg-emerald-400",
+  tapping: "bg-green-500",
+  completed: "bg-gray-400",
+};
+
+// ── Sidebar component ─────────────────────────────────────────────────────
+
 export default function Sidebar() {
   const [location] = useLocation();
-  const { role, isAdmin } = useRole();
+  const { role, canAccessAllProjects } = useRole();
   const { isCollapsed, toggle } = useSidebar();
+  const { selectedProjectId, setSelectedProjectId } = useProjectFilter();
+  const { data: projects = [] } = useListProjects();
 
   return (
     <TooltipProvider delayDuration={0}>
       <div className="flex flex-col h-full bg-gray-950 text-gray-100 overflow-hidden">
+
         {/* Brand header */}
         <div
           className={cn(
             "flex items-center border-b border-gray-800 flex-shrink-0 h-14",
-            isCollapsed ? "px-0 justify-center" : "px-4 gap-3"
+            isCollapsed ? "justify-center px-0" : "px-4 gap-3"
           )}
         >
           <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-600 flex-shrink-0">
@@ -130,10 +214,10 @@ export default function Sidebar() {
         )}
 
         {/* Navigation */}
-        <nav className="flex-1 px-2 py-3 space-y-4 overflow-y-auto overflow-x-hidden">
+        <nav className="flex-1 px-2 py-3 space-y-4 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-track-gray-900 scrollbar-thumb-gray-700">
           {navGroups.map((group) => {
             const visibleItems = group.items.filter(
-              (item) => !item.adminOnly || isAdmin
+              (item) => !item.roles || item.roles.includes(role)
             );
             if (visibleItems.length === 0) return null;
 
@@ -144,9 +228,8 @@ export default function Sidebar() {
                     {group.label}
                   </p>
                 )}
-                {isCollapsed && (
-                  <div className="h-px bg-gray-800 mx-1 mb-2" />
-                )}
+                {isCollapsed && <div className="h-px bg-gray-800 mx-1 mb-2" />}
+
                 <div className="space-y-0.5">
                   {visibleItems.map((item) => {
                     const isActive =
@@ -169,8 +252,7 @@ export default function Sidebar() {
                         >
                           <Icon
                             className={cn(
-                              "flex-shrink-0",
-                              isCollapsed ? "w-4.5 h-4.5" : "w-4 h-4",
+                              "flex-shrink-0 w-4 h-4",
                               isActive
                                 ? "text-white"
                                 : "text-gray-500 group-hover:text-gray-300"
@@ -205,6 +287,54 @@ export default function Sidebar() {
               </div>
             );
           })}
+
+          {/* My Projects mini-list — only for role-restricted users */}
+          {!canAccessAllProjects && projects.length > 0 && !isCollapsed && (
+            <div>
+              <p className="px-2 mb-1 text-[9px] font-bold uppercase tracking-widest text-gray-600">
+                My Projects
+              </p>
+              <div className="space-y-0.5">
+                {/* "All" deselect option */}
+                <button
+                  onClick={() => setSelectedProjectId(null)}
+                  className={cn(
+                    "w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all",
+                    selectedProjectId === null
+                      ? "text-gray-300 bg-gray-800"
+                      : "text-gray-500 hover:text-gray-300 hover:bg-gray-800"
+                  )}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-gray-500 flex-shrink-0" />
+                  <span className="truncate">All Projects</span>
+                </button>
+                {projects.map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() =>
+                      setSelectedProjectId(
+                        selectedProjectId === p.id ? null : p.id
+                      )
+                    }
+                    className={cn(
+                      "w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all",
+                      selectedProjectId === p.id
+                        ? "bg-emerald-600/20 text-emerald-400"
+                        : "text-gray-500 hover:text-gray-300 hover:bg-gray-800"
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "w-1.5 h-1.5 rounded-full flex-shrink-0",
+                        PROJECT_STATUS_DOT[p.status] ?? "bg-gray-500"
+                      )}
+                    />
+                    <span className="truncate flex-1 text-left">{p.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </nav>
 
         {/* Collapse toggle */}

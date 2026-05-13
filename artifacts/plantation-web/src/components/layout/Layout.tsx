@@ -2,6 +2,7 @@ import { ReactNode } from "react";
 import Sidebar from "./Sidebar";
 import Navbar from "./Navbar";
 import { SidebarProvider, useSidebar } from "@/contexts/SidebarContext";
+import { ProjectFilterProvider } from "@/contexts/ProjectFilterContext";
 import { cn } from "@/lib/utils";
 
 function LayoutInner({ children }: { children: ReactNode }) {
@@ -38,7 +39,9 @@ function LayoutInner({ children }: { children: ReactNode }) {
 export default function Layout({ children }: { children: ReactNode }) {
   return (
     <SidebarProvider>
-      <LayoutInner>{children}</LayoutInner>
+      <ProjectFilterProvider>
+        <LayoutInner>{children}</LayoutInner>
+      </ProjectFilterProvider>
     </SidebarProvider>
   );
 }
