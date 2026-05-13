@@ -4008,6 +4008,134 @@ export interface InventoryAnalytics {
   lowStockAlerts: LowStockAlert[];
 }
 
+export interface SaleAuditFieldChange {
+  field: string;
+  oldValue?: string | number | null;
+  newValue?: string | number | null;
+}
+
+export type SaleAuditEventRiskLevel =
+  (typeof SaleAuditEventRiskLevel)[keyof typeof SaleAuditEventRiskLevel];
+
+export const SaleAuditEventRiskLevel = {
+  normal: "normal",
+  watch: "watch",
+  flag: "flag",
+} as const;
+
+export interface SaleAuditEvent {
+  id: string;
+  transactionId?: string;
+  saleNumber: string;
+  projectId?: string;
+  eventType: string;
+  entityType: string;
+  entityId?: string;
+  description: string;
+  fieldChanges: SaleAuditFieldChange[];
+  riskLevel: SaleAuditEventRiskLevel;
+  riskReason?: string;
+  actorName: string;
+  actorRole: string;
+  createdAt: string;
+}
+
+export interface SaleAuditLog {
+  transactionId: string;
+  saleNumber: string;
+  totalEvents: number;
+  flagCount: number;
+  watchCount: number;
+  events: SaleAuditEvent[];
+}
+
+export interface SaleGovernanceAlerts {
+  flagCount: number;
+  watchCount: number;
+  totalCount: number;
+  events: SaleAuditEvent[];
+}
+
+export type SaleDocumentDocumentType =
+  (typeof SaleDocumentDocumentType)[keyof typeof SaleDocumentDocumentType];
+
+export const SaleDocumentDocumentType = {
+  invoice: "invoice",
+  buyer_document: "buyer_document",
+  sales_proof: "sales_proof",
+  operational_record: "operational_record",
+  other: "other",
+} as const;
+
+export type SaleDocumentStatus =
+  (typeof SaleDocumentStatus)[keyof typeof SaleDocumentStatus];
+
+export const SaleDocumentStatus = {
+  active: "active",
+  archived: "archived",
+} as const;
+
+export interface SaleDocument {
+  id: string;
+  transactionId: string;
+  saleNumber: string;
+  projectId?: string;
+  documentType: SaleDocumentDocumentType;
+  title: string;
+  description?: string;
+  fileObjectPath: string;
+  mimeType: string;
+  fileSizeBytes?: number;
+  originalFileName: string;
+  status: SaleDocumentStatus;
+  uploadedByName: string;
+  archivedAt?: string;
+  archivedByName?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CreateSaleDocumentBodyDocumentType =
+  (typeof CreateSaleDocumentBodyDocumentType)[keyof typeof CreateSaleDocumentBodyDocumentType];
+
+export const CreateSaleDocumentBodyDocumentType = {
+  invoice: "invoice",
+  buyer_document: "buyer_document",
+  sales_proof: "sales_proof",
+  operational_record: "operational_record",
+  other: "other",
+} as const;
+
+export interface CreateSaleDocumentBody {
+  documentType?: CreateSaleDocumentBodyDocumentType;
+  title: string;
+  description?: string;
+  fileObjectPath: string;
+  mimeType: string;
+  fileSizeBytes?: number;
+  originalFileName: string;
+  notes?: string;
+}
+
+export type UpdateSaleDocumentBodyDocumentType =
+  (typeof UpdateSaleDocumentBodyDocumentType)[keyof typeof UpdateSaleDocumentBodyDocumentType];
+
+export const UpdateSaleDocumentBodyDocumentType = {
+  invoice: "invoice",
+  buyer_document: "buyer_document",
+  sales_proof: "sales_proof",
+  operational_record: "operational_record",
+  other: "other",
+} as const;
+
+export interface UpdateSaleDocumentBody {
+  title?: string;
+  description?: string;
+  documentType?: UpdateSaleDocumentBodyDocumentType;
+  notes?: string;
+}
+
 export interface SuccessResponse {
   success: boolean;
 }
@@ -4594,3 +4722,30 @@ export type ListSalesParams = {
 export type GetSalesSummaryParams = {
   projectId?: string;
 };
+
+export type GetSaleGovernanceAlertsParams = {
+  projectId?: string;
+  riskLevel?: GetSaleGovernanceAlertsRiskLevel;
+  from?: string;
+  to?: string;
+};
+
+export type GetSaleGovernanceAlertsRiskLevel =
+  (typeof GetSaleGovernanceAlertsRiskLevel)[keyof typeof GetSaleGovernanceAlertsRiskLevel];
+
+export const GetSaleGovernanceAlertsRiskLevel = {
+  watch: "watch",
+  flag: "flag",
+} as const;
+
+export type ListSaleDocumentsParams = {
+  status?: ListSaleDocumentsStatus;
+};
+
+export type ListSaleDocumentsStatus =
+  (typeof ListSaleDocumentsStatus)[keyof typeof ListSaleDocumentsStatus];
+
+export const ListSaleDocumentsStatus = {
+  active: "active",
+  archived: "archived",
+} as const;

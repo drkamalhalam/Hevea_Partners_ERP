@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { format, parseISO } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
-import type { Buyer, SaleDetail, SalesTransaction } from "@workspace/api-client-react";
+import type { Buyer, SaleDetail, SalesTransaction, SaleDocument } from "@workspace/api-client-react";
 import {
   useListSales,
   useGetSale,
@@ -18,11 +18,16 @@ import {
   useUpdateBuyer,
   useListProjects,
   useListProductionBatches,
+  useListSaleDocuments,
+  useCreateSaleDocument,
+  useArchiveSaleDocument,
+  useRequestUploadUrl,
   getListSalesQueryKey,
   getGetSalesSummaryQueryKey,
   getListBuyersQueryKey,
   getGetSaleQueryKey,
   getListProductionBatchesQueryKey,
+  getListSaleDocumentsQueryKey,
 } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -85,7 +90,13 @@ import {
   IndianRupee,
   FileText,
   BarChart3,
+  Paperclip,
+  Upload,
+  Download,
+  ScrollText,
+  Archive,
 } from "lucide-react";
+import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { useRole } from "@/contexts/RoleContext";
 import { useProjectFilter } from "@/contexts/ProjectFilterContext";
@@ -596,6 +607,259 @@ function SaleDetailPanel({ txId, onClose }: { txId: string; onClose: () => void 
       {saleDetail.confirmedAt && (
         <div className="text-xs text-slate-500">
           Confirmed by {saleDetail.confirmedByName} · {fmtDate(saleDetail.confirmedAt)}
+        </div>
+      )}
+
+      {/* Documents */}
+      <SaleDocumentsPanel txId={txId} canManage={canManage} isAdmin={isAdmin} />
+
+      {/* Audit trail link */}
+      <div className="flex items-center justify-between border-t border-white/5 pt-3">
+        <span className="text-xs text-slate-500">Edit history &amp; governance audit</span>
+        <Link href="/sales/audit">
+          <Button variant="ghost" size="sm" className="h-7 text-xs text-sky-400 hover:text-sky-300 hover:bg-sky-500/10 gap-1.5">
+            <ScrollText className="h-3.5 w-3.5" /> View Audit Trail
+          </Button>
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+// ── Sale Documents Panel ───────────────────────────────────────────────────────
+
+const DOC_TYPE_LABELS: Record<string, string> = {
+  invoice: "Invoice",
+  buyer_document: "Buyer Doc",
+  sales_proof: "Sales Proof",
+  operational_record: "Operational",
+  other: "Other",
+};
+
+function SaleDocumentsPanel({
+  txId,
+  canManage,
+  isAdmin,
+}: {
+  txId: string;
+  canManage: boolean;
+  isAdmin: boolean;
+}) {
+  const { toast } = useToast();
+  const qc = useQueryClient();
+  const [expanded, setExpanded] = useState(false);
+  const [showUpload, setShowUpload] = useState(false);
+  const [uploading, setUploading] = useState(false);
+
+  const [docForm, setDocForm] = useState({
+    displayName: "",
+    documentType: "invoice",
+    description: "",
+    file: null as File | null,
+  });
+
+  const { data: docsData, isLoading } = useListSaleDocuments(txId, {}, {
+    query: {
+      enabled: expanded,
+      queryKey: getListSaleDocumentsQueryKey(txId, {}),
+    },
+  });
+  const docs: SaleDocument[] = (docsData as unknown as { documents?: SaleDocument[] })?.documents ?? [];
+
+  const requestUploadUrl = useRequestUploadUrl();
+  const createDoc = useCreateSaleDocument();
+  const archiveDoc = useArchiveSaleDocument();
+
+  function invalidateDocs() {
+    qc.invalidateQueries({ queryKey: getListSaleDocumentsQueryKey(txId, {}) });
+  }
+
+  async function handleUpload() {
+    if (!docForm.file || !docForm.displayName) return;
+    setUploading(true);
+    try {
+      const urlRes = await requestUploadUrl.mutateAsync({
+        data: {
+          name: docForm.file.name,
+          size: docForm.file.size,
+          contentType: docForm.file.type || "application/octet-stream",
+        },
+      });
+      const uploadUrl = (urlRes as unknown as { uploadUrl: string; objectPath: string });
+      await fetch(uploadUrl.uploadUrl, {
+        method: "PUT",
+        body: docForm.file,
+        headers: { "Content-Type": docForm.file.type || "application/octet-stream" },
+      });
+      await createDoc.mutateAsync({
+        id: txId,
+        data: {
+          title: docForm.displayName,
+          documentType: docForm.documentType as "invoice" | "buyer_document" | "sales_proof" | "operational_record" | "other",
+          description: docForm.description || undefined,
+          fileObjectPath: uploadUrl.objectPath,
+          originalFileName: docForm.file.name,
+          mimeType: docForm.file.type || "application/octet-stream",
+          fileSizeBytes: docForm.file.size,
+        },
+      });
+      toast({ title: "Document uploaded successfully" });
+      setDocForm({ displayName: "", documentType: "invoice", description: "", file: null });
+      setShowUpload(false);
+      invalidateDocs();
+    } catch {
+      toast({ title: "Upload failed", variant: "destructive" });
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function handleArchive(docId: string) {
+    try {
+      await archiveDoc.mutateAsync({ id: txId, docId });
+      toast({ title: "Document archived" });
+      invalidateDocs();
+    } catch {
+      toast({ title: "Failed to archive document", variant: "destructive" });
+    }
+  }
+
+  return (
+    <div className="border border-white/8 rounded-lg overflow-hidden">
+      <button
+        className="w-full flex items-center justify-between px-3 py-2.5 bg-slate-800/50 hover:bg-slate-800/70 transition-colors"
+        onClick={() => setExpanded((v) => !v)}
+      >
+        <span className="flex items-center gap-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+          <Paperclip className="h-3.5 w-3.5" />
+          Documents
+          {!isLoading && expanded && docs.length > 0 && (
+            <Badge className="bg-slate-600/40 text-slate-400 border-slate-500/20 text-[10px] px-1.5 py-0 normal-case font-normal tracking-normal">
+              {docs.length}
+            </Badge>
+          )}
+        </span>
+        {expanded ? <ChevronDown className="h-3.5 w-3.5 text-slate-500" /> : <ChevronRight className="h-3.5 w-3.5 text-slate-500" />}
+      </button>
+
+      {expanded && (
+        <div className="px-3 py-3 space-y-3 bg-slate-900/20">
+          {isLoading ? (
+            <div className="space-y-2">{[0,1].map(i => <Skeleton key={i} className="h-8 w-full" />)}</div>
+          ) : docs.length === 0 ? (
+            <div className="text-center py-4 text-slate-500 text-xs">No documents attached yet.</div>
+          ) : (
+            <div className="space-y-1.5">
+              {docs.map((doc) => (
+                <div key={doc.id} className="flex items-center justify-between bg-slate-800/40 rounded px-3 py-2 gap-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-3.5 w-3.5 text-slate-500 shrink-0" />
+                      <span className="text-xs text-slate-200 truncate">{doc.title}</span>
+                      <Badge className="bg-sky-500/15 text-sky-300 border-sky-500/20 text-[10px] px-1.5 py-0 shrink-0">
+                        {DOC_TYPE_LABELS[doc.documentType] ?? doc.documentType}
+                      </Badge>
+                    </div>
+                    {doc.description && (
+                      <div className="text-[11px] text-slate-500 mt-0.5 ml-5">{doc.description}</div>
+                    )}
+                    <div className="text-[11px] text-slate-600 mt-0.5 ml-5">
+                      {doc.originalFileName} · {doc.uploadedByName}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <a
+                      href={`/api/sales/${txId}/documents/${doc.id}/download`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-slate-500 hover:text-slate-300 p-1 rounded hover:bg-white/5"
+                    >
+                      <Download className="h-3.5 w-3.5" />
+                    </a>
+                    {isAdmin && (
+                      <button
+                        className="text-slate-500 hover:text-red-400 p-1 rounded hover:bg-red-500/10"
+                        onClick={() => handleArchive(doc.id)}
+                      >
+                        <Archive className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {canManage && !showUpload && (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 text-xs text-sky-400 hover:bg-sky-500/10 gap-1"
+              onClick={() => setShowUpload(true)}
+            >
+              <Upload className="h-3 w-3" /> Attach Document
+            </Button>
+          )}
+
+          {showUpload && (
+            <div className="bg-slate-800/50 border border-white/10 rounded-lg p-3 space-y-2">
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label className="text-xs text-slate-400">Display Name</Label>
+                  <input
+                    type="text"
+                    className="w-full h-8 rounded border border-slate-600 bg-slate-800 px-2 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-sky-500/50 mt-1"
+                    value={docForm.displayName}
+                    onChange={(e) => setDocForm((f) => ({ ...f, displayName: e.target.value }))}
+                    placeholder="e.g. Invoice #INV-2024-001"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs text-slate-400">Type</Label>
+                  <select
+                    className="w-full h-8 rounded border border-slate-600 bg-slate-800 px-2 text-xs text-slate-200 mt-1"
+                    value={docForm.documentType}
+                    onChange={(e) => setDocForm((f) => ({ ...f, documentType: e.target.value }))}
+                  >
+                    {Object.entries(DOC_TYPE_LABELS).map(([v, l]) => (
+                      <option key={v} value={v}>{l}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs text-slate-400">Description (optional)</Label>
+                <input
+                  type="text"
+                  className="w-full h-8 rounded border border-slate-600 bg-slate-800 px-2 text-xs text-slate-200 focus:outline-none mt-1"
+                  value={docForm.description}
+                  onChange={(e) => setDocForm((f) => ({ ...f, description: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-slate-400">File</Label>
+                <input
+                  type="file"
+                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xlsx,.xls,.csv"
+                  className="w-full text-xs text-slate-400 mt-1 file:mr-2 file:py-1 file:px-2 file:rounded file:border file:border-slate-600 file:bg-slate-700 file:text-slate-300 file:text-xs cursor-pointer"
+                  onChange={(e) => setDocForm((f) => ({ ...f, file: e.target.files?.[0] ?? null }))}
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  className="h-7 text-xs bg-sky-600 hover:bg-sky-700"
+                  onClick={handleUpload}
+                  disabled={uploading || !docForm.file || !docForm.displayName}
+                >
+                  {uploading ? "Uploading…" : "Upload"}
+                </Button>
+                <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setShowUpload(false)}>
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

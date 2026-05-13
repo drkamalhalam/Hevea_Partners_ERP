@@ -754,6 +754,40 @@ Comprehensive analytics dashboard for stock valuation, production/sales trends, 
 
 **Generated hook:** `useGetInventoryAnalytics`, `getGetInventoryAnalyticsQueryKey`
 
+## Sales Document & Audit Tracking System
+
+Full audit trail for all sale mutations, document attachment storage, and governance alerts for suspicious edits. Admin and developer roles only.
+
+**Risk detection (automatic, fire-and-forget):**
+- `normal` — no significant change
+- `watch` — quantity change ≥20% or rate change ≥15%
+- `flag` — quantity change ≥40%, rate change ≥30%, or any edit on an already-confirmed sale
+
+**DB tables:**
+- `sale_audit_events` (`lib/db/src/schema/sale_audit.ts`) — UUID PK, transactionId FK, projectId FK, saleNumber, eventType, entityType, entityId, description, fieldChanges (JSONB), riskLevel (normal/watch/flag), riskReason, actorId (set null), actorName, actorRole, createdAt
+- `sale_documents` (`lib/db/src/schema/sale_documents.ts`) — UUID PK, transactionId FK (restrict), projectId FK, saleNumber, documentType (invoice/buyer_document/sales_proof/operational_record/other), title, description, fileObjectPath, mimeType, fileSizeBytes, originalFileName, status (active/archived), uploadedById (set null), uploadedByName, archivedAt, archivedById (set null), archivedByName, notes, audit cols
+
+**Server lib:** `artifacts/api-server/src/lib/saleAuditHelper.ts` — `writeSaleAudit(req, event)` fire-and-forget helper; `detectRisk(fieldChanges, saleStatus)` for automatic risk classification. Called from all mutations in `sales.ts` (created, updated, confirmed, cancelled, line_item_added/updated/removed, deduction_added/removed).
+
+**API endpoints** (`artifacts/api-server/src/routes/sales_audit.ts`, mounted as `router.use("/sales", salesAuditRouter)` before `salesRouter`):
+- `GET /sales/governance/alerts` — top 50 watch+flag events, admin/developer
+- `GET /sales/:id/audit-log` — all audit events for a sale, newest first
+- `GET /sales/:id/documents` — list active documents, any authenticated user with project access
+- `POST /sales/:id/documents` — attach document post-presigned-upload, admin/developer
+- `GET /sales/:id/documents/:docId/download` — stream file from GCS
+- `PATCH /sales/:id/documents/:docId` — update title/description/notes, admin/developer
+- `DELETE /sales/:id/documents/:docId` — soft-archive, admin only
+
+**Frontend:**
+- `SalesAudit.tsx` (route `/sales/audit`) — governance alerts panel (flag/watch buckets with riskReason) + per-sale audit timeline selector with expandable field-change diff (old/new values + % change)
+- `SaleDocumentsPanel` (inline in `SaleDetailPanel`, `Sales.tsx`) — collapsible panel, lists active docs with title/type/filename/uploader, download button, admin-only archive; presigned-URL upload form with drag-and-drop file picker
+- "View Audit Trail" link at the bottom of every expanded sale detail → `/sales/audit`
+- Sidebar: "Sale Audit" added to Operations group (admin/developer only), icon: ShieldCheck, href: `/sales/audit`
+
+**Generated hooks:** `useGetSaleGovernanceAlerts`, `useListSaleAuditLog`, `useListSaleDocuments`, `useCreateSaleDocument`, `useGetSaleDocument`, `useUpdateSaleDocument`, `useArchiveSaleDocument`
+
+**Note:** `History` from lucide-react conflicts with the browser's native `History` API in this React version. Use `ScrollText` or `Clock` instead.
+
 ## Pointers
 
 - See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details

@@ -78,6 +78,7 @@ import type {
   CreateProductionEntryBody,
   CreateSaleBody,
   CreateSaleDeductionBody,
+  CreateSaleDocumentBody,
   CreateSaleLineItemBody,
   CreateStockMovementBody,
   CreateTemplateBody,
@@ -118,6 +119,7 @@ import type {
   GetOwnershipSummary200,
   GetOwnershipSummaryParams,
   GetProductionLogSummaryParams,
+  GetSaleGovernanceAlertsParams,
   GetSalesSummaryParams,
   GetUserActivityParams,
   GovernanceSummary,
@@ -170,6 +172,7 @@ import type {
   ListProductionBatchesParams,
   ListProductionEntriesParams,
   ListProductionRecordsParams,
+  ListSaleDocumentsParams,
   ListSalesParams,
   ListStockMovementsParams,
   ListTemplatesParams,
@@ -220,8 +223,11 @@ import type {
   ResolveContributionDisputeBody,
   RevenueStats,
   ReverseLandownerLedgerEntry200,
+  SaleAuditLog,
   SaleDeduction,
   SaleDetail,
+  SaleDocument,
+  SaleGovernanceAlerts,
   SaleLineItem,
   SalesSummary,
   SalesTransaction,
@@ -253,6 +259,7 @@ import type {
   UpdateProductionEntryBody,
   UpdateProfileInput,
   UpdateSaleBody,
+  UpdateSaleDocumentBody,
   UpdateSaleLineItemBody,
   UpdateTemplateBody,
   UpsertAccountingProfileBody,
@@ -20858,4 +20865,655 @@ export const useDeleteSaleDeduction = <
   TContext
 > => {
   return useMutation(getDeleteSaleDeductionMutationOptions(options));
+};
+
+/**
+ * @summary Get watch/flag level audit events for governance review (admin/developer)
+ */
+export const getGetSaleGovernanceAlertsUrl = (
+  params?: GetSaleGovernanceAlertsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/sales/governance/alerts?${stringifiedParams}`
+    : `/api/sales/governance/alerts`;
+};
+
+export const getSaleGovernanceAlerts = async (
+  params?: GetSaleGovernanceAlertsParams,
+  options?: RequestInit,
+): Promise<SaleGovernanceAlerts> => {
+  return customFetch<SaleGovernanceAlerts>(
+    getGetSaleGovernanceAlertsUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetSaleGovernanceAlertsQueryKey = (
+  params?: GetSaleGovernanceAlertsParams,
+) => {
+  return [`/api/sales/governance/alerts`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetSaleGovernanceAlertsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getSaleGovernanceAlerts>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetSaleGovernanceAlertsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getSaleGovernanceAlerts>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetSaleGovernanceAlertsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getSaleGovernanceAlerts>>
+  > = ({ signal }) =>
+    getSaleGovernanceAlerts(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getSaleGovernanceAlerts>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetSaleGovernanceAlertsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getSaleGovernanceAlerts>>
+>;
+export type GetSaleGovernanceAlertsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get watch/flag level audit events for governance review (admin/developer)
+ */
+
+export function useGetSaleGovernanceAlerts<
+  TData = Awaited<ReturnType<typeof getSaleGovernanceAlerts>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetSaleGovernanceAlertsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getSaleGovernanceAlerts>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetSaleGovernanceAlertsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get full audit timeline for a sale transaction
+ */
+export const getListSaleAuditLogUrl = (id: string) => {
+  return `/api/sales/${id}/audit-log`;
+};
+
+export const listSaleAuditLog = async (
+  id: string,
+  options?: RequestInit,
+): Promise<SaleAuditLog> => {
+  return customFetch<SaleAuditLog>(getListSaleAuditLogUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListSaleAuditLogQueryKey = (id: string) => {
+  return [`/api/sales/${id}/audit-log`] as const;
+};
+
+export const getListSaleAuditLogQueryOptions = <
+  TData = Awaited<ReturnType<typeof listSaleAuditLog>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listSaleAuditLog>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListSaleAuditLogQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listSaleAuditLog>>
+  > = ({ signal }) => listSaleAuditLog(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listSaleAuditLog>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListSaleAuditLogQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listSaleAuditLog>>
+>;
+export type ListSaleAuditLogQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get full audit timeline for a sale transaction
+ */
+
+export function useListSaleAuditLog<
+  TData = Awaited<ReturnType<typeof listSaleAuditLog>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listSaleAuditLog>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListSaleAuditLogQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List documents attached to a sale
+ */
+export const getListSaleDocumentsUrl = (
+  id: string,
+  params?: ListSaleDocumentsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/sales/${id}/documents?${stringifiedParams}`
+    : `/api/sales/${id}/documents`;
+};
+
+export const listSaleDocuments = async (
+  id: string,
+  params?: ListSaleDocumentsParams,
+  options?: RequestInit,
+): Promise<SaleDocument[]> => {
+  return customFetch<SaleDocument[]>(getListSaleDocumentsUrl(id, params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListSaleDocumentsQueryKey = (
+  id: string,
+  params?: ListSaleDocumentsParams,
+) => {
+  return [`/api/sales/${id}/documents`, ...(params ? [params] : [])] as const;
+};
+
+export const getListSaleDocumentsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listSaleDocuments>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  params?: ListSaleDocumentsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listSaleDocuments>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListSaleDocumentsQueryKey(id, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listSaleDocuments>>
+  > = ({ signal }) =>
+    listSaleDocuments(id, params, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listSaleDocuments>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListSaleDocumentsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listSaleDocuments>>
+>;
+export type ListSaleDocumentsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List documents attached to a sale
+ */
+
+export function useListSaleDocuments<
+  TData = Awaited<ReturnType<typeof listSaleDocuments>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  params?: ListSaleDocumentsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listSaleDocuments>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListSaleDocumentsQueryOptions(id, params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Register an uploaded document for a sale (admin/developer)
+ */
+export const getCreateSaleDocumentUrl = (id: string) => {
+  return `/api/sales/${id}/documents`;
+};
+
+export const createSaleDocument = async (
+  id: string,
+  createSaleDocumentBody: CreateSaleDocumentBody,
+  options?: RequestInit,
+): Promise<SaleDocument> => {
+  return customFetch<SaleDocument>(getCreateSaleDocumentUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createSaleDocumentBody),
+  });
+};
+
+export const getCreateSaleDocumentMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createSaleDocument>>,
+    TError,
+    { id: string; data: BodyType<CreateSaleDocumentBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createSaleDocument>>,
+  TError,
+  { id: string; data: BodyType<CreateSaleDocumentBody> },
+  TContext
+> => {
+  const mutationKey = ["createSaleDocument"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createSaleDocument>>,
+    { id: string; data: BodyType<CreateSaleDocumentBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return createSaleDocument(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateSaleDocumentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createSaleDocument>>
+>;
+export type CreateSaleDocumentMutationBody = BodyType<CreateSaleDocumentBody>;
+export type CreateSaleDocumentMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Register an uploaded document for a sale (admin/developer)
+ */
+export const useCreateSaleDocument = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createSaleDocument>>,
+    TError,
+    { id: string; data: BodyType<CreateSaleDocumentBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createSaleDocument>>,
+  TError,
+  { id: string; data: BodyType<CreateSaleDocumentBody> },
+  TContext
+> => {
+  return useMutation(getCreateSaleDocumentMutationOptions(options));
+};
+
+/**
+ * @summary Get a single sale document
+ */
+export const getGetSaleDocumentUrl = (id: string, docId: string) => {
+  return `/api/sales/${id}/documents/${docId}`;
+};
+
+export const getSaleDocument = async (
+  id: string,
+  docId: string,
+  options?: RequestInit,
+): Promise<SaleDocument> => {
+  return customFetch<SaleDocument>(getGetSaleDocumentUrl(id, docId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetSaleDocumentQueryKey = (id: string, docId: string) => {
+  return [`/api/sales/${id}/documents/${docId}`] as const;
+};
+
+export const getGetSaleDocumentQueryOptions = <
+  TData = Awaited<ReturnType<typeof getSaleDocument>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  docId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getSaleDocument>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetSaleDocumentQueryKey(id, docId);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getSaleDocument>>> = ({
+    signal,
+  }) => getSaleDocument(id, docId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!(id && docId),
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getSaleDocument>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetSaleDocumentQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getSaleDocument>>
+>;
+export type GetSaleDocumentQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get a single sale document
+ */
+
+export function useGetSaleDocument<
+  TData = Awaited<ReturnType<typeof getSaleDocument>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  docId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getSaleDocument>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetSaleDocumentQueryOptions(id, docId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Update sale document metadata (admin/developer)
+ */
+export const getUpdateSaleDocumentUrl = (id: string, docId: string) => {
+  return `/api/sales/${id}/documents/${docId}`;
+};
+
+export const updateSaleDocument = async (
+  id: string,
+  docId: string,
+  updateSaleDocumentBody: UpdateSaleDocumentBody,
+  options?: RequestInit,
+): Promise<SaleDocument> => {
+  return customFetch<SaleDocument>(getUpdateSaleDocumentUrl(id, docId), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateSaleDocumentBody),
+  });
+};
+
+export const getUpdateSaleDocumentMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateSaleDocument>>,
+    TError,
+    { id: string; docId: string; data: BodyType<UpdateSaleDocumentBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateSaleDocument>>,
+  TError,
+  { id: string; docId: string; data: BodyType<UpdateSaleDocumentBody> },
+  TContext
+> => {
+  const mutationKey = ["updateSaleDocument"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateSaleDocument>>,
+    { id: string; docId: string; data: BodyType<UpdateSaleDocumentBody> }
+  > = (props) => {
+    const { id, docId, data } = props ?? {};
+
+    return updateSaleDocument(id, docId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateSaleDocumentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateSaleDocument>>
+>;
+export type UpdateSaleDocumentMutationBody = BodyType<UpdateSaleDocumentBody>;
+export type UpdateSaleDocumentMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update sale document metadata (admin/developer)
+ */
+export const useUpdateSaleDocument = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateSaleDocument>>,
+    TError,
+    { id: string; docId: string; data: BodyType<UpdateSaleDocumentBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateSaleDocument>>,
+  TError,
+  { id: string; docId: string; data: BodyType<UpdateSaleDocumentBody> },
+  TContext
+> => {
+  return useMutation(getUpdateSaleDocumentMutationOptions(options));
+};
+
+/**
+ * @summary Soft-archive a sale document (admin only)
+ */
+export const getArchiveSaleDocumentUrl = (id: string, docId: string) => {
+  return `/api/sales/${id}/documents/${docId}`;
+};
+
+export const archiveSaleDocument = async (
+  id: string,
+  docId: string,
+  options?: RequestInit,
+): Promise<SaleDocument> => {
+  return customFetch<SaleDocument>(getArchiveSaleDocumentUrl(id, docId), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getArchiveSaleDocumentMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof archiveSaleDocument>>,
+    TError,
+    { id: string; docId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof archiveSaleDocument>>,
+  TError,
+  { id: string; docId: string },
+  TContext
+> => {
+  const mutationKey = ["archiveSaleDocument"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof archiveSaleDocument>>,
+    { id: string; docId: string }
+  > = (props) => {
+    const { id, docId } = props ?? {};
+
+    return archiveSaleDocument(id, docId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ArchiveSaleDocumentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof archiveSaleDocument>>
+>;
+
+export type ArchiveSaleDocumentMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Soft-archive a sale document (admin only)
+ */
+export const useArchiveSaleDocument = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof archiveSaleDocument>>,
+    TError,
+    { id: string; docId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof archiveSaleDocument>>,
+  TError,
+  { id: string; docId: string },
+  TContext
+> => {
+  return useMutation(getArchiveSaleDocumentMutationOptions(options));
 };

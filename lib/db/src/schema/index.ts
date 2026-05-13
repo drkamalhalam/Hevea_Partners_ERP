@@ -42,3 +42,5 @@ export * from "./production_log";
 export * from "./inventory";
 export * from "./buyers";
 export * from "./sales";
+export * from "./sale_audit";
+export * from "./sale_documents";

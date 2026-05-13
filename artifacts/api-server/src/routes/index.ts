@@ -36,6 +36,7 @@ import productionLogRouter from "./production_log";
 import inventoryStockRouter from "./inventory_stock";
 import buyersRouter from "./buyers";
 import salesRouter from "./sales";
+import salesAuditRouter from "./sales_audit";
 import devRouter from "./dev";
 
 const router: IRouter = Router();
@@ -88,6 +89,7 @@ router.use("/financial-access-logs", financialAuditLogRouter);
 router.use("/production-log", productionLogRouter);
 router.use("/inventory-stock", inventoryStockRouter);
 router.use("/buyers", buyersRouter);
+router.use("/sales", salesAuditRouter);
 router.use("/sales", salesRouter);
 
 export default router;

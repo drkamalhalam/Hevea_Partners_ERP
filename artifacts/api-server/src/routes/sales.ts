@@ -14,6 +14,12 @@ import {
   userProjectAssignmentsTable,
 } from "@workspace/db";
 import { requireRole, canAccessProject } from "../middlewares/auth";
+import {
+  writeSaleAudit,
+  assessLineItemRisk,
+  describeLineItemChange,
+  type FieldChange,
+} from "../lib/saleAuditHelper";
 
 const router = Router();
 
@@ -387,6 +393,18 @@ router.post(
       .where(eq(salesTransactionsTable.id, tx.id))
       .limit(1);
 
+    writeSaleAudit({
+      transactionId: tx.id,
+      saleNumber: saleNumber,
+      projectId: projectId,
+      eventType: "created",
+      entityType: "transaction",
+      description: `Sale created: ${saleNumber} — ${buyerName.trim()}, ${lineItems.length} line item(s)`,
+      actorId: actor.id,
+      actorName: actor.displayName ?? actor.email ?? "Unknown",
+      actorRole: actor.role,
+    });
+
     return res
       .status(201)
       .json(formatTransaction({ ...updated.tx, projectName: updated.projectName }));
@@ -479,6 +497,31 @@ router.patch(
       .where(eq(salesTransactionsTable.id, txId))
       .returning();
 
+    const txChanges: FieldChange[] = [];
+    if (buyerName !== undefined && buyerName !== tx.buyerName) {
+      txChanges.push({ field: "buyerName", oldValue: tx.buyerName, newValue: buyerName });
+    }
+    if (saleDate !== undefined && saleDate !== tx.saleDate) {
+      txChanges.push({ field: "saleDate", oldValue: tx.saleDate, newValue: saleDate });
+    }
+    const actorNameForAudit = actor.displayName ?? actor.email ?? "Unknown";
+    writeSaleAudit({
+      transactionId: txId,
+      saleNumber: tx.saleNumber,
+      projectId: tx.projectId,
+      eventType: "updated",
+      entityType: "transaction",
+      description: txChanges.length > 0
+        ? `Sale updated: ${txChanges.map((c) => c.field).join(", ")} changed`
+        : "Sale metadata updated",
+      fieldChanges: txChanges,
+      riskLevel: tx.status === "confirmed" ? "flag" : "normal",
+      riskReason: tx.status === "confirmed" ? "Edit on confirmed sale" : undefined,
+      actorId: actor.id,
+      actorName: actorNameForAudit,
+      actorRole: actor.role,
+    });
+
     return res.json(formatTransaction(updated));
   },
 );
@@ -551,6 +594,18 @@ router.post(
       });
     }
 
+    writeSaleAudit({
+      transactionId: txId,
+      saleNumber: updated.saleNumber,
+      projectId: updated.projectId,
+      eventType: "confirmed",
+      entityType: "transaction",
+      description: `Sale confirmed by ${actorName}`,
+      actorId: actor.id,
+      actorName: actorName,
+      actorRole: actor.role,
+    });
+
     return res.json(formatTransaction(updated));
   },
 );
@@ -580,6 +635,25 @@ router.post(
       .set({ status: "cancelled", isActive: false, updatedAt: new Date() })
       .where(eq(salesTransactionsTable.id, txId))
       .returning();
+
+    const [cancelActor] = await db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.clerkUserId, clerkUserId))
+      .limit(1);
+    if (cancelActor) {
+      writeSaleAudit({
+        transactionId: txId,
+        saleNumber: tx.saleNumber,
+        projectId: tx.projectId,
+        eventType: "cancelled",
+        entityType: "transaction",
+        description: `Sale cancelled by ${cancelActor.displayName ?? cancelActor.email ?? "Unknown"}`,
+        actorId: cancelActor.id,
+        actorName: cancelActor.displayName ?? cancelActor.email ?? "Unknown",
+        actorRole: cancelActor.role,
+      });
+    }
 
     return res.json(formatTransaction(updated));
   },
@@ -643,6 +717,21 @@ router.post(
       .returning();
 
     await recomputeTotals(txId);
+
+    const liAddActorName = actor.displayName ?? actor.email ?? "Unknown";
+    writeSaleAudit({
+      transactionId: txId,
+      saleNumber: tx.saleNumber,
+      projectId: tx.projectId,
+      eventType: "line_item_added",
+      entityType: "line_item",
+      entityId: created.id,
+      description: `Line item added: ${productType} × ${quantity} ${unit}${saleRate !== undefined ? ` @ ₹${saleRate}` : ""}`,
+      actorId: actor.id,
+      actorName: liAddActorName,
+      actorRole: actor.role,
+    });
+
     return res.status(201).json(formatLineItem(created));
   },
 );
@@ -695,6 +784,43 @@ router.patch(
       .returning();
 
     await recomputeTotals(txId);
+
+    const oldQty = Number(item.quantity);
+    const oldRate = item.saleRate !== null ? Number(item.saleRate) : null;
+    const newQtyVal = quantity !== undefined ? Number(quantity) : oldQty;
+    const newRateVal = saleRate !== undefined ? Number(saleRate) : oldRate;
+    const liRisk = assessLineItemRisk(oldQty, newQtyVal, oldRate, newRateVal, false);
+    const liDesc = describeLineItemChange(item.productType, oldQty, newQtyVal, oldRate, newRateVal);
+    const liChanges: FieldChange[] = [];
+    if (quantity !== undefined && quantity !== oldQty) {
+      liChanges.push({ field: "quantity", oldValue: oldQty, newValue: quantity });
+    }
+    if (saleRate !== undefined && saleRate !== oldRate) {
+      liChanges.push({ field: "saleRate", oldValue: oldRate, newValue: saleRate });
+    }
+    const [liPatchActor] = await db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.clerkUserId, clerkUserId))
+      .limit(1);
+    if (liPatchActor) {
+      writeSaleAudit({
+        transactionId: txId,
+        saleNumber: tx.saleNumber,
+        projectId: tx.projectId,
+        eventType: "line_item_updated",
+        entityType: "line_item",
+        entityId: itemId,
+        description: liDesc,
+        fieldChanges: liChanges,
+        riskLevel: liRisk.riskLevel,
+        riskReason: liRisk.riskReason,
+        actorId: liPatchActor.id,
+        actorName: liPatchActor.displayName ?? liPatchActor.email ?? "Unknown",
+        actorRole: liPatchActor.role,
+      });
+    }
+
     return res.json(formatLineItem(updated));
   },
 );
@@ -720,8 +846,36 @@ router.delete(
     if (!canAccessProject(req, tx.projectId)) return res.status(403).json({ error: "Forbidden" });
     if (tx.status !== "draft") return res.status(400).json({ error: "Can only delete items from draft sales" });
 
+    const [liToDelete] = await db
+      .select()
+      .from(salesLineItemsTable)
+      .where(eq(salesLineItemsTable.id, itemId))
+      .limit(1);
     await db.delete(salesLineItemsTable).where(eq(salesLineItemsTable.id, itemId));
     await recomputeTotals(txId);
+
+    const [liDelActor] = await db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.clerkUserId, clerkUserId))
+      .limit(1);
+    if (liDelActor) {
+      writeSaleAudit({
+        transactionId: txId,
+        saleNumber: tx.saleNumber,
+        projectId: tx.projectId,
+        eventType: "line_item_removed",
+        entityType: "line_item",
+        entityId: itemId,
+        description: liToDelete
+          ? `Line item removed: ${liToDelete.productType} × ${liToDelete.quantity} ${liToDelete.unit}`
+          : "Line item removed",
+        actorId: liDelActor.id,
+        actorName: liDelActor.displayName ?? liDelActor.email ?? "Unknown",
+        actorRole: liDelActor.role,
+      });
+    }
+
     return res.json({ success: true });
   },
 );
@@ -760,6 +914,27 @@ router.post(
       .returning();
 
     await recomputeTotals(txId);
+
+    const [dedAddActor] = await db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.clerkUserId, clerkUserId))
+      .limit(1);
+    if (dedAddActor) {
+      writeSaleAudit({
+        transactionId: txId,
+        saleNumber: tx.saleNumber,
+        projectId: tx.projectId,
+        eventType: "deduction_added",
+        entityType: "deduction",
+        entityId: created.id,
+        description: `Deduction added: ${created.deductionType} — ₹${amount}${description ? ` (${description})` : ""}`,
+        actorId: dedAddActor.id,
+        actorName: dedAddActor.displayName ?? dedAddActor.email ?? "Unknown",
+        actorRole: dedAddActor.role,
+      });
+    }
+
     return res.status(201).json(formatDeduction(created));
   },
 );
@@ -785,8 +960,36 @@ router.delete(
     if (!canAccessProject(req, tx.projectId)) return res.status(403).json({ error: "Forbidden" });
     if (tx.status !== "draft") return res.status(400).json({ error: "Can only delete deductions from draft sales" });
 
+    const [dedToDelete] = await db
+      .select()
+      .from(salesDeductionsTable)
+      .where(eq(salesDeductionsTable.id, dedId))
+      .limit(1);
     await db.delete(salesDeductionsTable).where(eq(salesDeductionsTable.id, dedId));
     await recomputeTotals(txId);
+
+    const [dedDelActor] = await db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.clerkUserId, clerkUserId))
+      .limit(1);
+    if (dedDelActor) {
+      writeSaleAudit({
+        transactionId: txId,
+        saleNumber: tx.saleNumber,
+        projectId: tx.projectId,
+        eventType: "deduction_removed",
+        entityType: "deduction",
+        entityId: dedId,
+        description: dedToDelete
+          ? `Deduction removed: ${dedToDelete.deductionType} — ₹${dedToDelete.amount}`
+          : "Deduction removed",
+        actorId: dedDelActor.id,
+        actorName: dedDelActor.displayName ?? dedDelActor.email ?? "Unknown",
+        actorRole: dedDelActor.role,
+      });
+    }
+
     return res.json({ success: true });
   },
 );

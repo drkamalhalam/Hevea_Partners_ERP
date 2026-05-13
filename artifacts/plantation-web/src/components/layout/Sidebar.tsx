@@ -243,6 +243,12 @@ const navGroups: NavGroup[] = [
         roles: ["admin", "developer"],
       },
       {
+        name: "Sale Audit",
+        href: "/sales/audit",
+        icon: ShieldCheck,
+        roles: ["admin", "developer"],
+      },
+      {
         name: "Distribution",
         href: "/distribution",
         icon: Truck,

@@ -5484,6 +5484,163 @@ paths:
               schema:
                 $ref: "#/components/schemas/SuccessResponse"
 
+  /sales/governance/alerts:
+    get:
+      operationId: getSaleGovernanceAlerts
+      tags: [sales]
+      summary: Get watch/flag level audit events for governance review (admin/developer)
+      parameters:
+        - name: projectId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: riskLevel
+          in: query
+          schema: { type: string, enum: [watch, flag] }
+        - name: from
+          in: query
+          schema: { type: string, format: date-time }
+        - name: to
+          in: query
+          schema: { type: string, format: date-time }
+      responses:
+        "200":
+          description: Governance alert summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SaleGovernanceAlerts"
+
+  /sales/{id}/audit-log:
+    get:
+      operationId: listSaleAuditLog
+      tags: [sales]
+      summary: Get full audit timeline for a sale transaction
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Audit log for the sale
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SaleAuditLog"
+
+  /sales/{id}/documents:
+    get:
+      operationId: listSaleDocuments
+      tags: [sales]
+      summary: List documents attached to a sale
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: status
+          in: query
+          schema: { type: string, enum: [active, archived] }
+      responses:
+        "200":
+          description: List of sale documents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SaleDocument"
+    post:
+      operationId: createSaleDocument
+      tags: [sales]
+      summary: Register an uploaded document for a sale (admin/developer)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSaleDocumentBody"
+      responses:
+        "201":
+          description: Document created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SaleDocument"
+
+  /sales/{id}/documents/{docId}:
+    get:
+      operationId: getSaleDocument
+      tags: [sales]
+      summary: Get a single sale document
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: docId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Sale document
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SaleDocument"
+    patch:
+      operationId: updateSaleDocument
+      tags: [sales]
+      summary: Update sale document metadata (admin/developer)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: docId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSaleDocumentBody"
+      responses:
+        "200":
+          description: Updated document
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SaleDocument"
+    delete:
+      operationId: archiveSaleDocument
+      tags: [sales]
+      summary: Soft-archive a sale document (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: docId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Archived document
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SaleDocument"
+
 components:
   schemas:
     HealthStatus:
@@ -9639,6 +9796,114 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/LowStockAlert"
+
+    SaleAuditFieldChange:
+      type: object
+      required: [field]
+      properties:
+        field: { type: string }
+        oldValue:
+          oneOf:
+            - type: string
+            - type: number
+            - type: "null"
+        newValue:
+          oneOf:
+            - type: string
+            - type: number
+            - type: "null"
+
+    SaleAuditEvent:
+      type: object
+      required: [id, saleNumber, eventType, entityType, description, fieldChanges, riskLevel, actorName, actorRole, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        transactionId: { type: string, format: uuid }
+        saleNumber: { type: string }
+        projectId: { type: string, format: uuid }
+        eventType: { type: string }
+        entityType: { type: string }
+        entityId: { type: string, format: uuid }
+        description: { type: string }
+        fieldChanges:
+          type: array
+          items:
+            $ref: "#/components/schemas/SaleAuditFieldChange"
+        riskLevel: { type: string, enum: [normal, watch, flag] }
+        riskReason: { type: string }
+        actorName: { type: string }
+        actorRole: { type: string }
+        createdAt: { type: string, format: date-time }
+
+    SaleAuditLog:
+      type: object
+      required: [transactionId, saleNumber, totalEvents, flagCount, watchCount, events]
+      properties:
+        transactionId: { type: string, format: uuid }
+        saleNumber: { type: string }
+        totalEvents: { type: integer }
+        flagCount: { type: integer }
+        watchCount: { type: integer }
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/SaleAuditEvent"
+
+    SaleGovernanceAlerts:
+      type: object
+      required: [flagCount, watchCount, totalCount, events]
+      properties:
+        flagCount: { type: integer }
+        watchCount: { type: integer }
+        totalCount: { type: integer }
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/SaleAuditEvent"
+
+    SaleDocument:
+      type: object
+      required: [id, transactionId, saleNumber, documentType, title, fileObjectPath, mimeType, originalFileName, status, uploadedByName, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        transactionId: { type: string, format: uuid }
+        saleNumber: { type: string }
+        projectId: { type: string, format: uuid }
+        documentType: { type: string, enum: [invoice, buyer_document, sales_proof, operational_record, other] }
+        title: { type: string }
+        description: { type: string }
+        fileObjectPath: { type: string }
+        mimeType: { type: string }
+        fileSizeBytes: { type: integer }
+        originalFileName: { type: string }
+        status: { type: string, enum: [active, archived] }
+        uploadedByName: { type: string }
+        archivedAt: { type: string, format: date-time }
+        archivedByName: { type: string }
+        notes: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    CreateSaleDocumentBody:
+      type: object
+      required: [title, fileObjectPath, mimeType, originalFileName]
+      properties:
+        documentType: { type: string, enum: [invoice, buyer_document, sales_proof, operational_record, other] }
+        title: { type: string }
+        description: { type: string }
+        fileObjectPath: { type: string }
+        mimeType: { type: string }
+        fileSizeBytes: { type: integer }
+        originalFileName: { type: string }
+        notes: { type: string }
+
+    UpdateSaleDocumentBody:
+      type: object
+      properties:
+        title: { type: string }
+        description: { type: string }
+        documentType: { type: string, enum: [invoice, buyer_document, sales_proof, operational_record, other] }
+        notes: { type: string }
 
     SuccessResponse:
       type: object

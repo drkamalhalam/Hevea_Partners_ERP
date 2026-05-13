@@ -8240,3 +8240,277 @@ export const DeleteSaleDeductionParams = zod.object({
 export const DeleteSaleDeductionResponse = zod.object({
   success: zod.boolean(),
 });
+
+/**
+ * @summary Get watch/flag level audit events for governance review (admin/developer)
+ */
+export const GetSaleGovernanceAlertsQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+  riskLevel: zod.enum(["watch", "flag"]).optional(),
+  from: zod.date().optional(),
+  to: zod.date().optional(),
+});
+
+export const GetSaleGovernanceAlertsResponse = zod.object({
+  flagCount: zod.number(),
+  watchCount: zod.number(),
+  totalCount: zod.number(),
+  events: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      transactionId: zod.string().uuid().optional(),
+      saleNumber: zod.string(),
+      projectId: zod.string().uuid().optional(),
+      eventType: zod.string(),
+      entityType: zod.string(),
+      entityId: zod.string().uuid().optional(),
+      description: zod.string(),
+      fieldChanges: zod.array(
+        zod.object({
+          field: zod.string(),
+          oldValue: zod
+            .union([zod.string(), zod.number(), zod.null()])
+            .optional(),
+          newValue: zod
+            .union([zod.string(), zod.number(), zod.null()])
+            .optional(),
+        }),
+      ),
+      riskLevel: zod.enum(["normal", "watch", "flag"]),
+      riskReason: zod.string().optional(),
+      actorName: zod.string(),
+      actorRole: zod.string(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+});
+
+/**
+ * @summary Get full audit timeline for a sale transaction
+ */
+export const ListSaleAuditLogParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const ListSaleAuditLogResponse = zod.object({
+  transactionId: zod.string().uuid(),
+  saleNumber: zod.string(),
+  totalEvents: zod.number(),
+  flagCount: zod.number(),
+  watchCount: zod.number(),
+  events: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      transactionId: zod.string().uuid().optional(),
+      saleNumber: zod.string(),
+      projectId: zod.string().uuid().optional(),
+      eventType: zod.string(),
+      entityType: zod.string(),
+      entityId: zod.string().uuid().optional(),
+      description: zod.string(),
+      fieldChanges: zod.array(
+        zod.object({
+          field: zod.string(),
+          oldValue: zod
+            .union([zod.string(), zod.number(), zod.null()])
+            .optional(),
+          newValue: zod
+            .union([zod.string(), zod.number(), zod.null()])
+            .optional(),
+        }),
+      ),
+      riskLevel: zod.enum(["normal", "watch", "flag"]),
+      riskReason: zod.string().optional(),
+      actorName: zod.string(),
+      actorRole: zod.string(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+});
+
+/**
+ * @summary List documents attached to a sale
+ */
+export const ListSaleDocumentsParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const ListSaleDocumentsQueryParams = zod.object({
+  status: zod.enum(["active", "archived"]).optional(),
+});
+
+export const ListSaleDocumentsResponseItem = zod.object({
+  id: zod.string().uuid(),
+  transactionId: zod.string().uuid(),
+  saleNumber: zod.string(),
+  projectId: zod.string().uuid().optional(),
+  documentType: zod.enum([
+    "invoice",
+    "buyer_document",
+    "sales_proof",
+    "operational_record",
+    "other",
+  ]),
+  title: zod.string(),
+  description: zod.string().optional(),
+  fileObjectPath: zod.string(),
+  mimeType: zod.string(),
+  fileSizeBytes: zod.number().optional(),
+  originalFileName: zod.string(),
+  status: zod.enum(["active", "archived"]),
+  uploadedByName: zod.string(),
+  archivedAt: zod.coerce.date().optional(),
+  archivedByName: zod.string().optional(),
+  notes: zod.string().optional(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const ListSaleDocumentsResponse = zod.array(
+  ListSaleDocumentsResponseItem,
+);
+
+/**
+ * @summary Register an uploaded document for a sale (admin/developer)
+ */
+export const CreateSaleDocumentParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const CreateSaleDocumentBody = zod.object({
+  documentType: zod
+    .enum([
+      "invoice",
+      "buyer_document",
+      "sales_proof",
+      "operational_record",
+      "other",
+    ])
+    .optional(),
+  title: zod.string(),
+  description: zod.string().optional(),
+  fileObjectPath: zod.string(),
+  mimeType: zod.string(),
+  fileSizeBytes: zod.number().optional(),
+  originalFileName: zod.string(),
+  notes: zod.string().optional(),
+});
+
+/**
+ * @summary Get a single sale document
+ */
+export const GetSaleDocumentParams = zod.object({
+  id: zod.coerce.string().uuid(),
+  docId: zod.coerce.string().uuid(),
+});
+
+export const GetSaleDocumentResponse = zod.object({
+  id: zod.string().uuid(),
+  transactionId: zod.string().uuid(),
+  saleNumber: zod.string(),
+  projectId: zod.string().uuid().optional(),
+  documentType: zod.enum([
+    "invoice",
+    "buyer_document",
+    "sales_proof",
+    "operational_record",
+    "other",
+  ]),
+  title: zod.string(),
+  description: zod.string().optional(),
+  fileObjectPath: zod.string(),
+  mimeType: zod.string(),
+  fileSizeBytes: zod.number().optional(),
+  originalFileName: zod.string(),
+  status: zod.enum(["active", "archived"]),
+  uploadedByName: zod.string(),
+  archivedAt: zod.coerce.date().optional(),
+  archivedByName: zod.string().optional(),
+  notes: zod.string().optional(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Update sale document metadata (admin/developer)
+ */
+export const UpdateSaleDocumentParams = zod.object({
+  id: zod.coerce.string().uuid(),
+  docId: zod.coerce.string().uuid(),
+});
+
+export const UpdateSaleDocumentBody = zod.object({
+  title: zod.string().optional(),
+  description: zod.string().optional(),
+  documentType: zod
+    .enum([
+      "invoice",
+      "buyer_document",
+      "sales_proof",
+      "operational_record",
+      "other",
+    ])
+    .optional(),
+  notes: zod.string().optional(),
+});
+
+export const UpdateSaleDocumentResponse = zod.object({
+  id: zod.string().uuid(),
+  transactionId: zod.string().uuid(),
+  saleNumber: zod.string(),
+  projectId: zod.string().uuid().optional(),
+  documentType: zod.enum([
+    "invoice",
+    "buyer_document",
+    "sales_proof",
+    "operational_record",
+    "other",
+  ]),
+  title: zod.string(),
+  description: zod.string().optional(),
+  fileObjectPath: zod.string(),
+  mimeType: zod.string(),
+  fileSizeBytes: zod.number().optional(),
+  originalFileName: zod.string(),
+  status: zod.enum(["active", "archived"]),
+  uploadedByName: zod.string(),
+  archivedAt: zod.coerce.date().optional(),
+  archivedByName: zod.string().optional(),
+  notes: zod.string().optional(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Soft-archive a sale document (admin only)
+ */
+export const ArchiveSaleDocumentParams = zod.object({
+  id: zod.coerce.string().uuid(),
+  docId: zod.coerce.string().uuid(),
+});
+
+export const ArchiveSaleDocumentResponse = zod.object({
+  id: zod.string().uuid(),
+  transactionId: zod.string().uuid(),
+  saleNumber: zod.string(),
+  projectId: zod.string().uuid().optional(),
+  documentType: zod.enum([
+    "invoice",
+    "buyer_document",
+    "sales_proof",
+    "operational_record",
+    "other",
+  ]),
+  title: zod.string(),
+  description: zod.string().optional(),
+  fileObjectPath: zod.string(),
+  mimeType: zod.string(),
+  fileSizeBytes: zod.number().optional(),
+  originalFileName: zod.string(),
+  status: zod.enum(["active", "archived"]),
+  uploadedByName: zod.string(),
+  archivedAt: zod.coerce.date().optional(),
+  archivedByName: zod.string().optional(),
+  notes: zod.string().optional(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
