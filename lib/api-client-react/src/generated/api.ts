@@ -61,11 +61,14 @@ import type {
   InitiateMaturityBody,
   InitiateNomineeActivationBody,
   LandNotionalState,
+  ListContributionVerificationHistory200,
   ListContributions200,
   ListContributionsParams,
   ListDocumentAccessLogParams,
   ListDocumentsParams,
   ListPartnerClaimantsParams,
+  ListPendingVerificationContributions200,
+  ListPendingVerificationContributionsParams,
   ListProductionRecordsParams,
   ListTemplatesParams,
   MaturityBlockers,
@@ -91,6 +94,7 @@ import type {
   ProjectParticipant,
   ProjectUpdate,
   RejectContributionBody,
+  RequestContributionVerificationBody,
   RequestUploadUrlBody,
   RequestUploadUrlResponse,
   RevenueStats,
@@ -8975,6 +8979,306 @@ export const useRestoreTemplate = <
 > => {
   return useMutation(getRestoreTemplateMutationOptions(options));
 };
+
+/**
+ * Returns contributions where the current user is the designated verifier and status is pending_verification. Also includes any pending items for admin/developer roles.
+ * @summary List contributions pending verification for the current user
+ */
+export const getListPendingVerificationContributionsUrl = (
+  params?: ListPendingVerificationContributionsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/contributions/pending-verification?${stringifiedParams}`
+    : `/api/contributions/pending-verification`;
+};
+
+export const listPendingVerificationContributions = async (
+  params?: ListPendingVerificationContributionsParams,
+  options?: RequestInit,
+): Promise<ListPendingVerificationContributions200> => {
+  return customFetch<ListPendingVerificationContributions200>(
+    getListPendingVerificationContributionsUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListPendingVerificationContributionsQueryKey = (
+  params?: ListPendingVerificationContributionsParams,
+) => {
+  return [
+    `/api/contributions/pending-verification`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListPendingVerificationContributionsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listPendingVerificationContributions>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListPendingVerificationContributionsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listPendingVerificationContributions>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getListPendingVerificationContributionsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listPendingVerificationContributions>>
+  > = ({ signal }) =>
+    listPendingVerificationContributions(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listPendingVerificationContributions>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListPendingVerificationContributionsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listPendingVerificationContributions>>
+>;
+export type ListPendingVerificationContributionsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List contributions pending verification for the current user
+ */
+
+export function useListPendingVerificationContributions<
+  TData = Awaited<ReturnType<typeof listPendingVerificationContributions>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListPendingVerificationContributionsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listPendingVerificationContributions>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListPendingVerificationContributionsQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Assign or reassign a counterparty verifier for a contribution
+ */
+export const getRequestContributionVerificationUrl = (id: string) => {
+  return `/api/contributions/${id}/request-verification`;
+};
+
+export const requestContributionVerification = async (
+  id: string,
+  requestContributionVerificationBody: RequestContributionVerificationBody,
+  options?: RequestInit,
+): Promise<ContributionEntry> => {
+  return customFetch<ContributionEntry>(
+    getRequestContributionVerificationUrl(id),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(requestContributionVerificationBody),
+    },
+  );
+};
+
+export const getRequestContributionVerificationMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof requestContributionVerification>>,
+    TError,
+    { id: string; data: BodyType<RequestContributionVerificationBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof requestContributionVerification>>,
+  TError,
+  { id: string; data: BodyType<RequestContributionVerificationBody> },
+  TContext
+> => {
+  const mutationKey = ["requestContributionVerification"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof requestContributionVerification>>,
+    { id: string; data: BodyType<RequestContributionVerificationBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return requestContributionVerification(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RequestContributionVerificationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof requestContributionVerification>>
+>;
+export type RequestContributionVerificationMutationBody =
+  BodyType<RequestContributionVerificationBody>;
+export type RequestContributionVerificationMutationError = ErrorType<void>;
+
+/**
+ * @summary Assign or reassign a counterparty verifier for a contribution
+ */
+export const useRequestContributionVerification = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof requestContributionVerification>>,
+    TError,
+    { id: string; data: BodyType<RequestContributionVerificationBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof requestContributionVerification>>,
+  TError,
+  { id: string; data: BodyType<RequestContributionVerificationBody> },
+  TContext
+> => {
+  return useMutation(
+    getRequestContributionVerificationMutationOptions(options),
+  );
+};
+
+/**
+ * @summary Get the verification event timeline for a contribution
+ */
+export const getListContributionVerificationHistoryUrl = (id: string) => {
+  return `/api/contributions/${id}/verification-history`;
+};
+
+export const listContributionVerificationHistory = async (
+  id: string,
+  options?: RequestInit,
+): Promise<ListContributionVerificationHistory200> => {
+  return customFetch<ListContributionVerificationHistory200>(
+    getListContributionVerificationHistoryUrl(id),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListContributionVerificationHistoryQueryKey = (id: string) => {
+  return [`/api/contributions/${id}/verification-history`] as const;
+};
+
+export const getListContributionVerificationHistoryQueryOptions = <
+  TData = Awaited<ReturnType<typeof listContributionVerificationHistory>>,
+  TError = ErrorType<void>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listContributionVerificationHistory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getListContributionVerificationHistoryQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listContributionVerificationHistory>>
+  > = ({ signal }) =>
+    listContributionVerificationHistory(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listContributionVerificationHistory>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListContributionVerificationHistoryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listContributionVerificationHistory>>
+>;
+export type ListContributionVerificationHistoryQueryError = ErrorType<void>;
+
+/**
+ * @summary Get the verification event timeline for a contribution
+ */
+
+export function useListContributionVerificationHistory<
+  TData = Awaited<ReturnType<typeof listContributionVerificationHistory>>,
+  TError = ErrorType<void>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listContributionVerificationHistory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListContributionVerificationHistoryQueryOptions(
+    id,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary Get the active land notional contribution for a project

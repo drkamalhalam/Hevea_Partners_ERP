@@ -39,6 +39,16 @@ export interface ContributionEntry {
   verifiedByName?: string | null;
   /** @nullable */
   verifierNotes?: string | null;
+  /**
+   * DB UUID of the counterparty user assigned to verify this contribution
+   * @nullable
+   */
+  designatedVerifierId?: string | null;
+  /**
+   * Denormalised display name of the designated verifier
+   * @nullable
+   */
+  designatedVerifierName?: string | null;
   /** @nullable */
   recordedBy?: string | null;
   /** @nullable */

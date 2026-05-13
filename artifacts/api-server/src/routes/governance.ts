@@ -13,6 +13,7 @@ import {
   maturityOtpVerificationsTable,
   nomineeActivationWorkflowsTable,
   projectClosureWorkflowsTable,
+  contributionsTable,
 } from "@workspace/db";
 import { eq, inArray, isNull, and } from "drizzle-orm";
 import { requireRole } from "../middlewares/auth";
@@ -28,7 +29,8 @@ type GovernanceIssueCode =
   | "INCOMPLETE_PROFILE"
   | "INCOMPLETE_PARTNER"
   | "NO_CLAIMANTS"
-  | "MISSING_DEVELOPER";
+  | "MISSING_DEVELOPER"
+  | "REJECTED_CONTRIBUTION";
 
 interface GovernanceAlert {
   code: GovernanceIssueCode;
@@ -337,6 +339,54 @@ router.get("/summary", async (req, res) => {
               partnerName: partner.name,
               status: worstSeverity(issues),
               issues,
+            });
+          }
+        }
+      }
+    }
+
+    // ── Rejected economic contributions (admin / developer) ───────────────
+    // Each project with at least one rejected economic_investment contribution
+    // surfaces a red governance alert so partners can request re-approval.
+    if (isAdminOrDev && visibleProjects.length > 0) {
+      const projectIds = visibleProjects.map((p) => p.id);
+      const rejectedContribs = await db
+        .select({
+          projectId: contributionsTable.projectId,
+        })
+        .from(contributionsTable)
+        .where(
+          and(
+            inArray(contributionsTable.projectId, projectIds),
+            eq(contributionsTable.contributionType, "economic_investment"),
+            eq(contributionsTable.verificationStatus, "rejected"),
+            isNull(contributionsTable.deletedAt),
+          ),
+        );
+
+      const rejectedByProject = new Map<string, number>();
+      for (const r of rejectedContribs) {
+        rejectedByProject.set(r.projectId, (rejectedByProject.get(r.projectId) ?? 0) + 1);
+      }
+
+      for (const [pid, count] of rejectedByProject.entries()) {
+        const existing = projectAlerts.find((p) => p.projectId === pid);
+        const alert: GovernanceAlert = {
+          code: "REJECTED_CONTRIBUTION",
+          severity: "attention_required",
+          message: `${count} economic contribution${count > 1 ? "s have" : " has"} been rejected and require${count > 1 ? "" : "s"} resolution`,
+        };
+        if (existing) {
+          existing.issues.push(alert);
+          existing.status = worstSeverity(existing.issues);
+        } else {
+          const proj = visibleProjects.find((p) => p.id === pid);
+          if (proj) {
+            projectAlerts.push({
+              projectId: pid,
+              projectName: proj.name,
+              status: "attention_required",
+              issues: [alert],
             });
           }
         }

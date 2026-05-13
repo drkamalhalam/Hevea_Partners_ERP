@@ -11,6 +11,13 @@ import * as zod from "zod";
  * @summary Get current user role and assigned projects
  */
 export const GetMeResponse = zod.object({
+  id: zod
+    .string()
+    .uuid()
+    .optional()
+    .describe(
+      "Internal DB UUID for this user (exposed for verifier designation etc.)",
+    ),
   clerkUserId: zod.string(),
   role: zod.enum([
     "admin",
@@ -83,6 +90,13 @@ export const UpsertMeBody = zod.object({
 });
 
 export const UpsertMeResponse = zod.object({
+  id: zod
+    .string()
+    .uuid()
+    .optional()
+    .describe(
+      "Internal DB UUID for this user (exposed for verifier designation etc.)",
+    ),
   clerkUserId: zod.string(),
   role: zod.enum([
     "admin",
@@ -143,6 +157,13 @@ export const UpdateMyProfileBody = zod.object({
 });
 
 export const UpdateMyProfileResponse = zod.object({
+  id: zod
+    .string()
+    .uuid()
+    .optional()
+    .describe(
+      "Internal DB UUID for this user (exposed for verifier designation etc.)",
+    ),
   clerkUserId: zod.string(),
   role: zod.enum([
     "admin",
@@ -195,6 +216,13 @@ export const UpdateMyProfileResponse = zod.object({
  * @summary List all users with roles (admin only)
  */
 export const ListUsersResponseItem = zod.object({
+  id: zod
+    .string()
+    .uuid()
+    .optional()
+    .describe(
+      "Internal DB UUID for this user (exposed for verifier designation etc.)",
+    ),
   clerkUserId: zod.string(),
   role: zod.enum([
     "admin",
@@ -252,6 +280,13 @@ export const GetUserProfileParams = zod.object({
 });
 
 export const GetUserProfileResponse = zod.object({
+  id: zod
+    .string()
+    .uuid()
+    .optional()
+    .describe(
+      "Internal DB UUID for this user (exposed for verifier designation etc.)",
+    ),
   clerkUserId: zod.string(),
   role: zod.enum([
     "admin",
@@ -316,6 +351,13 @@ export const UpdateUserProfileBody = zod.object({
 });
 
 export const UpdateUserProfileResponse = zod.object({
+  id: zod
+    .string()
+    .uuid()
+    .optional()
+    .describe(
+      "Internal DB UUID for this user (exposed for verifier designation etc.)",
+    ),
   clerkUserId: zod.string(),
   role: zod.enum([
     "admin",
@@ -383,6 +425,13 @@ export const UpdateUserRoleBody = zod.object({
 });
 
 export const UpdateUserRoleResponse = zod.object({
+  id: zod
+    .string()
+    .uuid()
+    .optional()
+    .describe(
+      "Internal DB UUID for this user (exposed for verifier designation etc.)",
+    ),
   clerkUserId: zod.string(),
   role: zod.enum([
     "admin",
@@ -3237,6 +3286,170 @@ export const RestoreTemplateResponse = zod.object({
 });
 
 /**
+ * Returns contributions where the current user is the designated verifier and status is pending_verification. Also includes any pending items for admin/developer roles.
+ * @summary List contributions pending verification for the current user
+ */
+export const ListPendingVerificationContributionsQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+});
+
+export const ListPendingVerificationContributionsResponse = zod.object({
+  contributions: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      projectId: zod.string().uuid(),
+      projectName: zod.string().nullish(),
+      partnerId: zod.string().uuid().nullish(),
+      partnerName: zod.string(),
+      contributionType: zod.enum([
+        "land_notional",
+        "economic_investment",
+        "operational_cost",
+        "recoverable_advance",
+        "manual_adjustment",
+      ]),
+      amount: zod.number().describe("Amount in INR"),
+      contributionDate: zod.coerce.date(),
+      lifecyclePhaseSnapshot: zod
+        .string()
+        .describe("Project lifecycle phase at time of recording"),
+      agreementId: zod.string().uuid().nullish(),
+      referenceNumber: zod.string().nullish(),
+      remarks: zod.string().nullish(),
+      affectsOwnership: zod
+        .boolean()
+        .describe(
+          "Whether this contribution is eligible to influence ownership guidance",
+        ),
+      verificationStatus: zod.enum([
+        "draft",
+        "pending_verification",
+        "verified",
+        "rejected",
+      ]),
+      verifiedAt: zod.coerce.date().nullish(),
+      verifiedBy: zod.string().uuid().nullish(),
+      verifiedByName: zod.string().nullish(),
+      verifierNotes: zod.string().nullish(),
+      designatedVerifierId: zod
+        .string()
+        .uuid()
+        .nullish()
+        .describe(
+          "DB UUID of the counterparty user assigned to verify this contribution",
+        ),
+      designatedVerifierName: zod
+        .string()
+        .nullish()
+        .describe("Denormalised display name of the designated verifier"),
+      recordedBy: zod.string().uuid().nullish(),
+      recordedByName: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date().nullish(),
+    }),
+  ),
+  totalCount: zod.number(),
+});
+
+/**
+ * @summary Assign or reassign a counterparty verifier for a contribution
+ */
+export const RequestContributionVerificationParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const RequestContributionVerificationBody = zod.object({
+  verifierUserId: zod.string().uuid(),
+  notes: zod.string().optional(),
+});
+
+export const RequestContributionVerificationResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  projectName: zod.string().nullish(),
+  partnerId: zod.string().uuid().nullish(),
+  partnerName: zod.string(),
+  contributionType: zod.enum([
+    "land_notional",
+    "economic_investment",
+    "operational_cost",
+    "recoverable_advance",
+    "manual_adjustment",
+  ]),
+  amount: zod.number().describe("Amount in INR"),
+  contributionDate: zod.coerce.date(),
+  lifecyclePhaseSnapshot: zod
+    .string()
+    .describe("Project lifecycle phase at time of recording"),
+  agreementId: zod.string().uuid().nullish(),
+  referenceNumber: zod.string().nullish(),
+  remarks: zod.string().nullish(),
+  affectsOwnership: zod
+    .boolean()
+    .describe(
+      "Whether this contribution is eligible to influence ownership guidance",
+    ),
+  verificationStatus: zod.enum([
+    "draft",
+    "pending_verification",
+    "verified",
+    "rejected",
+  ]),
+  verifiedAt: zod.coerce.date().nullish(),
+  verifiedBy: zod.string().uuid().nullish(),
+  verifiedByName: zod.string().nullish(),
+  verifierNotes: zod.string().nullish(),
+  designatedVerifierId: zod
+    .string()
+    .uuid()
+    .nullish()
+    .describe(
+      "DB UUID of the counterparty user assigned to verify this contribution",
+    ),
+  designatedVerifierName: zod
+    .string()
+    .nullish()
+    .describe("Denormalised display name of the designated verifier"),
+  recordedBy: zod.string().uuid().nullish(),
+  recordedByName: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date().nullish(),
+});
+
+/**
+ * @summary Get the verification event timeline for a contribution
+ */
+export const ListContributionVerificationHistoryParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const ListContributionVerificationHistoryResponse = zod.object({
+  events: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      contributionId: zod.string().uuid(),
+      eventType: zod.enum([
+        "verification_requested",
+        "approved",
+        "rejected",
+        "re_approved",
+        "verifier_changed",
+        "otp_sent",
+        "otp_verified",
+      ]),
+      actorId: zod.string().uuid().nullish(),
+      actorName: zod.string().nullish(),
+      targetUserId: zod.string().uuid().nullish(),
+      targetUserName: zod.string().nullish(),
+      notes: zod.string().nullish(),
+      otpSentAt: zod.coerce.date().nullish(),
+      otpVerifiedAt: zod.coerce.date().nullish(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+});
+
+/**
  * @summary Get the active land notional contribution for a project
  */
 export const GetLandNotionalContributionQueryParams = zod.object({
@@ -3282,6 +3495,17 @@ export const GetLandNotionalContributionResponse = zod.object({
         verifiedBy: zod.string().uuid().nullish(),
         verifiedByName: zod.string().nullish(),
         verifierNotes: zod.string().nullish(),
+        designatedVerifierId: zod
+          .string()
+          .uuid()
+          .nullish()
+          .describe(
+            "DB UUID of the counterparty user assigned to verify this contribution",
+          ),
+        designatedVerifierName: zod
+          .string()
+          .nullish()
+          .describe("Denormalised display name of the designated verifier"),
         recordedBy: zod.string().uuid().nullish(),
         recordedByName: zod.string().nullish(),
         createdAt: zod.coerce.date(),
@@ -3352,6 +3576,17 @@ export const GetLandNotionalHistoryResponse = zod.object({
       verifiedBy: zod.string().uuid().nullish(),
       verifiedByName: zod.string().nullish(),
       verifierNotes: zod.string().nullish(),
+      designatedVerifierId: zod
+        .string()
+        .uuid()
+        .nullish()
+        .describe(
+          "DB UUID of the counterparty user assigned to verify this contribution",
+        ),
+      designatedVerifierName: zod
+        .string()
+        .nullish()
+        .describe("Denormalised display name of the designated verifier"),
       recordedBy: zod.string().uuid().nullish(),
       recordedByName: zod.string().nullish(),
       createdAt: zod.coerce.date(),
@@ -3418,6 +3653,17 @@ export const ListContributionsResponse = zod.object({
       verifiedBy: zod.string().uuid().nullish(),
       verifiedByName: zod.string().nullish(),
       verifierNotes: zod.string().nullish(),
+      designatedVerifierId: zod
+        .string()
+        .uuid()
+        .nullish()
+        .describe(
+          "DB UUID of the counterparty user assigned to verify this contribution",
+        ),
+      designatedVerifierName: zod
+        .string()
+        .nullish()
+        .describe("Denormalised display name of the designated verifier"),
       recordedBy: zod.string().uuid().nullish(),
       recordedByName: zod.string().nullish(),
       createdAt: zod.coerce.date(),
@@ -3447,6 +3693,11 @@ export const CreateContributionBody = zod.object({
   referenceNumber: zod.string().optional(),
   remarks: zod.string().optional(),
   affectsOwnership: zod.boolean().optional(),
+  designatedVerifierId: zod
+    .string()
+    .uuid()
+    .optional()
+    .describe("DB UUID of the user who should verify this contribution"),
 });
 
 /**
@@ -3526,6 +3777,17 @@ export const GetContributionResponse = zod.object({
   verifiedBy: zod.string().uuid().nullish(),
   verifiedByName: zod.string().nullish(),
   verifierNotes: zod.string().nullish(),
+  designatedVerifierId: zod
+    .string()
+    .uuid()
+    .nullish()
+    .describe(
+      "DB UUID of the counterparty user assigned to verify this contribution",
+    ),
+  designatedVerifierName: zod
+    .string()
+    .nullish()
+    .describe("Denormalised display name of the designated verifier"),
   recordedBy: zod.string().uuid().nullish(),
   recordedByName: zod.string().nullish(),
   createdAt: zod.coerce.date(),
@@ -3593,6 +3855,17 @@ export const UpdateContributionResponse = zod.object({
   verifiedBy: zod.string().uuid().nullish(),
   verifiedByName: zod.string().nullish(),
   verifierNotes: zod.string().nullish(),
+  designatedVerifierId: zod
+    .string()
+    .uuid()
+    .nullish()
+    .describe(
+      "DB UUID of the counterparty user assigned to verify this contribution",
+    ),
+  designatedVerifierName: zod
+    .string()
+    .nullish()
+    .describe("Denormalised display name of the designated verifier"),
   recordedBy: zod.string().uuid().nullish(),
   recordedByName: zod.string().nullish(),
   createdAt: zod.coerce.date(),
@@ -3649,6 +3922,17 @@ export const SubmitContributionForVerificationResponse = zod.object({
   verifiedBy: zod.string().uuid().nullish(),
   verifiedByName: zod.string().nullish(),
   verifierNotes: zod.string().nullish(),
+  designatedVerifierId: zod
+    .string()
+    .uuid()
+    .nullish()
+    .describe(
+      "DB UUID of the counterparty user assigned to verify this contribution",
+    ),
+  designatedVerifierName: zod
+    .string()
+    .nullish()
+    .describe("Denormalised display name of the designated verifier"),
   recordedBy: zod.string().uuid().nullish(),
   recordedByName: zod.string().nullish(),
   createdAt: zod.coerce.date(),
@@ -3702,6 +3986,17 @@ export const VerifyContributionResponse = zod.object({
   verifiedBy: zod.string().uuid().nullish(),
   verifiedByName: zod.string().nullish(),
   verifierNotes: zod.string().nullish(),
+  designatedVerifierId: zod
+    .string()
+    .uuid()
+    .nullish()
+    .describe(
+      "DB UUID of the counterparty user assigned to verify this contribution",
+    ),
+  designatedVerifierName: zod
+    .string()
+    .nullish()
+    .describe("Denormalised display name of the designated verifier"),
   recordedBy: zod.string().uuid().nullish(),
   recordedByName: zod.string().nullish(),
   createdAt: zod.coerce.date(),
@@ -3755,6 +4050,17 @@ export const RejectContributionResponse = zod.object({
   verifiedBy: zod.string().uuid().nullish(),
   verifiedByName: zod.string().nullish(),
   verifierNotes: zod.string().nullish(),
+  designatedVerifierId: zod
+    .string()
+    .uuid()
+    .nullish()
+    .describe(
+      "DB UUID of the counterparty user assigned to verify this contribution",
+    ),
+  designatedVerifierName: zod
+    .string()
+    .nullish()
+    .describe("Denormalised display name of the designated verifier"),
   recordedBy: zod.string().uuid().nullish(),
   recordedByName: zod.string().nullish(),
   createdAt: zod.coerce.date(),

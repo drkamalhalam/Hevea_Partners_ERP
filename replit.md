@@ -367,6 +367,46 @@ Generates filled DOCX documents from stored templates by substituting `{{VARIABL
 - All route params/IDs are strings in routes (no `parseInt`/`Number()` conversions — UUIDs come as strings from the URL)
 - `@clerk/shared/keys` is not bundled — `app.ts` derives publishable key and proxyUrl directly without it
 
+## Economic Contribution Verification Workflow
+
+Counterparty-designated verification system for economic investment contributions. Supports a full approve → reject → re-approve lifecycle with an immutable event audit trail, pending task dashboard, and governance alerts for unresolved rejections.
+
+**DB schema additions:**
+- `contributionVerificationEventTypeEnum` in `enums.ts`: `verification_requested | approved | rejected | re_approved | verifier_changed | otp_sent | otp_verified`
+- `designatedVerifierId` + `designatedVerifierName` columns added to `contributionsTable`
+- `contributionVerificationEventsTable` (`lib/db/src/schema/contribution_verification_events.ts`) — immutable audit trail; UUID PK, contributionId FK (cascade), eventType, actorId/Name, targetUserId/Name, notes, otpSentAt, otpVerifiedAt
+
+**API endpoints** (`artifacts/api-server/src/routes/contributions.ts`):
+- `GET /contributions/pending-verification` — pending items for current user (admin/dev: all; others: only their designated items). **Must be registered before `/:id`** to avoid Express path shadowing.
+- `POST /contributions/:id/verify` — approve (admin/dev OR designated verifier); writes `approved` or `re_approved` event
+- `POST /contributions/:id/reject` — reject (admin/dev OR designated verifier); writes `rejected` event; requires notes
+- `POST /contributions/:id/request-verification` — admin/dev only; assign/reassign verifier, auto-advance draft → pending_verification, writes `verification_requested` or `verifier_changed` event
+- `GET /contributions/:id/verification-history` — immutable event timeline; accessible to any user with project access OR designated verifier
+
+**Governance extension** (`artifacts/api-server/src/routes/governance.ts`):
+- `REJECTED_CONTRIBUTION` added to `GovernanceIssueCode` (severity: `attention_required`)
+- Batch query for rejected `economic_investment` contributions per visible project; surfaces as project-level governance alert for admin/developer
+
+**OpenAPI schema additions:**
+- `ContributionEntry`: added `designatedVerifierId` (nullable UUID) + `designatedVerifierName` (nullable string)
+- `CreateContributionBody`: added `designatedVerifierId` (optional UUID)
+- `UserProfile`: added `id` (optional DB UUID) — exposed so frontend can match logged-in user against `designatedVerifierId`
+- `me.ts` `buildProfile()` now includes `id: userRow?.id ?? null`
+
+**Frontend** (`artifacts/plantation-web/src/pages/EconomicContributions.tsx`), route `/contributions/economic`:
+- 4 KPI cards: total, pending, verified total (INR), rejected
+- Red governance alert banner when rejected contributions exist (with rejection remarks preview)
+- **Pending Verification tab**: card grid of pending items with Approve / Reject buttons + OTP placeholder block
+- **All Economic Contributions tab**: collapsible table rows with inline `VerificationTimeline` showing full event history
+- `AssignVerifierDialog`: assign/change the counterparty verifier; filtered user list by DB UUID
+- `ApproveRejectDialog`: approve/reject with notes; re-approval warning for previously-rejected; OTP placeholder notice
+- `RecordContributionDialog`: full form with optional verifier designation at creation time
+- Current user's DB UUID fetched via `useGetMe()` (`.id`) to compare against `designatedVerifierId`
+
+**Sidebar**: "Economic" entry added to Contributions sub-group (roles: admin, developer, landowner, investor)
+
+**Generated hooks:** `useListPendingVerificationContributions`, `useRequestContributionVerification`, `useListContributionVerificationHistory`
+
 ## Pointers
 
 - See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details

@@ -58,6 +58,7 @@ async function buildProfile(clerkUserId: string) {
   const profileComplete = missingNomineeProjectIds.length === 0;
 
   return {
+    id: userRow?.id ?? null,
     clerkUserId,
     role: userRow?.role ?? "employee",
     displayName: userRow?.displayName ?? null,

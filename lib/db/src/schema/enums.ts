@@ -309,6 +309,31 @@ export const contributionVerificationStatusEnum = pgEnum(
   ["draft", "pending_verification", "verified", "rejected"],
 );
 
+// ── Contribution verification event enums ─────────────────────────────────
+
+/**
+ * Event types in the immutable verification audit trail.
+ *   verification_requested — a verifier was assigned or re-assigned
+ *   approved               — designated verifier (or admin) approved the contribution
+ *   rejected               — designated verifier (or admin) rejected it
+ *   re_approved            — previously-rejected contribution approved after appeal
+ *   verifier_changed       — verifier assignment changed (records old → new verifier)
+ *   otp_sent               — OTP challenge dispatched (placeholder for future flow)
+ *   otp_verified           — OTP confirmed by counterparty (placeholder)
+ */
+export const contributionVerificationEventTypeEnum = pgEnum(
+  "contribution_verification_event_type",
+  [
+    "verification_requested",
+    "approved",
+    "rejected",
+    "re_approved",
+    "verifier_changed",
+    "otp_sent",
+    "otp_verified",
+  ],
+);
+
 // ── Audit enums ───────────────────────────────────────────────────────────
 
 export const dbOperationEnum = pgEnum("db_operation", [

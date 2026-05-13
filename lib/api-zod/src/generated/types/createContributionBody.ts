@@ -19,4 +19,6 @@ export interface CreateContributionBody {
   referenceNumber?: string;
   remarks?: string;
   affectsOwnership?: boolean;
+  /** DB UUID of the user who should verify this contribution */
+  designatedVerifierId?: string;
 }

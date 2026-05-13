@@ -2398,6 +2398,95 @@ paths:
 
 
 
+
+  /contributions/pending-verification:
+    get:
+      operationId: listPendingVerificationContributions
+      summary: List contributions pending verification for the current user
+      description: Returns contributions where the current user is the designated verifier and status is pending_verification. Also includes any pending items for admin/developer roles.
+      tags: [Contributions]
+      parameters:
+        - name: projectId
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Pending verification items
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [contributions, totalCount]
+                properties:
+                  contributions:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ContributionEntry"
+                  totalCount:
+                    type: integer
+
+  /contributions/{id}/request-verification:
+    post:
+      operationId: requestContributionVerification
+      summary: Assign or reassign a counterparty verifier for a contribution
+      tags: [Contributions]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [verifierUserId]
+              properties:
+                verifierUserId:
+                  type: string
+                  format: uuid
+                notes:
+                  type: string
+      responses:
+        "200":
+          description: Verifier assigned
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ContributionEntry" }
+        "400": { description: Bad request }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+        "404": { description: Not found }
+
+  /contributions/{id}/verification-history:
+    get:
+      operationId: listContributionVerificationHistory
+      summary: Get the verification event timeline for a contribution
+      tags: [Contributions]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Verification event timeline
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [events]
+                properties:
+                  events:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ContributionVerificationEvent"
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+        "404": { description: Not found }
+
   /contributions/land-notional:
     get:
       operationId: getLandNotionalContribution
@@ -3359,6 +3448,10 @@ components:
       type: object
       required: [clerkUserId, role, assignedProjectIds, isActive, profileComplete]
       properties:
+        id:
+          type: string
+          format: uuid
+          description: Internal DB UUID for this user (exposed for verifier designation etc.)
         clerkUserId:
           type: string
         role:
@@ -4679,6 +4772,13 @@ components:
           type: ["string", "null"]
         verifierNotes:
           type: ["string", "null"]
+        designatedVerifierId:
+          type: ["string", "null"]
+          format: uuid
+          description: DB UUID of the counterparty user assigned to verify this contribution
+        designatedVerifierName:
+          type: ["string", "null"]
+          description: Denormalised display name of the designated verifier
         recordedBy:
           type: ["string", "null"]
           format: uuid
@@ -4722,6 +4822,10 @@ components:
           type: string
         affectsOwnership:
           type: boolean
+        designatedVerifierId:
+          type: string
+          format: uuid
+          description: DB UUID of the user who should verify this contribution
 
     UpdateContributionBody:
       type: object
@@ -4814,3 +4918,39 @@ components:
         isLocked:
           type: boolean
           description: True when the project has advanced beyond prematurity (new entries blocked)
+
+
+    ContributionVerificationEvent:
+      type: object
+      required: [id, contributionId, eventType, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        contributionId:
+          type: string
+          format: uuid
+        eventType:
+          type: string
+          enum: [verification_requested, approved, rejected, re_approved, verifier_changed, otp_sent, otp_verified]
+        actorId:
+          type: ["string", "null"]
+          format: uuid
+        actorName:
+          type: ["string", "null"]
+        targetUserId:
+          type: ["string", "null"]
+          format: uuid
+        targetUserName:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        otpSentAt:
+          type: ["string", "null"]
+          format: date-time
+        otpVerifiedAt:
+          type: ["string", "null"]
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time

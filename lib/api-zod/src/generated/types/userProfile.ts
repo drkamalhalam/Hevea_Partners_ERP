@@ -9,6 +9,8 @@ import type { ProjectAssignmentItem } from "./projectAssignmentItem";
 import type { UserProfileRole } from "./userProfileRole";
 
 export interface UserProfile {
+  /** Internal DB UUID for this user (exposed for verifier designation etc.) */
+  id?: string;
   clerkUserId: string;
   role: UserProfileRole;
   /** @nullable */

@@ -595,6 +595,8 @@ export const UserProfileRole = {
 } as const;
 
 export interface UserProfile {
+  /** Internal DB UUID for this user (exposed for verifier designation etc.) */
+  id?: string;
   clerkUserId: string;
   role: UserProfileRole;
   /** @nullable */
@@ -1821,6 +1823,16 @@ export interface ContributionEntry {
   verifiedByName?: string | null;
   /** @nullable */
   verifierNotes?: string | null;
+  /**
+   * DB UUID of the counterparty user assigned to verify this contribution
+   * @nullable
+   */
+  designatedVerifierId?: string | null;
+  /**
+   * Denormalised display name of the designated verifier
+   * @nullable
+   */
+  designatedVerifierName?: string | null;
   /** @nullable */
   recordedBy?: string | null;
   /** @nullable */
@@ -1853,6 +1865,8 @@ export interface CreateContributionBody {
   referenceNumber?: string;
   remarks?: string;
   affectsOwnership?: boolean;
+  /** DB UUID of the user who should verify this contribution */
+  designatedVerifierId?: string;
 }
 
 export type UpdateContributionBodyContributionType =
@@ -1915,6 +1929,40 @@ export interface LandNotionalState {
   canRecord: boolean;
   /** True when the project has advanced beyond prematurity (new entries blocked) */
   isLocked: boolean;
+}
+
+export type ContributionVerificationEventEventType =
+  (typeof ContributionVerificationEventEventType)[keyof typeof ContributionVerificationEventEventType];
+
+export const ContributionVerificationEventEventType = {
+  verification_requested: "verification_requested",
+  approved: "approved",
+  rejected: "rejected",
+  re_approved: "re_approved",
+  verifier_changed: "verifier_changed",
+  otp_sent: "otp_sent",
+  otp_verified: "otp_verified",
+} as const;
+
+export interface ContributionVerificationEvent {
+  id: string;
+  contributionId: string;
+  eventType: ContributionVerificationEventEventType;
+  /** @nullable */
+  actorId?: string | null;
+  /** @nullable */
+  actorName?: string | null;
+  /** @nullable */
+  targetUserId?: string | null;
+  /** @nullable */
+  targetUserName?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  /** @nullable */
+  otpSentAt?: string | null;
+  /** @nullable */
+  otpVerifiedAt?: string | null;
+  createdAt: string;
 }
 
 export type GetUserActivityParams = {
@@ -1984,6 +2032,24 @@ export const ListTemplatesStatus = {
   active: "active",
   archived: "archived",
 } as const;
+
+export type ListPendingVerificationContributionsParams = {
+  projectId?: string;
+};
+
+export type ListPendingVerificationContributions200 = {
+  contributions: ContributionEntry[];
+  totalCount: number;
+};
+
+export type RequestContributionVerificationBody = {
+  verifierUserId: string;
+  notes?: string;
+};
+
+export type ListContributionVerificationHistory200 = {
+  events: ContributionVerificationEvent[];
+};
 
 export type GetLandNotionalContributionParams = {
   projectId: string;

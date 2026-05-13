@@ -94,6 +94,16 @@ export const contributionsTable = pgTable("contributions", {
   verifiedByName: text("verified_by_name"), // denormalized snapshot
   verifierNotes: text("verifier_notes"),
 
+  // ── Counterparty verifier (designated responsible party) ──────────────────
+  // The user designated to verify this contribution on behalf of the
+  // counterparty. When set, this user (and admin/developer) can approve/reject.
+  // Enables per-contribution "pending tasks" for the assigned verifier.
+  designatedVerifierId: uuid("designated_verifier_id").references(
+    () => usersTable.id,
+    { onDelete: "set null" },
+  ),
+  designatedVerifierName: text("designated_verifier_name"), // denormalized snapshot
+
   // ── Audit columns ─────────────────────────────────────────────────────────
   recordedBy: uuid("recorded_by").references(() => usersTable.id, {
     onDelete: "set null",

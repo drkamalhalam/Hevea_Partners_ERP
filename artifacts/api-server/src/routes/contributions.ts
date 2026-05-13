@@ -4,6 +4,7 @@ import { eq, and, isNull, ne, inArray, desc, sql } from "drizzle-orm";
 import {
   db,
   contributionsTable,
+  contributionVerificationEventsTable,
   projectsTable,
   partnersTable,
   usersTable,
@@ -107,11 +108,46 @@ function formatContribution(
     verifiedBy: row.verifiedBy,
     verifiedByName: row.verifiedByName,
     verifierNotes: row.verifierNotes,
+    designatedVerifierId: row.designatedVerifierId ?? null,
+    designatedVerifierName: row.designatedVerifierName ?? null,
     recordedBy: row.recordedBy,
     recordedByName: row.recordedByName,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt?.toISOString() ?? null,
   };
+}
+
+// ── Write verification event (fire-and-forget helper) ─────────────────────────
+
+async function writeVerificationEvent(params: {
+  contributionId: string;
+  eventType:
+    | "verification_requested"
+    | "approved"
+    | "rejected"
+    | "re_approved"
+    | "verifier_changed"
+    | "otp_sent"
+    | "otp_verified";
+  actorId?: string | null;
+  actorName?: string | null;
+  targetUserId?: string | null;
+  targetUserName?: string | null;
+  notes?: string | null;
+}) {
+  try {
+    await db.insert(contributionVerificationEventsTable).values({
+      contributionId: params.contributionId,
+      eventType: params.eventType,
+      actorId: params.actorId ?? null,
+      actorName: params.actorName ?? null,
+      targetUserId: params.targetUserId ?? null,
+      targetUserName: params.targetUserName ?? null,
+      notes: params.notes ?? null,
+    });
+  } catch {
+    // Non-fatal — event logging must not block the response
+  }
 }
 
 // ── GET /contributions/summary ────────────────────────────────────────────────
@@ -375,6 +411,20 @@ router.post(
         ? b.lifecyclePhaseSnapshot
         : (projectRows[0].lifecycleStatus ?? "prematurity"));
 
+    // Resolve designated verifier if provided
+    let designatedVerifierId: string | null = null;
+    let designatedVerifierName: string | null = null;
+    if (typeof b.designatedVerifierId === "string") {
+      const verifierRows = await db
+        .select({ id: usersTable.id, displayName: usersTable.displayName })
+        .from(usersTable)
+        .where(eq(usersTable.id, b.designatedVerifierId))
+        .limit(1);
+      if (!verifierRows[0]) return res.status(400).json({ error: "Designated verifier user not found" });
+      designatedVerifierId = verifierRows[0].id;
+      designatedVerifierName = verifierRows[0].displayName;
+    }
+
     const [inserted] = await db
       .insert(contributionsTable)
       .values({
@@ -392,8 +442,23 @@ router.post(
         verificationStatus: "draft",
         recordedBy: actor.id,
         recordedByName: actor.name,
+        designatedVerifierId,
+        designatedVerifierName,
       })
       .returning();
+
+    // Write initial event if a verifier was assigned at creation
+    if (designatedVerifierId) {
+      void writeVerificationEvent({
+        contributionId: inserted.id,
+        eventType: "verification_requested",
+        actorId: actor.id,
+        actorName: actor.name,
+        targetUserId: designatedVerifierId,
+        targetUserName: designatedVerifierName,
+        notes: typeof b.remarks === "string" ? b.remarks : null,
+      });
+    }
 
     return res.status(201).json(formatContribution({ ...inserted, projectName: projectRows[0].name }));
   },
@@ -489,6 +554,62 @@ router.get("/contributions/land-notional/history", async (req, res) => {
       formatContribution({ ...r.contribution, projectName: r.projectName }),
     ),
   });
+});
+
+// ── GET /contributions/pending-verification ────────────────────────────────────
+// Returns contributions pending verification for the current user.
+// For admin/developer: all pending_verification entries within visible projects.
+// For other roles: only entries where they are the designated verifier.
+// MUST be registered before /:id to avoid Express treating "pending-verification"
+// as an :id parameter value.
+
+router.get("/contributions/pending-verification", async (req, res) => {
+  const { userId: clerkUserId } = getAuth(req);
+  if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
+
+  const actor = await resolveActingUser(clerkUserId);
+  if (!actor) return res.status(401).json({ error: "User not found" });
+
+  let visibleProjectIds: string[] | null = null;
+  if (!canAccessAllProjects(actor.role)) {
+    visibleProjectIds = await getAssignedProjectIds(actor.id);
+    if (visibleProjectIds.length === 0) {
+      return res.json({ contributions: [], totalCount: 0 });
+    }
+  }
+
+  const filterProjectId = typeof req.query.projectId === "string" ? req.query.projectId : null;
+  if (filterProjectId) {
+    if (visibleProjectIds !== null && !visibleProjectIds.includes(filterProjectId)) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+    visibleProjectIds = [filterProjectId];
+  }
+
+  const conditions: ReturnType<typeof eq>[] = [
+    isNull(contributionsTable.deletedAt) as unknown as ReturnType<typeof eq>,
+    eq(contributionsTable.verificationStatus, "pending_verification") as unknown as ReturnType<typeof eq>,
+  ];
+
+  if (!canAccessAllProjects(actor.role)) {
+    conditions.push(eq(contributionsTable.designatedVerifierId, actor.id) as unknown as ReturnType<typeof eq>);
+  }
+  if (visibleProjectIds !== null) {
+    conditions.push(inArray(contributionsTable.projectId, visibleProjectIds) as unknown as ReturnType<typeof eq>);
+  }
+
+  const rows = await db
+    .select({ contribution: contributionsTable, projectName: projectsTable.name })
+    .from(contributionsTable)
+    .leftJoin(projectsTable, eq(contributionsTable.projectId, projectsTable.id))
+    .where(and(...(conditions as Parameters<typeof and>)))
+    .orderBy(desc(contributionsTable.createdAt));
+
+  const contributions = rows.map((r) =>
+    formatContribution({ ...r.contribution, projectName: r.projectName }),
+  );
+
+  return res.json({ contributions, totalCount: contributions.length });
 });
 
 // ── GET /contributions/:id ─────────────────────────────────────────────────────
@@ -634,51 +755,125 @@ router.post(
 );
 
 // ── POST /contributions/:id/verify ─────────────────────────────────────────────
+// Extended: designated verifier AND admin/developer can approve.
+// Handles re_approved event for previously-rejected contributions.
 
-router.post(
-  "/contributions/:id/verify",
-  requireRole("admin"),
-  async (req, res) => {
-    const { userId: clerkUserId } = getAuth(req);
-    if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
+router.post("/contributions/:id/verify", async (req, res) => {
+  const { userId: clerkUserId } = getAuth(req);
+  if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
 
-    const actor = await resolveActingUser(clerkUserId);
-    if (!actor) return res.status(401).json({ error: "User not found" });
+  const actor = await resolveActingUser(clerkUserId);
+  if (!actor) return res.status(401).json({ error: "User not found" });
 
-    const id = String(req.params.id);
-    const existing = await db
-      .select()
-      .from(contributionsTable)
-      .where(and(eq(contributionsTable.id, id), isNull(contributionsTable.deletedAt)))
-      .limit(1);
-    if (!existing[0]) return res.status(404).json({ error: "Contribution not found" });
-    if (existing[0].verificationStatus === "verified") {
-      return res.status(400).json({ error: "Already verified" });
-    }
+  const id = String(req.params.id);
+  const existing = await db
+    .select({ contribution: contributionsTable, projectName: projectsTable.name })
+    .from(contributionsTable)
+    .leftJoin(projectsTable, eq(contributionsTable.projectId, projectsTable.id))
+    .where(and(eq(contributionsTable.id, id), isNull(contributionsTable.deletedAt)))
+    .limit(1);
+  if (!existing[0]) return res.status(404).json({ error: "Contribution not found" });
 
-    const b = req.body as Record<string, unknown>;
-    const [updated] = await db
-      .update(contributionsTable)
-      .set({
-        verificationStatus: "verified",
-        verifiedAt: new Date(),
-        verifiedBy: actor.id,
-        verifiedByName: actor.name,
-        verifierNotes: typeof b.notes === "string" ? b.notes : null,
-      })
-      .where(eq(contributionsTable.id, id))
-      .returning();
+  const curr = existing[0].contribution;
+  if (curr.verificationStatus === "verified") {
+    return res.status(400).json({ error: "Already verified" });
+  }
 
-    const projectRows = await db.select({ name: projectsTable.name }).from(projectsTable).where(eq(projectsTable.id, updated.projectId)).limit(1);
-    return res.json(formatContribution({ ...updated, projectName: projectRows[0]?.name }));
-  },
-);
+  // Authorization: admin, developer, or the designated verifier
+  const isDesignatedVerifier = curr.designatedVerifierId === actor.id;
+  const isAdminOrDev = actor.role === "admin" || actor.role === "developer";
+  if (!isAdminOrDev && !isDesignatedVerifier) {
+    return res.status(403).json({ error: "Only the designated verifier or admin/developer can approve this contribution" });
+  }
+
+  const b = req.body as Record<string, unknown>;
+  const wasRejected = curr.verificationStatus === "rejected";
+
+  const [updated] = await db
+    .update(contributionsTable)
+    .set({
+      verificationStatus: "verified",
+      verifiedAt: new Date(),
+      verifiedBy: actor.id,
+      verifiedByName: actor.name,
+      verifierNotes: typeof b.notes === "string" ? b.notes : null,
+    })
+    .where(eq(contributionsTable.id, id))
+    .returning();
+
+  // Write audit event
+  void writeVerificationEvent({
+    contributionId: id,
+    eventType: wasRejected ? "re_approved" : "approved",
+    actorId: actor.id,
+    actorName: actor.name,
+    notes: typeof b.notes === "string" ? b.notes : null,
+  });
+
+  const projectRows = await db.select({ name: projectsTable.name }).from(projectsTable).where(eq(projectsTable.id, updated.projectId)).limit(1);
+  return res.json(formatContribution({ ...updated, projectName: projectRows[0]?.name }));
+});
 
 // ── POST /contributions/:id/reject ─────────────────────────────────────────────
+// Extended: designated verifier AND admin/developer can reject.
+
+router.post("/contributions/:id/reject", async (req, res) => {
+  const { userId: clerkUserId } = getAuth(req);
+  if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
+
+  const actor = await resolveActingUser(clerkUserId);
+  if (!actor) return res.status(401).json({ error: "User not found" });
+
+  const id = String(req.params.id);
+  const existing = await db
+    .select()
+    .from(contributionsTable)
+    .where(and(eq(contributionsTable.id, id), isNull(contributionsTable.deletedAt)))
+    .limit(1);
+  if (!existing[0]) return res.status(404).json({ error: "Contribution not found" });
+  if (existing[0].verificationStatus === "rejected") {
+    return res.status(400).json({ error: "Already rejected" });
+  }
+
+  const curr = existing[0];
+  const isDesignatedVerifier = curr.designatedVerifierId === actor.id;
+  const isAdminOrDev = actor.role === "admin" || actor.role === "developer";
+  if (!isAdminOrDev && !isDesignatedVerifier) {
+    return res.status(403).json({ error: "Only the designated verifier or admin/developer can reject this contribution" });
+  }
+
+  const b = req.body as Record<string, unknown>;
+  const [updated] = await db
+    .update(contributionsTable)
+    .set({
+      verificationStatus: "rejected",
+      verifiedAt: new Date(),
+      verifiedBy: actor.id,
+      verifiedByName: actor.name,
+      verifierNotes: typeof b.notes === "string" ? b.notes : null,
+    })
+    .where(eq(contributionsTable.id, id))
+    .returning();
+
+  void writeVerificationEvent({
+    contributionId: id,
+    eventType: "rejected",
+    actorId: actor.id,
+    actorName: actor.name,
+    notes: typeof b.notes === "string" ? b.notes : null,
+  });
+
+  const projectRows = await db.select({ name: projectsTable.name }).from(projectsTable).where(eq(projectsTable.id, updated.projectId)).limit(1);
+  return res.json(formatContribution({ ...updated, projectName: projectRows[0]?.name }));
+});
+
+// ── POST /contributions/:id/request-verification ───────────────────────────────
+// Assign or reassign the counterparty verifier. Writes a verification_requested
+// or verifier_changed event. The contribution must be non-deleted.
 
 router.post(
-  "/contributions/:id/reject",
-  requireRole("admin"),
+  "/contributions/:id/request-verification",
+  requireRole("admin", "developer"),
   async (req, res) => {
     const { userId: clerkUserId } = getAuth(req);
     if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
@@ -693,27 +888,97 @@ router.post(
       .where(and(eq(contributionsTable.id, id), isNull(contributionsTable.deletedAt)))
       .limit(1);
     if (!existing[0]) return res.status(404).json({ error: "Contribution not found" });
-    if (existing[0].verificationStatus === "rejected") {
-      return res.status(400).json({ error: "Already rejected" });
-    }
 
     const b = req.body as Record<string, unknown>;
+    if (!b.verifierUserId || typeof b.verifierUserId !== "string") {
+      return res.status(400).json({ error: "verifierUserId is required" });
+    }
+
+    const verifierRows = await db
+      .select({ id: usersTable.id, displayName: usersTable.displayName })
+      .from(usersTable)
+      .where(eq(usersTable.id, b.verifierUserId))
+      .limit(1);
+    if (!verifierRows[0]) return res.status(400).json({ error: "Verifier user not found" });
+
+    const hadVerifier = !!existing[0].designatedVerifierId;
     const [updated] = await db
       .update(contributionsTable)
       .set({
-        verificationStatus: "rejected",
-        verifiedAt: new Date(),
-        verifiedBy: actor.id,
-        verifiedByName: actor.name,
-        verifierNotes: typeof b.notes === "string" ? b.notes : null,
+        designatedVerifierId: verifierRows[0].id,
+        designatedVerifierName: verifierRows[0].displayName,
+        // Auto-advance draft to pending_verification when verifier is assigned
+        verificationStatus:
+          existing[0].verificationStatus === "draft"
+            ? "pending_verification"
+            : existing[0].verificationStatus,
       })
       .where(eq(contributionsTable.id, id))
       .returning();
+
+    void writeVerificationEvent({
+      contributionId: id,
+      eventType: hadVerifier ? "verifier_changed" : "verification_requested",
+      actorId: actor.id,
+      actorName: actor.name,
+      targetUserId: verifierRows[0].id,
+      targetUserName: verifierRows[0].displayName,
+      notes: typeof b.notes === "string" ? b.notes : null,
+    });
 
     const projectRows = await db.select({ name: projectsTable.name }).from(projectsTable).where(eq(projectsTable.id, updated.projectId)).limit(1);
     return res.json(formatContribution({ ...updated, projectName: projectRows[0]?.name }));
   },
 );
+
+// ── GET /contributions/:id/verification-history ────────────────────────────────
+// Returns the immutable event timeline for a contribution.
+
+router.get("/contributions/:id/verification-history", async (req, res) => {
+  const { userId: clerkUserId } = getAuth(req);
+  if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
+
+  const actor = await resolveActingUser(clerkUserId);
+  if (!actor) return res.status(401).json({ error: "User not found" });
+
+  const id = String(req.params.id);
+  const contribution = await db
+    .select()
+    .from(contributionsTable)
+    .where(and(eq(contributionsTable.id, id), isNull(contributionsTable.deletedAt)))
+    .limit(1);
+  if (!contribution[0]) return res.status(404).json({ error: "Contribution not found" });
+
+  if (!canAccessAllProjects(actor.role)) {
+    const assigned = await getAssignedProjectIds(actor.id);
+    const isDesignatedVerifier = contribution[0].designatedVerifierId === actor.id;
+    if (!assigned.includes(contribution[0].projectId) && !isDesignatedVerifier) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+  }
+
+  const events = await db
+    .select()
+    .from(contributionVerificationEventsTable)
+    .where(eq(contributionVerificationEventsTable.contributionId, id))
+    .orderBy(desc(contributionVerificationEventsTable.createdAt));
+
+  return res.json({
+    events: events.map((e) => ({
+      id: e.id,
+      contributionId: e.contributionId,
+      eventType: e.eventType,
+      actorId: e.actorId,
+      actorName: e.actorName,
+      targetUserId: e.targetUserId,
+      targetUserName: e.targetUserName,
+      notes: e.notes,
+      otpSentAt: e.otpSentAt?.toISOString() ?? null,
+      otpVerifiedAt: e.otpVerifiedAt?.toISOString() ?? null,
+      createdAt: e.createdAt.toISOString(),
+    })),
+  });
+});
 
 // ── DELETE /contributions/:id ──────────────────────────────────────────────────
 
