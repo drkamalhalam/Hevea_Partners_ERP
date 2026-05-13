@@ -95,6 +95,12 @@ const navGroups: NavGroup[] = [
         roles: ["admin", "developer"],
       },
       {
+        name: "Participation Dashboard",
+        href: "/contributions/dashboard",
+        icon: BarChart3,
+        roles: ["admin", "developer", "landowner", "investor"],
+      },
+      {
         name: "Contributions",
         href: "/contributions",
         icon: HandCoins,

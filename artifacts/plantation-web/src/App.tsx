@@ -30,6 +30,7 @@ import Contributions from "./pages/Contributions";
 import LandContribution from "./pages/LandContribution";
 import EconomicContributions from "./pages/EconomicContributions";
 import OwnershipGuidance from "./pages/OwnershipGuidance";
+import ParticipationDashboard from "./pages/ParticipationDashboard";
 import Expenditure from "./pages/Expenditure";
 import TemplateLibrary from "./pages/TemplateLibrary";
 
@@ -224,6 +225,7 @@ function AppRoutes() {
               <Route path="/generate-agreement"><ProtectedRoute component={GenerateAgreement} /></Route>
               <Route path="/contributions/land"><ProtectedRoute component={LandContribution} /></Route>
               <Route path="/contributions/economic"><ProtectedRoute component={EconomicContributions} /></Route>
+              <Route path="/contributions/dashboard"><ProtectedRoute component={ParticipationDashboard} /></Route>
               <Route path="/contributions"><ProtectedRoute component={Contributions} /></Route>
               <Route path="/ownership"><ProtectedRoute component={OwnershipGuidance} /></Route>
               <Route path="/expenditure"><ProtectedRoute component={Expenditure} /></Route>

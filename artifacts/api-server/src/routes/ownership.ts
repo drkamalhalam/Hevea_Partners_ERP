@@ -199,7 +199,7 @@ function formatDetail(
 // Returns live ownership guidance for all visible projects (or a single project
 // if ?projectId= is supplied).
 
-router.get("/ownership/summary", async (req, res) => {
+router.get("/summary", async (req, res) => {
   const { userId: clerkUserId } = getAuth(req);
   if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
 
@@ -252,7 +252,7 @@ router.get("/ownership/summary", async (req, res) => {
 
 // ── GET /ownership/:projectId ──────────────────────────────────────────────────
 
-router.get("/ownership/:projectId", async (req, res) => {
+router.get("/:projectId", async (req, res) => {
   const { userId: clerkUserId } = getAuth(req);
   if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
 
@@ -286,7 +286,7 @@ router.get("/ownership/:projectId", async (req, res) => {
 
 // ── GET /ownership/:projectId/snapshots ───────────────────────────────────────
 
-router.get("/ownership/:projectId/snapshots", async (req, res) => {
+router.get("/:projectId/snapshots", async (req, res) => {
   const { userId: clerkUserId } = getAuth(req);
   if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
 
@@ -343,7 +343,7 @@ router.get("/ownership/:projectId/snapshots", async (req, res) => {
 // Admin/developer only. Saves a manual snapshot of the current live calculation.
 
 router.post(
-  "/ownership/:projectId/snapshots",
+  "/:projectId/snapshots",
   requireRole("admin", "developer"),
   async (req, res) => {
     const { userId: clerkUserId } = getAuth(req);

@@ -438,6 +438,29 @@ Dynamic prematurity ownership percentages based on verified land_notional + econ
 
 **Generated hooks:** `useGetOwnershipSummary`, `getGetOwnershipSummaryQueryKey`, `useGetProjectOwnership`, `getGetProjectOwnershipQueryKey`, `useListOwnershipSnapshots`, `getListOwnershipSnapshotsQueryKey`, `useCreateOwnershipSnapshot`
 
+## Prematurity Ownership & Economic Participation Dashboard
+
+Aggregated single-page dashboard at `/contributions/dashboard` combining ownership guidance, contribution data, pending verifications, and alerts. Clearly labelled as **Prematurity Ownership Guidance** throughout.
+
+**Sections:**
+- Amber guidance disclaimer banner ("Prematurity Ownership Guidance — not legally binding until maturity declaration freeze")
+- Red rejected-contribution alert panel (with inline preview of rejected items, links to Economic page)
+- 6-KPI row: Verified Contributions count, Total Verified Amount, Land Notional total, Economic Investment total, Pending Verification count, Active Partners count
+- **Ownership Guidance Cards** (per project): expandable stacked ownership bar + partner %, click to expand full breakdown, links to full `/ownership` view
+- **Verified by Type** donut chart: land vs economic split
+- **Contribution Trend** bar chart: grouped by month × type (verified only, amounts in ₹K)
+- **Partner-wise Contribution Table**: aggregated by partner — land / economic / operational columns + verified/pending/rejected sub-totals + % of grand total
+- **Pending Verifications Panel**: amber-bordered list of items awaiting action, links to Economic page
+- **Contribution History Timeline**: most recent 15 contributions across all types/statuses with status dot timeline
+
+**Data sources:** `useListContributions`, `useListPendingVerificationContributions`, `useGetOwnershipSummary`, `useGetGovernanceSummary`, `useListProjects`
+
+**Sidebar:** "Participation Dashboard" entry in Finance group (roles: admin, developer, landowner, investor), icon `BarChart3`
+
+**Frontend:** `artifacts/plantation-web/src/pages/ParticipationDashboard.tsx`, route `/contributions/dashboard`
+
+**Ownership route fix:** Routes inside `ownershipRouter` use relative paths (`/summary`, `/:projectId`, `/:projectId/snapshots`) — the `/ownership` prefix comes from `router.use("/ownership", ownershipRouter)` in index.ts.
+
 ## Pointers
 
 - See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
