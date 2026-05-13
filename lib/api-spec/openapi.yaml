@@ -4281,6 +4281,148 @@ paths:
         "403": { description: Forbidden }
         "404": { description: Ledger entry not found }
 
+  /landowner-account/summary:
+    get:
+      operationId: getLandownerAccountSummary
+      summary: Aggregate landowner net position — revenue, burden, adjustments, LCA receivable
+      tags: [landowner-account]
+      parameters:
+        - name: projectId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: partnerId
+          in: query
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LandownerAccountSummary"
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+
+  /landowner-account/entries:
+    get:
+      operationId: listLandownerLedgerEntries
+      summary: List landowner ledger entries
+      tags: [landowner-account]
+      parameters:
+        - name: projectId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: partnerId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: entryType
+          in: query
+          schema: { type: string }
+        - name: status
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LandownerLedgerEntry"
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+    post:
+      operationId: createLandownerLedgerEntry
+      summary: Create a landowner ledger entry (admin/developer only)
+      tags: [landowner-account]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateLandownerLedgerEntryBody"
+      responses:
+        "201":
+          description: Created entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LandownerLedgerEntry"
+        "400": { description: Validation error }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+
+  /landowner-account/entries/{id}:
+    patch:
+      operationId: updateLandownerLedgerEntry
+      summary: Update a landowner ledger entry (admin/developer only)
+      tags: [landowner-account]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateLandownerLedgerEntryBody"
+      responses:
+        "200":
+          description: Updated entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LandownerLedgerEntry"
+        "400": { description: Validation error }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+        "404": { description: Not found }
+    delete:
+      operationId: reverseLandownerLedgerEntry
+      summary: Reverse (soft-delete) a ledger entry (admin only)
+      tags: [landowner-account]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success]
+                properties:
+                  success: { type: boolean }
+        "400": { description: Already reversed }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+        "404": { description: Not found }
+
+  /landowner-account/lca-receivable:
+    get:
+      operationId: getLandownerLcaReceivable
+      summary: Outstanding LCA receivable from lca_ledger for visible projects
+      tags: [landowner-account]
+      parameters:
+        - name: projectId
+          in: query
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: LCA receivable summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LandownerLcaReceivable"
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+
 components:
   schemas:
     HealthStatus:
@@ -7377,6 +7519,133 @@ components:
               type: array
               items:
                 $ref: "#/components/schemas/LcaPaymentEvent"
+
+    LandownerLedgerEntry:
+      type: object
+      required: [id, projectId, partnerId, entryType, direction, periodLabel, periodStart, periodEnd, description, amount, isRecoverable, recoveredAmount, recoveryStatus, status, recordedByName, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        projectName: { type: string }
+        partnerId: { type: string, format: uuid }
+        partnerName: { type: string }
+        entryType:
+          type: string
+          enum: [revenue_entitlement, operational_burden, recoverable_adjustment, lca_credit, other_credit, other_debit]
+        direction:
+          type: string
+          enum: [credit, debit]
+        periodLabel: { type: string }
+        periodStart: { type: string }
+        periodEnd: { type: string }
+        description: { type: string }
+        amount: { type: number }
+        grossRevenue: { type: number }
+        ownershipPct: { type: number }
+        revenueModelType: { type: string }
+        isRecoverable: { type: boolean }
+        recoveredAmount: { type: number }
+        recoveryStatus:
+          type: string
+          enum: [none, partial, full]
+        status:
+          type: string
+          enum: [draft, confirmed, disputed, reversed]
+        notes: { type: string }
+        recordedById: { type: string, format: uuid }
+        recordedByName: { type: string }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+
+    CreateLandownerLedgerEntryBody:
+      type: object
+      required: [projectId, partnerId, entryType, direction, periodLabel, periodStart, periodEnd, description, amount]
+      properties:
+        projectId: { type: string, format: uuid }
+        partnerId: { type: string, format: uuid }
+        entryType:
+          type: string
+          enum: [revenue_entitlement, operational_burden, recoverable_adjustment, lca_credit, other_credit, other_debit]
+        direction:
+          type: string
+          enum: [credit, debit]
+        periodLabel: { type: string }
+        periodStart: { type: string }
+        periodEnd: { type: string }
+        description: { type: string }
+        amount: { type: number, minimum: 0.01 }
+        grossRevenue: { type: number }
+        ownershipPct: { type: number }
+        revenueModelType: { type: string }
+        isRecoverable: { type: boolean }
+        notes: { type: string }
+
+    UpdateLandownerLedgerEntryBody:
+      type: object
+      properties:
+        description: { type: string }
+        amount: { type: number, minimum: 0.01 }
+        grossRevenue: { type: number }
+        ownershipPct: { type: number }
+        revenueModelType: { type: string }
+        periodLabel: { type: string }
+        periodStart: { type: string }
+        periodEnd: { type: string }
+        isRecoverable: { type: boolean }
+        recoveredAmount: { type: number }
+        recoveryStatus:
+          type: string
+          enum: [none, partial, full]
+        status:
+          type: string
+          enum: [draft, confirmed, disputed, reversed]
+        notes: { type: string }
+
+    LandownerAccountSummary:
+      type: object
+      required: [revenueEntitlement, operationalBurden, recoverableAdjCredit, recoverableAdjDebit, recoverableNet, otherCredit, otherDebit, lcaReceivable, netPosition, entryCount, lcaEntryCount]
+      properties:
+        revenueEntitlement: { type: number }
+        operationalBurden: { type: number }
+        recoverableAdjCredit: { type: number }
+        recoverableAdjDebit: { type: number }
+        recoverableNet: { type: number }
+        otherCredit: { type: number }
+        otherDebit: { type: number }
+        lcaReceivable: { type: number }
+        netPosition: { type: number }
+        entryCount: { type: integer }
+        lcaEntryCount: { type: integer }
+
+    LandownerLcaReceivableEntry:
+      type: object
+      required: [id, projectId, year, grossDue, carryForward, totalDue, amountPaid, balance, status]
+      properties:
+        id: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        projectName: { type: string }
+        year: { type: integer }
+        grossDue: { type: number }
+        carryForward: { type: number }
+        totalDue: { type: number }
+        amountPaid: { type: number }
+        balance: { type: number }
+        status: { type: string }
+        baseAmount: { type: number }
+        escalationPct: { type: number }
+
+    LandownerLcaReceivable:
+      type: object
+      required: [totalReceivable, totalPaid, totalDue, outstandingCount, entries]
+      properties:
+        totalReceivable: { type: number }
+        totalPaid: { type: number }
+        totalDue: { type: number }
+        outstandingCount: { type: integer }
+        entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/LandownerLcaReceivableEntry"
 
     LcaFullLedger:
       type: object

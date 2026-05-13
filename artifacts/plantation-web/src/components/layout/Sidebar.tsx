@@ -182,6 +182,12 @@ const navGroups: NavGroup[] = [
         icon: Receipt,
         roles: ["admin", "developer", "landowner"],
       },
+      {
+        name: "Landowner Account",
+        href: "/landowner-account",
+        icon: Landmark,
+        roles: ["admin", "developer", "landowner"],
+      },
     ],
   },
   {

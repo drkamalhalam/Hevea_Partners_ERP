@@ -2814,6 +2814,183 @@ export type LcaFullLedgerEntry = LcaLedgerEntry & {
   payments: LcaPaymentEvent[];
 };
 
+export type LandownerLedgerEntryEntryType =
+  (typeof LandownerLedgerEntryEntryType)[keyof typeof LandownerLedgerEntryEntryType];
+
+export const LandownerLedgerEntryEntryType = {
+  revenue_entitlement: "revenue_entitlement",
+  operational_burden: "operational_burden",
+  recoverable_adjustment: "recoverable_adjustment",
+  lca_credit: "lca_credit",
+  other_credit: "other_credit",
+  other_debit: "other_debit",
+} as const;
+
+export type LandownerLedgerEntryDirection =
+  (typeof LandownerLedgerEntryDirection)[keyof typeof LandownerLedgerEntryDirection];
+
+export const LandownerLedgerEntryDirection = {
+  credit: "credit",
+  debit: "debit",
+} as const;
+
+export type LandownerLedgerEntryRecoveryStatus =
+  (typeof LandownerLedgerEntryRecoveryStatus)[keyof typeof LandownerLedgerEntryRecoveryStatus];
+
+export const LandownerLedgerEntryRecoveryStatus = {
+  none: "none",
+  partial: "partial",
+  full: "full",
+} as const;
+
+export type LandownerLedgerEntryStatus =
+  (typeof LandownerLedgerEntryStatus)[keyof typeof LandownerLedgerEntryStatus];
+
+export const LandownerLedgerEntryStatus = {
+  draft: "draft",
+  confirmed: "confirmed",
+  disputed: "disputed",
+  reversed: "reversed",
+} as const;
+
+export interface LandownerLedgerEntry {
+  id: string;
+  projectId: string;
+  projectName?: string;
+  partnerId: string;
+  partnerName?: string;
+  entryType: LandownerLedgerEntryEntryType;
+  direction: LandownerLedgerEntryDirection;
+  periodLabel: string;
+  periodStart: string;
+  periodEnd: string;
+  description: string;
+  amount: number;
+  grossRevenue?: number;
+  ownershipPct?: number;
+  revenueModelType?: string;
+  isRecoverable: boolean;
+  recoveredAmount: number;
+  recoveryStatus: LandownerLedgerEntryRecoveryStatus;
+  status: LandownerLedgerEntryStatus;
+  notes?: string;
+  recordedById?: string;
+  recordedByName: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CreateLandownerLedgerEntryBodyEntryType =
+  (typeof CreateLandownerLedgerEntryBodyEntryType)[keyof typeof CreateLandownerLedgerEntryBodyEntryType];
+
+export const CreateLandownerLedgerEntryBodyEntryType = {
+  revenue_entitlement: "revenue_entitlement",
+  operational_burden: "operational_burden",
+  recoverable_adjustment: "recoverable_adjustment",
+  lca_credit: "lca_credit",
+  other_credit: "other_credit",
+  other_debit: "other_debit",
+} as const;
+
+export type CreateLandownerLedgerEntryBodyDirection =
+  (typeof CreateLandownerLedgerEntryBodyDirection)[keyof typeof CreateLandownerLedgerEntryBodyDirection];
+
+export const CreateLandownerLedgerEntryBodyDirection = {
+  credit: "credit",
+  debit: "debit",
+} as const;
+
+export interface CreateLandownerLedgerEntryBody {
+  projectId: string;
+  partnerId: string;
+  entryType: CreateLandownerLedgerEntryBodyEntryType;
+  direction: CreateLandownerLedgerEntryBodyDirection;
+  periodLabel: string;
+  periodStart: string;
+  periodEnd: string;
+  description: string;
+  /** @minimum 0.01 */
+  amount: number;
+  grossRevenue?: number;
+  ownershipPct?: number;
+  revenueModelType?: string;
+  isRecoverable?: boolean;
+  notes?: string;
+}
+
+export type UpdateLandownerLedgerEntryBodyRecoveryStatus =
+  (typeof UpdateLandownerLedgerEntryBodyRecoveryStatus)[keyof typeof UpdateLandownerLedgerEntryBodyRecoveryStatus];
+
+export const UpdateLandownerLedgerEntryBodyRecoveryStatus = {
+  none: "none",
+  partial: "partial",
+  full: "full",
+} as const;
+
+export type UpdateLandownerLedgerEntryBodyStatus =
+  (typeof UpdateLandownerLedgerEntryBodyStatus)[keyof typeof UpdateLandownerLedgerEntryBodyStatus];
+
+export const UpdateLandownerLedgerEntryBodyStatus = {
+  draft: "draft",
+  confirmed: "confirmed",
+  disputed: "disputed",
+  reversed: "reversed",
+} as const;
+
+export interface UpdateLandownerLedgerEntryBody {
+  description?: string;
+  /** @minimum 0.01 */
+  amount?: number;
+  grossRevenue?: number;
+  ownershipPct?: number;
+  revenueModelType?: string;
+  periodLabel?: string;
+  periodStart?: string;
+  periodEnd?: string;
+  isRecoverable?: boolean;
+  recoveredAmount?: number;
+  recoveryStatus?: UpdateLandownerLedgerEntryBodyRecoveryStatus;
+  status?: UpdateLandownerLedgerEntryBodyStatus;
+  notes?: string;
+}
+
+export interface LandownerAccountSummary {
+  revenueEntitlement: number;
+  operationalBurden: number;
+  recoverableAdjCredit: number;
+  recoverableAdjDebit: number;
+  recoverableNet: number;
+  otherCredit: number;
+  otherDebit: number;
+  lcaReceivable: number;
+  netPosition: number;
+  entryCount: number;
+  lcaEntryCount: number;
+}
+
+export interface LandownerLcaReceivableEntry {
+  id: string;
+  projectId: string;
+  projectName?: string;
+  year: number;
+  grossDue: number;
+  carryForward: number;
+  totalDue: number;
+  amountPaid: number;
+  balance: number;
+  status: string;
+  baseAmount?: number;
+  escalationPct?: number;
+}
+
+export interface LandownerLcaReceivable {
+  totalReceivable: number;
+  totalPaid: number;
+  totalDue: number;
+  outstandingCount: number;
+  entries: LandownerLcaReceivableEntry[];
+}
+
 export type LcaFullLedgerTotals = {
   baseTotal: number;
   escalationTotal: number;
@@ -3248,4 +3425,24 @@ export type GetLcaFullLedgerParams = {
 export type RecordLcaPayment201 = {
   event: LcaPaymentEvent;
   ledgerEntry: LcaLedgerEntry;
+};
+
+export type GetLandownerAccountSummaryParams = {
+  projectId?: string;
+  partnerId?: string;
+};
+
+export type ListLandownerLedgerEntriesParams = {
+  projectId?: string;
+  partnerId?: string;
+  entryType?: string;
+  status?: string;
+};
+
+export type ReverseLandownerLedgerEntry200 = {
+  success: boolean;
+};
+
+export type GetLandownerLcaReceivableParams = {
+  projectId?: string;
 };

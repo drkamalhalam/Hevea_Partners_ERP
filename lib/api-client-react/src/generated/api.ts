@@ -58,6 +58,7 @@ import type {
   CreateGenerationBody,
   CreateImbalanceEntry201,
   CreateImbalanceEntryBody,
+  CreateLandownerLedgerEntryBody,
   CreateLcaConfigBody,
   CreateLcaLedgerEntryBody,
   CreateNomineeInput,
@@ -82,6 +83,8 @@ import type {
   GetLandNotionalContributionParams,
   GetLandNotionalHistory200,
   GetLandNotionalHistoryParams,
+  GetLandownerAccountSummaryParams,
+  GetLandownerLcaReceivableParams,
   GetLcaFullLedgerParams,
   GetLcaSchedule200,
   GetLcaScheduleParams,
@@ -98,6 +101,9 @@ import type {
   InitiateMaturityBody,
   InitiateNomineeActivationBody,
   LandNotionalState,
+  LandownerAccountSummary,
+  LandownerLcaReceivable,
+  LandownerLedgerEntry,
   LcaConfig,
   LcaFullLedger,
   LcaLedgerEntry,
@@ -117,6 +123,7 @@ import type {
   ListExpendituresParams,
   ListImbalanceLedger200,
   ListImbalanceLedgerParams,
+  ListLandownerLedgerEntriesParams,
   ListLcaConfigsParams,
   ListLcaLedgerParams,
   ListOwnershipSnapshots200,
@@ -168,6 +175,7 @@ import type {
   RequestUploadUrlResponse,
   ResolveContributionDisputeBody,
   RevenueStats,
+  ReverseLandownerLedgerEntry200,
   SeedImbalanceLedger200,
   SetUserRoleInput,
   StockSummary,
@@ -182,6 +190,7 @@ import type {
   UpdateContributionBody,
   UpdateDocumentBody,
   UpdateExpenditureBody,
+  UpdateLandownerLedgerEntryBody,
   UpdateLcaConfigBody,
   UpdateLcaLedgerEntryBody,
   UpdateMissingDeveloperCaseBody,
@@ -15736,3 +15745,595 @@ export const useRecordLcaPayment = <
 > => {
   return useMutation(getRecordLcaPaymentMutationOptions(options));
 };
+
+/**
+ * @summary Aggregate landowner net position — revenue, burden, adjustments, LCA receivable
+ */
+export const getGetLandownerAccountSummaryUrl = (
+  params?: GetLandownerAccountSummaryParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/landowner-account/summary?${stringifiedParams}`
+    : `/api/landowner-account/summary`;
+};
+
+export const getLandownerAccountSummary = async (
+  params?: GetLandownerAccountSummaryParams,
+  options?: RequestInit,
+): Promise<LandownerAccountSummary> => {
+  return customFetch<LandownerAccountSummary>(
+    getGetLandownerAccountSummaryUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetLandownerAccountSummaryQueryKey = (
+  params?: GetLandownerAccountSummaryParams,
+) => {
+  return [
+    `/api/landowner-account/summary`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetLandownerAccountSummaryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getLandownerAccountSummary>>,
+  TError = ErrorType<void>,
+>(
+  params?: GetLandownerAccountSummaryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getLandownerAccountSummary>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetLandownerAccountSummaryQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getLandownerAccountSummary>>
+  > = ({ signal }) =>
+    getLandownerAccountSummary(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getLandownerAccountSummary>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetLandownerAccountSummaryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getLandownerAccountSummary>>
+>;
+export type GetLandownerAccountSummaryQueryError = ErrorType<void>;
+
+/**
+ * @summary Aggregate landowner net position — revenue, burden, adjustments, LCA receivable
+ */
+
+export function useGetLandownerAccountSummary<
+  TData = Awaited<ReturnType<typeof getLandownerAccountSummary>>,
+  TError = ErrorType<void>,
+>(
+  params?: GetLandownerAccountSummaryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getLandownerAccountSummary>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetLandownerAccountSummaryQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List landowner ledger entries
+ */
+export const getListLandownerLedgerEntriesUrl = (
+  params?: ListLandownerLedgerEntriesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/landowner-account/entries?${stringifiedParams}`
+    : `/api/landowner-account/entries`;
+};
+
+export const listLandownerLedgerEntries = async (
+  params?: ListLandownerLedgerEntriesParams,
+  options?: RequestInit,
+): Promise<LandownerLedgerEntry[]> => {
+  return customFetch<LandownerLedgerEntry[]>(
+    getListLandownerLedgerEntriesUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListLandownerLedgerEntriesQueryKey = (
+  params?: ListLandownerLedgerEntriesParams,
+) => {
+  return [
+    `/api/landowner-account/entries`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListLandownerLedgerEntriesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listLandownerLedgerEntries>>,
+  TError = ErrorType<void>,
+>(
+  params?: ListLandownerLedgerEntriesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listLandownerLedgerEntries>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListLandownerLedgerEntriesQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listLandownerLedgerEntries>>
+  > = ({ signal }) =>
+    listLandownerLedgerEntries(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listLandownerLedgerEntries>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListLandownerLedgerEntriesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listLandownerLedgerEntries>>
+>;
+export type ListLandownerLedgerEntriesQueryError = ErrorType<void>;
+
+/**
+ * @summary List landowner ledger entries
+ */
+
+export function useListLandownerLedgerEntries<
+  TData = Awaited<ReturnType<typeof listLandownerLedgerEntries>>,
+  TError = ErrorType<void>,
+>(
+  params?: ListLandownerLedgerEntriesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listLandownerLedgerEntries>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListLandownerLedgerEntriesQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a landowner ledger entry (admin/developer only)
+ */
+export const getCreateLandownerLedgerEntryUrl = () => {
+  return `/api/landowner-account/entries`;
+};
+
+export const createLandownerLedgerEntry = async (
+  createLandownerLedgerEntryBody: CreateLandownerLedgerEntryBody,
+  options?: RequestInit,
+): Promise<LandownerLedgerEntry> => {
+  return customFetch<LandownerLedgerEntry>(getCreateLandownerLedgerEntryUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createLandownerLedgerEntryBody),
+  });
+};
+
+export const getCreateLandownerLedgerEntryMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createLandownerLedgerEntry>>,
+    TError,
+    { data: BodyType<CreateLandownerLedgerEntryBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createLandownerLedgerEntry>>,
+  TError,
+  { data: BodyType<CreateLandownerLedgerEntryBody> },
+  TContext
+> => {
+  const mutationKey = ["createLandownerLedgerEntry"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createLandownerLedgerEntry>>,
+    { data: BodyType<CreateLandownerLedgerEntryBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createLandownerLedgerEntry(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateLandownerLedgerEntryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createLandownerLedgerEntry>>
+>;
+export type CreateLandownerLedgerEntryMutationBody =
+  BodyType<CreateLandownerLedgerEntryBody>;
+export type CreateLandownerLedgerEntryMutationError = ErrorType<void>;
+
+/**
+ * @summary Create a landowner ledger entry (admin/developer only)
+ */
+export const useCreateLandownerLedgerEntry = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createLandownerLedgerEntry>>,
+    TError,
+    { data: BodyType<CreateLandownerLedgerEntryBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createLandownerLedgerEntry>>,
+  TError,
+  { data: BodyType<CreateLandownerLedgerEntryBody> },
+  TContext
+> => {
+  return useMutation(getCreateLandownerLedgerEntryMutationOptions(options));
+};
+
+/**
+ * @summary Update a landowner ledger entry (admin/developer only)
+ */
+export const getUpdateLandownerLedgerEntryUrl = (id: string) => {
+  return `/api/landowner-account/entries/${id}`;
+};
+
+export const updateLandownerLedgerEntry = async (
+  id: string,
+  updateLandownerLedgerEntryBody: UpdateLandownerLedgerEntryBody,
+  options?: RequestInit,
+): Promise<LandownerLedgerEntry> => {
+  return customFetch<LandownerLedgerEntry>(
+    getUpdateLandownerLedgerEntryUrl(id),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(updateLandownerLedgerEntryBody),
+    },
+  );
+};
+
+export const getUpdateLandownerLedgerEntryMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateLandownerLedgerEntry>>,
+    TError,
+    { id: string; data: BodyType<UpdateLandownerLedgerEntryBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateLandownerLedgerEntry>>,
+  TError,
+  { id: string; data: BodyType<UpdateLandownerLedgerEntryBody> },
+  TContext
+> => {
+  const mutationKey = ["updateLandownerLedgerEntry"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateLandownerLedgerEntry>>,
+    { id: string; data: BodyType<UpdateLandownerLedgerEntryBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateLandownerLedgerEntry(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateLandownerLedgerEntryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateLandownerLedgerEntry>>
+>;
+export type UpdateLandownerLedgerEntryMutationBody =
+  BodyType<UpdateLandownerLedgerEntryBody>;
+export type UpdateLandownerLedgerEntryMutationError = ErrorType<void>;
+
+/**
+ * @summary Update a landowner ledger entry (admin/developer only)
+ */
+export const useUpdateLandownerLedgerEntry = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateLandownerLedgerEntry>>,
+    TError,
+    { id: string; data: BodyType<UpdateLandownerLedgerEntryBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateLandownerLedgerEntry>>,
+  TError,
+  { id: string; data: BodyType<UpdateLandownerLedgerEntryBody> },
+  TContext
+> => {
+  return useMutation(getUpdateLandownerLedgerEntryMutationOptions(options));
+};
+
+/**
+ * @summary Reverse (soft-delete) a ledger entry (admin only)
+ */
+export const getReverseLandownerLedgerEntryUrl = (id: string) => {
+  return `/api/landowner-account/entries/${id}`;
+};
+
+export const reverseLandownerLedgerEntry = async (
+  id: string,
+  options?: RequestInit,
+): Promise<ReverseLandownerLedgerEntry200> => {
+  return customFetch<ReverseLandownerLedgerEntry200>(
+    getReverseLandownerLedgerEntryUrl(id),
+    {
+      ...options,
+      method: "DELETE",
+    },
+  );
+};
+
+export const getReverseLandownerLedgerEntryMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reverseLandownerLedgerEntry>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof reverseLandownerLedgerEntry>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["reverseLandownerLedgerEntry"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof reverseLandownerLedgerEntry>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return reverseLandownerLedgerEntry(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ReverseLandownerLedgerEntryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof reverseLandownerLedgerEntry>>
+>;
+
+export type ReverseLandownerLedgerEntryMutationError = ErrorType<void>;
+
+/**
+ * @summary Reverse (soft-delete) a ledger entry (admin only)
+ */
+export const useReverseLandownerLedgerEntry = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reverseLandownerLedgerEntry>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof reverseLandownerLedgerEntry>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getReverseLandownerLedgerEntryMutationOptions(options));
+};
+
+/**
+ * @summary Outstanding LCA receivable from lca_ledger for visible projects
+ */
+export const getGetLandownerLcaReceivableUrl = (
+  params?: GetLandownerLcaReceivableParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/landowner-account/lca-receivable?${stringifiedParams}`
+    : `/api/landowner-account/lca-receivable`;
+};
+
+export const getLandownerLcaReceivable = async (
+  params?: GetLandownerLcaReceivableParams,
+  options?: RequestInit,
+): Promise<LandownerLcaReceivable> => {
+  return customFetch<LandownerLcaReceivable>(
+    getGetLandownerLcaReceivableUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetLandownerLcaReceivableQueryKey = (
+  params?: GetLandownerLcaReceivableParams,
+) => {
+  return [
+    `/api/landowner-account/lca-receivable`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetLandownerLcaReceivableQueryOptions = <
+  TData = Awaited<ReturnType<typeof getLandownerLcaReceivable>>,
+  TError = ErrorType<void>,
+>(
+  params?: GetLandownerLcaReceivableParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getLandownerLcaReceivable>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetLandownerLcaReceivableQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getLandownerLcaReceivable>>
+  > = ({ signal }) =>
+    getLandownerLcaReceivable(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getLandownerLcaReceivable>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetLandownerLcaReceivableQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getLandownerLcaReceivable>>
+>;
+export type GetLandownerLcaReceivableQueryError = ErrorType<void>;
+
+/**
+ * @summary Outstanding LCA receivable from lca_ledger for visible projects
+ */
+
+export function useGetLandownerLcaReceivable<
+  TData = Awaited<ReturnType<typeof getLandownerLcaReceivable>>,
+  TError = ErrorType<void>,
+>(
+  params?: GetLandownerLcaReceivableParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getLandownerLcaReceivable>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetLandownerLcaReceivableQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}

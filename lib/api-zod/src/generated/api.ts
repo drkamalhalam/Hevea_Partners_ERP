@@ -6508,3 +6508,201 @@ export const RecordLcaPaymentBody = zod.object({
   paymentRef: zod.string().optional(),
   notes: zod.string().optional(),
 });
+
+/**
+ * @summary Aggregate landowner net position — revenue, burden, adjustments, LCA receivable
+ */
+export const GetLandownerAccountSummaryQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+  partnerId: zod.coerce.string().uuid().optional(),
+});
+
+export const GetLandownerAccountSummaryResponse = zod.object({
+  revenueEntitlement: zod.number(),
+  operationalBurden: zod.number(),
+  recoverableAdjCredit: zod.number(),
+  recoverableAdjDebit: zod.number(),
+  recoverableNet: zod.number(),
+  otherCredit: zod.number(),
+  otherDebit: zod.number(),
+  lcaReceivable: zod.number(),
+  netPosition: zod.number(),
+  entryCount: zod.number(),
+  lcaEntryCount: zod.number(),
+});
+
+/**
+ * @summary List landowner ledger entries
+ */
+export const ListLandownerLedgerEntriesQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+  partnerId: zod.coerce.string().uuid().optional(),
+  entryType: zod.coerce.string().optional(),
+  status: zod.coerce.string().optional(),
+});
+
+export const ListLandownerLedgerEntriesResponseItem = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  projectName: zod.string().optional(),
+  partnerId: zod.string().uuid(),
+  partnerName: zod.string().optional(),
+  entryType: zod.enum([
+    "revenue_entitlement",
+    "operational_burden",
+    "recoverable_adjustment",
+    "lca_credit",
+    "other_credit",
+    "other_debit",
+  ]),
+  direction: zod.enum(["credit", "debit"]),
+  periodLabel: zod.string(),
+  periodStart: zod.string(),
+  periodEnd: zod.string(),
+  description: zod.string(),
+  amount: zod.number(),
+  grossRevenue: zod.number().optional(),
+  ownershipPct: zod.number().optional(),
+  revenueModelType: zod.string().optional(),
+  isRecoverable: zod.boolean(),
+  recoveredAmount: zod.number(),
+  recoveryStatus: zod.enum(["none", "partial", "full"]),
+  status: zod.enum(["draft", "confirmed", "disputed", "reversed"]),
+  notes: zod.string().optional(),
+  recordedById: zod.string().uuid().optional(),
+  recordedByName: zod.string(),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
+});
+export const ListLandownerLedgerEntriesResponse = zod.array(
+  ListLandownerLedgerEntriesResponseItem,
+);
+
+/**
+ * @summary Create a landowner ledger entry (admin/developer only)
+ */
+export const createLandownerLedgerEntryBodyAmountMin = 0.01;
+
+export const CreateLandownerLedgerEntryBody = zod.object({
+  projectId: zod.string().uuid(),
+  partnerId: zod.string().uuid(),
+  entryType: zod.enum([
+    "revenue_entitlement",
+    "operational_burden",
+    "recoverable_adjustment",
+    "lca_credit",
+    "other_credit",
+    "other_debit",
+  ]),
+  direction: zod.enum(["credit", "debit"]),
+  periodLabel: zod.string(),
+  periodStart: zod.string(),
+  periodEnd: zod.string(),
+  description: zod.string(),
+  amount: zod.number().min(createLandownerLedgerEntryBodyAmountMin),
+  grossRevenue: zod.number().optional(),
+  ownershipPct: zod.number().optional(),
+  revenueModelType: zod.string().optional(),
+  isRecoverable: zod.boolean().optional(),
+  notes: zod.string().optional(),
+});
+
+/**
+ * @summary Update a landowner ledger entry (admin/developer only)
+ */
+export const UpdateLandownerLedgerEntryParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const updateLandownerLedgerEntryBodyAmountMin = 0.01;
+
+export const UpdateLandownerLedgerEntryBody = zod.object({
+  description: zod.string().optional(),
+  amount: zod.number().min(updateLandownerLedgerEntryBodyAmountMin).optional(),
+  grossRevenue: zod.number().optional(),
+  ownershipPct: zod.number().optional(),
+  revenueModelType: zod.string().optional(),
+  periodLabel: zod.string().optional(),
+  periodStart: zod.string().optional(),
+  periodEnd: zod.string().optional(),
+  isRecoverable: zod.boolean().optional(),
+  recoveredAmount: zod.number().optional(),
+  recoveryStatus: zod.enum(["none", "partial", "full"]).optional(),
+  status: zod.enum(["draft", "confirmed", "disputed", "reversed"]).optional(),
+  notes: zod.string().optional(),
+});
+
+export const UpdateLandownerLedgerEntryResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  projectName: zod.string().optional(),
+  partnerId: zod.string().uuid(),
+  partnerName: zod.string().optional(),
+  entryType: zod.enum([
+    "revenue_entitlement",
+    "operational_burden",
+    "recoverable_adjustment",
+    "lca_credit",
+    "other_credit",
+    "other_debit",
+  ]),
+  direction: zod.enum(["credit", "debit"]),
+  periodLabel: zod.string(),
+  periodStart: zod.string(),
+  periodEnd: zod.string(),
+  description: zod.string(),
+  amount: zod.number(),
+  grossRevenue: zod.number().optional(),
+  ownershipPct: zod.number().optional(),
+  revenueModelType: zod.string().optional(),
+  isRecoverable: zod.boolean(),
+  recoveredAmount: zod.number(),
+  recoveryStatus: zod.enum(["none", "partial", "full"]),
+  status: zod.enum(["draft", "confirmed", "disputed", "reversed"]),
+  notes: zod.string().optional(),
+  recordedById: zod.string().uuid().optional(),
+  recordedByName: zod.string(),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
+});
+
+/**
+ * @summary Reverse (soft-delete) a ledger entry (admin only)
+ */
+export const ReverseLandownerLedgerEntryParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const ReverseLandownerLedgerEntryResponse = zod.object({
+  success: zod.boolean(),
+});
+
+/**
+ * @summary Outstanding LCA receivable from lca_ledger for visible projects
+ */
+export const GetLandownerLcaReceivableQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+});
+
+export const GetLandownerLcaReceivableResponse = zod.object({
+  totalReceivable: zod.number(),
+  totalPaid: zod.number(),
+  totalDue: zod.number(),
+  outstandingCount: zod.number(),
+  entries: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      projectId: zod.string().uuid(),
+      projectName: zod.string().optional(),
+      year: zod.number(),
+      grossDue: zod.number(),
+      carryForward: zod.number(),
+      totalDue: zod.number(),
+      amountPaid: zod.number(),
+      balance: zod.number(),
+      status: zod.string(),
+      baseAmount: zod.number().optional(),
+      escalationPct: zod.number().optional(),
+    }),
+  ),
+});

@@ -40,6 +40,7 @@ import ExpenditureGovernance from "./pages/ExpenditureGovernance";
 import ExpenditureAnalytics from "./pages/ExpenditureAnalytics";
 import LCAConfig from "./pages/LCAConfig";
 import LCALedger from "./pages/LCALedger";
+import LandownerAccount from "./pages/LandownerAccount";
 import TemplateLibrary from "./pages/TemplateLibrary";
 
 // Pages — Operations
@@ -245,6 +246,7 @@ function AppRoutes() {
               <Route path="/expenditure-analytics"><ProtectedRoute component={ExpenditureAnalytics} /></Route>
               <Route path="/lca"><ProtectedRoute component={LCAConfig} /></Route>
               <Route path="/lca/ledger"><ProtectedRoute component={LCALedger} /></Route>
+              <Route path="/landowner-account"><ProtectedRoute component={LandownerAccount} /></Route>
               <Route path="/templates"><ProtectedRoute component={TemplateLibrary} /></Route>
 
               {/* Operations */}

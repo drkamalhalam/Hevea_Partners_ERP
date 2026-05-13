@@ -289,6 +289,51 @@ Immutable point-in-time snapshots of every generated agreement document, with fu
 
 **Generated hooks:** `useGetAgreementGeneration`, `useListAgreementAuditLog`, `getGetAgreementGenerationQueryKey`, `getListAgreementAuditLogQueryKey`
 
+## Landowner Accounting Engine
+
+Separate landowner-side accounting ledger tracking four financial flows per (project, partner) pair. **Deliberately isolated** from ownership contribution accounting and economic participant pool accounting.
+
+**Four entry types (all stored in `landowner_ledger_entries`):**
+
+| Type | Direction | Purpose |
+|---|---|---|
+| `revenue_entitlement` | credit | Landowner's gross revenue share for a period |
+| `operational_burden` | debit | Operational costs charged against the landowner |
+| `recoverable_adjustment` | credit or debit | One-off adjustments; can be netted |
+| `lca_credit` | credit | LCA advances paid (informational) |
+| `other_credit` / `other_debit` | either | Catch-all entries |
+
+**Net position formula (confirmed entries only):**
+```
+net = Σ(credits) − Σ(debits) + lca_receivable (from lca_ledger)
+```
+
+**Future integration hooks:** `ownershipPct` for ownership model, `revenueModelType` (`contribution` | `fifty_percent_revenue`) for revenue model, `grossRevenue` for auto-population from sales module.
+
+**DB table:** `landowner_ledger_entries` — UUID PK, projectId FK (restrict), partnerId FK (restrict), entryType, direction, periodLabel, periodStart, periodEnd, description, amount (always positive), grossRevenue, ownershipPct, revenueModelType, isRecoverable, recoveredAmount, recoveryStatus (none/partial/full), status (draft/confirmed/disputed/reversed), notes, audit cols
+
+**API endpoints at `/landowner-account`:**
+- `GET /summary?projectId&partnerId` — aggregate net position with full breakdown
+- `GET /entries?projectId&partnerId&entryType&status` — list entries (project-visibility filtered)
+- `POST /entries` — create entry (admin/developer; draft by default)
+- `PATCH /entries/:id` — update entry (admin/developer; confirm via status="confirmed")
+- `DELETE /entries/:id` — soft-reverse entry (admin only; sets status="reversed")
+- `GET /lca-receivable?projectId` — outstanding LCA balances from lca_ledger for landowner
+
+**Frontend page:** `artifacts/plantation-web/src/pages/LandownerAccount.tsx` at `/landowner-account`
+- Project + Landowner filter dropdowns
+- 5 KPI cards: Revenue Entitlement | Operational Burden | Recoverable Adj | LCA Receivable | Net Position
+- Accounting breakdown line showing the net position formula with real values
+- Revenue vs Burden bar chart by period (Recharts, confirmed entries only)
+- Tabs: All | Revenue | Burden | Adjustments | LCA Receivable
+- Entry table with type badge, direction (±), status badge, confirm/edit/reverse actions
+- Add Entry dialog: type-aware form (revenue fields shown for revenue_entitlement, recoverable toggle for burden/adj, direction auto-set but overridable for adjustments)
+- LCA Receivable tab pulls directly from lca_ledger with outstanding year breakdown
+
+**Sidebar:** "Landowner Account" added to Finance group (admin/developer/landowner); icon: Landmark
+
+**Generated hooks:** `useGetLandownerAccountSummary`, `useListLandownerLedgerEntries`, `useCreateLandownerLedgerEntry`, `useUpdateLandownerLedgerEntry`, `useReverseLandownerLedgerEntry`, `useGetLandownerLcaReceivable`
+
 ## LCA Automatic Calculation Engine
 
 Yearly Land Contribution Adjustment (LCA) auto-generation system with sequential escalation, carry-forward tracking, and full payment event history. Applies to `contribution` revenue model projects only; project must be in `mature_production` lifecycle.
