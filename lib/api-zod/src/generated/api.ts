@@ -989,6 +989,117 @@ export const UpdatePartnerResponse = zod.object({
 });
 
 /**
+ * @summary List claimants for a partner (project-wise)
+ */
+export const ListPartnerClaimantsParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const ListPartnerClaimantsQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+});
+
+export const ListPartnerClaimantsResponseItem = zod.object({
+  id: zod.string().uuid(),
+  partnerId: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  claimantName: zod.string(),
+  relationship: zod.string(),
+  phone: zod.string(),
+  address: zod.string(),
+  claimDocumentsUrl: zod.string().nullish(),
+  status: zod.enum([
+    "registered",
+    "pending_verification",
+    "verified",
+    "disputed",
+  ]),
+  notes: zod.string().nullish(),
+  isActive: zod.boolean(),
+  createdBy: zod.string().uuid().nullish(),
+  createdAt: zod.string(),
+  updatedAt: zod.string().nullish(),
+});
+export const ListPartnerClaimantsResponse = zod.array(
+  ListPartnerClaimantsResponseItem,
+);
+
+/**
+ * @summary Add a claimant for a partner
+ */
+export const AddPartnerClaimantParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const AddPartnerClaimantBody = zod.object({
+  projectId: zod.string().uuid(),
+  claimantName: zod.string(),
+  relationship: zod.string(),
+  phone: zod.string(),
+  address: zod.string(),
+  claimDocumentsUrl: zod.string().optional(),
+  status: zod
+    .enum(["registered", "pending_verification", "verified", "disputed"])
+    .optional(),
+  notes: zod.string().optional(),
+});
+
+/**
+ * @summary Edit a claimant record
+ */
+export const UpdatePartnerClaimantParams = zod.object({
+  id: zod.coerce.string().uuid(),
+  claimantId: zod.coerce.string().uuid(),
+});
+
+export const UpdatePartnerClaimantBody = zod.object({
+  claimantName: zod.string().optional(),
+  relationship: zod.string().optional(),
+  phone: zod.string().optional(),
+  address: zod.string().optional(),
+  claimDocumentsUrl: zod.string().optional(),
+  status: zod
+    .enum(["registered", "pending_verification", "verified", "disputed"])
+    .optional(),
+  notes: zod.string().optional(),
+  isActive: zod.boolean().optional(),
+});
+
+export const UpdatePartnerClaimantResponse = zod.object({
+  id: zod.string().uuid(),
+  partnerId: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  claimantName: zod.string(),
+  relationship: zod.string(),
+  phone: zod.string(),
+  address: zod.string(),
+  claimDocumentsUrl: zod.string().nullish(),
+  status: zod.enum([
+    "registered",
+    "pending_verification",
+    "verified",
+    "disputed",
+  ]),
+  notes: zod.string().nullish(),
+  isActive: zod.boolean(),
+  createdBy: zod.string().uuid().nullish(),
+  createdAt: zod.string(),
+  updatedAt: zod.string().nullish(),
+});
+
+/**
+ * @summary Remove (deactivate) a claimant
+ */
+export const RemovePartnerClaimantParams = zod.object({
+  id: zod.coerce.string().uuid(),
+  claimantId: zod.coerce.string().uuid(),
+});
+
+export const RemovePartnerClaimantResponse = zod.object({
+  ok: zod.boolean().optional(),
+});
+
+/**
  * @summary List all partnership agreements
  */
 export const ListAgreementsResponseItem = zod.object({

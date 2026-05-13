@@ -655,12 +655,89 @@ export interface UpdateParticipantInput {
   participationNotes?: string;
 }
 
+export type PartnerClaimantStatus =
+  (typeof PartnerClaimantStatus)[keyof typeof PartnerClaimantStatus];
+
+export const PartnerClaimantStatus = {
+  registered: "registered",
+  pending_verification: "pending_verification",
+  verified: "verified",
+  disputed: "disputed",
+} as const;
+
+export interface PartnerClaimant {
+  id: string;
+  partnerId: string;
+  projectId: string;
+  claimantName: string;
+  relationship: string;
+  phone: string;
+  address: string;
+  /** @nullable */
+  claimDocumentsUrl?: string | null;
+  status: PartnerClaimantStatus;
+  /** @nullable */
+  notes?: string | null;
+  isActive: boolean;
+  /** @nullable */
+  createdBy?: string | null;
+  createdAt: string;
+  /** @nullable */
+  updatedAt?: string | null;
+}
+
+export type CreateClaimantInputStatus =
+  (typeof CreateClaimantInputStatus)[keyof typeof CreateClaimantInputStatus];
+
+export const CreateClaimantInputStatus = {
+  registered: "registered",
+  pending_verification: "pending_verification",
+  verified: "verified",
+  disputed: "disputed",
+} as const;
+
+export interface CreateClaimantInput {
+  projectId: string;
+  claimantName: string;
+  relationship: string;
+  phone: string;
+  address: string;
+  claimDocumentsUrl?: string;
+  status?: CreateClaimantInputStatus;
+  notes?: string;
+}
+
+export type UpdateClaimantInputStatus =
+  (typeof UpdateClaimantInputStatus)[keyof typeof UpdateClaimantInputStatus];
+
+export const UpdateClaimantInputStatus = {
+  registered: "registered",
+  pending_verification: "pending_verification",
+  verified: "verified",
+  disputed: "disputed",
+} as const;
+
+export interface UpdateClaimantInput {
+  claimantName?: string;
+  relationship?: string;
+  phone?: string;
+  address?: string;
+  claimDocumentsUrl?: string;
+  status?: UpdateClaimantInputStatus;
+  notes?: string;
+  isActive?: boolean;
+}
+
 export interface OkResponse {
   ok?: boolean;
 }
 
 export type GetUserActivityParams = {
   limit?: number;
+};
+
+export type ListPartnerClaimantsParams = {
+  projectId?: string;
 };
 
 export type ListProductionRecordsParams = {

@@ -23,13 +23,16 @@ import type {
   AgreementInput,
   AgreementUpdate,
   AssignProjectInput,
+  CreateClaimantInput,
   CreateNomineeInput,
   DashboardSummary,
   GetUserActivityParams,
   HealthStatus,
+  ListPartnerClaimantsParams,
   ListProductionRecordsParams,
   OkResponse,
   Partner,
+  PartnerClaimant,
   PartnerInput,
   PartnerPortfolio,
   PartnerUpdate,
@@ -44,6 +47,7 @@ import type {
   SetUserRoleInput,
   StockSummary,
   UpdateAssignmentInput,
+  UpdateClaimantInput,
   UpdateNomineeInput,
   UpdateParticipantInput,
   UpdateProfileInput,
@@ -2671,6 +2675,385 @@ export const useUpdatePartner = <
   TContext
 > => {
   return useMutation(getUpdatePartnerMutationOptions(options));
+};
+
+/**
+ * @summary List claimants for a partner (project-wise)
+ */
+export const getListPartnerClaimantsUrl = (
+  id: string,
+  params?: ListPartnerClaimantsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/partners/${id}/claimants?${stringifiedParams}`
+    : `/api/partners/${id}/claimants`;
+};
+
+export const listPartnerClaimants = async (
+  id: string,
+  params?: ListPartnerClaimantsParams,
+  options?: RequestInit,
+): Promise<PartnerClaimant[]> => {
+  return customFetch<PartnerClaimant[]>(
+    getListPartnerClaimantsUrl(id, params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListPartnerClaimantsQueryKey = (
+  id: string,
+  params?: ListPartnerClaimantsParams,
+) => {
+  return [
+    `/api/partners/${id}/claimants`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListPartnerClaimantsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listPartnerClaimants>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  params?: ListPartnerClaimantsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listPartnerClaimants>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListPartnerClaimantsQueryKey(id, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listPartnerClaimants>>
+  > = ({ signal }) =>
+    listPartnerClaimants(id, params, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listPartnerClaimants>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListPartnerClaimantsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listPartnerClaimants>>
+>;
+export type ListPartnerClaimantsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List claimants for a partner (project-wise)
+ */
+
+export function useListPartnerClaimants<
+  TData = Awaited<ReturnType<typeof listPartnerClaimants>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  params?: ListPartnerClaimantsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listPartnerClaimants>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListPartnerClaimantsQueryOptions(id, params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Add a claimant for a partner
+ */
+export const getAddPartnerClaimantUrl = (id: string) => {
+  return `/api/partners/${id}/claimants`;
+};
+
+export const addPartnerClaimant = async (
+  id: string,
+  createClaimantInput: CreateClaimantInput,
+  options?: RequestInit,
+): Promise<PartnerClaimant> => {
+  return customFetch<PartnerClaimant>(getAddPartnerClaimantUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createClaimantInput),
+  });
+};
+
+export const getAddPartnerClaimantMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof addPartnerClaimant>>,
+    TError,
+    { id: string; data: BodyType<CreateClaimantInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof addPartnerClaimant>>,
+  TError,
+  { id: string; data: BodyType<CreateClaimantInput> },
+  TContext
+> => {
+  const mutationKey = ["addPartnerClaimant"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof addPartnerClaimant>>,
+    { id: string; data: BodyType<CreateClaimantInput> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return addPartnerClaimant(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AddPartnerClaimantMutationResult = NonNullable<
+  Awaited<ReturnType<typeof addPartnerClaimant>>
+>;
+export type AddPartnerClaimantMutationBody = BodyType<CreateClaimantInput>;
+export type AddPartnerClaimantMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Add a claimant for a partner
+ */
+export const useAddPartnerClaimant = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof addPartnerClaimant>>,
+    TError,
+    { id: string; data: BodyType<CreateClaimantInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof addPartnerClaimant>>,
+  TError,
+  { id: string; data: BodyType<CreateClaimantInput> },
+  TContext
+> => {
+  return useMutation(getAddPartnerClaimantMutationOptions(options));
+};
+
+/**
+ * @summary Edit a claimant record
+ */
+export const getUpdatePartnerClaimantUrl = (id: string, claimantId: string) => {
+  return `/api/partners/${id}/claimants/${claimantId}`;
+};
+
+export const updatePartnerClaimant = async (
+  id: string,
+  claimantId: string,
+  updateClaimantInput: UpdateClaimantInput,
+  options?: RequestInit,
+): Promise<PartnerClaimant> => {
+  return customFetch<PartnerClaimant>(
+    getUpdatePartnerClaimantUrl(id, claimantId),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(updateClaimantInput),
+    },
+  );
+};
+
+export const getUpdatePartnerClaimantMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updatePartnerClaimant>>,
+    TError,
+    { id: string; claimantId: string; data: BodyType<UpdateClaimantInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updatePartnerClaimant>>,
+  TError,
+  { id: string; claimantId: string; data: BodyType<UpdateClaimantInput> },
+  TContext
+> => {
+  const mutationKey = ["updatePartnerClaimant"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updatePartnerClaimant>>,
+    { id: string; claimantId: string; data: BodyType<UpdateClaimantInput> }
+  > = (props) => {
+    const { id, claimantId, data } = props ?? {};
+
+    return updatePartnerClaimant(id, claimantId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdatePartnerClaimantMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updatePartnerClaimant>>
+>;
+export type UpdatePartnerClaimantMutationBody = BodyType<UpdateClaimantInput>;
+export type UpdatePartnerClaimantMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Edit a claimant record
+ */
+export const useUpdatePartnerClaimant = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updatePartnerClaimant>>,
+    TError,
+    { id: string; claimantId: string; data: BodyType<UpdateClaimantInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updatePartnerClaimant>>,
+  TError,
+  { id: string; claimantId: string; data: BodyType<UpdateClaimantInput> },
+  TContext
+> => {
+  return useMutation(getUpdatePartnerClaimantMutationOptions(options));
+};
+
+/**
+ * @summary Remove (deactivate) a claimant
+ */
+export const getRemovePartnerClaimantUrl = (id: string, claimantId: string) => {
+  return `/api/partners/${id}/claimants/${claimantId}`;
+};
+
+export const removePartnerClaimant = async (
+  id: string,
+  claimantId: string,
+  options?: RequestInit,
+): Promise<OkResponse> => {
+  return customFetch<OkResponse>(getRemovePartnerClaimantUrl(id, claimantId), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getRemovePartnerClaimantMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof removePartnerClaimant>>,
+    TError,
+    { id: string; claimantId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof removePartnerClaimant>>,
+  TError,
+  { id: string; claimantId: string },
+  TContext
+> => {
+  const mutationKey = ["removePartnerClaimant"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof removePartnerClaimant>>,
+    { id: string; claimantId: string }
+  > = (props) => {
+    const { id, claimantId } = props ?? {};
+
+    return removePartnerClaimant(id, claimantId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RemovePartnerClaimantMutationResult = NonNullable<
+  Awaited<ReturnType<typeof removePartnerClaimant>>
+>;
+
+export type RemovePartnerClaimantMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Remove (deactivate) a claimant
+ */
+export const useRemovePartnerClaimant = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof removePartnerClaimant>>,
+    TError,
+    { id: string; claimantId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof removePartnerClaimant>>,
+  TError,
+  { id: string; claimantId: string },
+  TContext
+> => {
+  return useMutation(getRemovePartnerClaimantMutationOptions(options));
 };
 
 /**

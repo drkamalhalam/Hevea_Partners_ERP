@@ -47,6 +47,22 @@ export const nomineeActivationStatusEnum = pgEnum(
   ["pending", "activated", "revoked"],
 );
 
+// ── Claimant enums ────────────────────────────────────────────────────────
+
+/**
+ * Status of a partner claimant record.
+ *   registered          — details captured, no verification started
+ *   pending_verification— documents submitted, under review
+ *   verified            — admin-verified claim record
+ *   disputed            — claim under dispute; blocked from further action
+ */
+export const claimantStatusEnum = pgEnum("claimant_status", [
+  "registered",
+  "pending_verification",
+  "verified",
+  "disputed",
+]);
+
 // ── Audit enums ───────────────────────────────────────────────────────────
 
 export const dbOperationEnum = pgEnum("db_operation", [

@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, Mail, Phone, MapPin, IdCard } from "lucide-react";
+import PartnerClaimants from "./PartnerClaimants";
 
 const roleColors: Record<string, string> = {
   project_developer: "bg-purple-100 text-purple-800",
@@ -92,6 +93,8 @@ export default function PartnerDetails() {
           )}
         </CardContent>
       </Card>
+
+      <PartnerClaimants partnerId={id} />
     </div>
   );
 }

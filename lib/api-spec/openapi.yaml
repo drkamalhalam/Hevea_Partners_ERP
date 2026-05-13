@@ -668,6 +668,114 @@ paths:
               schema:
                 $ref: "#/components/schemas/Partner"
 
+  /partners/{id}/claimants:
+    get:
+      operationId: listPartnerClaimants
+      tags: [partners]
+      summary: List claimants for a partner (project-wise)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: projectId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: List of claimants
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PartnerClaimant"
+    post:
+      operationId: addPartnerClaimant
+      tags: [partners]
+      summary: Add a claimant for a partner
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateClaimantInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartnerClaimant"
+
+  /partners/{id}/claimants/{claimantId}:
+    patch:
+      operationId: updatePartnerClaimant
+      tags: [partners]
+      summary: Edit a claimant record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: claimantId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateClaimantInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartnerClaimant"
+    delete:
+      operationId: removePartnerClaimant
+      tags: [partners]
+      summary: Remove (deactivate) a claimant
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: claimantId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
   /agreements:
     get:
       operationId: listAgreements
@@ -1647,6 +1755,88 @@ components:
           type: string
         participationNotes:
           type: string
+
+    PartnerClaimant:
+      type: object
+      required: [id, partnerId, projectId, claimantName, relationship, phone, address, status, isActive, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        partnerId:
+          type: string
+          format: uuid
+        projectId:
+          type: string
+          format: uuid
+        claimantName:
+          type: string
+        relationship:
+          type: string
+        phone:
+          type: string
+        address:
+          type: string
+        claimDocumentsUrl:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [registered, pending_verification, verified, disputed]
+        notes:
+          type: ["string", "null"]
+        isActive:
+          type: boolean
+        createdBy:
+          type: ["string", "null"]
+          format: uuid
+        createdAt:
+          type: string
+        updatedAt:
+          type: ["string", "null"]
+
+    CreateClaimantInput:
+      type: object
+      required: [projectId, claimantName, relationship, phone, address]
+      properties:
+        projectId:
+          type: string
+          format: uuid
+        claimantName:
+          type: string
+        relationship:
+          type: string
+        phone:
+          type: string
+        address:
+          type: string
+        claimDocumentsUrl:
+          type: string
+        status:
+          type: string
+          enum: [registered, pending_verification, verified, disputed]
+        notes:
+          type: string
+
+    UpdateClaimantInput:
+      type: object
+      properties:
+        claimantName:
+          type: string
+        relationship:
+          type: string
+        phone:
+          type: string
+        address:
+          type: string
+        claimDocumentsUrl:
+          type: string
+        status:
+          type: string
+          enum: [registered, pending_verification, verified, disputed]
+        notes:
+          type: string
+        isActive:
+          type: boolean
 
     OkResponse:
       type: object
