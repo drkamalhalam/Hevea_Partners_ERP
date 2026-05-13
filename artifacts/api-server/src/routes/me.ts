@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { createClerkClient } from "@clerk/express";
 import {
   db,
   usersTable,
@@ -8,14 +9,44 @@ import {
 import { eq, and, inArray } from "drizzle-orm";
 import { UpsertMeBody, UpdateMyProfileBody } from "@workspace/api-zod";
 
+const clerkClient = createClerkClient({
+  secretKey: process.env.CLERK_SECRET_KEY,
+});
+
 const router = Router();
 
 async function buildProfile(clerkUserId: string) {
-  const [userRow] = await db
+  let [userRow] = await db
     .select()
     .from(usersTable)
     .where(eq(usersTable.clerkUserId, clerkUserId))
     .limit(1);
+
+  // Auto-link pre-provisioned records (e.g. admin pre-created by email)
+  if (!userRow) {
+    try {
+      const clerkUser = await clerkClient.users.getUser(clerkUserId);
+      const primaryEmail = clerkUser.emailAddresses.find(
+        (e) => e.id === clerkUser.primaryEmailAddressId
+      )?.emailAddress;
+      if (primaryEmail) {
+        const [preCreated] = await db
+          .select()
+          .from(usersTable)
+          .where(eq(usersTable.email, primaryEmail))
+          .limit(1);
+        if (preCreated && preCreated.clerkUserId !== clerkUserId) {
+          await db
+            .update(usersTable)
+            .set({ clerkUserId, updatedAt: new Date() })
+            .where(eq(usersTable.id, preCreated.id));
+          userRow = { ...preCreated, clerkUserId };
+        }
+      }
+    } catch {
+      // Clerk lookup failure is non-fatal — fall through to default profile
+    }
+  }
 
   const assignments = userRow
     ? await db
