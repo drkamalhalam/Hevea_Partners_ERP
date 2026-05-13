@@ -3676,6 +3676,74 @@ export interface CreateStockMovementBody {
   notes?: string;
 }
 
+export type BatchMovementDirection =
+  (typeof BatchMovementDirection)[keyof typeof BatchMovementDirection];
+
+export const BatchMovementDirection = {
+  in: "in",
+  out: "out",
+} as const;
+
+export type BatchMovementStatus =
+  (typeof BatchMovementStatus)[keyof typeof BatchMovementStatus];
+
+export const BatchMovementStatus = {
+  confirmed: "confirmed",
+  pending: "pending",
+  cancelled: "cancelled",
+} as const;
+
+export interface BatchMovement {
+  id: string;
+  projectId: string;
+  stockType: string;
+  movementType: string;
+  direction: BatchMovementDirection;
+  quantity: number;
+  unit: string;
+  movementDate: string;
+  referenceId?: string;
+  referenceType?: string;
+  notes?: string;
+  status: BatchMovementStatus;
+  confirmedAt?: string;
+  confirmedByName?: string;
+  createdByName: string;
+  createdAt: string;
+}
+
+export interface BatchStockTypeSummary {
+  produced: number;
+  unit: string;
+  stockedIn: number;
+  saleOut: number;
+  transferOut: number;
+  wastage: number;
+  otherOut: number;
+  totalOut: number;
+  remaining: number;
+}
+
+export type BatchAnalyticsStockSummary = {
+  [key: string]: BatchStockTypeSummary;
+};
+
+export interface BatchAnalytics {
+  batchId: string;
+  batchNumber: string;
+  batchDate: string;
+  projectId: string;
+  projectName?: string;
+  status: string;
+  createdByName: string;
+  closedByName?: string;
+  closedAt?: string;
+  createdAt: string;
+  stockMovementCount: number;
+  entries: ProductionEntry[];
+  stockSummary: BatchAnalyticsStockSummary;
+}
+
 export type GetUserActivityParams = {
   limit?: number;
 };

@@ -5070,6 +5070,46 @@ paths:
                   success: { type: boolean }
         "404": { description: Not found }
 
+  /production-log/batches/{id}/movements:
+    get:
+      operationId: getBatchMovements
+      tags: [production-log]
+      summary: List all inventory movements linked to a production batch
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Inventory movements for this batch
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BatchMovement"
+        "404": { description: Batch not found }
+
+  /production-log/batches/{id}/analytics:
+    get:
+      operationId: getBatchAnalytics
+      tags: [production-log]
+      summary: Full analytics for a batch (produced, stocked, sold, remaining)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Batch analytics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BatchAnalytics"
+        "404": { description: Batch not found }
+
 components:
   schemas:
     HealthStatus:
@@ -8867,3 +8907,62 @@ components:
         referenceId: { type: string }
         referenceType: { type: string }
         notes: { type: string }
+
+    BatchMovement:
+      type: object
+      required: [id, projectId, stockType, movementType, direction, quantity, unit, movementDate, status, createdByName, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        stockType: { type: string }
+        movementType: { type: string }
+        direction: { type: string, enum: [in, out] }
+        quantity: { type: number }
+        unit: { type: string }
+        movementDate: { type: string, format: date }
+        referenceId: { type: string }
+        referenceType: { type: string }
+        notes: { type: string }
+        status: { type: string, enum: [confirmed, pending, cancelled] }
+        confirmedAt: { type: string, format: date-time }
+        confirmedByName: { type: string }
+        createdByName: { type: string }
+        createdAt: { type: string, format: date-time }
+
+    BatchStockTypeSummary:
+      type: object
+      required: [produced, unit, stockedIn, saleOut, transferOut, wastage, otherOut, totalOut, remaining]
+      properties:
+        produced: { type: number }
+        unit: { type: string }
+        stockedIn: { type: number }
+        saleOut: { type: number }
+        transferOut: { type: number }
+        wastage: { type: number }
+        otherOut: { type: number }
+        totalOut: { type: number }
+        remaining: { type: number }
+
+    BatchAnalytics:
+      type: object
+      required: [batchId, batchNumber, batchDate, projectId, status, createdByName, stockMovementCount, entries, stockSummary, createdAt]
+      properties:
+        batchId: { type: string, format: uuid }
+        batchNumber: { type: string }
+        batchDate: { type: string, format: date }
+        projectId: { type: string, format: uuid }
+        projectName: { type: string }
+        status: { type: string }
+        createdByName: { type: string }
+        closedByName: { type: string }
+        closedAt: { type: string, format: date-time }
+        createdAt: { type: string, format: date-time }
+        stockMovementCount: { type: integer }
+        entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProductionEntry"
+        stockSummary:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/BatchStockTypeSummary"

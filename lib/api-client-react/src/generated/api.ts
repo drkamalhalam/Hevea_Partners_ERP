@@ -40,6 +40,8 @@ import type {
   AssignProjectInput,
   AutoGenerateLcaLedgerBody,
   AutoGenerateLcaResult,
+  BatchAnalytics,
+  BatchMovement,
   BurdenRecord,
   BurdenRecoveryAdjustment,
   BurdenRecoveryEvent,
@@ -19087,3 +19089,177 @@ export const useDeleteStockMovement = <
 > => {
   return useMutation(getDeleteStockMovementMutationOptions(options));
 };
+
+/**
+ * @summary List all inventory movements linked to a production batch
+ */
+export const getGetBatchMovementsUrl = (id: string) => {
+  return `/api/production-log/batches/${id}/movements`;
+};
+
+export const getBatchMovements = async (
+  id: string,
+  options?: RequestInit,
+): Promise<BatchMovement[]> => {
+  return customFetch<BatchMovement[]>(getGetBatchMovementsUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetBatchMovementsQueryKey = (id: string) => {
+  return [`/api/production-log/batches/${id}/movements`] as const;
+};
+
+export const getGetBatchMovementsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getBatchMovements>>,
+  TError = ErrorType<void>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getBatchMovements>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetBatchMovementsQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getBatchMovements>>
+  > = ({ signal }) => getBatchMovements(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getBatchMovements>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetBatchMovementsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getBatchMovements>>
+>;
+export type GetBatchMovementsQueryError = ErrorType<void>;
+
+/**
+ * @summary List all inventory movements linked to a production batch
+ */
+
+export function useGetBatchMovements<
+  TData = Awaited<ReturnType<typeof getBatchMovements>>,
+  TError = ErrorType<void>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getBatchMovements>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetBatchMovementsQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Full analytics for a batch (produced, stocked, sold, remaining)
+ */
+export const getGetBatchAnalyticsUrl = (id: string) => {
+  return `/api/production-log/batches/${id}/analytics`;
+};
+
+export const getBatchAnalytics = async (
+  id: string,
+  options?: RequestInit,
+): Promise<BatchAnalytics> => {
+  return customFetch<BatchAnalytics>(getGetBatchAnalyticsUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetBatchAnalyticsQueryKey = (id: string) => {
+  return [`/api/production-log/batches/${id}/analytics`] as const;
+};
+
+export const getGetBatchAnalyticsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getBatchAnalytics>>,
+  TError = ErrorType<void>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getBatchAnalytics>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetBatchAnalyticsQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getBatchAnalytics>>
+  > = ({ signal }) => getBatchAnalytics(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getBatchAnalytics>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetBatchAnalyticsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getBatchAnalytics>>
+>;
+export type GetBatchAnalyticsQueryError = ErrorType<void>;
+
+/**
+ * @summary Full analytics for a batch (produced, stocked, sold, remaining)
+ */
+
+export function useGetBatchAnalytics<
+  TData = Awaited<ReturnType<typeof getBatchAnalytics>>,
+  TError = ErrorType<void>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getBatchAnalytics>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetBatchAnalyticsQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}

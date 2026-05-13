@@ -7637,3 +7637,84 @@ export const DeleteStockMovementParams = zod.object({
 export const DeleteStockMovementResponse = zod.object({
   success: zod.boolean().optional(),
 });
+
+/**
+ * @summary List all inventory movements linked to a production batch
+ */
+export const GetBatchMovementsParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const GetBatchMovementsResponseItem = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  stockType: zod.string(),
+  movementType: zod.string(),
+  direction: zod.enum(["in", "out"]),
+  quantity: zod.number(),
+  unit: zod.string(),
+  movementDate: zod.coerce.date(),
+  referenceId: zod.string().optional(),
+  referenceType: zod.string().optional(),
+  notes: zod.string().optional(),
+  status: zod.enum(["confirmed", "pending", "cancelled"]),
+  confirmedAt: zod.coerce.date().optional(),
+  confirmedByName: zod.string().optional(),
+  createdByName: zod.string(),
+  createdAt: zod.coerce.date(),
+});
+export const GetBatchMovementsResponse = zod.array(
+  GetBatchMovementsResponseItem,
+);
+
+/**
+ * @summary Full analytics for a batch (produced, stocked, sold, remaining)
+ */
+export const GetBatchAnalyticsParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const GetBatchAnalyticsResponse = zod.object({
+  batchId: zod.string().uuid(),
+  batchNumber: zod.string(),
+  batchDate: zod.coerce.date(),
+  projectId: zod.string().uuid(),
+  projectName: zod.string().optional(),
+  status: zod.string(),
+  createdByName: zod.string(),
+  closedByName: zod.string().optional(),
+  closedAt: zod.coerce.date().optional(),
+  createdAt: zod.coerce.date(),
+  stockMovementCount: zod.number(),
+  entries: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      batchId: zod.string().uuid(),
+      projectId: zod.string().uuid(),
+      projectName: zod.string().optional(),
+      productionType: zod.enum(["latex", "rubber_sheet", "rubber_scrap"]),
+      quantity: zod.number(),
+      unit: zod.enum(["litres", "kg"]),
+      productionDate: zod.coerce.date(),
+      enteredByName: zod.string(),
+      remarks: zod.string().optional(),
+      isActive: zod.boolean(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    }),
+  ),
+  stockSummary: zod.record(
+    zod.string(),
+    zod.object({
+      produced: zod.number(),
+      unit: zod.string(),
+      stockedIn: zod.number(),
+      saleOut: zod.number(),
+      transferOut: zod.number(),
+      wastage: zod.number(),
+      otherOut: zod.number(),
+      totalOut: zod.number(),
+      remaining: zod.number(),
+    }),
+  ),
+});

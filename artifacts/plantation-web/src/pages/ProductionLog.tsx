@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { format, parseISO, startOfDay, isToday } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import {
   useListProductionBatches,
   useCreateProductionBatch,
@@ -78,6 +79,7 @@ import {
   ChevronDown,
   ChevronRight,
   Lock,
+  ExternalLink,
   Unlock,
   Trash2,
   Pencil,
@@ -125,6 +127,7 @@ export default function ProductionLog() {
   const { role, assignedProjectIds, canAccessAllProjects } = useRole();
   const qc = useQueryClient();
   const { toast } = useToast();
+  const [, navigate] = useLocation();
 
   const isAdmin = role === "admin";
   const isDeveloper = role === "developer";
@@ -334,6 +337,10 @@ export default function ProductionLog() {
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
+            <Button size="sm" variant="ghost" className="h-8 text-xs text-sky-400 hover:text-sky-300 hover:bg-sky-500/10"
+              onClick={(e) => { e.stopPropagation(); navigate(`/production-log/batches/${batch.id}`); }}>
+              <ExternalLink className="h-3 w-3 mr-1" /> View
+            </Button>
             {canOperate && batch.status === "open" && (
               <Button size="sm" variant="ghost" className="h-8 text-xs text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10"
                 onClick={(e) => { e.stopPropagation(); openEntryDialog(batch); }}>

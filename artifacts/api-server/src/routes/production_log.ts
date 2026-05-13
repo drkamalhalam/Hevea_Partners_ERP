@@ -7,6 +7,7 @@ import {
   projectsTable,
   productionBatchesTable,
   productionEntriesTable,
+  inventoryStockMovementsTable,
   userProjectAssignmentsTable,
 } from "@workspace/db";
 import { requireRole, canAccessProject } from "../middlewares/auth";
@@ -275,6 +276,8 @@ router.get("/batches/:id", async (req, res) => {
 });
 
 // ── POST /production-log/batches/:id/close ────────────────────────────────────
+// Closes the batch and auto-creates production_in inventory movements
+// for each stock type that has quantity > 0 (idempotent — won't duplicate).
 
 router.post(
   "/batches/:id/close",
@@ -312,9 +315,219 @@ router.post(
       .where(eq(productionBatchesTable.id, batchId))
       .returning();
 
-    return res.json(formatBatch(updated));
+    // Auto-create production_in inventory movements for each type with qty > 0.
+    // Idempotent: skip if a production_in movement already exists for this batch+type.
+    const stockTypes: Array<{ type: string; qty: number; unit: string }> = [
+      { type: "latex", qty: Number(updated.totalLatexLitres), unit: "litres" },
+      { type: "rubber_sheet", qty: Number(updated.totalSheetKg), unit: "kg" },
+      { type: "rubber_scrap", qty: Number(updated.totalScrapKg), unit: "kg" },
+    ];
+
+    for (const st of stockTypes) {
+      if (st.qty <= 0) continue;
+      // Check for existing movement
+      const [existing] = await db
+        .select({ id: inventoryStockMovementsTable.id })
+        .from(inventoryStockMovementsTable)
+        .where(
+          and(
+            eq(inventoryStockMovementsTable.batchId, batchId),
+            eq(inventoryStockMovementsTable.stockType, st.type),
+            eq(inventoryStockMovementsTable.movementType, "production_in"),
+          ),
+        )
+        .limit(1);
+      if (existing) continue;
+
+      await db.insert(inventoryStockMovementsTable).values({
+        projectId: updated.projectId,
+        stockType: st.type,
+        movementType: "production_in",
+        direction: "in",
+        quantity: st.qty.toString(),
+        unit: st.unit,
+        movementDate: updated.batchDate,
+        batchId: updated.id,
+        referenceId: updated.batchNumber,
+        referenceType: "production",
+        notes: `Auto-created on batch close: ${updated.batchNumber}`,
+        status: "confirmed",
+        confirmedAt: new Date(),
+        confirmedById: actor.id,
+        confirmedByName: actorName,
+        createdById: actor.id,
+        createdByName: actorName,
+        isActive: true,
+      });
+    }
+
+    return res.json(formatBatch({ ...updated }));
   },
 );
+
+// ── GET /production-log/batches/:id/movements ─────────────────────────────────
+// Returns all inventory movements linked to this batch.
+
+router.get("/batches/:id/movements", async (req, res) => {
+  const { userId: clerkUserId } = getAuth(req);
+  if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
+  const actor = await resolveActor(clerkUserId);
+  if (!actor) return res.status(401).json({ error: "User not found" });
+
+  const batchId = req.params.id as string;
+  const [batch] = await db
+    .select()
+    .from(productionBatchesTable)
+    .where(eq(productionBatchesTable.id, batchId))
+    .limit(1);
+
+  if (!batch) return res.status(404).json({ error: "Batch not found" });
+  if (!canAccessProject(req, batch.projectId)) return res.status(403).json({ error: "Forbidden" });
+
+  const movements = await db
+    .select()
+    .from(inventoryStockMovementsTable)
+    .where(
+      and(
+        eq(inventoryStockMovementsTable.batchId, batchId),
+        eq(inventoryStockMovementsTable.isActive, true),
+      ),
+    )
+    .orderBy(desc(inventoryStockMovementsTable.movementDate), desc(inventoryStockMovementsTable.createdAt));
+
+  return res.json(
+    movements.map((m) => ({
+      id: m.id,
+      projectId: m.projectId,
+      stockType: m.stockType,
+      movementType: m.movementType,
+      direction: m.direction,
+      quantity: Number(m.quantity),
+      unit: m.unit,
+      movementDate: m.movementDate,
+      referenceId: m.referenceId ?? undefined,
+      referenceType: m.referenceType ?? undefined,
+      notes: m.notes ?? undefined,
+      status: m.status,
+      confirmedAt: m.confirmedAt?.toISOString() ?? undefined,
+      confirmedByName: m.confirmedByName ?? undefined,
+      createdByName: m.createdByName,
+      createdAt: m.createdAt.toISOString(),
+    })),
+  );
+});
+
+// ── GET /production-log/batches/:id/analytics ─────────────────────────────────
+// Full batch analytics: produced + stock movements breakdown + remaining.
+
+router.get("/batches/:id/analytics", async (req, res) => {
+  const { userId: clerkUserId } = getAuth(req);
+  if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
+  const actor = await resolveActor(clerkUserId);
+  if (!actor) return res.status(401).json({ error: "User not found" });
+
+  const batchId = req.params.id as string;
+  const [batchRow] = await db
+    .select({ batch: productionBatchesTable, projectName: projectsTable.name })
+    .from(productionBatchesTable)
+    .leftJoin(projectsTable, eq(productionBatchesTable.projectId, projectsTable.id))
+    .where(eq(productionBatchesTable.id, batchId))
+    .limit(1);
+
+  if (!batchRow) return res.status(404).json({ error: "Batch not found" });
+  if (!canAccessProject(req, batchRow.batch.projectId)) return res.status(403).json({ error: "Forbidden" });
+
+  const { batch } = batchRow;
+
+  // Aggregate inventory movements for this batch by stockType + direction (confirmed only)
+  const movAgg = await db
+    .select({
+      stockType: inventoryStockMovementsTable.stockType,
+      movementType: inventoryStockMovementsTable.movementType,
+      direction: inventoryStockMovementsTable.direction,
+      unit: inventoryStockMovementsTable.unit,
+      totalQty: sql<number>`COALESCE(SUM(${inventoryStockMovementsTable.quantity}::numeric), 0)`,
+      movCount: sql<number>`count(*)::int`,
+    })
+    .from(inventoryStockMovementsTable)
+    .where(
+      and(
+        eq(inventoryStockMovementsTable.batchId, batchId),
+        eq(inventoryStockMovementsTable.isActive, true),
+        eq(inventoryStockMovementsTable.status, "confirmed"),
+      ),
+    )
+    .groupBy(
+      inventoryStockMovementsTable.stockType,
+      inventoryStockMovementsTable.movementType,
+      inventoryStockMovementsTable.direction,
+      inventoryStockMovementsTable.unit,
+    );
+
+  // Build per-stockType summary
+  type TypeSummary = {
+    produced: number;
+    unit: string;
+    stockedIn: number;
+    saleOut: number;
+    transferOut: number;
+    wastage: number;
+    otherOut: number;
+    totalOut: number;
+    remaining: number;
+  };
+
+  const typeMap: Record<string, TypeSummary> = {
+    latex: { produced: Number(batch.totalLatexLitres), unit: "litres", stockedIn: 0, saleOut: 0, transferOut: 0, wastage: 0, otherOut: 0, totalOut: 0, remaining: 0 },
+    rubber_sheet: { produced: Number(batch.totalSheetKg), unit: "kg", stockedIn: 0, saleOut: 0, transferOut: 0, wastage: 0, otherOut: 0, totalOut: 0, remaining: 0 },
+    rubber_scrap: { produced: Number(batch.totalScrapKg), unit: "kg", stockedIn: 0, saleOut: 0, transferOut: 0, wastage: 0, otherOut: 0, totalOut: 0, remaining: 0 },
+  };
+
+  for (const row of movAgg) {
+    const t = typeMap[row.stockType];
+    if (!t) continue;
+    const qty = Number(row.totalQty);
+    if (row.movementType === "production_in") t.stockedIn += qty;
+    else if (row.movementType === "sale_out") t.saleOut += qty;
+    else if (row.movementType === "transfer_out") t.transferOut += qty;
+    else if (row.movementType === "wastage") t.wastage += qty;
+    else if (row.direction === "out") t.otherOut += qty;
+  }
+
+  // Total movement count
+  const [movCountRow] = await db
+    .select({ n: sql<number>`count(*)::int` })
+    .from(inventoryStockMovementsTable)
+    .where(and(eq(inventoryStockMovementsTable.batchId, batchId), eq(inventoryStockMovementsTable.isActive, true)));
+
+  for (const t of Object.values(typeMap)) {
+    t.totalOut = t.saleOut + t.transferOut + t.wastage + t.otherOut;
+    t.remaining = Math.max(t.stockedIn - t.totalOut, 0);
+  }
+
+  // All entries for this batch
+  const entries = await db
+    .select()
+    .from(productionEntriesTable)
+    .where(and(eq(productionEntriesTable.batchId, batchId), eq(productionEntriesTable.isActive, true)))
+    .orderBy(asc(productionEntriesTable.createdAt));
+
+  return res.json({
+    batchId: batch.id,
+    batchNumber: batch.batchNumber,
+    batchDate: batch.batchDate,
+    projectId: batch.projectId,
+    projectName: batchRow.projectName ?? undefined,
+    status: batch.status,
+    createdByName: batch.createdByName,
+    closedByName: batch.closedByName ?? undefined,
+    closedAt: batch.closedAt?.toISOString() ?? undefined,
+    createdAt: batch.createdAt.toISOString(),
+    stockMovementCount: movCountRow?.n ?? 0,
+    entries: entries.map((e) => formatEntry(e)),
+    stockSummary: typeMap,
+  });
+});
 
 // ── POST /production-log/batches/:id/reopen ───────────────────────────────────
 
