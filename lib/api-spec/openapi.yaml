@@ -5751,6 +5751,111 @@ paths:
         "204":
           description: Deleted
 
+  /operational-alerts/summary:
+    get:
+      operationId: getOperationalAlertSummary
+      summary: Get alert counts by severity and type
+      tags: [operational-alerts]
+      responses:
+        "200":
+          description: Alert summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AlertSummary"
+
+  /operational-alerts/generate:
+    post:
+      operationId: generateOperationalAlerts
+      summary: Run alert detection engine and persist new alerts
+      tags: [operational-alerts]
+      responses:
+        "201":
+          description: Generation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AlertGenerationResult"
+
+  /operational-alerts:
+    get:
+      operationId: listOperationalAlerts
+      summary: List operational governance alerts
+      tags: [operational-alerts]
+      parameters:
+        - in: query
+          name: status
+          schema: { type: string, enum: [open, acknowledged, resolved, dismissed] }
+        - in: query
+          name: severity
+          schema: { type: string, enum: [critical, warning, info] }
+        - in: query
+          name: alertType
+          schema: { type: string }
+        - in: query
+          name: projectId
+          schema: { type: string, format: uuid }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 100 }
+        - in: query
+          name: offset
+          schema: { type: integer, default: 0 }
+      responses:
+        "200":
+          description: List of alerts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OperationalAlert"
+
+  /operational-alerts/{id}:
+    get:
+      operationId: getOperationalAlert
+      summary: Get a single operational alert
+      tags: [operational-alerts]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Alert detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperationalAlert"
+        "404":
+          description: Not found
+
+    patch:
+      operationId: updateOperationalAlert
+      summary: Acknowledge, resolve, dismiss, or reopen an alert
+      tags: [operational-alerts]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAlertBody"
+      responses:
+        "200":
+          description: Updated alert
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperationalAlert"
+        "404":
+          description: Not found
+
 components:
   schemas:
     HealthStatus:
@@ -10088,6 +10193,80 @@ components:
         urgent: { type: integer }
         overdue: { type: integer }
         total: { type: integer }
+
+    OperationalAlert:
+      type: object
+      required: [id, alertCode, alertType, severity, status, title, description, detectedAt, isActive, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        alertCode: { type: string }
+        alertType:
+          type: string
+          enum: [negative_stock, missing_batch_linkage, inventory_inconsistency, suspicious_adjustment, unusual_sales_change, missing_operational_record]
+        severity:
+          type: string
+          enum: [critical, warning, info]
+        status:
+          type: string
+          enum: [open, acknowledged, resolved, dismissed]
+        title: { type: string }
+        description: { type: string }
+        projectId: { type: string, format: uuid, nullable: true }
+        projectName: { type: string, nullable: true }
+        entityType: { type: string, nullable: true }
+        entityId: { type: string, format: uuid, nullable: true }
+        entityRef: { type: string, nullable: true }
+        detectedAt: { type: string, format: date-time }
+        acknowledgedAt: { type: string, format: date-time, nullable: true }
+        acknowledgedById: { type: string, format: uuid, nullable: true }
+        acknowledgedByName: { type: string, nullable: true }
+        resolvedAt: { type: string, format: date-time, nullable: true }
+        resolvedById: { type: string, format: uuid, nullable: true }
+        resolvedByName: { type: string, nullable: true }
+        resolutionNotes: { type: string, nullable: true }
+        metadata: { type: object, nullable: true }
+        isActive: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    AlertSummary:
+      type: object
+      required: [openCount, acknowledgedCount, resolvedCount, dismissedCount, criticalActive, warningActive, infoActive, byType, total]
+      properties:
+        openCount: { type: integer }
+        acknowledgedCount: { type: integer }
+        resolvedCount: { type: integer }
+        dismissedCount: { type: integer }
+        criticalActive: { type: integer }
+        warningActive: { type: integer }
+        infoActive: { type: integer }
+        byType:
+          type: object
+          properties:
+            negativeStock: { type: integer }
+            missingBatchLinkage: { type: integer }
+            inventoryInconsistency: { type: integer }
+            suspiciousAdjustment: { type: integer }
+            unusualSalesChange: { type: integer }
+            missingOperationalRecord: { type: integer }
+        total: { type: integer }
+
+    AlertGenerationResult:
+      type: object
+      required: [generated, skipped, totalDetected]
+      properties:
+        generated: { type: integer }
+        skipped: { type: integer }
+        totalDetected: { type: integer }
+
+    UpdateAlertBody:
+      type: object
+      required: [action]
+      properties:
+        action:
+          type: string
+          enum: [acknowledge, resolve, dismiss, reopen]
+        resolutionNotes: { type: string }
 
     SuccessResponse:
       type: object

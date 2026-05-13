@@ -499,6 +499,52 @@ export const recoverableAdvanceStatusEnum = pgEnum("recoverable_advance_status",
   "written_off",
 ]);
 
+// ── Operational alert enums ───────────────────────────────────────────────
+
+/**
+ * Category of operational governance alert.
+ *   negative_stock           — computed stock balance < 0 for a project/type
+ *   missing_batch_linkage    — production_in or sale movement with no batch reference
+ *   inventory_inconsistency  — production_in quantity doesn't reconcile with batch total
+ *   suspicious_adjustment    — large adjustment movement without justification
+ *   unusual_sales_change     — flagged sale edit detected by sale audit engine
+ *   missing_operational_record — open production batch > threshold age (not closed)
+ */
+export const operationalAlertTypeEnum = pgEnum("operational_alert_type", [
+  "negative_stock",
+  "missing_batch_linkage",
+  "inventory_inconsistency",
+  "suspicious_adjustment",
+  "unusual_sales_change",
+  "missing_operational_record",
+]);
+
+/**
+ * Severity of an operational alert.
+ *   critical — requires immediate action (e.g. negative stock)
+ *   warning  — should be investigated soon
+ *   info     — informational; not blocking
+ */
+export const alertSeverityEnum = pgEnum("alert_severity", [
+  "critical",
+  "warning",
+  "info",
+]);
+
+/**
+ * Lifecycle status of an operational alert.
+ *   open         — newly generated, no action taken
+ *   acknowledged — an admin/developer has seen and noted it
+ *   resolved     — root cause addressed; alert closed
+ *   dismissed    — admin determined alert is a false positive or not actionable
+ */
+export const alertStatusEnum = pgEnum("alert_status", [
+  "open",
+  "acknowledged",
+  "resolved",
+  "dismissed",
+]);
+
 // ── Operational task enums ────────────────────────────────────────────────
 
 /**

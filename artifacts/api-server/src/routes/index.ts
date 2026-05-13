@@ -38,6 +38,7 @@ import buyersRouter from "./buyers";
 import salesRouter from "./sales";
 import salesAuditRouter from "./sales_audit";
 import tasksRouter from "./tasks";
+import operationalAlertsRouter from "./operational_alerts";
 import devRouter from "./dev";
 
 const router: IRouter = Router();
@@ -93,5 +94,6 @@ router.use("/buyers", buyersRouter);
 router.use("/sales", salesAuditRouter);
 router.use("/sales", salesRouter);
 router.use("/tasks", tasksRouter);
+router.use("/operational-alerts", operationalAlertsRouter);
 
 export default router;

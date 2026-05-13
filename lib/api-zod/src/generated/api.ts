@@ -8696,3 +8696,166 @@ export const UpdateTaskResponse = zod.object({
 export const DeleteTaskParams = zod.object({
   id: zod.coerce.string().uuid(),
 });
+
+/**
+ * @summary Get alert counts by severity and type
+ */
+export const GetOperationalAlertSummaryResponse = zod.object({
+  openCount: zod.number(),
+  acknowledgedCount: zod.number(),
+  resolvedCount: zod.number(),
+  dismissedCount: zod.number(),
+  criticalActive: zod.number(),
+  warningActive: zod.number(),
+  infoActive: zod.number(),
+  byType: zod.object({
+    negativeStock: zod.number().optional(),
+    missingBatchLinkage: zod.number().optional(),
+    inventoryInconsistency: zod.number().optional(),
+    suspiciousAdjustment: zod.number().optional(),
+    unusualSalesChange: zod.number().optional(),
+    missingOperationalRecord: zod.number().optional(),
+  }),
+  total: zod.number(),
+});
+
+/**
+ * @summary List operational governance alerts
+ */
+export const listOperationalAlertsQueryLimitDefault = 100;
+export const listOperationalAlertsQueryOffsetDefault = 0;
+
+export const ListOperationalAlertsQueryParams = zod.object({
+  status: zod
+    .enum(["open", "acknowledged", "resolved", "dismissed"])
+    .optional(),
+  severity: zod.enum(["critical", "warning", "info"]).optional(),
+  alertType: zod.coerce.string().optional(),
+  projectId: zod.coerce.string().uuid().optional(),
+  limit: zod.coerce.number().default(listOperationalAlertsQueryLimitDefault),
+  offset: zod.coerce.number().default(listOperationalAlertsQueryOffsetDefault),
+});
+
+export const ListOperationalAlertsResponseItem = zod.object({
+  id: zod.string().uuid(),
+  alertCode: zod.string(),
+  alertType: zod.enum([
+    "negative_stock",
+    "missing_batch_linkage",
+    "inventory_inconsistency",
+    "suspicious_adjustment",
+    "unusual_sales_change",
+    "missing_operational_record",
+  ]),
+  severity: zod.enum(["critical", "warning", "info"]),
+  status: zod.enum(["open", "acknowledged", "resolved", "dismissed"]),
+  title: zod.string(),
+  description: zod.string(),
+  projectId: zod.string().uuid().nullish(),
+  projectName: zod.string().nullish(),
+  entityType: zod.string().nullish(),
+  entityId: zod.string().uuid().nullish(),
+  entityRef: zod.string().nullish(),
+  detectedAt: zod.coerce.date(),
+  acknowledgedAt: zod.coerce.date().nullish(),
+  acknowledgedById: zod.string().uuid().nullish(),
+  acknowledgedByName: zod.string().nullish(),
+  resolvedAt: zod.coerce.date().nullish(),
+  resolvedById: zod.string().uuid().nullish(),
+  resolvedByName: zod.string().nullish(),
+  resolutionNotes: zod.string().nullish(),
+  metadata: zod.object({}).passthrough().nullish(),
+  isActive: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const ListOperationalAlertsResponse = zod.array(
+  ListOperationalAlertsResponseItem,
+);
+
+/**
+ * @summary Get a single operational alert
+ */
+export const GetOperationalAlertParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const GetOperationalAlertResponse = zod.object({
+  id: zod.string().uuid(),
+  alertCode: zod.string(),
+  alertType: zod.enum([
+    "negative_stock",
+    "missing_batch_linkage",
+    "inventory_inconsistency",
+    "suspicious_adjustment",
+    "unusual_sales_change",
+    "missing_operational_record",
+  ]),
+  severity: zod.enum(["critical", "warning", "info"]),
+  status: zod.enum(["open", "acknowledged", "resolved", "dismissed"]),
+  title: zod.string(),
+  description: zod.string(),
+  projectId: zod.string().uuid().nullish(),
+  projectName: zod.string().nullish(),
+  entityType: zod.string().nullish(),
+  entityId: zod.string().uuid().nullish(),
+  entityRef: zod.string().nullish(),
+  detectedAt: zod.coerce.date(),
+  acknowledgedAt: zod.coerce.date().nullish(),
+  acknowledgedById: zod.string().uuid().nullish(),
+  acknowledgedByName: zod.string().nullish(),
+  resolvedAt: zod.coerce.date().nullish(),
+  resolvedById: zod.string().uuid().nullish(),
+  resolvedByName: zod.string().nullish(),
+  resolutionNotes: zod.string().nullish(),
+  metadata: zod.object({}).passthrough().nullish(),
+  isActive: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Acknowledge, resolve, dismiss, or reopen an alert
+ */
+export const UpdateOperationalAlertParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const UpdateOperationalAlertBody = zod.object({
+  action: zod.enum(["acknowledge", "resolve", "dismiss", "reopen"]),
+  resolutionNotes: zod.string().optional(),
+});
+
+export const UpdateOperationalAlertResponse = zod.object({
+  id: zod.string().uuid(),
+  alertCode: zod.string(),
+  alertType: zod.enum([
+    "negative_stock",
+    "missing_batch_linkage",
+    "inventory_inconsistency",
+    "suspicious_adjustment",
+    "unusual_sales_change",
+    "missing_operational_record",
+  ]),
+  severity: zod.enum(["critical", "warning", "info"]),
+  status: zod.enum(["open", "acknowledged", "resolved", "dismissed"]),
+  title: zod.string(),
+  description: zod.string(),
+  projectId: zod.string().uuid().nullish(),
+  projectName: zod.string().nullish(),
+  entityType: zod.string().nullish(),
+  entityId: zod.string().uuid().nullish(),
+  entityRef: zod.string().nullish(),
+  detectedAt: zod.coerce.date(),
+  acknowledgedAt: zod.coerce.date().nullish(),
+  acknowledgedById: zod.string().uuid().nullish(),
+  acknowledgedByName: zod.string().nullish(),
+  resolvedAt: zod.coerce.date().nullish(),
+  resolvedById: zod.string().uuid().nullish(),
+  resolvedByName: zod.string().nullish(),
+  resolutionNotes: zod.string().nullish(),
+  metadata: zod.object({}).passthrough().nullish(),
+  isActive: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});

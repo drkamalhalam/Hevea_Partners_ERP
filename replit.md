@@ -829,6 +829,51 @@ Task assignment and tracking for employee and operational_staff roles. Admin/dev
 - Visible: Dashboard, Projects, My Portfolio, My Profile, Production Log, Production (emp only), Inventory, Stock, Tasks, Distribution (staff only), Notifications
 - Hidden: all Finance modules, all Analytics modules, Governance, Sale Audit, Admin, Inv. Analytics, Sales
 
+## Operational Governance Alert Monitoring System
+
+ERP-style real-time anomaly detection engine for operational governance and compliance. Runs six independent detectors against live DB data, deduplicates against existing open alerts, and persists new findings. Admin and developer roles only.
+
+**Six alert types detected:**
+
+| Alert Type | Severity | Detection Logic |
+|---|---|---|
+| `negative_stock` | critical | `SUM(in) − SUM(out) < 0` per project/stockType on confirmed movements |
+| `missing_batch_linkage` | warning | `production_in` movements with `batchId IS NULL`; confirmed sale line items with no batch link |
+| `inventory_inconsistency` | warning | Closed production batch totals vs. actual `production_in` movement quantities diverge by >1L / >0.5kg |
+| `suspicious_adjustment` | warning | `adjustment_in/out` movement >100 kg / >1000 L, or pending adjustment >7 days old |
+| `unusual_sales_change` | warning | Sale audit events where `risk_level = 'flag'` |
+| `missing_operational_record` | info | Production batch in `open` status for >7 days |
+
+**Alert lifecycle:** `open` → `acknowledged` → `resolved` / `dismissed` (admin can reopen)
+
+**DB table:** `operational_alerts` (`lib/db/src/schema/operational_alerts.ts`) — UUID PK, alertCode (idempotency key), alertType, severity, status, title, description, projectId FK (set null), projectName, entityType, entityId, entityRef, detectedAt, acknowledged/resolved/dismissed audit cols, resolutionNotes, metadata JSONB, isActive
+**Enums added to `enums.ts`:** `operationalAlertTypeEnum`, `alertSeverityEnum`, `alertStatusEnum`
+
+**Detection engine idempotency:** Before inserting, fetches all existing `open` alertCodes and skips any that already exist — re-runs are safe to call repeatedly.
+
+**API endpoints** (`artifacts/api-server/src/routes/operational_alerts.ts`, mounted at `/operational-alerts`):
+- `GET /operational-alerts/summary` — counts by status, severity, and type (admin/developer)
+- `POST /operational-alerts/generate` — runs all 6 detectors, returns `{ generated, skipped, totalDetected }` (admin/developer)
+- `GET /operational-alerts` — list with filters: `?status=`, `?severity=`, `?alertType=`, `?projectId=` (admin/developer)
+- `GET /operational-alerts/:id` — single alert detail (admin/developer)
+- `PATCH /operational-alerts/:id` — `{ action: "acknowledge"|"resolve"|"dismiss"|"reopen", resolutionNotes? }` (reopen: admin only)
+
+**Frontend:** `OperationalAlerts.tsx` (route `/operational-alerts`) — ERP-style monitoring dashboard:
+- 4 KPI cards: Critical Active / Warnings Active / Open Alerts / Resolved
+- Type breakdown strip: per-alert-type open count pills
+- Filter bar: search, status, severity, alert type dropdowns
+- Post-generate feedback banner: "N new alerts generated, N duplicates skipped"
+- Alert rows: severity-colour-coded, expandable for detail + raw metadata JSON viewer
+- Quick actions per row: Acknowledge / Resolve / Dismiss (with dialog + resolution notes) / Reopen (admin)
+- Empty state with "Run Detection" call-to-action
+- Inventory integrity success banner when no negative stock / inconsistency alerts are open
+
+**Sidebar:** "Op. Alerts" added to Operations group (admin/developer only), icon: ScanSearch, href: `/operational-alerts`
+
+**Generated hooks:** `useGetOperationalAlertSummary`, `useGenerateOperationalAlerts`, `useListOperationalAlerts`, `useGetOperationalAlert`, `useUpdateOperationalAlert`
+
+**Access:** admin and developer only. landowner, investor, employee, operational_staff see a "not available" screen.
+
 ## Pointers
 
 - See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details

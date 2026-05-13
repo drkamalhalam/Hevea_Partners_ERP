@@ -45,3 +45,4 @@ export * from "./sales";
 export * from "./sale_audit";
 export * from "./sale_documents";
 export * from "./operational_tasks";
+export * from "./operational_alerts";

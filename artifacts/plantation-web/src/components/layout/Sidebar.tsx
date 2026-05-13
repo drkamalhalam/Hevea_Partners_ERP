@@ -17,6 +17,7 @@ import {
   Bell,
   ShieldCheck,
   ShieldAlert,
+  ScanSearch,
   Sprout,
   ChevronLeft,
   ChevronRight,
@@ -247,6 +248,12 @@ const navGroups: NavGroup[] = [
         name: "Sale Audit",
         href: "/sales/audit",
         icon: ShieldCheck,
+        roles: ["admin", "developer"],
+      },
+      {
+        name: "Op. Alerts",
+        href: "/operational-alerts",
+        icon: ScanSearch,
         roles: ["admin", "developer"],
       },
       {

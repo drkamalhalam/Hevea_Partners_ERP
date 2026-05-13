@@ -4283,6 +4283,108 @@ export interface TaskSummary {
   total: number;
 }
 
+export type OperationalAlertAlertType =
+  (typeof OperationalAlertAlertType)[keyof typeof OperationalAlertAlertType];
+
+export const OperationalAlertAlertType = {
+  negative_stock: "negative_stock",
+  missing_batch_linkage: "missing_batch_linkage",
+  inventory_inconsistency: "inventory_inconsistency",
+  suspicious_adjustment: "suspicious_adjustment",
+  unusual_sales_change: "unusual_sales_change",
+  missing_operational_record: "missing_operational_record",
+} as const;
+
+export type OperationalAlertSeverity =
+  (typeof OperationalAlertSeverity)[keyof typeof OperationalAlertSeverity];
+
+export const OperationalAlertSeverity = {
+  critical: "critical",
+  warning: "warning",
+  info: "info",
+} as const;
+
+export type OperationalAlertStatus =
+  (typeof OperationalAlertStatus)[keyof typeof OperationalAlertStatus];
+
+export const OperationalAlertStatus = {
+  open: "open",
+  acknowledged: "acknowledged",
+  resolved: "resolved",
+  dismissed: "dismissed",
+} as const;
+
+export type OperationalAlertMetadata = { [key: string]: unknown } | null;
+
+export interface OperationalAlert {
+  id: string;
+  alertCode: string;
+  alertType: OperationalAlertAlertType;
+  severity: OperationalAlertSeverity;
+  status: OperationalAlertStatus;
+  title: string;
+  description: string;
+  projectId?: string | null;
+  projectName?: string | null;
+  entityType?: string | null;
+  entityId?: string | null;
+  entityRef?: string | null;
+  detectedAt: string;
+  acknowledgedAt?: string | null;
+  acknowledgedById?: string | null;
+  acknowledgedByName?: string | null;
+  resolvedAt?: string | null;
+  resolvedById?: string | null;
+  resolvedByName?: string | null;
+  resolutionNotes?: string | null;
+  metadata?: OperationalAlertMetadata;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type AlertSummaryByType = {
+  negativeStock?: number;
+  missingBatchLinkage?: number;
+  inventoryInconsistency?: number;
+  suspiciousAdjustment?: number;
+  unusualSalesChange?: number;
+  missingOperationalRecord?: number;
+};
+
+export interface AlertSummary {
+  openCount: number;
+  acknowledgedCount: number;
+  resolvedCount: number;
+  dismissedCount: number;
+  criticalActive: number;
+  warningActive: number;
+  infoActive: number;
+  byType: AlertSummaryByType;
+  total: number;
+}
+
+export interface AlertGenerationResult {
+  generated: number;
+  skipped: number;
+  totalDetected: number;
+}
+
+export type UpdateAlertBodyAction =
+  (typeof UpdateAlertBodyAction)[keyof typeof UpdateAlertBodyAction];
+
+export const UpdateAlertBodyAction = {
+  acknowledge: "acknowledge",
+  resolve: "resolve",
+  dismiss: "dismiss",
+  reopen: "reopen",
+} as const;
+
+export interface UpdateAlertBody {
+  action: UpdateAlertBodyAction;
+  resolutionNotes?: string;
+}
+
 export interface SuccessResponse {
   success: boolean;
 }
@@ -4922,4 +5024,32 @@ export const ListTasksTaskType = {
   stock_update: "stock_update",
   inspection: "inspection",
   general: "general",
+} as const;
+
+export type ListOperationalAlertsParams = {
+  status?: ListOperationalAlertsStatus;
+  severity?: ListOperationalAlertsSeverity;
+  alertType?: string;
+  projectId?: string;
+  limit?: number;
+  offset?: number;
+};
+
+export type ListOperationalAlertsStatus =
+  (typeof ListOperationalAlertsStatus)[keyof typeof ListOperationalAlertsStatus];
+
+export const ListOperationalAlertsStatus = {
+  open: "open",
+  acknowledged: "acknowledged",
+  resolved: "resolved",
+  dismissed: "dismissed",
+} as const;
+
+export type ListOperationalAlertsSeverity =
+  (typeof ListOperationalAlertsSeverity)[keyof typeof ListOperationalAlertsSeverity];
+
+export const ListOperationalAlertsSeverity = {
+  critical: "critical",
+  warning: "warning",
+  info: "info",
 } as const;

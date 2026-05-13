@@ -57,6 +57,7 @@ import InventoryAnalytics from "./pages/InventoryAnalytics";
 import Sales from "./pages/Sales";
 import SalesAudit from "./pages/SalesAudit";
 import OperationalTasks from "./pages/OperationalTasks";
+import OperationalAlerts from "./pages/OperationalAlerts";
 import Distribution from "./pages/Distribution";
 
 // Pages — Analytics
@@ -269,6 +270,7 @@ function AppRoutes() {
               <Route path="/inventory-analytics"><ProtectedRoute component={InventoryAnalytics} /></Route>
               <Route path="/sales/audit"><ProtectedRoute component={SalesAudit} /></Route>
               <Route path="/tasks"><ProtectedRoute component={OperationalTasks} /></Route>
+              <Route path="/operational-alerts"><ProtectedRoute component={OperationalAlerts} /></Route>
               <Route path="/sales"><ProtectedRoute component={Sales} /></Route>
               <Route path="/distribution"><ProtectedRoute component={Distribution} /></Route>
 

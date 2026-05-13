@@ -34,6 +34,8 @@ import type {
   AgreementTemplate,
   AgreementUpdate,
   AgreementVariablesResponse,
+  AlertGenerationResult,
+  AlertSummary,
   ApproveExpenditureBody,
   ApproveExpenditureVerification200,
   ApproveExpenditureVerificationBody,
@@ -164,6 +166,7 @@ import type {
   ListLandownerLedgerEntriesParams,
   ListLcaConfigsParams,
   ListLcaLedgerParams,
+  ListOperationalAlertsParams,
   ListOwnershipSnapshots200,
   ListOwnershipSnapshotsParams,
   ListPartnerClaimantsParams,
@@ -185,6 +188,7 @@ import type {
   MissingDeveloperCase,
   NomineeActivationWorkflow,
   OkResponse,
+  OperationalAlert,
   OperationalTask,
   OwnershipFreeze,
   OwnershipSnapshot,
@@ -244,6 +248,7 @@ import type {
   TransitionLifecycleBody,
   UpdateAdvanceBody,
   UpdateAgreementVariablesBody,
+  UpdateAlertBody,
   UpdateAssignmentInput,
   UpdateBurdenRecordBody,
   UpdateBurdenRuleBody,
@@ -22024,4 +22029,435 @@ export const useDeleteTask = <
   TContext
 > => {
   return useMutation(getDeleteTaskMutationOptions(options));
+};
+
+/**
+ * @summary Get alert counts by severity and type
+ */
+export const getGetOperationalAlertSummaryUrl = () => {
+  return `/api/operational-alerts/summary`;
+};
+
+export const getOperationalAlertSummary = async (
+  options?: RequestInit,
+): Promise<AlertSummary> => {
+  return customFetch<AlertSummary>(getGetOperationalAlertSummaryUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetOperationalAlertSummaryQueryKey = () => {
+  return [`/api/operational-alerts/summary`] as const;
+};
+
+export const getGetOperationalAlertSummaryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getOperationalAlertSummary>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getOperationalAlertSummary>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetOperationalAlertSummaryQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getOperationalAlertSummary>>
+  > = ({ signal }) => getOperationalAlertSummary({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getOperationalAlertSummary>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetOperationalAlertSummaryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getOperationalAlertSummary>>
+>;
+export type GetOperationalAlertSummaryQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get alert counts by severity and type
+ */
+
+export function useGetOperationalAlertSummary<
+  TData = Awaited<ReturnType<typeof getOperationalAlertSummary>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getOperationalAlertSummary>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetOperationalAlertSummaryQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Run alert detection engine and persist new alerts
+ */
+export const getGenerateOperationalAlertsUrl = () => {
+  return `/api/operational-alerts/generate`;
+};
+
+export const generateOperationalAlerts = async (
+  options?: RequestInit,
+): Promise<AlertGenerationResult> => {
+  return customFetch<AlertGenerationResult>(getGenerateOperationalAlertsUrl(), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getGenerateOperationalAlertsMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof generateOperationalAlerts>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof generateOperationalAlerts>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["generateOperationalAlerts"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof generateOperationalAlerts>>,
+    void
+  > = () => {
+    return generateOperationalAlerts(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type GenerateOperationalAlertsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof generateOperationalAlerts>>
+>;
+
+export type GenerateOperationalAlertsMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Run alert detection engine and persist new alerts
+ */
+export const useGenerateOperationalAlerts = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof generateOperationalAlerts>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof generateOperationalAlerts>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(getGenerateOperationalAlertsMutationOptions(options));
+};
+
+/**
+ * @summary List operational governance alerts
+ */
+export const getListOperationalAlertsUrl = (
+  params?: ListOperationalAlertsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/operational-alerts?${stringifiedParams}`
+    : `/api/operational-alerts`;
+};
+
+export const listOperationalAlerts = async (
+  params?: ListOperationalAlertsParams,
+  options?: RequestInit,
+): Promise<OperationalAlert[]> => {
+  return customFetch<OperationalAlert[]>(getListOperationalAlertsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListOperationalAlertsQueryKey = (
+  params?: ListOperationalAlertsParams,
+) => {
+  return [`/api/operational-alerts`, ...(params ? [params] : [])] as const;
+};
+
+export const getListOperationalAlertsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listOperationalAlerts>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListOperationalAlertsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listOperationalAlerts>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListOperationalAlertsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listOperationalAlerts>>
+  > = ({ signal }) =>
+    listOperationalAlerts(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listOperationalAlerts>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListOperationalAlertsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listOperationalAlerts>>
+>;
+export type ListOperationalAlertsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List operational governance alerts
+ */
+
+export function useListOperationalAlerts<
+  TData = Awaited<ReturnType<typeof listOperationalAlerts>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListOperationalAlertsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listOperationalAlerts>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListOperationalAlertsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get a single operational alert
+ */
+export const getGetOperationalAlertUrl = (id: string) => {
+  return `/api/operational-alerts/${id}`;
+};
+
+export const getOperationalAlert = async (
+  id: string,
+  options?: RequestInit,
+): Promise<OperationalAlert> => {
+  return customFetch<OperationalAlert>(getGetOperationalAlertUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetOperationalAlertQueryKey = (id: string) => {
+  return [`/api/operational-alerts/${id}`] as const;
+};
+
+export const getGetOperationalAlertQueryOptions = <
+  TData = Awaited<ReturnType<typeof getOperationalAlert>>,
+  TError = ErrorType<void>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getOperationalAlert>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetOperationalAlertQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getOperationalAlert>>
+  > = ({ signal }) => getOperationalAlert(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getOperationalAlert>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetOperationalAlertQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getOperationalAlert>>
+>;
+export type GetOperationalAlertQueryError = ErrorType<void>;
+
+/**
+ * @summary Get a single operational alert
+ */
+
+export function useGetOperationalAlert<
+  TData = Awaited<ReturnType<typeof getOperationalAlert>>,
+  TError = ErrorType<void>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getOperationalAlert>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetOperationalAlertQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Acknowledge, resolve, dismiss, or reopen an alert
+ */
+export const getUpdateOperationalAlertUrl = (id: string) => {
+  return `/api/operational-alerts/${id}`;
+};
+
+export const updateOperationalAlert = async (
+  id: string,
+  updateAlertBody: UpdateAlertBody,
+  options?: RequestInit,
+): Promise<OperationalAlert> => {
+  return customFetch<OperationalAlert>(getUpdateOperationalAlertUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateAlertBody),
+  });
+};
+
+export const getUpdateOperationalAlertMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateOperationalAlert>>,
+    TError,
+    { id: string; data: BodyType<UpdateAlertBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateOperationalAlert>>,
+  TError,
+  { id: string; data: BodyType<UpdateAlertBody> },
+  TContext
+> => {
+  const mutationKey = ["updateOperationalAlert"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateOperationalAlert>>,
+    { id: string; data: BodyType<UpdateAlertBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateOperationalAlert(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateOperationalAlertMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateOperationalAlert>>
+>;
+export type UpdateOperationalAlertMutationBody = BodyType<UpdateAlertBody>;
+export type UpdateOperationalAlertMutationError = ErrorType<void>;
+
+/**
+ * @summary Acknowledge, resolve, dismiss, or reopen an alert
+ */
+export const useUpdateOperationalAlert = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateOperationalAlert>>,
+    TError,
+    { id: string; data: BodyType<UpdateAlertBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateOperationalAlert>>,
+  TError,
+  { id: string; data: BodyType<UpdateAlertBody> },
+  TContext
+> => {
+  return useMutation(getUpdateOperationalAlertMutationOptions(options));
 };
