@@ -2056,6 +2056,88 @@ export interface ContributionDisputeSummary {
   blockedProjectIds: string[];
 }
 
+export type ExpenditureEntryCategory =
+  (typeof ExpenditureEntryCategory)[keyof typeof ExpenditureEntryCategory];
+
+export const ExpenditureEntryCategory = {
+  labor: "labor",
+  fertilizer: "fertilizer",
+  transport: "transport",
+  machinery: "machinery",
+  maintenance: "maintenance",
+  consumables: "consumables",
+  plantation_operations: "plantation_operations",
+  miscellaneous: "miscellaneous",
+} as const;
+
+export type ExpenditureEntryVerificationStatus =
+  (typeof ExpenditureEntryVerificationStatus)[keyof typeof ExpenditureEntryVerificationStatus];
+
+export const ExpenditureEntryVerificationStatus = {
+  draft: "draft",
+  pending_review: "pending_review",
+  approved: "approved",
+  rejected: "rejected",
+} as const;
+
+export interface ExpenditureEntry {
+  id: string;
+  projectId: string;
+  /** @nullable */
+  projectName?: string | null;
+  /** @nullable */
+  paidById?: string | null;
+  /** @nullable */
+  paidByName?: string | null;
+  category: ExpenditureEntryCategory;
+  amount: number;
+  expenditureDate: string;
+  description: string;
+  /** @nullable */
+  invoiceObjectPath?: string | null;
+  verificationStatus: ExpenditureEntryVerificationStatus;
+  /** @nullable */
+  verifiedAt?: string | null;
+  /** @nullable */
+  verifiedByName?: string | null;
+  /** @nullable */
+  verifierNotes?: string | null;
+  lifecyclePhaseSnapshot: string;
+  /** @nullable */
+  recordedByName?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  createdAt: string;
+}
+
+export type ExpenditureSummaryProjectsItemCategoryBreakdownItem = {
+  category: string;
+  amount: number;
+  count: number;
+};
+
+export type ExpenditureSummaryProjectsItem = {
+  projectId: string;
+  projectName: string;
+  totalAmount: number;
+  approvedAmount: number;
+  pendingAmount: number;
+  count: number;
+  categoryBreakdown: ExpenditureSummaryProjectsItemCategoryBreakdownItem[];
+};
+
+export type ExpenditureSummaryTotals = {
+  totalAmount: number;
+  approvedAmount: number;
+  pendingAmount: number;
+  count: number;
+};
+
+export interface ExpenditureSummary {
+  projects: ExpenditureSummaryProjectsItem[];
+  totals: ExpenditureSummaryTotals;
+}
+
 export type GetUserActivityParams = {
   limit?: number;
 };
@@ -2240,4 +2322,48 @@ export type ListOwnershipSnapshots200 = {
 
 export type CreateOwnershipSnapshotBody = {
   notes?: string;
+};
+
+export type ListExpendituresParams = {
+  projectId?: string;
+  category?: string;
+  status?: string;
+  search?: string;
+  dateFrom?: string;
+  dateTo?: string;
+};
+
+export type ListExpenditures200 = {
+  expenditures: ExpenditureEntry[];
+};
+
+export type CreateExpenditureBody = {
+  projectId: string;
+  category: string;
+  amount: number;
+  expenditureDate: string;
+  description: string;
+  notes?: string;
+  paidByName?: string;
+};
+
+export type GetExpenditureSummaryParams = {
+  projectId?: string;
+};
+
+export type UpdateExpenditureBody = {
+  category?: string;
+  amount?: number;
+  expenditureDate?: string;
+  description?: string;
+  notes?: string;
+  paidByName?: string;
+};
+
+export type ApproveExpenditureBody = {
+  notes?: string;
+};
+
+export type RejectExpenditureBody = {
+  notes: string;
 };

@@ -2966,6 +2966,253 @@ paths:
         "403": { description: Forbidden }
         "404": { description: Not found }
 
+  /expenditures:
+    get:
+      operationId: listExpenditures
+      summary: List expenditure records with optional filters
+      tags: [Expenditures]
+      parameters:
+        - name: projectId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: category
+          in: query
+          schema: { type: string }
+        - name: status
+          in: query
+          schema: { type: string }
+        - name: search
+          in: query
+          schema: { type: string }
+        - name: dateFrom
+          in: query
+          schema: { type: string }
+        - name: dateTo
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Expenditure list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [expenditures]
+                properties:
+                  expenditures:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ExpenditureEntry"
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+    post:
+      operationId: createExpenditure
+      summary: Record a new operational expenditure
+      tags: [Expenditures]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [projectId, category, amount, expenditureDate, description]
+              properties:
+                projectId:
+                  type: string
+                  format: uuid
+                category:
+                  type: string
+                amount:
+                  type: number
+                expenditureDate:
+                  type: string
+                description:
+                  type: string
+                notes:
+                  type: string
+                paidByName:
+                  type: string
+      responses:
+        "201":
+          description: Expenditure created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ExpenditureEntry" }
+        "400": { description: Bad request }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+
+  /expenditures/summary:
+    get:
+      operationId: getExpenditureSummary
+      summary: Project-wise expenditure analytics dashboard
+      tags: [Expenditures]
+      parameters:
+        - name: projectId
+          in: query
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Expenditure summary
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ExpenditureSummary" }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+
+  /expenditures/{id}:
+    get:
+      operationId: getExpenditure
+      summary: Get a single expenditure record
+      tags: [Expenditures]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Expenditure detail
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ExpenditureEntry" }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+        "404": { description: Not found }
+    patch:
+      operationId: updateExpenditure
+      summary: Update an expenditure record
+      tags: [Expenditures]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                category:
+                  type: string
+                amount:
+                  type: number
+                expenditureDate:
+                  type: string
+                description:
+                  type: string
+                notes:
+                  type: string
+                paidByName:
+                  type: string
+      responses:
+        "200":
+          description: Expenditure updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ExpenditureEntry" }
+        "400": { description: Bad request }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+        "404": { description: Not found }
+    delete:
+      operationId: deleteExpenditure
+      summary: Soft-delete an expenditure record (admin only)
+      tags: [Expenditures]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "204": { description: Deleted }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+        "404": { description: Not found }
+
+  /expenditures/{id}/submit:
+    post:
+      operationId: submitExpenditure
+      summary: Submit a draft expenditure for review
+      tags: [Expenditures]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Submitted for review
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ExpenditureEntry" }
+        "400": { description: Bad request }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+        "404": { description: Not found }
+
+  /expenditures/{id}/approve:
+    post:
+      operationId: approveExpenditure
+      summary: Approve a pending expenditure record
+      tags: [Expenditures]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                notes:
+                  type: string
+      responses:
+        "200":
+          description: Approved
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ExpenditureEntry" }
+        "400": { description: Bad request }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+        "404": { description: Not found }
+
+  /expenditures/{id}/reject:
+    post:
+      operationId: rejectExpenditure
+      summary: Reject a pending expenditure record
+      tags: [Expenditures]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [notes]
+              properties:
+                notes:
+                  type: string
+      responses:
+        "200":
+          description: Rejected
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ExpenditureEntry" }
+        "400": { description: Bad request }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+        "404": { description: Not found }
+
 components:
   schemas:
     HealthStatus:
@@ -5297,3 +5544,97 @@ components:
           items:
             type: string
             format: uuid
+
+    ExpenditureEntry:
+      type: object
+      required: [id, projectId, category, amount, expenditureDate, description, verificationStatus, lifecyclePhaseSnapshot, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        projectId:
+          type: string
+          format: uuid
+        projectName:
+          type: ["string", "null"]
+        paidById:
+          type: ["string", "null"]
+          format: uuid
+        paidByName:
+          type: ["string", "null"]
+        category:
+          type: string
+          enum: [labor, fertilizer, transport, machinery, maintenance, consumables, plantation_operations, miscellaneous]
+        amount:
+          type: number
+        expenditureDate:
+          type: string
+        description:
+          type: string
+        invoiceObjectPath:
+          type: ["string", "null"]
+        verificationStatus:
+          type: string
+          enum: [draft, pending_review, approved, rejected]
+        verifiedAt:
+          type: ["string", "null"]
+        verifiedByName:
+          type: ["string", "null"]
+        verifierNotes:
+          type: ["string", "null"]
+        lifecyclePhaseSnapshot:
+          type: string
+        recordedByName:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    ExpenditureSummary:
+      type: object
+      required: [projects, totals]
+      properties:
+        projects:
+          type: array
+          items:
+            type: object
+            required: [projectId, projectName, totalAmount, approvedAmount, pendingAmount, count, categoryBreakdown]
+            properties:
+              projectId:
+                type: string
+                format: uuid
+              projectName:
+                type: string
+              totalAmount:
+                type: number
+              approvedAmount:
+                type: number
+              pendingAmount:
+                type: number
+              count:
+                type: integer
+              categoryBreakdown:
+                type: array
+                items:
+                  type: object
+                  required: [category, amount, count]
+                  properties:
+                    category:
+                      type: string
+                    amount:
+                      type: number
+                    count:
+                      type: integer
+        totals:
+          type: object
+          required: [totalAmount, approvedAmount, pendingAmount, count]
+          properties:
+            totalAmount:
+              type: number
+            approvedAmount:
+              type: number
+            pendingAmount:
+              type: number
+            count:
+              type: integer

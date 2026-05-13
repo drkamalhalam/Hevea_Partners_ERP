@@ -363,3 +363,33 @@ export const dbOperationEnum = pgEnum("db_operation", [
   "UPDATE",
   "DELETE",
 ]);
+
+// ── Expenditure enums ─────────────────────────────────────────────────────────
+
+/**
+ * Operational expenditure categories for plantation cost tracking.
+ * These are day-to-day running costs and are entirely separate from
+ * ownership contributions (which affect equity calculations).
+ */
+export const expenditureCategoryEnum = pgEnum("expenditure_category", [
+  "labor",
+  "fertilizer",
+  "transport",
+  "machinery",
+  "maintenance",
+  "consumables",
+  "plantation_operations",
+  "miscellaneous",
+]);
+
+/**
+ * Verification lifecycle of an expenditure record.
+ *   draft          — saved by staff, not yet submitted for review
+ *   pending_review — submitted; awaiting admin / developer approval
+ *   approved       — accepted; included in cost reporting
+ *   rejected       — declined; excluded from cost reporting
+ */
+export const expenditureVerificationStatusEnum = pgEnum(
+  "expenditure_verification_status",
+  ["draft", "pending_review", "approved", "rejected"],
+);

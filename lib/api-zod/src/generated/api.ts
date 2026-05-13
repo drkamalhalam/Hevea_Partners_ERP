@@ -4518,3 +4518,334 @@ export const CreateOwnershipSnapshotParams = zod.object({
 export const CreateOwnershipSnapshotBody = zod.object({
   notes: zod.string().optional(),
 });
+
+/**
+ * @summary List expenditure records with optional filters
+ */
+export const ListExpendituresQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+  category: zod.coerce.string().optional(),
+  status: zod.coerce.string().optional(),
+  search: zod.coerce.string().optional(),
+  dateFrom: zod.coerce.string().optional(),
+  dateTo: zod.coerce.string().optional(),
+});
+
+export const ListExpendituresResponse = zod.object({
+  expenditures: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      projectId: zod.string().uuid(),
+      projectName: zod.string().nullish(),
+      paidById: zod.string().uuid().nullish(),
+      paidByName: zod.string().nullish(),
+      category: zod.enum([
+        "labor",
+        "fertilizer",
+        "transport",
+        "machinery",
+        "maintenance",
+        "consumables",
+        "plantation_operations",
+        "miscellaneous",
+      ]),
+      amount: zod.number(),
+      expenditureDate: zod.string(),
+      description: zod.string(),
+      invoiceObjectPath: zod.string().nullish(),
+      verificationStatus: zod.enum([
+        "draft",
+        "pending_review",
+        "approved",
+        "rejected",
+      ]),
+      verifiedAt: zod.string().nullish(),
+      verifiedByName: zod.string().nullish(),
+      verifierNotes: zod.string().nullish(),
+      lifecyclePhaseSnapshot: zod.string(),
+      recordedByName: zod.string().nullish(),
+      notes: zod.string().nullish(),
+      createdAt: zod.string(),
+    }),
+  ),
+});
+
+/**
+ * @summary Record a new operational expenditure
+ */
+export const CreateExpenditureBody = zod.object({
+  projectId: zod.string().uuid(),
+  category: zod.string(),
+  amount: zod.number(),
+  expenditureDate: zod.string(),
+  description: zod.string(),
+  notes: zod.string().optional(),
+  paidByName: zod.string().optional(),
+});
+
+/**
+ * @summary Project-wise expenditure analytics dashboard
+ */
+export const GetExpenditureSummaryQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+});
+
+export const GetExpenditureSummaryResponse = zod.object({
+  projects: zod.array(
+    zod.object({
+      projectId: zod.string().uuid(),
+      projectName: zod.string(),
+      totalAmount: zod.number(),
+      approvedAmount: zod.number(),
+      pendingAmount: zod.number(),
+      count: zod.number(),
+      categoryBreakdown: zod.array(
+        zod.object({
+          category: zod.string(),
+          amount: zod.number(),
+          count: zod.number(),
+        }),
+      ),
+    }),
+  ),
+  totals: zod.object({
+    totalAmount: zod.number(),
+    approvedAmount: zod.number(),
+    pendingAmount: zod.number(),
+    count: zod.number(),
+  }),
+});
+
+/**
+ * @summary Get a single expenditure record
+ */
+export const GetExpenditureParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const GetExpenditureResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  projectName: zod.string().nullish(),
+  paidById: zod.string().uuid().nullish(),
+  paidByName: zod.string().nullish(),
+  category: zod.enum([
+    "labor",
+    "fertilizer",
+    "transport",
+    "machinery",
+    "maintenance",
+    "consumables",
+    "plantation_operations",
+    "miscellaneous",
+  ]),
+  amount: zod.number(),
+  expenditureDate: zod.string(),
+  description: zod.string(),
+  invoiceObjectPath: zod.string().nullish(),
+  verificationStatus: zod.enum([
+    "draft",
+    "pending_review",
+    "approved",
+    "rejected",
+  ]),
+  verifiedAt: zod.string().nullish(),
+  verifiedByName: zod.string().nullish(),
+  verifierNotes: zod.string().nullish(),
+  lifecyclePhaseSnapshot: zod.string(),
+  recordedByName: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  createdAt: zod.string(),
+});
+
+/**
+ * @summary Update an expenditure record
+ */
+export const UpdateExpenditureParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const UpdateExpenditureBody = zod.object({
+  category: zod.string().optional(),
+  amount: zod.number().optional(),
+  expenditureDate: zod.string().optional(),
+  description: zod.string().optional(),
+  notes: zod.string().optional(),
+  paidByName: zod.string().optional(),
+});
+
+export const UpdateExpenditureResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  projectName: zod.string().nullish(),
+  paidById: zod.string().uuid().nullish(),
+  paidByName: zod.string().nullish(),
+  category: zod.enum([
+    "labor",
+    "fertilizer",
+    "transport",
+    "machinery",
+    "maintenance",
+    "consumables",
+    "plantation_operations",
+    "miscellaneous",
+  ]),
+  amount: zod.number(),
+  expenditureDate: zod.string(),
+  description: zod.string(),
+  invoiceObjectPath: zod.string().nullish(),
+  verificationStatus: zod.enum([
+    "draft",
+    "pending_review",
+    "approved",
+    "rejected",
+  ]),
+  verifiedAt: zod.string().nullish(),
+  verifiedByName: zod.string().nullish(),
+  verifierNotes: zod.string().nullish(),
+  lifecyclePhaseSnapshot: zod.string(),
+  recordedByName: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  createdAt: zod.string(),
+});
+
+/**
+ * @summary Soft-delete an expenditure record (admin only)
+ */
+export const DeleteExpenditureParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+/**
+ * @summary Submit a draft expenditure for review
+ */
+export const SubmitExpenditureParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const SubmitExpenditureResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  projectName: zod.string().nullish(),
+  paidById: zod.string().uuid().nullish(),
+  paidByName: zod.string().nullish(),
+  category: zod.enum([
+    "labor",
+    "fertilizer",
+    "transport",
+    "machinery",
+    "maintenance",
+    "consumables",
+    "plantation_operations",
+    "miscellaneous",
+  ]),
+  amount: zod.number(),
+  expenditureDate: zod.string(),
+  description: zod.string(),
+  invoiceObjectPath: zod.string().nullish(),
+  verificationStatus: zod.enum([
+    "draft",
+    "pending_review",
+    "approved",
+    "rejected",
+  ]),
+  verifiedAt: zod.string().nullish(),
+  verifiedByName: zod.string().nullish(),
+  verifierNotes: zod.string().nullish(),
+  lifecyclePhaseSnapshot: zod.string(),
+  recordedByName: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  createdAt: zod.string(),
+});
+
+/**
+ * @summary Approve a pending expenditure record
+ */
+export const ApproveExpenditureParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const ApproveExpenditureBody = zod.object({
+  notes: zod.string().optional(),
+});
+
+export const ApproveExpenditureResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  projectName: zod.string().nullish(),
+  paidById: zod.string().uuid().nullish(),
+  paidByName: zod.string().nullish(),
+  category: zod.enum([
+    "labor",
+    "fertilizer",
+    "transport",
+    "machinery",
+    "maintenance",
+    "consumables",
+    "plantation_operations",
+    "miscellaneous",
+  ]),
+  amount: zod.number(),
+  expenditureDate: zod.string(),
+  description: zod.string(),
+  invoiceObjectPath: zod.string().nullish(),
+  verificationStatus: zod.enum([
+    "draft",
+    "pending_review",
+    "approved",
+    "rejected",
+  ]),
+  verifiedAt: zod.string().nullish(),
+  verifiedByName: zod.string().nullish(),
+  verifierNotes: zod.string().nullish(),
+  lifecyclePhaseSnapshot: zod.string(),
+  recordedByName: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  createdAt: zod.string(),
+});
+
+/**
+ * @summary Reject a pending expenditure record
+ */
+export const RejectExpenditureParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const RejectExpenditureBody = zod.object({
+  notes: zod.string(),
+});
+
+export const RejectExpenditureResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  projectName: zod.string().nullish(),
+  paidById: zod.string().uuid().nullish(),
+  paidByName: zod.string().nullish(),
+  category: zod.enum([
+    "labor",
+    "fertilizer",
+    "transport",
+    "machinery",
+    "maintenance",
+    "consumables",
+    "plantation_operations",
+    "miscellaneous",
+  ]),
+  amount: zod.number(),
+  expenditureDate: zod.string(),
+  description: zod.string(),
+  invoiceObjectPath: zod.string().nullish(),
+  verificationStatus: zod.enum([
+    "draft",
+    "pending_review",
+    "approved",
+    "rejected",
+  ]),
+  verifiedAt: zod.string().nullish(),
+  verifiedByName: zod.string().nullish(),
+  verifierNotes: zod.string().nullish(),
+  lifecyclePhaseSnapshot: zod.string(),
+  recordedByName: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  createdAt: zod.string(),
+});

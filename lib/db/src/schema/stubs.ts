@@ -45,25 +45,6 @@ const auditCols = (users: typeof usersTable) => ({
   }),
 });
 
-// ── Expenditure ───────────────────────────────────────────────────────────
-// Plantation operating and capital expenditure items.
-
-export const expendituresTable = pgTable("expenditures", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  projectId: uuid("project_id")
-    .notNull()
-    .references(() => projectsTable.id, { onDelete: "restrict" }),
-  category: text("category").notNull().default("general"),
-  description: text("description").notNull(),
-  amount: real("amount").notNull(),
-  expenseDate: text("expense_date").notNull(),
-  receiptUrl: text("receipt_url"),
-  // pending | approved | rejected
-  status: text("status").notNull().default("pending"),
-  notes: text("notes"),
-  ...auditCols(usersTable),
-});
-
 // ── Inventory ─────────────────────────────────────────────────────────────
 // Consumables, tools, and equipment tracked at the project level.
 
@@ -178,7 +159,6 @@ export const governanceRecordsTable = pgTable("governance_records", {
 
 // ── Exported types ────────────────────────────────────────────────────────
 
-export type Expenditure = typeof expendituresTable.$inferSelect;
 export type InventoryItem = typeof inventoryItemsTable.$inferSelect;
 export type SalesRecord = typeof salesRecordsTable.$inferSelect;
 export type Distribution = typeof distributionsTable.$inferSelect;
