@@ -72,7 +72,14 @@ function ClerkQueryClientCacheInvalidator() {
   useEffect(() => {
     const unsubscribe = addListener(({ user }) => {
       const userId = user?.id ?? null;
-      if (prevUserIdRef.current !== undefined && prevUserIdRef.current !== userId) {
+      // Only clear cache when switching FROM an authenticated user TO a different
+      // state (sign-out or different account). Ignore the initial null→user
+      // transition that fires during Clerk's own initialisation — that would
+      // wipe the /me cache on every page load and cause the role to flash
+      // "employee" while the query re-fetches.
+      const prevWasAuthenticatedUser =
+        prevUserIdRef.current !== undefined && prevUserIdRef.current !== null;
+      if (prevWasAuthenticatedUser && prevUserIdRef.current !== userId) {
         queryClient.clear();
       }
       prevUserIdRef.current = userId;

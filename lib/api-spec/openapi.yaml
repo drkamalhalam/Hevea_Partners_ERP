@@ -2462,11 +2462,11 @@ components:
 
     UpsertUserInput:
       type: object
-      required: [role]
       properties:
         role:
           type: string
           enum: [admin, developer, landowner, investor, employee, operational_staff]
+          description: Ignored by the server. Role is managed exclusively by admin actions. Kept for backwards compatibility only.
         displayName:
           type: string
         email:

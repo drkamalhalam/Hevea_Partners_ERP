@@ -6,6 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 
+/**
+ * Ignored by the server. Role is managed exclusively by admin actions. Kept for backwards compatibility only.
+ */
 export type UpsertUserInputRole =
   (typeof UpsertUserInputRole)[keyof typeof UpsertUserInputRole];
 

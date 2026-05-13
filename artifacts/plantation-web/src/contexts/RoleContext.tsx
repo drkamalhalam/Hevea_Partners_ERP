@@ -56,23 +56,29 @@ export function RoleProvider({ children }: { children: ReactNode }) {
     query: { enabled: !!user, queryKey: getGetMeQueryKey() },
   });
   const upsertMe = useUpsertMe();
-  const upsertedRef = useRef(false);
+  // Track which Clerk userId we have already synced so the upsert fires once
+  // per distinct user, not once per component lifetime.  A plain boolean ref
+  // would get stuck as `true` if the user signs out and back in (or switches
+  // accounts) without unmounting this provider.
+  const upsertedForUserRef = useRef<string | null>(null);
 
-  // Always sync the user record on first load of each session.
-  // This handles three cases:
-  //   1. Brand new user — creates their DB record
-  //   2. Existing user whose Clerk ID changed (dev token refresh / re-sign-in)
-  //      — the PUT /me email-linking logic re-links the pre-created record
+  // Sync the user record on first load of each authenticated session.
+  // Handles three cases:
+  //   1. Brand new user  — creates their DB record (role defaults to "employee"
+  //      via DB default; we never send role from the client so it is never
+  //      accidentally overwritten here)
+  //   2. Existing user whose Clerk ID changed — email-linking in PUT /me
+  //      re-links the pre-created record while preserving their stored role
   //   3. Normal returning user — no-op (onConflictDoUpdate leaves role untouched)
   // After the upsert succeeds we invalidate the /me cache so the correct role
   // is immediately reflected in the UI.
   useEffect(() => {
-    if (!user || !isLoaded || upsertedRef.current) return;
-    upsertedRef.current = true;
+    if (!user || !isLoaded) return;
+    if (upsertedForUserRef.current === user.id) return;
+    upsertedForUserRef.current = user.id;
     upsertMe.mutate(
       {
         data: {
-          role: "employee",
           displayName: user.fullName ?? undefined,
           email: user.primaryEmailAddress?.emailAddress ?? undefined,
         },

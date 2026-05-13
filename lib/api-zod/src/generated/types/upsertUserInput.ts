@@ -8,7 +8,8 @@
 import type { UpsertUserInputRole } from "./upsertUserInputRole";
 
 export interface UpsertUserInput {
-  role: UpsertUserInputRole;
+  /** Ignored by the server. Role is managed exclusively by admin actions. Kept for backwards compatibility only. */
+  role?: UpsertUserInputRole;
   displayName?: string;
   email?: string;
   phone?: string;

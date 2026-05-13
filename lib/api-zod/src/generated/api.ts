@@ -63,14 +63,19 @@ export const GetMeResponse = zod.object({
  * @summary Upsert current user role record (called on first login)
  */
 export const UpsertMeBody = zod.object({
-  role: zod.enum([
-    "admin",
-    "developer",
-    "landowner",
-    "investor",
-    "employee",
-    "operational_staff",
-  ]),
+  role: zod
+    .enum([
+      "admin",
+      "developer",
+      "landowner",
+      "investor",
+      "employee",
+      "operational_staff",
+    ])
+    .optional()
+    .describe(
+      "Ignored by the server. Role is managed exclusively by admin actions. Kept for backwards compatibility only.",
+    ),
   displayName: zod.string().optional(),
   email: zod.string().optional(),
   phone: zod.string().optional(),

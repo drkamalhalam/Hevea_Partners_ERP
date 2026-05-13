@@ -98,13 +98,16 @@ router.put("/", async (req, res) => {
       return;
     }
 
-    const { role, displayName, email, phone, address } = parsed.data;
+    // Note: `role` from the request body is intentionally ignored here.
+    // Role is managed exclusively by admin actions (PUT /users/:id/role).
+    // The DB default ("employee") is applied for brand-new inserts.
+    const { displayName, email, phone, address } = parsed.data;
 
     // If a pre-created record exists for this email (e.g. admin pre-provisioning),
     // link the real Clerk user ID to it and preserve the existing role.
     if (email) {
       const [preCreated] = await db
-        .select({ id: usersTable.id, clerkUserId: usersTable.clerkUserId, role: usersTable.role })
+        .select({ id: usersTable.id, clerkUserId: usersTable.clerkUserId, displayName: usersTable.displayName })
         .from(usersTable)
         .where(eq(usersTable.email, email))
         .limit(1);
@@ -114,7 +117,7 @@ router.put("/", async (req, res) => {
           .update(usersTable)
           .set({
             clerkUserId: req.userId!,
-            displayName: displayName ?? preCreated.role,
+            displayName: displayName ?? preCreated.displayName ?? undefined,
             ...(phone !== undefined && { phone }),
             ...(address !== undefined && { address }),
             updatedAt: new Date(),
@@ -128,7 +131,7 @@ router.put("/", async (req, res) => {
 
     await db
       .insert(usersTable)
-      .values({ clerkUserId: req.userId!, role, displayName, email, phone, address })
+      .values({ clerkUserId: req.userId!, displayName, email, phone, address })
       .onConflictDoUpdate({
         target: usersTable.clerkUserId,
         set: {

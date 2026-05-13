@@ -530,6 +530,9 @@ export interface UserProfile {
   createdAt?: string;
 }
 
+/**
+ * Ignored by the server. Role is managed exclusively by admin actions. Kept for backwards compatibility only.
+ */
 export type UpsertUserInputRole =
   (typeof UpsertUserInputRole)[keyof typeof UpsertUserInputRole];
 
@@ -543,7 +546,8 @@ export const UpsertUserInputRole = {
 } as const;
 
 export interface UpsertUserInput {
-  role: UpsertUserInputRole;
+  /** Ignored by the server. Role is managed exclusively by admin actions. Kept for backwards compatibility only. */
+  role?: UpsertUserInputRole;
   displayName?: string;
   email?: string;
   phone?: string;
