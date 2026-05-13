@@ -9,7 +9,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
-import { projectStatusEnum } from "./enums";
+import { projectStatusEnum, projectLifecycleStatusEnum } from "./enums";
 import { usersTable } from "./users";
 
 export const projectsTable = pgTable("projects", {
@@ -25,6 +25,9 @@ export const projectsTable = pgTable("projects", {
   landNotionalValue: real("land_notional_value"),
   landValuePerUnit: real("land_value_per_unit"),
   status: projectStatusEnum("status").notNull().default("planning"),
+  lifecycleStatus: projectLifecycleStatusEnum("lifecycle_status")
+    .notNull()
+    .default("prematurity"),
   startDate: text("start_date").notNull(),
   expectedMaturityDate: text("expected_maturity_date"),
   termYears: integer("term_years").notNull().default(35),

@@ -20,6 +20,15 @@ export const ProjectStatus = {
   suspended: "suspended",
 } as const;
 
+export type ProjectLifecycleStatus =
+  (typeof ProjectLifecycleStatus)[keyof typeof ProjectLifecycleStatus];
+
+export const ProjectLifecycleStatus = {
+  prematurity: "prematurity",
+  mature_production: "mature_production",
+  closed: "closed",
+} as const;
+
 export interface Project {
   id: string;
   name: string;
@@ -37,6 +46,7 @@ export interface Project {
   /** @nullable */
   landValuePerUnit?: number | null;
   status: ProjectStatus;
+  lifecycleStatus: ProjectLifecycleStatus;
   startDate: string;
   /** @nullable */
   expectedMaturityDate?: string | null;
@@ -531,6 +541,58 @@ export interface UpdateAssignmentInput {
   projectRole: UpdateAssignmentInputProjectRole;
 }
 
+export type ProjectLifecycleCurrentStatus =
+  (typeof ProjectLifecycleCurrentStatus)[keyof typeof ProjectLifecycleCurrentStatus];
+
+export const ProjectLifecycleCurrentStatus = {
+  prematurity: "prematurity",
+  mature_production: "mature_production",
+  closed: "closed",
+} as const;
+
+export type ProjectLifecycleHistoryEntryToStatus =
+  (typeof ProjectLifecycleHistoryEntryToStatus)[keyof typeof ProjectLifecycleHistoryEntryToStatus];
+
+export const ProjectLifecycleHistoryEntryToStatus = {
+  prematurity: "prematurity",
+  mature_production: "mature_production",
+  closed: "closed",
+} as const;
+
+export interface ProjectLifecycleHistoryEntry {
+  id: string;
+  projectId: string;
+  /** @nullable */
+  fromStatus?: string | null;
+  toStatus: ProjectLifecycleHistoryEntryToStatus;
+  /** @nullable */
+  remarks?: string | null;
+  /** @nullable */
+  changedBy?: string | null;
+  /** @nullable */
+  changedByName?: string | null;
+  changedAt: string;
+}
+
+export interface ProjectLifecycle {
+  projectId: string;
+  currentStatus: ProjectLifecycleCurrentStatus;
+  history: ProjectLifecycleHistoryEntry[];
+}
+
+export type TransitionLifecycleBodyToStatus =
+  (typeof TransitionLifecycleBodyToStatus)[keyof typeof TransitionLifecycleBodyToStatus];
+
+export const TransitionLifecycleBodyToStatus = {
+  mature_production: "mature_production",
+  closed: "closed",
+} as const;
+
+export interface TransitionLifecycleBody {
+  toStatus: TransitionLifecycleBodyToStatus;
+  remarks?: string;
+}
+
 export type ProjectNomineeActivationStatus =
   (typeof ProjectNomineeActivationStatus)[keyof typeof ProjectNomineeActivationStatus];
 
@@ -806,6 +868,10 @@ export interface GovernanceSummary {
   projectAlerts: ProjectGovernanceStatus[];
   profileAlerts: GovernanceAlert[];
   partnerAlerts: PartnerGovernanceStatus[];
+}
+
+export interface ErrorResponse {
+  error?: string;
 }
 
 export interface OkResponse {

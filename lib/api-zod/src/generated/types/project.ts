@@ -5,6 +5,7 @@
  * Rubber Plantation Partnership API
  * OpenAPI spec version: 0.1.0
  */
+import type { ProjectLifecycleStatus } from "./projectLifecycleStatus";
 import type { ProjectStatus } from "./projectStatus";
 
 export interface Project {
@@ -24,6 +25,7 @@ export interface Project {
   /** @nullable */
   landValuePerUnit?: number | null;
   status: ProjectStatus;
+  lifecycleStatus: ProjectLifecycleStatus;
   startDate: string;
   /** @nullable */
   expectedMaturityDate?: string | null;

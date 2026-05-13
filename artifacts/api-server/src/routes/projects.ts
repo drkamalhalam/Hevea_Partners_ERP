@@ -6,8 +6,9 @@ import {
   usersTable,
   userProjectAssignmentsTable,
   projectNomineesTable,
+  projectLifecycleHistoryTable,
 } from "@workspace/db";
-import { eq, and, inArray } from "drizzle-orm";
+import { eq, and, inArray, desc } from "drizzle-orm";
 import {
   CreateProjectBody,
   UpdateProjectBody,
@@ -27,6 +28,9 @@ import {
   ReplaceProjectNomineeParams,
   ReplaceProjectNomineeBody,
   RemoveProjectNomineeParams,
+  GetProjectLifecycleParams,
+  TransitionProjectLifecycleParams,
+  TransitionProjectLifecycleBody,
 } from "@workspace/api-zod";
 import { requireRole, canAccessProject } from "../middlewares/auth";
 
@@ -776,5 +780,199 @@ router.delete("/:id/nominee", requireRole("admin"), async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
+
+// ── Lifecycle ──────────────────────────────────────────────────────────────
+
+/**
+ * Forward-only lifecycle state machine.
+ * Keys are the current status; values are permitted next states.
+ * Designed for future extension: add approval gates, metadata, or
+ * multi-party sign-off by inserting workflow steps here.
+ */
+const LIFECYCLE_TRANSITIONS: Record<string, string[]> = {
+  prematurity: ["mature_production", "closed"],
+  mature_production: ["closed"],
+  closed: [],
+};
+
+// GET /projects/:id/lifecycle — any authenticated project member
+router.get("/:id/lifecycle", async (req, res) => {
+  const parsed = GetProjectLifecycleParams.safeParse({ id: req.params.id });
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid project id" });
+    return;
+  }
+  const projectId = parsed.data.id;
+
+  try {
+    const [project] = await db
+      .select({
+        id: projectsTable.id,
+        lifecycleStatus: projectsTable.lifecycleStatus,
+      })
+      .from(projectsTable)
+      .where(
+        and(
+          eq(projectsTable.id, projectId),
+          eq(projectsTable.isActive, true),
+        ),
+      )
+      .limit(1);
+
+    if (!project) {
+      res.status(404).json({ error: "Project not found" });
+      return;
+    }
+
+    const history = await db
+      .select()
+      .from(projectLifecycleHistoryTable)
+      .where(eq(projectLifecycleHistoryTable.projectId, projectId))
+      .orderBy(desc(projectLifecycleHistoryTable.changedAt));
+
+    res.json({
+      projectId,
+      currentStatus: project.lifecycleStatus,
+      history: history.map((h) => ({
+        id: h.id,
+        projectId: h.projectId,
+        fromStatus: h.fromStatus ?? null,
+        toStatus: h.toStatus,
+        remarks: h.remarks ?? null,
+        changedBy: h.changedBy ?? null,
+        changedByName: h.changedByName ?? null,
+        changedAt: h.changedAt.toISOString(),
+      })),
+    });
+  } catch (err) {
+    req.log.error({ err }, "Failed to get project lifecycle");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// POST /projects/:id/lifecycle — admin/developer only
+router.post(
+  "/:id/lifecycle",
+  requireRole("admin", "developer"),
+  async (req, res) => {
+    const paramsParsed = TransitionProjectLifecycleParams.safeParse({
+      id: req.params.id,
+    });
+    if (!paramsParsed.success) {
+      res.status(400).json({ error: "Invalid project id" });
+      return;
+    }
+    const bodyParsed = TransitionProjectLifecycleBody.safeParse(req.body);
+    if (!bodyParsed.success) {
+      res.status(400).json({ error: bodyParsed.error.message });
+      return;
+    }
+
+    const projectId = paramsParsed.data.id;
+    const { toStatus, remarks } = bodyParsed.data;
+
+    try {
+      const [project] = await db
+        .select({
+          id: projectsTable.id,
+          lifecycleStatus: projectsTable.lifecycleStatus,
+          name: projectsTable.name,
+        })
+        .from(projectsTable)
+        .where(
+          and(
+            eq(projectsTable.id, projectId),
+            eq(projectsTable.isActive, true),
+          ),
+        )
+        .limit(1);
+
+      if (!project) {
+        res.status(404).json({ error: "Project not found" });
+        return;
+      }
+
+      const currentStatus = project.lifecycleStatus;
+      const allowed = LIFECYCLE_TRANSITIONS[currentStatus] ?? [];
+
+      if (!allowed.includes(toStatus)) {
+        if (currentStatus === toStatus) {
+          res
+            .status(409)
+            .json({ error: `Project is already in '${toStatus}' status` });
+        } else {
+          res.status(400).json({
+            error: `Cannot transition from '${currentStatus}' to '${toStatus}'`,
+          });
+        }
+        return;
+      }
+
+      // Resolve acting user
+      let actingUserId: string | undefined;
+      let actingUserName: string | undefined;
+      if (req.userId) {
+        const [row] = await db
+          .select({ id: usersTable.id, displayName: usersTable.displayName })
+          .from(usersTable)
+          .where(eq(usersTable.clerkUserId, req.userId))
+          .limit(1);
+        actingUserId = row?.id;
+        actingUserName = row?.displayName ?? undefined;
+      }
+
+      // Persist transition
+      await db
+        .update(projectsTable)
+        .set({
+          lifecycleStatus: toStatus as "prematurity" | "mature_production" | "closed",
+          updatedAt: new Date(),
+        })
+        .where(eq(projectsTable.id, projectId));
+
+      const [entry] = await db
+        .insert(projectLifecycleHistoryTable)
+        .values({
+          projectId,
+          fromStatus: currentStatus,
+          toStatus: toStatus as "prematurity" | "mature_production" | "closed",
+          remarks: remarks ?? null,
+          changedBy: actingUserId ?? null,
+          changedByName: actingUserName ?? null,
+        })
+        .returning();
+
+      // Audit activity
+      await db.insert(activityTable).values({
+        type: "status_change",
+        description: `Lifecycle advanced from ${currentStatus} to ${toStatus}${remarks ? `: ${remarks}` : ""}`,
+        entityId: projectId,
+        entityType: "project",
+        projectId,
+        userId: actingUserId ?? null,
+        metadata: { fromStatus: currentStatus, toStatus },
+      });
+
+      req.log.info(
+        { projectId, fromStatus: currentStatus, toStatus },
+        "Project lifecycle transitioned",
+      );
+
+      res.status(201).json({
+        id: entry.id,
+        projectId: entry.projectId,
+        fromStatus: entry.fromStatus ?? null,
+        toStatus: entry.toStatus,
+        remarks: entry.remarks ?? null,
+        changedBy: entry.changedBy ?? null,
+        changedByName: entry.changedByName ?? null,
+        changedAt: entry.changedAt.toISOString(),
+      });
+    } catch (err) {
+      req.log.error({ err }, "Failed to transition project lifecycle");
+      res.status(500).json({ error: "Internal server error" });
+    }
+  },
+);
 
 export default router;

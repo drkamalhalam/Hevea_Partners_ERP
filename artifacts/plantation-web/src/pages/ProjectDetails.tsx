@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, MapPin } from "lucide-react";
 import ProjectParticipants from "./ProjectParticipants";
 import ProjectNomineeSection from "./ProjectNominee";
+import ProjectLifecycleSection from "./ProjectLifecycleSection";
 
 const statusColors: Record<string, string> = {
   planning: "bg-blue-100 text-blue-800",
@@ -123,6 +124,8 @@ export default function ProjectDetails() {
           )}
         </CardContent>
       </Card>
+
+      <ProjectLifecycleSection projectId={id} />
 
       <ProjectParticipants projectId={id} />
 

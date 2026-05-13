@@ -590,6 +590,68 @@ paths:
               schema:
                 $ref: "#/components/schemas/OkResponse"
 
+  /projects/{id}/lifecycle:
+    get:
+      operationId: getProjectLifecycle
+      summary: Get project lifecycle status and history
+      tags: [projects]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Project lifecycle data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectLifecycle"
+    post:
+      operationId: transitionProjectLifecycle
+      summary: Transition project to next lifecycle status (admin/developer only)
+      tags: [projects]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransitionLifecycleBody"
+      responses:
+        "201":
+          description: Lifecycle transition recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectLifecycleHistoryEntry"
+        "400":
+          description: Invalid transition
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /partners:
     get:
       operationId: listPartners
@@ -1024,7 +1086,7 @@ components:
 
     Project:
       type: object
-      required: [id, name, location, district, state, landArea, landAreaUnit, status, startDate, termYears, isActive, createdAt]
+      required: [id, name, location, district, state, landArea, landAreaUnit, status, lifecycleStatus, startDate, termYears, isActive, createdAt]
       properties:
         id:
           type: string
@@ -1052,6 +1114,9 @@ components:
         status:
           type: string
           enum: [planning, developing, maturing, tapping, completed, suspended]
+        lifecycleStatus:
+          type: string
+          enum: [prematurity, mature_production, closed]
         startDate:
           type: string
         expectedMaturityDate:
@@ -1631,6 +1696,57 @@ components:
           type: string
           enum: [admin, developer, landowner, investor, employee, operational_staff]
 
+    ProjectLifecycle:
+      type: object
+      required: [projectId, currentStatus, history]
+      properties:
+        projectId:
+          type: string
+          format: uuid
+        currentStatus:
+          type: string
+          enum: [prematurity, mature_production, closed]
+        history:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProjectLifecycleHistoryEntry"
+
+    ProjectLifecycleHistoryEntry:
+      type: object
+      required: [id, projectId, toStatus, changedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        projectId:
+          type: string
+          format: uuid
+        fromStatus:
+          type: ["string", "null"]
+        toStatus:
+          type: string
+          enum: [prematurity, mature_production, closed]
+        remarks:
+          type: ["string", "null"]
+        changedBy:
+          type: ["string", "null"]
+          format: uuid
+        changedByName:
+          type: ["string", "null"]
+        changedAt:
+          type: string
+          format: date-time
+
+    TransitionLifecycleBody:
+      type: object
+      required: [toStatus]
+      properties:
+        toStatus:
+          type: string
+          enum: [mature_production, closed]
+        remarks:
+          type: string
+
     ProjectNominee:
       type: object
       required: [id, projectId, nomineeName, relationship, phone, address, isActive, activationStatus, createdAt]
@@ -1919,6 +2035,12 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/PartnerGovernanceStatus"
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
 
     OkResponse:
       type: object

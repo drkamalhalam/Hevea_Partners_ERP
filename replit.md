@@ -112,6 +112,42 @@ Every Project Developer must register a governance continuity nominee per projec
 - Frontend: `ProjectNomineeSection` (`artifacts/plantation-web/src/pages/ProjectNominee.tsx`) — Add/Edit/Replace/Remove UI embedded in `ProjectDetails.tsx`
 - Profile completeness: `GET /me` returns `profileComplete: boolean` + `missingNomineeProjectIds: string[]` for developers who have not nominated for all their developer-role project assignments. `MyProfile.tsx` shows an amber banner with clickable project links when completeness is false.
 
+## Project Lifecycle System
+
+Forward-only lifecycle state machine for rubber plantation projects. Separate from the operational `status` field — lifecycle tracks the biological/business maturity phase.
+
+**Phases (forward-only, irreversible):**
+```
+prematurity → mature_production → closed
+prematurity → closed  (skip allowed)
+```
+
+- **Prematurity** (default for all projects): trees planted and growing, pre-tapping phase
+- **Mature Production** (irreversible): trees are mature and actively producing latex
+- **Closed** (terminal): project concluded, no further transitions possible
+
+**DB:**
+- `projectLifecycleStatusEnum` in `lib/db/src/schema/enums.ts`
+- `lifecycleStatus` column on `projectsTable` (default: `"prematurity"`)
+- `projectLifecycleHistoryTable` (`lib/db/src/schema/lifecycle.ts`) — UUID PK, projectId FK (cascade), fromStatus (text, nullable), toStatus (enum), remarks (text, nullable), changedBy FK (set null), changedByName (denormalized), changedAt
+
+**API:**
+- `GET /projects/:id/lifecycle` — returns `{ projectId, currentStatus, history[] }` (any authenticated user)
+- `POST /projects/:id/lifecycle` — `{ toStatus, remarks? }` — admin/developer only; validates forward-only; creates audit history entry + activity log
+
+**Frontend components (`artifacts/plantation-web/src/`):**
+- `components/lifecycle/LifecycleBadge.tsx` — colored pill badge (sky=prematurity, emerald=mature, gray=closed); `size="sm"|"md"`
+- `components/lifecycle/LifecycleTimeline.tsx` — 3-step horizontal stepper (check=past, filled-circle=current, lock=future) with transition dates
+- `pages/ProjectLifecycleSection.tsx` — full card: current badge + timeline + history list + `TransitionDialog` (admin/developer only, with warning for irreversible actions)
+- Embedded in `pages/ProjectDetails.tsx` above Participants section
+
+**Scalable architecture notes:**
+- `LIFECYCLE_TRANSITIONS` map in `projects.ts` is the single point of truth for valid transitions — add new states by extending the map
+- `fromStatus` text column (not enum) allows future states without migrations
+- History table designed for future approval workflows: add `approvedBy`/`approvedAt`/`workflowId` columns without breaking existing data
+
+**Generated hooks:** `useGetProjectLifecycle`, `useTransitionProjectLifecycle`, `getGetProjectLifecycleQueryKey`
+
 ## Role-Specific Dashboard System
 
 Five separate dashboard functions rendered dynamically based on the logged-in user's role. Root router in `Dashboard.tsx` dispatches by role directly (`role === "admin"` etc.) — no longer uses `canAccessAllProjects` as the branch condition.

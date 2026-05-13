@@ -63,6 +63,21 @@ export const claimantStatusEnum = pgEnum("claimant_status", [
   "disputed",
 ]);
 
+// ── Lifecycle enums ───────────────────────────────────────────────────────
+
+/**
+ * Lifecycle phases of a rubber plantation project.
+ * This is a forward-only state machine — status cannot be reversed.
+ *   prematurity      — trees planted, pre-tapping phase (default for all new projects)
+ *   mature_production — trees are mature and producing (irreversible once set)
+ *   closed            — project closed/ended (terminal state)
+ */
+export const projectLifecycleStatusEnum = pgEnum("project_lifecycle_status", [
+  "prematurity",
+  "mature_production",
+  "closed",
+]);
+
 // ── Audit enums ───────────────────────────────────────────────────────────
 
 export const dbOperationEnum = pgEnum("db_operation", [

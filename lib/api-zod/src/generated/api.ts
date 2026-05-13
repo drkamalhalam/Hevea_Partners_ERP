@@ -540,6 +540,7 @@ export const ListProjectsResponseItem = zod.object({
     "completed",
     "suspended",
   ]),
+  lifecycleStatus: zod.enum(["prematurity", "mature_production", "closed"]),
   startDate: zod.string(),
   expectedMaturityDate: zod.string().nullish(),
   termYears: zod.number(),
@@ -605,6 +606,7 @@ export const GetProjectResponse = zod.object({
     "completed",
     "suspended",
   ]),
+  lifecycleStatus: zod.enum(["prematurity", "mature_production", "closed"]),
   startDate: zod.string(),
   expectedMaturityDate: zod.string().nullish(),
   termYears: zod.number(),
@@ -668,6 +670,7 @@ export const UpdateProjectResponse = zod.object({
     "completed",
     "suspended",
   ]),
+  lifecycleStatus: zod.enum(["prematurity", "mature_production", "closed"]),
   startDate: zod.string(),
   expectedMaturityDate: zod.string().nullish(),
   termYears: zod.number(),
@@ -899,6 +902,42 @@ export const RemoveProjectNomineeParams = zod.object({
 
 export const RemoveProjectNomineeResponse = zod.object({
   ok: zod.boolean().optional(),
+});
+
+/**
+ * @summary Get project lifecycle status and history
+ */
+export const GetProjectLifecycleParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const GetProjectLifecycleResponse = zod.object({
+  projectId: zod.string().uuid(),
+  currentStatus: zod.enum(["prematurity", "mature_production", "closed"]),
+  history: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      projectId: zod.string().uuid(),
+      fromStatus: zod.string().nullish(),
+      toStatus: zod.enum(["prematurity", "mature_production", "closed"]),
+      remarks: zod.string().nullish(),
+      changedBy: zod.string().uuid().nullish(),
+      changedByName: zod.string().nullish(),
+      changedAt: zod.coerce.date(),
+    }),
+  ),
+});
+
+/**
+ * @summary Transition project to next lifecycle status (admin/developer only)
+ */
+export const TransitionProjectLifecycleParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const TransitionProjectLifecycleBody = zod.object({
+  toStatus: zod.enum(["mature_production", "closed"]),
+  remarks: zod.string().optional(),
 });
 
 /**
@@ -1506,6 +1545,7 @@ export const GetMyPortfolioResponse = zod.object({
         "completed",
         "suspended",
       ]),
+      lifecycleStatus: zod.enum(["prematurity", "mature_production", "closed"]),
       startDate: zod.string(),
       expectedMaturityDate: zod.string().nullish(),
       termYears: zod.number(),

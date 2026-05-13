@@ -26,6 +26,7 @@ import type {
   CreateClaimantInput,
   CreateNomineeInput,
   DashboardSummary,
+  ErrorResponse,
   GetUserActivityParams,
   GovernanceSummary,
   HealthStatus,
@@ -41,12 +42,15 @@ import type {
   ProductionRecord,
   Project,
   ProjectInput,
+  ProjectLifecycle,
+  ProjectLifecycleHistoryEntry,
   ProjectNominee,
   ProjectParticipant,
   ProjectUpdate,
   RevenueStats,
   SetUserRoleInput,
   StockSummary,
+  TransitionLifecycleBody,
   UpdateAssignmentInput,
   UpdateClaimantInput,
   UpdateNomineeInput,
@@ -2341,6 +2345,184 @@ export const useRemoveProjectNominee = <
   TContext
 > => {
   return useMutation(getRemoveProjectNomineeMutationOptions(options));
+};
+
+/**
+ * @summary Get project lifecycle status and history
+ */
+export const getGetProjectLifecycleUrl = (id: string) => {
+  return `/api/projects/${id}/lifecycle`;
+};
+
+export const getProjectLifecycle = async (
+  id: string,
+  options?: RequestInit,
+): Promise<ProjectLifecycle> => {
+  return customFetch<ProjectLifecycle>(getGetProjectLifecycleUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetProjectLifecycleQueryKey = (id: string) => {
+  return [`/api/projects/${id}/lifecycle`] as const;
+};
+
+export const getGetProjectLifecycleQueryOptions = <
+  TData = Awaited<ReturnType<typeof getProjectLifecycle>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getProjectLifecycle>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetProjectLifecycleQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getProjectLifecycle>>
+  > = ({ signal }) => getProjectLifecycle(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getProjectLifecycle>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetProjectLifecycleQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getProjectLifecycle>>
+>;
+export type GetProjectLifecycleQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get project lifecycle status and history
+ */
+
+export function useGetProjectLifecycle<
+  TData = Awaited<ReturnType<typeof getProjectLifecycle>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getProjectLifecycle>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetProjectLifecycleQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Transition project to next lifecycle status (admin/developer only)
+ */
+export const getTransitionProjectLifecycleUrl = (id: string) => {
+  return `/api/projects/${id}/lifecycle`;
+};
+
+export const transitionProjectLifecycle = async (
+  id: string,
+  transitionLifecycleBody: TransitionLifecycleBody,
+  options?: RequestInit,
+): Promise<ProjectLifecycleHistoryEntry> => {
+  return customFetch<ProjectLifecycleHistoryEntry>(
+    getTransitionProjectLifecycleUrl(id),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(transitionLifecycleBody),
+    },
+  );
+};
+
+export const getTransitionProjectLifecycleMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof transitionProjectLifecycle>>,
+    TError,
+    { id: string; data: BodyType<TransitionLifecycleBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof transitionProjectLifecycle>>,
+  TError,
+  { id: string; data: BodyType<TransitionLifecycleBody> },
+  TContext
+> => {
+  const mutationKey = ["transitionProjectLifecycle"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof transitionProjectLifecycle>>,
+    { id: string; data: BodyType<TransitionLifecycleBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return transitionProjectLifecycle(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type TransitionProjectLifecycleMutationResult = NonNullable<
+  Awaited<ReturnType<typeof transitionProjectLifecycle>>
+>;
+export type TransitionProjectLifecycleMutationBody =
+  BodyType<TransitionLifecycleBody>;
+export type TransitionProjectLifecycleMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Transition project to next lifecycle status (admin/developer only)
+ */
+export const useTransitionProjectLifecycle = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof transitionProjectLifecycle>>,
+    TError,
+    { id: string; data: BodyType<TransitionLifecycleBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof transitionProjectLifecycle>>,
+  TError,
+  { id: string; data: BodyType<TransitionLifecycleBody> },
+  TContext
+> => {
+  return useMutation(getTransitionProjectLifecycleMutationOptions(options));
 };
 
 /**
