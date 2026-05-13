@@ -51,6 +51,8 @@ import type {
   CreateDocumentBody,
   CreateExpenditureBody,
   CreateGenerationBody,
+  CreateImbalanceEntry201,
+  CreateImbalanceEntryBody,
   CreateNomineeInput,
   CreateOwnershipSnapshotBody,
   CreateTemplateBody,
@@ -67,6 +69,8 @@ import type {
   GetBurdenSummaryParams,
   GetContributionSummaryParams,
   GetExpenditureSummaryParams,
+  GetImbalancePartnerSummary200,
+  GetImbalanceSummaryParams,
   GetLandNotionalContributionParams,
   GetLandNotionalHistory200,
   GetLandNotionalHistoryParams,
@@ -75,6 +79,7 @@ import type {
   GetUserActivityParams,
   GovernanceSummary,
   HealthStatus,
+  ImbalanceSummary,
   InitiateAgreementActivation409,
   InitiateAgreementActivationBody,
   InitiateClosureBody,
@@ -92,6 +97,8 @@ import type {
   ListDocumentsParams,
   ListExpenditures200,
   ListExpendituresParams,
+  ListImbalanceLedger200,
+  ListImbalanceLedgerParams,
   ListOwnershipSnapshots200,
   ListOwnershipSnapshotsParams,
   ListPartnerClaimantsParams,
@@ -136,6 +143,7 @@ import type {
   RequestUploadUrlResponse,
   ResolveContributionDisputeBody,
   RevenueStats,
+  SeedImbalanceLedger200,
   SetUserRoleInput,
   StockSummary,
   TransitionLifecycleBody,
@@ -13256,4 +13264,460 @@ export const useMarkBurdenRecordRecovered = <
   TContext
 > => {
   return useMutation(getMarkBurdenRecordRecoveredMutationOptions(options));
+};
+
+/**
+ * @summary Get current imbalance balances per project and party
+ */
+export const getGetImbalanceSummaryUrl = (
+  params?: GetImbalanceSummaryParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/burden/imbalances/summary?${stringifiedParams}`
+    : `/api/burden/imbalances/summary`;
+};
+
+export const getImbalanceSummary = async (
+  params?: GetImbalanceSummaryParams,
+  options?: RequestInit,
+): Promise<ImbalanceSummary> => {
+  return customFetch<ImbalanceSummary>(getGetImbalanceSummaryUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetImbalanceSummaryQueryKey = (
+  params?: GetImbalanceSummaryParams,
+) => {
+  return [
+    `/api/burden/imbalances/summary`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetImbalanceSummaryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getImbalanceSummary>>,
+  TError = ErrorType<void>,
+>(
+  params?: GetImbalanceSummaryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getImbalanceSummary>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetImbalanceSummaryQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getImbalanceSummary>>
+  > = ({ signal }) =>
+    getImbalanceSummary(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getImbalanceSummary>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetImbalanceSummaryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getImbalanceSummary>>
+>;
+export type GetImbalanceSummaryQueryError = ErrorType<void>;
+
+/**
+ * @summary Get current imbalance balances per project and party
+ */
+
+export function useGetImbalanceSummary<
+  TData = Awaited<ReturnType<typeof getImbalanceSummary>>,
+  TError = ErrorType<void>,
+>(
+  params?: GetImbalanceSummaryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getImbalanceSummary>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetImbalanceSummaryQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get imbalance ledger entries with running balance
+ */
+export const getListImbalanceLedgerUrl = (
+  params?: ListImbalanceLedgerParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/burden/imbalances/ledger?${stringifiedParams}`
+    : `/api/burden/imbalances/ledger`;
+};
+
+export const listImbalanceLedger = async (
+  params?: ListImbalanceLedgerParams,
+  options?: RequestInit,
+): Promise<ListImbalanceLedger200> => {
+  return customFetch<ListImbalanceLedger200>(
+    getListImbalanceLedgerUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListImbalanceLedgerQueryKey = (
+  params?: ListImbalanceLedgerParams,
+) => {
+  return [
+    `/api/burden/imbalances/ledger`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListImbalanceLedgerQueryOptions = <
+  TData = Awaited<ReturnType<typeof listImbalanceLedger>>,
+  TError = ErrorType<void>,
+>(
+  params?: ListImbalanceLedgerParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listImbalanceLedger>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListImbalanceLedgerQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listImbalanceLedger>>
+  > = ({ signal }) =>
+    listImbalanceLedger(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listImbalanceLedger>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListImbalanceLedgerQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listImbalanceLedger>>
+>;
+export type ListImbalanceLedgerQueryError = ErrorType<void>;
+
+/**
+ * @summary Get imbalance ledger entries with running balance
+ */
+
+export function useListImbalanceLedger<
+  TData = Awaited<ReturnType<typeof listImbalanceLedger>>,
+  TError = ErrorType<void>,
+>(
+  params?: ListImbalanceLedgerParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listImbalanceLedger>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListImbalanceLedgerQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get partner-attributed imbalance balances
+ */
+export const getGetImbalancePartnerSummaryUrl = () => {
+  return `/api/burden/imbalances/partner-summary`;
+};
+
+export const getImbalancePartnerSummary = async (
+  options?: RequestInit,
+): Promise<GetImbalancePartnerSummary200> => {
+  return customFetch<GetImbalancePartnerSummary200>(
+    getGetImbalancePartnerSummaryUrl(),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetImbalancePartnerSummaryQueryKey = () => {
+  return [`/api/burden/imbalances/partner-summary`] as const;
+};
+
+export const getGetImbalancePartnerSummaryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getImbalancePartnerSummary>>,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getImbalancePartnerSummary>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetImbalancePartnerSummaryQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getImbalancePartnerSummary>>
+  > = ({ signal }) => getImbalancePartnerSummary({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getImbalancePartnerSummary>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetImbalancePartnerSummaryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getImbalancePartnerSummary>>
+>;
+export type GetImbalancePartnerSummaryQueryError = ErrorType<void>;
+
+/**
+ * @summary Get partner-attributed imbalance balances
+ */
+
+export function useGetImbalancePartnerSummary<
+  TData = Awaited<ReturnType<typeof getImbalancePartnerSummary>>,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getImbalancePartnerSummary>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetImbalancePartnerSummaryQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a manual imbalance ledger entry pair (admin only)
+ */
+export const getCreateImbalanceEntryUrl = () => {
+  return `/api/burden/imbalances/entries`;
+};
+
+export const createImbalanceEntry = async (
+  createImbalanceEntryBody: CreateImbalanceEntryBody,
+  options?: RequestInit,
+): Promise<CreateImbalanceEntry201> => {
+  return customFetch<CreateImbalanceEntry201>(getCreateImbalanceEntryUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createImbalanceEntryBody),
+  });
+};
+
+export const getCreateImbalanceEntryMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createImbalanceEntry>>,
+    TError,
+    { data: BodyType<CreateImbalanceEntryBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createImbalanceEntry>>,
+  TError,
+  { data: BodyType<CreateImbalanceEntryBody> },
+  TContext
+> => {
+  const mutationKey = ["createImbalanceEntry"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createImbalanceEntry>>,
+    { data: BodyType<CreateImbalanceEntryBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createImbalanceEntry(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateImbalanceEntryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createImbalanceEntry>>
+>;
+export type CreateImbalanceEntryMutationBody =
+  BodyType<CreateImbalanceEntryBody>;
+export type CreateImbalanceEntryMutationError = ErrorType<void>;
+
+/**
+ * @summary Create a manual imbalance ledger entry pair (admin only)
+ */
+export const useCreateImbalanceEntry = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createImbalanceEntry>>,
+    TError,
+    { data: BodyType<CreateImbalanceEntryBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createImbalanceEntry>>,
+  TError,
+  { data: BodyType<CreateImbalanceEntryBody> },
+  TContext
+> => {
+  return useMutation(getCreateImbalanceEntryMutationOptions(options));
+};
+
+/**
+ * @summary Seed imbalance ledger from existing burden records (idempotent, admin only)
+ */
+export const getSeedImbalanceLedgerUrl = () => {
+  return `/api/burden/imbalances/seed`;
+};
+
+export const seedImbalanceLedger = async (
+  options?: RequestInit,
+): Promise<SeedImbalanceLedger200> => {
+  return customFetch<SeedImbalanceLedger200>(getSeedImbalanceLedgerUrl(), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getSeedImbalanceLedgerMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof seedImbalanceLedger>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof seedImbalanceLedger>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["seedImbalanceLedger"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof seedImbalanceLedger>>,
+    void
+  > = () => {
+    return seedImbalanceLedger(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SeedImbalanceLedgerMutationResult = NonNullable<
+  Awaited<ReturnType<typeof seedImbalanceLedger>>
+>;
+
+export type SeedImbalanceLedgerMutationError = ErrorType<void>;
+
+/**
+ * @summary Seed imbalance ledger from existing burden records (idempotent, admin only)
+ */
+export const useSeedImbalanceLedger = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof seedImbalanceLedger>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof seedImbalanceLedger>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(getSeedImbalanceLedgerMutationOptions(options));
 };

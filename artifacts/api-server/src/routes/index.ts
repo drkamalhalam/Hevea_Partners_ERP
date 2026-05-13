@@ -24,6 +24,7 @@ import ownershipRouter from "./ownership";
 import expendituresRouter from "./expenditures";
 import expenditureVerificationRouter from "./expenditure_verification";
 import burdenRouter from "./burden";
+import burdenImbalancesRouter from "./burden_imbalances";
 import devRouter from "./dev";
 
 const router: IRouter = Router();
@@ -65,5 +66,6 @@ router.use("/ownership", ownershipRouter);
 router.use("/expenditures", expendituresRouter);
 router.use("/expenditures", expenditureVerificationRouter);
 router.use("/burden", burdenRouter);
+router.use("/burden", burdenImbalancesRouter);
 
 export default router;

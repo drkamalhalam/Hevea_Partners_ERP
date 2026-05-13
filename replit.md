@@ -513,10 +513,52 @@ Tracks who was **expected** to bear each operational cost vs who **actually** pa
 - **Summary tab** — 4 KPI cards (developer advance / landowner advance / pending recovery / recovered) + per-project breakdown table
 - **Ledger tab** — records table with expected vs actual columns, expandable detail rows, waive (✗) and recover (↻) action buttons, filter by adjustment status
 - **Rules tab** — card list of active rules with edit/deactivate, "New Rule" form dialog with bearer-type-aware % split fields
+- **Imbalances tab** — carry-forward balance dashboard, partner imbalance summary, transaction ledger with running balance; see below
 
 **Sidebar:** "Burden Accounting" in Finance group (admin/developer only), icon `ArrowLeftRight`, route `/burden`
 
 **Generated hooks:** `useGetBurdenSummary`, `useListBurdenRules`, `useCreateBurdenRule`, `useUpdateBurdenRule`, `useListBurdenRecords`, `useCreateBurdenRecord`, `useUpdateBurdenRecord`, `useWaiveBurdenRecord`, `useMarkBurdenRecordRecovered`
+
+## Imbalance Adjustment & Negative Balance Accounting
+
+Double-entry imbalance ledger that accumulates carry-forward balances per project and party. Foundation layer for future settlement engines — this stage is pure accounting structure only.
+
+**Accounting model:**
+- Each event creates a mirrored pair of entries (developer + landowner); the two always sum to zero.
+- `amount > 0` = this party is owed money (credit); `amount < 0` = this party owes money (debit)
+- Running balance = cumulative sum of all prior entries for a given `(projectId, partyRole)`.
+- **Balances may be negative.** Negative means a party has a deficit (owes more than it has been credited).
+
+**Auto-generated entry pairs:**
+- `burden_imbalance` — when a burden record with non-zero imbalance is created (fire-and-forget, non-fatal)
+- `recovery` — when a recovery payment is recorded on a burden record
+- `waiver` — when a burden record imbalance is waived
+
+**Entry types:** `burden_imbalance` | `recovery` | `waiver` | `manual` | `carry_forward`
+
+**DB table:** `imbalance_ledger` (`lib/db/src/schema/imbalance_ledger.ts`) — UUID PK, projectId FK (restrict), partyRole text, amount NUMERIC(14,2) signed, entryType text, burdenRecordId FK (set null), period (YYYY-MM), description, notes, isActive, createdById FK (set null), createdByName (denormalized)
+
+**API endpoints** (`artifacts/api-server/src/routes/burden_imbalances.ts`), also mounted at `/burden`:
+- `GET /burden/imbalances/summary?projectId=` — current balance per project/party with partner attribution (admin/developer)
+- `GET /burden/imbalances/ledger?projectId=&partyRole=&entryType=` — all entries oldest-first, running balance computed in JS, returned newest-first (all roles, project-scoped)
+- `GET /burden/imbalances/partner-summary` — partner-centric view: aggregates ledger balances through agreements → partner name (admin/developer)
+- `POST /burden/imbalances/entries { projectId, developerAmount, landownerAmount, description, notes?, period? }` — manual adjustment pair (admin only)
+- `POST /burden/imbalances/seed` — idempotent backfill from existing burden records; skips already-seeded records; returns `{ seeded, skipped, message }` (admin only)
+
+**Shared helper:** `createImbalanceLedgerPair(...)` exported from `burden_imbalances.ts`, imported and called by `burden.ts`
+
+**Frontend — Imbalances tab (inside `/burden`):**
+- **Balance Overview sub-view** — 4 KPI cards (developer total balance, landowner total balance, projects tracked, negative-balance count); per-project table with developer/landowner balance, partner names, negative indicator
+- **Partners sub-view** — per-partner accordion cards showing roles, net balance, per-project breakdown; red highlight on negative
+- **Ledger sub-view** — chronological table with party badge, entry type badge, signed amount, running balance column (red AlertTriangle icon on negative rows); project + party filters
+- **Admin actions** — "Seed from Records" button (idempotent), "Manual Entry" dialog (signed amounts with explanation)
+
+**Generated hooks:** `useGetImbalanceSummary`, `useListImbalanceLedger`, `useGetImbalancePartnerSummary`, `useCreateImbalanceEntry`, `useSeedImbalanceLedger`
+
+**Extension points for future settlement:**
+- Add `approvedBy`, `settlementId` columns to `imbalance_ledger` for settlement workflow linking
+- Add `carry_forward` entries at period close via a new scheduled/manual endpoint
+- Settlement engine queries all entries with `runningBalance != 0` to produce settlement proposals
 
 ## Pointers
 

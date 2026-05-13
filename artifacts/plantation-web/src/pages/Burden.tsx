@@ -11,6 +11,11 @@ import {
   useMarkBurdenRecordRecovered,
   useListExpenditures,
   useListProjects,
+  useGetImbalanceSummary,
+  useListImbalanceLedger,
+  useGetImbalancePartnerSummary,
+  useCreateImbalanceEntry,
+  useSeedImbalanceLedger,
   getGetBurdenSummaryQueryKey,
   getListBurdenRulesQueryKey,
   getListBurdenRecordsQueryKey,
@@ -69,6 +74,13 @@ import {
   Scale,
   HandCoins,
   RefreshCw,
+  Wallet,
+  Users,
+  List,
+  Minus,
+  Layers,
+  Loader2,
+  Download,
 } from "lucide-react";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -1443,6 +1455,562 @@ function RulesTab({
   );
 }
 
+// ── Imbalances Tab ────────────────────────────────────────────────────────────
+
+const ENTRY_TYPE_CONFIG: Record<string, { label: string; color: string }> = {
+  burden_imbalance: { label: "Imbalance", color: "bg-orange-500/15 text-orange-400 border-orange-500/30" },
+  recovery: { label: "Recovery", color: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" },
+  waiver: { label: "Waiver", color: "bg-slate-500/15 text-slate-400 border-slate-500/30" },
+  manual: { label: "Manual", color: "bg-purple-500/15 text-purple-400 border-purple-500/30" },
+  carry_forward: { label: "Carry-forward", color: "bg-blue-500/15 text-blue-400 border-blue-500/30" },
+};
+
+function EntryTypeBadge({ type }: { type: string }) {
+  const cfg = ENTRY_TYPE_CONFIG[type] ?? { label: type, color: "bg-slate-500/15 text-slate-400" };
+  return (
+    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border ${cfg.color}`}>
+      {cfg.label}
+    </span>
+  );
+}
+
+function BalanceAmount({ amount, className = "" }: { amount: number; className?: string }) {
+  const isNeg = amount < 0;
+  return (
+    <span className={`font-mono font-semibold ${isNeg ? "text-red-400" : amount > 0 ? "text-emerald-400" : "text-slate-400"} ${className}`}>
+      {isNeg ? <Minus size={12} className="inline mr-0.5" /> : null}
+      {formatINR(Math.abs(amount))}
+    </span>
+  );
+}
+
+function ImbalancesTab({
+  projectId,
+  canEdit,
+  isAdmin,
+  projects,
+}: {
+  projectId: string | null;
+  canEdit: boolean;
+  isAdmin: boolean;
+  projects: Project[];
+}) {
+  const qc = useQueryClient();
+  const [view, setView] = useState<"overview" | "partners" | "ledger">("overview");
+  const [ledgerRole, setLedgerRole] = useState<string>("");
+  const [ledgerProject, setLedgerProject] = useState<string>(projectId ?? "");
+
+  // Manual entry dialog state
+  const [showManualDialog, setShowManualDialog] = useState(false);
+  const [manualForm, setManualForm] = useState({
+    projectId: projectId ?? "",
+    developerAmount: "",
+    landownerAmount: "",
+    description: "",
+    notes: "",
+    period: new Date().toISOString().slice(0, 7),
+  });
+
+  const { data: summary, isLoading: summaryLoading } = useGetImbalanceSummary(
+    projectId ? { projectId } : undefined,
+  );
+  const { data: partnerData, isLoading: partnerLoading } = useGetImbalancePartnerSummary();
+  const { data: ledgerData, isLoading: ledgerLoading } = useListImbalanceLedger({
+    projectId: ledgerProject || undefined,
+    partyRole: (ledgerRole || undefined) as "developer" | "landowner" | undefined,
+  });
+
+  const seedMutation = useSeedImbalanceLedger({
+    mutation: {
+      onSuccess: () => {
+        qc.invalidateQueries({ queryKey: ["getImbalanceSummary"] });
+        qc.invalidateQueries({ queryKey: ["listImbalanceLedger"] });
+      },
+    },
+  });
+
+  const createEntryMutation = useCreateImbalanceEntry({
+    mutation: {
+      onSuccess: () => {
+        qc.invalidateQueries({ queryKey: ["getImbalanceSummary"] });
+        qc.invalidateQueries({ queryKey: ["listImbalanceLedger"] });
+        setShowManualDialog(false);
+        setManualForm((f) => ({ ...f, description: "", notes: "", developerAmount: "", landownerAmount: "" }));
+      },
+    },
+  });
+
+  const summaryProjects = summary?.projects ?? [];
+  const totals = summary?.totals;
+  const ledgerEntries = ledgerData?.entries ?? [];
+  const partnerList = partnerData?.partners ?? [];
+
+  function handleCreateEntry() {
+    const devAmt = parseFloat(manualForm.developerAmount);
+    const loAmt = parseFloat(manualForm.landownerAmount);
+    if (!manualForm.projectId || isNaN(devAmt) || isNaN(loAmt) || !manualForm.description.trim()) return;
+    createEntryMutation.mutate({
+      data: {
+        projectId: manualForm.projectId,
+        developerAmount: devAmt,
+        landownerAmount: loAmt,
+        description: manualForm.description.trim(),
+        notes: manualForm.notes || undefined,
+        period: manualForm.period || undefined,
+      },
+    });
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Sub-nav + actions */}
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-1 bg-slate-800 border border-slate-700 rounded-lg p-1">
+          {(
+            [
+              { id: "overview", label: "Balance Overview", Icon: Wallet },
+              { id: "partners", label: "Partners", Icon: Users },
+              { id: "ledger", label: "Ledger", Icon: List },
+            ] as { id: "overview" | "partners" | "ledger"; label: string; Icon: React.ElementType }[]
+          ).map(({ id, label, Icon }) => (
+            <button
+              key={id}
+              onClick={() => setView(id)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium transition-colors ${
+                view === id
+                  ? "bg-slate-700 text-white"
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              <Icon size={13} />
+              {label}
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-2">
+          {isAdmin && (
+            <>
+              <Button
+                size="sm"
+                variant="outline"
+                className="border-slate-600 text-slate-300 hover:bg-slate-700 text-xs gap-1.5"
+                onClick={() => seedMutation.mutate()}
+                disabled={seedMutation.isPending}
+              >
+                {seedMutation.isPending ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />}
+                Seed from Records
+              </Button>
+              <Button
+                size="sm"
+                className="bg-blue-600 hover:bg-blue-700 text-xs gap-1.5"
+                onClick={() => setShowManualDialog(true)}
+              >
+                <Plus size={12} />
+                Manual Entry
+              </Button>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* ── Balance Overview ────────────────────────────────────────────────────── */}
+      {view === "overview" && (
+        <div className="space-y-4">
+          {/* Totals KPIs */}
+          {totals && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <Card className="bg-slate-800 border-slate-700">
+                <CardContent className="p-4">
+                  <p className="text-xs text-slate-400 mb-1">Developer Balance</p>
+                  <BalanceAmount amount={totals.totalDeveloperBalance} className="text-lg" />
+                  <p className="text-xs text-slate-500 mt-1">
+                    {totals.totalDeveloperBalance > 0 ? "Owed to developer" : totals.totalDeveloperBalance < 0 ? "Developer owes" : "Balanced"}
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="bg-slate-800 border-slate-700">
+                <CardContent className="p-4">
+                  <p className="text-xs text-slate-400 mb-1">Landowner Balance</p>
+                  <BalanceAmount amount={totals.totalLandownerBalance} className="text-lg" />
+                  <p className="text-xs text-slate-500 mt-1">
+                    {totals.totalLandownerBalance > 0 ? "Owed to landowner" : totals.totalLandownerBalance < 0 ? "Landowner owes" : "Balanced"}
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="bg-slate-800 border-slate-700">
+                <CardContent className="p-4">
+                  <p className="text-xs text-slate-400 mb-1">Projects Tracked</p>
+                  <p className="text-2xl font-bold text-white">{totals.projectCount}</p>
+                </CardContent>
+              </Card>
+              <Card className={`border ${totals.negativeCount > 0 ? "bg-red-900/20 border-red-700/40" : "bg-slate-800 border-slate-700"}`}>
+                <CardContent className="p-4">
+                  <p className="text-xs text-slate-400 mb-1">Negative Balances</p>
+                  <p className={`text-2xl font-bold ${totals.negativeCount > 0 ? "text-red-400" : "text-slate-400"}`}>
+                    {totals.negativeCount}
+                  </p>
+                  <p className="text-xs text-slate-500 mt-1">projects with deficit</p>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Per-project breakdown */}
+          {summaryLoading ? (
+            <div className="flex items-center justify-center h-24 text-slate-500">
+              <Loader2 size={16} className="animate-spin mr-2" /> Loading…
+            </div>
+          ) : summaryProjects.length === 0 ? (
+            <Card className="bg-slate-800 border-slate-700">
+              <CardContent className="p-8 text-center">
+                <Layers size={32} className="mx-auto mb-3 text-slate-600" />
+                <p className="text-slate-400 font-medium">No imbalance data yet</p>
+                <p className="text-slate-500 text-sm mt-1">
+                  Create burden records or use "Seed from Records" to populate the ledger.
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="rounded-lg border border-slate-700 overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-slate-700 hover:bg-transparent">
+                    <TableHead className="text-slate-400">Project</TableHead>
+                    <TableHead className="text-slate-400">Developer</TableHead>
+                    <TableHead className="text-slate-400">Developer Partner</TableHead>
+                    <TableHead className="text-slate-400">Landowner</TableHead>
+                    <TableHead className="text-slate-400">Landowner Partner</TableHead>
+                    <TableHead className="text-slate-400 text-right">Entries</TableHead>
+                    <TableHead className="text-slate-400 text-right">Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {summaryProjects.map((p) => {
+                    const hasNeg = p.developerBalance < 0 || p.landownerBalance < 0;
+                    return (
+                      <TableRow key={p.projectId} className={`border-slate-700 ${hasNeg ? "bg-red-900/10" : ""}`}>
+                        <TableCell className="text-white font-medium">{p.projectName}</TableCell>
+                        <TableCell><BalanceAmount amount={p.developerBalance} /></TableCell>
+                        <TableCell className="text-slate-400 text-sm">{p.developerPartnerName ?? "—"}</TableCell>
+                        <TableCell><BalanceAmount amount={p.landownerBalance} /></TableCell>
+                        <TableCell className="text-slate-400 text-sm">{p.landownerPartnerName ?? "—"}</TableCell>
+                        <TableCell className="text-right text-slate-400">{p.entryCount}</TableCell>
+                        <TableCell className="text-right">
+                          {hasNeg ? (
+                            <span className="inline-flex items-center gap-1 text-xs text-red-400">
+                              <AlertTriangle size={12} /> Negative
+                            </span>
+                          ) : p.developerBalance === 0 && p.landownerBalance === 0 ? (
+                            <span className="text-xs text-slate-500">Zero</span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-xs text-emerald-400">
+                              <CheckCircle2 size={12} /> Positive
+                            </span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Partner Summary ──────────────────────────────────────────────────────── */}
+      {view === "partners" && (
+        <div className="space-y-3">
+          {partnerLoading ? (
+            <div className="flex items-center justify-center h-24 text-slate-500">
+              <Loader2 size={16} className="animate-spin mr-2" /> Loading…
+            </div>
+          ) : partnerList.length === 0 ? (
+            <Card className="bg-slate-800 border-slate-700">
+              <CardContent className="p-8 text-center">
+                <Users size={32} className="mx-auto mb-3 text-slate-600" />
+                <p className="text-slate-400 font-medium">No partner imbalance data</p>
+                <p className="text-slate-500 text-sm mt-1">
+                  Partners appear here once active agreements link them to projects with imbalance records.
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            partnerList.map((partner) => (
+              <Card
+                key={partner.partnerId}
+                className={`border ${partner.isNegative ? "bg-red-900/15 border-red-700/40" : "bg-slate-800 border-slate-700"}`}
+              >
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className={`p-1.5 rounded-full ${partner.isNegative ? "bg-red-500/15" : "bg-emerald-500/15"}`}>
+                        <Users size={14} className={partner.isNegative ? "text-red-400" : "text-emerald-400"} />
+                      </div>
+                      <CardTitle className="text-white text-base">{partner.partnerName}</CardTitle>
+                      <div className="flex gap-1">
+                        {partner.roles.map((r: string) => (
+                          <Badge key={r} variant="outline" className="text-xs border-slate-600 text-slate-400 capitalize">
+                            {r}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-slate-500 mb-0.5">Net Balance</p>
+                      <BalanceAmount amount={partner.totalBalance} className="text-base" />
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="rounded border border-slate-700 overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="border-slate-700 hover:bg-transparent">
+                          <TableHead className="text-slate-500 text-xs">Project</TableHead>
+                          <TableHead className="text-slate-500 text-xs">Role</TableHead>
+                          <TableHead className="text-slate-500 text-xs text-right">Balance</TableHead>
+                          <TableHead className="text-slate-500 text-xs text-right">Status</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {partner.projects.map((pp: { projectId: string; projectName: string; role: string; balance: number; isNegative: boolean }) => (
+                          <TableRow key={`${pp.projectId}-${pp.role}`} className="border-slate-700">
+                            <TableCell className="text-slate-300 text-sm">{pp.projectName}</TableCell>
+                            <TableCell className="text-slate-400 text-sm capitalize">{pp.role}</TableCell>
+                            <TableCell className="text-right"><BalanceAmount amount={pp.balance} /></TableCell>
+                            <TableCell className="text-right">
+                              {pp.isNegative ? (
+                                <span className="text-xs text-red-400 flex items-center gap-1 justify-end">
+                                  <AlertTriangle size={11} /> Deficit
+                                </span>
+                              ) : pp.balance === 0 ? (
+                                <span className="text-xs text-slate-500">Neutral</span>
+                              ) : (
+                                <span className="text-xs text-emerald-400 flex items-center gap-1 justify-end">
+                                  <CheckCircle2 size={11} /> Credit
+                                </span>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </div>
+      )}
+
+      {/* ── Transaction Ledger ───────────────────────────────────────────────────── */}
+      {view === "ledger" && (
+        <div className="space-y-3">
+          {/* Filters */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <Select value={ledgerProject} onValueChange={setLedgerProject}>
+              <SelectTrigger className="w-48 bg-slate-800 border-slate-700 text-slate-300 text-sm h-8">
+                <SelectValue placeholder="All projects" />
+              </SelectTrigger>
+              <SelectContent className="bg-slate-800 border-slate-700">
+                <SelectItem value="" className="text-slate-300">All projects</SelectItem>
+                {projects.map((p) => (
+                  <SelectItem key={p.id} value={p.id} className="text-slate-300">
+                    {p.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={ledgerRole} onValueChange={setLedgerRole}>
+              <SelectTrigger className="w-40 bg-slate-800 border-slate-700 text-slate-300 text-sm h-8">
+                <SelectValue placeholder="All parties" />
+              </SelectTrigger>
+              <SelectContent className="bg-slate-800 border-slate-700">
+                <SelectItem value="" className="text-slate-300">All parties</SelectItem>
+                <SelectItem value="developer" className="text-slate-300">Developer</SelectItem>
+                <SelectItem value="landowner" className="text-slate-300">Landowner</SelectItem>
+              </SelectContent>
+            </Select>
+            <span className="text-xs text-slate-500 ml-1">
+              {ledgerEntries.length} entries
+            </span>
+          </div>
+
+          {ledgerLoading ? (
+            <div className="flex items-center justify-center h-24 text-slate-500">
+              <Loader2 size={16} className="animate-spin mr-2" /> Loading…
+            </div>
+          ) : ledgerEntries.length === 0 ? (
+            <Card className="bg-slate-800 border-slate-700">
+              <CardContent className="p-8 text-center">
+                <List size={32} className="mx-auto mb-3 text-slate-600" />
+                <p className="text-slate-400 font-medium">No ledger entries</p>
+                <p className="text-slate-500 text-sm mt-1">Entries are created automatically when burden records have imbalances.</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="rounded-lg border border-slate-700 overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-slate-700 hover:bg-transparent">
+                    <TableHead className="text-slate-400 w-28">Date</TableHead>
+                    <TableHead className="text-slate-400 w-24">Party</TableHead>
+                    <TableHead className="text-slate-400 w-32">Type</TableHead>
+                    <TableHead className="text-slate-400">Description</TableHead>
+                    <TableHead className="text-slate-400 text-right w-36">Amount</TableHead>
+                    <TableHead className="text-slate-400 text-right w-40">Running Balance</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {ledgerEntries.map((e) => (
+                    <TableRow
+                      key={e.id}
+                      className={`border-slate-700 ${e.isNegativeBalance ? "bg-red-900/10" : ""}`}
+                    >
+                      <TableCell className="text-slate-400 text-xs">
+                        {fmtDate(e.createdAt as unknown as string)}
+                        {e.period && (
+                          <span className="block text-slate-600">{e.period}</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <span className={`text-xs font-medium ${e.partyRole === "developer" ? "text-blue-400" : "text-amber-400"}`}>
+                          {e.partyRole === "developer" ? "Developer" : "Landowner"}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <EntryTypeBadge type={e.entryType} />
+                      </TableCell>
+                      <TableCell className="text-slate-300 text-sm">
+                        {e.description}
+                        {e.notes && <span className="block text-xs text-slate-500">{e.notes}</span>}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <span className={`font-mono text-sm font-semibold ${e.amount > 0 ? "text-emerald-400" : e.amount < 0 ? "text-red-400" : "text-slate-400"}`}>
+                          {e.amount > 0 ? "+" : ""}{formatINR(e.amount)}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          {e.isNegativeBalance && (
+                            <AlertTriangle size={12} className="text-red-400 shrink-0" />
+                          )}
+                          <BalanceAmount amount={e.runningBalance} />
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Manual Entry Dialog ──────────────────────────────────────────────────── */}
+      {isAdmin && (
+        <Dialog open={showManualDialog} onOpenChange={setShowManualDialog}>
+          <DialogContent className="bg-slate-900 border-slate-700 max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="text-white">Manual Imbalance Entry</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              <p className="text-xs text-slate-400 bg-slate-800 border border-slate-700 rounded p-3">
+                Creates a paired entry for both developer and landowner. Positive = credit (owed to party), negative = debit (party owes). The two amounts should normally sum to zero.
+              </p>
+              <div>
+                <label className="text-xs text-slate-400 mb-1 block">Project</label>
+                <Select
+                  value={manualForm.projectId}
+                  onValueChange={(v) => setManualForm((f) => ({ ...f, projectId: v }))}
+                >
+                  <SelectTrigger className="bg-slate-800 border-slate-700 text-slate-300">
+                    <SelectValue placeholder="Select project" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-800 border-slate-700">
+                    {projects.map((p) => (
+                      <SelectItem key={p.id} value={p.id} className="text-slate-300">{p.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-slate-400 mb-1 block">Developer Amount (signed)</label>
+                  <Input
+                    type="number"
+                    placeholder="e.g. 50000 or -50000"
+                    value={manualForm.developerAmount}
+                    onChange={(e) => setManualForm((f) => ({ ...f, developerAmount: e.target.value }))}
+                    className="bg-slate-800 border-slate-700 text-slate-300"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-slate-400 mb-1 block">Landowner Amount (signed)</label>
+                  <Input
+                    type="number"
+                    placeholder="e.g. -50000 or 50000"
+                    value={manualForm.landownerAmount}
+                    onChange={(e) => setManualForm((f) => ({ ...f, landownerAmount: e.target.value }))}
+                    className="bg-slate-800 border-slate-700 text-slate-300"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs text-slate-400 mb-1 block">Description</label>
+                <Input
+                  placeholder="Reason for manual adjustment"
+                  value={manualForm.description}
+                  onChange={(e) => setManualForm((f) => ({ ...f, description: e.target.value }))}
+                  className="bg-slate-800 border-slate-700 text-slate-300"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-slate-400 mb-1 block">Period (YYYY-MM)</label>
+                  <Input
+                    placeholder="2026-05"
+                    value={manualForm.period}
+                    onChange={(e) => setManualForm((f) => ({ ...f, period: e.target.value }))}
+                    className="bg-slate-800 border-slate-700 text-slate-300"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-slate-400 mb-1 block">Notes (optional)</label>
+                  <Input
+                    placeholder="Additional notes"
+                    value={manualForm.notes}
+                    onChange={(e) => setManualForm((f) => ({ ...f, notes: e.target.value }))}
+                    className="bg-slate-800 border-slate-700 text-slate-300"
+                  />
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowManualDialog(false)}
+                className="border-slate-600 text-slate-300"
+              >
+                Cancel
+              </Button>
+              <Button
+                className="bg-blue-600 hover:bg-blue-700"
+                onClick={handleCreateEntry}
+                disabled={createEntryMutation.isPending}
+              >
+                {createEntryMutation.isPending && <Loader2 size={14} className="animate-spin mr-1.5" />}
+                Create Entry
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+    </div>
+  );
+}
+
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function Burden() {
@@ -1494,6 +2062,13 @@ export default function Burden() {
             <Scale size={14} className="mr-1.5" />
             Rules
           </TabsTrigger>
+          <TabsTrigger
+            value="imbalances"
+            className="data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-400"
+          >
+            <Wallet size={14} className="mr-1.5" />
+            Imbalances
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="summary" className="mt-4">
@@ -1512,6 +2087,15 @@ export default function Burden() {
           <RulesTab
             projectId={selectedProjectId}
             canEdit={canEdit}
+            projects={projects}
+          />
+        </TabsContent>
+
+        <TabsContent value="imbalances" className="mt-4">
+          <ImbalancesTab
+            projectId={selectedProjectId}
+            canEdit={canEdit}
+            isAdmin={role === "admin"}
             projects={projects}
           />
         </TabsContent>

@@ -2412,6 +2412,98 @@ export interface UpdateBurdenRecordBody {
   recoveryNotes?: string | null;
 }
 
+export type ImbalanceLedgerEntryPartyRole =
+  (typeof ImbalanceLedgerEntryPartyRole)[keyof typeof ImbalanceLedgerEntryPartyRole];
+
+export const ImbalanceLedgerEntryPartyRole = {
+  developer: "developer",
+  landowner: "landowner",
+} as const;
+
+export type ImbalanceLedgerEntryEntryType =
+  (typeof ImbalanceLedgerEntryEntryType)[keyof typeof ImbalanceLedgerEntryEntryType];
+
+export const ImbalanceLedgerEntryEntryType = {
+  burden_imbalance: "burden_imbalance",
+  recovery: "recovery",
+  waiver: "waiver",
+  manual: "manual",
+  carry_forward: "carry_forward",
+} as const;
+
+export interface ImbalanceLedgerEntry {
+  id: string;
+  projectId: string;
+  partyRole: ImbalanceLedgerEntryPartyRole;
+  entryType: ImbalanceLedgerEntryEntryType;
+  /** Signed amount: positive = credit (owed to party), negative = debit (party owes) */
+  amount: number;
+  /** Cumulative balance for this project+party up to this entry */
+  runningBalance: number;
+  isNegativeBalance: boolean;
+  burdenRecordId?: string | null;
+  /** YYYY-MM accounting period */
+  period?: string | null;
+  description: string;
+  notes?: string | null;
+  createdById?: string | null;
+  createdByName?: string | null;
+  createdAt: string;
+}
+
+export type ImbalanceSummaryTotals = {
+  totalDeveloperBalance: number;
+  totalLandownerBalance: number;
+  negativeCount: number;
+  projectCount: number;
+};
+
+export type ImbalanceSummaryProjectsItem = {
+  projectId: string;
+  projectName: string;
+  developerBalance: number;
+  landownerBalance: number;
+  developerPartnerId?: string | null;
+  developerPartnerName?: string | null;
+  landownerPartnerId?: string | null;
+  landownerPartnerName?: string | null;
+  entryCount: number;
+};
+
+export interface ImbalanceSummary {
+  totals: ImbalanceSummaryTotals;
+  projects: ImbalanceSummaryProjectsItem[];
+}
+
+export type PartnerImbalanceSummaryProjectsItem = {
+  projectId: string;
+  projectName: string;
+  role: string;
+  balance: number;
+  isNegative: boolean;
+};
+
+export interface PartnerImbalanceSummary {
+  partnerId: string;
+  partnerName: string;
+  roles: string[];
+  totalBalance: number;
+  isNegative: boolean;
+  projects: PartnerImbalanceSummaryProjectsItem[];
+}
+
+export interface CreateImbalanceEntryBody {
+  projectId: string;
+  /** Signed: positive=credit, negative=debit */
+  developerAmount: number;
+  /** Signed: positive=credit, negative=debit */
+  landownerAmount: number;
+  description: string;
+  notes?: string;
+  /** YYYY-MM accounting period */
+  period?: string;
+}
+
 export type GetUserActivityParams = {
   limit?: number;
 };
@@ -2711,4 +2803,40 @@ export type MarkBurdenRecordRecoveredBody = {
   /** Amount recovered in this payment */
   amount: number;
   notes?: string;
+};
+
+export type GetImbalanceSummaryParams = {
+  projectId?: string;
+};
+
+export type ListImbalanceLedgerParams = {
+  projectId?: string;
+  partyRole?: ListImbalanceLedgerPartyRole;
+  entryType?: string;
+};
+
+export type ListImbalanceLedgerPartyRole =
+  (typeof ListImbalanceLedgerPartyRole)[keyof typeof ListImbalanceLedgerPartyRole];
+
+export const ListImbalanceLedgerPartyRole = {
+  developer: "developer",
+  landowner: "landowner",
+} as const;
+
+export type ListImbalanceLedger200 = {
+  entries: ImbalanceLedgerEntry[];
+};
+
+export type GetImbalancePartnerSummary200 = {
+  partners: PartnerImbalanceSummary[];
+};
+
+export type CreateImbalanceEntry201 = {
+  entries: ImbalanceLedgerEntry[];
+};
+
+export type SeedImbalanceLedger200 = {
+  seeded: number;
+  skipped: number;
+  message: string;
 };

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { getAuth } from "@clerk/express";
 import { eq, and, inArray, desc, isNull, or } from "drizzle-orm";
+import { createImbalanceLedgerPair } from "./burden_imbalances";
 import {
   db,
   usersTable,
@@ -836,6 +837,26 @@ router.post(
       .returning();
 
     req.log.info({ recordId: record.id, expenditureId }, "Burden record created");
+
+    // Auto-create imbalance ledger entries when an imbalance exists
+    if (record.adjustmentStatus !== "balanced" && record.projectId) {
+      const isDevAdvance = record.adjustmentStatus === "developer_advance";
+      const imbalanceAmt = Number(record.recoverableAmount);
+      createImbalanceLedgerPair({
+        projectId: record.projectId,
+        burdenRecordId: record.id,
+        entryType: "burden_imbalance",
+        developerAmount: isDevAdvance ? imbalanceAmt : -imbalanceAmt,
+        landownerAmount: isDevAdvance ? -imbalanceAmt : imbalanceAmt,
+        description: `Burden imbalance from expenditure`,
+        period: new Date().toISOString().slice(0, 7),
+        createdById: actor.id,
+        createdByName: actor.displayName ?? null,
+      }).catch((err: unknown) => {
+        req.log.warn({ err }, "Failed to create imbalance ledger entry (non-fatal)");
+      });
+    }
+
     return res
       .status(201)
       .json(formatRecord(record, { projectName: expRow.projectName }));
@@ -948,6 +969,29 @@ router.post(
       .returning();
 
     req.log.info({ recordId }, "Burden record waived");
+
+    // Zero out the remaining imbalance in the ledger
+    const remaining =
+      Math.round(
+        (Number(row.record.recoverableAmount) - Number(row.record.recoveredAmount)) * 100,
+      ) / 100;
+    if (remaining > 0 && row.record.projectId) {
+      const isDevAdvance = row.record.adjustmentStatus === "developer_advance";
+      createImbalanceLedgerPair({
+        projectId: row.record.projectId,
+        burdenRecordId: recordId,
+        entryType: "waiver",
+        developerAmount: isDevAdvance ? -remaining : remaining,
+        landownerAmount: isDevAdvance ? remaining : -remaining,
+        description: `Burden imbalance waived`,
+        period: new Date().toISOString().slice(0, 7),
+        createdById: actor.id,
+        createdByName: actor.displayName ?? null,
+      }).catch((err: unknown) => {
+        req.log.warn({ err }, "Failed to create waiver ledger entry (non-fatal)");
+      });
+    }
+
     return res.json(formatRecord(updated, { projectName: row.projectName }));
   },
 );
@@ -1025,6 +1069,26 @@ router.post(
       .returning();
 
     req.log.info({ recordId, amount, newRecoveryStatus }, "Burden record recovery payment recorded");
+
+    // Record the recovery offset in the imbalance ledger
+    if (r.projectId) {
+      const isDevAdvance = r.adjustmentStatus === "developer_advance";
+      createImbalanceLedgerPair({
+        projectId: r.projectId,
+        burdenRecordId: recordId,
+        entryType: "recovery",
+        // Recovery reduces the overpaying party's credit and reduces the underpaying party's debit
+        developerAmount: isDevAdvance ? -amount : amount,
+        landownerAmount: isDevAdvance ? amount : -amount,
+        description: `Recovery payment of ₹${amount.toLocaleString("en-IN")}`,
+        period: new Date().toISOString().slice(0, 7),
+        createdById: actor.id,
+        createdByName: actor.displayName ?? null,
+      }).catch((err: unknown) => {
+        req.log.warn({ err }, "Failed to create recovery ledger entry (non-fatal)");
+      });
+    }
+
     return res.json(formatRecord(updated, { projectName: row.projectName }));
   },
 );

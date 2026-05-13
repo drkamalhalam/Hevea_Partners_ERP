@@ -5585,3 +5585,123 @@ export const MarkBurdenRecordRecoveredResponse = zod.object({
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
+
+/**
+ * @summary Get current imbalance balances per project and party
+ */
+export const GetImbalanceSummaryQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+});
+
+export const GetImbalanceSummaryResponse = zod.object({
+  totals: zod.object({
+    totalDeveloperBalance: zod.number(),
+    totalLandownerBalance: zod.number(),
+    negativeCount: zod.number(),
+    projectCount: zod.number(),
+  }),
+  projects: zod.array(
+    zod.object({
+      projectId: zod.string().uuid(),
+      projectName: zod.string(),
+      developerBalance: zod.number(),
+      landownerBalance: zod.number(),
+      developerPartnerId: zod.string().uuid().nullish(),
+      developerPartnerName: zod.string().nullish(),
+      landownerPartnerId: zod.string().uuid().nullish(),
+      landownerPartnerName: zod.string().nullish(),
+      entryCount: zod.number(),
+    }),
+  ),
+});
+
+/**
+ * @summary Get imbalance ledger entries with running balance
+ */
+export const ListImbalanceLedgerQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+  partyRole: zod.enum(["developer", "landowner"]).optional(),
+  entryType: zod.coerce.string().optional(),
+});
+
+export const ListImbalanceLedgerResponse = zod.object({
+  entries: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      projectId: zod.string().uuid(),
+      partyRole: zod.enum(["developer", "landowner"]),
+      entryType: zod.enum([
+        "burden_imbalance",
+        "recovery",
+        "waiver",
+        "manual",
+        "carry_forward",
+      ]),
+      amount: zod
+        .number()
+        .describe(
+          "Signed amount: positive = credit (owed to party), negative = debit (party owes)",
+        ),
+      runningBalance: zod
+        .number()
+        .describe("Cumulative balance for this project+party up to this entry"),
+      isNegativeBalance: zod.boolean(),
+      burdenRecordId: zod.string().uuid().nullish(),
+      period: zod.string().nullish().describe("YYYY-MM accounting period"),
+      description: zod.string(),
+      notes: zod.string().nullish(),
+      createdById: zod.string().uuid().nullish(),
+      createdByName: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+});
+
+/**
+ * @summary Get partner-attributed imbalance balances
+ */
+export const GetImbalancePartnerSummaryResponse = zod.object({
+  partners: zod.array(
+    zod.object({
+      partnerId: zod.string().uuid(),
+      partnerName: zod.string(),
+      roles: zod.array(zod.string()),
+      totalBalance: zod.number(),
+      isNegative: zod.boolean(),
+      projects: zod.array(
+        zod.object({
+          projectId: zod.string().uuid(),
+          projectName: zod.string(),
+          role: zod.string(),
+          balance: zod.number(),
+          isNegative: zod.boolean(),
+        }),
+      ),
+    }),
+  ),
+});
+
+/**
+ * @summary Create a manual imbalance ledger entry pair (admin only)
+ */
+export const CreateImbalanceEntryBody = zod.object({
+  projectId: zod.string().uuid(),
+  developerAmount: zod
+    .number()
+    .describe("Signed: positive=credit, negative=debit"),
+  landownerAmount: zod
+    .number()
+    .describe("Signed: positive=credit, negative=debit"),
+  description: zod.string(),
+  notes: zod.string().optional(),
+  period: zod.string().optional().describe("YYYY-MM accounting period"),
+});
+
+/**
+ * @summary Seed imbalance ledger from existing burden records (idempotent, admin only)
+ */
+export const SeedImbalanceLedgerResponse = zod.object({
+  seeded: zod.number(),
+  skipped: zod.number(),
+  message: zod.string(),
+});

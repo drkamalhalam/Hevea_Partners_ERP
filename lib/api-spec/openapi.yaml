@@ -3613,6 +3613,119 @@ paths:
         "401": { description: Unauthorized }
         "404": { description: Not found }
 
+  /burden/imbalances/summary:
+    get:
+      tags: [Burden]
+      operationId: getImbalanceSummary
+      summary: Get current imbalance balances per project and party
+      parameters:
+        - in: query
+          name: projectId
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ImbalanceSummary" }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+
+  /burden/imbalances/ledger:
+    get:
+      tags: [Burden]
+      operationId: listImbalanceLedger
+      summary: Get imbalance ledger entries with running balance
+      parameters:
+        - in: query
+          name: projectId
+          schema: { type: string, format: uuid }
+        - in: query
+          name: partyRole
+          schema: { type: string, enum: [developer, landowner] }
+        - in: query
+          name: entryType
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [entries]
+                properties:
+                  entries:
+                    type: array
+                    items: { $ref: "#/components/schemas/ImbalanceLedgerEntry" }
+        "401": { description: Unauthorized }
+
+  /burden/imbalances/partner-summary:
+    get:
+      tags: [Burden]
+      operationId: getImbalancePartnerSummary
+      summary: Get partner-attributed imbalance balances
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [partners]
+                properties:
+                  partners:
+                    type: array
+                    items: { $ref: "#/components/schemas/PartnerImbalanceSummary" }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+
+  /burden/imbalances/entries:
+    post:
+      tags: [Burden]
+      operationId: createImbalanceEntry
+      summary: Create a manual imbalance ledger entry pair (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateImbalanceEntryBody" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [entries]
+                properties:
+                  entries:
+                    type: array
+                    items: { $ref: "#/components/schemas/ImbalanceLedgerEntry" }
+        "400": { description: Bad request }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+
+  /burden/imbalances/seed:
+    post:
+      tags: [Burden]
+      operationId: seedImbalanceLedger
+      summary: Seed imbalance ledger from existing burden records (idempotent, admin only)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [seeded, skipped, message]
+                properties:
+                  seeded: { type: integer }
+                  skipped: { type: integer }
+                  message: { type: string }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+
 components:
   schemas:
     HealthStatus:
@@ -6287,3 +6400,82 @@ components:
       properties:
         notes: { type: string, nullable: true }
         recoveryNotes: { type: string, nullable: true }
+
+    ImbalanceLedgerEntry:
+      type: object
+      required: [id, projectId, partyRole, entryType, amount, runningBalance, isNegativeBalance, description, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        partyRole: { type: string, enum: [developer, landowner] }
+        entryType: { type: string, enum: [burden_imbalance, recovery, waiver, manual, carry_forward] }
+        amount: { type: number, description: "Signed amount: positive = credit (owed to party), negative = debit (party owes)" }
+        runningBalance: { type: number, description: "Cumulative balance for this project+party up to this entry" }
+        isNegativeBalance: { type: boolean }
+        burdenRecordId: { type: string, format: uuid, nullable: true }
+        period: { type: string, nullable: true, description: "YYYY-MM accounting period" }
+        description: { type: string }
+        notes: { type: string, nullable: true }
+        createdById: { type: string, format: uuid, nullable: true }
+        createdByName: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+
+    ImbalanceSummary:
+      type: object
+      required: [totals, projects]
+      properties:
+        totals:
+          type: object
+          required: [totalDeveloperBalance, totalLandownerBalance, negativeCount, projectCount]
+          properties:
+            totalDeveloperBalance: { type: number }
+            totalLandownerBalance: { type: number }
+            negativeCount: { type: integer }
+            projectCount: { type: integer }
+        projects:
+          type: array
+          items:
+            type: object
+            required: [projectId, projectName, developerBalance, landownerBalance, entryCount]
+            properties:
+              projectId: { type: string, format: uuid }
+              projectName: { type: string }
+              developerBalance: { type: number }
+              landownerBalance: { type: number }
+              developerPartnerId: { type: string, format: uuid, nullable: true }
+              developerPartnerName: { type: string, nullable: true }
+              landownerPartnerId: { type: string, format: uuid, nullable: true }
+              landownerPartnerName: { type: string, nullable: true }
+              entryCount: { type: integer }
+
+    PartnerImbalanceSummary:
+      type: object
+      required: [partnerId, partnerName, roles, totalBalance, isNegative, projects]
+      properties:
+        partnerId: { type: string, format: uuid }
+        partnerName: { type: string }
+        roles: { type: array, items: { type: string } }
+        totalBalance: { type: number }
+        isNegative: { type: boolean }
+        projects:
+          type: array
+          items:
+            type: object
+            required: [projectId, projectName, role, balance, isNegative]
+            properties:
+              projectId: { type: string, format: uuid }
+              projectName: { type: string }
+              role: { type: string }
+              balance: { type: number }
+              isNegative: { type: boolean }
+
+    CreateImbalanceEntryBody:
+      type: object
+      required: [projectId, developerAmount, landownerAmount, description]
+      properties:
+        projectId: { type: string, format: uuid }
+        developerAmount: { type: number, description: "Signed: positive=credit, negative=debit" }
+        landownerAmount: { type: number, description: "Signed: positive=credit, negative=debit" }
+        description: { type: string }
+        notes: { type: string }
+        period: { type: string, description: "YYYY-MM accounting period" }
