@@ -322,7 +322,7 @@ function ExpenditureFormDialog({
                   <SelectValue placeholder="Select project" />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-800 border-slate-700">
-                  {projects.map((p) => (
+                  {projects.filter((p) => !!p.id).map((p) => (
                     <SelectItem key={p.id} value={p.id} className="text-slate-100">
                       {p.name}
                     </SelectItem>
@@ -1035,7 +1035,7 @@ export default function Expenditure() {
                 <SelectItem value="__all__" className="text-slate-100">
                   All projects
                 </SelectItem>
-                {projects.map((p) => (
+                {projects.filter((p) => !!p.id).map((p) => (
                   <SelectItem key={p.id} value={p.id} className="text-slate-100">
                     {p.name}
                   </SelectItem>
