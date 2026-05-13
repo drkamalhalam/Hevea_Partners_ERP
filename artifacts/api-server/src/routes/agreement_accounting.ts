@@ -9,7 +9,8 @@ import {
   projectsTable,
   lcaConfigsTable,
 } from "@workspace/db";
-import { requireRole } from "../middlewares/auth";
+import { requireRole, requireFinancialRole } from "../middlewares/auth";
+import { logFinancialAccess } from "../lib/financialAudit";
 
 const router = Router();
 
@@ -81,11 +82,12 @@ function defaultFlagsForModel(revenueModel: string) {
 // Returns the accounting profile, auto-creating it from agreement defaults if
 // it does not yet exist.
 
-router.get("/:id/accounting-profile", async (req, res) => {
+router.get("/:id/accounting-profile", requireFinancialRole, async (req, res) => {
   const { userId: clerkUserId } = getAuth(req);
   if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
 
   const agreementId = req.params.id as string;
+  logFinancialAccess(req, "agreement_accounting_profile", "read", undefined, agreementId);
 
   const [agreement] = await db
     .select()

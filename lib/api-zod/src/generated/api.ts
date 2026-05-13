@@ -7075,6 +7075,47 @@ export const GetLcaGovernanceSummaryResponse = zod.object({
 });
 
 /**
+ * @summary Financial data access audit log (admin/developer only)
+ */
+export const listFinancialAccessLogsQueryLimitDefault = 50;
+export const listFinancialAccessLogsQueryLimitMax = 200;
+
+export const listFinancialAccessLogsQueryOffsetDefault = 0;
+
+export const ListFinancialAccessLogsQueryParams = zod.object({
+  resource: zod.coerce.string().optional(),
+  projectId: zod.coerce.string().uuid().optional(),
+  userId: zod.coerce.string().uuid().optional(),
+  from: zod.coerce.string().optional(),
+  to: zod.coerce.string().optional(),
+  limit: zod.coerce
+    .number()
+    .max(listFinancialAccessLogsQueryLimitMax)
+    .default(listFinancialAccessLogsQueryLimitDefault),
+  offset: zod.coerce
+    .number()
+    .default(listFinancialAccessLogsQueryOffsetDefault),
+});
+
+export const ListFinancialAccessLogsResponse = zod.object({
+  entries: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      userId: zod.string().uuid().optional(),
+      userRole: zod.string(),
+      resource: zod.string(),
+      resourceId: zod.string().optional(),
+      projectId: zod.string().uuid().optional(),
+      action: zod.string(),
+      ipAddress: zod.string().optional(),
+      accessedAt: zod.string(),
+    }),
+  ),
+  limit: zod.number(),
+  offset: zod.number(),
+});
+
+/**
  * @summary Landowner profitability and operational sustainability analytics
  */
 export const GetLandownerProfitabilityAnalyticsQueryParams = zod.object({

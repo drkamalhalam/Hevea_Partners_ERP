@@ -11,7 +11,8 @@ import {
   lcaConfigsTable,
   userProjectAssignmentsTable,
 } from "@workspace/db";
-import { requireRole } from "../middlewares/auth";
+import { requireRole, requireFinancialRole } from "../middlewares/auth";
+import { logFinancialAccess } from "../lib/financialAudit";
 
 const router = Router();
 
@@ -80,12 +81,14 @@ function formatEntry(row: LedgerRow) {
 // ── GET /landowner-account/summary ────────────────────────────────────────────
 // Aggregate net position for a (partner, project) or all visible entries.
 
-router.get("/summary", async (req, res) => {
+router.get("/summary", requireFinancialRole, async (req, res) => {
   const { userId: clerkUserId } = getAuth(req);
   if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
 
   const actor = await resolveActor(clerkUserId);
   if (!actor) return res.status(401).json({ error: "User not found" });
+
+  logFinancialAccess(req, "landowner_account_summary", "read", req.query.projectId as string | undefined);
 
   const { projectId, partnerId } = req.query as Record<string, string>;
 
@@ -199,12 +202,14 @@ router.get("/summary", async (req, res) => {
 
 // ── GET /landowner-account/entries ────────────────────────────────────────────
 
-router.get("/entries", async (req, res) => {
+router.get("/entries", requireFinancialRole, async (req, res) => {
   const { userId: clerkUserId } = getAuth(req);
   if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
 
   const actor = await resolveActor(clerkUserId);
   if (!actor) return res.status(401).json({ error: "User not found" });
+
+  logFinancialAccess(req, "landowner_ledger_entries", "list", req.query.projectId as string | undefined);
 
   const { projectId, partnerId, entryType, status } = req.query as Record<string, string>;
 
@@ -462,12 +467,14 @@ router.delete(
 // ── GET /landowner-account/lca-receivable ─────────────────────────────────────
 // Returns outstanding LCA receivable from lca_ledger for visible projects.
 
-router.get("/lca-receivable", async (req, res) => {
+router.get("/lca-receivable", requireFinancialRole, async (req, res) => {
   const { userId: clerkUserId } = getAuth(req);
   if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
 
   const actor = await resolveActor(clerkUserId);
   if (!actor) return res.status(401).json({ error: "User not found" });
+
+  logFinancialAccess(req, "lca_receivable", "read", req.query.projectId as string | undefined);
 
   const { projectId } = req.query as Record<string, string>;
 

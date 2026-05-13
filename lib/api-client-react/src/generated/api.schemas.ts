@@ -3379,6 +3379,24 @@ export interface ProjectProfitabilityRow {
   costBurdenRatio: number;
 }
 
+export interface FinancialAccessLogEntry {
+  id: string;
+  userId?: string;
+  userRole: string;
+  resource: string;
+  resourceId?: string;
+  projectId?: string;
+  action: string;
+  ipAddress?: string;
+  accessedAt: string;
+}
+
+export interface FinancialAccessLogListResponse {
+  entries: FinancialAccessLogEntry[];
+  limit: number;
+  offset: number;
+}
+
 export interface LandownerProfitabilityAnalytics {
   summary: LandownerProfitabilitySummary;
   yearlyBreakdown: YearlyProfitabilityRow[];
@@ -3842,6 +3860,19 @@ export type ListBurdenRecoveryAdjustmentsParams = {
 
 export type GetLcaGovernanceSummaryParams = {
   projectId?: string;
+};
+
+export type ListFinancialAccessLogsParams = {
+  resource?: string;
+  projectId?: string;
+  userId?: string;
+  from?: string;
+  to?: string;
+  /**
+   * @maximum 200
+   */
+  limit?: number;
+  offset?: number;
 };
 
 export type GetLandownerProfitabilityAnalyticsParams = {

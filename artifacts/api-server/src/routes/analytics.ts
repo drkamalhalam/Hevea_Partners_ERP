@@ -12,6 +12,9 @@ import {
   userProjectAssignmentsTable,
 } from "@workspace/db";
 
+import { requireFinancialRole } from "../middlewares/auth";
+import { logFinancialAccess } from "../lib/financialAudit";
+
 const router = Router();
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -44,12 +47,14 @@ async function resolveActor(clerkUserId: string) {
 
 // ── GET /analytics/landowner-profitability ────────────────────────────────────
 
-router.get("/landowner-profitability", async (req, res) => {
+router.get("/landowner-profitability", requireFinancialRole, async (req, res) => {
   const { userId: clerkUserId } = getAuth(req);
   if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
 
   const actor = await resolveActor(clerkUserId);
   if (!actor) return res.status(401).json({ error: "Unauthorized" });
+
+  logFinancialAccess(req, "landowner_profitability", "read", req.query.projectId as string | undefined);
 
   const { projectId, partnerId, fromYear, toYear } = req.query as {
     projectId?: string;

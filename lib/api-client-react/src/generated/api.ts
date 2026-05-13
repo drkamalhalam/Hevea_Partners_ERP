@@ -79,6 +79,7 @@ import type {
   ExpenditureSummary,
   ExpenditureVerificationDetail,
   FileMissingDeveloperCaseBody,
+  FinancialAccessLogListResponse,
   GenerateAgreementDocument422,
   GenerateDocumentRequest,
   GetAdvanceSummaryParams,
@@ -134,6 +135,7 @@ import type {
   ListDocumentsParams,
   ListExpenditures200,
   ListExpendituresParams,
+  ListFinancialAccessLogsParams,
   ListImbalanceLedger200,
   ListImbalanceLedgerParams,
   ListLandownerLedgerEntriesParams,
@@ -17298,6 +17300,109 @@ export function useGetLcaGovernanceSummary<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetLcaGovernanceSummaryQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Financial data access audit log (admin/developer only)
+ */
+export const getListFinancialAccessLogsUrl = (
+  params?: ListFinancialAccessLogsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/financial-access-logs?${stringifiedParams}`
+    : `/api/financial-access-logs`;
+};
+
+export const listFinancialAccessLogs = async (
+  params?: ListFinancialAccessLogsParams,
+  options?: RequestInit,
+): Promise<FinancialAccessLogListResponse> => {
+  return customFetch<FinancialAccessLogListResponse>(
+    getListFinancialAccessLogsUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListFinancialAccessLogsQueryKey = (
+  params?: ListFinancialAccessLogsParams,
+) => {
+  return [`/api/financial-access-logs`, ...(params ? [params] : [])] as const;
+};
+
+export const getListFinancialAccessLogsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listFinancialAccessLogs>>,
+  TError = ErrorType<void>,
+>(
+  params?: ListFinancialAccessLogsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listFinancialAccessLogs>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListFinancialAccessLogsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listFinancialAccessLogs>>
+  > = ({ signal }) =>
+    listFinancialAccessLogs(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listFinancialAccessLogs>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListFinancialAccessLogsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listFinancialAccessLogs>>
+>;
+export type ListFinancialAccessLogsQueryError = ErrorType<void>;
+
+/**
+ * @summary Financial data access audit log (admin/developer only)
+ */
+
+export function useListFinancialAccessLogs<
+  TData = Awaited<ReturnType<typeof listFinancialAccessLogs>>,
+  TError = ErrorType<void>,
+>(
+  params?: ListFinancialAccessLogsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listFinancialAccessLogs>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListFinancialAccessLogsQueryOptions(params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

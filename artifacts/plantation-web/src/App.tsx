@@ -44,6 +44,7 @@ import LandownerAccount from "./pages/LandownerAccount";
 import BurdenRecovery from "./pages/BurdenRecovery";
 import LandownerProfitability from "./pages/LandownerProfitability";
 import LCAGovernance from "./pages/LCAGovernance";
+import FinancialAuditLog from "./pages/FinancialAuditLog";
 import TemplateLibrary from "./pages/TemplateLibrary";
 
 // Pages — Operations
@@ -272,6 +273,7 @@ function AppRoutes() {
 
               {/* System */}
               <Route path="/admin"><AdminRoute component={Admin} /></Route>
+              <Route path="/financial-audit-log"><ProtectedRoute component={FinancialAuditLog} /></Route>
 
               <Route component={NotFound} />
             </Switch>

@@ -11,7 +11,8 @@ import {
   lcaPaymentEventsTable,
   userProjectAssignmentsTable,
 } from "@workspace/db";
-import { requireRole } from "../middlewares/auth";
+import { requireRole, requireFinancialRole } from "../middlewares/auth";
+import { logFinancialAccess } from "../lib/financialAudit";
 
 const router = Router();
 
@@ -99,12 +100,14 @@ function computeGrossDue(baseAmount: number, escalationPct: number, yearOffset: 
 
 // ── GET /lca/configs ─────────────────────────────────────────────────────────
 
-router.get("/configs", async (req, res) => {
+router.get("/configs", requireFinancialRole, async (req, res) => {
   const { userId: clerkUserId } = getAuth(req);
   if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
 
   const actor = await resolveActor(clerkUserId);
   if (!actor) return res.status(401).json({ error: "User not found" });
+
+  logFinancialAccess(req, "lca_configs", "list", req.query.projectId as string | undefined);
 
   const { projectId, includeInactive } = req.query as Record<string, string>;
   const showInactive = includeInactive === "true";
@@ -247,12 +250,14 @@ router.post(
 
 // ── GET /lca/configs/:id ─────────────────────────────────────────────────────
 
-router.get("/configs/:id", async (req, res) => {
+router.get("/configs/:id", requireFinancialRole, async (req, res) => {
   const { userId: clerkUserId } = getAuth(req);
   if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
 
   const actor = await resolveActor(clerkUserId);
   if (!actor) return res.status(401).json({ error: "User not found" });
+
+  logFinancialAccess(req, "lca_config", "read", undefined, req.params.id as string);
 
   const [row] = await db
     .select({
@@ -367,12 +372,14 @@ router.delete(
 
 // ── GET /lca/configs/:id/schedule ────────────────────────────────────────────
 
-router.get("/configs/:id/schedule", async (req, res) => {
+router.get("/configs/:id/schedule", requireFinancialRole, async (req, res) => {
   const { userId: clerkUserId } = getAuth(req);
   if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
 
   const actor = await resolveActor(clerkUserId);
   if (!actor) return res.status(401).json({ error: "User not found" });
+
+  logFinancialAccess(req, "lca_schedule", "read", undefined, req.params.id as string);
 
   const [row] = await db
     .select()
@@ -446,12 +453,14 @@ router.get("/configs/:id/schedule", async (req, res) => {
 
 // ── GET /lca/ledger ──────────────────────────────────────────────────────────
 
-router.get("/ledger", async (req, res) => {
+router.get("/ledger", requireFinancialRole, async (req, res) => {
   const { userId: clerkUserId } = getAuth(req);
   if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
 
   const actor = await resolveActor(clerkUserId);
   if (!actor) return res.status(401).json({ error: "User not found" });
+
+  logFinancialAccess(req, "lca_ledger", "list", req.query.projectId as string | undefined);
 
   const { projectId, configId, year, status } = req.query as Record<string, string>;
 
@@ -668,12 +677,14 @@ router.patch(
 
 // ── GET /lca/summary ─────────────────────────────────────────────────────────
 
-router.get("/summary", async (req, res) => {
+router.get("/summary", requireFinancialRole, async (req, res) => {
   const { userId: clerkUserId } = getAuth(req);
   if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
 
   const actor = await resolveActor(clerkUserId);
   if (!actor) return res.status(401).json({ error: "User not found" });
+
+  logFinancialAccess(req, "lca_summary", "read", req.query.projectId as string | undefined);
 
   const { projectId } = req.query as Record<string, string>;
 
@@ -873,12 +884,14 @@ router.post(
 
 // ── GET /lca/ledger/:id/payments ─────────────────────────────────────────────
 
-router.get("/ledger/:id/payments", async (req, res) => {
+router.get("/ledger/:id/payments", requireFinancialRole, async (req, res) => {
   const { userId: clerkUserId } = getAuth(req);
   if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
 
   const actor = await resolveActor(clerkUserId);
   if (!actor) return res.status(401).json({ error: "User not found" });
+
+  logFinancialAccess(req, "lca_payments", "list", undefined, req.params.id as string);
 
   const [entry] = await db
     .select()
@@ -995,12 +1008,14 @@ router.post(
 // ── GET /lca/full-ledger ──────────────────────────────────────────────────────
 // ERP-style full accounting view: config + all entries + per-entry payment history.
 
-router.get("/full-ledger", async (req, res) => {
+router.get("/full-ledger", requireFinancialRole, async (req, res) => {
   const { userId: clerkUserId } = getAuth(req);
   if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
 
   const actor = await resolveActor(clerkUserId);
   if (!actor) return res.status(401).json({ error: "User not found" });
+
+  logFinancialAccess(req, "lca_full_ledger", "list", req.query.projectId as string | undefined);
 
   const { projectId, configId } = req.query as Record<string, string>;
 
@@ -1087,13 +1102,16 @@ router.get("/full-ledger", async (req, res) => {
 // ── GET /lca/governance ───────────────────────────────────────────────────────
 // LCA governance audit: eligible projects, alert generation, and task center.
 // Eligibility: mature_production lifecycle + active contribution-model agreement.
+// Admin/developer only — landowners do not need a cross-project governance overview.
 
-router.get("/governance", async (req, res) => {
+router.get("/governance", requireRole("admin", "developer"), async (req, res) => {
   const { userId: clerkUserId } = getAuth(req);
   if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
 
   const actor = await resolveActor(clerkUserId);
   if (!actor) return res.status(401).json({ error: "User not found" });
+
+  logFinancialAccess(req, "lca_governance", "read");
 
   const filterProjectId = req.query.projectId as string | undefined;
 

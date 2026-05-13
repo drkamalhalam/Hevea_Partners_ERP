@@ -15,6 +15,7 @@ declare global {
   namespace Express {
     interface Request {
       userId?: string;
+      dbUserId?: string; // UUID from users table, set by requireAuth
       userRole?: UserRoleEnum;
       userProjectIds?: string[];
       canAccessAllProjects?: boolean;
@@ -56,6 +57,7 @@ export async function requireAuth(
         .from(userProjectAssignmentsTable)
         .where(eq(userProjectAssignmentsTable.userId, userRow.id));
 
+      req.dbUserId = userRow.id;
       req.userRole = (userRow.role ?? "employee") as UserRoleEnum;
       req.userProjectIds = assignments
         .filter((a) => !a.revokedAt)
@@ -96,6 +98,13 @@ export function requireRole(...roles: UserRoleEnum[]) {
     next();
   };
 }
+
+/**
+ * requireFinancialRole — pre-built middleware for sensitive financial data endpoints.
+ * Permits admin, developer, and landowner. Blocks investor, employee, operational_staff.
+ * Must be used after requireAuth.
+ */
+export const requireFinancialRole = requireRole("admin", "developer", "landowner");
 
 /**
  * canAccessProject — inline helper used in route handlers.

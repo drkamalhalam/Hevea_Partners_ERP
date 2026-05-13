@@ -12,6 +12,7 @@ import partnersRouter from "./partners";
 import agreementsRouter from "./agreements";
 import agreementActivationRouter from "./agreement_activation";
 import agreementAccountingRouter from "./agreement_accounting";
+import financialAuditLogRouter from "./financial_audit_log";
 import dashboardRouter from "./dashboard";
 import productionRouter from "./production";
 import stockRouter from "./stock";
@@ -79,5 +80,6 @@ router.use("/lca", lcaRouter);
 router.use("/landowner-account", landownerAccountRouter);
 router.use("/burden-recovery", burdenRecoveryRouter);
 router.use("/analytics", analyticsRouter);
+router.use("/financial-access-logs", financialAuditLogRouter);
 
 export default router;
