@@ -8,6 +8,7 @@ import {
   userProjectAssignmentsTable,
   projectNomineesTable,
   partnerClaimantsTable,
+  missingDeveloperCasesTable,
 } from "@workspace/db";
 import { eq, inArray, isNull, and } from "drizzle-orm";
 
@@ -21,7 +22,8 @@ type GovernanceIssueCode =
   | "NO_AGREEMENTS"
   | "INCOMPLETE_PROFILE"
   | "INCOMPLETE_PARTNER"
-  | "NO_CLAIMANTS";
+  | "NO_CLAIMANTS"
+  | "MISSING_DEVELOPER";
 
 interface GovernanceAlert {
   code: GovernanceIssueCode;
@@ -99,7 +101,7 @@ router.get("/summary", async (req, res) => {
     if (isAdminOrDev && visibleProjects.length > 0) {
       const projectIds = visibleProjects.map((p) => p.id);
 
-      const [nominees, participants, agreements] = await Promise.all([
+      const [nominees, participants, agreements, missingDevCases] = await Promise.all([
         db
           .select({ projectId: projectNomineesTable.projectId })
           .from(projectNomineesTable)
@@ -122,14 +124,52 @@ router.get("/summary", async (req, res) => {
           .select({ projectId: agreementsTable.projectId })
           .from(agreementsTable)
           .where(inArray(agreementsTable.projectId, projectIds)),
+        db
+          .select({
+            projectId: missingDeveloperCasesTable.projectId,
+            gdEntryDate: missingDeveloperCasesTable.gdEntryDate,
+            status: missingDeveloperCasesTable.status,
+          })
+          .from(missingDeveloperCasesTable)
+          .where(
+            and(
+              inArray(missingDeveloperCasesTable.projectId, projectIds),
+              eq(missingDeveloperCasesTable.isActive, true),
+            ),
+          ),
       ]);
 
       const nomineeSet = new Set(nominees.map((n) => n.projectId));
       const participantSet = new Set(participants.map((p) => p.projectId));
       const agreementSet = new Set(agreements.map((a) => a.projectId));
 
+      // Build a map of projectId → missing-dev case for alert messaging
+      const missingDevMap = new Map(
+        missingDevCases.map((c) => {
+          const entry = new Date(c.gdEntryDate + "T00:00:00.000Z");
+          const daysElapsed = Math.max(
+            0,
+            Math.floor((Date.now() - entry.getTime()) / (1000 * 60 * 60 * 24)),
+          );
+          return [c.projectId, { daysElapsed, status: c.status }];
+        }),
+      );
+
       for (const project of visibleProjects) {
         const issues: GovernanceAlert[] = [];
+
+        const mdCase = missingDevMap.get(project.id);
+        if (mdCase) {
+          const isEligible =
+            mdCase.status === "nominee_eligible" || mdCase.daysElapsed >= 45;
+          issues.push({
+            code: "MISSING_DEVELOPER",
+            severity: "attention_required",
+            message: isEligible
+              ? `Project developer reported missing — nominee now eligible for activation (${mdCase.daysElapsed} days elapsed)`
+              : `Project developer reported missing — waiting period active (${mdCase.daysElapsed}/45 days elapsed)`,
+          });
+        }
 
         if (!nomineeSet.has(project.id)) {
           issues.push({

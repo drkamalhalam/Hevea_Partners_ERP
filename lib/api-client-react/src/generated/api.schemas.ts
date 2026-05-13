@@ -18,6 +18,7 @@ export const ProjectStatus = {
   tapping: "tapping",
   completed: "completed",
   suspended: "suspended",
+  missing_developer: "missing_developer",
 } as const;
 
 export type ProjectLifecycleStatus =
@@ -71,6 +72,7 @@ export const ProjectInputStatus = {
   tapping: "tapping",
   completed: "completed",
   suspended: "suspended",
+  missing_developer: "missing_developer",
 } as const;
 
 export interface ProjectInput {
@@ -101,6 +103,7 @@ export const ProjectUpdateStatus = {
   tapping: "tapping",
   completed: "completed",
   suspended: "suspended",
+  missing_developer: "missing_developer",
 } as const;
 
 export interface ProjectUpdate {
@@ -953,6 +956,72 @@ export interface UpdateClaimantInput {
   status?: UpdateClaimantInputStatus;
   notes?: string;
   isActive?: boolean;
+}
+
+export type MissingDeveloperCaseStatus =
+  (typeof MissingDeveloperCaseStatus)[keyof typeof MissingDeveloperCaseStatus];
+
+export const MissingDeveloperCaseStatus = {
+  active: "active",
+  nominee_eligible: "nominee_eligible",
+  resolved: "resolved",
+  cancelled: "cancelled",
+} as const;
+
+export interface MissingDeveloperCase {
+  id: string;
+  projectId: string;
+  status: MissingDeveloperCaseStatus;
+  /** @nullable */
+  reportedBy?: string | null;
+  /** @nullable */
+  reportedByName?: string | null;
+  /** @nullable */
+  gdNumber?: string | null;
+  /** @nullable */
+  gdDocumentUrl?: string | null;
+  gdEntryDate: string;
+  /** @nullable */
+  remarks?: string | null;
+  /** @nullable */
+  previousProjectStatus?: string | null;
+  /** @nullable */
+  resolvedAt?: string | null;
+  /** @nullable */
+  resolvedBy?: string | null;
+  /** @nullable */
+  resolvedByName?: string | null;
+  /** @nullable */
+  resolutionNotes?: string | null;
+  isActive: boolean;
+  createdAt: string;
+  /** @nullable */
+  updatedAt?: string | null;
+  daysElapsed: number;
+  daysRemaining: number;
+  nomineeEligibleAt: string;
+  isNomineeEligible: boolean;
+}
+
+export interface FileMissingDeveloperCaseBody {
+  gdEntryDate: string;
+  gdNumber?: string;
+  gdDocumentUrl?: string;
+  remarks?: string;
+}
+
+export type UpdateMissingDeveloperCaseBodyStatus =
+  (typeof UpdateMissingDeveloperCaseBodyStatus)[keyof typeof UpdateMissingDeveloperCaseBodyStatus];
+
+export const UpdateMissingDeveloperCaseBodyStatus = {
+  resolved: "resolved",
+  cancelled: "cancelled",
+} as const;
+
+export interface UpdateMissingDeveloperCaseBody {
+  status?: UpdateMissingDeveloperCaseBodyStatus;
+  remarks?: string;
+  resolutionNotes?: string;
 }
 
 export type GovernanceAlertCode =

@@ -840,6 +840,92 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /projects/{id}/missing-developer:
+    get:
+      operationId: getMissingDeveloperCase
+      summary: Get active missing developer case for a project
+      tags: [projects]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Active missing developer case with countdown details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MissingDeveloperCase"
+        "404":
+          description: No active missing developer case
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: fileMissingDeveloperCase
+      summary: File a missing developer report for a project (admin/developer only)
+      tags: [projects]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FileMissingDeveloperCaseBody"
+      responses:
+        "201":
+          description: Case filed, project status changed to missing_developer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MissingDeveloperCase"
+        "409":
+          description: An active case already exists for this project
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateMissingDeveloperCase
+      summary: Update remarks or resolve/cancel a missing developer case (admin only)
+      tags: [projects]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateMissingDeveloperCaseBody"
+      responses:
+        "200":
+          description: Case updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MissingDeveloperCase"
+        "404":
+          description: No active case found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /partners:
     get:
       operationId: listPartners
@@ -1301,7 +1387,7 @@ components:
           type: ["number", "null"]
         status:
           type: string
-          enum: [planning, developing, maturing, tapping, completed, suspended]
+          enum: [planning, developing, maturing, tapping, completed, suspended, missing_developer]
         lifecycleStatus:
           type: string
           enum: [prematurity, mature_production, closed]
@@ -1348,7 +1434,7 @@ components:
           type: number
         status:
           type: string
-          enum: [planning, developing, maturing, tapping, completed, suspended]
+          enum: [planning, developing, maturing, tapping, completed, suspended, missing_developer]
         startDate:
           type: string
         expectedMaturityDate:
@@ -1383,7 +1469,7 @@ components:
           type: number
         status:
           type: string
-          enum: [planning, developing, maturing, tapping, completed, suspended]
+          enum: [planning, developing, maturing, tapping, completed, suspended, missing_developer]
         startDate:
           type: string
         expectedMaturityDate:
@@ -2316,6 +2402,82 @@ components:
           type: string
         isActive:
           type: boolean
+
+    MissingDeveloperCase:
+      type: object
+      required: [id, projectId, status, gdEntryDate, isActive, createdAt, daysElapsed, daysRemaining, nomineeEligibleAt, isNomineeEligible]
+      properties:
+        id:
+          type: string
+          format: uuid
+        projectId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [active, nominee_eligible, resolved, cancelled]
+        reportedBy:
+          type: ["string", "null"]
+          format: uuid
+        reportedByName:
+          type: ["string", "null"]
+        gdNumber:
+          type: ["string", "null"]
+        gdDocumentUrl:
+          type: ["string", "null"]
+        gdEntryDate:
+          type: string
+        remarks:
+          type: ["string", "null"]
+        previousProjectStatus:
+          type: ["string", "null"]
+        resolvedAt:
+          type: ["string", "null"]
+        resolvedBy:
+          type: ["string", "null"]
+          format: uuid
+        resolvedByName:
+          type: ["string", "null"]
+        resolutionNotes:
+          type: ["string", "null"]
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+        updatedAt:
+          type: ["string", "null"]
+        daysElapsed:
+          type: integer
+        daysRemaining:
+          type: integer
+        nomineeEligibleAt:
+          type: string
+        isNomineeEligible:
+          type: boolean
+
+    FileMissingDeveloperCaseBody:
+      type: object
+      required: [gdEntryDate]
+      properties:
+        gdEntryDate:
+          type: string
+        gdNumber:
+          type: string
+        gdDocumentUrl:
+          type: string
+        remarks:
+          type: string
+
+    UpdateMissingDeveloperCaseBody:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [resolved, cancelled]
+        remarks:
+          type: string
+        resolutionNotes:
+          type: string
 
     GovernanceAlert:
       type: object

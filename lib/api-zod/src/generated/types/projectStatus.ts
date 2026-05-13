@@ -15,4 +15,5 @@ export const ProjectStatus = {
   tapping: "tapping",
   completed: "completed",
   suspended: "suspended",
+  missing_developer: "missing_developer",
 } as const;

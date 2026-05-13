@@ -20,6 +20,7 @@ export const projectStatusEnum = pgEnum("project_status", [
   "tapping",
   "completed",
   "suspended",
+  "missing_developer",
 ]);
 
 // ── Notification enums ────────────────────────────────────────────────────

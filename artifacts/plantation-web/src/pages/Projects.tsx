@@ -21,6 +21,7 @@ import { useToast } from "@/hooks/use-toast";
 
 const statusColors: Record<string, string> = {
   planning: "bg-blue-100 text-blue-800 border-blue-200",
+  missing_developer: "bg-orange-100 text-orange-800 border-orange-200",
   developing: "bg-amber-100 text-amber-800 border-amber-200",
   maturing: "bg-emerald-100 text-emerald-800 border-emerald-200",
   tapping: "bg-green-100 text-green-800 border-green-200",

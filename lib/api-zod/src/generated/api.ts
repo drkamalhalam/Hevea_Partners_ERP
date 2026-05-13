@@ -539,6 +539,7 @@ export const ListProjectsResponseItem = zod.object({
     "tapping",
     "completed",
     "suspended",
+    "missing_developer",
   ]),
   lifecycleStatus: zod.enum(["prematurity", "mature_production", "closed"]),
   startDate: zod.string(),
@@ -573,6 +574,7 @@ export const CreateProjectBody = zod.object({
     "tapping",
     "completed",
     "suspended",
+    "missing_developer",
   ]),
   startDate: zod.string(),
   expectedMaturityDate: zod.string().optional(),
@@ -606,6 +608,7 @@ export const GetProjectResponse = zod.object({
     "tapping",
     "completed",
     "suspended",
+    "missing_developer",
   ]),
   lifecycleStatus: zod.enum(["prematurity", "mature_production", "closed"]),
   startDate: zod.string(),
@@ -644,6 +647,7 @@ export const UpdateProjectBody = zod.object({
       "tapping",
       "completed",
       "suspended",
+      "missing_developer",
     ])
     .optional(),
   startDate: zod.string().optional(),
@@ -671,6 +675,7 @@ export const UpdateProjectResponse = zod.object({
     "tapping",
     "completed",
     "suspended",
+    "missing_developer",
   ]),
   lifecycleStatus: zod.enum(["prematurity", "mature_production", "closed"]),
   startDate: zod.string(),
@@ -1125,6 +1130,88 @@ export const GetOwnershipFreezeResponse = zod.object({
   createdAt: zod.string(),
   allowedOperations: zod.array(zod.string()),
   restrictedOperations: zod.array(zod.string()),
+});
+
+/**
+ * @summary Get active missing developer case for a project
+ */
+export const GetMissingDeveloperCaseParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const GetMissingDeveloperCaseResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  status: zod.enum(["active", "nominee_eligible", "resolved", "cancelled"]),
+  reportedBy: zod.string().uuid().nullish(),
+  reportedByName: zod.string().nullish(),
+  gdNumber: zod.string().nullish(),
+  gdDocumentUrl: zod.string().nullish(),
+  gdEntryDate: zod.string(),
+  remarks: zod.string().nullish(),
+  previousProjectStatus: zod.string().nullish(),
+  resolvedAt: zod.string().nullish(),
+  resolvedBy: zod.string().uuid().nullish(),
+  resolvedByName: zod.string().nullish(),
+  resolutionNotes: zod.string().nullish(),
+  isActive: zod.boolean(),
+  createdAt: zod.string(),
+  updatedAt: zod.string().nullish(),
+  daysElapsed: zod.number(),
+  daysRemaining: zod.number(),
+  nomineeEligibleAt: zod.string(),
+  isNomineeEligible: zod.boolean(),
+});
+
+/**
+ * @summary File a missing developer report for a project (admin/developer only)
+ */
+export const FileMissingDeveloperCaseParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const FileMissingDeveloperCaseBody = zod.object({
+  gdEntryDate: zod.string(),
+  gdNumber: zod.string().optional(),
+  gdDocumentUrl: zod.string().optional(),
+  remarks: zod.string().optional(),
+});
+
+/**
+ * @summary Update remarks or resolve/cancel a missing developer case (admin only)
+ */
+export const UpdateMissingDeveloperCaseParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const UpdateMissingDeveloperCaseBody = zod.object({
+  status: zod.enum(["resolved", "cancelled"]).optional(),
+  remarks: zod.string().optional(),
+  resolutionNotes: zod.string().optional(),
+});
+
+export const UpdateMissingDeveloperCaseResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  status: zod.enum(["active", "nominee_eligible", "resolved", "cancelled"]),
+  reportedBy: zod.string().uuid().nullish(),
+  reportedByName: zod.string().nullish(),
+  gdNumber: zod.string().nullish(),
+  gdDocumentUrl: zod.string().nullish(),
+  gdEntryDate: zod.string(),
+  remarks: zod.string().nullish(),
+  previousProjectStatus: zod.string().nullish(),
+  resolvedAt: zod.string().nullish(),
+  resolvedBy: zod.string().uuid().nullish(),
+  resolvedByName: zod.string().nullish(),
+  resolutionNotes: zod.string().nullish(),
+  isActive: zod.boolean(),
+  createdAt: zod.string(),
+  updatedAt: zod.string().nullish(),
+  daysElapsed: zod.number(),
+  daysRemaining: zod.number(),
+  nomineeEligibleAt: zod.string(),
+  isNomineeEligible: zod.boolean(),
 });
 
 /**
@@ -1731,6 +1818,7 @@ export const GetMyPortfolioResponse = zod.object({
         "tapping",
         "completed",
         "suspended",
+        "missing_developer",
       ]),
       lifecycleStatus: zod.enum(["prematurity", "mature_production", "closed"]),
       startDate: zod.string(),

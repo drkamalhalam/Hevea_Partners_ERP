@@ -8,6 +8,7 @@ import ProjectParticipants from "./ProjectParticipants";
 import ProjectNomineeSection from "./ProjectNominee";
 import ProjectLifecycleSection from "./ProjectLifecycleSection";
 import { OwnershipFreezePanel } from "@/components/ownership/OwnershipFreezePanel";
+import MissingDeveloperPanel from "./MissingDeveloperPanel";
 
 const statusColors: Record<string, string> = {
   planning: "bg-blue-100 text-blue-800",
@@ -15,6 +16,7 @@ const statusColors: Record<string, string> = {
   maturing: "bg-emerald-100 text-emerald-800",
   tapping: "bg-green-100 text-green-800",
   completed: "bg-gray-100 text-gray-800",
+  missing_developer: "bg-orange-100 text-orange-800",
 };
 
 export default function ProjectDetails() {
@@ -164,6 +166,8 @@ export default function ProjectDetails() {
           </CardHeader>
         </Card>
       )}
+
+      <MissingDeveloperPanel projectId={id} />
 
       <ProjectParticipants projectId={id} />
 

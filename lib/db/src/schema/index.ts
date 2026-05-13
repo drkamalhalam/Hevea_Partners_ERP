@@ -12,5 +12,6 @@ export * from "./activity";
 export * from "./audit";
 export * from "./lifecycle";
 export * from "./maturity";
+export * from "./missing_developer";
 export * from "./ownership_freeze";
 export * from "./stubs";
