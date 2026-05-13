@@ -3726,6 +3726,211 @@ paths:
         "401": { description: Unauthorized }
         "403": { description: Forbidden }
 
+  /advances/summary:
+    get:
+      tags: [Advances]
+      operationId: getAdvanceSummary
+      summary: Get recoverable advance summary with totals and breakdowns
+      parameters:
+        - in: query
+          name: projectId
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdvanceSummary"
+        "401": { description: Unauthorized }
+
+  /advances:
+    get:
+      tags: [Advances]
+      operationId: listAdvances
+      summary: List recoverable advances with optional filters
+      parameters:
+        - in: query
+          name: projectId
+          schema: { type: string, format: uuid }
+        - in: query
+          name: status
+          schema: { type: string }
+        - in: query
+          name: responsiblePartyRole
+          schema: { type: string }
+        - in: query
+          name: advancedByPartnerId
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RecoverableAdvance"
+        "401": { description: Unauthorized }
+    post:
+      tags: [Advances]
+      operationId: createAdvance
+      summary: Create a recoverable advance record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAdvanceBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecoverableAdvance"
+        "400": { description: Validation error }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+
+  /advances/{id}:
+    get:
+      tags: [Advances]
+      operationId: getAdvance
+      summary: Get single advance with full recovery event history
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecoverableAdvanceDetail"
+        "401": { description: Unauthorized }
+        "404": { description: Not found }
+    patch:
+      tags: [Advances]
+      operationId: updateAdvance
+      summary: Update advance description, notes, or due date
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                description: { type: string }
+                notes: { type: string }
+                dueDate: { type: string }
+                recoveryNotes: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecoverableAdvance"
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+        "404": { description: Not found }
+
+  /advances/{id}/acknowledge:
+    post:
+      tags: [Advances]
+      operationId: acknowledgeAdvance
+      summary: Acknowledge a recoverable advance (responsible party confirms liability)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                notes: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecoverableAdvance"
+        "400": { description: Already acknowledged or closed }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+        "404": { description: Not found }
+
+  /advances/{id}/recover:
+    post:
+      tags: [Advances]
+      operationId: recordAdvanceRecovery
+      summary: Record a recovery payment or share deduction against an advance
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecordAdvanceRecoveryBody"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecoverableAdvance"
+        "400": { description: Validation error or advance already closed }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+        "404": { description: Not found }
+
+  /advances/{id}/write-off:
+    post:
+      tags: [Advances]
+      operationId: writeOffAdvance
+      summary: Write off a recoverable advance (no ownership implication)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                notes: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecoverableAdvance"
+        "400": { description: Advance already closed }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+        "404": { description: Not found }
+
 components:
   schemas:
     HealthStatus:
@@ -6479,3 +6684,159 @@ components:
         description: { type: string }
         notes: { type: string }
         period: { type: string, description: "YYYY-MM accounting period" }
+
+    RecoverableAdvance:
+      type: object
+      required:
+        [
+          id,
+          projectId,
+          advancedByName,
+          advancedByRole,
+          responsiblePartyRole,
+          originalAmount,
+          recoveredAmount,
+          remainingAmount,
+          description,
+          advancedDate,
+          status,
+          isOverdue,
+          createdAt,
+        ]
+      properties:
+        id: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        projectName: { type: string }
+        advancedByPartnerId: { type: string, format: uuid }
+        advancedByName: { type: string }
+        advancedByRole: { type: string }
+        responsiblePartyRole: { type: string }
+        responsiblePartnerId: { type: string, format: uuid }
+        responsiblePartnerName: { type: string }
+        linkedBurdenRecordId: { type: string, format: uuid }
+        linkedExpenditureId: { type: string, format: uuid }
+        originalAmount: { type: number }
+        recoveredAmount: { type: number }
+        remainingAmount: { type: number }
+        description: { type: string }
+        advancedDate: { type: string }
+        dueDate: { type: string }
+        recoveryMethod: { type: string }
+        status: { type: string }
+        notes: { type: string }
+        recoveryNotes: { type: string }
+        acknowledgedAt: { type: string }
+        acknowledgedByName: { type: string }
+        closedAt: { type: string }
+        closedByName: { type: string }
+        isOverdue: { type: boolean }
+        createdByName: { type: string }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+
+    AdvanceRecoveryEvent:
+      type: object
+      required: [id, advanceId, eventType, description, eventDate, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        advanceId: { type: string, format: uuid }
+        eventType: { type: string }
+        amount: { type: number }
+        description: { type: string }
+        eventDate: { type: string }
+        recordedByName: { type: string }
+        createdAt: { type: string }
+
+    RecoverableAdvanceDetail:
+      allOf:
+        - $ref: "#/components/schemas/RecoverableAdvance"
+        - type: object
+          required: [events]
+          properties:
+            events:
+              type: array
+              items:
+                $ref: "#/components/schemas/AdvanceRecoveryEvent"
+
+    AdvanceSummary:
+      type: object
+      required:
+        [
+          totalOutstanding,
+          totalOverdue,
+          totalRecovered,
+          totalWrittenOff,
+          advanceCount,
+          pendingCount,
+          inRecoveryCount,
+          byProject,
+          byPartyRole,
+        ]
+      properties:
+        totalOutstanding: { type: number }
+        totalOverdue: { type: number }
+        totalRecovered: { type: number }
+        totalWrittenOff: { type: number }
+        advanceCount: { type: number }
+        pendingCount: { type: number }
+        inRecoveryCount: { type: number }
+        byProject:
+          type: array
+          items:
+            type: object
+            required: [projectId, projectName, outstanding, overdue, count]
+            properties:
+              projectId: { type: string }
+              projectName: { type: string }
+              outstanding: { type: number }
+              overdue: { type: number }
+              count: { type: number }
+        byPartyRole:
+          type: array
+          items:
+            type: object
+            required: [role, outstanding, count]
+            properties:
+              role: { type: string }
+              outstanding: { type: number }
+              count: { type: number }
+
+    CreateAdvanceBody:
+      type: object
+      required:
+        [
+          projectId,
+          advancedByName,
+          advancedByRole,
+          responsiblePartyRole,
+          originalAmount,
+          description,
+          advancedDate,
+        ]
+      properties:
+        projectId: { type: string, format: uuid }
+        advancedByPartnerId: { type: string, format: uuid }
+        advancedByName: { type: string }
+        advancedByRole: { type: string }
+        responsiblePartyRole: { type: string }
+        responsiblePartnerId: { type: string, format: uuid }
+        responsiblePartnerName: { type: string }
+        linkedBurdenRecordId: { type: string, format: uuid }
+        linkedExpenditureId: { type: string, format: uuid }
+        originalAmount: { type: number, minimum: 0.01 }
+        description: { type: string, minLength: 1 }
+        advancedDate: { type: string }
+        dueDate: { type: string }
+        recoveryMethod: { type: string }
+        notes: { type: string }
+
+    RecordAdvanceRecoveryBody:
+      type: object
+      required: [amount, method]
+      properties:
+        amount: { type: number, minimum: 0.01 }
+        method:
+          type: string
+          enum: [direct_payment, share_deduction, settlement]
+        notes: { type: string }
+        eventDate: { type: string }

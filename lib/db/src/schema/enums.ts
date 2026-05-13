@@ -478,3 +478,22 @@ export const expenditureVerificationEventTypeEnum = pgEnum(
     "cancelled",
   ],
 );
+
+// ── Recoverable advance enums ──────────────────────────────────────────────────
+
+/**
+ * Lifecycle status of a recoverable advance.
+ *
+ *   pending      — advance raised, awaiting acknowledgement
+ *   acknowledged — responsible party has confirmed the liability
+ *   in_recovery  — partial or ongoing repayment in progress
+ *   recovered    — fully repaid
+ *   written_off  — parties agreed to forgo recovery (no ownership implication)
+ */
+export const recoverableAdvanceStatusEnum = pgEnum("recoverable_advance_status", [
+  "pending",
+  "acknowledged",
+  "in_recovery",
+  "recovered",
+  "written_off",
+]);

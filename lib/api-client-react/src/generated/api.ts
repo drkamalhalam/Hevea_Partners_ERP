@@ -17,9 +17,11 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
+  AcknowledgeAdvanceBody,
   AcknowledgeClosureBody,
   ActivityItem,
   AddParticipantInput,
+  AdvanceSummary,
   Agreement,
   AgreementActivation,
   AgreementActivationOtp,
@@ -44,6 +46,7 @@ import type {
   ContributionDisputeSummary,
   ContributionEntry,
   ContributionSummary,
+  CreateAdvanceBody,
   CreateBurdenRecordBody,
   CreateBurdenRuleBody,
   CreateClaimantInput,
@@ -66,6 +69,7 @@ import type {
   FileMissingDeveloperCaseBody,
   GenerateAgreementDocument422,
   GenerateDocumentRequest,
+  GetAdvanceSummaryParams,
   GetBurdenSummaryParams,
   GetContributionSummaryParams,
   GetExpenditureSummaryParams,
@@ -86,6 +90,7 @@ import type {
   InitiateMaturityBody,
   InitiateNomineeActivationBody,
   LandNotionalState,
+  ListAdvancesParams,
   ListBurdenRecords200,
   ListBurdenRecordsParams,
   ListBurdenRules200,
@@ -133,6 +138,9 @@ import type {
   ProjectParticipant,
   ProjectUpdate,
   RaiseContributionDisputeBody,
+  RecordAdvanceRecoveryBody,
+  RecoverableAdvance,
+  RecoverableAdvanceDetail,
   RejectContributionBody,
   RejectExpenditureBody,
   RejectExpenditureVerification200,
@@ -147,6 +155,7 @@ import type {
   SetUserRoleInput,
   StockSummary,
   TransitionLifecycleBody,
+  UpdateAdvanceBody,
   UpdateAgreementVariablesBody,
   UpdateAssignmentInput,
   UpdateBurdenRecordBody,
@@ -170,6 +179,7 @@ import type {
   VerifyNomineeActivationBody,
   VerifyOtpBody,
   WaiveBurdenRecordBody,
+  WriteOffAdvanceBody,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -13720,4 +13730,717 @@ export const useSeedImbalanceLedger = <
   TContext
 > => {
   return useMutation(getSeedImbalanceLedgerMutationOptions(options));
+};
+
+/**
+ * @summary Get recoverable advance summary with totals and breakdowns
+ */
+export const getGetAdvanceSummaryUrl = (params?: GetAdvanceSummaryParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/advances/summary?${stringifiedParams}`
+    : `/api/advances/summary`;
+};
+
+export const getAdvanceSummary = async (
+  params?: GetAdvanceSummaryParams,
+  options?: RequestInit,
+): Promise<AdvanceSummary> => {
+  return customFetch<AdvanceSummary>(getGetAdvanceSummaryUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetAdvanceSummaryQueryKey = (
+  params?: GetAdvanceSummaryParams,
+) => {
+  return [`/api/advances/summary`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetAdvanceSummaryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getAdvanceSummary>>,
+  TError = ErrorType<void>,
+>(
+  params?: GetAdvanceSummaryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getAdvanceSummary>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetAdvanceSummaryQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getAdvanceSummary>>
+  > = ({ signal }) => getAdvanceSummary(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getAdvanceSummary>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetAdvanceSummaryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getAdvanceSummary>>
+>;
+export type GetAdvanceSummaryQueryError = ErrorType<void>;
+
+/**
+ * @summary Get recoverable advance summary with totals and breakdowns
+ */
+
+export function useGetAdvanceSummary<
+  TData = Awaited<ReturnType<typeof getAdvanceSummary>>,
+  TError = ErrorType<void>,
+>(
+  params?: GetAdvanceSummaryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getAdvanceSummary>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetAdvanceSummaryQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List recoverable advances with optional filters
+ */
+export const getListAdvancesUrl = (params?: ListAdvancesParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/advances?${stringifiedParams}`
+    : `/api/advances`;
+};
+
+export const listAdvances = async (
+  params?: ListAdvancesParams,
+  options?: RequestInit,
+): Promise<RecoverableAdvance[]> => {
+  return customFetch<RecoverableAdvance[]>(getListAdvancesUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListAdvancesQueryKey = (params?: ListAdvancesParams) => {
+  return [`/api/advances`, ...(params ? [params] : [])] as const;
+};
+
+export const getListAdvancesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listAdvances>>,
+  TError = ErrorType<void>,
+>(
+  params?: ListAdvancesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listAdvances>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListAdvancesQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listAdvances>>> = ({
+    signal,
+  }) => listAdvances(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listAdvances>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListAdvancesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listAdvances>>
+>;
+export type ListAdvancesQueryError = ErrorType<void>;
+
+/**
+ * @summary List recoverable advances with optional filters
+ */
+
+export function useListAdvances<
+  TData = Awaited<ReturnType<typeof listAdvances>>,
+  TError = ErrorType<void>,
+>(
+  params?: ListAdvancesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listAdvances>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListAdvancesQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a recoverable advance record
+ */
+export const getCreateAdvanceUrl = () => {
+  return `/api/advances`;
+};
+
+export const createAdvance = async (
+  createAdvanceBody: CreateAdvanceBody,
+  options?: RequestInit,
+): Promise<RecoverableAdvance> => {
+  return customFetch<RecoverableAdvance>(getCreateAdvanceUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createAdvanceBody),
+  });
+};
+
+export const getCreateAdvanceMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createAdvance>>,
+    TError,
+    { data: BodyType<CreateAdvanceBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createAdvance>>,
+  TError,
+  { data: BodyType<CreateAdvanceBody> },
+  TContext
+> => {
+  const mutationKey = ["createAdvance"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createAdvance>>,
+    { data: BodyType<CreateAdvanceBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createAdvance(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateAdvanceMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createAdvance>>
+>;
+export type CreateAdvanceMutationBody = BodyType<CreateAdvanceBody>;
+export type CreateAdvanceMutationError = ErrorType<void>;
+
+/**
+ * @summary Create a recoverable advance record
+ */
+export const useCreateAdvance = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createAdvance>>,
+    TError,
+    { data: BodyType<CreateAdvanceBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createAdvance>>,
+  TError,
+  { data: BodyType<CreateAdvanceBody> },
+  TContext
+> => {
+  return useMutation(getCreateAdvanceMutationOptions(options));
+};
+
+/**
+ * @summary Get single advance with full recovery event history
+ */
+export const getGetAdvanceUrl = (id: string) => {
+  return `/api/advances/${id}`;
+};
+
+export const getAdvance = async (
+  id: string,
+  options?: RequestInit,
+): Promise<RecoverableAdvanceDetail> => {
+  return customFetch<RecoverableAdvanceDetail>(getGetAdvanceUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetAdvanceQueryKey = (id: string) => {
+  return [`/api/advances/${id}`] as const;
+};
+
+export const getGetAdvanceQueryOptions = <
+  TData = Awaited<ReturnType<typeof getAdvance>>,
+  TError = ErrorType<void>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getAdvance>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetAdvanceQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdvance>>> = ({
+    signal,
+  }) => getAdvance(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getAdvance>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetAdvanceQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getAdvance>>
+>;
+export type GetAdvanceQueryError = ErrorType<void>;
+
+/**
+ * @summary Get single advance with full recovery event history
+ */
+
+export function useGetAdvance<
+  TData = Awaited<ReturnType<typeof getAdvance>>,
+  TError = ErrorType<void>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getAdvance>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetAdvanceQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Update advance description, notes, or due date
+ */
+export const getUpdateAdvanceUrl = (id: string) => {
+  return `/api/advances/${id}`;
+};
+
+export const updateAdvance = async (
+  id: string,
+  updateAdvanceBody: UpdateAdvanceBody,
+  options?: RequestInit,
+): Promise<RecoverableAdvance> => {
+  return customFetch<RecoverableAdvance>(getUpdateAdvanceUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateAdvanceBody),
+  });
+};
+
+export const getUpdateAdvanceMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateAdvance>>,
+    TError,
+    { id: string; data: BodyType<UpdateAdvanceBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateAdvance>>,
+  TError,
+  { id: string; data: BodyType<UpdateAdvanceBody> },
+  TContext
+> => {
+  const mutationKey = ["updateAdvance"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateAdvance>>,
+    { id: string; data: BodyType<UpdateAdvanceBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateAdvance(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateAdvanceMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateAdvance>>
+>;
+export type UpdateAdvanceMutationBody = BodyType<UpdateAdvanceBody>;
+export type UpdateAdvanceMutationError = ErrorType<void>;
+
+/**
+ * @summary Update advance description, notes, or due date
+ */
+export const useUpdateAdvance = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateAdvance>>,
+    TError,
+    { id: string; data: BodyType<UpdateAdvanceBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateAdvance>>,
+  TError,
+  { id: string; data: BodyType<UpdateAdvanceBody> },
+  TContext
+> => {
+  return useMutation(getUpdateAdvanceMutationOptions(options));
+};
+
+/**
+ * @summary Acknowledge a recoverable advance (responsible party confirms liability)
+ */
+export const getAcknowledgeAdvanceUrl = (id: string) => {
+  return `/api/advances/${id}/acknowledge`;
+};
+
+export const acknowledgeAdvance = async (
+  id: string,
+  acknowledgeAdvanceBody?: AcknowledgeAdvanceBody,
+  options?: RequestInit,
+): Promise<RecoverableAdvance> => {
+  return customFetch<RecoverableAdvance>(getAcknowledgeAdvanceUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(acknowledgeAdvanceBody),
+  });
+};
+
+export const getAcknowledgeAdvanceMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof acknowledgeAdvance>>,
+    TError,
+    { id: string; data: BodyType<AcknowledgeAdvanceBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof acknowledgeAdvance>>,
+  TError,
+  { id: string; data: BodyType<AcknowledgeAdvanceBody> },
+  TContext
+> => {
+  const mutationKey = ["acknowledgeAdvance"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof acknowledgeAdvance>>,
+    { id: string; data: BodyType<AcknowledgeAdvanceBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return acknowledgeAdvance(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AcknowledgeAdvanceMutationResult = NonNullable<
+  Awaited<ReturnType<typeof acknowledgeAdvance>>
+>;
+export type AcknowledgeAdvanceMutationBody = BodyType<AcknowledgeAdvanceBody>;
+export type AcknowledgeAdvanceMutationError = ErrorType<void>;
+
+/**
+ * @summary Acknowledge a recoverable advance (responsible party confirms liability)
+ */
+export const useAcknowledgeAdvance = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof acknowledgeAdvance>>,
+    TError,
+    { id: string; data: BodyType<AcknowledgeAdvanceBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof acknowledgeAdvance>>,
+  TError,
+  { id: string; data: BodyType<AcknowledgeAdvanceBody> },
+  TContext
+> => {
+  return useMutation(getAcknowledgeAdvanceMutationOptions(options));
+};
+
+/**
+ * @summary Record a recovery payment or share deduction against an advance
+ */
+export const getRecordAdvanceRecoveryUrl = (id: string) => {
+  return `/api/advances/${id}/recover`;
+};
+
+export const recordAdvanceRecovery = async (
+  id: string,
+  recordAdvanceRecoveryBody: RecordAdvanceRecoveryBody,
+  options?: RequestInit,
+): Promise<RecoverableAdvance> => {
+  return customFetch<RecoverableAdvance>(getRecordAdvanceRecoveryUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(recordAdvanceRecoveryBody),
+  });
+};
+
+export const getRecordAdvanceRecoveryMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof recordAdvanceRecovery>>,
+    TError,
+    { id: string; data: BodyType<RecordAdvanceRecoveryBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof recordAdvanceRecovery>>,
+  TError,
+  { id: string; data: BodyType<RecordAdvanceRecoveryBody> },
+  TContext
+> => {
+  const mutationKey = ["recordAdvanceRecovery"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof recordAdvanceRecovery>>,
+    { id: string; data: BodyType<RecordAdvanceRecoveryBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return recordAdvanceRecovery(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RecordAdvanceRecoveryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof recordAdvanceRecovery>>
+>;
+export type RecordAdvanceRecoveryMutationBody =
+  BodyType<RecordAdvanceRecoveryBody>;
+export type RecordAdvanceRecoveryMutationError = ErrorType<void>;
+
+/**
+ * @summary Record a recovery payment or share deduction against an advance
+ */
+export const useRecordAdvanceRecovery = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof recordAdvanceRecovery>>,
+    TError,
+    { id: string; data: BodyType<RecordAdvanceRecoveryBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof recordAdvanceRecovery>>,
+  TError,
+  { id: string; data: BodyType<RecordAdvanceRecoveryBody> },
+  TContext
+> => {
+  return useMutation(getRecordAdvanceRecoveryMutationOptions(options));
+};
+
+/**
+ * @summary Write off a recoverable advance (no ownership implication)
+ */
+export const getWriteOffAdvanceUrl = (id: string) => {
+  return `/api/advances/${id}/write-off`;
+};
+
+export const writeOffAdvance = async (
+  id: string,
+  writeOffAdvanceBody?: WriteOffAdvanceBody,
+  options?: RequestInit,
+): Promise<RecoverableAdvance> => {
+  return customFetch<RecoverableAdvance>(getWriteOffAdvanceUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(writeOffAdvanceBody),
+  });
+};
+
+export const getWriteOffAdvanceMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof writeOffAdvance>>,
+    TError,
+    { id: string; data: BodyType<WriteOffAdvanceBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof writeOffAdvance>>,
+  TError,
+  { id: string; data: BodyType<WriteOffAdvanceBody> },
+  TContext
+> => {
+  const mutationKey = ["writeOffAdvance"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof writeOffAdvance>>,
+    { id: string; data: BodyType<WriteOffAdvanceBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return writeOffAdvance(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type WriteOffAdvanceMutationResult = NonNullable<
+  Awaited<ReturnType<typeof writeOffAdvance>>
+>;
+export type WriteOffAdvanceMutationBody = BodyType<WriteOffAdvanceBody>;
+export type WriteOffAdvanceMutationError = ErrorType<void>;
+
+/**
+ * @summary Write off a recoverable advance (no ownership implication)
+ */
+export const useWriteOffAdvance = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof writeOffAdvance>>,
+    TError,
+    { id: string; data: BodyType<WriteOffAdvanceBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof writeOffAdvance>>,
+  TError,
+  { id: string; data: BodyType<WriteOffAdvanceBody> },
+  TContext
+> => {
+  return useMutation(getWriteOffAdvanceMutationOptions(options));
 };

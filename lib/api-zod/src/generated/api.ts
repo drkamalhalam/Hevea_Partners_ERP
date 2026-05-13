@@ -5705,3 +5705,338 @@ export const SeedImbalanceLedgerResponse = zod.object({
   skipped: zod.number(),
   message: zod.string(),
 });
+
+/**
+ * @summary Get recoverable advance summary with totals and breakdowns
+ */
+export const GetAdvanceSummaryQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+});
+
+export const GetAdvanceSummaryResponse = zod.object({
+  totalOutstanding: zod.number(),
+  totalOverdue: zod.number(),
+  totalRecovered: zod.number(),
+  totalWrittenOff: zod.number(),
+  advanceCount: zod.number(),
+  pendingCount: zod.number(),
+  inRecoveryCount: zod.number(),
+  byProject: zod.array(
+    zod.object({
+      projectId: zod.string(),
+      projectName: zod.string(),
+      outstanding: zod.number(),
+      overdue: zod.number(),
+      count: zod.number(),
+    }),
+  ),
+  byPartyRole: zod.array(
+    zod.object({
+      role: zod.string(),
+      outstanding: zod.number(),
+      count: zod.number(),
+    }),
+  ),
+});
+
+/**
+ * @summary List recoverable advances with optional filters
+ */
+export const ListAdvancesQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+  status: zod.coerce.string().optional(),
+  responsiblePartyRole: zod.coerce.string().optional(),
+  advancedByPartnerId: zod.coerce.string().uuid().optional(),
+});
+
+export const ListAdvancesResponseItem = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  projectName: zod.string().optional(),
+  advancedByPartnerId: zod.string().uuid().optional(),
+  advancedByName: zod.string(),
+  advancedByRole: zod.string(),
+  responsiblePartyRole: zod.string(),
+  responsiblePartnerId: zod.string().uuid().optional(),
+  responsiblePartnerName: zod.string().optional(),
+  linkedBurdenRecordId: zod.string().uuid().optional(),
+  linkedExpenditureId: zod.string().uuid().optional(),
+  originalAmount: zod.number(),
+  recoveredAmount: zod.number(),
+  remainingAmount: zod.number(),
+  description: zod.string(),
+  advancedDate: zod.string(),
+  dueDate: zod.string().optional(),
+  recoveryMethod: zod.string().optional(),
+  status: zod.string(),
+  notes: zod.string().optional(),
+  recoveryNotes: zod.string().optional(),
+  acknowledgedAt: zod.string().optional(),
+  acknowledgedByName: zod.string().optional(),
+  closedAt: zod.string().optional(),
+  closedByName: zod.string().optional(),
+  isOverdue: zod.boolean(),
+  createdByName: zod.string().optional(),
+  createdAt: zod.string(),
+  updatedAt: zod.string().optional(),
+});
+export const ListAdvancesResponse = zod.array(ListAdvancesResponseItem);
+
+/**
+ * @summary Create a recoverable advance record
+ */
+export const createAdvanceBodyOriginalAmountMin = 0.01;
+
+export const CreateAdvanceBody = zod.object({
+  projectId: zod.string().uuid(),
+  advancedByPartnerId: zod.string().uuid().optional(),
+  advancedByName: zod.string(),
+  advancedByRole: zod.string(),
+  responsiblePartyRole: zod.string(),
+  responsiblePartnerId: zod.string().uuid().optional(),
+  responsiblePartnerName: zod.string().optional(),
+  linkedBurdenRecordId: zod.string().uuid().optional(),
+  linkedExpenditureId: zod.string().uuid().optional(),
+  originalAmount: zod.number().min(createAdvanceBodyOriginalAmountMin),
+  description: zod.string().min(1),
+  advancedDate: zod.string(),
+  dueDate: zod.string().optional(),
+  recoveryMethod: zod.string().optional(),
+  notes: zod.string().optional(),
+});
+
+/**
+ * @summary Get single advance with full recovery event history
+ */
+export const GetAdvanceParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const GetAdvanceResponse = zod
+  .object({
+    id: zod.string().uuid(),
+    projectId: zod.string().uuid(),
+    projectName: zod.string().optional(),
+    advancedByPartnerId: zod.string().uuid().optional(),
+    advancedByName: zod.string(),
+    advancedByRole: zod.string(),
+    responsiblePartyRole: zod.string(),
+    responsiblePartnerId: zod.string().uuid().optional(),
+    responsiblePartnerName: zod.string().optional(),
+    linkedBurdenRecordId: zod.string().uuid().optional(),
+    linkedExpenditureId: zod.string().uuid().optional(),
+    originalAmount: zod.number(),
+    recoveredAmount: zod.number(),
+    remainingAmount: zod.number(),
+    description: zod.string(),
+    advancedDate: zod.string(),
+    dueDate: zod.string().optional(),
+    recoveryMethod: zod.string().optional(),
+    status: zod.string(),
+    notes: zod.string().optional(),
+    recoveryNotes: zod.string().optional(),
+    acknowledgedAt: zod.string().optional(),
+    acknowledgedByName: zod.string().optional(),
+    closedAt: zod.string().optional(),
+    closedByName: zod.string().optional(),
+    isOverdue: zod.boolean(),
+    createdByName: zod.string().optional(),
+    createdAt: zod.string(),
+    updatedAt: zod.string().optional(),
+  })
+  .and(
+    zod.object({
+      events: zod.array(
+        zod.object({
+          id: zod.string().uuid(),
+          advanceId: zod.string().uuid(),
+          eventType: zod.string(),
+          amount: zod.number().optional(),
+          description: zod.string(),
+          eventDate: zod.string(),
+          recordedByName: zod.string().optional(),
+          createdAt: zod.string(),
+        }),
+      ),
+    }),
+  );
+
+/**
+ * @summary Update advance description, notes, or due date
+ */
+export const UpdateAdvanceParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const UpdateAdvanceBody = zod.object({
+  description: zod.string().optional(),
+  notes: zod.string().optional(),
+  dueDate: zod.string().optional(),
+  recoveryNotes: zod.string().optional(),
+});
+
+export const UpdateAdvanceResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  projectName: zod.string().optional(),
+  advancedByPartnerId: zod.string().uuid().optional(),
+  advancedByName: zod.string(),
+  advancedByRole: zod.string(),
+  responsiblePartyRole: zod.string(),
+  responsiblePartnerId: zod.string().uuid().optional(),
+  responsiblePartnerName: zod.string().optional(),
+  linkedBurdenRecordId: zod.string().uuid().optional(),
+  linkedExpenditureId: zod.string().uuid().optional(),
+  originalAmount: zod.number(),
+  recoveredAmount: zod.number(),
+  remainingAmount: zod.number(),
+  description: zod.string(),
+  advancedDate: zod.string(),
+  dueDate: zod.string().optional(),
+  recoveryMethod: zod.string().optional(),
+  status: zod.string(),
+  notes: zod.string().optional(),
+  recoveryNotes: zod.string().optional(),
+  acknowledgedAt: zod.string().optional(),
+  acknowledgedByName: zod.string().optional(),
+  closedAt: zod.string().optional(),
+  closedByName: zod.string().optional(),
+  isOverdue: zod.boolean(),
+  createdByName: zod.string().optional(),
+  createdAt: zod.string(),
+  updatedAt: zod.string().optional(),
+});
+
+/**
+ * @summary Acknowledge a recoverable advance (responsible party confirms liability)
+ */
+export const AcknowledgeAdvanceParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const AcknowledgeAdvanceBody = zod.object({
+  notes: zod.string().optional(),
+});
+
+export const AcknowledgeAdvanceResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  projectName: zod.string().optional(),
+  advancedByPartnerId: zod.string().uuid().optional(),
+  advancedByName: zod.string(),
+  advancedByRole: zod.string(),
+  responsiblePartyRole: zod.string(),
+  responsiblePartnerId: zod.string().uuid().optional(),
+  responsiblePartnerName: zod.string().optional(),
+  linkedBurdenRecordId: zod.string().uuid().optional(),
+  linkedExpenditureId: zod.string().uuid().optional(),
+  originalAmount: zod.number(),
+  recoveredAmount: zod.number(),
+  remainingAmount: zod.number(),
+  description: zod.string(),
+  advancedDate: zod.string(),
+  dueDate: zod.string().optional(),
+  recoveryMethod: zod.string().optional(),
+  status: zod.string(),
+  notes: zod.string().optional(),
+  recoveryNotes: zod.string().optional(),
+  acknowledgedAt: zod.string().optional(),
+  acknowledgedByName: zod.string().optional(),
+  closedAt: zod.string().optional(),
+  closedByName: zod.string().optional(),
+  isOverdue: zod.boolean(),
+  createdByName: zod.string().optional(),
+  createdAt: zod.string(),
+  updatedAt: zod.string().optional(),
+});
+
+/**
+ * @summary Record a recovery payment or share deduction against an advance
+ */
+export const RecordAdvanceRecoveryParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const recordAdvanceRecoveryBodyAmountMin = 0.01;
+
+export const RecordAdvanceRecoveryBody = zod.object({
+  amount: zod.number().min(recordAdvanceRecoveryBodyAmountMin),
+  method: zod.enum(["direct_payment", "share_deduction", "settlement"]),
+  notes: zod.string().optional(),
+  eventDate: zod.string().optional(),
+});
+
+export const RecordAdvanceRecoveryResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  projectName: zod.string().optional(),
+  advancedByPartnerId: zod.string().uuid().optional(),
+  advancedByName: zod.string(),
+  advancedByRole: zod.string(),
+  responsiblePartyRole: zod.string(),
+  responsiblePartnerId: zod.string().uuid().optional(),
+  responsiblePartnerName: zod.string().optional(),
+  linkedBurdenRecordId: zod.string().uuid().optional(),
+  linkedExpenditureId: zod.string().uuid().optional(),
+  originalAmount: zod.number(),
+  recoveredAmount: zod.number(),
+  remainingAmount: zod.number(),
+  description: zod.string(),
+  advancedDate: zod.string(),
+  dueDate: zod.string().optional(),
+  recoveryMethod: zod.string().optional(),
+  status: zod.string(),
+  notes: zod.string().optional(),
+  recoveryNotes: zod.string().optional(),
+  acknowledgedAt: zod.string().optional(),
+  acknowledgedByName: zod.string().optional(),
+  closedAt: zod.string().optional(),
+  closedByName: zod.string().optional(),
+  isOverdue: zod.boolean(),
+  createdByName: zod.string().optional(),
+  createdAt: zod.string(),
+  updatedAt: zod.string().optional(),
+});
+
+/**
+ * @summary Write off a recoverable advance (no ownership implication)
+ */
+export const WriteOffAdvanceParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const WriteOffAdvanceBody = zod.object({
+  notes: zod.string().optional(),
+});
+
+export const WriteOffAdvanceResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  projectName: zod.string().optional(),
+  advancedByPartnerId: zod.string().uuid().optional(),
+  advancedByName: zod.string(),
+  advancedByRole: zod.string(),
+  responsiblePartyRole: zod.string(),
+  responsiblePartnerId: zod.string().uuid().optional(),
+  responsiblePartnerName: zod.string().optional(),
+  linkedBurdenRecordId: zod.string().uuid().optional(),
+  linkedExpenditureId: zod.string().uuid().optional(),
+  originalAmount: zod.number(),
+  recoveredAmount: zod.number(),
+  remainingAmount: zod.number(),
+  description: zod.string(),
+  advancedDate: zod.string(),
+  dueDate: zod.string().optional(),
+  recoveryMethod: zod.string().optional(),
+  status: zod.string(),
+  notes: zod.string().optional(),
+  recoveryNotes: zod.string().optional(),
+  acknowledgedAt: zod.string().optional(),
+  acknowledgedByName: zod.string().optional(),
+  closedAt: zod.string().optional(),
+  closedByName: zod.string().optional(),
+  isOverdue: zod.boolean(),
+  createdByName: zod.string().optional(),
+  createdAt: zod.string(),
+  updatedAt: zod.string().optional(),
+});

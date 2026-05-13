@@ -2504,6 +2504,116 @@ export interface CreateImbalanceEntryBody {
   period?: string;
 }
 
+export interface RecoverableAdvance {
+  id: string;
+  projectId: string;
+  projectName?: string;
+  advancedByPartnerId?: string;
+  advancedByName: string;
+  advancedByRole: string;
+  responsiblePartyRole: string;
+  responsiblePartnerId?: string;
+  responsiblePartnerName?: string;
+  linkedBurdenRecordId?: string;
+  linkedExpenditureId?: string;
+  originalAmount: number;
+  recoveredAmount: number;
+  remainingAmount: number;
+  description: string;
+  advancedDate: string;
+  dueDate?: string;
+  recoveryMethod?: string;
+  status: string;
+  notes?: string;
+  recoveryNotes?: string;
+  acknowledgedAt?: string;
+  acknowledgedByName?: string;
+  closedAt?: string;
+  closedByName?: string;
+  isOverdue: boolean;
+  createdByName?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface AdvanceRecoveryEvent {
+  id: string;
+  advanceId: string;
+  eventType: string;
+  amount?: number;
+  description: string;
+  eventDate: string;
+  recordedByName?: string;
+  createdAt: string;
+}
+
+export type RecoverableAdvanceDetail = RecoverableAdvance & {
+  events: AdvanceRecoveryEvent[];
+};
+
+export type AdvanceSummaryByProjectItem = {
+  projectId: string;
+  projectName: string;
+  outstanding: number;
+  overdue: number;
+  count: number;
+};
+
+export type AdvanceSummaryByPartyRoleItem = {
+  role: string;
+  outstanding: number;
+  count: number;
+};
+
+export interface AdvanceSummary {
+  totalOutstanding: number;
+  totalOverdue: number;
+  totalRecovered: number;
+  totalWrittenOff: number;
+  advanceCount: number;
+  pendingCount: number;
+  inRecoveryCount: number;
+  byProject: AdvanceSummaryByProjectItem[];
+  byPartyRole: AdvanceSummaryByPartyRoleItem[];
+}
+
+export interface CreateAdvanceBody {
+  projectId: string;
+  advancedByPartnerId?: string;
+  advancedByName: string;
+  advancedByRole: string;
+  responsiblePartyRole: string;
+  responsiblePartnerId?: string;
+  responsiblePartnerName?: string;
+  linkedBurdenRecordId?: string;
+  linkedExpenditureId?: string;
+  /** @minimum 0.01 */
+  originalAmount: number;
+  /** @minLength 1 */
+  description: string;
+  advancedDate: string;
+  dueDate?: string;
+  recoveryMethod?: string;
+  notes?: string;
+}
+
+export type RecordAdvanceRecoveryBodyMethod =
+  (typeof RecordAdvanceRecoveryBodyMethod)[keyof typeof RecordAdvanceRecoveryBodyMethod];
+
+export const RecordAdvanceRecoveryBodyMethod = {
+  direct_payment: "direct_payment",
+  share_deduction: "share_deduction",
+  settlement: "settlement",
+} as const;
+
+export interface RecordAdvanceRecoveryBody {
+  /** @minimum 0.01 */
+  amount: number;
+  method: RecordAdvanceRecoveryBodyMethod;
+  notes?: string;
+  eventDate?: string;
+}
+
 export type GetUserActivityParams = {
   limit?: number;
 };
@@ -2839,4 +2949,30 @@ export type SeedImbalanceLedger200 = {
   seeded: number;
   skipped: number;
   message: string;
+};
+
+export type GetAdvanceSummaryParams = {
+  projectId?: string;
+};
+
+export type ListAdvancesParams = {
+  projectId?: string;
+  status?: string;
+  responsiblePartyRole?: string;
+  advancedByPartnerId?: string;
+};
+
+export type UpdateAdvanceBody = {
+  description?: string;
+  notes?: string;
+  dueDate?: string;
+  recoveryNotes?: string;
+};
+
+export type AcknowledgeAdvanceBody = {
+  notes?: string;
+};
+
+export type WriteOffAdvanceBody = {
+  notes?: string;
 };

@@ -151,6 +151,12 @@ const navGroups: NavGroup[] = [
         icon: ArrowLeftRight,
         roles: ["admin", "developer"],
       },
+      {
+        name: "Recoverable Advances",
+        href: "/advances",
+        icon: HandCoins,
+        roles: ["admin", "developer"],
+      },
     ],
   },
   {
