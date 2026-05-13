@@ -1,4 +1,4 @@
-import { createContext, useContext, ReactNode, useEffect, useRef } from "react";
+import { createContext, useContext, ReactNode, useEffect, useRef, useState } from "react";
 import { useUser } from "@clerk/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useGetMe, useUpsertMe, getGetMeQueryKey } from "@workspace/api-client-react";
@@ -29,6 +29,45 @@ export const ROLE_COLORS: Record<UserRole, string> = {
   operational_staff: "bg-green-100 text-green-800",
 };
 
+const VALID_ROLES: ReadonlySet<string> = new Set([
+  "admin",
+  "developer",
+  "landowner",
+  "investor",
+  "employee",
+  "operational_staff",
+]);
+
+function roleStorageKey(userId: string) {
+  return `hevea_role_${userId}`;
+}
+
+function readCachedRole(userId: string | undefined): UserRole | null {
+  if (!userId) return null;
+  try {
+    const stored = localStorage.getItem(roleStorageKey(userId));
+    return stored && VALID_ROLES.has(stored) ? (stored as UserRole) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeCachedRole(userId: string, role: UserRole) {
+  try {
+    localStorage.setItem(roleStorageKey(userId), role);
+  } catch {
+    // localStorage unavailable — no-op
+  }
+}
+
+function clearCachedRole(userId: string) {
+  try {
+    localStorage.removeItem(roleStorageKey(userId));
+  } catch {
+    // no-op
+  }
+}
+
 interface RoleContextValue {
   role: UserRole;
   assignedProjectIds: string[];
@@ -56,16 +95,48 @@ export function RoleProvider({ children }: { children: ReactNode }) {
     query: { enabled: !!user, queryKey: getGetMeQueryKey() },
   });
   const upsertMe = useUpsertMe();
+
   // Track which Clerk userId we have already synced so the upsert fires once
-  // per distinct user, not once per component lifetime.  A plain boolean ref
-  // would get stuck as `true` if the user signs out and back in (or switches
-  // accounts) without unmounting this provider.
+  // per distinct user, not once per component lifetime.
   const upsertedForUserRef = useRef<string | null>(null);
+
+  // Seed the initial role from localStorage so the correct role is shown
+  // immediately on page load — before GET /me completes — and to survive
+  // brief 401 windows (session token refresh, server restart, etc.).
+  const [localRole, setLocalRole] = useState<UserRole | null>(() =>
+    readCachedRole(user?.id),
+  );
+
+  // When the Clerk userId changes (sign-in / sign-out / account switch),
+  // reload the cached role for the new user.
+  const prevUserIdRef = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    if (!isLoaded) return;
+    const uid = user?.id;
+    if (uid === prevUserIdRef.current) return;
+    prevUserIdRef.current = uid;
+
+    if (uid) {
+      setLocalRole(readCachedRole(uid));
+    } else {
+      // User signed out — clear the local role so the next sign-in is clean.
+      setLocalRole(null);
+    }
+  }, [user?.id, isLoaded]);
+
+  // When the server profile loads successfully, persist the authoritative role
+  // to localStorage and update local state.
+  useEffect(() => {
+    if (!profile?.role || !user?.id) return;
+    const serverRole = profile.role as UserRole;
+    writeCachedRole(user.id, serverRole);
+    setLocalRole(serverRole);
+  }, [profile?.role, user?.id]);
 
   // Sync the user record on first load of each authenticated session.
   // Handles three cases:
   //   1. Brand new user  — creates their DB record (role defaults to "employee"
-  //      via DB default; we never send role from the client so it is never
+  //      via DB default; we never send role from the client so it can never be
   //      accidentally overwritten here)
   //   2. Existing user whose Clerk ID changed — email-linking in PUT /me
   //      re-links the pre-created record while preserving their stored role
@@ -91,7 +162,11 @@ export function RoleProvider({ children }: { children: ReactNode }) {
     );
   }, [user, isLoaded]);
 
-  const role = (profile?.role ?? "employee") as UserRole;
+  // Resolution order:
+  //   1. Live server data (profile.role) — always authoritative when present
+  //   2. localStorage cache — survives page reloads and brief auth hiccups
+  //   3. "employee" — safe default for brand-new or unauthenticated users
+  const role = ((profile?.role ?? localRole) ?? "employee") as UserRole;
   const assignedProjectIds = profile?.assignedProjectIds ?? [];
   const isAdmin = role === "admin";
   const isDeveloper = role === "developer";
