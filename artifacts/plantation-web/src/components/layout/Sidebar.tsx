@@ -183,6 +183,12 @@ const navGroups: NavGroup[] = [
         roles: ["admin", "developer", "landowner"],
       },
       {
+        name: "LCA Governance",
+        href: "/lca/governance",
+        icon: ShieldAlert,
+        roles: ["admin", "developer"],
+      },
+      {
         name: "Landowner Account",
         href: "/landowner-account",
         icon: Landmark,

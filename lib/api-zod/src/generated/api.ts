@@ -6896,6 +6896,65 @@ export const RecordBurdenRecoveryEventBody = zod.object({
 });
 
 /**
+ * @summary LCA governance audit — alerts, eligibility check, task center
+ */
+export const GetLcaGovernanceSummaryQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+});
+
+export const GetLcaGovernanceSummaryResponse = zod.object({
+  stats: zod.object({
+    eligibleProjectCount: zod.number(),
+    configuredCount: zod.number(),
+    missingConfigCount: zod.number(),
+    noLedgerCount: zod.number(),
+    overdueCount: zod.number(),
+    currentYearPendingCount: zod.number(),
+    carryForwardCount: zod.number(),
+    mismatchCount: zod.number(),
+    totalOutstanding: zod.number(),
+    totalCarryForward: zod.number(),
+  }),
+  eligibleProjects: zod.array(
+    zod.object({
+      projectId: zod.string().uuid(),
+      projectName: zod.string(),
+      lifecycleStatus: zod.string(),
+      hasActiveConfig: zod.boolean(),
+      configId: zod.string().uuid().optional(),
+      ledgerEntryCount: zod.number(),
+      pendingCount: zod.number(),
+      overdueCount: zod.number(),
+      totalBalance: zod.number(),
+      totalCarryForward: zod.number(),
+    }),
+  ),
+  alerts: zod.array(
+    zod.object({
+      id: zod.string(),
+      alertType: zod.enum([
+        "missing_config",
+        "overdue_payment",
+        "pending_payment",
+        "carry_forward",
+        "no_ledger_entries",
+        "lifecycle_mismatch",
+        "revenue_model_mismatch",
+      ]),
+      severity: zod.enum(["critical", "high", "medium", "low"]),
+      projectId: zod.string().uuid(),
+      projectName: zod.string(),
+      configId: zod.string().uuid().optional(),
+      ledgerEntryId: zod.string().uuid().optional(),
+      year: zod.number().optional(),
+      amount: zod.number().optional(),
+      message: zod.string(),
+      suggestedAction: zod.string(),
+    }),
+  ),
+});
+
+/**
  * @summary Landowner profitability and operational sustainability analytics
  */
 export const GetLandownerProfitabilityAnalyticsQueryParams = zod.object({

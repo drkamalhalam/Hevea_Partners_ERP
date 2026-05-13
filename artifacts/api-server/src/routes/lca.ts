@@ -1084,6 +1084,314 @@ router.get("/full-ledger", async (req, res) => {
   });
 });
 
+// ── GET /lca/governance ───────────────────────────────────────────────────────
+// LCA governance audit: eligible projects, alert generation, and task center.
+// Eligibility: mature_production lifecycle + active contribution-model agreement.
+
+router.get("/governance", async (req, res) => {
+  const { userId: clerkUserId } = getAuth(req);
+  if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
+
+  const actor = await resolveActor(clerkUserId);
+  if (!actor) return res.status(401).json({ error: "User not found" });
+
+  const filterProjectId = req.query.projectId as string | undefined;
+
+  let allowedProjectIds: string[] | null = null;
+  if (!canAccessAllProjects(actor.role)) {
+    allowedProjectIds = await getAssignedProjectIds(actor.id);
+  }
+
+  const currentYear = new Date().getFullYear();
+
+  // Step 1 — all active projects (access-filtered)
+  const allProjects = await db
+    .select()
+    .from(projectsTable)
+    .where(and(isNull(projectsTable.deletedAt), eq(projectsTable.isActive, true)));
+
+  const accessibleProjects = allProjects.filter((p) => {
+    if (filterProjectId && p.id !== filterProjectId) return false;
+    if (allowedProjectIds !== null && !allowedProjectIds.includes(p.id)) return false;
+    return true;
+  });
+
+  const accessibleProjectIds = accessibleProjects.map((p) => p.id);
+
+  // Step 2 — all agreements for accessible projects (not deleted)
+  const agreements = accessibleProjectIds.length > 0
+    ? await db
+        .select()
+        .from(agreementsTable)
+        .where(
+          and(
+            inArray(agreementsTable.projectId, accessibleProjectIds),
+            isNull(agreementsTable.deletedAt),
+          ),
+        )
+    : [];
+
+  // Step 3 — eligible: mature_production + has a contribution-model agreement
+  const contributionProjectIds = new Set(
+    agreements.filter((a) => a.revenueModel === "contribution").map((a) => a.projectId),
+  );
+
+  const eligibleProjects = accessibleProjects.filter(
+    (p) => p.lifecycleStatus === "mature_production" && contributionProjectIds.has(p.id),
+  );
+  const eligibleProjectIds = eligibleProjects.map((p) => p.id);
+
+  // Step 4 — all active LCA configs for accessible projects
+  const allConfigs = accessibleProjectIds.length > 0
+    ? await db
+        .select()
+        .from(lcaConfigsTable)
+        .where(
+          and(
+            inArray(lcaConfigsTable.projectId, accessibleProjectIds),
+            eq(lcaConfigsTable.isActive, true),
+          ),
+        )
+    : [];
+
+  // Step 5 — all active ledger entries for those configs
+  const configIds = allConfigs.map((c) => c.id);
+  const allEntries = configIds.length > 0
+    ? await db
+        .select()
+        .from(lcaLedgerTable)
+        .where(
+          and(
+            inArray(lcaLedgerTable.configId, configIds),
+            eq(lcaLedgerTable.isActive, true),
+          ),
+        )
+    : [];
+
+  // Index helpers
+  const projectMap = new Map(accessibleProjects.map((p) => [p.id, p]));
+  const configByProjectId = new Map<string, typeof lcaConfigsTable.$inferSelect>();
+  for (const c of allConfigs) configByProjectId.set(c.projectId, c);
+
+  const entriesByConfigId = new Map<string, (typeof lcaLedgerTable.$inferSelect)[]>();
+  for (const e of allEntries) {
+    const list = entriesByConfigId.get(e.configId) ?? [];
+    list.push(e);
+    entriesByConfigId.set(e.configId, list);
+  }
+
+  // Step 6 — generate alerts
+  const alerts: Array<{
+    id: string;
+    alertType: string;
+    severity: string;
+    projectId: string;
+    projectName: string;
+    configId?: string;
+    ledgerEntryId?: string;
+    year?: number;
+    amount?: number;
+    message: string;
+    suggestedAction: string;
+  }> = [];
+  let seq = 0;
+
+  // Missing config on eligible project
+  for (const p of eligibleProjects) {
+    if (!configByProjectId.has(p.id)) {
+      alerts.push({
+        id: `alert-${++seq}`,
+        alertType: "missing_config",
+        severity: "high",
+        projectId: p.id,
+        projectName: p.name,
+        message: `"${p.name}" is in mature production with a contribution-model agreement but has no active LCA configuration.`,
+        suggestedAction: "Create an LCA configuration for this project to begin tracking annual land contribution adjustments.",
+      });
+    }
+  }
+
+  // Config-level checks
+  for (const c of allConfigs) {
+    const project = projectMap.get(c.projectId);
+    if (!project) continue;
+
+    // Lifecycle mismatch
+    if (project.lifecycleStatus !== "mature_production") {
+      alerts.push({
+        id: `alert-${++seq}`,
+        alertType: "lifecycle_mismatch",
+        severity: "critical",
+        projectId: c.projectId,
+        projectName: project.name,
+        configId: c.id,
+        message: `Active LCA config exists for "${project.name}" but project lifecycle is "${project.lifecycleStatus}" — LCA only applies to mature_production projects.`,
+        suggestedAction: "Deactivate this LCA config, or transition the project to mature production if warranted.",
+      });
+    }
+
+    // Revenue model mismatch on linked agreement
+    if (c.agreementId) {
+      const linked = agreements.find((a) => a.id === c.agreementId);
+      if (linked && linked.revenueModel !== "contribution") {
+        alerts.push({
+          id: `alert-${++seq}`,
+          alertType: "revenue_model_mismatch",
+          severity: "high",
+          projectId: c.projectId,
+          projectName: project.name,
+          configId: c.id,
+          message: `LCA config for "${project.name}" is linked to an agreement with revenue model "${linked.revenueModel}". LCA only applies to contribution-model agreements.`,
+          suggestedAction: "Unlink or deactivate this config. LCA is not applicable to the 50% revenue-sharing model.",
+        });
+      }
+    }
+
+    // No ledger entries
+    const entries = entriesByConfigId.get(c.id) ?? [];
+    if (entries.length === 0 && eligibleProjectIds.includes(c.projectId)) {
+      alerts.push({
+        id: `alert-${++seq}`,
+        alertType: "no_ledger_entries",
+        severity: "medium",
+        projectId: c.projectId,
+        projectName: project.name,
+        configId: c.id,
+        message: `LCA config for "${project.name}" exists but no yearly ledger entries have been generated.`,
+        suggestedAction: `Run "Auto-Generate" on this config to create the payment schedule from ${c.startYear} to present.`,
+      });
+    }
+  }
+
+  // Ledger-entry level checks
+  for (const e of allEntries) {
+    const config = allConfigs.find((c) => c.id === e.configId);
+    if (!config) continue;
+    const project = projectMap.get(config.projectId);
+    if (!project) continue;
+
+    const balance = Number(e.balance);
+    const carryForward = Number(e.carryForward);
+
+    // Overdue payment (past year, still unpaid/partial)
+    if (e.year < currentYear && (e.status === "pending" || e.status === "partial")) {
+      const yearsOverdue = currentYear - e.year;
+      alerts.push({
+        id: `alert-${++seq}`,
+        alertType: "overdue_payment",
+        severity: yearsOverdue > 1 ? "critical" : "high",
+        projectId: config.projectId,
+        projectName: project.name,
+        configId: config.id,
+        ledgerEntryId: e.id,
+        year: e.year,
+        amount: balance,
+        message: `LCA ${e.year} for "${project.name}" is overdue by ${yearsOverdue} year${yearsOverdue > 1 ? "s" : ""}. Outstanding: ₹${balance.toLocaleString("en-IN")}.`,
+        suggestedAction: `Record payment or waive the ${e.year} LCA entry.`,
+      });
+    }
+
+    // Current-year pending
+    if (e.year === currentYear && (e.status === "pending" || e.status === "partial")) {
+      alerts.push({
+        id: `alert-${++seq}`,
+        alertType: "pending_payment",
+        severity: "medium",
+        projectId: config.projectId,
+        projectName: project.name,
+        configId: config.id,
+        ledgerEntryId: e.id,
+        year: e.year,
+        amount: balance,
+        message: `LCA ${e.year} for "${project.name}" is due. Balance: ₹${balance.toLocaleString("en-IN")}.`,
+        suggestedAction: `Record the LCA payment for ${e.year}.`,
+      });
+    }
+
+    // Carry-forward balance
+    if (carryForward > 0) {
+      alerts.push({
+        id: `alert-${++seq}`,
+        alertType: "carry_forward",
+        severity: carryForward > Number(config.baseAmount) ? "high" : "medium",
+        projectId: config.projectId,
+        projectName: project.name,
+        configId: config.id,
+        ledgerEntryId: e.id,
+        year: e.year,
+        amount: carryForward,
+        message: `Year ${e.year} entry for "${project.name}" carries forward ₹${carryForward.toLocaleString("en-IN")} from prior unpaid balance.`,
+        suggestedAction: "Clear prior-year carry-forward amounts to prevent compounding balances.",
+      });
+    }
+  }
+
+  // Sort: critical → high → medium → low
+  const sevOrder: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
+  alerts.sort((a, b) => (sevOrder[a.severity] ?? 3) - (sevOrder[b.severity] ?? 3));
+
+  // Step 7 — per-eligible-project status
+  const eligibleProjectStatuses = eligibleProjects.map((p) => {
+    const config = configByProjectId.get(p.id);
+    const entries = config ? (entriesByConfigId.get(config.id) ?? []) : [];
+    const overdueEntries = entries.filter(
+      (e) => e.year < currentYear && (e.status === "pending" || e.status === "partial"),
+    );
+    const pendingEntries = entries.filter(
+      (e) => e.status === "pending" || e.status === "partial",
+    );
+    const totalBalance = entries.reduce((s, e) => s + Number(e.balance), 0);
+    const totalCF = entries.reduce((s, e) => s + Number(e.carryForward), 0);
+    return {
+      projectId: p.id,
+      projectName: p.name,
+      lifecycleStatus: p.lifecycleStatus,
+      hasActiveConfig: !!config,
+      configId: config?.id,
+      ledgerEntryCount: entries.length,
+      pendingCount: pendingEntries.length,
+      overdueCount: overdueEntries.length,
+      totalBalance: Math.round(totalBalance * 100) / 100,
+      totalCarryForward: Math.round(totalCF * 100) / 100,
+    };
+  });
+
+  // Step 8 — aggregate stats
+  const configuredCount = eligibleProjects.filter((p) => configByProjectId.has(p.id)).length;
+  const overdueCount = allEntries.filter(
+    (e) => e.year < currentYear && (e.status === "pending" || e.status === "partial"),
+  ).length;
+  const currentYearPendingCount = allEntries.filter(
+    (e) => e.year === currentYear && (e.status === "pending" || e.status === "partial"),
+  ).length;
+  const carryForwardCount = allEntries.filter((e) => Number(e.carryForward) > 0).length;
+  const noLedgerCount = allConfigs.filter(
+    (c) => (entriesByConfigId.get(c.id) ?? []).length === 0,
+  ).length;
+  const mismatchCount = alerts.filter(
+    (a) => a.alertType === "lifecycle_mismatch" || a.alertType === "revenue_model_mismatch",
+  ).length;
+  const totalOutstanding = Math.round(allEntries.reduce((s, e) => s + Number(e.balance), 0) * 100) / 100;
+  const totalCarryForward = Math.round(allEntries.reduce((s, e) => s + Number(e.carryForward), 0) * 100) / 100;
+
+  return res.json({
+    stats: {
+      eligibleProjectCount: eligibleProjects.length,
+      configuredCount,
+      missingConfigCount: eligibleProjects.length - configuredCount,
+      noLedgerCount,
+      overdueCount,
+      currentYearPendingCount,
+      carryForwardCount,
+      mismatchCount,
+      totalOutstanding,
+      totalCarryForward,
+    },
+    eligibleProjects: eligibleProjectStatuses,
+    alerts,
+  });
+});
+
 // ── Payment event formatter ───────────────────────────────────────────────────
 
 function formatPaymentEvent(row: typeof lcaPaymentEventsTable.$inferSelect) {

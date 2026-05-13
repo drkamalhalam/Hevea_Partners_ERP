@@ -93,6 +93,7 @@ import type {
   GetLandownerLcaReceivableParams,
   GetLandownerProfitabilityAnalyticsParams,
   GetLcaFullLedgerParams,
+  GetLcaGovernanceSummaryParams,
   GetLcaSchedule200,
   GetLcaScheduleParams,
   GetLcaSummaryParams,
@@ -114,6 +115,7 @@ import type {
   LandownerProfitabilityAnalytics,
   LcaConfig,
   LcaFullLedger,
+  LcaGovernanceSummary,
   LcaLedgerEntry,
   LcaPaymentEvent,
   LcaSummary,
@@ -16920,6 +16922,109 @@ export const useRecordBurdenRecoveryEvent = <
 > => {
   return useMutation(getRecordBurdenRecoveryEventMutationOptions(options));
 };
+
+/**
+ * @summary LCA governance audit — alerts, eligibility check, task center
+ */
+export const getGetLcaGovernanceSummaryUrl = (
+  params?: GetLcaGovernanceSummaryParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/lca/governance?${stringifiedParams}`
+    : `/api/lca/governance`;
+};
+
+export const getLcaGovernanceSummary = async (
+  params?: GetLcaGovernanceSummaryParams,
+  options?: RequestInit,
+): Promise<LcaGovernanceSummary> => {
+  return customFetch<LcaGovernanceSummary>(
+    getGetLcaGovernanceSummaryUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetLcaGovernanceSummaryQueryKey = (
+  params?: GetLcaGovernanceSummaryParams,
+) => {
+  return [`/api/lca/governance`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetLcaGovernanceSummaryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getLcaGovernanceSummary>>,
+  TError = ErrorType<void>,
+>(
+  params?: GetLcaGovernanceSummaryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getLcaGovernanceSummary>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetLcaGovernanceSummaryQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getLcaGovernanceSummary>>
+  > = ({ signal }) =>
+    getLcaGovernanceSummary(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getLcaGovernanceSummary>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetLcaGovernanceSummaryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getLcaGovernanceSummary>>
+>;
+export type GetLcaGovernanceSummaryQueryError = ErrorType<void>;
+
+/**
+ * @summary LCA governance audit — alerts, eligibility check, task center
+ */
+
+export function useGetLcaGovernanceSummary<
+  TData = Awaited<ReturnType<typeof getLcaGovernanceSummary>>,
+  TError = ErrorType<void>,
+>(
+  params?: GetLcaGovernanceSummaryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getLcaGovernanceSummary>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetLcaGovernanceSummaryQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary Landowner profitability and operational sustainability analytics

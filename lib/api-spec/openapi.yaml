@@ -4559,6 +4559,25 @@ paths:
               schema:
                 $ref: "#/components/schemas/BurdenRecoveryEvent"
 
+  /lca/governance:
+    get:
+      operationId: getLcaGovernanceSummary
+      summary: LCA governance audit — alerts, eligibility check, task center
+      tags: [lca]
+      parameters:
+        - name: projectId
+          in: query
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: LCA governance summary with alerts and per-project status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LcaGovernanceSummary"
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+
   /analytics/landowner-profitability:
     get:
       operationId: getLandownerProfitabilityAnalytics
@@ -7589,6 +7608,68 @@ components:
               balance: { type: number }
               entryCount: { type: integer }
               pendingEntries: { type: integer }
+
+    LcaGovernanceSummary:
+      type: object
+      required: [stats, eligibleProjects, alerts]
+      properties:
+        stats:
+          type: object
+          required: [eligibleProjectCount, configuredCount, missingConfigCount, noLedgerCount, overdueCount, currentYearPendingCount, carryForwardCount, mismatchCount, totalOutstanding, totalCarryForward]
+          properties:
+            eligibleProjectCount: { type: integer }
+            configuredCount: { type: integer }
+            missingConfigCount: { type: integer }
+            noLedgerCount: { type: integer }
+            overdueCount: { type: integer }
+            currentYearPendingCount: { type: integer }
+            carryForwardCount: { type: integer }
+            mismatchCount: { type: integer }
+            totalOutstanding: { type: number }
+            totalCarryForward: { type: number }
+        eligibleProjects:
+          type: array
+          items:
+            $ref: "#/components/schemas/LcaEligibleProjectStatus"
+        alerts:
+          type: array
+          items:
+            $ref: "#/components/schemas/LcaGovernanceAlert"
+
+    LcaEligibleProjectStatus:
+      type: object
+      required: [projectId, projectName, lifecycleStatus, hasActiveConfig, ledgerEntryCount, pendingCount, overdueCount, totalBalance, totalCarryForward]
+      properties:
+        projectId: { type: string, format: uuid }
+        projectName: { type: string }
+        lifecycleStatus: { type: string }
+        hasActiveConfig: { type: boolean }
+        configId: { type: string, format: uuid }
+        ledgerEntryCount: { type: integer }
+        pendingCount: { type: integer }
+        overdueCount: { type: integer }
+        totalBalance: { type: number }
+        totalCarryForward: { type: number }
+
+    LcaGovernanceAlert:
+      type: object
+      required: [id, alertType, severity, projectId, projectName, message, suggestedAction]
+      properties:
+        id: { type: string }
+        alertType:
+          type: string
+          enum: [missing_config, overdue_payment, pending_payment, carry_forward, no_ledger_entries, lifecycle_mismatch, revenue_model_mismatch]
+        severity:
+          type: string
+          enum: [critical, high, medium, low]
+        projectId: { type: string, format: uuid }
+        projectName: { type: string }
+        configId: { type: string, format: uuid }
+        ledgerEntryId: { type: string, format: uuid }
+        year: { type: integer }
+        amount: { type: number }
+        message: { type: string }
+        suggestedAction: { type: string }
 
     CreateLcaConfigBody:
       type: object

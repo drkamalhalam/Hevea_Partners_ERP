@@ -2719,6 +2719,75 @@ export interface LcaSummary {
   byProject: LcaSummaryByProjectItem[];
 }
 
+export type LcaGovernanceSummaryStats = {
+  eligibleProjectCount: number;
+  configuredCount: number;
+  missingConfigCount: number;
+  noLedgerCount: number;
+  overdueCount: number;
+  currentYearPendingCount: number;
+  carryForwardCount: number;
+  mismatchCount: number;
+  totalOutstanding: number;
+  totalCarryForward: number;
+};
+
+export interface LcaEligibleProjectStatus {
+  projectId: string;
+  projectName: string;
+  lifecycleStatus: string;
+  hasActiveConfig: boolean;
+  configId?: string;
+  ledgerEntryCount: number;
+  pendingCount: number;
+  overdueCount: number;
+  totalBalance: number;
+  totalCarryForward: number;
+}
+
+export type LcaGovernanceAlertAlertType =
+  (typeof LcaGovernanceAlertAlertType)[keyof typeof LcaGovernanceAlertAlertType];
+
+export const LcaGovernanceAlertAlertType = {
+  missing_config: "missing_config",
+  overdue_payment: "overdue_payment",
+  pending_payment: "pending_payment",
+  carry_forward: "carry_forward",
+  no_ledger_entries: "no_ledger_entries",
+  lifecycle_mismatch: "lifecycle_mismatch",
+  revenue_model_mismatch: "revenue_model_mismatch",
+} as const;
+
+export type LcaGovernanceAlertSeverity =
+  (typeof LcaGovernanceAlertSeverity)[keyof typeof LcaGovernanceAlertSeverity];
+
+export const LcaGovernanceAlertSeverity = {
+  critical: "critical",
+  high: "high",
+  medium: "medium",
+  low: "low",
+} as const;
+
+export interface LcaGovernanceAlert {
+  id: string;
+  alertType: LcaGovernanceAlertAlertType;
+  severity: LcaGovernanceAlertSeverity;
+  projectId: string;
+  projectName: string;
+  configId?: string;
+  ledgerEntryId?: string;
+  year?: number;
+  amount?: number;
+  message: string;
+  suggestedAction: string;
+}
+
+export interface LcaGovernanceSummary {
+  stats: LcaGovernanceSummaryStats;
+  eligibleProjects: LcaEligibleProjectStatus[];
+  alerts: LcaGovernanceAlert[];
+}
+
 export interface CreateLcaConfigBody {
   projectId: string;
   agreementId?: string;
@@ -3672,6 +3741,10 @@ export type ListBurdenRecoveryAdjustmentsParams = {
   recoveryStatus?: string;
   sourcePartnerId?: string;
   targetPartnerId?: string;
+};
+
+export type GetLcaGovernanceSummaryParams = {
+  projectId?: string;
 };
 
 export type GetLandownerProfitabilityAnalyticsParams = {
