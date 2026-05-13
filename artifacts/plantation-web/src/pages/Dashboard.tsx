@@ -611,7 +611,7 @@ function LifecycleAnalyticsSection({
   const mature = projects.filter((p) => p.lifecycleStatus === "mature_production").length;
   const closed = projects.filter((p) => p.lifecycleStatus === "closed").length;
   const total = projects.length;
-  const missingDevCount = tasks?.missingDeveloperCases.length ?? 0;
+  const missingDevCount = tasks?.missingDeveloperCases?.length ?? 0;
 
   if (total === 0 && !isLoading) return null;
 
@@ -747,10 +747,10 @@ function GovernanceTaskCenter() {
   });
 
   const totalTasks =
-    (data?.pendingMaturityDeclarations.length ?? 0) +
-    (data?.pendingNomineeActivations.length ?? 0) +
-    (data?.pendingClosureAcknowledgments.length ?? 0) +
-    (data?.missingDeveloperCases.length ?? 0);
+    (data?.pendingMaturityDeclarations?.length ?? 0) +
+    (data?.pendingNomineeActivations?.length ?? 0) +
+    (data?.pendingClosureAcknowledgments?.length ?? 0) +
+    (data?.missingDeveloperCases?.length ?? 0);
 
   if (isLoading) {
     return (
