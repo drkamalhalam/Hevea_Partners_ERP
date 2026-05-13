@@ -48,6 +48,8 @@ export * from "./maturityOtpVerification";
 export * from "./maturityOtpVerificationPartyRole";
 export * from "./maturityOtpVerificationStatus";
 export * from "./okResponse";
+export * from "./ownershipFreeze";
+export * from "./ownershipFreezeStatus";
 export * from "./partner";
 export * from "./partnerClaimant";
 export * from "./partnerClaimantStatus";

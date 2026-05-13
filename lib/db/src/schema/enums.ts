@@ -115,6 +115,23 @@ export const maturityOtpStatusEnum = pgEnum("maturity_otp_status", [
   "expired",
 ]);
 
+// ── Ownership freeze enums ────────────────────────────────────────────────
+
+/**
+ * Status of an ownership freeze record.
+ *   frozen              — default; ownership structure is locked; no direct changes
+ *   transfer_pending    — a share transfer is in progress (structural lock remains)
+ *   inheritance_pending — an inheritance settlement is in progress (structural lock remains)
+ *
+ * Note: all statuses still enforce the freeze — transfer_pending and
+ * inheritance_pending only indicate an approved governance workflow is active.
+ */
+export const ownershipFreezeStatusEnum = pgEnum("ownership_freeze_status", [
+  "frozen",
+  "transfer_pending",
+  "inheritance_pending",
+]);
+
 // ── Audit enums ───────────────────────────────────────────────────────────
 
 export const dbOperationEnum = pgEnum("db_operation", [

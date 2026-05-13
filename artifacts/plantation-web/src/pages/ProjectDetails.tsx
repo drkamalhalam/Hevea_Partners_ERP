@@ -3,10 +3,11 @@ import { useGetProject, useListAgreements, getGetProjectQueryKey } from "@worksp
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, MapPin, ChevronRight } from "lucide-react";
+import { ArrowLeft, MapPin, ChevronRight, Lock } from "lucide-react";
 import ProjectParticipants from "./ProjectParticipants";
 import ProjectNomineeSection from "./ProjectNominee";
 import ProjectLifecycleSection from "./ProjectLifecycleSection";
+import { OwnershipFreezePanel } from "@/components/ownership/OwnershipFreezePanel";
 
 const statusColors: Record<string, string> = {
   planning: "bg-blue-100 text-blue-800",
@@ -23,6 +24,8 @@ export default function ProjectDetails() {
   const { data: agreements } = useListAgreements();
 
   const projectAgreements = agreements?.filter(a => a.projectId === id) ?? [];
+
+  const isFrozen = !!project?.ownershipFrozenAt;
 
   if (isLoading) {
     return (
@@ -52,13 +55,21 @@ export default function ProjectDetails() {
 
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-serif font-bold text-foreground">{project.name}</h1>
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <h1 className="text-3xl font-serif font-bold text-foreground">{project.name}</h1>
+            {isFrozen && (
+              <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border font-medium bg-red-100 text-red-800 border-red-200">
+                <Lock className="w-3 h-3" />
+                Ownership Frozen
+              </span>
+            )}
+          </div>
           <div className="flex items-center gap-2 mt-1 text-muted-foreground">
             <MapPin className="w-4 h-4" />
             <span>{project.location}{project.village ? `, ${project.village}` : ""}, {project.district}, {project.state}</span>
           </div>
         </div>
-        <span className={`text-sm px-3 py-1 rounded-full font-medium capitalize ${statusColors[project.status] ?? ""}`}>
+        <span className={`text-sm px-3 py-1 rounded-full font-medium capitalize flex-shrink-0 ${statusColors[project.status] ?? ""}`}>
           {project.status}
         </span>
       </div>
@@ -126,6 +137,11 @@ export default function ProjectDetails() {
       </Card>
 
       <ProjectLifecycleSection projectId={id} />
+
+      {/* Ownership Freeze — shown for mature/closed projects where freeze exists */}
+      {(project.lifecycleStatus === "mature_production" || project.lifecycleStatus === "closed") && (
+        <OwnershipFreezePanel projectId={id} />
+      )}
 
       {/* Maturity Declaration — only visible for prematurity projects */}
       {project.lifecycleStatus === "prematurity" && (

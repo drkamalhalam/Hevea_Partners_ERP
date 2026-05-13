@@ -814,6 +814,32 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /projects/{id}/ownership-freeze:
+    get:
+      operationId: getOwnershipFreeze
+      summary: Get ownership freeze record for a project
+      tags: [projects]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Ownership freeze record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OwnershipFreeze"
+        "404":
+          description: Project is not yet frozen
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /partners:
     get:
       operationId: listPartners
@@ -1292,6 +1318,8 @@ components:
         createdAt:
           type: string
         updatedAt:
+          type: ["string", "null"]
+        ownershipFrozenAt:
           type: ["string", "null"]
 
     ProjectInput:
@@ -2032,6 +2060,42 @@ components:
       properties:
         otpCode:
           type: string
+
+    OwnershipFreeze:
+      type: object
+      required: [id, projectId, status, frozenAt, createdAt, allowedOperations, restrictedOperations]
+      properties:
+        id:
+          type: string
+          format: uuid
+        projectId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [frozen, transfer_pending, inheritance_pending]
+        frozenAt:
+          type: string
+        frozenBy:
+          type: ["string", "null"]
+          format: uuid
+        frozenByName:
+          type: ["string", "null"]
+        declarationId:
+          type: ["string", "null"]
+          format: uuid
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        allowedOperations:
+          type: array
+          items:
+            type: string
+        restrictedOperations:
+          type: array
+          items:
+            type: string
 
     ProjectNominee:
       type: object

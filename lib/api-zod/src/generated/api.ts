@@ -548,6 +548,7 @@ export const ListProjectsResponseItem = zod.object({
   isActive: zod.boolean(),
   createdAt: zod.string(),
   updatedAt: zod.string().nullish(),
+  ownershipFrozenAt: zod.string().nullish(),
 });
 export const ListProjectsResponse = zod.array(ListProjectsResponseItem);
 
@@ -614,6 +615,7 @@ export const GetProjectResponse = zod.object({
   isActive: zod.boolean(),
   createdAt: zod.string(),
   updatedAt: zod.string().nullish(),
+  ownershipFrozenAt: zod.string().nullish(),
 });
 
 /**
@@ -678,6 +680,7 @@ export const UpdateProjectResponse = zod.object({
   isActive: zod.boolean(),
   createdAt: zod.string(),
   updatedAt: zod.string().nullish(),
+  ownershipFrozenAt: zod.string().nullish(),
 });
 
 /**
@@ -1101,6 +1104,27 @@ export const VerifyMaturityOtpResponse = zod.object({
       createdAt: zod.string(),
     }),
   ),
+});
+
+/**
+ * @summary Get ownership freeze record for a project
+ */
+export const GetOwnershipFreezeParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const GetOwnershipFreezeResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  status: zod.enum(["frozen", "transfer_pending", "inheritance_pending"]),
+  frozenAt: zod.string(),
+  frozenBy: zod.string().uuid().nullish(),
+  frozenByName: zod.string().nullish(),
+  declarationId: zod.string().uuid().nullish(),
+  notes: zod.string().nullish(),
+  createdAt: zod.string(),
+  allowedOperations: zod.array(zod.string()),
+  restrictedOperations: zod.array(zod.string()),
 });
 
 /**
@@ -1716,6 +1740,7 @@ export const GetMyPortfolioResponse = zod.object({
       isActive: zod.boolean(),
       createdAt: zod.string(),
       updatedAt: zod.string().nullish(),
+      ownershipFrozenAt: zod.string().nullish(),
     }),
   ),
 });

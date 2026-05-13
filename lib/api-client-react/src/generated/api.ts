@@ -38,6 +38,7 @@ import type {
   MaturityDeclaration,
   MaturityOtpVerification,
   OkResponse,
+  OwnershipFreeze,
   Partner,
   PartnerClaimant,
   PartnerInput,
@@ -3063,6 +3064,93 @@ export const useVerifyMaturityOtp = <
 > => {
   return useMutation(getVerifyMaturityOtpMutationOptions(options));
 };
+
+/**
+ * @summary Get ownership freeze record for a project
+ */
+export const getGetOwnershipFreezeUrl = (id: string) => {
+  return `/api/projects/${id}/ownership-freeze`;
+};
+
+export const getOwnershipFreeze = async (
+  id: string,
+  options?: RequestInit,
+): Promise<OwnershipFreeze> => {
+  return customFetch<OwnershipFreeze>(getGetOwnershipFreezeUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetOwnershipFreezeQueryKey = (id: string) => {
+  return [`/api/projects/${id}/ownership-freeze`] as const;
+};
+
+export const getGetOwnershipFreezeQueryOptions = <
+  TData = Awaited<ReturnType<typeof getOwnershipFreeze>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getOwnershipFreeze>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetOwnershipFreezeQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getOwnershipFreeze>>
+  > = ({ signal }) => getOwnershipFreeze(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getOwnershipFreeze>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetOwnershipFreezeQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getOwnershipFreeze>>
+>;
+export type GetOwnershipFreezeQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Get ownership freeze record for a project
+ */
+
+export function useGetOwnershipFreeze<
+  TData = Awaited<ReturnType<typeof getOwnershipFreeze>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getOwnershipFreeze>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetOwnershipFreezeQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary List all partners

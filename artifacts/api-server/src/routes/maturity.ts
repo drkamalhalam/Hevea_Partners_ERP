@@ -10,6 +10,7 @@ import {
   maturityOtpVerificationsTable,
   projectLifecycleHistoryTable,
   activityTable,
+  projectOwnershipFreezesTable,
 } from "@workspace/db";
 import { eq, and, inArray, desc } from "drizzle-orm";
 import {
@@ -648,7 +649,34 @@ router.post(
           metadata: { declarationId: declaration.id },
         });
 
-        req.log.info({ projectId, declarationId: declaration.id }, "Maturity declaration completed");
+        // Create ownership freeze record — ownership structure is now permanently frozen
+        await db.insert(projectOwnershipFreezesTable).values({
+          projectId,
+          frozenBy: actor.id ?? null,
+          frozenByName: actor.name ?? null,
+          declarationId: declaration.id,
+          notes:
+            "Ownership structure frozen upon completion of maturity declaration — all parties verified.",
+        });
+
+        // Stamp ownershipFrozenAt on the project row for fast querying
+        await db
+          .update(projectsTable)
+          .set({ ownershipFrozenAt: new Date() })
+          .where(eq(projectsTable.id, projectId));
+
+        await db.insert(activityTable).values({
+          type: "ownership_frozen",
+          description:
+            "Ownership structure permanently frozen. Only share transfers and inheritance workflows are permitted.",
+          entityId: projectId,
+          entityType: "project",
+          projectId,
+          userId: actor.id ?? null,
+          metadata: { declarationId: declaration.id, frozenBy: actor.id },
+        });
+
+        req.log.info({ projectId, declarationId: declaration.id }, "Maturity declaration completed — ownership frozen");
       }
 
       const full = await fetchDeclarationWithVerifications(declaration.id);
@@ -659,5 +687,44 @@ router.post(
     }
   },
 );
+
+// GET /:id/ownership-freeze — fetch freeze record for a project
+router.get("/:id/ownership-freeze", async (req, res) => {
+  const projectId = req.params.id as string;
+
+  try {
+    const [freeze] = await db
+      .select()
+      .from(projectOwnershipFreezesTable)
+      .where(eq(projectOwnershipFreezesTable.projectId, projectId))
+      .limit(1);
+
+    if (!freeze) {
+      res.status(404).json({ error: "Project ownership is not yet frozen" });
+      return;
+    }
+
+    res.json({
+      id: freeze.id,
+      projectId: freeze.projectId,
+      status: freeze.status,
+      frozenAt: freeze.frozenAt.toISOString(),
+      frozenBy: freeze.frozenBy ?? null,
+      frozenByName: freeze.frozenByName ?? null,
+      declarationId: freeze.declarationId ?? null,
+      notes: freeze.notes ?? null,
+      createdAt: freeze.createdAt.toISOString(),
+      allowedOperations: ["share_transfer", "inheritance_workflow"],
+      restrictedOperations: [
+        "direct_ownership_change",
+        "ownership_dilution",
+        "new_partner_entry",
+      ],
+    });
+  } catch (err) {
+    req.log.error({ err }, "Failed to get ownership freeze");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
 
 export default router;

@@ -36,4 +36,6 @@ export interface Project {
   createdAt: string;
   /** @nullable */
   updatedAt?: string | null;
+  /** @nullable */
+  ownershipFrozenAt?: string | null;
 }

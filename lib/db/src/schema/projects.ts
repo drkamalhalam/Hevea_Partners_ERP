@@ -32,6 +32,9 @@ export const projectsTable = pgTable("projects", {
   expectedMaturityDate: text("expected_maturity_date"),
   termYears: integer("term_years").notNull().default(35),
   notes: text("notes"),
+  ownershipFrozenAt: timestamp("ownership_frozen_at", {
+    withTimezone: true,
+  }),
   isActive: boolean("is_active").notNull().default(true),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

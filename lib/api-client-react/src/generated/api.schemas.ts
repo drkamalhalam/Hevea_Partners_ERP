@@ -57,6 +57,8 @@ export interface Project {
   createdAt: string;
   /** @nullable */
   updatedAt?: string | null;
+  /** @nullable */
+  ownershipFrozenAt?: string | null;
 }
 
 export type ProjectInputStatus =
@@ -727,6 +729,33 @@ export interface CancelMaturityBody {
 
 export interface VerifyOtpBody {
   otpCode: string;
+}
+
+export type OwnershipFreezeStatus =
+  (typeof OwnershipFreezeStatus)[keyof typeof OwnershipFreezeStatus];
+
+export const OwnershipFreezeStatus = {
+  frozen: "frozen",
+  transfer_pending: "transfer_pending",
+  inheritance_pending: "inheritance_pending",
+} as const;
+
+export interface OwnershipFreeze {
+  id: string;
+  projectId: string;
+  status: OwnershipFreezeStatus;
+  frozenAt: string;
+  /** @nullable */
+  frozenBy?: string | null;
+  /** @nullable */
+  frozenByName?: string | null;
+  /** @nullable */
+  declarationId?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  createdAt: string;
+  allowedOperations: string[];
+  restrictedOperations: string[];
 }
 
 export type ProjectNomineeActivationStatus =

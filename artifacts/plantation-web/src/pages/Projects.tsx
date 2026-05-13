@@ -16,7 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Plus, MapPin, Trees, Trash2, ExternalLink } from "lucide-react";
+import { Plus, MapPin, Trees, Trash2, ExternalLink, Lock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const statusColors: Record<string, string> = {
@@ -252,6 +252,12 @@ export default function Projects() {
                     <span className={`text-xs px-2 py-1 rounded-full border font-medium capitalize whitespace-nowrap ${statusColors[project.status] ?? ""}`}>
                       {project.status}
                     </span>
+                    {project.ownershipFrozenAt && (
+                      <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border font-medium bg-red-100 text-red-800 border-red-200 whitespace-nowrap">
+                        <Lock className="w-2.5 h-2.5" />
+                        Frozen
+                      </span>
+                    )}
                     {canAccessAllProjects && governance && (
                       <GovernanceStatusBadge
                         status={govProjectMap.get(project.id) ?? "complete"}
