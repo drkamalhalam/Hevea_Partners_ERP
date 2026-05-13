@@ -175,6 +175,28 @@ export const ownershipFreezeStatusEnum = pgEnum("ownership_freeze_status", [
   "inheritance_pending",
 ]);
 
+// ── Agreement template enums ──────────────────────────────────────────────
+
+/**
+ * Supported file formats for agreement templates.
+ *   docx — Microsoft Word document (editable, variable substitution supported)
+ *   pdf  — PDF document (read-only preview)
+ */
+export const templateFileFormatEnum = pgEnum("template_file_format", [
+  "docx",
+  "pdf",
+]);
+
+/**
+ * Lifecycle status of an agreement template.
+ *   active   — available for use
+ *   archived — removed from active library; retained for audit
+ */
+export const templateStatusEnum = pgEnum("template_status", [
+  "active",
+  "archived",
+]);
+
 // ── Audit enums ───────────────────────────────────────────────────────────
 
 export const dbOperationEnum = pgEnum("db_operation", [

@@ -1303,6 +1303,86 @@ export interface OkResponse {
   ok?: boolean;
 }
 
+export interface RequestUploadUrlBody {
+  /** @minLength 1 */
+  name: string;
+  /** @minimum 1 */
+  size: number;
+  /** @minLength 1 */
+  contentType: string;
+}
+
+export interface RequestUploadUrlResponse {
+  uploadURL: string;
+  objectPath: string;
+}
+
+export type AgreementTemplateFileFormat =
+  (typeof AgreementTemplateFileFormat)[keyof typeof AgreementTemplateFileFormat];
+
+export const AgreementTemplateFileFormat = {
+  docx: "docx",
+  pdf: "pdf",
+} as const;
+
+export type AgreementTemplateStatus =
+  (typeof AgreementTemplateStatus)[keyof typeof AgreementTemplateStatus];
+
+export const AgreementTemplateStatus = {
+  active: "active",
+  archived: "archived",
+} as const;
+
+export interface AgreementTemplate {
+  id: string;
+  name: string;
+  /** @nullable */
+  description?: string | null;
+  version: string;
+  fileObjectPath: string;
+  fileFormat: AgreementTemplateFileFormat;
+  mimeType: string;
+  /** @nullable */
+  fileSizeBytes?: number | null;
+  status: AgreementTemplateStatus;
+  isActive: boolean;
+  /** @nullable */
+  uploadedBy?: string | null;
+  /** @nullable */
+  uploadedByName?: string | null;
+  /** @nullable */
+  archivedAt?: string | null;
+  /** @nullable */
+  archivedBy?: string | null;
+  createdAt: string;
+  /** @nullable */
+  updatedAt?: string | null;
+}
+
+export type CreateTemplateBodyFileFormat =
+  (typeof CreateTemplateBodyFileFormat)[keyof typeof CreateTemplateBodyFileFormat];
+
+export const CreateTemplateBodyFileFormat = {
+  docx: "docx",
+  pdf: "pdf",
+} as const;
+
+export interface CreateTemplateBody {
+  name: string;
+  description?: string;
+  version?: string;
+  fileObjectPath: string;
+  fileFormat: CreateTemplateBodyFileFormat;
+  mimeType: string;
+  fileSizeBytes?: number;
+}
+
+export interface UpdateTemplateBody {
+  name?: string;
+  description?: string;
+  version?: string;
+}
+
 export type GetUserActivityParams = {
   limit?: number;
 };
@@ -1314,3 +1394,15 @@ export type ListPartnerClaimantsParams = {
 export type ListProductionRecordsParams = {
   projectId?: string;
 };
+
+export type ListTemplatesParams = {
+  status?: ListTemplatesStatus;
+};
+
+export type ListTemplatesStatus =
+  (typeof ListTemplatesStatus)[keyof typeof ListTemplatesStatus];
+
+export const ListTemplatesStatus = {
+  active: "active",
+  archived: "archived",
+} as const;

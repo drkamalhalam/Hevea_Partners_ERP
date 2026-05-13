@@ -20,6 +20,7 @@ import {
   ChevronLeft,
   ChevronRight,
   UserCircle,
+  LibraryBig,
 } from "lucide-react";
 import { useRole, ROLE_LABELS, ROLE_COLORS } from "@/contexts/RoleContext";
 import type { UserRole } from "@/contexts/RoleContext";
@@ -71,6 +72,12 @@ const navGroups: NavGroup[] = [
         href: "/agreements",
         icon: FileSignature,
         roles: ["admin", "developer", "landowner", "investor"],
+      },
+      {
+        name: "Templates",
+        href: "/templates",
+        icon: LibraryBig,
+        roles: ["admin", "developer"],
       },
       {
         name: "Contributions",

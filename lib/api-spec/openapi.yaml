@@ -22,6 +22,10 @@ tags:
     description: Dashboard and analytics
   - name: production
     description: Rubber production and sales records
+  - name: templates
+    description: Agreement template library and version management
+  - name: storage
+    description: Object storage upload and serving endpoints
 
 paths:
   /me:
@@ -1608,6 +1612,147 @@ paths:
                 items:
                   $ref: "#/components/schemas/RevenueStats"
 
+  /storage/uploads/request-url:
+    post:
+      tags: [storage]
+      operationId: requestUploadUrl
+      summary: Request a presigned URL for file upload
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RequestUploadUrlBody"
+      responses:
+        "200":
+          description: Presigned upload URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RequestUploadUrlResponse"
+
+  /templates:
+    get:
+      tags: [templates]
+      operationId: listTemplates
+      summary: List agreement templates
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, archived]
+      responses:
+        "200":
+          description: List of templates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AgreementTemplate"
+    post:
+      tags: [templates]
+      operationId: createTemplate
+      summary: Create a new template record (after file upload)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTemplateBody"
+      responses:
+        "201":
+          description: Template created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgreementTemplate"
+
+  /templates/{id}:
+    get:
+      tags: [templates]
+      operationId: getTemplate
+      summary: Get a single template
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Template detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgreementTemplate"
+    patch:
+      tags: [templates]
+      operationId: updateTemplate
+      summary: Update template metadata
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTemplateBody"
+      responses:
+        "200":
+          description: Updated template
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgreementTemplate"
+
+  /templates/{id}/archive:
+    post:
+      tags: [templates]
+      operationId: archiveTemplate
+      summary: Archive a template
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Archived template
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgreementTemplate"
+
+  /templates/{id}/restore:
+    post:
+      tags: [templates]
+      operationId: restoreTemplate
+      summary: Restore an archived template (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Restored template
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgreementTemplate"
+
 components:
   schemas:
     HealthStatus:
@@ -3023,8 +3168,114 @@ components:
         error:
           type: string
 
+
+    # ── ErrorResponse schema (end of paths block) ─────────────────────────────
+
     OkResponse:
       type: object
       properties:
         ok:
           type: boolean
+
+    # ── Object Storage ────────────────────────────────────────────────────────
+
+    RequestUploadUrlBody:
+      type: object
+      required: [name, size, contentType]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        size:
+          type: integer
+          minimum: 1
+        contentType:
+          type: string
+          minLength: 1
+
+    RequestUploadUrlResponse:
+      type: object
+      required: [uploadURL, objectPath]
+      properties:
+        uploadURL:
+          type: string
+          format: uri
+        objectPath:
+          type: string
+
+    # ── Agreement Templates ───────────────────────────────────────────────────
+
+    AgreementTemplate:
+      type: object
+      required: [id, name, version, fileObjectPath, fileFormat, mimeType, status, isActive, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        version:
+          type: string
+        fileObjectPath:
+          type: string
+        fileFormat:
+          type: string
+          enum: [docx, pdf]
+        mimeType:
+          type: string
+        fileSizeBytes:
+          type: ["integer", "null"]
+        status:
+          type: string
+          enum: [active, archived]
+        isActive:
+          type: boolean
+        uploadedBy:
+          type: ["string", "null"]
+          format: uuid
+        uploadedByName:
+          type: ["string", "null"]
+        archivedAt:
+          type: ["string", "null"]
+          format: date-time
+        archivedBy:
+          type: ["string", "null"]
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: ["string", "null"]
+          format: date-time
+
+    CreateTemplateBody:
+      type: object
+      required: [name, fileObjectPath, fileFormat, mimeType]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        version:
+          type: string
+        fileObjectPath:
+          type: string
+        fileFormat:
+          type: string
+          enum: [docx, pdf]
+        mimeType:
+          type: string
+        fileSizeBytes:
+          type: integer
+
+    UpdateTemplateBody:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        version:
+          type: string

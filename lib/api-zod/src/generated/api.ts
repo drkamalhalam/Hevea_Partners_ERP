@@ -2260,3 +2260,168 @@ export const GetRevenueStatsResponseItem = zod.object({
   profit: zod.number(),
 });
 export const GetRevenueStatsResponse = zod.array(GetRevenueStatsResponseItem);
+
+/**
+ * @summary Request a presigned URL for file upload
+ */
+
+export const RequestUploadUrlBody = zod.object({
+  name: zod.string().min(1),
+  size: zod.number().min(1),
+  contentType: zod.string().min(1),
+});
+
+export const RequestUploadUrlResponse = zod.object({
+  uploadURL: zod.string().url(),
+  objectPath: zod.string(),
+});
+
+/**
+ * @summary List agreement templates
+ */
+export const ListTemplatesQueryParams = zod.object({
+  status: zod.enum(["active", "archived"]).optional(),
+});
+
+export const ListTemplatesResponseItem = zod.object({
+  id: zod.string().uuid(),
+  name: zod.string(),
+  description: zod.string().nullish(),
+  version: zod.string(),
+  fileObjectPath: zod.string(),
+  fileFormat: zod.enum(["docx", "pdf"]),
+  mimeType: zod.string(),
+  fileSizeBytes: zod.number().nullish(),
+  status: zod.enum(["active", "archived"]),
+  isActive: zod.boolean(),
+  uploadedBy: zod.string().uuid().nullish(),
+  uploadedByName: zod.string().nullish(),
+  archivedAt: zod.coerce.date().nullish(),
+  archivedBy: zod.string().uuid().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date().nullish(),
+});
+export const ListTemplatesResponse = zod.array(ListTemplatesResponseItem);
+
+/**
+ * @summary Create a new template record (after file upload)
+ */
+export const CreateTemplateBody = zod.object({
+  name: zod.string(),
+  description: zod.string().optional(),
+  version: zod.string().optional(),
+  fileObjectPath: zod.string(),
+  fileFormat: zod.enum(["docx", "pdf"]),
+  mimeType: zod.string(),
+  fileSizeBytes: zod.number().optional(),
+});
+
+/**
+ * @summary Get a single template
+ */
+export const GetTemplateParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const GetTemplateResponse = zod.object({
+  id: zod.string().uuid(),
+  name: zod.string(),
+  description: zod.string().nullish(),
+  version: zod.string(),
+  fileObjectPath: zod.string(),
+  fileFormat: zod.enum(["docx", "pdf"]),
+  mimeType: zod.string(),
+  fileSizeBytes: zod.number().nullish(),
+  status: zod.enum(["active", "archived"]),
+  isActive: zod.boolean(),
+  uploadedBy: zod.string().uuid().nullish(),
+  uploadedByName: zod.string().nullish(),
+  archivedAt: zod.coerce.date().nullish(),
+  archivedBy: zod.string().uuid().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date().nullish(),
+});
+
+/**
+ * @summary Update template metadata
+ */
+export const UpdateTemplateParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const UpdateTemplateBody = zod.object({
+  name: zod.string().optional(),
+  description: zod.string().optional(),
+  version: zod.string().optional(),
+});
+
+export const UpdateTemplateResponse = zod.object({
+  id: zod.string().uuid(),
+  name: zod.string(),
+  description: zod.string().nullish(),
+  version: zod.string(),
+  fileObjectPath: zod.string(),
+  fileFormat: zod.enum(["docx", "pdf"]),
+  mimeType: zod.string(),
+  fileSizeBytes: zod.number().nullish(),
+  status: zod.enum(["active", "archived"]),
+  isActive: zod.boolean(),
+  uploadedBy: zod.string().uuid().nullish(),
+  uploadedByName: zod.string().nullish(),
+  archivedAt: zod.coerce.date().nullish(),
+  archivedBy: zod.string().uuid().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date().nullish(),
+});
+
+/**
+ * @summary Archive a template
+ */
+export const ArchiveTemplateParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const ArchiveTemplateResponse = zod.object({
+  id: zod.string().uuid(),
+  name: zod.string(),
+  description: zod.string().nullish(),
+  version: zod.string(),
+  fileObjectPath: zod.string(),
+  fileFormat: zod.enum(["docx", "pdf"]),
+  mimeType: zod.string(),
+  fileSizeBytes: zod.number().nullish(),
+  status: zod.enum(["active", "archived"]),
+  isActive: zod.boolean(),
+  uploadedBy: zod.string().uuid().nullish(),
+  uploadedByName: zod.string().nullish(),
+  archivedAt: zod.coerce.date().nullish(),
+  archivedBy: zod.string().uuid().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date().nullish(),
+});
+
+/**
+ * @summary Restore an archived template (admin only)
+ */
+export const RestoreTemplateParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const RestoreTemplateResponse = zod.object({
+  id: zod.string().uuid(),
+  name: zod.string(),
+  description: zod.string().nullish(),
+  version: zod.string(),
+  fileObjectPath: zod.string(),
+  fileFormat: zod.enum(["docx", "pdf"]),
+  mimeType: zod.string(),
+  fileSizeBytes: zod.number().nullish(),
+  status: zod.enum(["active", "archived"]),
+  isActive: zod.boolean(),
+  uploadedBy: zod.string().uuid().nullish(),
+  uploadedByName: zod.string().nullish(),
+  archivedAt: zod.coerce.date().nullish(),
+  archivedBy: zod.string().uuid().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date().nullish(),
+});

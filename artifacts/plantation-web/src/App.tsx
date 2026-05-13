@@ -25,6 +25,7 @@ import Agreements from "./pages/Agreements";
 import AgreementDetails from "./pages/AgreementDetails";
 import Contributions from "./pages/Contributions";
 import Expenditure from "./pages/Expenditure";
+import TemplateLibrary from "./pages/TemplateLibrary";
 
 // Pages — Operations
 import Production from "./pages/Production";
@@ -207,6 +208,7 @@ function AppRoutes() {
               <Route path="/agreements/:id"><ProtectedRoute component={AgreementDetails} /></Route>
               <Route path="/contributions"><ProtectedRoute component={Contributions} /></Route>
               <Route path="/expenditure"><ProtectedRoute component={Expenditure} /></Route>
+              <Route path="/templates"><ProtectedRoute component={TemplateLibrary} /></Route>
 
               {/* Operations */}
               <Route path="/production"><ProtectedRoute component={Production} /></Route>

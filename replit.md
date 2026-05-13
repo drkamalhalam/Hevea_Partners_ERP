@@ -183,6 +183,39 @@ Real-time governance completeness tracking for projects, user profiles, and part
 - Generated hook: `useGetGovernanceSummary()` from `@workspace/api-client-react`
 - Generated types: `GovernanceSummary`, `ProjectGovernanceStatus`, `PartnerGovernanceStatus`, `GovernanceAlert` — importable from `@workspace/api-client-react`
 
+## Agreement Template Management System
+
+Master agreement template library with secure GCS-backed file storage. Admin and Developer roles can upload, manage, version, preview, and archive templates.
+
+**Supported formats:** DOCX (Word) and PDF. Exact wording, formatting, and legal structure are preserved — only designated placeholder variables change per agreement.
+
+**Storage:** Replit Object Storage (GCS) via presigned URL upload flow. Files stored in `PRIVATE_OBJECT_DIR`. Served via `GET /api/storage/objects/{objectPath}`.
+
+**DB table:** `agreementTemplatesTable` (`lib/db/src/schema/templates.ts`) — UUID PK, name, description, version, fileObjectPath, fileFormat (docx/pdf), mimeType, fileSizeBytes, status (active/archived), isActive, uploadedBy FK, uploadedByName (denormalized), archivedAt, archivedBy FK
+
+**API endpoints** (`artifacts/api-server/src/routes/templates.ts`):
+- `GET /templates?status=active|archived` — list templates (all authenticated)
+- `POST /templates` — create template record post-upload (admin/developer)
+- `GET /templates/:id` — get single template
+- `PATCH /templates/:id` — update name/description/version (admin/developer)
+- `POST /templates/:id/archive` — archive (admin/developer)
+- `POST /templates/:id/restore` — restore archived template (admin only)
+
+**Storage endpoints** (`artifacts/api-server/src/routes/storage.ts`):
+- `POST /storage/uploads/request-url` — request presigned GCS upload URL (two-step upload flow)
+- `GET /storage/objects/{objectPath}` — serve uploaded file (auth required)
+- `GET /storage/public-objects/{filePath}` — serve public assets
+
+**Frontend:** `artifacts/plantation-web/src/pages/TemplateLibrary.tsx` — split-panel layout: template library list (active/archived tabs + search) on the left, inline preview panel on the right. PDF files previewed in `<iframe>`, DOCX files show metadata + download link. Upload dialog with drag-and-drop file picker. Archive confirmation dialog. Edit metadata dialog.
+
+**Sidebar:** "Templates" added to Finance group (admin/developer only), route `/templates`.
+
+**Generated hooks:** `useListTemplates`, `useCreateTemplate`, `useGetTemplate`, `useUpdateTemplate`, `useArchiveTemplate`, `useRestoreTemplate`, `useRequestUploadUrl`
+
+**Codegen fix:** `lib/api-spec/package.json` codegen script now auto-patches `lib/api-zod/src/index.ts` after Orval runs to only export from `./generated/api` (prevents TS2308 duplicate name errors from inline body schemas).
+
+**Object storage env vars:** `DEFAULT_OBJECT_STORAGE_BUCKET_ID`, `PUBLIC_OBJECT_SEARCH_PATHS`, `PRIVATE_OBJECT_DIR` (set by Replit sidecar auth, auto-configured)
+
 ## Seeded Data
 
 - Partners: Ramesh Debbarma (developer), Sukumar Tripura (landowner), Birendra Reang (landowner), Dilip Jamatia (investor)
