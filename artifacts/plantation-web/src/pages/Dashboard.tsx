@@ -373,7 +373,7 @@ function AdminDeveloperDashboard() {
   const { data: summary, isLoading: isLoadingSummary } = useGetDashboardSummary();
   const { data: stock = [] } = useGetStockSummary();
 
-  const totalStock = stock.reduce((s, p) => s + p.currentStockKg, 0);
+  const totalStock = stock.reduce((s, p) => s + p.currentStock, 0);
 
   return (
     <div className="space-y-6 max-w-[1600px]">
@@ -382,7 +382,7 @@ function AdminDeveloperDashboard() {
       {/* KPI Cards */}
       <section>
         <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
-          <MetricCard label="Total Projects" value={summary?.totalProjects ?? "—"} sub={summary ? `${summary.activeProjectsCount} active` : undefined} icon={Trees} iconColor="bg-blue-50 text-blue-600" trend={{ value: 0 }} isLoading={isLoadingSummary} />
+          <MetricCard label="Total Projects" value={summary?.totalProjects ?? "—"} sub={summary ? `${summary.tappingProjectsCount} tapping` : undefined} icon={Trees} iconColor="bg-blue-50 text-blue-600" trend={{ value: 0 }} isLoading={isLoadingSummary} />
           <MetricCard label="Total Revenue" value="₹24.5L" sub="YTD estimate" icon={Wallet} iconColor="bg-emerald-50 text-emerald-600" trend={{ value: 12 }} />
           <MetricCard label="Total Expenditure" value="₹8.2L" sub="YTD estimate" icon={Receipt} iconColor="bg-rose-50 text-rose-500" trend={{ value: -3 }} />
           <MetricCard label="Pending Approvals" value={MOCK_APPROVALS.length} sub="2 overdue" icon={ClipboardCheck} iconColor="bg-amber-50 text-amber-600" trend={{ value: 1 }} />
@@ -497,8 +497,8 @@ function LandownerDashboard() {
   const { data: projects = [], isLoading: isLoadingProjects } = useListProjects();
 
   const agreements = portfolio?.agreements ?? [];
-  const totalLand = portfolio?.totalLandArea ?? 0;
-  const ownershipShare = portfolio?.totalOwnershipShare ?? 0;
+  const totalLand = portfolio?.projects?.length ?? 0;
+  const ownershipShare = portfolio?.agreements?.length ?? 0;
 
   return (
     <div className="space-y-6 max-w-[1400px]">
@@ -595,8 +595,8 @@ function InvestorDashboard() {
   const { data: revenueStats = [] } = useGetRevenueStats();
 
   const agreements = portfolio?.agreements ?? [];
-  const totalLand = portfolio?.totalLandArea ?? 0;
-  const ownershipShare = portfolio?.totalOwnershipShare ?? 0;
+  const totalLand = portfolio?.projects?.length ?? 0;
+  const ownershipShare = portfolio?.agreements?.length ?? 0;
 
   const projectedRevenue = totalLand > 0 ? `₹${(totalLand * 12).toFixed(0)}k` : "—";
 
@@ -733,7 +733,7 @@ function EmployeeDashboard() {
     })
     .reduce((sum, p) => sum + p.productionKg, 0);
 
-  const totalStock = stock.reduce((sum, s) => sum + s.currentStockKg, 0);
+  const totalStock = stock.reduce((sum, s) => sum + s.currentStock, 0);
 
   return (
     <div className="space-y-6 max-w-[1400px]">
@@ -857,8 +857,8 @@ function StaffDashboard() {
   const { data: projects = [], isLoading: isLoadingProjects } = useListProjects();
   const { data: stock = [], isLoading: isLoadingStock } = useGetStockSummary();
 
-  const totalStock = stock.reduce((sum, s) => sum + s.currentStockKg, 0);
-  const totalProduced = stock.reduce((sum, s) => sum + s.totalProducedKg, 0);
+  const totalStock = stock.reduce((sum, s) => sum + s.currentStock, 0);
+  const totalProduced = stock.reduce((sum, s) => sum + s.totalProduced, 0);
 
   return (
     <div className="space-y-6 max-w-[1400px]">
@@ -939,11 +939,11 @@ function StaffDashboard() {
                     {stock.map((s) => (
                       <tr key={s.projectId} className="border-b last:border-0 hover:bg-gray-50/60">
                         <td className="py-2.5 font-medium truncate max-w-[140px]">{s.projectName}</td>
-                        <td className="py-2.5 text-right text-muted-foreground">{s.totalProducedKg.toLocaleString()} kg</td>
-                        <td className="py-2.5 text-right text-blue-700">{s.totalSoldKg.toLocaleString()} kg</td>
+                        <td className="py-2.5 text-right text-muted-foreground">{s.totalProduced.toLocaleString()} kg</td>
+                        <td className="py-2.5 text-right text-blue-700">{s.totalSold.toLocaleString()} kg</td>
                         <td className="py-2.5 text-right">
-                          <span className={`font-semibold ${s.currentStockKg > 0 ? "text-emerald-700" : "text-muted-foreground"}`}>
-                            {s.currentStockKg.toLocaleString()} kg
+                          <span className={`font-semibold ${s.currentStock > 0 ? "text-emerald-700" : "text-muted-foreground"}`}>
+                            {s.currentStock.toLocaleString()} kg
                           </span>
                         </td>
                       </tr>
@@ -952,7 +952,7 @@ function StaffDashboard() {
                       <tr className="bg-gray-50 font-semibold">
                         <td className="py-2 px-0 text-xs text-muted-foreground">Total</td>
                         <td className="py-2 text-right text-xs">{totalProduced.toLocaleString()} kg</td>
-                        <td className="py-2 text-right text-xs">{stock.reduce((s, p) => s + p.totalSoldKg, 0).toLocaleString()} kg</td>
+                        <td className="py-2 text-right text-xs">{stock.reduce((s, p) => s + p.totalSold, 0).toLocaleString()} kg</td>
                         <td className="py-2 text-right text-xs text-emerald-700">{totalStock.toLocaleString()} kg</td>
                       </tr>
                     )}

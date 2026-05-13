@@ -102,9 +102,9 @@ export default function Stock() {
     });
   }
 
-  const totalStock = stock?.reduce((s, p) => s + p.currentStockKg, 0) ?? 0;
-  const totalProduced = stock?.reduce((s, p) => s + p.totalProducedKg, 0) ?? 0;
-  const totalSold = stock?.reduce((s, p) => s + p.totalSoldKg, 0) ?? 0;
+  const totalStock = stock?.reduce((s, p) => s + p.currentStock, 0) ?? 0;
+  const totalProduced = stock?.reduce((s, p) => s + p.totalProduced, 0) ?? 0;
+  const totalSold = stock?.reduce((s, p) => s + p.totalSold, 0) ?? 0;
 
   // Movement log for selected project (or all)
   const movements = (records ?? [])
@@ -116,7 +116,7 @@ export default function Stock() {
     .sort((a, b) => new Date(b.recordedAt).getTime() - new Date(a.recordedAt).getTime());
 
   // Running stock over time for the selected project (or first with data)
-  const chartProject = selectedProject ?? (stock?.find(s => s.totalProducedKg > 0)?.projectId ?? null);
+  const chartProject = selectedProject ?? (stock?.find(s => s.totalProduced > 0)?.projectId ?? null);
   const chartRecords = (records ?? [])
     .filter(r => r.projectId === chartProject)
     .sort((a, b) => new Date(a.recordedAt).getTime() - new Date(b.recordedAt).getTime());
@@ -268,7 +268,7 @@ export default function Stock() {
         ) : (
           <div className="grid gap-4 md:grid-cols-3">
             {stock?.map(p => {
-              const stockPct = p.totalProducedKg > 0 ? (p.currentStockKg / p.totalProducedKg) * 100 : 0;
+              const stockPct = p.totalProduced > 0 ? (p.currentStock / p.totalProduced) * 100 : 0;
               const isSelected = selectedProject === p.projectId;
               return (
                 <Card
@@ -279,34 +279,31 @@ export default function Stock() {
                 >
                   <CardHeader className="pb-2">
                     <CardTitle className="font-serif text-base leading-snug">{p.projectName}</CardTitle>
-                    <p className="text-xs text-muted-foreground">{p.location}, {p.district}</p>
+                    <p className="text-xs text-muted-foreground">{p.projectName}</p>
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <div className="flex items-end justify-between">
                       <div>
                         <p className="text-xs text-muted-foreground">Current Stock</p>
-                        <p className={`text-2xl font-bold ${p.currentStockKg > 0 ? "text-foreground" : "text-muted-foreground"}`}>
-                          {p.currentStockKg.toLocaleString("en-IN", { maximumFractionDigits: 1 })} kg
+                        <p className={`text-2xl font-bold ${p.currentStock > 0 ? "text-foreground" : "text-muted-foreground"}`}>
+                          {p.currentStock.toLocaleString("en-IN", { maximumFractionDigits: 1 })} kg
                         </p>
                       </div>
                       <div className="text-right">
                         <p className="text-xs text-muted-foreground">{stockPct.toFixed(0)}% remaining</p>
                       </div>
                     </div>
-                    <StockBar produced={p.totalProducedKg} sold={p.totalSoldKg} stock={p.currentStockKg} />
+                    <StockBar produced={p.totalProduced} sold={p.totalSold} stock={p.currentStock} />
                     <div className="grid grid-cols-2 gap-2 text-xs pt-1">
                       <div className="flex items-center gap-1 text-emerald-700">
                         <ArrowUpCircle className="w-3 h-3" />
-                        <span>{p.totalProducedKg.toLocaleString("en-IN", { maximumFractionDigits: 1 })} kg produced</span>
+                        <span>{p.totalProduced.toLocaleString("en-IN", { maximumFractionDigits: 1 })} kg produced</span>
                       </div>
                       <div className="flex items-center gap-1 text-red-600 justify-end">
                         <ArrowDownCircle className="w-3 h-3" />
-                        <span>{p.totalSoldKg.toLocaleString("en-IN", { maximumFractionDigits: 1 })} kg sold</span>
+                        <span>{p.totalSold.toLocaleString("en-IN", { maximumFractionDigits: 1 })} kg sold</span>
                       </div>
                     </div>
-                    {p.lastUpdatedAt && (
-                      <p className="text-xs text-muted-foreground">Last entry: {format(new Date(p.lastUpdatedAt), "dd MMM yyyy")}</p>
-                    )}
                   </CardContent>
                 </Card>
               );

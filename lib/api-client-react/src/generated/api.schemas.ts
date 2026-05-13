@@ -246,6 +246,16 @@ export const AgreementInputRevenueModel = {
   fifty_percent_revenue: "fifty_percent_revenue",
 } as const;
 
+export type AgreementInputStatus =
+  (typeof AgreementInputStatus)[keyof typeof AgreementInputStatus];
+
+export const AgreementInputStatus = {
+  draft: "draft",
+  active: "active",
+  matured: "matured",
+  terminated: "terminated",
+} as const;
+
 export interface AgreementInput {
   projectId: string;
   landOwnerId: string;
@@ -259,7 +269,10 @@ export interface AgreementInput {
   landValuePerUnit: number;
   landContributionAdjustment: number;
   yearlyEscalation: number;
+  ownershipShareLandowner?: number;
+  ownershipShareDeveloper?: number;
   revenueModel?: AgreementInputRevenueModel;
+  status?: AgreementInputStatus;
   northBoundary?: string;
   southBoundary?: string;
   eastBoundary?: string;
@@ -315,19 +328,12 @@ export interface DashboardSummary {
   totalPartners: number;
   totalAgreements: number;
   totalLandArea: number;
-  activeProjectsCount: number;
-  maturingProjectsCount: number;
   tappingProjectsCount: number;
 }
 
 export interface PartnerPortfolio {
-  /** @nullable */
-  partnerId: string | null;
-  partnerName: string;
-  role: string;
   agreements: Agreement[];
-  totalLandArea: number;
-  totalOwnershipShare: number;
+  projects: Project[];
 }
 
 export interface ActivityItem {
@@ -336,19 +342,19 @@ export interface ActivityItem {
   description: string;
   entityId: string;
   entityType: string;
+  /** @nullable */
+  userId?: string | null;
+  /** @nullable */
+  projectId?: string | null;
   createdAt: string;
 }
 
 export interface StockSummary {
   projectId: string;
   projectName: string;
-  location: string;
-  district: string;
-  totalProducedKg: number;
-  totalSoldKg: number;
-  currentStockKg: number;
-  /** @nullable */
-  lastUpdatedAt?: string | null;
+  totalProduced: number;
+  totalSold: number;
+  currentStock: number;
 }
 
 export interface ProductionRecord {
@@ -387,6 +393,30 @@ export interface RevenueStats {
   profit: number;
 }
 
+/**
+ * @nullable
+ */
+export type ProjectAssignmentItemProjectRole =
+  | (typeof ProjectAssignmentItemProjectRole)[keyof typeof ProjectAssignmentItemProjectRole]
+  | null;
+
+export const ProjectAssignmentItemProjectRole = {
+  admin: "admin",
+  developer: "developer",
+  landowner: "landowner",
+  investor: "investor",
+  employee: "employee",
+  operational_staff: "operational_staff",
+  null: "null",
+} as const;
+
+export interface ProjectAssignmentItem {
+  assignmentId: string;
+  projectId: string;
+  /** @nullable */
+  projectRole?: ProjectAssignmentItemProjectRole;
+}
+
 export type UserProfileRole =
   (typeof UserProfileRole)[keyof typeof UserProfileRole];
 
@@ -406,7 +436,17 @@ export interface UserProfile {
   displayName?: string | null;
   /** @nullable */
   email?: string | null;
+  /** @nullable */
+  phone?: string | null;
+  /** @nullable */
+  address?: string | null;
+  /** @nullable */
+  avatarUrl?: string | null;
+  /** @nullable */
+  idDocumentUrl?: string | null;
+  isActive: boolean;
   assignedProjectIds: string[];
+  projectAssignments?: ProjectAssignmentItem[];
   createdAt?: string;
 }
 
@@ -426,6 +466,16 @@ export interface UpsertUserInput {
   role: UpsertUserInputRole;
   displayName?: string;
   email?: string;
+  phone?: string;
+  address?: string;
+}
+
+export interface UpdateProfileInput {
+  displayName?: string;
+  phone?: string;
+  address?: string;
+  avatarUrl?: string;
+  idDocumentUrl?: string;
 }
 
 export type SetUserRoleInputRole =
@@ -444,13 +494,46 @@ export interface SetUserRoleInput {
   role: SetUserRoleInputRole;
 }
 
+export type AssignProjectInputProjectRole =
+  (typeof AssignProjectInputProjectRole)[keyof typeof AssignProjectInputProjectRole];
+
+export const AssignProjectInputProjectRole = {
+  admin: "admin",
+  developer: "developer",
+  landowner: "landowner",
+  investor: "investor",
+  employee: "employee",
+  operational_staff: "operational_staff",
+} as const;
+
 export interface AssignProjectInput {
   projectId: string;
+  projectRole?: AssignProjectInputProjectRole;
+}
+
+export type UpdateAssignmentInputProjectRole =
+  (typeof UpdateAssignmentInputProjectRole)[keyof typeof UpdateAssignmentInputProjectRole];
+
+export const UpdateAssignmentInputProjectRole = {
+  admin: "admin",
+  developer: "developer",
+  landowner: "landowner",
+  investor: "investor",
+  employee: "employee",
+  operational_staff: "operational_staff",
+} as const;
+
+export interface UpdateAssignmentInput {
+  projectRole: UpdateAssignmentInputProjectRole;
 }
 
 export interface OkResponse {
   ok?: boolean;
 }
+
+export type GetUserActivityParams = {
+  limit?: number;
+};
 
 export type ListProductionRecordsParams = {
   projectId?: string;

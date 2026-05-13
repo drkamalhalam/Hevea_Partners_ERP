@@ -11,7 +11,5 @@ export interface DashboardSummary {
   totalPartners: number;
   totalAgreements: number;
   totalLandArea: number;
-  activeProjectsCount: number;
-  maturingProjectsCount: number;
   tappingProjectsCount: number;
 }

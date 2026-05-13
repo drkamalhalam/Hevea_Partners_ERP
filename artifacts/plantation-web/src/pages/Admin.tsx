@@ -140,12 +140,17 @@ function UserRow({
           {user.displayName?.charAt(0).toUpperCase() ?? "?"}
         </div>
         <div className="min-w-0">
-          <p className="text-sm font-medium text-foreground truncate">
-            {user.displayName ?? "(No name)"}
-            {isSampleUser && (
-              <span className="ml-1.5 text-xs text-muted-foreground font-normal">[sample]</span>
-            )}
-          </p>
+          <div className="flex items-center gap-1.5">
+            <p className="text-sm font-medium text-foreground truncate">
+              {user.displayName ?? "(No name)"}
+              {isSampleUser && (
+                <span className="ml-1.5 text-xs text-muted-foreground font-normal">[sample]</span>
+              )}
+            </p>
+            <Link href={`/users/${user.clerkUserId}`}>
+              <span className="text-xs text-primary hover:underline whitespace-nowrap">View Profile</span>
+            </Link>
+          </div>
           <p className="text-xs text-muted-foreground truncate">{user.email ?? user.clerkUserId}</p>
         </div>
       </div>

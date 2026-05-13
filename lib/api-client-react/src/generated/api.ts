@@ -23,6 +23,7 @@ import type {
   AgreementUpdate,
   AssignProjectInput,
   DashboardSummary,
+  GetUserActivityParams,
   HealthStatus,
   ListProductionRecordsParams,
   OkResponse,
@@ -38,6 +39,8 @@ import type {
   RevenueStats,
   SetUserRoleInput,
   StockSummary,
+  UpdateAssignmentInput,
+  UpdateProfileInput,
   UpsertUserInput,
   UserProfile,
 } from "./api.schemas";
@@ -201,6 +204,92 @@ export const useUpsertMe = <
 };
 
 /**
+ * @summary Update current user's own profile fields
+ */
+export const getUpdateMyProfileUrl = () => {
+  return `/api/me/profile`;
+};
+
+export const updateMyProfile = async (
+  updateProfileInput: UpdateProfileInput,
+  options?: RequestInit,
+): Promise<UserProfile> => {
+  return customFetch<UserProfile>(getUpdateMyProfileUrl(), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateProfileInput),
+  });
+};
+
+export const getUpdateMyProfileMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateMyProfile>>,
+    TError,
+    { data: BodyType<UpdateProfileInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateMyProfile>>,
+  TError,
+  { data: BodyType<UpdateProfileInput> },
+  TContext
+> => {
+  const mutationKey = ["updateMyProfile"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateMyProfile>>,
+    { data: BodyType<UpdateProfileInput> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return updateMyProfile(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateMyProfileMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateMyProfile>>
+>;
+export type UpdateMyProfileMutationBody = BodyType<UpdateProfileInput>;
+export type UpdateMyProfileMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update current user's own profile fields
+ */
+export const useUpdateMyProfile = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateMyProfile>>,
+    TError,
+    { data: BodyType<UpdateProfileInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateMyProfile>>,
+  TError,
+  { data: BodyType<UpdateProfileInput> },
+  TContext
+> => {
+  return useMutation(getUpdateMyProfileMutationOptions(options));
+};
+
+/**
  * @summary List all users with roles (admin only)
  */
 export const getListUsersUrl = () => {
@@ -266,6 +355,181 @@ export function useListUsers<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Get a single user's full profile (admin/developer)
+ */
+export const getGetUserProfileUrl = (clerkUserId: string) => {
+  return `/api/users/${clerkUserId}`;
+};
+
+export const getUserProfile = async (
+  clerkUserId: string,
+  options?: RequestInit,
+): Promise<UserProfile> => {
+  return customFetch<UserProfile>(getGetUserProfileUrl(clerkUserId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetUserProfileQueryKey = (clerkUserId: string) => {
+  return [`/api/users/${clerkUserId}`] as const;
+};
+
+export const getGetUserProfileQueryOptions = <
+  TData = Awaited<ReturnType<typeof getUserProfile>>,
+  TError = ErrorType<void>,
+>(
+  clerkUserId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getUserProfile>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetUserProfileQueryKey(clerkUserId);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getUserProfile>>> = ({
+    signal,
+  }) => getUserProfile(clerkUserId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!clerkUserId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getUserProfile>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetUserProfileQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getUserProfile>>
+>;
+export type GetUserProfileQueryError = ErrorType<void>;
+
+/**
+ * @summary Get a single user's full profile (admin/developer)
+ */
+
+export function useGetUserProfile<
+  TData = Awaited<ReturnType<typeof getUserProfile>>,
+  TError = ErrorType<void>,
+>(
+  clerkUserId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getUserProfile>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetUserProfileQueryOptions(clerkUserId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Update a user's profile fields (admin only)
+ */
+export const getUpdateUserProfileUrl = (clerkUserId: string) => {
+  return `/api/users/${clerkUserId}`;
+};
+
+export const updateUserProfile = async (
+  clerkUserId: string,
+  updateProfileInput: UpdateProfileInput,
+  options?: RequestInit,
+): Promise<UserProfile> => {
+  return customFetch<UserProfile>(getUpdateUserProfileUrl(clerkUserId), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateProfileInput),
+  });
+};
+
+export const getUpdateUserProfileMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateUserProfile>>,
+    TError,
+    { clerkUserId: string; data: BodyType<UpdateProfileInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateUserProfile>>,
+  TError,
+  { clerkUserId: string; data: BodyType<UpdateProfileInput> },
+  TContext
+> => {
+  const mutationKey = ["updateUserProfile"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateUserProfile>>,
+    { clerkUserId: string; data: BodyType<UpdateProfileInput> }
+  > = (props) => {
+    const { clerkUserId, data } = props ?? {};
+
+    return updateUserProfile(clerkUserId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateUserProfileMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateUserProfile>>
+>;
+export type UpdateUserProfileMutationBody = BodyType<UpdateProfileInput>;
+export type UpdateUserProfileMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update a user's profile fields (admin only)
+ */
+export const useUpdateUserProfile = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateUserProfile>>,
+    TError,
+    { clerkUserId: string; data: BodyType<UpdateProfileInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateUserProfile>>,
+  TError,
+  { clerkUserId: string; data: BodyType<UpdateProfileInput> },
+  TContext
+> => {
+  return useMutation(getUpdateUserProfileMutationOptions(options));
+};
 
 /**
  * @summary Update a user's role (admin only)
@@ -355,7 +619,7 @@ export const useUpdateUserRole = <
 };
 
 /**
- * @summary Assign a user to a project
+ * @summary Assign a user to a project (optionally with a project-specific role)
  */
 export const getAssignUserToProjectUrl = (clerkUserId: string) => {
   return `/api/users/${clerkUserId}/projects`;
@@ -419,7 +683,7 @@ export type AssignUserToProjectMutationBody = BodyType<AssignProjectInput>;
 export type AssignUserToProjectMutationError = ErrorType<unknown>;
 
 /**
- * @summary Assign a user to a project
+ * @summary Assign a user to a project (optionally with a project-specific role)
  */
 export const useAssignUserToProject = <
   TError = ErrorType<unknown>,
@@ -439,6 +703,126 @@ export const useAssignUserToProject = <
   TContext
 > => {
   return useMutation(getAssignUserToProjectMutationOptions(options));
+};
+
+/**
+ * @summary Update project role for an existing assignment (admin only)
+ */
+export const getUpdateProjectAssignmentUrl = (
+  clerkUserId: string,
+  projectId: string,
+) => {
+  return `/api/users/${clerkUserId}/projects/${projectId}`;
+};
+
+export const updateProjectAssignment = async (
+  clerkUserId: string,
+  projectId: string,
+  updateAssignmentInput: UpdateAssignmentInput,
+  options?: RequestInit,
+): Promise<OkResponse> => {
+  return customFetch<OkResponse>(
+    getUpdateProjectAssignmentUrl(clerkUserId, projectId),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(updateAssignmentInput),
+    },
+  );
+};
+
+export const getUpdateProjectAssignmentMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateProjectAssignment>>,
+    TError,
+    {
+      clerkUserId: string;
+      projectId: string;
+      data: BodyType<UpdateAssignmentInput>;
+    },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateProjectAssignment>>,
+  TError,
+  {
+    clerkUserId: string;
+    projectId: string;
+    data: BodyType<UpdateAssignmentInput>;
+  },
+  TContext
+> => {
+  const mutationKey = ["updateProjectAssignment"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateProjectAssignment>>,
+    {
+      clerkUserId: string;
+      projectId: string;
+      data: BodyType<UpdateAssignmentInput>;
+    }
+  > = (props) => {
+    const { clerkUserId, projectId, data } = props ?? {};
+
+    return updateProjectAssignment(
+      clerkUserId,
+      projectId,
+      data,
+      requestOptions,
+    );
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateProjectAssignmentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateProjectAssignment>>
+>;
+export type UpdateProjectAssignmentMutationBody =
+  BodyType<UpdateAssignmentInput>;
+export type UpdateProjectAssignmentMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update project role for an existing assignment (admin only)
+ */
+export const useUpdateProjectAssignment = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateProjectAssignment>>,
+    TError,
+    {
+      clerkUserId: string;
+      projectId: string;
+      data: BodyType<UpdateAssignmentInput>;
+    },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateProjectAssignment>>,
+  TError,
+  {
+    clerkUserId: string;
+    projectId: string;
+    data: BodyType<UpdateAssignmentInput>;
+  },
+  TContext
+> => {
+  return useMutation(getUpdateProjectAssignmentMutationOptions(options));
 };
 
 /**
@@ -531,6 +915,125 @@ export const useRemoveUserFromProject = <
 > => {
   return useMutation(getRemoveUserFromProjectMutationOptions(options));
 };
+
+/**
+ * @summary Get recent activity for a specific user (admin/developer or own)
+ */
+export const getGetUserActivityUrl = (
+  clerkUserId: string,
+  params?: GetUserActivityParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/users/${clerkUserId}/activity?${stringifiedParams}`
+    : `/api/users/${clerkUserId}/activity`;
+};
+
+export const getUserActivity = async (
+  clerkUserId: string,
+  params?: GetUserActivityParams,
+  options?: RequestInit,
+): Promise<ActivityItem[]> => {
+  return customFetch<ActivityItem[]>(
+    getGetUserActivityUrl(clerkUserId, params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetUserActivityQueryKey = (
+  clerkUserId: string,
+  params?: GetUserActivityParams,
+) => {
+  return [
+    `/api/users/${clerkUserId}/activity`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetUserActivityQueryOptions = <
+  TData = Awaited<ReturnType<typeof getUserActivity>>,
+  TError = ErrorType<unknown>,
+>(
+  clerkUserId: string,
+  params?: GetUserActivityParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getUserActivity>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetUserActivityQueryKey(clerkUserId, params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getUserActivity>>> = ({
+    signal,
+  }) => getUserActivity(clerkUserId, params, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!clerkUserId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getUserActivity>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetUserActivityQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getUserActivity>>
+>;
+export type GetUserActivityQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get recent activity for a specific user (admin/developer or own)
+ */
+
+export function useGetUserActivity<
+  TData = Awaited<ReturnType<typeof getUserActivity>>,
+  TError = ErrorType<unknown>,
+>(
+  clerkUserId: string,
+  params?: GetUserActivityParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getUserActivity>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetUserActivityQueryOptions(
+    clerkUserId,
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * Returns server health status

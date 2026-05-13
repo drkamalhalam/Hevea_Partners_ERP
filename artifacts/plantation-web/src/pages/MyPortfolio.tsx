@@ -42,7 +42,7 @@ export default function MyPortfolio() {
             <Trees className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{portfolio?.totalLandArea.toFixed(1) ?? "0"}</div>
+            <div className="text-2xl font-bold">{portfolio?.projects?.length ?? 0}</div>
             <p className="text-xs text-muted-foreground">kani</p>
           </CardContent>
         </Card>
@@ -52,7 +52,7 @@ export default function MyPortfolio() {
             <Percent className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{portfolio?.totalOwnershipShare.toFixed(1) ?? "0"}%</div>
+            <div className="text-2xl font-bold">{portfolio?.agreements?.length ?? 0}</div>
           </CardContent>
         </Card>
       </div>

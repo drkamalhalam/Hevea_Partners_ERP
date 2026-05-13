@@ -12,5 +12,9 @@ export interface ActivityItem {
   description: string;
   entityId: string;
   entityType: string;
+  /** @nullable */
+  userId?: string | null;
+  /** @nullable */
+  projectId?: string | null;
   createdAt: string;
 }

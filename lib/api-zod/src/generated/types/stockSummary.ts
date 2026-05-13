@@ -9,11 +9,7 @@
 export interface StockSummary {
   projectId: string;
   projectName: string;
-  location: string;
-  district: string;
-  totalProducedKg: number;
-  totalSoldKg: number;
-  currentStockKg: number;
-  /** @nullable */
-  lastUpdatedAt?: string | null;
+  totalProduced: number;
+  totalSold: number;
+  currentStock: number;
 }

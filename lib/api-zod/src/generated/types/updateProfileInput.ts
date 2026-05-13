@@ -5,12 +5,11 @@
  * Rubber Plantation Partnership API
  * OpenAPI spec version: 0.1.0
  */
-import type { UpsertUserInputRole } from "./upsertUserInputRole";
 
-export interface UpsertUserInput {
-  role: UpsertUserInputRole;
+export interface UpdateProfileInput {
   displayName?: string;
-  email?: string;
   phone?: string;
   address?: string;
+  avatarUrl?: string;
+  idDocumentUrl?: string;
 }

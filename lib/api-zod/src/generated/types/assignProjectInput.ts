@@ -5,7 +5,9 @@
  * Rubber Plantation Partnership API
  * OpenAPI spec version: 0.1.0
  */
+import type { AssignProjectInputProjectRole } from "./assignProjectInputProjectRole";
 
 export interface AssignProjectInput {
   projectId: string;
+  projectRole?: AssignProjectInputProjectRole;
 }

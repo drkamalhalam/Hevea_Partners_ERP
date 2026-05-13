@@ -24,6 +24,8 @@ export const usersTable = pgTable("users", {
   email: text("email"),
   phone: text("phone"),
   avatarUrl: text("avatar_url"),
+  address: text("address"),
+  idDocumentUrl: text("id_document_url"),
   isActive: boolean("is_active").notNull().default(true),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

@@ -6,6 +6,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { usersTable } from "./users";
 import { projectsTable } from "./projects";
+import { userRoleEnum } from "./enums";
 
 /**
  * user_project_assignments — maps users to the projects they can access.
@@ -24,6 +25,7 @@ export const userProjectAssignmentsTable = pgTable(
     projectId: uuid("project_id")
       .notNull()
       .references(() => projectsTable.id, { onDelete: "cascade" }),
+    projectRole: userRoleEnum("project_role"),
     assignedBy: uuid("assigned_by").references(() => usersTable.id, {
       onDelete: "set null",
     }),

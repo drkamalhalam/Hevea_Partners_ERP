@@ -54,6 +54,25 @@ paths:
               schema:
                 $ref: "#/components/schemas/UserProfile"
 
+  /me/profile:
+    patch:
+      operationId: updateMyProfile
+      tags: [users]
+      summary: Update current user's own profile fields
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProfileInput"
+      responses:
+        "200":
+          description: Updated user profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+
   /users:
     get:
       operationId: listUsers
@@ -68,6 +87,50 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/UserProfile"
+
+  /users/{clerkUserId}:
+    get:
+      operationId: getUserProfile
+      tags: [users]
+      summary: Get a single user's full profile (admin/developer)
+      parameters:
+        - in: path
+          name: clerkUserId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateUserProfile
+      tags: [users]
+      summary: Update a user's profile fields (admin only)
+      parameters:
+        - in: path
+          name: clerkUserId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProfileInput"
+      responses:
+        "200":
+          description: Updated user profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
 
   /users/{clerkUserId}/role:
     put:
@@ -98,7 +161,7 @@ paths:
     post:
       operationId: assignUserToProject
       tags: [users]
-      summary: Assign a user to a project
+      summary: Assign a user to a project (optionally with a project-specific role)
       parameters:
         - in: path
           name: clerkUserId
@@ -120,6 +183,35 @@ paths:
                 $ref: "#/components/schemas/OkResponse"
 
   /users/{clerkUserId}/projects/{projectId}:
+    patch:
+      operationId: updateProjectAssignment
+      tags: [users]
+      summary: Update project role for an existing assignment (admin only)
+      parameters:
+        - in: path
+          name: clerkUserId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: projectId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAssignmentInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
     delete:
       operationId: removeUserFromProject
       tags: [users]
@@ -143,6 +235,32 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/OkResponse"
+
+  /users/{clerkUserId}/activity:
+    get:
+      operationId: getUserActivity
+      tags: [users]
+      summary: Get recent activity for a specific user (admin/developer or own)
+      parameters:
+        - in: path
+          name: clerkUserId
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Activity feed
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityItem"
 
   /healthz:
     get:
@@ -849,9 +967,16 @@ components:
           type: number
         yearlyEscalation:
           type: number
+        ownershipShareLandowner:
+          type: number
+        ownershipShareDeveloper:
+          type: number
         revenueModel:
           type: string
           enum: [contribution, fifty_percent_revenue]
+        status:
+          type: string
+          enum: [draft, active, matured, terminated]
         northBoundary:
           type: string
         southBoundary:
@@ -915,7 +1040,7 @@ components:
 
     DashboardSummary:
       type: object
-      required: [totalProjects, totalPartners, totalAgreements, totalLandArea, activeProjectsCount, maturingProjectsCount, tappingProjectsCount]
+      required: [totalProjects, totalPartners, totalAgreements, totalLandArea, tappingProjectsCount]
       properties:
         totalProjects:
           type: integer
@@ -925,31 +1050,21 @@ components:
           type: integer
         totalLandArea:
           type: number
-        activeProjectsCount:
-          type: integer
-        maturingProjectsCount:
-          type: integer
         tappingProjectsCount:
           type: integer
 
     PartnerPortfolio:
       type: object
-      required: [partnerId, partnerName, role, agreements, totalLandArea, totalOwnershipShare]
+      required: [agreements, projects]
       properties:
-        partnerId:
-          type: ["string", "null"]
-        partnerName:
-          type: string
-        role:
-          type: string
         agreements:
           type: array
           items:
             $ref: "#/components/schemas/Agreement"
-        totalLandArea:
-          type: number
-        totalOwnershipShare:
-          type: number
+        projects:
+          type: array
+          items:
+            $ref: "#/components/schemas/Project"
 
     ActivityItem:
       type: object
@@ -966,30 +1081,30 @@ components:
           type: string
         entityType:
           type: string
+        userId:
+          type: ["string", "null"]
+          format: uuid
+        projectId:
+          type: ["string", "null"]
+          format: uuid
         createdAt:
           type: string
 
     StockSummary:
       type: object
-      required: [projectId, projectName, location, district, totalProducedKg, totalSoldKg, currentStockKg]
+      required: [projectId, projectName, totalProduced, totalSold, currentStock]
       properties:
         projectId:
           type: string
           format: uuid
         projectName:
           type: string
-        location:
-          type: string
-        district:
-          type: string
-        totalProducedKg:
+        totalProduced:
           type: number
-        totalSoldKg:
+        totalSold:
           type: number
-        currentStockKg:
+        currentStock:
           type: number
-        lastUpdatedAt:
-          type: ["string", "null"]
 
     ProductionRecord:
       type: object
@@ -1058,9 +1173,23 @@ components:
         profit:
           type: number
 
+    ProjectAssignmentItem:
+      type: object
+      required: [assignmentId, projectId]
+      properties:
+        assignmentId:
+          type: string
+          format: uuid
+        projectId:
+          type: string
+          format: uuid
+        projectRole:
+          type: ["string", "null"]
+          enum: [admin, developer, landowner, investor, employee, operational_staff, "null"]
+
     UserProfile:
       type: object
-      required: [clerkUserId, role, assignedProjectIds]
+      required: [clerkUserId, role, assignedProjectIds, isActive]
       properties:
         clerkUserId:
           type: string
@@ -1071,11 +1200,25 @@ components:
           type: ["string", "null"]
         email:
           type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        address:
+          type: ["string", "null"]
+        avatarUrl:
+          type: ["string", "null"]
+        idDocumentUrl:
+          type: ["string", "null"]
+        isActive:
+          type: boolean
         assignedProjectIds:
           type: array
           items:
             type: string
             format: uuid
+        projectAssignments:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProjectAssignmentItem"
         createdAt:
           type: string
 
@@ -1089,6 +1232,24 @@ components:
         displayName:
           type: string
         email:
+          type: string
+        phone:
+          type: string
+        address:
+          type: string
+
+    UpdateProfileInput:
+      type: object
+      properties:
+        displayName:
+          type: string
+        phone:
+          type: string
+        address:
+          type: string
+        avatarUrl:
+          type: string
+        idDocumentUrl:
           type: string
 
     SetUserRoleInput:
@@ -1106,6 +1267,17 @@ components:
         projectId:
           type: string
           format: uuid
+        projectRole:
+          type: string
+          enum: [admin, developer, landowner, investor, employee, operational_staff]
+
+    UpdateAssignmentInput:
+      type: object
+      required: [projectRole]
+      properties:
+        projectRole:
+          type: string
+          enum: [admin, developer, landowner, investor, employee, operational_staff]
 
     OkResponse:
       type: object

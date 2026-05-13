@@ -16,6 +16,8 @@ import ProjectDetails from "./pages/ProjectDetails";
 import Partners from "./pages/Partners";
 import PartnerDetails from "./pages/PartnerDetails";
 import MyPortfolio from "./pages/MyPortfolio";
+import MyProfile from "./pages/MyProfile";
+import UserProfile from "./pages/UserProfile";
 import Admin from "./pages/Admin";
 
 // Pages — Finance
@@ -191,6 +193,8 @@ function AppRoutes() {
               <Route path="/partners"><ProtectedRoute component={Partners} /></Route>
               <Route path="/partners/:id"><ProtectedRoute component={PartnerDetails} /></Route>
               <Route path="/my-portfolio"><ProtectedRoute component={MyPortfolio} /></Route>
+              <Route path="/profile"><ProtectedRoute component={MyProfile} /></Route>
+              <Route path="/users/:clerkUserId"><ProtectedRoute component={UserProfile} /></Route>
 
               {/* Finance */}
               <Route path="/agreements"><ProtectedRoute component={Agreements} /></Route>

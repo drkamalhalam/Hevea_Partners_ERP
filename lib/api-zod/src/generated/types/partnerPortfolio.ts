@@ -6,13 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { Agreement } from "./agreement";
+import type { Project } from "./project";
 
 export interface PartnerPortfolio {
-  /** @nullable */
-  partnerId: string | null;
-  partnerName: string;
-  role: string;
   agreements: Agreement[];
-  totalLandArea: number;
-  totalOwnershipShare: number;
+  projects: Project[];
 }

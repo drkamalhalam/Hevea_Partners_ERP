@@ -5,6 +5,7 @@
  * Rubber Plantation Partnership API
  * OpenAPI spec version: 0.1.0
  */
+import type { ProjectAssignmentItem } from "./projectAssignmentItem";
 import type { UserProfileRole } from "./userProfileRole";
 
 export interface UserProfile {
@@ -14,6 +15,16 @@ export interface UserProfile {
   displayName?: string | null;
   /** @nullable */
   email?: string | null;
+  /** @nullable */
+  phone?: string | null;
+  /** @nullable */
+  address?: string | null;
+  /** @nullable */
+  avatarUrl?: string | null;
+  /** @nullable */
+  idDocumentUrl?: string | null;
+  isActive: boolean;
   assignedProjectIds: string[];
+  projectAssignments?: ProjectAssignmentItem[];
   createdAt?: string;
 }

@@ -22,7 +22,31 @@ export const GetMeResponse = zod.object({
   ]),
   displayName: zod.string().nullish(),
   email: zod.string().nullish(),
+  phone: zod.string().nullish(),
+  address: zod.string().nullish(),
+  avatarUrl: zod.string().nullish(),
+  idDocumentUrl: zod.string().nullish(),
+  isActive: zod.boolean(),
   assignedProjectIds: zod.array(zod.string().uuid()),
+  projectAssignments: zod
+    .array(
+      zod.object({
+        assignmentId: zod.string().uuid(),
+        projectId: zod.string().uuid(),
+        projectRole: zod
+          .enum([
+            "admin",
+            "developer",
+            "landowner",
+            "investor",
+            "employee",
+            "operational_staff",
+            "null",
+          ])
+          .nullish(),
+      }),
+    )
+    .optional(),
   createdAt: zod.string().optional(),
 });
 
@@ -40,6 +64,8 @@ export const UpsertMeBody = zod.object({
   ]),
   displayName: zod.string().optional(),
   email: zod.string().optional(),
+  phone: zod.string().optional(),
+  address: zod.string().optional(),
 });
 
 export const UpsertMeResponse = zod.object({
@@ -54,7 +80,82 @@ export const UpsertMeResponse = zod.object({
   ]),
   displayName: zod.string().nullish(),
   email: zod.string().nullish(),
+  phone: zod.string().nullish(),
+  address: zod.string().nullish(),
+  avatarUrl: zod.string().nullish(),
+  idDocumentUrl: zod.string().nullish(),
+  isActive: zod.boolean(),
   assignedProjectIds: zod.array(zod.string().uuid()),
+  projectAssignments: zod
+    .array(
+      zod.object({
+        assignmentId: zod.string().uuid(),
+        projectId: zod.string().uuid(),
+        projectRole: zod
+          .enum([
+            "admin",
+            "developer",
+            "landowner",
+            "investor",
+            "employee",
+            "operational_staff",
+            "null",
+          ])
+          .nullish(),
+      }),
+    )
+    .optional(),
+  createdAt: zod.string().optional(),
+});
+
+/**
+ * @summary Update current user's own profile fields
+ */
+export const UpdateMyProfileBody = zod.object({
+  displayName: zod.string().optional(),
+  phone: zod.string().optional(),
+  address: zod.string().optional(),
+  avatarUrl: zod.string().optional(),
+  idDocumentUrl: zod.string().optional(),
+});
+
+export const UpdateMyProfileResponse = zod.object({
+  clerkUserId: zod.string(),
+  role: zod.enum([
+    "admin",
+    "developer",
+    "landowner",
+    "investor",
+    "employee",
+    "operational_staff",
+  ]),
+  displayName: zod.string().nullish(),
+  email: zod.string().nullish(),
+  phone: zod.string().nullish(),
+  address: zod.string().nullish(),
+  avatarUrl: zod.string().nullish(),
+  idDocumentUrl: zod.string().nullish(),
+  isActive: zod.boolean(),
+  assignedProjectIds: zod.array(zod.string().uuid()),
+  projectAssignments: zod
+    .array(
+      zod.object({
+        assignmentId: zod.string().uuid(),
+        projectId: zod.string().uuid(),
+        projectRole: zod
+          .enum([
+            "admin",
+            "developer",
+            "landowner",
+            "investor",
+            "employee",
+            "operational_staff",
+            "null",
+          ])
+          .nullish(),
+      }),
+    )
+    .optional(),
   createdAt: zod.string().optional(),
 });
 
@@ -73,10 +174,136 @@ export const ListUsersResponseItem = zod.object({
   ]),
   displayName: zod.string().nullish(),
   email: zod.string().nullish(),
+  phone: zod.string().nullish(),
+  address: zod.string().nullish(),
+  avatarUrl: zod.string().nullish(),
+  idDocumentUrl: zod.string().nullish(),
+  isActive: zod.boolean(),
   assignedProjectIds: zod.array(zod.string().uuid()),
+  projectAssignments: zod
+    .array(
+      zod.object({
+        assignmentId: zod.string().uuid(),
+        projectId: zod.string().uuid(),
+        projectRole: zod
+          .enum([
+            "admin",
+            "developer",
+            "landowner",
+            "investor",
+            "employee",
+            "operational_staff",
+            "null",
+          ])
+          .nullish(),
+      }),
+    )
+    .optional(),
   createdAt: zod.string().optional(),
 });
 export const ListUsersResponse = zod.array(ListUsersResponseItem);
+
+/**
+ * @summary Get a single user's full profile (admin/developer)
+ */
+export const GetUserProfileParams = zod.object({
+  clerkUserId: zod.coerce.string(),
+});
+
+export const GetUserProfileResponse = zod.object({
+  clerkUserId: zod.string(),
+  role: zod.enum([
+    "admin",
+    "developer",
+    "landowner",
+    "investor",
+    "employee",
+    "operational_staff",
+  ]),
+  displayName: zod.string().nullish(),
+  email: zod.string().nullish(),
+  phone: zod.string().nullish(),
+  address: zod.string().nullish(),
+  avatarUrl: zod.string().nullish(),
+  idDocumentUrl: zod.string().nullish(),
+  isActive: zod.boolean(),
+  assignedProjectIds: zod.array(zod.string().uuid()),
+  projectAssignments: zod
+    .array(
+      zod.object({
+        assignmentId: zod.string().uuid(),
+        projectId: zod.string().uuid(),
+        projectRole: zod
+          .enum([
+            "admin",
+            "developer",
+            "landowner",
+            "investor",
+            "employee",
+            "operational_staff",
+            "null",
+          ])
+          .nullish(),
+      }),
+    )
+    .optional(),
+  createdAt: zod.string().optional(),
+});
+
+/**
+ * @summary Update a user's profile fields (admin only)
+ */
+export const UpdateUserProfileParams = zod.object({
+  clerkUserId: zod.coerce.string(),
+});
+
+export const UpdateUserProfileBody = zod.object({
+  displayName: zod.string().optional(),
+  phone: zod.string().optional(),
+  address: zod.string().optional(),
+  avatarUrl: zod.string().optional(),
+  idDocumentUrl: zod.string().optional(),
+});
+
+export const UpdateUserProfileResponse = zod.object({
+  clerkUserId: zod.string(),
+  role: zod.enum([
+    "admin",
+    "developer",
+    "landowner",
+    "investor",
+    "employee",
+    "operational_staff",
+  ]),
+  displayName: zod.string().nullish(),
+  email: zod.string().nullish(),
+  phone: zod.string().nullish(),
+  address: zod.string().nullish(),
+  avatarUrl: zod.string().nullish(),
+  idDocumentUrl: zod.string().nullish(),
+  isActive: zod.boolean(),
+  assignedProjectIds: zod.array(zod.string().uuid()),
+  projectAssignments: zod
+    .array(
+      zod.object({
+        assignmentId: zod.string().uuid(),
+        projectId: zod.string().uuid(),
+        projectRole: zod
+          .enum([
+            "admin",
+            "developer",
+            "landowner",
+            "investor",
+            "employee",
+            "operational_staff",
+            "null",
+          ])
+          .nullish(),
+      }),
+    )
+    .optional(),
+  createdAt: zod.string().optional(),
+});
 
 /**
  * @summary Update a user's role (admin only)
@@ -108,12 +335,36 @@ export const UpdateUserRoleResponse = zod.object({
   ]),
   displayName: zod.string().nullish(),
   email: zod.string().nullish(),
+  phone: zod.string().nullish(),
+  address: zod.string().nullish(),
+  avatarUrl: zod.string().nullish(),
+  idDocumentUrl: zod.string().nullish(),
+  isActive: zod.boolean(),
   assignedProjectIds: zod.array(zod.string().uuid()),
+  projectAssignments: zod
+    .array(
+      zod.object({
+        assignmentId: zod.string().uuid(),
+        projectId: zod.string().uuid(),
+        projectRole: zod
+          .enum([
+            "admin",
+            "developer",
+            "landowner",
+            "investor",
+            "employee",
+            "operational_staff",
+            "null",
+          ])
+          .nullish(),
+      }),
+    )
+    .optional(),
   createdAt: zod.string().optional(),
 });
 
 /**
- * @summary Assign a user to a project
+ * @summary Assign a user to a project (optionally with a project-specific role)
  */
 export const AssignUserToProjectParams = zod.object({
   clerkUserId: zod.coerce.string(),
@@ -121,9 +372,42 @@ export const AssignUserToProjectParams = zod.object({
 
 export const AssignUserToProjectBody = zod.object({
   projectId: zod.string().uuid(),
+  projectRole: zod
+    .enum([
+      "admin",
+      "developer",
+      "landowner",
+      "investor",
+      "employee",
+      "operational_staff",
+    ])
+    .optional(),
 });
 
 export const AssignUserToProjectResponse = zod.object({
+  ok: zod.boolean().optional(),
+});
+
+/**
+ * @summary Update project role for an existing assignment (admin only)
+ */
+export const UpdateProjectAssignmentParams = zod.object({
+  clerkUserId: zod.coerce.string(),
+  projectId: zod.coerce.string().uuid(),
+});
+
+export const UpdateProjectAssignmentBody = zod.object({
+  projectRole: zod.enum([
+    "admin",
+    "developer",
+    "landowner",
+    "investor",
+    "employee",
+    "operational_staff",
+  ]),
+});
+
+export const UpdateProjectAssignmentResponse = zod.object({
   ok: zod.boolean().optional(),
 });
 
@@ -138,6 +422,29 @@ export const RemoveUserFromProjectParams = zod.object({
 export const RemoveUserFromProjectResponse = zod.object({
   ok: zod.boolean().optional(),
 });
+
+/**
+ * @summary Get recent activity for a specific user (admin/developer or own)
+ */
+export const GetUserActivityParams = zod.object({
+  clerkUserId: zod.coerce.string(),
+});
+
+export const GetUserActivityQueryParams = zod.object({
+  limit: zod.coerce.number().optional(),
+});
+
+export const GetUserActivityResponseItem = zod.object({
+  id: zod.string().uuid(),
+  type: zod.string(),
+  description: zod.string(),
+  entityId: zod.string(),
+  entityType: zod.string(),
+  userId: zod.string().uuid().nullish(),
+  projectId: zod.string().uuid().nullish(),
+  createdAt: zod.string(),
+});
+export const GetUserActivityResponse = zod.array(GetUserActivityResponseItem);
 
 /**
  * Returns server health status
@@ -453,7 +760,10 @@ export const CreateAgreementBody = zod.object({
   landValuePerUnit: zod.number(),
   landContributionAdjustment: zod.number(),
   yearlyEscalation: zod.number(),
+  ownershipShareLandowner: zod.number().optional(),
+  ownershipShareDeveloper: zod.number().optional(),
   revenueModel: zod.enum(["contribution", "fifty_percent_revenue"]).optional(),
+  status: zod.enum(["draft", "active", "matured", "terminated"]).optional(),
   northBoundary: zod.string().optional(),
   southBoundary: zod.string().optional(),
   eastBoundary: zod.string().optional(),
@@ -570,12 +880,9 @@ export const UpdateAgreementResponse = zod.object({
 export const GetStockSummaryResponseItem = zod.object({
   projectId: zod.string().uuid(),
   projectName: zod.string(),
-  location: zod.string(),
-  district: zod.string(),
-  totalProducedKg: zod.number(),
-  totalSoldKg: zod.number(),
-  currentStockKg: zod.number(),
-  lastUpdatedAt: zod.string().nullish(),
+  totalProduced: zod.number(),
+  totalSold: zod.number(),
+  currentStock: zod.number(),
 });
 export const GetStockSummaryResponse = zod.array(GetStockSummaryResponseItem);
 
@@ -651,8 +958,6 @@ export const GetDashboardSummaryResponse = zod.object({
   totalPartners: zod.number(),
   totalAgreements: zod.number(),
   totalLandArea: zod.number(),
-  activeProjectsCount: zod.number(),
-  maturingProjectsCount: zod.number(),
   tappingProjectsCount: zod.number(),
 });
 
@@ -660,9 +965,6 @@ export const GetDashboardSummaryResponse = zod.object({
  * @summary Get current user's portfolio and agreements
  */
 export const GetMyPortfolioResponse = zod.object({
-  partnerId: zod.string().nullable(),
-  partnerName: zod.string(),
-  role: zod.string(),
   agreements: zod.array(
     zod.object({
       id: zod.string().uuid(),
@@ -698,8 +1000,36 @@ export const GetMyPortfolioResponse = zod.object({
       updatedAt: zod.string().nullish(),
     }),
   ),
-  totalLandArea: zod.number(),
-  totalOwnershipShare: zod.number(),
+  projects: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      name: zod.string(),
+      description: zod.string().nullish(),
+      location: zod.string(),
+      village: zod.string().nullish(),
+      district: zod.string(),
+      state: zod.string(),
+      landArea: zod.number(),
+      landAreaUnit: zod.string(),
+      landNotionalValue: zod.number().nullish(),
+      landValuePerUnit: zod.number().nullish(),
+      status: zod.enum([
+        "planning",
+        "developing",
+        "maturing",
+        "tapping",
+        "completed",
+        "suspended",
+      ]),
+      startDate: zod.string(),
+      expectedMaturityDate: zod.string().nullish(),
+      termYears: zod.number(),
+      notes: zod.string().nullish(),
+      isActive: zod.boolean(),
+      createdAt: zod.string(),
+      updatedAt: zod.string().nullish(),
+    }),
+  ),
 });
 
 /**
@@ -711,6 +1041,8 @@ export const GetRecentActivityResponseItem = zod.object({
   description: zod.string(),
   entityId: zod.string(),
   entityType: zod.string(),
+  userId: zod.string().uuid().nullish(),
+  projectId: zod.string().uuid().nullish(),
   createdAt: zod.string(),
 });
 export const GetRecentActivityResponse = zod.array(

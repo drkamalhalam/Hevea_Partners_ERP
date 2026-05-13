@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { AgreementInputRevenueModel } from "./agreementInputRevenueModel";
+import type { AgreementInputStatus } from "./agreementInputStatus";
 
 export interface AgreementInput {
   projectId: string;
@@ -20,7 +21,10 @@ export interface AgreementInput {
   landValuePerUnit: number;
   landContributionAdjustment: number;
   yearlyEscalation: number;
+  ownershipShareLandowner?: number;
+  ownershipShareDeveloper?: number;
   revenueModel?: AgreementInputRevenueModel;
+  status?: AgreementInputStatus;
   northBoundary?: string;
   southBoundary?: string;
   eastBoundary?: string;
