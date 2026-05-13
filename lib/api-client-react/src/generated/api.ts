@@ -21,6 +21,9 @@ import type {
   ActivityItem,
   AddParticipantInput,
   Agreement,
+  AgreementActivation,
+  AgreementActivationOtp,
+  AgreementActivationSummary,
   AgreementAuditEntry,
   AgreementGeneration,
   AgreementInput,
@@ -28,6 +31,7 @@ import type {
   AgreementUpdate,
   AgreementVariablesResponse,
   AssignProjectInput,
+  CancelAgreementActivationBody,
   CancelMaturityBody,
   CreateClaimantInput,
   CreateGenerationBody,
@@ -41,6 +45,8 @@ import type {
   GetUserActivityParams,
   GovernanceSummary,
   HealthStatus,
+  InitiateAgreementActivation409,
+  InitiateAgreementActivationBody,
   InitiateClosureBody,
   InitiateMaturityBody,
   InitiateNomineeActivationBody,
@@ -87,6 +93,8 @@ import type {
   UpdateTemplateBody,
   UpsertUserInput,
   UserProfile,
+  VerifyAgreementActivationOtp400,
+  VerifyAgreementActivationOtpBody,
   VerifyNomineeActivationBody,
   VerifyOtpBody,
 } from "./api.schemas";
@@ -6223,6 +6231,603 @@ export const useGenerateAgreementDocument = <
   TContext
 > => {
   return useMutation(getGenerateAgreementDocumentMutationOptions(options));
+};
+
+/**
+ * @summary List all agreements pending activation (admin/developer only)
+ */
+export const getListPendingActivationAgreementsUrl = () => {
+  return `/api/agreements/pending-activation`;
+};
+
+export const listPendingActivationAgreements = async (
+  options?: RequestInit,
+): Promise<AgreementActivationSummary[]> => {
+  return customFetch<AgreementActivationSummary[]>(
+    getListPendingActivationAgreementsUrl(),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListPendingActivationAgreementsQueryKey = () => {
+  return [`/api/agreements/pending-activation`] as const;
+};
+
+export const getListPendingActivationAgreementsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listPendingActivationAgreements>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listPendingActivationAgreements>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListPendingActivationAgreementsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listPendingActivationAgreements>>
+  > = ({ signal }) =>
+    listPendingActivationAgreements({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listPendingActivationAgreements>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListPendingActivationAgreementsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listPendingActivationAgreements>>
+>;
+export type ListPendingActivationAgreementsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List all agreements pending activation (admin/developer only)
+ */
+
+export function useListPendingActivationAgreements<
+  TData = Awaited<ReturnType<typeof listPendingActivationAgreements>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listPendingActivationAgreements>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListPendingActivationAgreementsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get current activation workflow for an agreement
+ */
+export const getGetAgreementActivationUrl = (id: string) => {
+  return `/api/agreements/${id}/activation`;
+};
+
+export const getAgreementActivation = async (
+  id: string,
+  options?: RequestInit,
+): Promise<AgreementActivation> => {
+  return customFetch<AgreementActivation>(getGetAgreementActivationUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetAgreementActivationQueryKey = (id: string) => {
+  return [`/api/agreements/${id}/activation`] as const;
+};
+
+export const getGetAgreementActivationQueryOptions = <
+  TData = Awaited<ReturnType<typeof getAgreementActivation>>,
+  TError = ErrorType<void>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getAgreementActivation>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetAgreementActivationQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getAgreementActivation>>
+  > = ({ signal }) => getAgreementActivation(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getAgreementActivation>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetAgreementActivationQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getAgreementActivation>>
+>;
+export type GetAgreementActivationQueryError = ErrorType<void>;
+
+/**
+ * @summary Get current activation workflow for an agreement
+ */
+
+export function useGetAgreementActivation<
+  TData = Awaited<ReturnType<typeof getAgreementActivation>>,
+  TError = ErrorType<void>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getAgreementActivation>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetAgreementActivationQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Initiate activation workflow for a draft agreement (admin/developer only)
+ */
+export const getInitiateAgreementActivationUrl = (id: string) => {
+  return `/api/agreements/${id}/activation`;
+};
+
+export const initiateAgreementActivation = async (
+  id: string,
+  initiateAgreementActivationBody?: InitiateAgreementActivationBody,
+  options?: RequestInit,
+): Promise<AgreementActivation> => {
+  return customFetch<AgreementActivation>(
+    getInitiateAgreementActivationUrl(id),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(initiateAgreementActivationBody),
+    },
+  );
+};
+
+export const getInitiateAgreementActivationMutationOptions = <
+  TError = ErrorType<InitiateAgreementActivation409>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof initiateAgreementActivation>>,
+    TError,
+    { id: string; data: BodyType<InitiateAgreementActivationBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof initiateAgreementActivation>>,
+  TError,
+  { id: string; data: BodyType<InitiateAgreementActivationBody> },
+  TContext
+> => {
+  const mutationKey = ["initiateAgreementActivation"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof initiateAgreementActivation>>,
+    { id: string; data: BodyType<InitiateAgreementActivationBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return initiateAgreementActivation(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type InitiateAgreementActivationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof initiateAgreementActivation>>
+>;
+export type InitiateAgreementActivationMutationBody =
+  BodyType<InitiateAgreementActivationBody>;
+export type InitiateAgreementActivationMutationError =
+  ErrorType<InitiateAgreementActivation409>;
+
+/**
+ * @summary Initiate activation workflow for a draft agreement (admin/developer only)
+ */
+export const useInitiateAgreementActivation = <
+  TError = ErrorType<InitiateAgreementActivation409>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof initiateAgreementActivation>>,
+    TError,
+    { id: string; data: BodyType<InitiateAgreementActivationBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof initiateAgreementActivation>>,
+  TError,
+  { id: string; data: BodyType<InitiateAgreementActivationBody> },
+  TContext
+> => {
+  return useMutation(getInitiateAgreementActivationMutationOptions(options));
+};
+
+/**
+ * @summary Cancel the active activation workflow (admin/developer only)
+ */
+export const getCancelAgreementActivationUrl = (
+  id: string,
+  activationId: string,
+) => {
+  return `/api/agreements/${id}/activation/${activationId}/cancel`;
+};
+
+export const cancelAgreementActivation = async (
+  id: string,
+  activationId: string,
+  cancelAgreementActivationBody?: CancelAgreementActivationBody,
+  options?: RequestInit,
+): Promise<AgreementActivation> => {
+  return customFetch<AgreementActivation>(
+    getCancelAgreementActivationUrl(id, activationId),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(cancelAgreementActivationBody),
+    },
+  );
+};
+
+export const getCancelAgreementActivationMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof cancelAgreementActivation>>,
+    TError,
+    {
+      id: string;
+      activationId: string;
+      data: BodyType<CancelAgreementActivationBody>;
+    },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof cancelAgreementActivation>>,
+  TError,
+  {
+    id: string;
+    activationId: string;
+    data: BodyType<CancelAgreementActivationBody>;
+  },
+  TContext
+> => {
+  const mutationKey = ["cancelAgreementActivation"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof cancelAgreementActivation>>,
+    {
+      id: string;
+      activationId: string;
+      data: BodyType<CancelAgreementActivationBody>;
+    }
+  > = (props) => {
+    const { id, activationId, data } = props ?? {};
+
+    return cancelAgreementActivation(id, activationId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CancelAgreementActivationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof cancelAgreementActivation>>
+>;
+export type CancelAgreementActivationMutationBody =
+  BodyType<CancelAgreementActivationBody>;
+export type CancelAgreementActivationMutationError = ErrorType<void>;
+
+/**
+ * @summary Cancel the active activation workflow (admin/developer only)
+ */
+export const useCancelAgreementActivation = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof cancelAgreementActivation>>,
+    TError,
+    {
+      id: string;
+      activationId: string;
+      data: BodyType<CancelAgreementActivationBody>;
+    },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof cancelAgreementActivation>>,
+  TError,
+  {
+    id: string;
+    activationId: string;
+    data: BodyType<CancelAgreementActivationBody>;
+  },
+  TContext
+> => {
+  return useMutation(getCancelAgreementActivationMutationOptions(options));
+};
+
+/**
+ * @summary Send (or resend) OTP to a party for agreement activation
+ */
+export const getSendAgreementActivationOtpUrl = (
+  id: string,
+  activationId: string,
+  otpId: string,
+) => {
+  return `/api/agreements/${id}/activation/${activationId}/otp/${otpId}/send`;
+};
+
+export const sendAgreementActivationOtp = async (
+  id: string,
+  activationId: string,
+  otpId: string,
+  options?: RequestInit,
+): Promise<AgreementActivationOtp> => {
+  return customFetch<AgreementActivationOtp>(
+    getSendAgreementActivationOtpUrl(id, activationId, otpId),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getSendAgreementActivationOtpMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof sendAgreementActivationOtp>>,
+    TError,
+    { id: string; activationId: string; otpId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof sendAgreementActivationOtp>>,
+  TError,
+  { id: string; activationId: string; otpId: string },
+  TContext
+> => {
+  const mutationKey = ["sendAgreementActivationOtp"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof sendAgreementActivationOtp>>,
+    { id: string; activationId: string; otpId: string }
+  > = (props) => {
+    const { id, activationId, otpId } = props ?? {};
+
+    return sendAgreementActivationOtp(id, activationId, otpId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SendAgreementActivationOtpMutationResult = NonNullable<
+  Awaited<ReturnType<typeof sendAgreementActivationOtp>>
+>;
+
+export type SendAgreementActivationOtpMutationError = ErrorType<void>;
+
+/**
+ * @summary Send (or resend) OTP to a party for agreement activation
+ */
+export const useSendAgreementActivationOtp = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof sendAgreementActivationOtp>>,
+    TError,
+    { id: string; activationId: string; otpId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof sendAgreementActivationOtp>>,
+  TError,
+  { id: string; activationId: string; otpId: string },
+  TContext
+> => {
+  return useMutation(getSendAgreementActivationOtpMutationOptions(options));
+};
+
+/**
+ * @summary Submit OTP code to verify a party for agreement activation
+ */
+export const getVerifyAgreementActivationOtpUrl = (
+  id: string,
+  activationId: string,
+  otpId: string,
+) => {
+  return `/api/agreements/${id}/activation/${activationId}/otp/${otpId}/verify`;
+};
+
+export const verifyAgreementActivationOtp = async (
+  id: string,
+  activationId: string,
+  otpId: string,
+  verifyAgreementActivationOtpBody: VerifyAgreementActivationOtpBody,
+  options?: RequestInit,
+): Promise<AgreementActivation> => {
+  return customFetch<AgreementActivation>(
+    getVerifyAgreementActivationOtpUrl(id, activationId, otpId),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(verifyAgreementActivationOtpBody),
+    },
+  );
+};
+
+export const getVerifyAgreementActivationOtpMutationOptions = <
+  TError = ErrorType<VerifyAgreementActivationOtp400>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof verifyAgreementActivationOtp>>,
+    TError,
+    {
+      id: string;
+      activationId: string;
+      otpId: string;
+      data: BodyType<VerifyAgreementActivationOtpBody>;
+    },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof verifyAgreementActivationOtp>>,
+  TError,
+  {
+    id: string;
+    activationId: string;
+    otpId: string;
+    data: BodyType<VerifyAgreementActivationOtpBody>;
+  },
+  TContext
+> => {
+  const mutationKey = ["verifyAgreementActivationOtp"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof verifyAgreementActivationOtp>>,
+    {
+      id: string;
+      activationId: string;
+      otpId: string;
+      data: BodyType<VerifyAgreementActivationOtpBody>;
+    }
+  > = (props) => {
+    const { id, activationId, otpId, data } = props ?? {};
+
+    return verifyAgreementActivationOtp(
+      id,
+      activationId,
+      otpId,
+      data,
+      requestOptions,
+    );
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type VerifyAgreementActivationOtpMutationResult = NonNullable<
+  Awaited<ReturnType<typeof verifyAgreementActivationOtp>>
+>;
+export type VerifyAgreementActivationOtpMutationBody =
+  BodyType<VerifyAgreementActivationOtpBody>;
+export type VerifyAgreementActivationOtpMutationError =
+  ErrorType<VerifyAgreementActivationOtp400>;
+
+/**
+ * @summary Submit OTP code to verify a party for agreement activation
+ */
+export const useVerifyAgreementActivationOtp = <
+  TError = ErrorType<VerifyAgreementActivationOtp400>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof verifyAgreementActivationOtp>>,
+    TError,
+    {
+      id: string;
+      activationId: string;
+      otpId: string;
+      data: BodyType<VerifyAgreementActivationOtpBody>;
+    },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof verifyAgreementActivationOtp>>,
+  TError,
+  {
+    id: string;
+    activationId: string;
+    otpId: string;
+    data: BodyType<VerifyAgreementActivationOtpBody>;
+  },
+  TContext
+> => {
+  return useMutation(getVerifyAgreementActivationOtpMutationOptions(options));
 };
 
 /**

@@ -8,6 +8,7 @@ import AgreementVariablePanel from "./AgreementVariablePanel";
 import AgreementGeneratePanel from "./AgreementGeneratePanel";
 import AgreementGenerationsPanel from "./AgreementGenerationsPanel";
 import AgreementAuditLog from "./AgreementAuditLog";
+import AgreementActivationPanel from "./AgreementActivationPanel";
 
 const statusColors: Record<string, string> = {
   draft: "bg-gray-100 text-gray-800",
@@ -100,6 +101,8 @@ export default function AgreementDetails() {
           </CardContent>
         </Card>
       )}
+
+      <AgreementActivationPanel agreementId={id} agreementStatus={agreement.status} />
 
       <AgreementVariablePanel agreementId={id} />
 

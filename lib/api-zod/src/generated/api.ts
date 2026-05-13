@@ -2281,6 +2281,221 @@ export const GenerateAgreementDocumentBody = zod.object({
 });
 
 /**
+ * @summary List all agreements pending activation (admin/developer only)
+ */
+export const ListPendingActivationAgreementsResponseItem = zod.object({
+  agreementId: zod.string().uuid(),
+  projectName: zod.string(),
+  landOwnerName: zod.string(),
+  projectDeveloperName: zod.string(),
+  agreementStatus: zod.string(),
+  executionDate: zod.string().optional(),
+  activation: zod.object({
+    id: zod.string().uuid(),
+    agreementId: zod.string().uuid(),
+    status: zod.enum(["pending_otp", "completed", "cancelled", "rejected"]),
+    initiatedBy: zod.string().uuid().nullish(),
+    initiatedByName: zod.string().nullish(),
+    completedAt: zod.string().nullish(),
+    cancelledBy: zod.string().uuid().nullish(),
+    cancelledAt: zod.string().nullish(),
+    cancellationReason: zod.string().nullish(),
+    notes: zod.string().nullish(),
+    createdAt: zod.string(),
+    updatedAt: zod.string().nullish(),
+    otpTasks: zod.array(
+      zod.object({
+        id: zod.string().uuid(),
+        activationId: zod.string().uuid(),
+        partyRole: zod.enum(["landowner", "developer"]),
+        partyName: zod.string(),
+        partyPhone: zod.string().nullish(),
+        partnerId: zod.string().uuid().nullish(),
+        status: zod.enum(["pending", "sent", "verified", "failed", "expired"]),
+        otpCodePlaceholder: zod.string().nullish(),
+        sentAt: zod.string().nullish(),
+        verifiedAt: zod.string().nullish(),
+        expiresAt: zod.string().nullish(),
+        verifiedBy: zod.string().uuid().nullish(),
+        attempts: zod.number(),
+        createdAt: zod.string(),
+      }),
+    ),
+  }),
+});
+export const ListPendingActivationAgreementsResponse = zod.array(
+  ListPendingActivationAgreementsResponseItem,
+);
+
+/**
+ * @summary Get current activation workflow for an agreement
+ */
+export const GetAgreementActivationParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const GetAgreementActivationResponse = zod.object({
+  id: zod.string().uuid(),
+  agreementId: zod.string().uuid(),
+  status: zod.enum(["pending_otp", "completed", "cancelled", "rejected"]),
+  initiatedBy: zod.string().uuid().nullish(),
+  initiatedByName: zod.string().nullish(),
+  completedAt: zod.string().nullish(),
+  cancelledBy: zod.string().uuid().nullish(),
+  cancelledAt: zod.string().nullish(),
+  cancellationReason: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  createdAt: zod.string(),
+  updatedAt: zod.string().nullish(),
+  otpTasks: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      activationId: zod.string().uuid(),
+      partyRole: zod.enum(["landowner", "developer"]),
+      partyName: zod.string(),
+      partyPhone: zod.string().nullish(),
+      partnerId: zod.string().uuid().nullish(),
+      status: zod.enum(["pending", "sent", "verified", "failed", "expired"]),
+      otpCodePlaceholder: zod.string().nullish(),
+      sentAt: zod.string().nullish(),
+      verifiedAt: zod.string().nullish(),
+      expiresAt: zod.string().nullish(),
+      verifiedBy: zod.string().uuid().nullish(),
+      attempts: zod.number(),
+      createdAt: zod.string(),
+    }),
+  ),
+});
+
+/**
+ * @summary Initiate activation workflow for a draft agreement (admin/developer only)
+ */
+export const InitiateAgreementActivationParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const InitiateAgreementActivationBody = zod.object({
+  notes: zod.string().optional(),
+});
+
+/**
+ * @summary Cancel the active activation workflow (admin/developer only)
+ */
+export const CancelAgreementActivationParams = zod.object({
+  id: zod.coerce.string().uuid(),
+  activationId: zod.coerce.string().uuid(),
+});
+
+export const CancelAgreementActivationBody = zod.object({
+  cancellationReason: zod.string().optional(),
+});
+
+export const CancelAgreementActivationResponse = zod.object({
+  id: zod.string().uuid(),
+  agreementId: zod.string().uuid(),
+  status: zod.enum(["pending_otp", "completed", "cancelled", "rejected"]),
+  initiatedBy: zod.string().uuid().nullish(),
+  initiatedByName: zod.string().nullish(),
+  completedAt: zod.string().nullish(),
+  cancelledBy: zod.string().uuid().nullish(),
+  cancelledAt: zod.string().nullish(),
+  cancellationReason: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  createdAt: zod.string(),
+  updatedAt: zod.string().nullish(),
+  otpTasks: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      activationId: zod.string().uuid(),
+      partyRole: zod.enum(["landowner", "developer"]),
+      partyName: zod.string(),
+      partyPhone: zod.string().nullish(),
+      partnerId: zod.string().uuid().nullish(),
+      status: zod.enum(["pending", "sent", "verified", "failed", "expired"]),
+      otpCodePlaceholder: zod.string().nullish(),
+      sentAt: zod.string().nullish(),
+      verifiedAt: zod.string().nullish(),
+      expiresAt: zod.string().nullish(),
+      verifiedBy: zod.string().uuid().nullish(),
+      attempts: zod.number(),
+      createdAt: zod.string(),
+    }),
+  ),
+});
+
+/**
+ * @summary Send (or resend) OTP to a party for agreement activation
+ */
+export const SendAgreementActivationOtpParams = zod.object({
+  id: zod.coerce.string().uuid(),
+  activationId: zod.coerce.string().uuid(),
+  otpId: zod.coerce.string().uuid(),
+});
+
+export const SendAgreementActivationOtpResponse = zod.object({
+  id: zod.string().uuid(),
+  activationId: zod.string().uuid(),
+  partyRole: zod.enum(["landowner", "developer"]),
+  partyName: zod.string(),
+  partyPhone: zod.string().nullish(),
+  partnerId: zod.string().uuid().nullish(),
+  status: zod.enum(["pending", "sent", "verified", "failed", "expired"]),
+  otpCodePlaceholder: zod.string().nullish(),
+  sentAt: zod.string().nullish(),
+  verifiedAt: zod.string().nullish(),
+  expiresAt: zod.string().nullish(),
+  verifiedBy: zod.string().uuid().nullish(),
+  attempts: zod.number(),
+  createdAt: zod.string(),
+});
+
+/**
+ * @summary Submit OTP code to verify a party for agreement activation
+ */
+export const VerifyAgreementActivationOtpParams = zod.object({
+  id: zod.coerce.string().uuid(),
+  activationId: zod.coerce.string().uuid(),
+  otpId: zod.coerce.string().uuid(),
+});
+
+export const VerifyAgreementActivationOtpBody = zod.object({
+  otpCode: zod.string(),
+});
+
+export const VerifyAgreementActivationOtpResponse = zod.object({
+  id: zod.string().uuid(),
+  agreementId: zod.string().uuid(),
+  status: zod.enum(["pending_otp", "completed", "cancelled", "rejected"]),
+  initiatedBy: zod.string().uuid().nullish(),
+  initiatedByName: zod.string().nullish(),
+  completedAt: zod.string().nullish(),
+  cancelledBy: zod.string().uuid().nullish(),
+  cancelledAt: zod.string().nullish(),
+  cancellationReason: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  createdAt: zod.string(),
+  updatedAt: zod.string().nullish(),
+  otpTasks: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      activationId: zod.string().uuid(),
+      partyRole: zod.enum(["landowner", "developer"]),
+      partyName: zod.string(),
+      partyPhone: zod.string().nullish(),
+      partnerId: zod.string().uuid().nullish(),
+      status: zod.enum(["pending", "sent", "verified", "failed", "expired"]),
+      otpCodePlaceholder: zod.string().nullish(),
+      sentAt: zod.string().nullish(),
+      verifiedAt: zod.string().nullish(),
+      expiresAt: zod.string().nullish(),
+      verifiedBy: zod.string().uuid().nullish(),
+      attempts: zod.number(),
+      createdAt: zod.string(),
+    }),
+  ),
+});
+
+/**
  * @summary Get governance completeness summary for the current user
  */
 export const GetGovernanceSummaryResponse = zod.object({

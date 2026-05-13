@@ -1697,6 +1697,206 @@ paths:
                   error:
                     type: string
 
+  /agreements/pending-activation:
+    get:
+      operationId: listPendingActivationAgreements
+      tags: [agreements]
+      summary: List all agreements pending activation (admin/developer only)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: List of agreements in pending_activation status
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AgreementActivationSummary"
+
+  /agreements/{id}/activation:
+    get:
+      operationId: getAgreementActivation
+      tags: [agreements]
+      summary: Get current activation workflow for an agreement
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Current or most recent activation workflow
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgreementActivation"
+        "404":
+          description: No activation workflow found
+
+    post:
+      operationId: initiateAgreementActivation
+      tags: [agreements]
+      summary: Initiate activation workflow for a draft agreement (admin/developer only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InitiateAgreementActivationBody"
+      responses:
+        "201":
+          description: Activation workflow initiated; agreement status set to pending_activation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgreementActivation"
+        "409":
+          description: Agreement already has an active activation workflow or is not in draft status
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [error]
+                properties:
+                  error:
+                    type: string
+
+  /agreements/{id}/activation/{activationId}/cancel:
+    post:
+      operationId: cancelAgreementActivation
+      tags: [agreements]
+      summary: Cancel the active activation workflow (admin/developer only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: activationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CancelAgreementActivationBody"
+      responses:
+        "200":
+          description: Activation cancelled; agreement status reverted to draft
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgreementActivation"
+        "404":
+          description: Activation workflow not found
+
+  /agreements/{id}/activation/{activationId}/otp/{otpId}/send:
+    post:
+      operationId: sendAgreementActivationOtp
+      tags: [agreements]
+      summary: Send (or resend) OTP to a party for agreement activation
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: activationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: otpId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OTP generated and sent; otpCodePlaceholder exposed in response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgreementActivationOtp"
+        "404":
+          description: Activation or OTP task not found
+
+  /agreements/{id}/activation/{activationId}/otp/{otpId}/verify:
+    post:
+      operationId: verifyAgreementActivationOtp
+      tags: [agreements]
+      summary: Submit OTP code to verify a party for agreement activation
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: activationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: otpId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VerifyAgreementActivationOtpBody"
+      responses:
+        "200":
+          description: OTP result; if all parties verified the full activation is returned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgreementActivation"
+        "400":
+          description: Invalid or expired OTP
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [error]
+                properties:
+                  error:
+                    type: string
+
   /governance/summary:
     get:
       operationId: getGovernanceSummary
@@ -2836,6 +3036,122 @@ components:
           type: string
           enum: [mature_production, closed]
         remarks:
+          type: string
+
+    AgreementActivation:
+      type: object
+      required: [id, agreementId, status, createdAt, otpTasks]
+      properties:
+        id:
+          type: string
+          format: uuid
+        agreementId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [pending_otp, completed, cancelled, rejected]
+        initiatedBy:
+          type: ["string", "null"]
+          format: uuid
+        initiatedByName:
+          type: ["string", "null"]
+        completedAt:
+          type: ["string", "null"]
+        cancelledBy:
+          type: ["string", "null"]
+          format: uuid
+        cancelledAt:
+          type: ["string", "null"]
+        cancellationReason:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: ["string", "null"]
+        otpTasks:
+          type: array
+          items:
+            $ref: "#/components/schemas/AgreementActivationOtp"
+
+    AgreementActivationOtp:
+      type: object
+      required: [id, activationId, partyRole, partyName, status, attempts, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        activationId:
+          type: string
+          format: uuid
+        partyRole:
+          type: string
+          enum: [landowner, developer]
+        partyName:
+          type: string
+        partyPhone:
+          type: ["string", "null"]
+        partnerId:
+          type: ["string", "null"]
+          format: uuid
+        status:
+          type: string
+          enum: [pending, sent, verified, failed, expired]
+        otpCodePlaceholder:
+          type: ["string", "null"]
+        sentAt:
+          type: ["string", "null"]
+        verifiedAt:
+          type: ["string", "null"]
+        expiresAt:
+          type: ["string", "null"]
+        verifiedBy:
+          type: ["string", "null"]
+          format: uuid
+        attempts:
+          type: integer
+        createdAt:
+          type: string
+
+    AgreementActivationSummary:
+      type: object
+      required: [agreementId, projectName, landOwnerName, projectDeveloperName, agreementStatus, activation]
+      properties:
+        agreementId:
+          type: string
+          format: uuid
+        projectName:
+          type: string
+        landOwnerName:
+          type: string
+        projectDeveloperName:
+          type: string
+        agreementStatus:
+          type: string
+        executionDate:
+          type: string
+        activation:
+          $ref: "#/components/schemas/AgreementActivation"
+
+    InitiateAgreementActivationBody:
+      type: object
+      properties:
+        notes:
+          type: string
+
+    CancelAgreementActivationBody:
+      type: object
+      properties:
+        cancellationReason:
+          type: string
+
+    VerifyAgreementActivationOtpBody:
+      type: object
+      required: [otpCode]
+      properties:
+        otpCode:
           type: string
 
     MaturityDeclaration:

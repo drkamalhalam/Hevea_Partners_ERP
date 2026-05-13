@@ -81,6 +81,12 @@ const navGroups: NavGroup[] = [
         roles: ["admin", "developer"],
       },
       {
+        name: "Activation Tasks",
+        href: "/activation",
+        icon: ShieldCheck,
+        roles: ["admin", "developer"],
+      },
+      {
         name: "Generate Deed",
         href: "/generate-agreement",
         icon: Scroll,

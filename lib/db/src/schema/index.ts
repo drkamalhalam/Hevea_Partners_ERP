@@ -20,3 +20,4 @@ export * from "./stubs";
 export * from "./templates";
 export * from "./agreement_variables";
 export * from "./generations";
+export * from "./agreement_activation";

@@ -197,6 +197,41 @@ export const templateStatusEnum = pgEnum("template_status", [
   "archived",
 ]);
 
+// ── Agreement activation workflow enums ──────────────────────────────────
+
+/**
+ * Status of an agreement activation workflow session.
+ *   pending_otp — activation initiated; OTPs sent, awaiting party verification
+ *   completed   — all parties verified; agreement becomes active
+ *   cancelled   — cancelled before completion by admin/developer
+ *   rejected    — a party explicitly rejected; agreement returns to draft
+ */
+export const agreementActivationStatusEnum = pgEnum(
+  "agreement_activation_status",
+  ["pending_otp", "completed", "cancelled", "rejected"],
+);
+
+/**
+ * Which party is responsible for an agreement activation OTP row.
+ */
+export const agreementActivationPartyEnum = pgEnum(
+  "agreement_activation_party",
+  ["landowner", "developer"],
+);
+
+/**
+ * Lifecycle of a single OTP row in an agreement activation workflow.
+ *   pending  — generated, not yet sent
+ *   sent     — dispatched (placeholder: code visible in response)
+ *   verified — correct code entered; party confirmed
+ *   failed   — max attempts exceeded
+ *   expired  — sentAt + 30 min elapsed without verification
+ */
+export const agreementActivationOtpStatusEnum = pgEnum(
+  "agreement_activation_otp_status",
+  ["pending", "sent", "verified", "failed", "expired"],
+);
+
 // ── Audit enums ───────────────────────────────────────────────────────────
 
 export const dbOperationEnum = pgEnum("db_operation", [

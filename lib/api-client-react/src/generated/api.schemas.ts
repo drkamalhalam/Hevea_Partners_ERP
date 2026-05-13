@@ -749,6 +749,105 @@ export interface TransitionLifecycleBody {
   remarks?: string;
 }
 
+export type AgreementActivationStatus =
+  (typeof AgreementActivationStatus)[keyof typeof AgreementActivationStatus];
+
+export const AgreementActivationStatus = {
+  pending_otp: "pending_otp",
+  completed: "completed",
+  cancelled: "cancelled",
+  rejected: "rejected",
+} as const;
+
+export type AgreementActivationOtpPartyRole =
+  (typeof AgreementActivationOtpPartyRole)[keyof typeof AgreementActivationOtpPartyRole];
+
+export const AgreementActivationOtpPartyRole = {
+  landowner: "landowner",
+  developer: "developer",
+} as const;
+
+export type AgreementActivationOtpStatus =
+  (typeof AgreementActivationOtpStatus)[keyof typeof AgreementActivationOtpStatus];
+
+export const AgreementActivationOtpStatus = {
+  pending: "pending",
+  sent: "sent",
+  verified: "verified",
+  failed: "failed",
+  expired: "expired",
+} as const;
+
+export interface AgreementActivationOtp {
+  id: string;
+  activationId: string;
+  partyRole: AgreementActivationOtpPartyRole;
+  partyName: string;
+  /** @nullable */
+  partyPhone?: string | null;
+  /** @nullable */
+  partnerId?: string | null;
+  status: AgreementActivationOtpStatus;
+  /** @nullable */
+  otpCodePlaceholder?: string | null;
+  /** @nullable */
+  sentAt?: string | null;
+  /** @nullable */
+  verifiedAt?: string | null;
+  /** @nullable */
+  expiresAt?: string | null;
+  /** @nullable */
+  verifiedBy?: string | null;
+  attempts: number;
+  createdAt: string;
+}
+
+export interface AgreementActivation {
+  id: string;
+  agreementId: string;
+  status: AgreementActivationStatus;
+  /** @nullable */
+  initiatedBy?: string | null;
+  /** @nullable */
+  initiatedByName?: string | null;
+  /** @nullable */
+  completedAt?: string | null;
+  /** @nullable */
+  cancelledBy?: string | null;
+  /** @nullable */
+  cancelledAt?: string | null;
+  /** @nullable */
+  cancellationReason?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  createdAt: string;
+  /** @nullable */
+  updatedAt?: string | null;
+  otpTasks: AgreementActivationOtp[];
+}
+
+export interface AgreementActivationSummary {
+  agreementId: string;
+  projectName: string;
+  landOwnerName: string;
+  projectDeveloperName: string;
+  agreementStatus: string;
+  executionDate?: string;
+  activation: AgreementActivation;
+}
+
+export interface InitiateAgreementActivationBody {
+  notes?: string;
+}
+
+export interface CancelAgreementActivationBody {
+  cancellationReason?: string;
+}
+
+export interface VerifyAgreementActivationOtpBody {
+  otpCode: string;
+}
+
 export type MaturityDeclarationStatus =
   (typeof MaturityDeclarationStatus)[keyof typeof MaturityDeclarationStatus];
 
@@ -1543,6 +1642,14 @@ export type ListPartnerClaimantsParams = {
 };
 
 export type GenerateAgreementDocument422 = {
+  error: string;
+};
+
+export type InitiateAgreementActivation409 = {
+  error: string;
+};
+
+export type VerifyAgreementActivationOtp400 = {
   error: string;
 };
 
