@@ -641,6 +641,54 @@ Double-entry imbalance ledger that accumulates carry-forward balances per projec
 - Add `carry_forward` entries at period close via a new scheduled/manual endpoint
 - Settlement engine queries all entries with `runningBalance != 0` to produce settlement proposals
 
+## Inventory & Stock Management System
+
+Audit-friendly ledger system tracking Latex, Rubber Sheets, and Rubber Scrap across all projects. Every stock change is a permanent movement record — balance is derived, never stored directly.
+
+**Core principle:** Ledger-based. Balance = SUM(confirmed in movements) − SUM(confirmed out movements). No row is ever deleted — only soft-deactivated (admin only).
+
+**Movement types:**
+
+| Type | Direction | Auto-confirmed? |
+|---|---|---|
+| `opening` | in | Yes |
+| `production_in` | in | Yes |
+| `purchase_in` | in | Yes |
+| `sale_out` | out | Yes |
+| `transfer_out` | out | Yes |
+| `wastage` | out | Yes |
+| `adjustment_in` | in | Admin/developer: yes; staff: pending |
+| `adjustment_out` | out | Admin/developer: yes; staff: pending |
+
+**Adjustment workflow:** Non-admin/developer users submit adjustments as `pending`. Admin/developer must confirm (updates balance) or cancel (no effect). This provides a full approval audit trail.
+
+**DB table:** `inventory_stock_movements` — UUID PK, projectId FK (cascade), stockType (latex/rubber_sheet/rubber_scrap), movementType, direction (in/out, denormalized), quantity numeric(12,3), unit (litres/kg), movementDate date, batchId FK → production_batches (set null), referenceId text, referenceType text, notes, status (confirmed/pending/cancelled), confirmedAt/confirmedById/confirmedByName, cancelledAt/cancelledById/cancelledByName, createdById/createdByName, isActive, createdAt/updatedAt
+
+**Indexes:** projectId, stockType, movementDate DESC, status, batchId
+
+**API endpoints at `/api/inventory-stock/`:**
+- `GET /balance?projectId=&stockType=` — confirmed balance per (project, type), includes pendingCount/pendingQty
+- `GET /summary?projectId=` — dashboard: totalMovements + per-status counts + stockSummary (balance, productionIn, saleOut, wastage per type)
+- `GET /movements?projectId=&stockType=&movementType=&status=` — ledger list (newest first)
+- `POST /movements` — create movement (admin/developer/employee/operational_staff)
+- `POST /movements/:id/confirm` — confirm pending (admin/developer)
+- `POST /movements/:id/cancel` — cancel (admin/developer)
+- `DELETE /movements/:id` — soft-delete (admin only, sets isActive=false)
+
+**Access control:** Admin/developer see all projects; others see only assigned projects. Any authenticated user can view; only allowed roles can write.
+
+**Frontend page:** `artifacts/plantation-web/src/pages/Inventory.tsx` at `/inventory`
+- **Balance strip** (3 columns): per-type balance with low-stock / no-stock warning colours
+- **Dashboard tab**: per-type stock cards (balance + totalIn/Out + productionIn/saleOut/wastage breakdown), movement stat pills (total/confirmed/pending/cancelled), bar chart (Prod In / Sale Out / Wastage / Balance by type)
+- **Movements tab**: filterable table (by type, movement type, status) with confirm/cancel/delete inline actions for admins/developers
+- **Pending tab**: badge count, amber warning banner, confirm/cancel table for pending adjustments
+- **Add movement dialog**: stock type button-picker, movement type selector, quantity + unit, date, optional batch link (for production_in), reference number + type, notes; context-aware per tab (in/out/adjustment); adjustment warning text varies by role
+- **Confirm/Cancel/Delete alerts**: clear description of consequence before action
+
+**Generated hooks:** `useGetInventoryStockBalance`, `useGetInventoryStockSummary`, `useListStockMovements`, `useCreateStockMovement`, `useConfirmStockMovement`, `useCancelStockMovement`, `useDeleteStockMovement`
+
+**Sidebar:** `/inventory` entry already existed in Operations group — placeholder replaced with full implementation.
+
 ## Pointers
 
 - See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details

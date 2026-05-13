@@ -7445,3 +7445,195 @@ export const GetProductionLogSummaryResponse = zod.object({
     }),
   ),
 });
+
+/**
+ * @summary Current confirmed stock balance per type per project
+ */
+export const GetInventoryStockBalanceQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+  stockType: zod.enum(["latex", "rubber_sheet", "rubber_scrap"]).optional(),
+});
+
+export const GetInventoryStockBalanceResponseItem = zod.object({
+  projectId: zod.string().uuid(),
+  projectName: zod.string().optional(),
+  stockType: zod.enum(["latex", "rubber_sheet", "rubber_scrap"]),
+  unit: zod.string(),
+  totalIn: zod.number(),
+  totalOut: zod.number(),
+  balance: zod.number(),
+  pendingCount: zod.number(),
+  pendingQty: zod.number(),
+});
+export const GetInventoryStockBalanceResponse = zod.array(
+  GetInventoryStockBalanceResponseItem,
+);
+
+/**
+ * @summary Dashboard summary with movement stats and per-type breakdown
+ */
+export const GetInventoryStockSummaryQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+});
+
+export const GetInventoryStockSummaryResponse = zod.object({
+  totalMovements: zod.number(),
+  confirmedCount: zod.number(),
+  pendingCount: zod.number(),
+  cancelledCount: zod.number(),
+  stockSummary: zod.array(
+    zod.object({
+      stockType: zod.string(),
+      unit: zod.string(),
+      totalIn: zod.number(),
+      totalOut: zod.number(),
+      balance: zod.number(),
+      productionIn: zod.number(),
+      saleOut: zod.number(),
+      wastage: zod.number(),
+    }),
+  ),
+});
+
+/**
+ * @summary List stock movements with filters
+ */
+export const ListStockMovementsQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+  stockType: zod.enum(["latex", "rubber_sheet", "rubber_scrap"]).optional(),
+  movementType: zod.coerce.string().optional(),
+  status: zod.enum(["confirmed", "pending", "cancelled"]).optional(),
+});
+
+export const ListStockMovementsResponseItem = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  projectName: zod.string().optional(),
+  stockType: zod.enum(["latex", "rubber_sheet", "rubber_scrap"]),
+  movementType: zod.string(),
+  direction: zod.enum(["in", "out"]),
+  quantity: zod.number(),
+  unit: zod.string(),
+  movementDate: zod.coerce.date(),
+  batchId: zod.string().uuid().optional(),
+  batchNumber: zod.string().optional(),
+  referenceId: zod.string().optional(),
+  referenceType: zod.string().optional(),
+  notes: zod.string().optional(),
+  status: zod.enum(["confirmed", "pending", "cancelled"]),
+  confirmedAt: zod.coerce.date().optional(),
+  confirmedByName: zod.string().optional(),
+  cancelledAt: zod.coerce.date().optional(),
+  cancelledByName: zod.string().optional(),
+  createdByName: zod.string(),
+  isActive: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const ListStockMovementsResponse = zod.array(
+  ListStockMovementsResponseItem,
+);
+
+/**
+ * @summary Record a new stock movement
+ */
+export const createStockMovementBodyQuantityMin = 0.001;
+
+export const CreateStockMovementBody = zod.object({
+  projectId: zod.string().uuid(),
+  stockType: zod.enum(["latex", "rubber_sheet", "rubber_scrap"]),
+  movementType: zod.enum([
+    "opening",
+    "production_in",
+    "purchase_in",
+    "sale_out",
+    "transfer_out",
+    "wastage",
+    "adjustment_in",
+    "adjustment_out",
+  ]),
+  quantity: zod.number().min(createStockMovementBodyQuantityMin),
+  unit: zod.enum(["litres", "kg"]).optional(),
+  movementDate: zod.coerce.date(),
+  batchId: zod.string().uuid().optional(),
+  referenceId: zod.string().optional(),
+  referenceType: zod.string().optional(),
+  notes: zod.string().optional(),
+});
+
+/**
+ * @summary Confirm a pending stock movement (admin/developer)
+ */
+export const ConfirmStockMovementParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const ConfirmStockMovementResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  projectName: zod.string().optional(),
+  stockType: zod.enum(["latex", "rubber_sheet", "rubber_scrap"]),
+  movementType: zod.string(),
+  direction: zod.enum(["in", "out"]),
+  quantity: zod.number(),
+  unit: zod.string(),
+  movementDate: zod.coerce.date(),
+  batchId: zod.string().uuid().optional(),
+  batchNumber: zod.string().optional(),
+  referenceId: zod.string().optional(),
+  referenceType: zod.string().optional(),
+  notes: zod.string().optional(),
+  status: zod.enum(["confirmed", "pending", "cancelled"]),
+  confirmedAt: zod.coerce.date().optional(),
+  confirmedByName: zod.string().optional(),
+  cancelledAt: zod.coerce.date().optional(),
+  cancelledByName: zod.string().optional(),
+  createdByName: zod.string(),
+  isActive: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Cancel a stock movement (admin/developer)
+ */
+export const CancelStockMovementParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const CancelStockMovementResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  projectName: zod.string().optional(),
+  stockType: zod.enum(["latex", "rubber_sheet", "rubber_scrap"]),
+  movementType: zod.string(),
+  direction: zod.enum(["in", "out"]),
+  quantity: zod.number(),
+  unit: zod.string(),
+  movementDate: zod.coerce.date(),
+  batchId: zod.string().uuid().optional(),
+  batchNumber: zod.string().optional(),
+  referenceId: zod.string().optional(),
+  referenceType: zod.string().optional(),
+  notes: zod.string().optional(),
+  status: zod.enum(["confirmed", "pending", "cancelled"]),
+  confirmedAt: zod.coerce.date().optional(),
+  confirmedByName: zod.string().optional(),
+  cancelledAt: zod.coerce.date().optional(),
+  cancelledByName: zod.string().optional(),
+  createdByName: zod.string(),
+  isActive: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Soft-delete a stock movement (admin only)
+ */
+export const DeleteStockMovementParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const DeleteStockMovementResponse = zod.object({
+  success: zod.boolean().optional(),
+});

@@ -39,3 +39,4 @@ export * from "./burden_recovery";
 export * from "./agreement_accounting";
 export * from "./financial_audit";
 export * from "./production_log";
+export * from "./inventory";

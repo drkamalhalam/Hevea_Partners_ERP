@@ -4920,6 +4920,156 @@ paths:
         "401": { description: Unauthorized }
 
 
+  /inventory-stock/balance:
+    get:
+      operationId: getInventoryStockBalance
+      tags: [inventory]
+      summary: Current confirmed stock balance per type per project
+      parameters:
+        - name: projectId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: stockType
+          in: query
+          schema: { type: string, enum: [latex, rubber_sheet, rubber_scrap] }
+      responses:
+        "200":
+          description: Balance rows
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StockBalance"
+        "401": { description: Unauthorized }
+
+  /inventory-stock/summary:
+    get:
+      operationId: getInventoryStockSummary
+      tags: [inventory]
+      summary: Dashboard summary with movement stats and per-type breakdown
+      parameters:
+        - name: projectId
+          in: query
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryStockSummary"
+        "401": { description: Unauthorized }
+
+  /inventory-stock/movements:
+    get:
+      operationId: listStockMovements
+      tags: [inventory]
+      summary: List stock movements with filters
+      parameters:
+        - name: projectId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: stockType
+          in: query
+          schema: { type: string, enum: [latex, rubber_sheet, rubber_scrap] }
+        - name: movementType
+          in: query
+          schema: { type: string }
+        - name: status
+          in: query
+          schema: { type: string, enum: [confirmed, pending, cancelled] }
+      responses:
+        "200":
+          description: Movement list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StockMovement"
+        "401": { description: Unauthorized }
+    post:
+      operationId: createStockMovement
+      tags: [inventory]
+      summary: Record a new stock movement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateStockMovementBody"
+      responses:
+        "201":
+          description: Created movement
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StockMovement"
+        "400": { description: Validation error }
+        "403": { description: Forbidden }
+
+  /inventory-stock/movements/{id}/confirm:
+    post:
+      operationId: confirmStockMovement
+      tags: [inventory]
+      summary: Confirm a pending stock movement (admin/developer)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Confirmed movement
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StockMovement"
+        "400": { description: Already confirmed/cancelled }
+        "403": { description: Forbidden }
+
+  /inventory-stock/movements/{id}/cancel:
+    post:
+      operationId: cancelStockMovement
+      tags: [inventory]
+      summary: Cancel a stock movement (admin/developer)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Cancelled movement
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StockMovement"
+        "400": { description: Already cancelled }
+        "403": { description: Forbidden }
+
+  /inventory-stock/movements/{id}:
+    delete:
+      operationId: deleteStockMovement
+      tags: [inventory]
+      summary: Soft-delete a stock movement (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+        "404": { description: Not found }
+
 components:
   schemas:
     HealthStatus:
@@ -8632,3 +8782,88 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ProductionLogProjectSummary"
+
+    StockBalance:
+      type: object
+      required: [projectId, stockType, unit, totalIn, totalOut, balance, pendingCount, pendingQty]
+      properties:
+        projectId: { type: string, format: uuid }
+        projectName: { type: string }
+        stockType: { type: string, enum: [latex, rubber_sheet, rubber_scrap] }
+        unit: { type: string }
+        totalIn: { type: number }
+        totalOut: { type: number }
+        balance: { type: number }
+        pendingCount: { type: integer }
+        pendingQty: { type: number }
+
+    StockTypeSummary:
+      type: object
+      required: [stockType, unit, totalIn, totalOut, balance, productionIn, saleOut, wastage]
+      properties:
+        stockType: { type: string }
+        unit: { type: string }
+        totalIn: { type: number }
+        totalOut: { type: number }
+        balance: { type: number }
+        productionIn: { type: number }
+        saleOut: { type: number }
+        wastage: { type: number }
+
+    InventoryStockSummary:
+      type: object
+      required: [totalMovements, confirmedCount, pendingCount, cancelledCount, stockSummary]
+      properties:
+        totalMovements: { type: integer }
+        confirmedCount: { type: integer }
+        pendingCount: { type: integer }
+        cancelledCount: { type: integer }
+        stockSummary:
+          type: array
+          items:
+            $ref: "#/components/schemas/StockTypeSummary"
+
+    StockMovement:
+      type: object
+      required: [id, projectId, stockType, movementType, direction, quantity, unit, movementDate, status, createdByName, isActive, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        projectName: { type: string }
+        stockType: { type: string, enum: [latex, rubber_sheet, rubber_scrap] }
+        movementType: { type: string }
+        direction: { type: string, enum: [in, out] }
+        quantity: { type: number }
+        unit: { type: string }
+        movementDate: { type: string, format: date }
+        batchId: { type: string, format: uuid }
+        batchNumber: { type: string }
+        referenceId: { type: string }
+        referenceType: { type: string }
+        notes: { type: string }
+        status: { type: string, enum: [confirmed, pending, cancelled] }
+        confirmedAt: { type: string, format: date-time }
+        confirmedByName: { type: string }
+        cancelledAt: { type: string, format: date-time }
+        cancelledByName: { type: string }
+        createdByName: { type: string }
+        isActive: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    CreateStockMovementBody:
+      type: object
+      required: [projectId, stockType, movementType, quantity, movementDate]
+      properties:
+        projectId: { type: string, format: uuid }
+        stockType: { type: string, enum: [latex, rubber_sheet, rubber_scrap] }
+        movementType:
+          type: string
+          enum: [opening, production_in, purchase_in, sale_out, transfer_out, wastage, adjustment_in, adjustment_out]
+        quantity: { type: number, minimum: 0.001 }
+        unit: { type: string, enum: [litres, kg] }
+        movementDate: { type: string, format: date }
+        batchId: { type: string, format: uuid }
+        referenceId: { type: string }
+        referenceType: { type: string }
+        notes: { type: string }

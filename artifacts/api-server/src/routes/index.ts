@@ -33,6 +33,7 @@ import landownerAccountRouter from "./landowner_account";
 import burdenRecoveryRouter from "./burden_recovery";
 import analyticsRouter from "./analytics";
 import productionLogRouter from "./production_log";
+import inventoryStockRouter from "./inventory_stock";
 import devRouter from "./dev";
 
 const router: IRouter = Router();
@@ -83,5 +84,6 @@ router.use("/burden-recovery", burdenRecoveryRouter);
 router.use("/analytics", analyticsRouter);
 router.use("/financial-access-logs", financialAuditLogRouter);
 router.use("/production-log", productionLogRouter);
+router.use("/inventory-stock", inventoryStockRouter);
 
 export default router;

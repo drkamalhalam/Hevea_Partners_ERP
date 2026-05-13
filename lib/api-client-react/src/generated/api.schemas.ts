@@ -3539,6 +3539,143 @@ export interface ProductionLogSummary {
   projects: ProductionLogProjectSummary[];
 }
 
+export type StockBalanceStockType =
+  (typeof StockBalanceStockType)[keyof typeof StockBalanceStockType];
+
+export const StockBalanceStockType = {
+  latex: "latex",
+  rubber_sheet: "rubber_sheet",
+  rubber_scrap: "rubber_scrap",
+} as const;
+
+export interface StockBalance {
+  projectId: string;
+  projectName?: string;
+  stockType: StockBalanceStockType;
+  unit: string;
+  totalIn: number;
+  totalOut: number;
+  balance: number;
+  pendingCount: number;
+  pendingQty: number;
+}
+
+export interface StockTypeSummary {
+  stockType: string;
+  unit: string;
+  totalIn: number;
+  totalOut: number;
+  balance: number;
+  productionIn: number;
+  saleOut: number;
+  wastage: number;
+}
+
+export interface InventoryStockSummary {
+  totalMovements: number;
+  confirmedCount: number;
+  pendingCount: number;
+  cancelledCount: number;
+  stockSummary: StockTypeSummary[];
+}
+
+export type StockMovementStockType =
+  (typeof StockMovementStockType)[keyof typeof StockMovementStockType];
+
+export const StockMovementStockType = {
+  latex: "latex",
+  rubber_sheet: "rubber_sheet",
+  rubber_scrap: "rubber_scrap",
+} as const;
+
+export type StockMovementDirection =
+  (typeof StockMovementDirection)[keyof typeof StockMovementDirection];
+
+export const StockMovementDirection = {
+  in: "in",
+  out: "out",
+} as const;
+
+export type StockMovementStatus =
+  (typeof StockMovementStatus)[keyof typeof StockMovementStatus];
+
+export const StockMovementStatus = {
+  confirmed: "confirmed",
+  pending: "pending",
+  cancelled: "cancelled",
+} as const;
+
+export interface StockMovement {
+  id: string;
+  projectId: string;
+  projectName?: string;
+  stockType: StockMovementStockType;
+  movementType: string;
+  direction: StockMovementDirection;
+  quantity: number;
+  unit: string;
+  movementDate: string;
+  batchId?: string;
+  batchNumber?: string;
+  referenceId?: string;
+  referenceType?: string;
+  notes?: string;
+  status: StockMovementStatus;
+  confirmedAt?: string;
+  confirmedByName?: string;
+  cancelledAt?: string;
+  cancelledByName?: string;
+  createdByName: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CreateStockMovementBodyStockType =
+  (typeof CreateStockMovementBodyStockType)[keyof typeof CreateStockMovementBodyStockType];
+
+export const CreateStockMovementBodyStockType = {
+  latex: "latex",
+  rubber_sheet: "rubber_sheet",
+  rubber_scrap: "rubber_scrap",
+} as const;
+
+export type CreateStockMovementBodyMovementType =
+  (typeof CreateStockMovementBodyMovementType)[keyof typeof CreateStockMovementBodyMovementType];
+
+export const CreateStockMovementBodyMovementType = {
+  opening: "opening",
+  production_in: "production_in",
+  purchase_in: "purchase_in",
+  sale_out: "sale_out",
+  transfer_out: "transfer_out",
+  wastage: "wastage",
+  adjustment_in: "adjustment_in",
+  adjustment_out: "adjustment_out",
+} as const;
+
+export type CreateStockMovementBodyUnit =
+  (typeof CreateStockMovementBodyUnit)[keyof typeof CreateStockMovementBodyUnit];
+
+export const CreateStockMovementBodyUnit = {
+  litres: "litres",
+  kg: "kg",
+} as const;
+
+export interface CreateStockMovementBody {
+  projectId: string;
+  stockType: CreateStockMovementBodyStockType;
+  movementType: CreateStockMovementBodyMovementType;
+  /** @minimum 0.001 */
+  quantity: number;
+  unit?: CreateStockMovementBodyUnit;
+  movementDate: string;
+  batchId?: string;
+  referenceId?: string;
+  referenceType?: string;
+  notes?: string;
+}
+
 export type GetUserActivityParams = {
   limit?: number;
 };
@@ -4052,4 +4189,51 @@ export type DeleteProductionEntry200 = {
 
 export type GetProductionLogSummaryParams = {
   projectId?: string;
+};
+
+export type GetInventoryStockBalanceParams = {
+  projectId?: string;
+  stockType?: GetInventoryStockBalanceStockType;
+};
+
+export type GetInventoryStockBalanceStockType =
+  (typeof GetInventoryStockBalanceStockType)[keyof typeof GetInventoryStockBalanceStockType];
+
+export const GetInventoryStockBalanceStockType = {
+  latex: "latex",
+  rubber_sheet: "rubber_sheet",
+  rubber_scrap: "rubber_scrap",
+} as const;
+
+export type GetInventoryStockSummaryParams = {
+  projectId?: string;
+};
+
+export type ListStockMovementsParams = {
+  projectId?: string;
+  stockType?: ListStockMovementsStockType;
+  movementType?: string;
+  status?: ListStockMovementsStatus;
+};
+
+export type ListStockMovementsStockType =
+  (typeof ListStockMovementsStockType)[keyof typeof ListStockMovementsStockType];
+
+export const ListStockMovementsStockType = {
+  latex: "latex",
+  rubber_sheet: "rubber_sheet",
+  rubber_scrap: "rubber_scrap",
+} as const;
+
+export type ListStockMovementsStatus =
+  (typeof ListStockMovementsStatus)[keyof typeof ListStockMovementsStatus];
+
+export const ListStockMovementsStatus = {
+  confirmed: "confirmed",
+  pending: "pending",
+  cancelled: "cancelled",
+} as const;
+
+export type DeleteStockMovement200 = {
+  success?: boolean;
 };

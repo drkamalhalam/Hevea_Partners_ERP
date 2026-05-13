@@ -72,9 +72,11 @@ import type {
   CreateOwnershipSnapshotBody,
   CreateProductionBatchBody,
   CreateProductionEntryBody,
+  CreateStockMovementBody,
   CreateTemplateBody,
   DashboardSummary,
   DeleteProductionEntry200,
+  DeleteStockMovement200,
   Document,
   DocumentAccessLogEntry,
   ErrorResponse,
@@ -92,6 +94,8 @@ import type {
   GetExpenditureSummaryParams,
   GetImbalancePartnerSummary200,
   GetImbalanceSummaryParams,
+  GetInventoryStockBalanceParams,
+  GetInventoryStockSummaryParams,
   GetLandNotionalContributionParams,
   GetLandNotionalHistory200,
   GetLandNotionalHistoryParams,
@@ -115,6 +119,7 @@ import type {
   InitiateClosureBody,
   InitiateMaturityBody,
   InitiateNomineeActivationBody,
+  InventoryStockSummary,
   LandNotionalState,
   LandownerAccountSummary,
   LandownerLcaReceivable,
@@ -154,6 +159,7 @@ import type {
   ListProductionBatchesParams,
   ListProductionEntriesParams,
   ListProductionRecordsParams,
+  ListStockMovementsParams,
   ListTemplatesParams,
   MarkBurdenRecordRecoveredBody,
   MaturityBlockers,
@@ -204,6 +210,8 @@ import type {
   ReverseLandownerLedgerEntry200,
   SeedImbalanceLedger200,
   SetUserRoleInput,
+  StockBalance,
+  StockMovement,
   StockSummary,
   TransitionLifecycleBody,
   UpdateAdvanceBody,
@@ -18438,3 +18446,644 @@ export function useGetProductionLogSummary<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Current confirmed stock balance per type per project
+ */
+export const getGetInventoryStockBalanceUrl = (
+  params?: GetInventoryStockBalanceParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/inventory-stock/balance?${stringifiedParams}`
+    : `/api/inventory-stock/balance`;
+};
+
+export const getInventoryStockBalance = async (
+  params?: GetInventoryStockBalanceParams,
+  options?: RequestInit,
+): Promise<StockBalance[]> => {
+  return customFetch<StockBalance[]>(getGetInventoryStockBalanceUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetInventoryStockBalanceQueryKey = (
+  params?: GetInventoryStockBalanceParams,
+) => {
+  return [`/api/inventory-stock/balance`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetInventoryStockBalanceQueryOptions = <
+  TData = Awaited<ReturnType<typeof getInventoryStockBalance>>,
+  TError = ErrorType<void>,
+>(
+  params?: GetInventoryStockBalanceParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getInventoryStockBalance>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetInventoryStockBalanceQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getInventoryStockBalance>>
+  > = ({ signal }) =>
+    getInventoryStockBalance(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getInventoryStockBalance>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetInventoryStockBalanceQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getInventoryStockBalance>>
+>;
+export type GetInventoryStockBalanceQueryError = ErrorType<void>;
+
+/**
+ * @summary Current confirmed stock balance per type per project
+ */
+
+export function useGetInventoryStockBalance<
+  TData = Awaited<ReturnType<typeof getInventoryStockBalance>>,
+  TError = ErrorType<void>,
+>(
+  params?: GetInventoryStockBalanceParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getInventoryStockBalance>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetInventoryStockBalanceQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Dashboard summary with movement stats and per-type breakdown
+ */
+export const getGetInventoryStockSummaryUrl = (
+  params?: GetInventoryStockSummaryParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/inventory-stock/summary?${stringifiedParams}`
+    : `/api/inventory-stock/summary`;
+};
+
+export const getInventoryStockSummary = async (
+  params?: GetInventoryStockSummaryParams,
+  options?: RequestInit,
+): Promise<InventoryStockSummary> => {
+  return customFetch<InventoryStockSummary>(
+    getGetInventoryStockSummaryUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetInventoryStockSummaryQueryKey = (
+  params?: GetInventoryStockSummaryParams,
+) => {
+  return [`/api/inventory-stock/summary`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetInventoryStockSummaryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getInventoryStockSummary>>,
+  TError = ErrorType<void>,
+>(
+  params?: GetInventoryStockSummaryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getInventoryStockSummary>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetInventoryStockSummaryQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getInventoryStockSummary>>
+  > = ({ signal }) =>
+    getInventoryStockSummary(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getInventoryStockSummary>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetInventoryStockSummaryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getInventoryStockSummary>>
+>;
+export type GetInventoryStockSummaryQueryError = ErrorType<void>;
+
+/**
+ * @summary Dashboard summary with movement stats and per-type breakdown
+ */
+
+export function useGetInventoryStockSummary<
+  TData = Awaited<ReturnType<typeof getInventoryStockSummary>>,
+  TError = ErrorType<void>,
+>(
+  params?: GetInventoryStockSummaryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getInventoryStockSummary>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetInventoryStockSummaryQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List stock movements with filters
+ */
+export const getListStockMovementsUrl = (params?: ListStockMovementsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/inventory-stock/movements?${stringifiedParams}`
+    : `/api/inventory-stock/movements`;
+};
+
+export const listStockMovements = async (
+  params?: ListStockMovementsParams,
+  options?: RequestInit,
+): Promise<StockMovement[]> => {
+  return customFetch<StockMovement[]>(getListStockMovementsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListStockMovementsQueryKey = (
+  params?: ListStockMovementsParams,
+) => {
+  return [
+    `/api/inventory-stock/movements`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListStockMovementsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listStockMovements>>,
+  TError = ErrorType<void>,
+>(
+  params?: ListStockMovementsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listStockMovements>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListStockMovementsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listStockMovements>>
+  > = ({ signal }) => listStockMovements(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listStockMovements>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListStockMovementsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listStockMovements>>
+>;
+export type ListStockMovementsQueryError = ErrorType<void>;
+
+/**
+ * @summary List stock movements with filters
+ */
+
+export function useListStockMovements<
+  TData = Awaited<ReturnType<typeof listStockMovements>>,
+  TError = ErrorType<void>,
+>(
+  params?: ListStockMovementsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listStockMovements>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListStockMovementsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Record a new stock movement
+ */
+export const getCreateStockMovementUrl = () => {
+  return `/api/inventory-stock/movements`;
+};
+
+export const createStockMovement = async (
+  createStockMovementBody: CreateStockMovementBody,
+  options?: RequestInit,
+): Promise<StockMovement> => {
+  return customFetch<StockMovement>(getCreateStockMovementUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createStockMovementBody),
+  });
+};
+
+export const getCreateStockMovementMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createStockMovement>>,
+    TError,
+    { data: BodyType<CreateStockMovementBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createStockMovement>>,
+  TError,
+  { data: BodyType<CreateStockMovementBody> },
+  TContext
+> => {
+  const mutationKey = ["createStockMovement"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createStockMovement>>,
+    { data: BodyType<CreateStockMovementBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createStockMovement(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateStockMovementMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createStockMovement>>
+>;
+export type CreateStockMovementMutationBody = BodyType<CreateStockMovementBody>;
+export type CreateStockMovementMutationError = ErrorType<void>;
+
+/**
+ * @summary Record a new stock movement
+ */
+export const useCreateStockMovement = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createStockMovement>>,
+    TError,
+    { data: BodyType<CreateStockMovementBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createStockMovement>>,
+  TError,
+  { data: BodyType<CreateStockMovementBody> },
+  TContext
+> => {
+  return useMutation(getCreateStockMovementMutationOptions(options));
+};
+
+/**
+ * @summary Confirm a pending stock movement (admin/developer)
+ */
+export const getConfirmStockMovementUrl = (id: string) => {
+  return `/api/inventory-stock/movements/${id}/confirm`;
+};
+
+export const confirmStockMovement = async (
+  id: string,
+  options?: RequestInit,
+): Promise<StockMovement> => {
+  return customFetch<StockMovement>(getConfirmStockMovementUrl(id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getConfirmStockMovementMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof confirmStockMovement>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof confirmStockMovement>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["confirmStockMovement"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof confirmStockMovement>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return confirmStockMovement(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ConfirmStockMovementMutationResult = NonNullable<
+  Awaited<ReturnType<typeof confirmStockMovement>>
+>;
+
+export type ConfirmStockMovementMutationError = ErrorType<void>;
+
+/**
+ * @summary Confirm a pending stock movement (admin/developer)
+ */
+export const useConfirmStockMovement = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof confirmStockMovement>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof confirmStockMovement>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getConfirmStockMovementMutationOptions(options));
+};
+
+/**
+ * @summary Cancel a stock movement (admin/developer)
+ */
+export const getCancelStockMovementUrl = (id: string) => {
+  return `/api/inventory-stock/movements/${id}/cancel`;
+};
+
+export const cancelStockMovement = async (
+  id: string,
+  options?: RequestInit,
+): Promise<StockMovement> => {
+  return customFetch<StockMovement>(getCancelStockMovementUrl(id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getCancelStockMovementMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof cancelStockMovement>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof cancelStockMovement>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["cancelStockMovement"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof cancelStockMovement>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return cancelStockMovement(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CancelStockMovementMutationResult = NonNullable<
+  Awaited<ReturnType<typeof cancelStockMovement>>
+>;
+
+export type CancelStockMovementMutationError = ErrorType<void>;
+
+/**
+ * @summary Cancel a stock movement (admin/developer)
+ */
+export const useCancelStockMovement = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof cancelStockMovement>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof cancelStockMovement>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getCancelStockMovementMutationOptions(options));
+};
+
+/**
+ * @summary Soft-delete a stock movement (admin only)
+ */
+export const getDeleteStockMovementUrl = (id: string) => {
+  return `/api/inventory-stock/movements/${id}`;
+};
+
+export const deleteStockMovement = async (
+  id: string,
+  options?: RequestInit,
+): Promise<DeleteStockMovement200> => {
+  return customFetch<DeleteStockMovement200>(getDeleteStockMovementUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteStockMovementMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteStockMovement>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteStockMovement>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["deleteStockMovement"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteStockMovement>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteStockMovement(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteStockMovementMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteStockMovement>>
+>;
+
+export type DeleteStockMovementMutationError = ErrorType<void>;
+
+/**
+ * @summary Soft-delete a stock movement (admin only)
+ */
+export const useDeleteStockMovement = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteStockMovement>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteStockMovement>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getDeleteStockMovementMutationOptions(options));
+};
