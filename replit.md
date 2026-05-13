@@ -874,6 +874,60 @@ ERP-style real-time anomaly detection engine for operational governance and comp
 
 **Access:** admin and developer only. landowner, investor, employee, operational_staff see a "not available" screen.
 
+## Operational Security & Access Control System
+
+Role-based security enforcement across production, inventory, and sales modules. Implements field-level data protection, project-scoped visibility, and a full operational access audit trail.
+
+### Visibility rules enforced at API level
+
+| Module | admin/developer | employee | operational_staff | landowner/investor |
+|---|---|---|---|---|
+| Production batches (list/view) | All projects | Assigned projects | Assigned projects | Assigned projects (read-only) |
+| Inventory balance/movements | All projects | Assigned projects | Assigned projects | Assigned projects (read-only) |
+| Sales transactions (list/view) | All projects, all fields | Assigned projects, no revenue totals | Assigned projects, no pricing | Assigned projects, no pricing |
+| Sales analytics (summary) | Full revenue figures | Count only | Count only | Count only |
+| Inventory analytics | Full (rates + estimated value + sales trends) | Quantities only | Quantities only | Quantities only |
+
+### Revenue/pricing field protection
+
+**`formatTransaction` (sales.ts):** `totalGrossRevenue`, `totalDeductions`, `totalNetRevenue` → stripped for all roles except admin/developer  
+**`formatLineItem` (sales.ts):** `saleRate`, `grossAmount` → stripped for operational_staff, landowner, investor (employees retain access as they enter these values)  
+**Inventory analytics:** `lastSaleRate`, `estimatedValue`, `salesTrends` → stripped for non-manager roles. Safe valuation returned with undefined pricing fields.  
+**Sales summary:** revenue total aggregates stripped for all non-manager roles (count/confirmed count only visible)
+
+### Operational access audit trail
+
+Every access to production, inventory, and sales records is written to `operational_access_logs` via the `logOperationalAccess()` fire-and-forget utility in `artifacts/api-server/src/lib/accessLog.ts`.
+
+**Logged events:**
+- `GET /production-log/batches` → `production_batch / list`
+- `GET /production-log/batches/:id` → `production_batch / view`
+- `GET /sales` → `sale_transaction / list`
+- `GET /sales/:id` → `sale_detail / view`
+- `GET /sales/summary` → `sale_summary / summary`
+- `GET /inventory-stock/analytics` → `inventory_analytics / analytics`
+- `accessDenied: true` entries written on 403 responses
+
+**DB table:** `operational_access_logs` — UUID PK, userId FK (set null), userRole, projectId FK (set null), resourceType, resourceId, resourceRef, action, accessDenied, clientIp, userAgent, accessedAt. Append-only; never updated or deleted.
+
+**API endpoints** (`artifacts/api-server/src/routes/operational_access_logs.ts`, mounted at `/operational-access-logs`):
+- `GET /operational-access-logs?userId&projectId&resourceType&action&accessDenied&from&to&limit&offset` — paginated log list (admin/developer)
+- `GET /operational-access-logs/summary?from&to` — aggregate counts by role and resource type (admin/developer)
+
+**Frontend:** `OperationalAccessLog.tsx` (route `/operational-access-log`) — audit viewer with:
+- 4 KPI cards: Total Events / Denied Access / Active Roles / Resource Types
+- Role breakdown strip with clickable filter pills
+- Filter bar: search, resource type, action, access status
+- Paginated log table with expandable rows (full IDs, IP)
+- Color-coded role/action/resource badges
+
+**Sidebar:** "Op. Access Log" added to System group (admin/developer only), icon: ScanSearch
+
+**Generated hooks:** `useListOperationalAccessLogs`, `useGetOperationalAccessLogSummary`
+
+**Schema file:** `lib/db/src/schema/operational_access_logs.ts`  
+**Utility:** `artifacts/api-server/src/lib/accessLog.ts` — `logOperationalAccess(params)`, `logDeniedAccess(...)`
+
 ## Pointers
 
 - See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details

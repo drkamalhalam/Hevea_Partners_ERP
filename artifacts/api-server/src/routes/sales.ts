@@ -20,6 +20,7 @@ import {
   describeLineItemChange,
   type FieldChange,
 } from "../lib/saleAuditHelper";
+import { logOperationalAccess } from "../lib/accessLog";
 
 const router = Router();
 
@@ -51,12 +52,33 @@ async function getAssignedProjectIds(userId: string): Promise<string[]> {
   return rows.map((r) => r.projectId);
 }
 
+/**
+ * Roles that may see revenue totals per transaction.
+ * employee and operational_staff handle operational work but must not see
+ * financial aggregates. landowner/investor see their revenue share through
+ * the dedicated landowner-account module instead.
+ */
+function canSeeRevenueTotals(role: string): boolean {
+  return role === "admin" || role === "developer";
+}
+
+/**
+ * Roles that may see per-unit pricing (saleRate / grossAmount per line item).
+ * employees enter and manage sale line items so they need these fields.
+ * operational_staff, landowners, investors do not.
+ */
+function canSeePricing(role: string): boolean {
+  return role === "admin" || role === "developer" || role === "employee";
+}
+
 function formatTransaction(
   row: typeof salesTransactionsTable.$inferSelect & {
     projectName?: string | null;
     buyerPhone?: string | null;
   },
+  role?: string,
 ) {
+  const showRevenue = !role || canSeeRevenueTotals(role);
   return {
     id: row.id,
     projectId: row.projectId,
@@ -69,9 +91,9 @@ function formatTransaction(
     status: row.status,
     notes: row.notes ?? undefined,
     documentRef: row.documentRef ?? undefined,
-    totalGrossRevenue: Number(row.totalGrossRevenue),
-    totalDeductions: Number(row.totalDeductions),
-    totalNetRevenue: Number(row.totalNetRevenue),
+    totalGrossRevenue: showRevenue ? Number(row.totalGrossRevenue) : undefined,
+    totalDeductions: showRevenue ? Number(row.totalDeductions) : undefined,
+    totalNetRevenue: showRevenue ? Number(row.totalNetRevenue) : undefined,
     distributionId: row.distributionId ?? undefined,
     confirmedAt: row.confirmedAt?.toISOString() ?? undefined,
     confirmedByName: row.confirmedByName ?? undefined,
@@ -81,7 +103,8 @@ function formatTransaction(
   };
 }
 
-function formatLineItem(row: typeof salesLineItemsTable.$inferSelect) {
+function formatLineItem(row: typeof salesLineItemsTable.$inferSelect, role?: string) {
+  const showPricing = !role || canSeePricing(role);
   return {
     id: row.id,
     transactionId: row.transactionId,
@@ -90,8 +113,8 @@ function formatLineItem(row: typeof salesLineItemsTable.$inferSelect) {
     productType: row.productType,
     quantity: Number(row.quantity),
     unit: row.unit,
-    saleRate: row.saleRate !== null ? Number(row.saleRate) : undefined,
-    grossAmount: row.grossAmount !== null ? Number(row.grossAmount) : undefined,
+    saleRate: showPricing && row.saleRate !== null ? Number(row.saleRate) : undefined,
+    grossAmount: showPricing && row.grossAmount !== null ? Number(row.grossAmount) : undefined,
     remarks: row.remarks ?? undefined,
     createdAt: row.createdAt.toISOString(),
   };
@@ -179,9 +202,16 @@ router.get("/", async (req, res) => {
     )
     .orderBy(desc(salesTransactionsTable.saleDate), desc(salesTransactionsTable.createdAt));
 
+  logOperationalAccess({
+    req,
+    resourceType: "sale_transaction",
+    action: "list",
+    projectId: projectId ?? null,
+  });
+
   return res.json(
     rows.map((r) =>
-      formatTransaction({ ...r.tx, projectName: r.projectName, buyerPhone: r.buyerPhone }),
+      formatTransaction({ ...r.tx, projectName: r.projectName, buyerPhone: r.buyerPhone }, actor.role),
     ),
   );
 });
@@ -235,18 +265,27 @@ router.get("/summary", async (req, res) => {
   const totalNetAll = rows.reduce((s, r) => s + Number(r.totalNet), 0);
   const totalSalesAll = rows.reduce((s, r) => s + r.totalSales, 0);
 
+  const showRevenue = canSeeRevenueTotals(actor.role);
+
+  logOperationalAccess({
+    req,
+    resourceType: "sale_summary",
+    action: "summary",
+    projectId: projectId ?? null,
+  });
+
   return res.json({
-    totalGrossRevenue: totalGrossAll,
-    totalNetRevenue: totalNetAll,
+    totalGrossRevenue: showRevenue ? totalGrossAll : undefined,
+    totalNetRevenue: showRevenue ? totalNetAll : undefined,
     totalSalesCount: totalSalesAll,
     projects: rows.map((r) => ({
       projectId: r.projectId,
       projectName: r.projectName ?? undefined,
       totalSales: r.totalSales,
       confirmedSales: r.confirmedSales,
-      totalGrossRevenue: Number(r.totalGross),
-      totalDeductions: Number(r.totalDeductions),
-      totalNetRevenue: Number(r.totalNet),
+      totalGrossRevenue: showRevenue ? Number(r.totalGross) : undefined,
+      totalDeductions: showRevenue ? Number(r.totalDeductions) : undefined,
+      totalNetRevenue: showRevenue ? Number(r.totalNet) : undefined,
     })),
   });
 });
@@ -407,7 +446,7 @@ router.post(
 
     return res
       .status(201)
-      .json(formatTransaction({ ...updated.tx, projectName: updated.projectName }));
+      .json(formatTransaction({ ...updated.tx, projectName: updated.projectName }, actor.role));
   },
 );
 
@@ -446,9 +485,18 @@ router.get("/:id", async (req, res) => {
     .from(salesDeductionsTable)
     .where(eq(salesDeductionsTable.transactionId, txId));
 
+  logOperationalAccess({
+    req,
+    resourceType: "sale_detail",
+    action: "view",
+    projectId: row.tx.projectId,
+    resourceId: txId,
+    resourceRef: row.tx.saleNumber,
+  });
+
   return res.json({
-    ...formatTransaction({ ...row.tx, projectName: row.projectName, buyerPhone: row.buyerPhone }),
-    lineItems: lineItems.map(formatLineItem),
+    ...formatTransaction({ ...row.tx, projectName: row.projectName, buyerPhone: row.buyerPhone }, actor.role),
+    lineItems: lineItems.map((li) => formatLineItem(li, actor.role)),
     deductions: deductions.map(formatDeduction),
   });
 });
@@ -522,7 +570,7 @@ router.patch(
       actorRole: actor.role,
     });
 
-    return res.json(formatTransaction(updated));
+    return res.json(formatTransaction(updated, actor.role));
   },
 );
 
@@ -606,7 +654,7 @@ router.post(
       actorRole: actor.role,
     });
 
-    return res.json(formatTransaction(updated));
+    return res.json(formatTransaction(updated, actor.role));
   },
 );
 
@@ -655,7 +703,7 @@ router.post(
       });
     }
 
-    return res.json(formatTransaction(updated));
+    return res.json(formatTransaction(updated, cancelActor.role));
   },
 );
 
@@ -732,7 +780,7 @@ router.post(
       actorRole: actor.role,
     });
 
-    return res.status(201).json(formatLineItem(created));
+    return res.status(201).json(formatLineItem(created, actor.role));
   },
 );
 
@@ -821,7 +869,7 @@ router.patch(
       });
     }
 
-    return res.json(formatLineItem(updated));
+    return res.json(formatLineItem(updated, liPatchActor.role));
   },
 );
 

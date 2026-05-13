@@ -6,6 +6,11 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from "./accessLogEntry";
+export * from "./accessLogPage";
+export * from "./accessLogResourceBreakdown";
+export * from "./accessLogRoleBreakdown";
+export * from "./accessLogSummary";
 export * from "./accountingProfileValidationCheck";
 export * from "./accountingProfileValidationCheckStatus";
 export * from "./accountingProfileValidationResult";
@@ -191,6 +196,7 @@ export * from "./getLcaGovernanceSummaryParams";
 export * from "./getLcaSchedule200";
 export * from "./getLcaScheduleParams";
 export * from "./getLcaSummaryParams";
+export * from "./getOperationalAccessLogSummaryParams";
 export * from "./getOwnershipSummary200";
 export * from "./getOwnershipSummaryParams";
 export * from "./getProductionLogSummaryParams";
@@ -273,6 +279,8 @@ export * from "./listLandownerLedgerEntriesParams";
 export * from "./listLcaConfigsParams";
 export * from "./listLcaLedgerParams";
 export * from "./listLcaLedgerStatus";
+export * from "./listOperationalAccessLogsAccessDenied";
+export * from "./listOperationalAccessLogsParams";
 export * from "./listOperationalAlertsParams";
 export * from "./listOperationalAlertsSeverity";
 export * from "./listOperationalAlertsStatus";

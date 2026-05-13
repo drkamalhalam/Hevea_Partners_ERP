@@ -4385,6 +4385,48 @@ export interface UpdateAlertBody {
   resolutionNotes?: string;
 }
 
+export interface AccessLogEntry {
+  id: string;
+  userId?: string;
+  userName?: string;
+  userRole: string;
+  projectId?: string;
+  projectName?: string;
+  resourceType: string;
+  resourceId?: string;
+  resourceRef?: string;
+  action: string;
+  accessDenied: boolean;
+  clientIp?: string;
+  accessedAt: string;
+}
+
+export interface AccessLogPage {
+  logs: AccessLogEntry[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface AccessLogRoleBreakdown {
+  role: string;
+  count: number;
+  denied: number;
+}
+
+export interface AccessLogResourceBreakdown {
+  resourceType: string;
+  count: number;
+  denied: number;
+}
+
+export interface AccessLogSummary {
+  total: number;
+  totalDenied: number;
+  byRole: AccessLogRoleBreakdown[];
+  byResourceType: AccessLogResourceBreakdown[];
+}
+
 export interface SuccessResponse {
   success: boolean;
 }
@@ -5052,4 +5094,29 @@ export const ListOperationalAlertsSeverity = {
   critical: "critical",
   warning: "warning",
   info: "info",
+} as const;
+
+export type GetOperationalAccessLogSummaryParams = {
+  from?: string;
+  to?: string;
+};
+
+export type ListOperationalAccessLogsParams = {
+  userId?: string;
+  projectId?: string;
+  resourceType?: string;
+  action?: string;
+  accessDenied?: ListOperationalAccessLogsAccessDenied;
+  from?: string;
+  to?: string;
+  limit?: number;
+  offset?: number;
+};
+
+export type ListOperationalAccessLogsAccessDenied =
+  (typeof ListOperationalAccessLogsAccessDenied)[keyof typeof ListOperationalAccessLogsAccessDenied];
+
+export const ListOperationalAccessLogsAccessDenied = {
+  true: "true",
+  false: "false",
 } as const;

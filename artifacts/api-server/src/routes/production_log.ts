@@ -11,6 +11,7 @@ import {
   userProjectAssignmentsTable,
 } from "@workspace/db";
 import { requireRole, canAccessProject } from "../middlewares/auth";
+import { logOperationalAccess } from "../lib/accessLog";
 
 const router = Router();
 
@@ -172,6 +173,13 @@ router.get("/batches", async (req, res) => {
     )
     .orderBy(desc(productionBatchesTable.batchDate), desc(productionBatchesTable.createdAt));
 
+  logOperationalAccess({
+    req,
+    resourceType: "production_batch",
+    action: "list",
+    projectId: projectId ?? null,
+  });
+
   return res.json(rows.map((r) => formatBatch({ ...r.batch, projectName: r.projectName })));
 });
 
@@ -268,6 +276,15 @@ router.get("/batches/:id", async (req, res) => {
       ),
     )
     .orderBy(asc(productionEntriesTable.createdAt));
+
+  logOperationalAccess({
+    req,
+    resourceType: "production_batch",
+    action: "view",
+    projectId: batchRow.batch.projectId,
+    resourceId: batchId,
+    resourceRef: batchRow.batch.batchNumber,
+  });
 
   return res.json({
     ...formatBatch({ ...batchRow.batch, projectName: batchRow.projectName }),

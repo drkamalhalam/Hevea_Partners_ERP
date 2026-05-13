@@ -39,6 +39,7 @@ import salesRouter from "./sales";
 import salesAuditRouter from "./sales_audit";
 import tasksRouter from "./tasks";
 import operationalAlertsRouter from "./operational_alerts";
+import operationalAccessLogsRouter from "./operational_access_logs";
 import devRouter from "./dev";
 
 const router: IRouter = Router();
@@ -95,5 +96,6 @@ router.use("/sales", salesAuditRouter);
 router.use("/sales", salesRouter);
 router.use("/tasks", tasksRouter);
 router.use("/operational-alerts", operationalAlertsRouter);
+router.use("/operational-access-logs", operationalAccessLogsRouter);
 
 export default router;

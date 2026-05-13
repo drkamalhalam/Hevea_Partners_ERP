@@ -13,6 +13,7 @@ import {
   usersTable,
 } from "@workspace/db";
 import { requireRole, canAccessProject } from "../middlewares/auth";
+import { logOperationalAccess } from "../lib/accessLog";
 
 const router = Router();
 
@@ -708,6 +709,7 @@ router.get("/analytics", async (req, res) => {
       totalWastage: b?.wastage ?? 0,
       totalProductionIn: b?.prodIn ?? 0,
       totalSaleOut: b?.saleOut ?? 0,
+      // Financial fields — set below after role check
       lastSaleRate,
       lastSaleDate: rateInfo?.date ?? null,
       estimatedValue,
@@ -803,10 +805,28 @@ router.get("/analytics", async (req, res) => {
       alertLevel: v.alertLevel,
     }));
 
+  // Strip financial fields (pricing and revenue data) for non-manager roles.
+  // Employees and operational staff handle physical inventory but must not
+  // see per-unit sale rates, estimated stock value, or revenue trends.
+  const showFinancials = canViewAll(actor.role);
+
+  const safeValuation = stockValuation.map((v) => ({
+    ...v,
+    lastSaleRate: showFinancials ? v.lastSaleRate : undefined,
+    estimatedValue: showFinancials ? v.estimatedValue : undefined,
+  }));
+
+  logOperationalAccess({
+    req,
+    resourceType: "inventory_analytics",
+    action: "analytics",
+    projectId: projectId ?? null,
+  });
+
   return res.json({
-    stockValuation,
+    stockValuation: safeValuation,
     monthlyTrends,
-    salesTrends,
+    salesTrends: showFinancials ? salesTrends : undefined,
     batchSummary: {
       totalBatches,
       openBatches: batchCounts.open ?? 0,

@@ -5856,6 +5856,67 @@ paths:
         "404":
           description: Not found
 
+  /operational-access-logs/summary:
+    get:
+      operationId: getOperationalAccessLogSummary
+      summary: Get access log aggregate counts by role and resource type
+      tags: [operational-access-logs]
+      parameters:
+        - in: query
+          name: from
+          schema: { type: string, format: date-time }
+        - in: query
+          name: to
+          schema: { type: string, format: date-time }
+      responses:
+        "200":
+          description: Access log summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccessLogSummary"
+
+  /operational-access-logs:
+    get:
+      operationId: listOperationalAccessLogs
+      summary: List operational access audit log entries
+      tags: [operational-access-logs]
+      parameters:
+        - in: query
+          name: userId
+          schema: { type: string, format: uuid }
+        - in: query
+          name: projectId
+          schema: { type: string, format: uuid }
+        - in: query
+          name: resourceType
+          schema: { type: string }
+        - in: query
+          name: action
+          schema: { type: string }
+        - in: query
+          name: accessDenied
+          schema: { type: string, enum: ["true", "false"] }
+        - in: query
+          name: from
+          schema: { type: string, format: date-time }
+        - in: query
+          name: to
+          schema: { type: string, format: date-time }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 100 }
+        - in: query
+          name: offset
+          schema: { type: integer, default: 0 }
+      responses:
+        "200":
+          description: Paginated access log entries
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccessLogPage"
+
 components:
   schemas:
     HealthStatus:
@@ -10267,6 +10328,67 @@ components:
           type: string
           enum: [acknowledge, resolve, dismiss, reopen]
         resolutionNotes: { type: string }
+
+    AccessLogEntry:
+      type: object
+      required: [id, userRole, resourceType, action, accessDenied, accessedAt]
+      properties:
+        id: { type: string, format: uuid }
+        userId: { type: string, format: uuid }
+        userName: { type: string }
+        userRole: { type: string }
+        projectId: { type: string, format: uuid }
+        projectName: { type: string }
+        resourceType: { type: string }
+        resourceId: { type: string, format: uuid }
+        resourceRef: { type: string }
+        action: { type: string }
+        accessDenied: { type: boolean }
+        clientIp: { type: string }
+        accessedAt: { type: string, format: date-time }
+
+    AccessLogPage:
+      type: object
+      required: [logs, total, limit, offset]
+      properties:
+        logs:
+          type: array
+          items:
+            $ref: "#/components/schemas/AccessLogEntry"
+        total: { type: integer }
+        limit: { type: integer }
+        offset: { type: integer }
+
+    AccessLogRoleBreakdown:
+      type: object
+      required: [role, count, denied]
+      properties:
+        role: { type: string }
+        count: { type: integer }
+        denied: { type: integer }
+
+    AccessLogResourceBreakdown:
+      type: object
+      required: [resourceType, count, denied]
+      properties:
+        resourceType: { type: string }
+        count: { type: integer }
+        denied: { type: integer }
+
+    AccessLogSummary:
+      type: object
+      required: [total, totalDenied, byRole, byResourceType]
+      properties:
+        total: { type: integer }
+        totalDenied: { type: integer }
+        byRole:
+          type: array
+          items:
+            $ref: "#/components/schemas/AccessLogRoleBreakdown"
+        byResourceType:
+          type: array
+          items:
+            $ref: "#/components/schemas/AccessLogResourceBreakdown"
 
     SuccessResponse:
       type: object

@@ -8859,3 +8859,75 @@ export const UpdateOperationalAlertResponse = zod.object({
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
+
+/**
+ * @summary Get access log aggregate counts by role and resource type
+ */
+export const GetOperationalAccessLogSummaryQueryParams = zod.object({
+  from: zod.date().optional(),
+  to: zod.date().optional(),
+});
+
+export const GetOperationalAccessLogSummaryResponse = zod.object({
+  total: zod.number(),
+  totalDenied: zod.number(),
+  byRole: zod.array(
+    zod.object({
+      role: zod.string(),
+      count: zod.number(),
+      denied: zod.number(),
+    }),
+  ),
+  byResourceType: zod.array(
+    zod.object({
+      resourceType: zod.string(),
+      count: zod.number(),
+      denied: zod.number(),
+    }),
+  ),
+});
+
+/**
+ * @summary List operational access audit log entries
+ */
+export const listOperationalAccessLogsQueryLimitDefault = 100;
+export const listOperationalAccessLogsQueryOffsetDefault = 0;
+
+export const ListOperationalAccessLogsQueryParams = zod.object({
+  userId: zod.coerce.string().uuid().optional(),
+  projectId: zod.coerce.string().uuid().optional(),
+  resourceType: zod.coerce.string().optional(),
+  action: zod.coerce.string().optional(),
+  accessDenied: zod.enum(["true", "false"]).optional(),
+  from: zod.date().optional(),
+  to: zod.date().optional(),
+  limit: zod.coerce
+    .number()
+    .default(listOperationalAccessLogsQueryLimitDefault),
+  offset: zod.coerce
+    .number()
+    .default(listOperationalAccessLogsQueryOffsetDefault),
+});
+
+export const ListOperationalAccessLogsResponse = zod.object({
+  logs: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      userId: zod.string().uuid().optional(),
+      userName: zod.string().optional(),
+      userRole: zod.string(),
+      projectId: zod.string().uuid().optional(),
+      projectName: zod.string().optional(),
+      resourceType: zod.string(),
+      resourceId: zod.string().uuid().optional(),
+      resourceRef: zod.string().optional(),
+      action: zod.string(),
+      accessDenied: zod.boolean(),
+      clientIp: zod.string().optional(),
+      accessedAt: zod.coerce.date(),
+    }),
+  ),
+  total: zod.number(),
+  limit: zod.number(),
+  offset: zod.number(),
+});

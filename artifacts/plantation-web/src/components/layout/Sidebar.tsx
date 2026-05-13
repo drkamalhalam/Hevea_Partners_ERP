@@ -315,6 +315,12 @@ const navGroups: NavGroup[] = [
         icon: ShieldAlert,
         roles: ["admin", "developer"] as UserRole[],
       },
+      {
+        name: "Op. Access Log",
+        href: "/operational-access-log",
+        icon: ScanSearch,
+        roles: ["admin", "developer"] as UserRole[],
+      },
     ],
   },
 ];

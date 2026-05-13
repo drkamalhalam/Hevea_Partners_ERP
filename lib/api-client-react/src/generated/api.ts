@@ -17,6 +17,8 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
+  AccessLogPage,
+  AccessLogSummary,
   AccountingProfileValidationResult,
   AcknowledgeAdvanceBody,
   AcknowledgeClosureBody,
@@ -119,6 +121,7 @@ import type {
   GetLcaSchedule200,
   GetLcaScheduleParams,
   GetLcaSummaryParams,
+  GetOperationalAccessLogSummaryParams,
   GetOwnershipSummary200,
   GetOwnershipSummaryParams,
   GetProductionLogSummaryParams,
@@ -166,6 +169,7 @@ import type {
   ListLandownerLedgerEntriesParams,
   ListLcaConfigsParams,
   ListLcaLedgerParams,
+  ListOperationalAccessLogsParams,
   ListOperationalAlertsParams,
   ListOwnershipSnapshots200,
   ListOwnershipSnapshotsParams,
@@ -22461,3 +22465,215 @@ export const useUpdateOperationalAlert = <
 > => {
   return useMutation(getUpdateOperationalAlertMutationOptions(options));
 };
+
+/**
+ * @summary Get access log aggregate counts by role and resource type
+ */
+export const getGetOperationalAccessLogSummaryUrl = (
+  params?: GetOperationalAccessLogSummaryParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/operational-access-logs/summary?${stringifiedParams}`
+    : `/api/operational-access-logs/summary`;
+};
+
+export const getOperationalAccessLogSummary = async (
+  params?: GetOperationalAccessLogSummaryParams,
+  options?: RequestInit,
+): Promise<AccessLogSummary> => {
+  return customFetch<AccessLogSummary>(
+    getGetOperationalAccessLogSummaryUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetOperationalAccessLogSummaryQueryKey = (
+  params?: GetOperationalAccessLogSummaryParams,
+) => {
+  return [
+    `/api/operational-access-logs/summary`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetOperationalAccessLogSummaryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getOperationalAccessLogSummary>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetOperationalAccessLogSummaryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getOperationalAccessLogSummary>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetOperationalAccessLogSummaryQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getOperationalAccessLogSummary>>
+  > = ({ signal }) =>
+    getOperationalAccessLogSummary(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getOperationalAccessLogSummary>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetOperationalAccessLogSummaryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getOperationalAccessLogSummary>>
+>;
+export type GetOperationalAccessLogSummaryQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get access log aggregate counts by role and resource type
+ */
+
+export function useGetOperationalAccessLogSummary<
+  TData = Awaited<ReturnType<typeof getOperationalAccessLogSummary>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetOperationalAccessLogSummaryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getOperationalAccessLogSummary>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetOperationalAccessLogSummaryQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List operational access audit log entries
+ */
+export const getListOperationalAccessLogsUrl = (
+  params?: ListOperationalAccessLogsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/operational-access-logs?${stringifiedParams}`
+    : `/api/operational-access-logs`;
+};
+
+export const listOperationalAccessLogs = async (
+  params?: ListOperationalAccessLogsParams,
+  options?: RequestInit,
+): Promise<AccessLogPage> => {
+  return customFetch<AccessLogPage>(getListOperationalAccessLogsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListOperationalAccessLogsQueryKey = (
+  params?: ListOperationalAccessLogsParams,
+) => {
+  return [`/api/operational-access-logs`, ...(params ? [params] : [])] as const;
+};
+
+export const getListOperationalAccessLogsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listOperationalAccessLogs>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListOperationalAccessLogsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listOperationalAccessLogs>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListOperationalAccessLogsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listOperationalAccessLogs>>
+  > = ({ signal }) =>
+    listOperationalAccessLogs(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listOperationalAccessLogs>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListOperationalAccessLogsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listOperationalAccessLogs>>
+>;
+export type ListOperationalAccessLogsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List operational access audit log entries
+ */
+
+export function useListOperationalAccessLogs<
+  TData = Awaited<ReturnType<typeof listOperationalAccessLogs>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListOperationalAccessLogsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listOperationalAccessLogs>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListOperationalAccessLogsQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
