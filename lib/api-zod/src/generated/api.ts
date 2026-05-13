@@ -6339,3 +6339,172 @@ export const GetLcaSummaryResponse = zod.object({
     }),
   ),
 });
+
+/**
+ * @summary Auto-generate yearly LCA ledger entries from startYear to target year
+ */
+export const AutoGenerateLcaLedgerParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const AutoGenerateLcaLedgerBody = zod.object({
+  toYear: zod
+    .number()
+    .optional()
+    .describe("Target year inclusive (defaults to current calendar year)"),
+});
+
+export const AutoGenerateLcaLedgerResponse = zod.object({
+  configId: zod.string().uuid(),
+  generated: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      configId: zod.string().uuid(),
+      projectId: zod.string().uuid(),
+      projectName: zod.string().optional(),
+      year: zod.number(),
+      baseAmount: zod.number(),
+      escalationFactor: zod.number(),
+      grossDue: zod.number(),
+      carryForward: zod.number(),
+      totalDue: zod.number(),
+      amountPaid: zod.number(),
+      balance: zod.number(),
+      status: zod.enum(["pending", "partial", "paid", "waived"]),
+      paidAt: zod.string().optional(),
+      notes: zod.string().optional(),
+      isActive: zod.boolean(),
+      createdByName: zod.string(),
+      createdAt: zod.string(),
+      updatedAt: zod.string(),
+    }),
+  ),
+  skippedYears: zod
+    .array(zod.number())
+    .describe("Years that already had ledger entries and were skipped"),
+  generatedCount: zod.number(),
+  totalYears: zod.number(),
+});
+
+/**
+ * @summary Full ERP-style LCA accounting ledger with payment history
+ */
+export const GetLcaFullLedgerQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+  configId: zod.coerce.string().uuid().optional(),
+});
+
+export const GetLcaFullLedgerResponse = zod.object({
+  config: zod.object({
+    id: zod.string().uuid(),
+    projectId: zod.string().uuid(),
+    projectName: zod.string().optional(),
+    agreementId: zod.string().uuid().optional(),
+    agreementRef: zod.string().optional(),
+    baseAmount: zod.number(),
+    escalationPct: zod.number(),
+    effectiveStartDate: zod.string(),
+    startYear: zod.number(),
+    notes: zod.string().optional(),
+    isActive: zod.boolean(),
+    createdById: zod.string().uuid().optional(),
+    createdByName: zod.string(),
+    createdAt: zod.string(),
+    updatedAt: zod.string(),
+  }),
+  entries: zod.array(
+    zod
+      .object({
+        id: zod.string().uuid(),
+        configId: zod.string().uuid(),
+        projectId: zod.string().uuid(),
+        projectName: zod.string().optional(),
+        year: zod.number(),
+        baseAmount: zod.number(),
+        escalationFactor: zod.number(),
+        grossDue: zod.number(),
+        carryForward: zod.number(),
+        totalDue: zod.number(),
+        amountPaid: zod.number(),
+        balance: zod.number(),
+        status: zod.enum(["pending", "partial", "paid", "waived"]),
+        paidAt: zod.string().optional(),
+        notes: zod.string().optional(),
+        isActive: zod.boolean(),
+        createdByName: zod.string(),
+        createdAt: zod.string(),
+        updatedAt: zod.string(),
+      })
+      .and(
+        zod.object({
+          escalationApplied: zod.number(),
+          payments: zod.array(
+            zod.object({
+              id: zod.string().uuid(),
+              ledgerEntryId: zod.string().uuid(),
+              configId: zod.string().uuid(),
+              projectId: zod.string().uuid(),
+              year: zod.number(),
+              amountPaid: zod.number(),
+              paymentDate: zod.string(),
+              paymentRef: zod.string().optional(),
+              notes: zod.string().optional(),
+              recordedById: zod.string().uuid().optional(),
+              recordedByName: zod.string(),
+              createdAt: zod.string(),
+            }),
+          ),
+        }),
+      ),
+  ),
+  totals: zod.object({
+    baseTotal: zod.number(),
+    escalationTotal: zod.number(),
+    carryForwardTotal: zod.number(),
+    totalDue: zod.number(),
+    totalPaid: zod.number(),
+    totalBalance: zod.number(),
+    yearCount: zod.number(),
+  }),
+});
+
+/**
+ * @summary List payment events for a ledger entry
+ */
+export const ListLcaPaymentEventsParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const ListLcaPaymentEventsResponseItem = zod.object({
+  id: zod.string().uuid(),
+  ledgerEntryId: zod.string().uuid(),
+  configId: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  year: zod.number(),
+  amountPaid: zod.number(),
+  paymentDate: zod.string(),
+  paymentRef: zod.string().optional(),
+  notes: zod.string().optional(),
+  recordedById: zod.string().uuid().optional(),
+  recordedByName: zod.string(),
+  createdAt: zod.string(),
+});
+export const ListLcaPaymentEventsResponse = zod.array(
+  ListLcaPaymentEventsResponseItem,
+);
+
+/**
+ * @summary Record a payment against a ledger entry (admin/developer only)
+ */
+export const RecordLcaPaymentParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const recordLcaPaymentBodyAmountPaidMin = 0.01;
+
+export const RecordLcaPaymentBody = zod.object({
+  amountPaid: zod.number().min(recordLcaPaymentBodyAmountPaidMin),
+  paymentDate: zod.string().describe("YYYY-MM-DD"),
+  paymentRef: zod.string().optional(),
+  notes: zod.string().optional(),
+});

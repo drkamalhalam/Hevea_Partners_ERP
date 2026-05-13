@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { getAuth } from "@clerk/express";
-import { eq, and, inArray, desc, isNull, or } from "drizzle-orm";
+import { eq, and, inArray, desc, isNull, asc } from "drizzle-orm";
 import {
   db,
   usersTable,
@@ -8,6 +8,7 @@ import {
   agreementsTable,
   lcaConfigsTable,
   lcaLedgerTable,
+  lcaPaymentEventsTable,
   userProjectAssignmentsTable,
 } from "@workspace/db";
 import { requireRole } from "../middlewares/auth";
@@ -758,5 +759,348 @@ router.get("/summary", async (req, res) => {
     byProject,
   });
 });
+
+// ── POST /lca/configs/:id/auto-generate ──────────────────────────────────────
+// Auto-generate all missing yearly ledger entries from startYear → toYear.
+// Entries are computed in sequence so each year's carry-forward reflects the
+// previous year's actual balance. Already-existing entries are skipped.
+
+router.post(
+  "/configs/:id/auto-generate",
+  requireRole("admin", "developer"),
+  async (req, res) => {
+    const { userId: clerkUserId } = getAuth(req);
+    if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
+
+    const actor = await resolveActor(clerkUserId);
+    if (!actor) return res.status(401).json({ error: "User not found" });
+
+    const [config] = await db
+      .select()
+      .from(lcaConfigsTable)
+      .where(eq(lcaConfigsTable.id, String(req.params.id)))
+      .limit(1);
+    if (!config) return res.status(404).json({ error: "LCA config not found" });
+    if (!config.isActive) return res.status(400).json({ error: "Config is inactive" });
+
+    const currentYear = new Date().getFullYear();
+    const body = req.body as { toYear?: number };
+    const toYear = body.toYear && Number.isInteger(body.toYear)
+      ? Math.min(body.toYear, currentYear + 5)
+      : currentYear;
+
+    if (toYear < config.startYear) {
+      return res.status(400).json({
+        error: `toYear (${toYear}) is before startYear (${config.startYear})`,
+      });
+    }
+
+    // Fetch existing entries for this config
+    const existing = await db
+      .select()
+      .from(lcaLedgerTable)
+      .where(and(eq(lcaLedgerTable.configId, config.id), eq(lcaLedgerTable.isActive, true)))
+      .orderBy(asc(lcaLedgerTable.year));
+
+    const existingByYear = new Map(existing.map((e) => [e.year, e]));
+    const baseAmount = Number(config.baseAmount);
+    const escalationPct = Number(config.escalationPct);
+    const creatorName = actor.displayName ?? actor.email ?? "System";
+
+    const generated: typeof lcaLedgerTable.$inferSelect[] = [];
+    const skippedYears: number[] = [];
+
+    for (let year = config.startYear; year <= toYear; year++) {
+      if (existingByYear.has(year)) {
+        skippedYears.push(year);
+        continue;
+      }
+
+      const yearOffset = year - config.startYear;
+      const escalationFactor = yearOffset === 0 ? 1.0 : Math.pow(1 + escalationPct / 100, yearOffset);
+      const grossDue = baseAmount * escalationFactor;
+
+      // Carry-forward from previous year's balance (not escalated)
+      let carryForward = 0;
+      const prevEntry = existingByYear.get(year - 1)
+        ?? generated.find((e) => e.year === year - 1);
+      if (prevEntry && prevEntry.status !== "paid" && prevEntry.status !== "waived") {
+        carryForward = Math.max(0, Number(prevEntry.balance));
+      }
+
+      const totalDue = grossDue + carryForward;
+
+      const [created] = await db
+        .insert(lcaLedgerTable)
+        .values({
+          configId: config.id,
+          projectId: config.projectId,
+          year,
+          baseAmount,
+          escalationFactor,
+          grossDue,
+          carryForward,
+          totalDue,
+          amountPaid: 0,
+          balance: totalDue,
+          status: "pending",
+          isActive: true,
+          createdById: actor.id,
+          createdByName: creatorName,
+        })
+        .returning();
+
+      generated.push(created);
+      existingByYear.set(year, created);
+    }
+
+    const projectRow = await db
+      .select({ name: projectsTable.name })
+      .from(projectsTable)
+      .where(eq(projectsTable.id, config.projectId))
+      .limit(1)
+      .then((r) => r[0]);
+
+    return res.json({
+      configId: config.id,
+      generated: generated.map((e) => formatEntry({ ...e, projectName: projectRow?.name })),
+      skippedYears,
+      generatedCount: generated.length,
+      totalYears: toYear - config.startYear + 1,
+    });
+  },
+);
+
+// ── GET /lca/ledger/:id/payments ─────────────────────────────────────────────
+
+router.get("/ledger/:id/payments", async (req, res) => {
+  const { userId: clerkUserId } = getAuth(req);
+  if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
+
+  const actor = await resolveActor(clerkUserId);
+  if (!actor) return res.status(401).json({ error: "User not found" });
+
+  const [entry] = await db
+    .select()
+    .from(lcaLedgerTable)
+    .where(eq(lcaLedgerTable.id, String(req.params.id)))
+    .limit(1);
+  if (!entry) return res.status(404).json({ error: "Ledger entry not found" });
+
+  if (!canAccessAllProjects(actor.role)) {
+    const assigned = await getAssignedProjectIds(actor.id);
+    if (!assigned.includes(entry.projectId)) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+  }
+
+  const events = await db
+    .select()
+    .from(lcaPaymentEventsTable)
+    .where(eq(lcaPaymentEventsTable.ledgerEntryId, String(req.params.id)))
+    .orderBy(desc(lcaPaymentEventsTable.createdAt));
+
+  return res.json(events.map(formatPaymentEvent));
+});
+
+// ── POST /lca/ledger/:id/payments ────────────────────────────────────────────
+
+router.post(
+  "/ledger/:id/payments",
+  requireRole("admin", "developer"),
+  async (req, res) => {
+    const { userId: clerkUserId } = getAuth(req);
+    if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
+
+    const actor = await resolveActor(clerkUserId);
+    if (!actor) return res.status(401).json({ error: "User not found" });
+
+    const [entry] = await db
+      .select()
+      .from(lcaLedgerTable)
+      .where(eq(lcaLedgerTable.id, String(req.params.id)))
+      .limit(1);
+    if (!entry) return res.status(404).json({ error: "Ledger entry not found" });
+
+    if (entry.status === "waived") {
+      return res.status(400).json({ error: "Cannot record payment on a waived entry" });
+    }
+
+    const body = req.body as {
+      amountPaid: number;
+      paymentDate: string;
+      paymentRef?: string;
+      notes?: string;
+    };
+
+    if (typeof body.amountPaid !== "number" || body.amountPaid <= 0) {
+      return res.status(400).json({ error: "amountPaid must be a positive number" });
+    }
+    if (!body.paymentDate || !/^\d{4}-\d{2}-\d{2}$/.test(body.paymentDate)) {
+      return res.status(400).json({ error: "paymentDate must be YYYY-MM-DD" });
+    }
+
+    const currentPaid = Number(entry.amountPaid);
+    const totalDue = Number(entry.totalDue);
+    const newTotalPaid = Math.min(currentPaid + body.amountPaid, totalDue);
+    const newBalance = Math.max(0, totalDue - newTotalPaid);
+
+    let newStatus: "pending" | "partial" | "paid" | "waived" = "pending";
+    if (newTotalPaid >= totalDue) newStatus = "paid";
+    else if (newTotalPaid > 0) newStatus = "partial";
+
+    // Insert payment event
+    const [event] = await db
+      .insert(lcaPaymentEventsTable)
+      .values({
+        ledgerEntryId: entry.id,
+        configId: entry.configId,
+        projectId: entry.projectId,
+        year: entry.year,
+        amountPaid: body.amountPaid,
+        paymentDate: body.paymentDate,
+        paymentRef: body.paymentRef ?? null,
+        notes: body.notes ?? null,
+        recordedById: actor.id,
+        recordedByName: actor.displayName ?? actor.email ?? "Unknown",
+      })
+      .returning();
+
+    // Update ledger entry
+    const [updatedEntry] = await db
+      .update(lcaLedgerTable)
+      .set({
+        amountPaid: newTotalPaid,
+        balance: newBalance,
+        status: newStatus,
+        paidAt: newStatus === "paid" ? body.paymentDate : entry.paidAt,
+        updatedAt: new Date(),
+      })
+      .where(eq(lcaLedgerTable.id, entry.id))
+      .returning();
+
+    const [projectRow] = await db
+      .select({ name: projectsTable.name })
+      .from(projectsTable)
+      .where(eq(projectsTable.id, updatedEntry.projectId))
+      .limit(1);
+
+    return res.status(201).json({
+      event: formatPaymentEvent(event),
+      ledgerEntry: formatEntry({ ...updatedEntry, projectName: projectRow?.name }),
+    });
+  },
+);
+
+// ── GET /lca/full-ledger ──────────────────────────────────────────────────────
+// ERP-style full accounting view: config + all entries + per-entry payment history.
+
+router.get("/full-ledger", async (req, res) => {
+  const { userId: clerkUserId } = getAuth(req);
+  if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
+
+  const actor = await resolveActor(clerkUserId);
+  if (!actor) return res.status(401).json({ error: "User not found" });
+
+  const { projectId, configId } = req.query as Record<string, string>;
+
+  let visibleProjectIds: string[] | null = null;
+  if (!canAccessAllProjects(actor.role)) {
+    visibleProjectIds = await getAssignedProjectIds(actor.id);
+  }
+
+  const configRows = await db
+    .select({
+      config: lcaConfigsTable,
+      projectName: projectsTable.name,
+    })
+    .from(lcaConfigsTable)
+    .leftJoin(projectsTable, eq(lcaConfigsTable.projectId, projectsTable.id))
+    .where(
+      and(
+        eq(lcaConfigsTable.isActive, true),
+        projectId ? eq(lcaConfigsTable.projectId, String(projectId)) : undefined,
+        configId ? eq(lcaConfigsTable.id, String(configId)) : undefined,
+        visibleProjectIds
+          ? inArray(lcaConfigsTable.projectId, visibleProjectIds.length > 0 ? visibleProjectIds : ["__none__"])
+          : undefined,
+      ),
+    )
+    .limit(1);
+
+  if (configRows.length === 0) {
+    return res.status(404).json({ error: "No matching LCA config found" });
+  }
+
+  const { config, projectName } = configRows[0];
+
+  const entries = await db
+    .select()
+    .from(lcaLedgerTable)
+    .where(and(eq(lcaLedgerTable.configId, config.id), eq(lcaLedgerTable.isActive, true)))
+    .orderBy(asc(lcaLedgerTable.year));
+
+  const entryIds = entries.map((e) => e.id);
+  const allPayments = entryIds.length > 0
+    ? await db
+        .select()
+        .from(lcaPaymentEventsTable)
+        .where(inArray(lcaPaymentEventsTable.ledgerEntryId, entryIds))
+        .orderBy(desc(lcaPaymentEventsTable.createdAt))
+    : [];
+
+  const paymentsByEntry = new Map<string, typeof allPayments>();
+  for (const p of allPayments) {
+    const list = paymentsByEntry.get(p.ledgerEntryId) ?? [];
+    list.push(p);
+    paymentsByEntry.set(p.ledgerEntryId, list);
+  }
+
+  const enrichedEntries = entries.map((e) => {
+    const escalationApplied = Math.round((Number(e.grossDue) - Number(e.baseAmount)) * 100) / 100;
+    return {
+      ...formatEntry({ ...e, projectName }),
+      escalationApplied,
+      payments: (paymentsByEntry.get(e.id) ?? []).map(formatPaymentEvent),
+    };
+  });
+
+  const totals = {
+    baseTotal: Math.round(entries.reduce((s, e) => s + Number(e.baseAmount), 0) * 100) / 100,
+    escalationTotal: Math.round(
+      entries.reduce((s, e) => s + (Number(e.grossDue) - Number(e.baseAmount)), 0) * 100,
+    ) / 100,
+    carryForwardTotal: Math.round(entries.reduce((s, e) => s + Number(e.carryForward), 0) * 100) / 100,
+    totalDue: Math.round(entries.reduce((s, e) => s + Number(e.totalDue), 0) * 100) / 100,
+    totalPaid: Math.round(entries.reduce((s, e) => s + Number(e.amountPaid), 0) * 100) / 100,
+    totalBalance: Math.round(entries.reduce((s, e) => s + Number(e.balance), 0) * 100) / 100,
+    yearCount: entries.length,
+  };
+
+  return res.json({
+    config: formatConfig({ ...config, projectName }),
+    entries: enrichedEntries,
+    totals,
+  });
+});
+
+// ── Payment event formatter ───────────────────────────────────────────────────
+
+function formatPaymentEvent(row: typeof lcaPaymentEventsTable.$inferSelect) {
+  return {
+    id: row.id,
+    ledgerEntryId: row.ledgerEntryId,
+    configId: row.configId,
+    projectId: row.projectId,
+    year: row.year,
+    amountPaid: Number(row.amountPaid),
+    paymentDate: row.paymentDate,
+    paymentRef: row.paymentRef ?? undefined,
+    notes: row.notes ?? undefined,
+    recordedById: row.recordedById ?? undefined,
+    recordedByName: row.recordedByName,
+    createdAt: row.createdAt.toISOString(),
+  };
+}
 
 export default router;

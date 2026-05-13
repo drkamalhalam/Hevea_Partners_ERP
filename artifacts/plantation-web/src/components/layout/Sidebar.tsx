@@ -171,9 +171,15 @@ const navGroups: NavGroup[] = [
         roles: ["admin", "developer"],
       },
       {
-        name: "LCA",
+        name: "LCA Config",
         href: "/lca",
         icon: Coins,
+        roles: ["admin", "developer", "landowner"],
+      },
+      {
+        name: "LCA Ledger",
+        href: "/lca/ledger",
+        icon: Receipt,
         roles: ["admin", "developer", "landowner"],
       },
     ],

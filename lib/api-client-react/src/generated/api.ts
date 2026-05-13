@@ -36,6 +36,8 @@ import type {
   ApproveExpenditureVerification200,
   ApproveExpenditureVerificationBody,
   AssignProjectInput,
+  AutoGenerateLcaLedgerBody,
+  AutoGenerateLcaResult,
   BurdenRecord,
   BurdenRule,
   BurdenSummary,
@@ -80,6 +82,7 @@ import type {
   GetLandNotionalContributionParams,
   GetLandNotionalHistory200,
   GetLandNotionalHistoryParams,
+  GetLcaFullLedgerParams,
   GetLcaSchedule200,
   GetLcaScheduleParams,
   GetLcaSummaryParams,
@@ -96,7 +99,9 @@ import type {
   InitiateNomineeActivationBody,
   LandNotionalState,
   LcaConfig,
+  LcaFullLedger,
   LcaLedgerEntry,
+  LcaPaymentEvent,
   LcaSummary,
   ListAdvancesParams,
   ListBurdenRecords200,
@@ -149,6 +154,8 @@ import type {
   ProjectUpdate,
   RaiseContributionDisputeBody,
   RecordAdvanceRecoveryBody,
+  RecordLcaPayment201,
+  RecordLcaPaymentBody,
   RecoverableAdvance,
   RecoverableAdvanceDetail,
   RejectContributionBody,
@@ -15369,3 +15376,363 @@ export function useGetLcaSummary<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Auto-generate yearly LCA ledger entries from startYear to target year
+ */
+export const getAutoGenerateLcaLedgerUrl = (id: string) => {
+  return `/api/lca/configs/${id}/auto-generate`;
+};
+
+export const autoGenerateLcaLedger = async (
+  id: string,
+  autoGenerateLcaLedgerBody: AutoGenerateLcaLedgerBody,
+  options?: RequestInit,
+): Promise<AutoGenerateLcaResult> => {
+  return customFetch<AutoGenerateLcaResult>(getAutoGenerateLcaLedgerUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(autoGenerateLcaLedgerBody),
+  });
+};
+
+export const getAutoGenerateLcaLedgerMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof autoGenerateLcaLedger>>,
+    TError,
+    { id: string; data: BodyType<AutoGenerateLcaLedgerBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof autoGenerateLcaLedger>>,
+  TError,
+  { id: string; data: BodyType<AutoGenerateLcaLedgerBody> },
+  TContext
+> => {
+  const mutationKey = ["autoGenerateLcaLedger"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof autoGenerateLcaLedger>>,
+    { id: string; data: BodyType<AutoGenerateLcaLedgerBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return autoGenerateLcaLedger(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AutoGenerateLcaLedgerMutationResult = NonNullable<
+  Awaited<ReturnType<typeof autoGenerateLcaLedger>>
+>;
+export type AutoGenerateLcaLedgerMutationBody =
+  BodyType<AutoGenerateLcaLedgerBody>;
+export type AutoGenerateLcaLedgerMutationError = ErrorType<void>;
+
+/**
+ * @summary Auto-generate yearly LCA ledger entries from startYear to target year
+ */
+export const useAutoGenerateLcaLedger = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof autoGenerateLcaLedger>>,
+    TError,
+    { id: string; data: BodyType<AutoGenerateLcaLedgerBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof autoGenerateLcaLedger>>,
+  TError,
+  { id: string; data: BodyType<AutoGenerateLcaLedgerBody> },
+  TContext
+> => {
+  return useMutation(getAutoGenerateLcaLedgerMutationOptions(options));
+};
+
+/**
+ * @summary Full ERP-style LCA accounting ledger with payment history
+ */
+export const getGetLcaFullLedgerUrl = (params?: GetLcaFullLedgerParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/lca/full-ledger?${stringifiedParams}`
+    : `/api/lca/full-ledger`;
+};
+
+export const getLcaFullLedger = async (
+  params?: GetLcaFullLedgerParams,
+  options?: RequestInit,
+): Promise<LcaFullLedger> => {
+  return customFetch<LcaFullLedger>(getGetLcaFullLedgerUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetLcaFullLedgerQueryKey = (
+  params?: GetLcaFullLedgerParams,
+) => {
+  return [`/api/lca/full-ledger`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetLcaFullLedgerQueryOptions = <
+  TData = Awaited<ReturnType<typeof getLcaFullLedger>>,
+  TError = ErrorType<void>,
+>(
+  params?: GetLcaFullLedgerParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getLcaFullLedger>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetLcaFullLedgerQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getLcaFullLedger>>
+  > = ({ signal }) => getLcaFullLedger(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getLcaFullLedger>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetLcaFullLedgerQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getLcaFullLedger>>
+>;
+export type GetLcaFullLedgerQueryError = ErrorType<void>;
+
+/**
+ * @summary Full ERP-style LCA accounting ledger with payment history
+ */
+
+export function useGetLcaFullLedger<
+  TData = Awaited<ReturnType<typeof getLcaFullLedger>>,
+  TError = ErrorType<void>,
+>(
+  params?: GetLcaFullLedgerParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getLcaFullLedger>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetLcaFullLedgerQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List payment events for a ledger entry
+ */
+export const getListLcaPaymentEventsUrl = (id: string) => {
+  return `/api/lca/ledger/${id}/payments`;
+};
+
+export const listLcaPaymentEvents = async (
+  id: string,
+  options?: RequestInit,
+): Promise<LcaPaymentEvent[]> => {
+  return customFetch<LcaPaymentEvent[]>(getListLcaPaymentEventsUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListLcaPaymentEventsQueryKey = (id: string) => {
+  return [`/api/lca/ledger/${id}/payments`] as const;
+};
+
+export const getListLcaPaymentEventsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listLcaPaymentEvents>>,
+  TError = ErrorType<void>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listLcaPaymentEvents>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListLcaPaymentEventsQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listLcaPaymentEvents>>
+  > = ({ signal }) => listLcaPaymentEvents(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listLcaPaymentEvents>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListLcaPaymentEventsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listLcaPaymentEvents>>
+>;
+export type ListLcaPaymentEventsQueryError = ErrorType<void>;
+
+/**
+ * @summary List payment events for a ledger entry
+ */
+
+export function useListLcaPaymentEvents<
+  TData = Awaited<ReturnType<typeof listLcaPaymentEvents>>,
+  TError = ErrorType<void>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listLcaPaymentEvents>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListLcaPaymentEventsQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Record a payment against a ledger entry (admin/developer only)
+ */
+export const getRecordLcaPaymentUrl = (id: string) => {
+  return `/api/lca/ledger/${id}/payments`;
+};
+
+export const recordLcaPayment = async (
+  id: string,
+  recordLcaPaymentBody: RecordLcaPaymentBody,
+  options?: RequestInit,
+): Promise<RecordLcaPayment201> => {
+  return customFetch<RecordLcaPayment201>(getRecordLcaPaymentUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(recordLcaPaymentBody),
+  });
+};
+
+export const getRecordLcaPaymentMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof recordLcaPayment>>,
+    TError,
+    { id: string; data: BodyType<RecordLcaPaymentBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof recordLcaPayment>>,
+  TError,
+  { id: string; data: BodyType<RecordLcaPaymentBody> },
+  TContext
+> => {
+  const mutationKey = ["recordLcaPayment"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof recordLcaPayment>>,
+    { id: string; data: BodyType<RecordLcaPaymentBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return recordLcaPayment(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RecordLcaPaymentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof recordLcaPayment>>
+>;
+export type RecordLcaPaymentMutationBody = BodyType<RecordLcaPaymentBody>;
+export type RecordLcaPaymentMutationError = ErrorType<void>;
+
+/**
+ * @summary Record a payment against a ledger entry (admin/developer only)
+ */
+export const useRecordLcaPayment = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof recordLcaPayment>>,
+    TError,
+    { id: string; data: BodyType<RecordLcaPaymentBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof recordLcaPayment>>,
+  TError,
+  { id: string; data: BodyType<RecordLcaPaymentBody> },
+  TContext
+> => {
+  return useMutation(getRecordLcaPaymentMutationOptions(options));
+};

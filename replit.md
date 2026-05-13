@@ -289,6 +289,42 @@ Immutable point-in-time snapshots of every generated agreement document, with fu
 
 **Generated hooks:** `useGetAgreementGeneration`, `useListAgreementAuditLog`, `getGetAgreementGenerationQueryKey`, `getListAgreementAuditLogQueryKey`
 
+## LCA Automatic Calculation Engine
+
+Yearly Land Contribution Adjustment (LCA) auto-generation system with sequential escalation, carry-forward tracking, and full payment event history. Applies to `contribution` revenue model projects only; project must be in `mature_production` lifecycle.
+
+**New DB table:** `lca_payment_events` — individual payment transactions (append-only audit trail)
+- UUID PK, ledgerEntryId FK (restrict), configId FK (restrict), projectId FK (restrict), year, amountPaid, paymentDate, paymentRef, notes, recordedById (set null), recordedByName, createdAt
+
+**Auto-generate engine (`POST /lca/configs/:id/auto-generate`):**
+- Loops from `startYear` → `toYear` (default: current calendar year, max: currentYear+5)
+- For each year: computes `escalationFactor = (1 + esc%)^yearOffset`, `grossDue = baseAmount × escalationFactor`
+- Carry-forward = prior year's unpaid `balance` (never escalated further — rule enforced in code)
+- Skips years that already have ledger entries (non-destructive, idempotent)
+- Returns `{ generated[], skippedYears[], generatedCount, totalYears }`
+
+**Payment events endpoints:**
+- `GET /lca/ledger/:id/payments` — list payment events for a ledger entry
+- `POST /lca/ledger/:id/payments` — record payment (admin/developer); atomically updates ledger `amountPaid`, `balance`, `status` (pending → partial → paid)
+
+**Full ERP ledger endpoint:** `GET /lca/full-ledger?configId=&projectId=`
+- Returns config, all entries (sorted by year), per-entry payment events, and totals breakdown (base, escalation, carry-forward, due, paid, balance)
+
+**Frontend page:** `artifacts/plantation-web/src/pages/LCALedger.tsx` at `/lca/ledger`
+- Config selector dropdown
+- Config info tiles (project, base LCA, escalation %, start year)
+- 6 KPI cards (base total, escalation added, carry-forward, total payable, total paid, outstanding)
+- ERP journal table: Year | Base LCA | Escalation+ | Gross Due | Carry-Fwd+ | Total Payable | Paid | Balance | Status
+- Expandable row per year: escalation breakdown + payment history timeline
+- Running totals footer row
+- Auto-Generate dialog: year range selector + bullet explanation of rules
+- Record Payment dialog: amount, date, reference, notes; auto-updates ledger entry status
+- Legend explaining no-escalation-on-carry-forward rule
+
+**Sidebar:** "LCA Config" + "LCA Ledger" entries in Finance group (admin/developer/landowner)
+
+**Generated hooks:** `useAutoGenerateLcaLedger`, `useGetLcaFullLedger`, `getGetLcaFullLedgerQueryKey`, `useListLcaPaymentEvents`, `useRecordLcaPayment`
+
 ## Agreement Generation Workflow System
 
 5-step wizard for creating immutable, permanently-stored agreement documents with full generation history.

@@ -2776,6 +2776,60 @@ export interface UpdateLcaLedgerEntryBody {
   paidAt?: string;
 }
 
+export interface LcaPaymentEvent {
+  id: string;
+  ledgerEntryId: string;
+  configId: string;
+  projectId: string;
+  year: number;
+  amountPaid: number;
+  paymentDate: string;
+  paymentRef?: string;
+  notes?: string;
+  recordedById?: string;
+  recordedByName: string;
+  createdAt: string;
+}
+
+export interface RecordLcaPaymentBody {
+  /** @minimum 0.01 */
+  amountPaid: number;
+  /** YYYY-MM-DD */
+  paymentDate: string;
+  paymentRef?: string;
+  notes?: string;
+}
+
+export interface AutoGenerateLcaResult {
+  configId: string;
+  generated: LcaLedgerEntry[];
+  /** Years that already had ledger entries and were skipped */
+  skippedYears: number[];
+  generatedCount: number;
+  totalYears: number;
+}
+
+export type LcaFullLedgerEntry = LcaLedgerEntry & {
+  escalationApplied: number;
+  payments: LcaPaymentEvent[];
+};
+
+export type LcaFullLedgerTotals = {
+  baseTotal: number;
+  escalationTotal: number;
+  carryForwardTotal: number;
+  totalDue: number;
+  totalPaid: number;
+  totalBalance: number;
+  yearCount: number;
+};
+
+export interface LcaFullLedger {
+  config: LcaConfig;
+  entries: LcaFullLedgerEntry[];
+  totals: LcaFullLedgerTotals;
+}
+
 export type GetUserActivityParams = {
   limit?: number;
 };
@@ -3179,4 +3233,19 @@ export const ListLcaLedgerStatus = {
 
 export type GetLcaSummaryParams = {
   projectId?: string;
+};
+
+export type AutoGenerateLcaLedgerBody = {
+  /** Target year inclusive (defaults to current calendar year) */
+  toYear?: number;
+};
+
+export type GetLcaFullLedgerParams = {
+  projectId?: string;
+  configId?: string;
+};
+
+export type RecordLcaPayment201 = {
+  event: LcaPaymentEvent;
+  ledgerEntry: LcaLedgerEntry;
 };
