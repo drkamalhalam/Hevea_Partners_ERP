@@ -1,0 +1,794 @@
+import { Router } from "express";
+import { getAuth } from "@clerk/express";
+import { eq, and, inArray, isNull, desc, sql } from "drizzle-orm";
+import {
+  db,
+  usersTable,
+  projectsTable,
+  buyersTable,
+  salesTransactionsTable,
+  salesLineItemsTable,
+  salesDeductionsTable,
+  inventoryStockMovementsTable,
+  productionBatchesTable,
+  userProjectAssignmentsTable,
+} from "@workspace/db";
+import { requireRole, canAccessProject } from "../middlewares/auth";
+
+const router = Router();
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+async function resolveActor(clerkUserId: string) {
+  const [user] = await db
+    .select()
+    .from(usersTable)
+    .where(eq(usersTable.clerkUserId, clerkUserId))
+    .limit(1);
+  return user ?? null;
+}
+
+function canAccessAllProjects(role: string) {
+  return role === "admin" || role === "developer";
+}
+
+async function getAssignedProjectIds(userId: string): Promise<string[]> {
+  const rows = await db
+    .select({ projectId: userProjectAssignmentsTable.projectId })
+    .from(userProjectAssignmentsTable)
+    .where(
+      and(
+        eq(userProjectAssignmentsTable.userId, userId),
+        isNull(userProjectAssignmentsTable.revokedAt),
+      ),
+    );
+  return rows.map((r) => r.projectId);
+}
+
+function formatTransaction(
+  row: typeof salesTransactionsTable.$inferSelect & {
+    projectName?: string | null;
+    buyerPhone?: string | null;
+  },
+) {
+  return {
+    id: row.id,
+    projectId: row.projectId,
+    projectName: row.projectName ?? undefined,
+    buyerId: row.buyerId ?? undefined,
+    buyerName: row.buyerName,
+    buyerPhone: row.buyerPhone ?? undefined,
+    saleNumber: row.saleNumber,
+    saleDate: row.saleDate,
+    status: row.status,
+    notes: row.notes ?? undefined,
+    documentRef: row.documentRef ?? undefined,
+    totalGrossRevenue: Number(row.totalGrossRevenue),
+    totalDeductions: Number(row.totalDeductions),
+    totalNetRevenue: Number(row.totalNetRevenue),
+    distributionId: row.distributionId ?? undefined,
+    confirmedAt: row.confirmedAt?.toISOString() ?? undefined,
+    confirmedByName: row.confirmedByName ?? undefined,
+    createdByName: row.createdByName,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+  };
+}
+
+function formatLineItem(row: typeof salesLineItemsTable.$inferSelect) {
+  return {
+    id: row.id,
+    transactionId: row.transactionId,
+    batchId: row.batchId ?? undefined,
+    batchNumber: row.batchNumber ?? undefined,
+    productType: row.productType,
+    quantity: Number(row.quantity),
+    unit: row.unit,
+    saleRate: row.saleRate !== null ? Number(row.saleRate) : undefined,
+    grossAmount: row.grossAmount !== null ? Number(row.grossAmount) : undefined,
+    remarks: row.remarks ?? undefined,
+    createdAt: row.createdAt.toISOString(),
+  };
+}
+
+function formatDeduction(row: typeof salesDeductionsTable.$inferSelect) {
+  return {
+    id: row.id,
+    transactionId: row.transactionId,
+    deductionType: row.deductionType,
+    description: row.description ?? undefined,
+    amount: Number(row.amount),
+    createdAt: row.createdAt.toISOString(),
+  };
+}
+
+async function recomputeTotals(transactionId: string) {
+  const items = await db
+    .select()
+    .from(salesLineItemsTable)
+    .where(eq(salesLineItemsTable.transactionId, transactionId));
+  const deductions = await db
+    .select()
+    .from(salesDeductionsTable)
+    .where(eq(salesDeductionsTable.transactionId, transactionId));
+
+  const grossRevenue = items.reduce((s, i) => s + Number(i.grossAmount ?? 0), 0);
+  const totalDeductions = deductions.reduce((s, d) => s + Number(d.amount), 0);
+  const netRevenue = grossRevenue - totalDeductions;
+
+  await db
+    .update(salesTransactionsTable)
+    .set({
+      totalGrossRevenue: grossRevenue.toString(),
+      totalDeductions: totalDeductions.toString(),
+      totalNetRevenue: netRevenue.toString(),
+      updatedAt: new Date(),
+    })
+    .where(eq(salesTransactionsTable.id, transactionId));
+}
+
+// ── GET /sales ─────────────────────────────────────────────────────────────────
+
+router.get("/", async (req, res) => {
+  const { userId: clerkUserId } = getAuth(req);
+  if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
+
+  const actor = await resolveActor(clerkUserId);
+  if (!actor) return res.status(401).json({ error: "User not found" });
+
+  const { projectId, status, buyerId, from, to } = req.query as Record<string, string>;
+
+  let visibleProjectIds: string[] | null = null;
+  if (!canAccessAllProjects(actor.role)) {
+    visibleProjectIds = await getAssignedProjectIds(actor.id);
+    if (projectId && !visibleProjectIds.includes(projectId)) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+  }
+
+  const rows = await db
+    .select({
+      tx: salesTransactionsTable,
+      projectName: projectsTable.name,
+      buyerPhone: buyersTable.phone,
+    })
+    .from(salesTransactionsTable)
+    .leftJoin(projectsTable, eq(salesTransactionsTable.projectId, projectsTable.id))
+    .leftJoin(buyersTable, eq(salesTransactionsTable.buyerId, buyersTable.id))
+    .where(
+      and(
+        eq(salesTransactionsTable.isActive, true),
+        projectId ? eq(salesTransactionsTable.projectId, projectId) : undefined,
+        status ? eq(salesTransactionsTable.status, status) : undefined,
+        buyerId ? eq(salesTransactionsTable.buyerId, buyerId) : undefined,
+        from ? sql`${salesTransactionsTable.saleDate} >= ${from}` : undefined,
+        to ? sql`${salesTransactionsTable.saleDate} <= ${to}` : undefined,
+        visibleProjectIds
+          ? inArray(
+              salesTransactionsTable.projectId,
+              visibleProjectIds.length > 0 ? visibleProjectIds : ["__none__"],
+            )
+          : undefined,
+      ),
+    )
+    .orderBy(desc(salesTransactionsTable.saleDate), desc(salesTransactionsTable.createdAt));
+
+  return res.json(
+    rows.map((r) =>
+      formatTransaction({ ...r.tx, projectName: r.projectName, buyerPhone: r.buyerPhone }),
+    ),
+  );
+});
+
+// ── GET /sales/summary ─────────────────────────────────────────────────────────
+
+router.get("/summary", async (req, res) => {
+  const { userId: clerkUserId } = getAuth(req);
+  if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
+
+  const actor = await resolveActor(clerkUserId);
+  if (!actor) return res.status(401).json({ error: "User not found" });
+
+  const { projectId } = req.query as Record<string, string>;
+
+  let visibleProjectIds: string[] | null = null;
+  if (!canAccessAllProjects(actor.role)) {
+    visibleProjectIds = await getAssignedProjectIds(actor.id);
+    if (projectId && !visibleProjectIds.includes(projectId)) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+  }
+
+  const rows = await db
+    .select({
+      projectId: salesTransactionsTable.projectId,
+      projectName: projectsTable.name,
+      totalSales: sql<number>`count(*)::int`,
+      confirmedSales: sql<number>`count(*) filter (where ${salesTransactionsTable.status} = 'confirmed')::int`,
+      totalGross: sql<number>`COALESCE(SUM(${salesTransactionsTable.totalGrossRevenue}::numeric) filter (where ${salesTransactionsTable.status} = 'confirmed'), 0)`,
+      totalDeductions: sql<number>`COALESCE(SUM(${salesTransactionsTable.totalDeductions}::numeric) filter (where ${salesTransactionsTable.status} = 'confirmed'), 0)`,
+      totalNet: sql<number>`COALESCE(SUM(${salesTransactionsTable.totalNetRevenue}::numeric) filter (where ${salesTransactionsTable.status} = 'confirmed'), 0)`,
+    })
+    .from(salesTransactionsTable)
+    .leftJoin(projectsTable, eq(salesTransactionsTable.projectId, projectsTable.id))
+    .where(
+      and(
+        eq(salesTransactionsTable.isActive, true),
+        projectId ? eq(salesTransactionsTable.projectId, projectId) : undefined,
+        visibleProjectIds
+          ? inArray(
+              salesTransactionsTable.projectId,
+              visibleProjectIds.length > 0 ? visibleProjectIds : ["__none__"],
+            )
+          : undefined,
+      ),
+    )
+    .groupBy(salesTransactionsTable.projectId, projectsTable.name);
+
+  const totalGrossAll = rows.reduce((s, r) => s + Number(r.totalGross), 0);
+  const totalNetAll = rows.reduce((s, r) => s + Number(r.totalNet), 0);
+  const totalSalesAll = rows.reduce((s, r) => s + r.totalSales, 0);
+
+  return res.json({
+    totalGrossRevenue: totalGrossAll,
+    totalNetRevenue: totalNetAll,
+    totalSalesCount: totalSalesAll,
+    projects: rows.map((r) => ({
+      projectId: r.projectId,
+      projectName: r.projectName ?? undefined,
+      totalSales: r.totalSales,
+      confirmedSales: r.confirmedSales,
+      totalGrossRevenue: Number(r.totalGross),
+      totalDeductions: Number(r.totalDeductions),
+      totalNetRevenue: Number(r.totalNet),
+    })),
+  });
+});
+
+// ── POST /sales ────────────────────────────────────────────────────────────────
+
+router.post(
+  "/",
+  requireRole("admin", "developer", "employee", "operational_staff"),
+  async (req, res) => {
+    const { userId: clerkUserId } = getAuth(req);
+    if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
+
+    const actor = await resolveActor(clerkUserId);
+    if (!actor) return res.status(401).json({ error: "User not found" });
+
+    type LineItemInput = {
+      batchId?: string;
+      productType: string;
+      quantity: number;
+      unit: string;
+      saleRate?: number;
+      remarks?: string;
+    };
+    type DeductionInput = {
+      deductionType?: string;
+      description?: string;
+      amount: number;
+    };
+    type Body = {
+      projectId: string;
+      buyerId?: string;
+      buyerName: string;
+      saleDate: string;
+      notes?: string;
+      documentRef?: string;
+      lineItems: LineItemInput[];
+      deductions?: DeductionInput[];
+    };
+
+    const { projectId, buyerId, buyerName, saleDate, notes, documentRef, lineItems, deductions } =
+      req.body as Body;
+
+    if (!projectId || !buyerName?.trim() || !saleDate || !lineItems?.length) {
+      return res
+        .status(400)
+        .json({ error: "projectId, buyerName, saleDate, and at least one lineItem are required" });
+    }
+    if (!canAccessProject(req, projectId)) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+
+    // Auto-generate sale number
+    const dateStr = saleDate.replace(/-/g, "");
+    const [countRow] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(salesTransactionsTable)
+      .where(
+        and(
+          eq(salesTransactionsTable.projectId, projectId),
+          eq(salesTransactionsTable.saleDate, saleDate),
+        ),
+      );
+    const seq = (countRow?.count ?? 0) + 1;
+    const saleNumber = `SALE-${dateStr}-${String(seq).padStart(3, "0")}`;
+    const actorName = actor.displayName ?? actor.email ?? "Unknown";
+
+    // Verify buyer if provided
+    if (buyerId) {
+      const [buyer] = await db
+        .select()
+        .from(buyersTable)
+        .where(eq(buyersTable.id, buyerId))
+        .limit(1);
+      if (!buyer) return res.status(404).json({ error: "Buyer not found" });
+    }
+
+    // Create transaction
+    const [tx] = await db
+      .insert(salesTransactionsTable)
+      .values({
+        projectId,
+        buyerId: buyerId ?? null,
+        buyerName: buyerName.trim(),
+        saleNumber,
+        saleDate,
+        status: "draft",
+        notes: notes ?? null,
+        documentRef: documentRef ?? null,
+        createdById: actor.id,
+        createdByName: actorName,
+      })
+      .returning();
+
+    // Insert line items
+    for (const item of lineItems) {
+      if (!item.productType || !item.quantity || !item.unit) continue;
+
+      let batchNumber: string | null = null;
+      if (item.batchId) {
+        const [batch] = await db
+          .select({ batchNumber: productionBatchesTable.batchNumber })
+          .from(productionBatchesTable)
+          .where(eq(productionBatchesTable.id, item.batchId))
+          .limit(1);
+        batchNumber = batch?.batchNumber ?? null;
+      }
+
+      const grossAmount =
+        item.saleRate !== undefined ? Number(item.quantity) * item.saleRate : null;
+
+      await db.insert(salesLineItemsTable).values({
+        transactionId: tx.id,
+        batchId: item.batchId ?? null,
+        batchNumber,
+        productType: item.productType,
+        quantity: item.quantity.toString(),
+        unit: item.unit,
+        saleRate: item.saleRate !== undefined ? item.saleRate.toString() : null,
+        grossAmount: grossAmount !== null ? grossAmount.toString() : null,
+        remarks: item.remarks ?? null,
+      });
+    }
+
+    // Insert deductions
+    if (deductions?.length) {
+      for (const d of deductions) {
+        if (!d.amount) continue;
+        await db.insert(salesDeductionsTable).values({
+          transactionId: tx.id,
+          deductionType: d.deductionType ?? "other",
+          description: d.description ?? null,
+          amount: d.amount.toString(),
+        });
+      }
+    }
+
+    await recomputeTotals(tx.id);
+
+    const [updated] = await db
+      .select({ tx: salesTransactionsTable, projectName: projectsTable.name })
+      .from(salesTransactionsTable)
+      .leftJoin(projectsTable, eq(salesTransactionsTable.projectId, projectsTable.id))
+      .where(eq(salesTransactionsTable.id, tx.id))
+      .limit(1);
+
+    return res
+      .status(201)
+      .json(formatTransaction({ ...updated.tx, projectName: updated.projectName }));
+  },
+);
+
+// ── GET /sales/:id ─────────────────────────────────────────────────────────────
+
+router.get("/:id", async (req, res) => {
+  const { userId: clerkUserId } = getAuth(req);
+  if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
+
+  const actor = await resolveActor(clerkUserId);
+  if (!actor) return res.status(401).json({ error: "User not found" });
+
+  const txId = req.params.id as string;
+  const [row] = await db
+    .select({
+      tx: salesTransactionsTable,
+      projectName: projectsTable.name,
+      buyerPhone: buyersTable.phone,
+    })
+    .from(salesTransactionsTable)
+    .leftJoin(projectsTable, eq(salesTransactionsTable.projectId, projectsTable.id))
+    .leftJoin(buyersTable, eq(salesTransactionsTable.buyerId, buyersTable.id))
+    .where(and(eq(salesTransactionsTable.id, txId), eq(salesTransactionsTable.isActive, true)))
+    .limit(1);
+
+  if (!row) return res.status(404).json({ error: "Sale not found" });
+  if (!canAccessProject(req, row.tx.projectId)) return res.status(403).json({ error: "Forbidden" });
+
+  const lineItems = await db
+    .select()
+    .from(salesLineItemsTable)
+    .where(eq(salesLineItemsTable.transactionId, txId));
+
+  const deductions = await db
+    .select()
+    .from(salesDeductionsTable)
+    .where(eq(salesDeductionsTable.transactionId, txId));
+
+  return res.json({
+    ...formatTransaction({ ...row.tx, projectName: row.projectName, buyerPhone: row.buyerPhone }),
+    lineItems: lineItems.map(formatLineItem),
+    deductions: deductions.map(formatDeduction),
+  });
+});
+
+// ── PATCH /sales/:id ───────────────────────────────────────────────────────────
+
+router.patch(
+  "/:id",
+  requireRole("admin", "developer", "employee", "operational_staff"),
+  async (req, res) => {
+    const { userId: clerkUserId } = getAuth(req);
+    if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
+
+    const actor = await resolveActor(clerkUserId);
+    if (!actor) return res.status(401).json({ error: "User not found" });
+
+    const txId = req.params.id as string;
+    const [tx] = await db
+      .select()
+      .from(salesTransactionsTable)
+      .where(and(eq(salesTransactionsTable.id, txId), eq(salesTransactionsTable.isActive, true)))
+      .limit(1);
+
+    if (!tx) return res.status(404).json({ error: "Sale not found" });
+    if (!canAccessProject(req, tx.projectId)) return res.status(403).json({ error: "Forbidden" });
+    if (tx.status === "confirmed" && actor.role !== "admin") {
+      return res.status(400).json({ error: "Cannot edit a confirmed sale" });
+    }
+    if (tx.status === "cancelled") {
+      return res.status(400).json({ error: "Cannot edit a cancelled sale" });
+    }
+
+    type Body = { buyerId?: string; buyerName?: string; saleDate?: string; notes?: string; documentRef?: string };
+    const { buyerId, buyerName, saleDate, notes, documentRef } = req.body as Body;
+
+    const [updated] = await db
+      .update(salesTransactionsTable)
+      .set({
+        ...(buyerId !== undefined && { buyerId: buyerId || null }),
+        ...(buyerName !== undefined && { buyerName: buyerName.trim() }),
+        ...(saleDate !== undefined && { saleDate }),
+        ...(notes !== undefined && { notes: notes || null }),
+        ...(documentRef !== undefined && { documentRef: documentRef || null }),
+        updatedAt: new Date(),
+      })
+      .where(eq(salesTransactionsTable.id, txId))
+      .returning();
+
+    return res.json(formatTransaction(updated));
+  },
+);
+
+// ── POST /sales/:id/confirm ────────────────────────────────────────────────────
+// Confirms a sale and auto-creates sale_out inventory movements.
+
+router.post(
+  "/:id/confirm",
+  requireRole("admin", "developer"),
+  async (req, res) => {
+    const { userId: clerkUserId } = getAuth(req);
+    if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
+
+    const actor = await resolveActor(clerkUserId);
+    if (!actor) return res.status(401).json({ error: "User not found" });
+
+    const txId = req.params.id as string;
+    const [tx] = await db
+      .select()
+      .from(salesTransactionsTable)
+      .where(and(eq(salesTransactionsTable.id, txId), eq(salesTransactionsTable.isActive, true)))
+      .limit(1);
+
+    if (!tx) return res.status(404).json({ error: "Sale not found" });
+    if (!canAccessProject(req, tx.projectId)) return res.status(403).json({ error: "Forbidden" });
+    if (tx.status === "confirmed") return res.status(400).json({ error: "Sale is already confirmed" });
+    if (tx.status === "cancelled") return res.status(400).json({ error: "Cannot confirm a cancelled sale" });
+
+    const actorName = actor.displayName ?? actor.email ?? "Unknown";
+
+    const [updated] = await db
+      .update(salesTransactionsTable)
+      .set({
+        status: "confirmed",
+        confirmedAt: new Date(),
+        confirmedById: actor.id,
+        confirmedByName: actorName,
+        updatedAt: new Date(),
+      })
+      .where(eq(salesTransactionsTable.id, txId))
+      .returning();
+
+    // Auto-create sale_out inventory movements for each line item
+    const lineItems = await db
+      .select()
+      .from(salesLineItemsTable)
+      .where(eq(salesLineItemsTable.transactionId, txId));
+
+    for (const item of lineItems) {
+      await db.insert(inventoryStockMovementsTable).values({
+        projectId: updated.projectId,
+        stockType: item.productType,
+        movementType: "sale_out",
+        direction: "out",
+        quantity: item.quantity,
+        unit: item.unit,
+        movementDate: updated.saleDate,
+        batchId: item.batchId ?? null,
+        referenceId: updated.saleNumber,
+        referenceType: "sale",
+        notes: `Sale to ${updated.buyerName} — ${updated.saleNumber}`,
+        status: "confirmed",
+        confirmedAt: new Date(),
+        confirmedById: actor.id,
+        confirmedByName: actorName,
+        createdById: actor.id,
+        createdByName: actorName,
+        isActive: true,
+      });
+    }
+
+    return res.json(formatTransaction(updated));
+  },
+);
+
+// ── POST /sales/:id/cancel ─────────────────────────────────────────────────────
+
+router.post(
+  "/:id/cancel",
+  requireRole("admin"),
+  async (req, res) => {
+    const { userId: clerkUserId } = getAuth(req);
+    if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
+
+    const txId = req.params.id as string;
+    const [tx] = await db
+      .select()
+      .from(salesTransactionsTable)
+      .where(and(eq(salesTransactionsTable.id, txId), eq(salesTransactionsTable.isActive, true)))
+      .limit(1);
+
+    if (!tx) return res.status(404).json({ error: "Sale not found" });
+    if (!canAccessProject(req, tx.projectId)) return res.status(403).json({ error: "Forbidden" });
+    if (tx.status === "cancelled") return res.status(400).json({ error: "Already cancelled" });
+
+    const [updated] = await db
+      .update(salesTransactionsTable)
+      .set({ status: "cancelled", isActive: false, updatedAt: new Date() })
+      .where(eq(salesTransactionsTable.id, txId))
+      .returning();
+
+    return res.json(formatTransaction(updated));
+  },
+);
+
+// ── POST /sales/:id/line-items ─────────────────────────────────────────────────
+
+router.post(
+  "/:id/line-items",
+  requireRole("admin", "developer", "employee", "operational_staff"),
+  async (req, res) => {
+    const { userId: clerkUserId } = getAuth(req);
+    if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
+
+    const actor = await resolveActor(clerkUserId);
+    if (!actor) return res.status(401).json({ error: "User not found" });
+
+    const txId = req.params.id as string;
+    const [tx] = await db
+      .select()
+      .from(salesTransactionsTable)
+      .where(and(eq(salesTransactionsTable.id, txId), eq(salesTransactionsTable.isActive, true)))
+      .limit(1);
+
+    if (!tx) return res.status(404).json({ error: "Sale not found" });
+    if (!canAccessProject(req, tx.projectId)) return res.status(403).json({ error: "Forbidden" });
+    if (tx.status !== "draft") return res.status(400).json({ error: "Can only add items to draft sales" });
+
+    type Body = { batchId?: string; productType: string; quantity: number; unit: string; saleRate?: number; remarks?: string };
+    const { batchId, productType, quantity, unit, saleRate, remarks } = req.body as Body;
+
+    if (!productType || !quantity || !unit) {
+      return res.status(400).json({ error: "productType, quantity, unit are required" });
+    }
+
+    let batchNumber: string | null = null;
+    if (batchId) {
+      const [batch] = await db
+        .select({ batchNumber: productionBatchesTable.batchNumber })
+        .from(productionBatchesTable)
+        .where(eq(productionBatchesTable.id, batchId))
+        .limit(1);
+      batchNumber = batch?.batchNumber ?? null;
+    }
+
+    const grossAmount = saleRate !== undefined ? Number(quantity) * saleRate : null;
+
+    const [created] = await db
+      .insert(salesLineItemsTable)
+      .values({
+        transactionId: txId,
+        batchId: batchId ?? null,
+        batchNumber,
+        productType,
+        quantity: quantity.toString(),
+        unit,
+        saleRate: saleRate !== undefined ? saleRate.toString() : null,
+        grossAmount: grossAmount !== null ? grossAmount.toString() : null,
+        remarks: remarks ?? null,
+      })
+      .returning();
+
+    await recomputeTotals(txId);
+    return res.status(201).json(formatLineItem(created));
+  },
+);
+
+// ── PATCH /sales/:txId/line-items/:itemId ──────────────────────────────────────
+
+router.patch(
+  "/:txId/line-items/:itemId",
+  requireRole("admin", "developer"),
+  async (req, res) => {
+    const { userId: clerkUserId } = getAuth(req);
+    if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
+
+    const txId = req.params.txId as string;
+    const itemId = req.params.itemId as string;
+
+    const [tx] = await db
+      .select()
+      .from(salesTransactionsTable)
+      .where(and(eq(salesTransactionsTable.id, txId), eq(salesTransactionsTable.isActive, true)))
+      .limit(1);
+    if (!tx) return res.status(404).json({ error: "Sale not found" });
+    if (!canAccessProject(req, tx.projectId)) return res.status(403).json({ error: "Forbidden" });
+    if (tx.status !== "draft") return res.status(400).json({ error: "Can only edit items in draft sales" });
+
+    type Body = { quantity?: number; saleRate?: number; remarks?: string };
+    const { quantity, saleRate, remarks } = req.body as Body;
+
+    const [item] = await db
+      .select()
+      .from(salesLineItemsTable)
+      .where(eq(salesLineItemsTable.id, itemId))
+      .limit(1);
+    if (!item) return res.status(404).json({ error: "Line item not found" });
+
+    const newQty = quantity ?? Number(item.quantity);
+    const newRate = saleRate ?? (item.saleRate !== null ? Number(item.saleRate) : undefined);
+    const grossAmount = newRate !== undefined ? newQty * newRate : null;
+
+    const [updated] = await db
+      .update(salesLineItemsTable)
+      .set({
+        ...(quantity !== undefined && { quantity: quantity.toString() }),
+        ...(saleRate !== undefined && { saleRate: saleRate.toString() }),
+        ...(remarks !== undefined && { remarks }),
+        ...(grossAmount !== null && { grossAmount: grossAmount.toString() }),
+        updatedAt: new Date(),
+      })
+      .where(eq(salesLineItemsTable.id, itemId))
+      .returning();
+
+    await recomputeTotals(txId);
+    return res.json(formatLineItem(updated));
+  },
+);
+
+// ── DELETE /sales/:txId/line-items/:itemId ─────────────────────────────────────
+
+router.delete(
+  "/:txId/line-items/:itemId",
+  requireRole("admin", "developer"),
+  async (req, res) => {
+    const { userId: clerkUserId } = getAuth(req);
+    if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
+
+    const txId = req.params.txId as string;
+    const itemId = req.params.itemId as string;
+
+    const [tx] = await db
+      .select()
+      .from(salesTransactionsTable)
+      .where(and(eq(salesTransactionsTable.id, txId), eq(salesTransactionsTable.isActive, true)))
+      .limit(1);
+    if (!tx) return res.status(404).json({ error: "Sale not found" });
+    if (!canAccessProject(req, tx.projectId)) return res.status(403).json({ error: "Forbidden" });
+    if (tx.status !== "draft") return res.status(400).json({ error: "Can only delete items from draft sales" });
+
+    await db.delete(salesLineItemsTable).where(eq(salesLineItemsTable.id, itemId));
+    await recomputeTotals(txId);
+    return res.json({ success: true });
+  },
+);
+
+// ── POST /sales/:id/deductions ─────────────────────────────────────────────────
+
+router.post(
+  "/:id/deductions",
+  requireRole("admin", "developer"),
+  async (req, res) => {
+    const { userId: clerkUserId } = getAuth(req);
+    if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
+
+    const txId = req.params.id as string;
+    const [tx] = await db
+      .select()
+      .from(salesTransactionsTable)
+      .where(and(eq(salesTransactionsTable.id, txId), eq(salesTransactionsTable.isActive, true)))
+      .limit(1);
+    if (!tx) return res.status(404).json({ error: "Sale not found" });
+    if (!canAccessProject(req, tx.projectId)) return res.status(403).json({ error: "Forbidden" });
+    if (tx.status !== "draft") return res.status(400).json({ error: "Can only add deductions to draft sales" });
+
+    type Body = { deductionType?: string; description?: string; amount: number };
+    const { deductionType, description, amount } = req.body as Body;
+    if (!amount) return res.status(400).json({ error: "amount is required" });
+
+    const [created] = await db
+      .insert(salesDeductionsTable)
+      .values({
+        transactionId: txId,
+        deductionType: deductionType ?? "other",
+        description: description ?? null,
+        amount: amount.toString(),
+      })
+      .returning();
+
+    await recomputeTotals(txId);
+    return res.status(201).json(formatDeduction(created));
+  },
+);
+
+// ── DELETE /sales/:txId/deductions/:dedId ──────────────────────────────────────
+
+router.delete(
+  "/:txId/deductions/:dedId",
+  requireRole("admin", "developer"),
+  async (req, res) => {
+    const { userId: clerkUserId } = getAuth(req);
+    if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
+
+    const txId = req.params.txId as string;
+    const dedId = req.params.dedId as string;
+
+    const [tx] = await db
+      .select()
+      .from(salesTransactionsTable)
+      .where(and(eq(salesTransactionsTable.id, txId), eq(salesTransactionsTable.isActive, true)))
+      .limit(1);
+    if (!tx) return res.status(404).json({ error: "Sale not found" });
+    if (!canAccessProject(req, tx.projectId)) return res.status(403).json({ error: "Forbidden" });
+    if (tx.status !== "draft") return res.status(400).json({ error: "Can only delete deductions from draft sales" });
+
+    await db.delete(salesDeductionsTable).where(eq(salesDeductionsTable.id, dedId));
+    await recomputeTotals(txId);
+    return res.json({ success: true });
+  },
+);
+
+export default router;

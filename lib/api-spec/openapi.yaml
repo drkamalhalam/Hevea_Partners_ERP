@@ -5110,6 +5110,362 @@ paths:
                 $ref: "#/components/schemas/BatchAnalytics"
         "404": { description: Batch not found }
 
+  /buyers:
+    get:
+      operationId: listBuyers
+      tags: [buyers]
+      summary: List all buyers
+      parameters:
+        - name: search
+          in: query
+          schema: { type: string }
+        - name: includeInactive
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: List of buyers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Buyer"
+    post:
+      operationId: createBuyer
+      tags: [buyers]
+      summary: Create a new buyer (admin/developer)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateBuyerBody"
+      responses:
+        "201":
+          description: Created buyer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Buyer"
+
+  /buyers/{id}:
+    get:
+      operationId: getBuyer
+      tags: [buyers]
+      summary: Get a buyer by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Buyer detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Buyer"
+        "404": { description: Not found }
+    patch:
+      operationId: updateBuyer
+      tags: [buyers]
+      summary: Update a buyer (admin/developer)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateBuyerBody"
+      responses:
+        "200":
+          description: Updated buyer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Buyer"
+    delete:
+      operationId: deleteBuyer
+      tags: [buyers]
+      summary: Soft-delete a buyer (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /sales:
+    get:
+      operationId: listSales
+      tags: [sales]
+      summary: List sales transactions
+      parameters:
+        - name: projectId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: status
+          in: query
+          schema: { type: string }
+        - name: buyerId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: from
+          in: query
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          schema: { type: string, format: date }
+      responses:
+        "200":
+          description: List of transactions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SalesTransaction"
+    post:
+      operationId: createSale
+      tags: [sales]
+      summary: Create a new sales transaction (draft)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSaleBody"
+      responses:
+        "201":
+          description: Created transaction
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SalesTransaction"
+
+  /sales/summary:
+    get:
+      operationId: getSalesSummary
+      tags: [sales]
+      summary: Project-wise sales revenue summary
+      parameters:
+        - name: projectId
+          in: query
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Sales summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SalesSummary"
+
+  /sales/{id}:
+    get:
+      operationId: getSale
+      tags: [sales]
+      summary: Get a sale transaction with line items and deductions
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Sale detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SaleDetail"
+        "404": { description: Not found }
+    patch:
+      operationId: updateSale
+      tags: [sales]
+      summary: Update a draft sale
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSaleBody"
+      responses:
+        "200":
+          description: Updated sale
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SalesTransaction"
+
+  /sales/{id}/confirm:
+    post:
+      operationId: confirmSale
+      tags: [sales]
+      summary: Confirm a sale and auto-create inventory sale_out movements (admin/developer)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Confirmed sale
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SalesTransaction"
+
+  /sales/{id}/cancel:
+    post:
+      operationId: cancelSale
+      tags: [sales]
+      summary: Cancel a sale (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Cancelled sale
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SalesTransaction"
+
+  /sales/{id}/line-items:
+    post:
+      operationId: addSaleLineItem
+      tags: [sales]
+      summary: Add a line item to a draft sale
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSaleLineItemBody"
+      responses:
+        "201":
+          description: Created line item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SaleLineItem"
+
+  /sales/{txId}/line-items/{itemId}:
+    patch:
+      operationId: updateSaleLineItem
+      tags: [sales]
+      summary: Update a line item in a draft sale
+      parameters:
+        - name: txId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: itemId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSaleLineItemBody"
+      responses:
+        "200":
+          description: Updated line item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SaleLineItem"
+    delete:
+      operationId: deleteSaleLineItem
+      tags: [sales]
+      summary: Delete a line item from a draft sale
+      parameters:
+        - name: txId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: itemId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /sales/{id}/deductions:
+    post:
+      operationId: addSaleDeduction
+      tags: [sales]
+      summary: Add a deduction to a draft sale (admin/developer)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSaleDeductionBody"
+      responses:
+        "201":
+          description: Created deduction
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SaleDeduction"
+
+  /sales/{txId}/deductions/{dedId}:
+    delete:
+      operationId: deleteSaleDeduction
+      tags: [sales]
+      summary: Delete a deduction from a draft sale (admin/developer)
+      parameters:
+        - name: txId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: dedId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -8966,3 +9322,197 @@ components:
           type: object
           additionalProperties:
             $ref: "#/components/schemas/BatchStockTypeSummary"
+
+    Buyer:
+      type: object
+      required: [id, name, buyerType, isActive, createdByName, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        buyerType: { type: string }
+        contactPerson: { type: string }
+        phone: { type: string }
+        email: { type: string }
+        address: { type: string }
+        gstin: { type: string }
+        notes: { type: string }
+        isActive: { type: boolean }
+        createdByName: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    CreateBuyerBody:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+        buyerType: { type: string }
+        contactPerson: { type: string }
+        phone: { type: string }
+        email: { type: string }
+        address: { type: string }
+        gstin: { type: string }
+        notes: { type: string }
+
+    UpdateBuyerBody:
+      type: object
+      properties:
+        name: { type: string }
+        buyerType: { type: string }
+        contactPerson: { type: string }
+        phone: { type: string }
+        email: { type: string }
+        address: { type: string }
+        gstin: { type: string }
+        notes: { type: string }
+
+    SalesTransaction:
+      type: object
+      required: [id, projectId, buyerName, saleNumber, saleDate, status, totalGrossRevenue, totalDeductions, totalNetRevenue, createdByName, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        projectName: { type: string }
+        buyerId: { type: string, format: uuid }
+        buyerName: { type: string }
+        buyerPhone: { type: string }
+        saleNumber: { type: string }
+        saleDate: { type: string, format: date }
+        status: { type: string, enum: [draft, confirmed, cancelled] }
+        notes: { type: string }
+        documentRef: { type: string }
+        totalGrossRevenue: { type: number }
+        totalDeductions: { type: number }
+        totalNetRevenue: { type: number }
+        distributionId: { type: string, format: uuid }
+        confirmedAt: { type: string, format: date-time }
+        confirmedByName: { type: string }
+        createdByName: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    SaleLineItem:
+      type: object
+      required: [id, transactionId, productType, quantity, unit, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        transactionId: { type: string, format: uuid }
+        batchId: { type: string, format: uuid }
+        batchNumber: { type: string }
+        productType: { type: string }
+        quantity: { type: number }
+        unit: { type: string }
+        saleRate: { type: number }
+        grossAmount: { type: number }
+        remarks: { type: string }
+        createdAt: { type: string, format: date-time }
+
+    SaleDeduction:
+      type: object
+      required: [id, transactionId, deductionType, amount, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        transactionId: { type: string, format: uuid }
+        deductionType: { type: string }
+        description: { type: string }
+        amount: { type: number }
+        createdAt: { type: string, format: date-time }
+
+    SaleDetail:
+      allOf:
+        - $ref: "#/components/schemas/SalesTransaction"
+        - type: object
+          required: [lineItems, deductions]
+          properties:
+            lineItems:
+              type: array
+              items:
+                $ref: "#/components/schemas/SaleLineItem"
+            deductions:
+              type: array
+              items:
+                $ref: "#/components/schemas/SaleDeduction"
+
+    CreateSaleBody:
+      type: object
+      required: [projectId, buyerName, saleDate, lineItems]
+      properties:
+        projectId: { type: string, format: uuid }
+        buyerId: { type: string, format: uuid }
+        buyerName: { type: string }
+        saleDate: { type: string, format: date }
+        notes: { type: string }
+        documentRef: { type: string }
+        lineItems:
+          type: array
+          items:
+            $ref: "#/components/schemas/CreateSaleLineItemBody"
+        deductions:
+          type: array
+          items:
+            $ref: "#/components/schemas/CreateSaleDeductionBody"
+
+    UpdateSaleBody:
+      type: object
+      properties:
+        buyerId: { type: string, format: uuid }
+        buyerName: { type: string }
+        saleDate: { type: string, format: date }
+        notes: { type: string }
+        documentRef: { type: string }
+
+    CreateSaleLineItemBody:
+      type: object
+      required: [productType, quantity, unit]
+      properties:
+        batchId: { type: string, format: uuid }
+        productType: { type: string }
+        quantity: { type: number }
+        unit: { type: string }
+        saleRate: { type: number }
+        remarks: { type: string }
+
+    UpdateSaleLineItemBody:
+      type: object
+      properties:
+        quantity: { type: number }
+        saleRate: { type: number }
+        remarks: { type: string }
+
+    CreateSaleDeductionBody:
+      type: object
+      required: [amount]
+      properties:
+        deductionType: { type: string }
+        description: { type: string }
+        amount: { type: number }
+
+    SalesSummaryProject:
+      type: object
+      required: [projectId, totalSales, confirmedSales, totalGrossRevenue, totalDeductions, totalNetRevenue]
+      properties:
+        projectId: { type: string, format: uuid }
+        projectName: { type: string }
+        totalSales: { type: integer }
+        confirmedSales: { type: integer }
+        totalGrossRevenue: { type: number }
+        totalDeductions: { type: number }
+        totalNetRevenue: { type: number }
+
+    SalesSummary:
+      type: object
+      required: [totalGrossRevenue, totalNetRevenue, totalSalesCount, projects]
+      properties:
+        totalGrossRevenue: { type: number }
+        totalNetRevenue: { type: number }
+        totalSalesCount: { type: integer }
+        projects:
+          type: array
+          items:
+            $ref: "#/components/schemas/SalesSummaryProject"
+
+    SuccessResponse:
+      type: object
+      required: [success]
+      properties:
+        success: { type: boolean }

@@ -7718,3 +7718,439 @@ export const GetBatchAnalyticsResponse = zod.object({
     }),
   ),
 });
+
+/**
+ * @summary List all buyers
+ */
+export const ListBuyersQueryParams = zod.object({
+  search: zod.coerce.string().optional(),
+  includeInactive: zod.coerce.string().optional(),
+});
+
+export const ListBuyersResponseItem = zod.object({
+  id: zod.string().uuid(),
+  name: zod.string(),
+  buyerType: zod.string(),
+  contactPerson: zod.string().optional(),
+  phone: zod.string().optional(),
+  email: zod.string().optional(),
+  address: zod.string().optional(),
+  gstin: zod.string().optional(),
+  notes: zod.string().optional(),
+  isActive: zod.boolean(),
+  createdByName: zod.string(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const ListBuyersResponse = zod.array(ListBuyersResponseItem);
+
+/**
+ * @summary Create a new buyer (admin/developer)
+ */
+export const CreateBuyerBody = zod.object({
+  name: zod.string(),
+  buyerType: zod.string().optional(),
+  contactPerson: zod.string().optional(),
+  phone: zod.string().optional(),
+  email: zod.string().optional(),
+  address: zod.string().optional(),
+  gstin: zod.string().optional(),
+  notes: zod.string().optional(),
+});
+
+/**
+ * @summary Get a buyer by ID
+ */
+export const GetBuyerParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const GetBuyerResponse = zod.object({
+  id: zod.string().uuid(),
+  name: zod.string(),
+  buyerType: zod.string(),
+  contactPerson: zod.string().optional(),
+  phone: zod.string().optional(),
+  email: zod.string().optional(),
+  address: zod.string().optional(),
+  gstin: zod.string().optional(),
+  notes: zod.string().optional(),
+  isActive: zod.boolean(),
+  createdByName: zod.string(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Update a buyer (admin/developer)
+ */
+export const UpdateBuyerParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const UpdateBuyerBody = zod.object({
+  name: zod.string().optional(),
+  buyerType: zod.string().optional(),
+  contactPerson: zod.string().optional(),
+  phone: zod.string().optional(),
+  email: zod.string().optional(),
+  address: zod.string().optional(),
+  gstin: zod.string().optional(),
+  notes: zod.string().optional(),
+});
+
+export const UpdateBuyerResponse = zod.object({
+  id: zod.string().uuid(),
+  name: zod.string(),
+  buyerType: zod.string(),
+  contactPerson: zod.string().optional(),
+  phone: zod.string().optional(),
+  email: zod.string().optional(),
+  address: zod.string().optional(),
+  gstin: zod.string().optional(),
+  notes: zod.string().optional(),
+  isActive: zod.boolean(),
+  createdByName: zod.string(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Soft-delete a buyer (admin)
+ */
+export const DeleteBuyerParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const DeleteBuyerResponse = zod.object({
+  success: zod.boolean(),
+});
+
+/**
+ * @summary List sales transactions
+ */
+export const ListSalesQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+  status: zod.coerce.string().optional(),
+  buyerId: zod.coerce.string().uuid().optional(),
+  from: zod.date().optional(),
+  to: zod.date().optional(),
+});
+
+export const ListSalesResponseItem = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  projectName: zod.string().optional(),
+  buyerId: zod.string().uuid().optional(),
+  buyerName: zod.string(),
+  buyerPhone: zod.string().optional(),
+  saleNumber: zod.string(),
+  saleDate: zod.coerce.date(),
+  status: zod.enum(["draft", "confirmed", "cancelled"]),
+  notes: zod.string().optional(),
+  documentRef: zod.string().optional(),
+  totalGrossRevenue: zod.number(),
+  totalDeductions: zod.number(),
+  totalNetRevenue: zod.number(),
+  distributionId: zod.string().uuid().optional(),
+  confirmedAt: zod.coerce.date().optional(),
+  confirmedByName: zod.string().optional(),
+  createdByName: zod.string(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const ListSalesResponse = zod.array(ListSalesResponseItem);
+
+/**
+ * @summary Create a new sales transaction (draft)
+ */
+export const CreateSaleBody = zod.object({
+  projectId: zod.string().uuid(),
+  buyerId: zod.string().uuid().optional(),
+  buyerName: zod.string(),
+  saleDate: zod.coerce.date(),
+  notes: zod.string().optional(),
+  documentRef: zod.string().optional(),
+  lineItems: zod.array(
+    zod.object({
+      batchId: zod.string().uuid().optional(),
+      productType: zod.string(),
+      quantity: zod.number(),
+      unit: zod.string(),
+      saleRate: zod.number().optional(),
+      remarks: zod.string().optional(),
+    }),
+  ),
+  deductions: zod
+    .array(
+      zod.object({
+        deductionType: zod.string().optional(),
+        description: zod.string().optional(),
+        amount: zod.number(),
+      }),
+    )
+    .optional(),
+});
+
+/**
+ * @summary Project-wise sales revenue summary
+ */
+export const GetSalesSummaryQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+});
+
+export const GetSalesSummaryResponse = zod.object({
+  totalGrossRevenue: zod.number(),
+  totalNetRevenue: zod.number(),
+  totalSalesCount: zod.number(),
+  projects: zod.array(
+    zod.object({
+      projectId: zod.string().uuid(),
+      projectName: zod.string().optional(),
+      totalSales: zod.number(),
+      confirmedSales: zod.number(),
+      totalGrossRevenue: zod.number(),
+      totalDeductions: zod.number(),
+      totalNetRevenue: zod.number(),
+    }),
+  ),
+});
+
+/**
+ * @summary Get a sale transaction with line items and deductions
+ */
+export const GetSaleParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const GetSaleResponse = zod
+  .object({
+    id: zod.string().uuid(),
+    projectId: zod.string().uuid(),
+    projectName: zod.string().optional(),
+    buyerId: zod.string().uuid().optional(),
+    buyerName: zod.string(),
+    buyerPhone: zod.string().optional(),
+    saleNumber: zod.string(),
+    saleDate: zod.coerce.date(),
+    status: zod.enum(["draft", "confirmed", "cancelled"]),
+    notes: zod.string().optional(),
+    documentRef: zod.string().optional(),
+    totalGrossRevenue: zod.number(),
+    totalDeductions: zod.number(),
+    totalNetRevenue: zod.number(),
+    distributionId: zod.string().uuid().optional(),
+    confirmedAt: zod.coerce.date().optional(),
+    confirmedByName: zod.string().optional(),
+    createdByName: zod.string(),
+    createdAt: zod.coerce.date(),
+    updatedAt: zod.coerce.date(),
+  })
+  .and(
+    zod.object({
+      lineItems: zod.array(
+        zod.object({
+          id: zod.string().uuid(),
+          transactionId: zod.string().uuid(),
+          batchId: zod.string().uuid().optional(),
+          batchNumber: zod.string().optional(),
+          productType: zod.string(),
+          quantity: zod.number(),
+          unit: zod.string(),
+          saleRate: zod.number().optional(),
+          grossAmount: zod.number().optional(),
+          remarks: zod.string().optional(),
+          createdAt: zod.coerce.date(),
+        }),
+      ),
+      deductions: zod.array(
+        zod.object({
+          id: zod.string().uuid(),
+          transactionId: zod.string().uuid(),
+          deductionType: zod.string(),
+          description: zod.string().optional(),
+          amount: zod.number(),
+          createdAt: zod.coerce.date(),
+        }),
+      ),
+    }),
+  );
+
+/**
+ * @summary Update a draft sale
+ */
+export const UpdateSaleParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const UpdateSaleBody = zod.object({
+  buyerId: zod.string().uuid().optional(),
+  buyerName: zod.string().optional(),
+  saleDate: zod.coerce.date().optional(),
+  notes: zod.string().optional(),
+  documentRef: zod.string().optional(),
+});
+
+export const UpdateSaleResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  projectName: zod.string().optional(),
+  buyerId: zod.string().uuid().optional(),
+  buyerName: zod.string(),
+  buyerPhone: zod.string().optional(),
+  saleNumber: zod.string(),
+  saleDate: zod.coerce.date(),
+  status: zod.enum(["draft", "confirmed", "cancelled"]),
+  notes: zod.string().optional(),
+  documentRef: zod.string().optional(),
+  totalGrossRevenue: zod.number(),
+  totalDeductions: zod.number(),
+  totalNetRevenue: zod.number(),
+  distributionId: zod.string().uuid().optional(),
+  confirmedAt: zod.coerce.date().optional(),
+  confirmedByName: zod.string().optional(),
+  createdByName: zod.string(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Confirm a sale and auto-create inventory sale_out movements (admin/developer)
+ */
+export const ConfirmSaleParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const ConfirmSaleResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  projectName: zod.string().optional(),
+  buyerId: zod.string().uuid().optional(),
+  buyerName: zod.string(),
+  buyerPhone: zod.string().optional(),
+  saleNumber: zod.string(),
+  saleDate: zod.coerce.date(),
+  status: zod.enum(["draft", "confirmed", "cancelled"]),
+  notes: zod.string().optional(),
+  documentRef: zod.string().optional(),
+  totalGrossRevenue: zod.number(),
+  totalDeductions: zod.number(),
+  totalNetRevenue: zod.number(),
+  distributionId: zod.string().uuid().optional(),
+  confirmedAt: zod.coerce.date().optional(),
+  confirmedByName: zod.string().optional(),
+  createdByName: zod.string(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Cancel a sale (admin)
+ */
+export const CancelSaleParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const CancelSaleResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  projectName: zod.string().optional(),
+  buyerId: zod.string().uuid().optional(),
+  buyerName: zod.string(),
+  buyerPhone: zod.string().optional(),
+  saleNumber: zod.string(),
+  saleDate: zod.coerce.date(),
+  status: zod.enum(["draft", "confirmed", "cancelled"]),
+  notes: zod.string().optional(),
+  documentRef: zod.string().optional(),
+  totalGrossRevenue: zod.number(),
+  totalDeductions: zod.number(),
+  totalNetRevenue: zod.number(),
+  distributionId: zod.string().uuid().optional(),
+  confirmedAt: zod.coerce.date().optional(),
+  confirmedByName: zod.string().optional(),
+  createdByName: zod.string(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Add a line item to a draft sale
+ */
+export const AddSaleLineItemParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const AddSaleLineItemBody = zod.object({
+  batchId: zod.string().uuid().optional(),
+  productType: zod.string(),
+  quantity: zod.number(),
+  unit: zod.string(),
+  saleRate: zod.number().optional(),
+  remarks: zod.string().optional(),
+});
+
+/**
+ * @summary Update a line item in a draft sale
+ */
+export const UpdateSaleLineItemParams = zod.object({
+  txId: zod.coerce.string().uuid(),
+  itemId: zod.coerce.string().uuid(),
+});
+
+export const UpdateSaleLineItemBody = zod.object({
+  quantity: zod.number().optional(),
+  saleRate: zod.number().optional(),
+  remarks: zod.string().optional(),
+});
+
+export const UpdateSaleLineItemResponse = zod.object({
+  id: zod.string().uuid(),
+  transactionId: zod.string().uuid(),
+  batchId: zod.string().uuid().optional(),
+  batchNumber: zod.string().optional(),
+  productType: zod.string(),
+  quantity: zod.number(),
+  unit: zod.string(),
+  saleRate: zod.number().optional(),
+  grossAmount: zod.number().optional(),
+  remarks: zod.string().optional(),
+  createdAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Delete a line item from a draft sale
+ */
+export const DeleteSaleLineItemParams = zod.object({
+  txId: zod.coerce.string().uuid(),
+  itemId: zod.coerce.string().uuid(),
+});
+
+export const DeleteSaleLineItemResponse = zod.object({
+  success: zod.boolean(),
+});
+
+/**
+ * @summary Add a deduction to a draft sale (admin/developer)
+ */
+export const AddSaleDeductionParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const AddSaleDeductionBody = zod.object({
+  deductionType: zod.string().optional(),
+  description: zod.string().optional(),
+  amount: zod.number(),
+});
+
+/**
+ * @summary Delete a deduction from a draft sale (admin/developer)
+ */
+export const DeleteSaleDeductionParams = zod.object({
+  txId: zod.coerce.string().uuid(),
+  dedId: zod.coerce.string().uuid(),
+});
+
+export const DeleteSaleDeductionResponse = zod.object({
+  success: zod.boolean(),
+});

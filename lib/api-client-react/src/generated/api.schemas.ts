@@ -3744,6 +3744,165 @@ export interface BatchAnalytics {
   stockSummary: BatchAnalyticsStockSummary;
 }
 
+export interface Buyer {
+  id: string;
+  name: string;
+  buyerType: string;
+  contactPerson?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  gstin?: string;
+  notes?: string;
+  isActive: boolean;
+  createdByName: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateBuyerBody {
+  name: string;
+  buyerType?: string;
+  contactPerson?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  gstin?: string;
+  notes?: string;
+}
+
+export interface UpdateBuyerBody {
+  name?: string;
+  buyerType?: string;
+  contactPerson?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  gstin?: string;
+  notes?: string;
+}
+
+export type SalesTransactionStatus =
+  (typeof SalesTransactionStatus)[keyof typeof SalesTransactionStatus];
+
+export const SalesTransactionStatus = {
+  draft: "draft",
+  confirmed: "confirmed",
+  cancelled: "cancelled",
+} as const;
+
+export interface SalesTransaction {
+  id: string;
+  projectId: string;
+  projectName?: string;
+  buyerId?: string;
+  buyerName: string;
+  buyerPhone?: string;
+  saleNumber: string;
+  saleDate: string;
+  status: SalesTransactionStatus;
+  notes?: string;
+  documentRef?: string;
+  totalGrossRevenue: number;
+  totalDeductions: number;
+  totalNetRevenue: number;
+  distributionId?: string;
+  confirmedAt?: string;
+  confirmedByName?: string;
+  createdByName: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SaleLineItem {
+  id: string;
+  transactionId: string;
+  batchId?: string;
+  batchNumber?: string;
+  productType: string;
+  quantity: number;
+  unit: string;
+  saleRate?: number;
+  grossAmount?: number;
+  remarks?: string;
+  createdAt: string;
+}
+
+export interface SaleDeduction {
+  id: string;
+  transactionId: string;
+  deductionType: string;
+  description?: string;
+  amount: number;
+  createdAt: string;
+}
+
+export type SaleDetail = SalesTransaction & {
+  lineItems: SaleLineItem[];
+  deductions: SaleDeduction[];
+};
+
+export interface CreateSaleLineItemBody {
+  batchId?: string;
+  productType: string;
+  quantity: number;
+  unit: string;
+  saleRate?: number;
+  remarks?: string;
+}
+
+export interface CreateSaleDeductionBody {
+  deductionType?: string;
+  description?: string;
+  amount: number;
+}
+
+export interface CreateSaleBody {
+  projectId: string;
+  buyerId?: string;
+  buyerName: string;
+  saleDate: string;
+  notes?: string;
+  documentRef?: string;
+  lineItems: CreateSaleLineItemBody[];
+  deductions?: CreateSaleDeductionBody[];
+}
+
+export interface UpdateSaleBody {
+  buyerId?: string;
+  buyerName?: string;
+  saleDate?: string;
+  notes?: string;
+  documentRef?: string;
+}
+
+export interface UpdateSaleLineItemBody {
+  quantity?: number;
+  saleRate?: number;
+  remarks?: string;
+}
+
+export interface SalesSummaryProject {
+  projectId: string;
+  projectName?: string;
+  totalSales: number;
+  confirmedSales: number;
+  totalGrossRevenue: number;
+  totalDeductions: number;
+  totalNetRevenue: number;
+}
+
+export interface SalesSummary {
+  totalGrossRevenue: number;
+  totalNetRevenue: number;
+  totalSalesCount: number;
+  projects: SalesSummaryProject[];
+}
+
+export interface SuccessResponse {
+  success: boolean;
+}
+
 export type GetUserActivityParams = {
   limit?: number;
 };
@@ -4304,4 +4463,21 @@ export const ListStockMovementsStatus = {
 
 export type DeleteStockMovement200 = {
   success?: boolean;
+};
+
+export type ListBuyersParams = {
+  search?: string;
+  includeInactive?: string;
+};
+
+export type ListSalesParams = {
+  projectId?: string;
+  status?: string;
+  buyerId?: string;
+  from?: string;
+  to?: string;
+};
+
+export type GetSalesSummaryParams = {
+  projectId?: string;
 };

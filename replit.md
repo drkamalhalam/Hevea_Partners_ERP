@@ -689,6 +689,42 @@ Audit-friendly ledger system tracking Latex, Rubber Sheets, and Rubber Scrap acr
 
 **Sidebar:** `/inventory` entry already existed in Operations group — placeholder replaced with full implementation.
 
+## Sales & Buyer Management System
+
+Full rubber sales recording system with buyer registry, multi-product line items, deductions, inventory integration, and project-wise reporting. Sales must be confirmed by admin/developer before they are finalized; confirming auto-creates `sale_out` inventory movements.
+
+**DB tables** (`lib/db/src/schema/`):
+- `buyers.ts` — `buyersTable`: UUID PK, name, buyerType, contactPerson, phone, email, address, gstin, notes, isActive, audit cols
+- `sales.ts` — `salesTransactionsTable`, `salesLineItemsTable`, `salesDeductionsTable`
+  - Transaction: saleNumber (auto-generated `SALE-YYYYMMDD-NNNNN`), projectId FK, buyerId FK (optional), buyerName (denormalized), saleDate, status (draft/confirmed/cancelled), totalGrossRevenue, totalDeductions, totalNetRevenue, distributionId (placeholder for future distribution engine)
+  - LineItem: transactionId FK, productType (latex/rubber_sheet/rubber_scrap), quantity, unit, saleRate, grossAmount (computed), optional batchId FK
+  - Deduction: transactionId FK, deductionType (transport/commission/tax/processing/weighment/other), description, amount
+
+**API routes**:
+- `GET/POST /buyers`, `GET/PATCH /buyers/:id` — buyer CRUD (admin/developer for write)
+- `GET /sales?projectId&status&buyerId` — list sales (project-visibility filtered)
+- `POST /sales` — create sale with inline line items + deductions (admin/developer)
+- `GET /sales/summary?projectId` — project-wise revenue aggregation
+- `GET/PATCH /sales/:id` — get detail (with lineItems + deductions), update draft
+- `POST /sales/:id/confirm` — confirm sale + auto-create `sale_out` inventory movements (admin/developer)
+- `POST /sales/:id/cancel` — cancel sale (admin only)
+- `POST/PATCH/DELETE /sales/:id/line-items/:itemId` — line item CRUD on drafts
+- `POST/DELETE /sales/:id/deductions/:dedId` — deduction CRUD on drafts
+
+**Frontend page:** `artifacts/plantation-web/src/pages/Sales.tsx` at `/sales`
+- **KPI strip**: Net Revenue | Gross Revenue | Confirmed count (+ draft count) | Registered Buyers
+- **Transactions tab**: filter by project/status/buyer; expandable rows show inline `SaleDetailPanel` with confirm/cancel buttons, live line-item/deduction add-remove (draft only), revenue summary grid
+- **Reports tab**: grouped bar chart (Gross/Deductions/Net per project) + project-wise table with totals footer
+- **Buyers tab**: card grid of registered buyers with contact info; Add/Edit dialog (name, type, contact, phone, email, address, GSTIN)
+- **New Sale dialog**: project + date + buyer (registry lookup or manual name) + document ref; multi-row line items with product type, batch link (closed batches), quantity, rate; multiple deductions; live net preview
+- Buyer dialog resets correctly when switching between add/edit
+
+**Sidebar:** `/sales` already in Operations group; route in App.tsx maps to the new `Sales` component.
+
+**Generated hooks:** `useListBuyers`, `useGetBuyer`, `useCreateBuyer`, `useUpdateBuyer`, `useDeleteBuyer`, `useListSales`, `useGetSale`, `useGetSalesSummary`, `useCreateSale`, `useUpdateSale`, `useConfirmSale`, `useCancelSale`, `useAddSaleLineItem`, `useUpdateSaleLineItem`, `useDeleteSaleLineItem`, `useAddSaleDeduction`, `useDeleteSaleDeduction`
+
+**Distribution engine hook:** `distributionId` UUID column on `salesTransactionsTable` is a FK placeholder — no constraint yet; set when linking to a future distribution record.
+
 ## Pointers
 
 - See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
