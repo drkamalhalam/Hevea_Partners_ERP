@@ -393,3 +393,42 @@ export const expenditureVerificationStatusEnum = pgEnum(
   "expenditure_verification_status",
   ["draft", "pending_review", "approved", "rejected"],
 );
+
+// ── Expenditure verification workflow enums ───────────────────────────────────
+
+/**
+ * Status of a dedicated expenditure verification request.
+ *   pending   — request open; waiting for the designated verifier to act
+ *   approved  — verifier accepted the expenditure
+ *   rejected  — verifier rejected; raises a governance alert
+ *   cancelled — request voided (e.g. expenditure archived or re-submitted)
+ */
+export const expenditureVerificationRequestStatusEnum = pgEnum(
+  "expenditure_verification_request_status",
+  ["pending", "approved", "rejected", "cancelled"],
+);
+
+/**
+ * Immutable event types in the expenditure verification audit trail.
+ *   submitted          — expenditure submitted for verification
+ *   routing_assigned   — verifier role/user determined and request created
+ *   otp_requested      — OTP challenge sent to verifier (placeholder)
+ *   otp_verified       — OTP confirmed (placeholder)
+ *   approved           — verifier approved
+ *   rejected           — verifier rejected
+ *   resubmitted        — previously-rejected expenditure re-submitted for review
+ *   cancelled          — verification request cancelled
+ */
+export const expenditureVerificationEventTypeEnum = pgEnum(
+  "expenditure_verification_event_type",
+  [
+    "submitted",
+    "routing_assigned",
+    "otp_requested",
+    "otp_verified",
+    "approved",
+    "rejected",
+    "resubmitted",
+    "cancelled",
+  ],
+);

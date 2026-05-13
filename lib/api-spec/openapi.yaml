@@ -3213,6 +3213,186 @@ paths:
         "403": { description: Forbidden }
         "404": { description: Not found }
 
+  /expenditures/pending-verification:
+    get:
+      operationId: listPendingVerifications
+      summary: List expenditures pending verification for the current user
+      tags: [Expenditures]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/PendingVerificationItem"
+        "401": { description: Unauthorized }
+
+  /expenditures/{id}/verification:
+    get:
+      operationId: getExpenditureVerification
+      summary: Get the verification request and full event timeline for an expenditure
+      tags: [Expenditures]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExpenditureVerificationDetail"
+        "401": { description: Unauthorized }
+        "404": { description: Not found }
+
+  /expenditures/{id}/verification/approve:
+    post:
+      operationId: approveExpenditureVerification
+      summary: Approve a pending expenditure verification request
+      tags: [Expenditures]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                notes:
+                  type: string
+      responses:
+        "200":
+          description: Approved
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [expenditure, request]
+                properties:
+                  expenditure:
+                    $ref: "#/components/schemas/ExpenditureEntry"
+                  request:
+                    $ref: "#/components/schemas/ExpenditureVerificationRequest"
+        "400": { description: Bad request }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+        "404": { description: Not found }
+
+  /expenditures/{id}/verification/reject:
+    post:
+      operationId: rejectExpenditureVerification
+      summary: Reject a pending expenditure verification request
+      tags: [Expenditures]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [notes]
+              properties:
+                notes:
+                  type: string
+      responses:
+        "200":
+          description: Rejected
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [expenditure, request]
+                properties:
+                  expenditure:
+                    $ref: "#/components/schemas/ExpenditureEntry"
+                  request:
+                    $ref: "#/components/schemas/ExpenditureVerificationRequest"
+        "400": { description: Bad request }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+        "404": { description: Not found }
+
+  /expenditures/{id}/verification/otp/request:
+    post:
+      operationId: requestExpenditureVerificationOtp
+      summary: Request (send) an OTP challenge for expenditure verification — placeholder
+      tags: [Expenditures]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: OTP sent (placeholder — code returned in response for dev)
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [otpCode, expiresAt]
+                properties:
+                  otpCode:
+                    type: string
+                    description: Placeholder — would be sent via SMS in production
+                  expiresAt:
+                    type: string
+        "400": { description: Bad request }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+        "404": { description: Not found }
+
+  /expenditures/{id}/verification/otp/confirm:
+    post:
+      operationId: confirmExpenditureVerificationOtp
+      summary: Confirm an OTP to verify expenditure — placeholder
+      tags: [Expenditures]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [otpCode]
+              properties:
+                otpCode:
+                  type: string
+      responses:
+        "200":
+          description: OTP confirmed; verification request auto-approved
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [expenditure, request]
+                properties:
+                  expenditure:
+                    $ref: "#/components/schemas/ExpenditureEntry"
+                  request:
+                    $ref: "#/components/schemas/ExpenditureVerificationRequest"
+        "400": { description: Bad request }
+        "401": { description: Unauthorized }
+        "404": { description: Not found }
+
 components:
   schemas:
     HealthStatus:
@@ -5590,6 +5770,111 @@ components:
           type: ["string", "null"]
         createdAt:
           type: string
+
+    ExpenditureVerificationRequest:
+      type: object
+      required: [id, expenditureId, projectId, requiredVerifierRole, routingReason, status, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        expenditureId:
+          type: string
+          format: uuid
+        projectId:
+          type: string
+          format: uuid
+        requiredVerifierRole:
+          type: string
+          enum: [landowner, developer, admin]
+        requiredVerifierId:
+          type: ["string", "null"]
+          format: uuid
+        requiredVerifierName:
+          type: ["string", "null"]
+        routingReason:
+          type: string
+        status:
+          type: string
+          enum: [pending, approved, rejected, cancelled]
+        otpCode:
+          type: ["string", "null"]
+          description: Placeholder — visible only in dev; would be SMS in production
+        otpSentAt:
+          type: ["string", "null"]
+        otpExpiresAt:
+          type: ["string", "null"]
+        otpVerifiedAt:
+          type: ["string", "null"]
+        resolvedAt:
+          type: ["string", "null"]
+        resolvedById:
+          type: ["string", "null"]
+          format: uuid
+        resolvedByName:
+          type: ["string", "null"]
+        resolverNotes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    ExpenditureVerificationEvent:
+      type: object
+      required: [id, expenditureId, eventType, actorName, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        expenditureId:
+          type: string
+          format: uuid
+        verificationRequestId:
+          type: ["string", "null"]
+          format: uuid
+        eventType:
+          type: string
+          enum: [submitted, routing_assigned, otp_requested, otp_verified, approved, rejected, resubmitted, cancelled]
+        actorId:
+          type: ["string", "null"]
+          format: uuid
+        actorName:
+          type: string
+        actorRole:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        metadata:
+          type: ["object", "null"]
+          additionalProperties: true
+        createdAt:
+          type: string
+
+    ExpenditureVerificationDetail:
+      type: object
+      required: [expenditureId, events]
+      properties:
+        expenditureId:
+          type: string
+          format: uuid
+        request:
+          oneOf:
+            - $ref: "#/components/schemas/ExpenditureVerificationRequest"
+            - type: "null"
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExpenditureVerificationEvent"
+
+    PendingVerificationItem:
+      type: object
+      required: [expenditure, request]
+      properties:
+        expenditure:
+          $ref: "#/components/schemas/ExpenditureEntry"
+        request:
+          $ref: "#/components/schemas/ExpenditureVerificationRequest"
 
     ExpenditureSummary:
       type: object

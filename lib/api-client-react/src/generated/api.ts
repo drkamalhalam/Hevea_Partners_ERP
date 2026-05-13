@@ -31,9 +31,13 @@ import type {
   AgreementUpdate,
   AgreementVariablesResponse,
   ApproveExpenditureBody,
+  ApproveExpenditureVerification200,
+  ApproveExpenditureVerificationBody,
   AssignProjectInput,
   CancelAgreementActivationBody,
   CancelMaturityBody,
+  ConfirmExpenditureVerificationOtp200,
+  ConfirmExpenditureVerificationOtpBody,
   ContributionDisputeSummary,
   ContributionEntry,
   ContributionSummary,
@@ -51,6 +55,7 @@ import type {
   ErrorResponse,
   ExpenditureEntry,
   ExpenditureSummary,
+  ExpenditureVerificationDetail,
   FileMissingDeveloperCaseBody,
   GenerateAgreementDocument422,
   GenerateDocumentRequest,
@@ -82,6 +87,7 @@ import type {
   ListPartnerClaimantsParams,
   ListPendingVerificationContributions200,
   ListPendingVerificationContributionsParams,
+  ListPendingVerifications200,
   ListProductionRecordsParams,
   ListTemplatesParams,
   MaturityBlockers,
@@ -111,7 +117,10 @@ import type {
   RaiseContributionDisputeBody,
   RejectContributionBody,
   RejectExpenditureBody,
+  RejectExpenditureVerification200,
+  RejectExpenditureVerificationBody,
   RequestContributionVerificationBody,
+  RequestExpenditureVerificationOtp200,
   RequestUploadUrlBody,
   RequestUploadUrlResponse,
   ResolveContributionDisputeBody,
@@ -11889,4 +11898,539 @@ export const useRejectExpenditure = <
   TContext
 > => {
   return useMutation(getRejectExpenditureMutationOptions(options));
+};
+
+/**
+ * @summary List expenditures pending verification for the current user
+ */
+export const getListPendingVerificationsUrl = () => {
+  return `/api/expenditures/pending-verification`;
+};
+
+export const listPendingVerifications = async (
+  options?: RequestInit,
+): Promise<ListPendingVerifications200> => {
+  return customFetch<ListPendingVerifications200>(
+    getListPendingVerificationsUrl(),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListPendingVerificationsQueryKey = () => {
+  return [`/api/expenditures/pending-verification`] as const;
+};
+
+export const getListPendingVerificationsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listPendingVerifications>>,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listPendingVerifications>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListPendingVerificationsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listPendingVerifications>>
+  > = ({ signal }) => listPendingVerifications({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listPendingVerifications>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListPendingVerificationsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listPendingVerifications>>
+>;
+export type ListPendingVerificationsQueryError = ErrorType<void>;
+
+/**
+ * @summary List expenditures pending verification for the current user
+ */
+
+export function useListPendingVerifications<
+  TData = Awaited<ReturnType<typeof listPendingVerifications>>,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listPendingVerifications>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListPendingVerificationsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get the verification request and full event timeline for an expenditure
+ */
+export const getGetExpenditureVerificationUrl = (id: string) => {
+  return `/api/expenditures/${id}/verification`;
+};
+
+export const getExpenditureVerification = async (
+  id: string,
+  options?: RequestInit,
+): Promise<ExpenditureVerificationDetail> => {
+  return customFetch<ExpenditureVerificationDetail>(
+    getGetExpenditureVerificationUrl(id),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetExpenditureVerificationQueryKey = (id: string) => {
+  return [`/api/expenditures/${id}/verification`] as const;
+};
+
+export const getGetExpenditureVerificationQueryOptions = <
+  TData = Awaited<ReturnType<typeof getExpenditureVerification>>,
+  TError = ErrorType<void>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getExpenditureVerification>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetExpenditureVerificationQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getExpenditureVerification>>
+  > = ({ signal }) =>
+    getExpenditureVerification(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getExpenditureVerification>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetExpenditureVerificationQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getExpenditureVerification>>
+>;
+export type GetExpenditureVerificationQueryError = ErrorType<void>;
+
+/**
+ * @summary Get the verification request and full event timeline for an expenditure
+ */
+
+export function useGetExpenditureVerification<
+  TData = Awaited<ReturnType<typeof getExpenditureVerification>>,
+  TError = ErrorType<void>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getExpenditureVerification>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetExpenditureVerificationQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Approve a pending expenditure verification request
+ */
+export const getApproveExpenditureVerificationUrl = (id: string) => {
+  return `/api/expenditures/${id}/verification/approve`;
+};
+
+export const approveExpenditureVerification = async (
+  id: string,
+  approveExpenditureVerificationBody: ApproveExpenditureVerificationBody,
+  options?: RequestInit,
+): Promise<ApproveExpenditureVerification200> => {
+  return customFetch<ApproveExpenditureVerification200>(
+    getApproveExpenditureVerificationUrl(id),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(approveExpenditureVerificationBody),
+    },
+  );
+};
+
+export const getApproveExpenditureVerificationMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof approveExpenditureVerification>>,
+    TError,
+    { id: string; data: BodyType<ApproveExpenditureVerificationBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof approveExpenditureVerification>>,
+  TError,
+  { id: string; data: BodyType<ApproveExpenditureVerificationBody> },
+  TContext
+> => {
+  const mutationKey = ["approveExpenditureVerification"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof approveExpenditureVerification>>,
+    { id: string; data: BodyType<ApproveExpenditureVerificationBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return approveExpenditureVerification(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ApproveExpenditureVerificationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof approveExpenditureVerification>>
+>;
+export type ApproveExpenditureVerificationMutationBody =
+  BodyType<ApproveExpenditureVerificationBody>;
+export type ApproveExpenditureVerificationMutationError = ErrorType<void>;
+
+/**
+ * @summary Approve a pending expenditure verification request
+ */
+export const useApproveExpenditureVerification = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof approveExpenditureVerification>>,
+    TError,
+    { id: string; data: BodyType<ApproveExpenditureVerificationBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof approveExpenditureVerification>>,
+  TError,
+  { id: string; data: BodyType<ApproveExpenditureVerificationBody> },
+  TContext
+> => {
+  return useMutation(getApproveExpenditureVerificationMutationOptions(options));
+};
+
+/**
+ * @summary Reject a pending expenditure verification request
+ */
+export const getRejectExpenditureVerificationUrl = (id: string) => {
+  return `/api/expenditures/${id}/verification/reject`;
+};
+
+export const rejectExpenditureVerification = async (
+  id: string,
+  rejectExpenditureVerificationBody: RejectExpenditureVerificationBody,
+  options?: RequestInit,
+): Promise<RejectExpenditureVerification200> => {
+  return customFetch<RejectExpenditureVerification200>(
+    getRejectExpenditureVerificationUrl(id),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(rejectExpenditureVerificationBody),
+    },
+  );
+};
+
+export const getRejectExpenditureVerificationMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof rejectExpenditureVerification>>,
+    TError,
+    { id: string; data: BodyType<RejectExpenditureVerificationBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof rejectExpenditureVerification>>,
+  TError,
+  { id: string; data: BodyType<RejectExpenditureVerificationBody> },
+  TContext
+> => {
+  const mutationKey = ["rejectExpenditureVerification"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof rejectExpenditureVerification>>,
+    { id: string; data: BodyType<RejectExpenditureVerificationBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return rejectExpenditureVerification(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RejectExpenditureVerificationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof rejectExpenditureVerification>>
+>;
+export type RejectExpenditureVerificationMutationBody =
+  BodyType<RejectExpenditureVerificationBody>;
+export type RejectExpenditureVerificationMutationError = ErrorType<void>;
+
+/**
+ * @summary Reject a pending expenditure verification request
+ */
+export const useRejectExpenditureVerification = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof rejectExpenditureVerification>>,
+    TError,
+    { id: string; data: BodyType<RejectExpenditureVerificationBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof rejectExpenditureVerification>>,
+  TError,
+  { id: string; data: BodyType<RejectExpenditureVerificationBody> },
+  TContext
+> => {
+  return useMutation(getRejectExpenditureVerificationMutationOptions(options));
+};
+
+/**
+ * @summary Request (send) an OTP challenge for expenditure verification — placeholder
+ */
+export const getRequestExpenditureVerificationOtpUrl = (id: string) => {
+  return `/api/expenditures/${id}/verification/otp/request`;
+};
+
+export const requestExpenditureVerificationOtp = async (
+  id: string,
+  options?: RequestInit,
+): Promise<RequestExpenditureVerificationOtp200> => {
+  return customFetch<RequestExpenditureVerificationOtp200>(
+    getRequestExpenditureVerificationOtpUrl(id),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getRequestExpenditureVerificationOtpMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof requestExpenditureVerificationOtp>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof requestExpenditureVerificationOtp>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["requestExpenditureVerificationOtp"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof requestExpenditureVerificationOtp>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return requestExpenditureVerificationOtp(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RequestExpenditureVerificationOtpMutationResult = NonNullable<
+  Awaited<ReturnType<typeof requestExpenditureVerificationOtp>>
+>;
+
+export type RequestExpenditureVerificationOtpMutationError = ErrorType<void>;
+
+/**
+ * @summary Request (send) an OTP challenge for expenditure verification — placeholder
+ */
+export const useRequestExpenditureVerificationOtp = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof requestExpenditureVerificationOtp>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof requestExpenditureVerificationOtp>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(
+    getRequestExpenditureVerificationOtpMutationOptions(options),
+  );
+};
+
+/**
+ * @summary Confirm an OTP to verify expenditure — placeholder
+ */
+export const getConfirmExpenditureVerificationOtpUrl = (id: string) => {
+  return `/api/expenditures/${id}/verification/otp/confirm`;
+};
+
+export const confirmExpenditureVerificationOtp = async (
+  id: string,
+  confirmExpenditureVerificationOtpBody: ConfirmExpenditureVerificationOtpBody,
+  options?: RequestInit,
+): Promise<ConfirmExpenditureVerificationOtp200> => {
+  return customFetch<ConfirmExpenditureVerificationOtp200>(
+    getConfirmExpenditureVerificationOtpUrl(id),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(confirmExpenditureVerificationOtpBody),
+    },
+  );
+};
+
+export const getConfirmExpenditureVerificationOtpMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof confirmExpenditureVerificationOtp>>,
+    TError,
+    { id: string; data: BodyType<ConfirmExpenditureVerificationOtpBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof confirmExpenditureVerificationOtp>>,
+  TError,
+  { id: string; data: BodyType<ConfirmExpenditureVerificationOtpBody> },
+  TContext
+> => {
+  const mutationKey = ["confirmExpenditureVerificationOtp"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof confirmExpenditureVerificationOtp>>,
+    { id: string; data: BodyType<ConfirmExpenditureVerificationOtpBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return confirmExpenditureVerificationOtp(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ConfirmExpenditureVerificationOtpMutationResult = NonNullable<
+  Awaited<ReturnType<typeof confirmExpenditureVerificationOtp>>
+>;
+export type ConfirmExpenditureVerificationOtpMutationBody =
+  BodyType<ConfirmExpenditureVerificationOtpBody>;
+export type ConfirmExpenditureVerificationOtpMutationError = ErrorType<void>;
+
+/**
+ * @summary Confirm an OTP to verify expenditure — placeholder
+ */
+export const useConfirmExpenditureVerificationOtp = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof confirmExpenditureVerificationOtp>>,
+    TError,
+    { id: string; data: BodyType<ConfirmExpenditureVerificationOtpBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof confirmExpenditureVerificationOtp>>,
+  TError,
+  { id: string; data: BodyType<ConfirmExpenditureVerificationOtpBody> },
+  TContext
+> => {
+  return useMutation(
+    getConfirmExpenditureVerificationOtpMutationOptions(options),
+  );
 };

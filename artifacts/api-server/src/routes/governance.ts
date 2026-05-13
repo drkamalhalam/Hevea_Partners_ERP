@@ -14,6 +14,7 @@ import {
   nomineeActivationWorkflowsTable,
   projectClosureWorkflowsTable,
   contributionsTable,
+  expenditureVerificationRequestsTable,
 } from "@workspace/db";
 import { eq, inArray, isNull, and } from "drizzle-orm";
 import { requireRole } from "../middlewares/auth";
@@ -32,7 +33,9 @@ type GovernanceIssueCode =
   | "MISSING_DEVELOPER"
   | "REJECTED_CONTRIBUTION"
   | "DISPUTED_CONTRIBUTION"
-  | "PENDING_CONTRIBUTIONS";
+  | "PENDING_CONTRIBUTIONS"
+  | "REJECTED_EXPENDITURE"
+  | "PENDING_EXPENDITURE_VERIFICATION";
 
 interface GovernanceAlert {
   code: GovernanceIssueCode;
@@ -468,6 +471,94 @@ router.get("/summary", async (req, res) => {
           code: "PENDING_CONTRIBUTIONS",
           severity: "incomplete",
           message: `${count} contribution${count > 1 ? "s are" : " is"} awaiting verification`,
+        };
+        if (existing) {
+          existing.issues.push(alert);
+          existing.status = worstSeverity(existing.issues);
+        } else {
+          const proj = visibleProjects.find((p) => p.id === pid);
+          if (proj) {
+            projectAlerts.push({
+              projectId: pid,
+              projectName: proj.name,
+              status: "incomplete",
+              issues: [alert],
+            });
+          }
+        }
+      }
+    }
+
+    // ── Rejected expenditure verifications (admin / developer) ───────────
+    // Rejected expenditure verifications raise a red governance alert and
+    // block maturity declaration — they represent unresolved cost disputes.
+    if (isAdminOrDev && visibleProjects.length > 0) {
+      const projectIds = visibleProjects.map((p) => p.id);
+      const rejectedExpVerifs = await db
+        .select({ projectId: expenditureVerificationRequestsTable.projectId })
+        .from(expenditureVerificationRequestsTable)
+        .where(
+          and(
+            inArray(expenditureVerificationRequestsTable.projectId, projectIds),
+            eq(expenditureVerificationRequestsTable.status, "rejected"),
+          ),
+        );
+
+      const rejectedByProject = new Map<string, number>();
+      for (const r of rejectedExpVerifs) {
+        rejectedByProject.set(r.projectId, (rejectedByProject.get(r.projectId) ?? 0) + 1);
+      }
+
+      for (const [pid, count] of rejectedByProject.entries()) {
+        const existing = projectAlerts.find((p) => p.projectId === pid);
+        const alert: GovernanceAlert = {
+          code: "REJECTED_EXPENDITURE",
+          severity: "attention_required",
+          message: `${count} expenditure verification${count > 1 ? "s have" : " has"} been rejected — disputes must be resolved before maturity declaration`,
+        };
+        if (existing) {
+          existing.issues.push(alert);
+          existing.status = worstSeverity(existing.issues);
+        } else {
+          const proj = visibleProjects.find((p) => p.id === pid);
+          if (proj) {
+            projectAlerts.push({
+              projectId: pid,
+              projectName: proj.name,
+              status: "attention_required",
+              issues: [alert],
+            });
+          }
+        }
+      }
+    }
+
+    // ── Pending expenditure verification backlog (admin / developer) ──────
+    // Projects with 3+ pending verification requests get an "incomplete" alert.
+    if (isAdminOrDev && visibleProjects.length > 0) {
+      const projectIds = visibleProjects.map((p) => p.id);
+      const pendingExpVerifs = await db
+        .select({ projectId: expenditureVerificationRequestsTable.projectId })
+        .from(expenditureVerificationRequestsTable)
+        .where(
+          and(
+            inArray(expenditureVerificationRequestsTable.projectId, projectIds),
+            eq(expenditureVerificationRequestsTable.status, "pending"),
+          ),
+        );
+
+      const pendingByProject = new Map<string, number>();
+      for (const r of pendingExpVerifs) {
+        pendingByProject.set(r.projectId, (pendingByProject.get(r.projectId) ?? 0) + 1);
+      }
+
+      for (const [pid, count] of pendingByProject.entries()) {
+        if (count < 3) continue;
+        const existing = projectAlerts.find((p) => p.projectId === pid);
+        const alert: GovernanceAlert = {
+          code: "PENDING_EXPENDITURE_VERIFICATION",
+          severity: "incomplete",
+          message: `${count} expenditure${count > 1 ? "s are" : " is"} awaiting verification`,
         };
         if (existing) {
           existing.issues.push(alert);

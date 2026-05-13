@@ -27,3 +27,4 @@ export * from "./contributions";
 export * from "./contribution_verification_events";
 export * from "./ownership_snapshots";
 export * from "./expenditures";
+export * from "./expenditure_verification";

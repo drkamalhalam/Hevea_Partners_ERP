@@ -22,6 +22,7 @@ import documentsRouter from "./documents";
 import contributionsRouter from "./contributions";
 import ownershipRouter from "./ownership";
 import expendituresRouter from "./expenditures";
+import expenditureVerificationRouter from "./expenditure_verification";
 import devRouter from "./dev";
 
 const router: IRouter = Router();
@@ -61,5 +62,6 @@ router.use("/documents", documentsRouter);
 router.use("/contributions", contributionsRouter);
 router.use("/ownership", ownershipRouter);
 router.use("/expenditures", expendituresRouter);
+router.use("/expenditures", expenditureVerificationRouter);
 
 export default router;

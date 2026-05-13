@@ -6,6 +6,7 @@ import {
   partnersTable,
   usersTable,
   partnerClaimantsTable,
+  expendituresTable,
   maturityDeclarationsTable,
   maturityOtpVerificationsTable,
   projectLifecycleHistoryTable,
@@ -189,6 +190,27 @@ async function checkMaturityBlockers(projectId: string) {
         count: nonActive.length,
       });
     }
+  }
+
+  // Check rejected expenditure verifications — unresolved disputes block maturity
+  const rejectedExpenditures = await db
+    .select({ id: expendituresTable.id })
+    .from(expendituresTable)
+    .where(
+      and(
+        eq(expendituresTable.projectId, projectId),
+        eq(expendituresTable.verificationStatus, "rejected"),
+        eq(expendituresTable.isActive, true),
+      ),
+    );
+
+  if (rejectedExpenditures.length > 0) {
+    blockers.push({
+      type: "rejected_expenditure",
+      message: `${rejectedExpenditures.length} expenditure record(s) have been rejected — re-submit and get them approved or remove them before proceeding`,
+      severity: "error",
+      count: rejectedExpenditures.length,
+    });
   }
 
   // Check unresolved claimants

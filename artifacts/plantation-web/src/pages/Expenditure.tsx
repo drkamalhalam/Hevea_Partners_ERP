@@ -10,9 +10,12 @@ import {
   useRejectExpenditure,
   useGetExpenditureSummary,
   useListProjects,
+  useListPendingVerifications,
   getListExpendituresQueryKey,
   getGetExpenditureSummaryQueryKey,
+  getListPendingVerificationsQueryKey,
 } from "@workspace/api-client-react";
+import ExpenditureVerificationTab from "./ExpenditureVerificationTab";
 import type {
   ExpenditureEntry,
   Project,
@@ -68,6 +71,7 @@ import {
   TrendingDown,
   Upload,
   AlertTriangle,
+  Shield,
 } from "lucide-react";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -740,6 +744,10 @@ export default function Expenditure() {
     role === "developer" ||
     role === "landowner" ||
     role === "investor";
+  const canVerify =
+    role === "admin" || role === "developer" || role === "landowner";
+
+  const [tab, setTab] = useState<"overview" | "verification">("overview");
 
   // ── Filters ────────────────────────────────────────────────────────────────
   const [filterProject, setFilterProject] = useState<string>(
@@ -829,6 +837,15 @@ export default function Expenditure() {
     (e) => e.verificationStatus === "pending_review",
   ).length;
 
+  // Pending verification badge count for the tab
+  const { data: pendingVerifData } = useListPendingVerifications({
+    query: {
+      queryKey: getListPendingVerificationsQueryKey(),
+      enabled: canVerify,
+    },
+  });
+  const pendingVerifCount = pendingVerifData?.items?.length ?? 0;
+
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100 p-6 space-y-6">
       {/* ── Header ─────────────────────────────────────────────────────────── */}
@@ -842,7 +859,7 @@ export default function Expenditure() {
             ownership contributions
           </p>
         </div>
-        {canCreate && (
+        {canCreate && tab === "overview" && (
           <Button
             className="bg-indigo-600 hover:bg-indigo-700 text-white"
             onClick={() => setAddOpen(true)}
@@ -852,6 +869,50 @@ export default function Expenditure() {
           </Button>
         )}
       </div>
+
+      {/* ── Tab Switcher ────────────────────────────────────────────────────── */}
+      <div className="flex gap-1 p-1 bg-slate-800 border border-slate-700 rounded-lg w-fit">
+        <button
+          type="button"
+          onClick={() => setTab("overview")}
+          className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+            tab === "overview"
+              ? "bg-slate-700 text-slate-100 shadow-sm"
+              : "text-slate-400 hover:text-slate-200"
+          }`}
+        >
+          <Banknote className="h-3.5 w-3.5" />
+          Overview
+          {pendingCount > 0 && (
+            <span className="inline-flex items-center justify-center h-4 min-w-4 rounded-full bg-amber-700/80 text-amber-100 text-xs font-bold px-1">
+              {pendingCount}
+            </span>
+          )}
+        </button>
+        <button
+          type="button"
+          onClick={() => setTab("verification")}
+          className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+            tab === "verification"
+              ? "bg-slate-700 text-slate-100 shadow-sm"
+              : "text-slate-400 hover:text-slate-200"
+          }`}
+        >
+          <Shield className="h-3.5 w-3.5" />
+          Verification
+          {canVerify && pendingVerifCount > 0 && (
+            <span className="inline-flex items-center justify-center h-4 min-w-4 rounded-full bg-red-700/80 text-red-100 text-xs font-bold px-1">
+              {pendingVerifCount}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {/* ── Verification Tab ────────────────────────────────────────────────── */}
+      {tab === "verification" && <ExpenditureVerificationTab />}
+
+      {/* ── Overview Tab ────────────────────────────────────────────────────── */}
+      {tab === "overview" && (<>
 
       {/* ── KPI Cards ──────────────────────────────────────────────────────── */}
       {canViewSummary && summary && (
@@ -1207,6 +1268,8 @@ export default function Expenditure() {
           )}
         </CardContent>
       </Card>
+
+      </>)} {/* end tab === "overview" */}
 
       {/* ── Dialogs ──────────────────────────────────────────────────────────── */}
       <ExpenditureFormDialog

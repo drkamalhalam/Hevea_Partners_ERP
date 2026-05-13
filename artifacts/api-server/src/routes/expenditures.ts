@@ -6,9 +6,11 @@ import {
   usersTable,
   projectsTable,
   expendituresTable,
+  expenditureVerificationEventsTable,
   userProjectAssignmentsTable,
 } from "@workspace/db";
 import { requireRole } from "../middlewares/auth";
+import { routeAndCreateVerificationRequest } from "./expenditure_verification";
 
 const router = Router();
 
@@ -553,7 +555,9 @@ router.post("/expenditures/:id/submit", async (req, res) => {
     return res.status(403).json({ error: "You can only submit your own expenditure entries." });
   }
 
-  if (entry.verificationStatus !== "draft") {
+  const isResubmission = entry.verificationStatus === "rejected";
+
+  if (!["draft", "rejected"].includes(entry.verificationStatus)) {
     return res
       .status(400)
       .json({ error: `Cannot submit: current status is '${entry.verificationStatus}'.` });
@@ -564,6 +568,33 @@ router.post("/expenditures/:id/submit", async (req, res) => {
     .set({ verificationStatus: "pending_review", updatedAt: new Date() })
     .where(eq(expendituresTable.id, String(req.params.id)))
     .returning();
+
+  // Create / reset the verification request and write routing event
+  try {
+    await routeAndCreateVerificationRequest({
+      expenditureId: updated.id,
+      projectId: updated.projectId,
+      category: updated.category,
+      actorId: actor.id,
+      actorRole: actor.role,
+      actorName: actor.displayName ?? "Unknown",
+      eventType: isResubmission ? "resubmitted" : "routing_assigned",
+    });
+
+    // Write "submitted" event
+    await db.insert(expenditureVerificationEventsTable).values({
+      expenditureId: updated.id,
+      eventType: "submitted",
+      actorId: actor.id,
+      actorName: actor.displayName ?? "Unknown",
+      actorRole: actor.role,
+      notes: isResubmission
+        ? "Re-submitted for verification after rejection"
+        : "Expenditure submitted for verification",
+    });
+  } catch (err) {
+    req.log.warn({ err }, "Failed to create verification request — expenditure submitted without routing");
+  }
 
   return res.json(formatEntry(updated, entry.projectName));
 });

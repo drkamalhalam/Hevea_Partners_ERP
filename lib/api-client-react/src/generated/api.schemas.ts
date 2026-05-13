@@ -2110,6 +2110,109 @@ export interface ExpenditureEntry {
   createdAt: string;
 }
 
+export type ExpenditureVerificationRequestRequiredVerifierRole =
+  (typeof ExpenditureVerificationRequestRequiredVerifierRole)[keyof typeof ExpenditureVerificationRequestRequiredVerifierRole];
+
+export const ExpenditureVerificationRequestRequiredVerifierRole = {
+  landowner: "landowner",
+  developer: "developer",
+  admin: "admin",
+} as const;
+
+export type ExpenditureVerificationRequestStatus =
+  (typeof ExpenditureVerificationRequestStatus)[keyof typeof ExpenditureVerificationRequestStatus];
+
+export const ExpenditureVerificationRequestStatus = {
+  pending: "pending",
+  approved: "approved",
+  rejected: "rejected",
+  cancelled: "cancelled",
+} as const;
+
+export interface ExpenditureVerificationRequest {
+  id: string;
+  expenditureId: string;
+  projectId: string;
+  requiredVerifierRole: ExpenditureVerificationRequestRequiredVerifierRole;
+  /** @nullable */
+  requiredVerifierId?: string | null;
+  /** @nullable */
+  requiredVerifierName?: string | null;
+  routingReason: string;
+  status: ExpenditureVerificationRequestStatus;
+  /**
+   * Placeholder — visible only in dev; would be SMS in production
+   * @nullable
+   */
+  otpCode?: string | null;
+  /** @nullable */
+  otpSentAt?: string | null;
+  /** @nullable */
+  otpExpiresAt?: string | null;
+  /** @nullable */
+  otpVerifiedAt?: string | null;
+  /** @nullable */
+  resolvedAt?: string | null;
+  /** @nullable */
+  resolvedById?: string | null;
+  /** @nullable */
+  resolvedByName?: string | null;
+  /** @nullable */
+  resolverNotes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type ExpenditureVerificationEventEventType =
+  (typeof ExpenditureVerificationEventEventType)[keyof typeof ExpenditureVerificationEventEventType];
+
+export const ExpenditureVerificationEventEventType = {
+  submitted: "submitted",
+  routing_assigned: "routing_assigned",
+  otp_requested: "otp_requested",
+  otp_verified: "otp_verified",
+  approved: "approved",
+  rejected: "rejected",
+  resubmitted: "resubmitted",
+  cancelled: "cancelled",
+} as const;
+
+/**
+ * @nullable
+ */
+export type ExpenditureVerificationEventMetadata = {
+  [key: string]: unknown;
+} | null;
+
+export interface ExpenditureVerificationEvent {
+  id: string;
+  expenditureId: string;
+  /** @nullable */
+  verificationRequestId?: string | null;
+  eventType: ExpenditureVerificationEventEventType;
+  /** @nullable */
+  actorId?: string | null;
+  actorName: string;
+  /** @nullable */
+  actorRole?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  /** @nullable */
+  metadata?: ExpenditureVerificationEventMetadata;
+  createdAt: string;
+}
+
+export interface ExpenditureVerificationDetail {
+  expenditureId: string;
+  request?: ExpenditureVerificationRequest | null;
+  events: ExpenditureVerificationEvent[];
+}
+
+export interface PendingVerificationItem {
+  expenditure: ExpenditureEntry;
+  request: ExpenditureVerificationRequest;
+}
+
 export type ExpenditureSummaryProjectsItemCategoryBreakdownItem = {
   category: string;
   amount: number;
@@ -2366,4 +2469,41 @@ export type ApproveExpenditureBody = {
 
 export type RejectExpenditureBody = {
   notes: string;
+};
+
+export type ListPendingVerifications200 = {
+  items: PendingVerificationItem[];
+};
+
+export type ApproveExpenditureVerificationBody = {
+  notes?: string;
+};
+
+export type ApproveExpenditureVerification200 = {
+  expenditure: ExpenditureEntry;
+  request: ExpenditureVerificationRequest;
+};
+
+export type RejectExpenditureVerificationBody = {
+  notes: string;
+};
+
+export type RejectExpenditureVerification200 = {
+  expenditure: ExpenditureEntry;
+  request: ExpenditureVerificationRequest;
+};
+
+export type RequestExpenditureVerificationOtp200 = {
+  /** Placeholder — would be sent via SMS in production */
+  otpCode: string;
+  expiresAt: string;
+};
+
+export type ConfirmExpenditureVerificationOtpBody = {
+  otpCode: string;
+};
+
+export type ConfirmExpenditureVerificationOtp200 = {
+  expenditure: ExpenditureEntry;
+  request: ExpenditureVerificationRequest;
 };

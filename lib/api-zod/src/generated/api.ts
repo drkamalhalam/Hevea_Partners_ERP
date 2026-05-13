@@ -4849,3 +4849,369 @@ export const RejectExpenditureResponse = zod.object({
   notes: zod.string().nullish(),
   createdAt: zod.string(),
 });
+
+/**
+ * @summary List expenditures pending verification for the current user
+ */
+export const ListPendingVerificationsResponse = zod.object({
+  items: zod.array(
+    zod.object({
+      expenditure: zod.object({
+        id: zod.string().uuid(),
+        projectId: zod.string().uuid(),
+        projectName: zod.string().nullish(),
+        paidById: zod.string().uuid().nullish(),
+        paidByName: zod.string().nullish(),
+        category: zod.enum([
+          "labor",
+          "fertilizer",
+          "transport",
+          "machinery",
+          "maintenance",
+          "consumables",
+          "plantation_operations",
+          "miscellaneous",
+        ]),
+        amount: zod.number(),
+        expenditureDate: zod.string(),
+        description: zod.string(),
+        invoiceObjectPath: zod.string().nullish(),
+        verificationStatus: zod.enum([
+          "draft",
+          "pending_review",
+          "approved",
+          "rejected",
+        ]),
+        verifiedAt: zod.string().nullish(),
+        verifiedByName: zod.string().nullish(),
+        verifierNotes: zod.string().nullish(),
+        lifecyclePhaseSnapshot: zod.string(),
+        recordedByName: zod.string().nullish(),
+        notes: zod.string().nullish(),
+        createdAt: zod.string(),
+      }),
+      request: zod.object({
+        id: zod.string().uuid(),
+        expenditureId: zod.string().uuid(),
+        projectId: zod.string().uuid(),
+        requiredVerifierRole: zod.enum(["landowner", "developer", "admin"]),
+        requiredVerifierId: zod.string().uuid().nullish(),
+        requiredVerifierName: zod.string().nullish(),
+        routingReason: zod.string(),
+        status: zod.enum(["pending", "approved", "rejected", "cancelled"]),
+        otpCode: zod
+          .string()
+          .nullish()
+          .describe(
+            "Placeholder — visible only in dev; would be SMS in production",
+          ),
+        otpSentAt: zod.string().nullish(),
+        otpExpiresAt: zod.string().nullish(),
+        otpVerifiedAt: zod.string().nullish(),
+        resolvedAt: zod.string().nullish(),
+        resolvedById: zod.string().uuid().nullish(),
+        resolvedByName: zod.string().nullish(),
+        resolverNotes: zod.string().nullish(),
+        createdAt: zod.string(),
+        updatedAt: zod.string(),
+      }),
+    }),
+  ),
+});
+
+/**
+ * @summary Get the verification request and full event timeline for an expenditure
+ */
+export const GetExpenditureVerificationParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const GetExpenditureVerificationResponse = zod.object({
+  expenditureId: zod.string().uuid(),
+  request: zod
+    .union([
+      zod.object({
+        id: zod.string().uuid(),
+        expenditureId: zod.string().uuid(),
+        projectId: zod.string().uuid(),
+        requiredVerifierRole: zod.enum(["landowner", "developer", "admin"]),
+        requiredVerifierId: zod.string().uuid().nullish(),
+        requiredVerifierName: zod.string().nullish(),
+        routingReason: zod.string(),
+        status: zod.enum(["pending", "approved", "rejected", "cancelled"]),
+        otpCode: zod
+          .string()
+          .nullish()
+          .describe(
+            "Placeholder — visible only in dev; would be SMS in production",
+          ),
+        otpSentAt: zod.string().nullish(),
+        otpExpiresAt: zod.string().nullish(),
+        otpVerifiedAt: zod.string().nullish(),
+        resolvedAt: zod.string().nullish(),
+        resolvedById: zod.string().uuid().nullish(),
+        resolvedByName: zod.string().nullish(),
+        resolverNotes: zod.string().nullish(),
+        createdAt: zod.string(),
+        updatedAt: zod.string(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  events: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      expenditureId: zod.string().uuid(),
+      verificationRequestId: zod.string().uuid().nullish(),
+      eventType: zod.enum([
+        "submitted",
+        "routing_assigned",
+        "otp_requested",
+        "otp_verified",
+        "approved",
+        "rejected",
+        "resubmitted",
+        "cancelled",
+      ]),
+      actorId: zod.string().uuid().nullish(),
+      actorName: zod.string(),
+      actorRole: zod.string().nullish(),
+      notes: zod.string().nullish(),
+      metadata: zod.record(zod.string(), zod.unknown()).nullish(),
+      createdAt: zod.string(),
+    }),
+  ),
+});
+
+/**
+ * @summary Approve a pending expenditure verification request
+ */
+export const ApproveExpenditureVerificationParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const ApproveExpenditureVerificationBody = zod.object({
+  notes: zod.string().optional(),
+});
+
+export const ApproveExpenditureVerificationResponse = zod.object({
+  expenditure: zod.object({
+    id: zod.string().uuid(),
+    projectId: zod.string().uuid(),
+    projectName: zod.string().nullish(),
+    paidById: zod.string().uuid().nullish(),
+    paidByName: zod.string().nullish(),
+    category: zod.enum([
+      "labor",
+      "fertilizer",
+      "transport",
+      "machinery",
+      "maintenance",
+      "consumables",
+      "plantation_operations",
+      "miscellaneous",
+    ]),
+    amount: zod.number(),
+    expenditureDate: zod.string(),
+    description: zod.string(),
+    invoiceObjectPath: zod.string().nullish(),
+    verificationStatus: zod.enum([
+      "draft",
+      "pending_review",
+      "approved",
+      "rejected",
+    ]),
+    verifiedAt: zod.string().nullish(),
+    verifiedByName: zod.string().nullish(),
+    verifierNotes: zod.string().nullish(),
+    lifecyclePhaseSnapshot: zod.string(),
+    recordedByName: zod.string().nullish(),
+    notes: zod.string().nullish(),
+    createdAt: zod.string(),
+  }),
+  request: zod.object({
+    id: zod.string().uuid(),
+    expenditureId: zod.string().uuid(),
+    projectId: zod.string().uuid(),
+    requiredVerifierRole: zod.enum(["landowner", "developer", "admin"]),
+    requiredVerifierId: zod.string().uuid().nullish(),
+    requiredVerifierName: zod.string().nullish(),
+    routingReason: zod.string(),
+    status: zod.enum(["pending", "approved", "rejected", "cancelled"]),
+    otpCode: zod
+      .string()
+      .nullish()
+      .describe(
+        "Placeholder — visible only in dev; would be SMS in production",
+      ),
+    otpSentAt: zod.string().nullish(),
+    otpExpiresAt: zod.string().nullish(),
+    otpVerifiedAt: zod.string().nullish(),
+    resolvedAt: zod.string().nullish(),
+    resolvedById: zod.string().uuid().nullish(),
+    resolvedByName: zod.string().nullish(),
+    resolverNotes: zod.string().nullish(),
+    createdAt: zod.string(),
+    updatedAt: zod.string(),
+  }),
+});
+
+/**
+ * @summary Reject a pending expenditure verification request
+ */
+export const RejectExpenditureVerificationParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const RejectExpenditureVerificationBody = zod.object({
+  notes: zod.string(),
+});
+
+export const RejectExpenditureVerificationResponse = zod.object({
+  expenditure: zod.object({
+    id: zod.string().uuid(),
+    projectId: zod.string().uuid(),
+    projectName: zod.string().nullish(),
+    paidById: zod.string().uuid().nullish(),
+    paidByName: zod.string().nullish(),
+    category: zod.enum([
+      "labor",
+      "fertilizer",
+      "transport",
+      "machinery",
+      "maintenance",
+      "consumables",
+      "plantation_operations",
+      "miscellaneous",
+    ]),
+    amount: zod.number(),
+    expenditureDate: zod.string(),
+    description: zod.string(),
+    invoiceObjectPath: zod.string().nullish(),
+    verificationStatus: zod.enum([
+      "draft",
+      "pending_review",
+      "approved",
+      "rejected",
+    ]),
+    verifiedAt: zod.string().nullish(),
+    verifiedByName: zod.string().nullish(),
+    verifierNotes: zod.string().nullish(),
+    lifecyclePhaseSnapshot: zod.string(),
+    recordedByName: zod.string().nullish(),
+    notes: zod.string().nullish(),
+    createdAt: zod.string(),
+  }),
+  request: zod.object({
+    id: zod.string().uuid(),
+    expenditureId: zod.string().uuid(),
+    projectId: zod.string().uuid(),
+    requiredVerifierRole: zod.enum(["landowner", "developer", "admin"]),
+    requiredVerifierId: zod.string().uuid().nullish(),
+    requiredVerifierName: zod.string().nullish(),
+    routingReason: zod.string(),
+    status: zod.enum(["pending", "approved", "rejected", "cancelled"]),
+    otpCode: zod
+      .string()
+      .nullish()
+      .describe(
+        "Placeholder — visible only in dev; would be SMS in production",
+      ),
+    otpSentAt: zod.string().nullish(),
+    otpExpiresAt: zod.string().nullish(),
+    otpVerifiedAt: zod.string().nullish(),
+    resolvedAt: zod.string().nullish(),
+    resolvedById: zod.string().uuid().nullish(),
+    resolvedByName: zod.string().nullish(),
+    resolverNotes: zod.string().nullish(),
+    createdAt: zod.string(),
+    updatedAt: zod.string(),
+  }),
+});
+
+/**
+ * @summary Request (send) an OTP challenge for expenditure verification — placeholder
+ */
+export const RequestExpenditureVerificationOtpParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const RequestExpenditureVerificationOtpResponse = zod.object({
+  otpCode: zod
+    .string()
+    .describe("Placeholder — would be sent via SMS in production"),
+  expiresAt: zod.string(),
+});
+
+/**
+ * @summary Confirm an OTP to verify expenditure — placeholder
+ */
+export const ConfirmExpenditureVerificationOtpParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const ConfirmExpenditureVerificationOtpBody = zod.object({
+  otpCode: zod.string(),
+});
+
+export const ConfirmExpenditureVerificationOtpResponse = zod.object({
+  expenditure: zod.object({
+    id: zod.string().uuid(),
+    projectId: zod.string().uuid(),
+    projectName: zod.string().nullish(),
+    paidById: zod.string().uuid().nullish(),
+    paidByName: zod.string().nullish(),
+    category: zod.enum([
+      "labor",
+      "fertilizer",
+      "transport",
+      "machinery",
+      "maintenance",
+      "consumables",
+      "plantation_operations",
+      "miscellaneous",
+    ]),
+    amount: zod.number(),
+    expenditureDate: zod.string(),
+    description: zod.string(),
+    invoiceObjectPath: zod.string().nullish(),
+    verificationStatus: zod.enum([
+      "draft",
+      "pending_review",
+      "approved",
+      "rejected",
+    ]),
+    verifiedAt: zod.string().nullish(),
+    verifiedByName: zod.string().nullish(),
+    verifierNotes: zod.string().nullish(),
+    lifecyclePhaseSnapshot: zod.string(),
+    recordedByName: zod.string().nullish(),
+    notes: zod.string().nullish(),
+    createdAt: zod.string(),
+  }),
+  request: zod.object({
+    id: zod.string().uuid(),
+    expenditureId: zod.string().uuid(),
+    projectId: zod.string().uuid(),
+    requiredVerifierRole: zod.enum(["landowner", "developer", "admin"]),
+    requiredVerifierId: zod.string().uuid().nullish(),
+    requiredVerifierName: zod.string().nullish(),
+    routingReason: zod.string(),
+    status: zod.enum(["pending", "approved", "rejected", "cancelled"]),
+    otpCode: zod
+      .string()
+      .nullish()
+      .describe(
+        "Placeholder — visible only in dev; would be SMS in production",
+      ),
+    otpSentAt: zod.string().nullish(),
+    otpExpiresAt: zod.string().nullish(),
+    otpVerifiedAt: zod.string().nullish(),
+    resolvedAt: zod.string().nullish(),
+    resolvedById: zod.string().uuid().nullish(),
+    resolvedByName: zod.string().nullish(),
+    resolverNotes: zod.string().nullish(),
+    createdAt: zod.string(),
+    updatedAt: zod.string(),
+  }),
+});
