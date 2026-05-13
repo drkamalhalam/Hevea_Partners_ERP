@@ -6052,3 +6052,290 @@ export const WriteOffAdvanceResponse = zod.object({
   createdAt: zod.string(),
   updatedAt: zod.string().optional(),
 });
+
+/**
+ * @summary List LCA configurations
+ */
+export const ListLcaConfigsQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+  includeInactive: zod.coerce.boolean().optional(),
+});
+
+export const ListLcaConfigsResponseItem = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  projectName: zod.string().optional(),
+  agreementId: zod.string().uuid().optional(),
+  agreementRef: zod.string().optional(),
+  baseAmount: zod.number(),
+  escalationPct: zod.number(),
+  effectiveStartDate: zod.string(),
+  startYear: zod.number(),
+  notes: zod.string().optional(),
+  isActive: zod.boolean(),
+  createdById: zod.string().uuid().optional(),
+  createdByName: zod.string(),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
+});
+export const ListLcaConfigsResponse = zod.array(ListLcaConfigsResponseItem);
+
+/**
+ * @summary Create LCA configuration (admin/developer only)
+ */
+export const createLcaConfigBodyBaseAmountMin = 0.01;
+
+export const createLcaConfigBodyEscalationPctMin = 0;
+export const createLcaConfigBodyEscalationPctMax = 50;
+
+export const CreateLcaConfigBody = zod.object({
+  projectId: zod.string().uuid(),
+  agreementId: zod.string().uuid().optional(),
+  baseAmount: zod.number().min(createLcaConfigBodyBaseAmountMin),
+  escalationPct: zod
+    .number()
+    .min(createLcaConfigBodyEscalationPctMin)
+    .max(createLcaConfigBodyEscalationPctMax)
+    .optional(),
+  effectiveStartDate: zod.string().describe("YYYY-MM-DD"),
+  notes: zod.string().optional(),
+});
+
+/**
+ * @summary Get single LCA configuration
+ */
+export const GetLcaConfigParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const GetLcaConfigResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  projectName: zod.string().optional(),
+  agreementId: zod.string().uuid().optional(),
+  agreementRef: zod.string().optional(),
+  baseAmount: zod.number(),
+  escalationPct: zod.number(),
+  effectiveStartDate: zod.string(),
+  startYear: zod.number(),
+  notes: zod.string().optional(),
+  isActive: zod.boolean(),
+  createdById: zod.string().uuid().optional(),
+  createdByName: zod.string(),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
+});
+
+/**
+ * @summary Update LCA configuration (admin/developer only)
+ */
+export const UpdateLcaConfigParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const updateLcaConfigBodyBaseAmountMin = 0.01;
+
+export const updateLcaConfigBodyEscalationPctMin = 0;
+export const updateLcaConfigBodyEscalationPctMax = 50;
+
+export const UpdateLcaConfigBody = zod.object({
+  baseAmount: zod.number().min(updateLcaConfigBodyBaseAmountMin).optional(),
+  escalationPct: zod
+    .number()
+    .min(updateLcaConfigBodyEscalationPctMin)
+    .max(updateLcaConfigBodyEscalationPctMax)
+    .optional(),
+  notes: zod.string().optional(),
+  agreementId: zod.string().uuid().optional(),
+});
+
+export const UpdateLcaConfigResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  projectName: zod.string().optional(),
+  agreementId: zod.string().uuid().optional(),
+  agreementRef: zod.string().optional(),
+  baseAmount: zod.number(),
+  escalationPct: zod.number(),
+  effectiveStartDate: zod.string(),
+  startYear: zod.number(),
+  notes: zod.string().optional(),
+  isActive: zod.boolean(),
+  createdById: zod.string().uuid().optional(),
+  createdByName: zod.string(),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
+});
+
+/**
+ * @summary Deactivate LCA configuration (admin only)
+ */
+export const DeactivateLcaConfigParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+/**
+ * @summary Compute yearly LCA payment schedule (projection)
+ */
+export const GetLcaScheduleParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const GetLcaScheduleQueryParams = zod.object({
+  years: zod.coerce
+    .number()
+    .optional()
+    .describe("Number of years to project (default 10, max 40)"),
+});
+
+export const GetLcaScheduleResponse = zod.object({
+  configId: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  startYear: zod.number(),
+  escalationPct: zod.number(),
+  baseAmount: zod.number(),
+  schedule: zod.array(
+    zod.object({
+      year: zod.number(),
+      yearOffset: zod.number(),
+      grossDue: zod.number(),
+      carryForward: zod.number(),
+      totalDue: zod.number(),
+      amountPaid: zod.number(),
+      balance: zod.number(),
+      status: zod.enum(["pending", "partial", "paid", "waived"]),
+      ledgerEntryId: zod.string().uuid().optional(),
+      hasLedgerEntry: zod.boolean(),
+    }),
+  ),
+});
+
+/**
+ * @summary List LCA ledger entries
+ */
+export const ListLcaLedgerQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+  configId: zod.coerce.string().uuid().optional(),
+  year: zod.coerce.number().optional(),
+  status: zod.enum(["pending", "partial", "paid", "waived"]).optional(),
+});
+
+export const ListLcaLedgerResponseItem = zod.object({
+  id: zod.string().uuid(),
+  configId: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  projectName: zod.string().optional(),
+  year: zod.number(),
+  baseAmount: zod.number(),
+  escalationFactor: zod.number(),
+  grossDue: zod.number(),
+  carryForward: zod.number(),
+  totalDue: zod.number(),
+  amountPaid: zod.number(),
+  balance: zod.number(),
+  status: zod.enum(["pending", "partial", "paid", "waived"]),
+  paidAt: zod.string().optional(),
+  notes: zod.string().optional(),
+  isActive: zod.boolean(),
+  createdByName: zod.string(),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
+});
+export const ListLcaLedgerResponse = zod.array(ListLcaLedgerResponseItem);
+
+/**
+ * @summary Create LCA ledger entry (admin/developer only)
+ */
+export const createLcaLedgerEntryBodyYearMin = 2000;
+export const createLcaLedgerEntryBodyYearMax = 2100;
+
+export const createLcaLedgerEntryBodyAmountPaidMin = 0;
+
+export const CreateLcaLedgerEntryBody = zod.object({
+  configId: zod.string().uuid(),
+  year: zod
+    .number()
+    .min(createLcaLedgerEntryBodyYearMin)
+    .max(createLcaLedgerEntryBodyYearMax),
+  amountPaid: zod
+    .number()
+    .min(createLcaLedgerEntryBodyAmountPaidMin)
+    .optional(),
+  notes: zod.string().optional(),
+});
+
+/**
+ * @summary Update LCA ledger payment (admin/developer only)
+ */
+export const UpdateLcaLedgerEntryParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const updateLcaLedgerEntryBodyAmountPaidMin = 0;
+
+export const UpdateLcaLedgerEntryBody = zod.object({
+  amountPaid: zod
+    .number()
+    .min(updateLcaLedgerEntryBodyAmountPaidMin)
+    .optional(),
+  status: zod.enum(["pending", "partial", "paid", "waived"]).optional(),
+  notes: zod.string().optional(),
+  paidAt: zod.string().optional(),
+});
+
+export const UpdateLcaLedgerEntryResponse = zod.object({
+  id: zod.string().uuid(),
+  configId: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  projectName: zod.string().optional(),
+  year: zod.number(),
+  baseAmount: zod.number(),
+  escalationFactor: zod.number(),
+  grossDue: zod.number(),
+  carryForward: zod.number(),
+  totalDue: zod.number(),
+  amountPaid: zod.number(),
+  balance: zod.number(),
+  status: zod.enum(["pending", "partial", "paid", "waived"]),
+  paidAt: zod.string().optional(),
+  notes: zod.string().optional(),
+  isActive: zod.boolean(),
+  createdByName: zod.string(),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
+});
+
+/**
+ * @summary LCA summary dashboard data
+ */
+export const GetLcaSummaryQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+});
+
+export const GetLcaSummaryResponse = zod.object({
+  configCount: zod.number(),
+  totalGrossDue: zod.number(),
+  totalCarryForward: zod.number(),
+  totalDue: zod.number(),
+  totalPaid: zod.number(),
+  totalBalance: zod.number(),
+  pendingCount: zod.number(),
+  partialCount: zod.number(),
+  paidCount: zod.number(),
+  waivedCount: zod.number(),
+  byProject: zod.array(
+    zod.object({
+      projectId: zod.string().uuid(),
+      projectName: zod.string().optional(),
+      configId: zod.string().uuid(),
+      baseAmount: zod.number(),
+      escalationPct: zod.number(),
+      startYear: zod.number(),
+      totalDue: zod.number(),
+      totalPaid: zod.number(),
+      balance: zod.number(),
+      entryCount: zod.number(),
+      pendingEntries: zod.number(),
+    }),
+  ),
+});

@@ -38,6 +38,7 @@ import Burden from "./pages/Burden";
 import RecoverableAdvances from "./pages/RecoverableAdvances";
 import ExpenditureGovernance from "./pages/ExpenditureGovernance";
 import ExpenditureAnalytics from "./pages/ExpenditureAnalytics";
+import LCAConfig from "./pages/LCAConfig";
 import TemplateLibrary from "./pages/TemplateLibrary";
 
 // Pages — Operations
@@ -241,6 +242,7 @@ function AppRoutes() {
               <Route path="/advances"><ProtectedRoute component={RecoverableAdvances} /></Route>
               <Route path="/expenditure-governance"><ProtectedRoute component={ExpenditureGovernance} /></Route>
               <Route path="/expenditure-analytics"><ProtectedRoute component={ExpenditureAnalytics} /></Route>
+              <Route path="/lca"><ProtectedRoute component={LCAConfig} /></Route>
               <Route path="/templates"><ProtectedRoute component={TemplateLibrary} /></Route>
 
               {/* Operations */}

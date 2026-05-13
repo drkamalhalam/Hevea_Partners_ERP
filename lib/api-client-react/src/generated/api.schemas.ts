@@ -2618,6 +2618,164 @@ export interface RecordAdvanceRecoveryBody {
   eventDate?: string;
 }
 
+export interface LcaConfig {
+  id: string;
+  projectId: string;
+  projectName?: string;
+  agreementId?: string;
+  agreementRef?: string;
+  baseAmount: number;
+  escalationPct: number;
+  effectiveStartDate: string;
+  startYear: number;
+  notes?: string;
+  isActive: boolean;
+  createdById?: string;
+  createdByName: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type LcaLedgerEntryStatus =
+  (typeof LcaLedgerEntryStatus)[keyof typeof LcaLedgerEntryStatus];
+
+export const LcaLedgerEntryStatus = {
+  pending: "pending",
+  partial: "partial",
+  paid: "paid",
+  waived: "waived",
+} as const;
+
+export interface LcaLedgerEntry {
+  id: string;
+  configId: string;
+  projectId: string;
+  projectName?: string;
+  year: number;
+  baseAmount: number;
+  escalationFactor: number;
+  grossDue: number;
+  carryForward: number;
+  totalDue: number;
+  amountPaid: number;
+  balance: number;
+  status: LcaLedgerEntryStatus;
+  paidAt?: string;
+  notes?: string;
+  isActive: boolean;
+  createdByName: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type LcaScheduleEntryStatus =
+  (typeof LcaScheduleEntryStatus)[keyof typeof LcaScheduleEntryStatus];
+
+export const LcaScheduleEntryStatus = {
+  pending: "pending",
+  partial: "partial",
+  paid: "paid",
+  waived: "waived",
+} as const;
+
+export interface LcaScheduleEntry {
+  year: number;
+  yearOffset: number;
+  grossDue: number;
+  carryForward: number;
+  totalDue: number;
+  amountPaid: number;
+  balance: number;
+  status: LcaScheduleEntryStatus;
+  ledgerEntryId?: string;
+  hasLedgerEntry: boolean;
+}
+
+export type LcaSummaryByProjectItem = {
+  projectId: string;
+  projectName?: string;
+  configId: string;
+  baseAmount: number;
+  escalationPct: number;
+  startYear: number;
+  totalDue: number;
+  totalPaid: number;
+  balance: number;
+  entryCount: number;
+  pendingEntries: number;
+};
+
+export interface LcaSummary {
+  configCount: number;
+  totalGrossDue: number;
+  totalCarryForward: number;
+  totalDue: number;
+  totalPaid: number;
+  totalBalance: number;
+  pendingCount: number;
+  partialCount: number;
+  paidCount: number;
+  waivedCount: number;
+  byProject: LcaSummaryByProjectItem[];
+}
+
+export interface CreateLcaConfigBody {
+  projectId: string;
+  agreementId?: string;
+  /** @minimum 0.01 */
+  baseAmount: number;
+  /**
+   * @minimum 0
+   * @maximum 50
+   */
+  escalationPct?: number;
+  /** YYYY-MM-DD */
+  effectiveStartDate: string;
+  notes?: string;
+}
+
+export interface UpdateLcaConfigBody {
+  /** @minimum 0.01 */
+  baseAmount?: number;
+  /**
+   * @minimum 0
+   * @maximum 50
+   */
+  escalationPct?: number;
+  notes?: string;
+  agreementId?: string;
+}
+
+export interface CreateLcaLedgerEntryBody {
+  configId: string;
+  /**
+   * @minimum 2000
+   * @maximum 2100
+   */
+  year: number;
+  /** @minimum 0 */
+  amountPaid?: number;
+  notes?: string;
+}
+
+export type UpdateLcaLedgerEntryBodyStatus =
+  (typeof UpdateLcaLedgerEntryBodyStatus)[keyof typeof UpdateLcaLedgerEntryBodyStatus];
+
+export const UpdateLcaLedgerEntryBodyStatus = {
+  pending: "pending",
+  partial: "partial",
+  paid: "paid",
+  waived: "waived",
+} as const;
+
+export interface UpdateLcaLedgerEntryBody {
+  /** @minimum 0 */
+  amountPaid?: number;
+  status?: UpdateLcaLedgerEntryBodyStatus;
+  notes?: string;
+  paidAt?: string;
+}
+
 export type GetUserActivityParams = {
   limit?: number;
 };
@@ -2979,4 +3137,46 @@ export type AcknowledgeAdvanceBody = {
 
 export type WriteOffAdvanceBody = {
   notes?: string;
+};
+
+export type ListLcaConfigsParams = {
+  projectId?: string;
+  includeInactive?: boolean;
+};
+
+export type GetLcaScheduleParams = {
+  /**
+   * Number of years to project (default 10, max 40)
+   */
+  years?: number;
+};
+
+export type GetLcaSchedule200 = {
+  configId: string;
+  projectId: string;
+  startYear: number;
+  escalationPct: number;
+  baseAmount: number;
+  schedule: LcaScheduleEntry[];
+};
+
+export type ListLcaLedgerParams = {
+  projectId?: string;
+  configId?: string;
+  year?: number;
+  status?: ListLcaLedgerStatus;
+};
+
+export type ListLcaLedgerStatus =
+  (typeof ListLcaLedgerStatus)[keyof typeof ListLcaLedgerStatus];
+
+export const ListLcaLedgerStatus = {
+  pending: "pending",
+  partial: "partial",
+  paid: "paid",
+  waived: "waived",
+} as const;
+
+export type GetLcaSummaryParams = {
+  projectId?: string;
 };

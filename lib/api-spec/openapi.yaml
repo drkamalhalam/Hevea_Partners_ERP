@@ -3931,6 +3931,248 @@ paths:
         "403": { description: Forbidden }
         "404": { description: Not found }
 
+  /lca/configs:
+    get:
+      operationId: listLcaConfigs
+      summary: List LCA configurations
+      tags: [lca]
+      parameters:
+        - name: projectId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: includeInactive
+          in: query
+          schema: { type: boolean }
+      responses:
+        "200":
+          description: List of LCA configs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LcaConfig"
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+    post:
+      operationId: createLcaConfig
+      summary: Create LCA configuration (admin/developer only)
+      tags: [lca]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateLcaConfigBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LcaConfig"
+        "400": { description: Validation error or model ineligible }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+        "404": { description: Project or agreement not found }
+        "409": { description: Active LCA config already exists for this project }
+
+  /lca/configs/{id}:
+    get:
+      operationId: getLcaConfig
+      summary: Get single LCA configuration
+      tags: [lca]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: LCA config
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LcaConfig"
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+        "404": { description: Not found }
+    patch:
+      operationId: updateLcaConfig
+      summary: Update LCA configuration (admin/developer only)
+      tags: [lca]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateLcaConfigBody"
+      responses:
+        "200":
+          description: Updated config
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LcaConfig"
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+        "404": { description: Not found }
+    delete:
+      operationId: deactivateLcaConfig
+      summary: Deactivate LCA configuration (admin only)
+      tags: [lca]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200": { description: Deactivated }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+        "404": { description: Not found }
+
+  /lca/configs/{id}/schedule:
+    get:
+      operationId: getLcaSchedule
+      summary: Compute yearly LCA payment schedule (projection)
+      tags: [lca]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: years
+          in: query
+          description: Number of years to project (default 10, max 40)
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Yearly schedule
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [configId, projectId, startYear, escalationPct, baseAmount, schedule]
+                properties:
+                  configId: { type: string, format: uuid }
+                  projectId: { type: string, format: uuid }
+                  startYear: { type: integer }
+                  escalationPct: { type: number }
+                  baseAmount: { type: number }
+                  schedule:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/LcaScheduleEntry"
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+        "404": { description: Not found }
+
+  /lca/ledger:
+    get:
+      operationId: listLcaLedger
+      summary: List LCA ledger entries
+      tags: [lca]
+      parameters:
+        - name: projectId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: configId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: year
+          in: query
+          schema: { type: integer }
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, partial, paid, waived]
+      responses:
+        "200":
+          description: List of ledger entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LcaLedgerEntry"
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+    post:
+      operationId: createLcaLedgerEntry
+      summary: Create LCA ledger entry (admin/developer only)
+      tags: [lca]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateLcaLedgerEntryBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LcaLedgerEntry"
+        "400": { description: Validation error }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+        "404": { description: Config not found }
+        "409": { description: Ledger entry for this year already exists }
+
+  /lca/ledger/{id}:
+    patch:
+      operationId: updateLcaLedgerEntry
+      summary: Update LCA ledger payment (admin/developer only)
+      tags: [lca]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateLcaLedgerEntryBody"
+      responses:
+        "200":
+          description: Updated entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LcaLedgerEntry"
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+        "404": { description: Not found }
+
+  /lca/summary:
+    get:
+      operationId: getLcaSummary
+      summary: LCA summary dashboard data
+      tags: [lca]
+      parameters:
+        - name: projectId
+          in: query
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: LCA summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LcaSummary"
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+
 components:
   schemas:
     HealthStatus:
@@ -6840,3 +7082,136 @@ components:
           enum: [direct_payment, share_deduction, settlement]
         notes: { type: string }
         eventDate: { type: string }
+
+    LcaConfig:
+      type: object
+      required: [id, projectId, baseAmount, escalationPct, effectiveStartDate, startYear, isActive, createdByName, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        projectName: { type: string }
+        agreementId: { type: string, format: uuid }
+        agreementRef: { type: string }
+        baseAmount: { type: number }
+        escalationPct: { type: number }
+        effectiveStartDate: { type: string }
+        startYear: { type: integer }
+        notes: { type: string }
+        isActive: { type: boolean }
+        createdById: { type: string, format: uuid }
+        createdByName: { type: string }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+
+    LcaLedgerEntry:
+      type: object
+      required: [id, configId, projectId, year, baseAmount, escalationFactor, grossDue, carryForward, totalDue, amountPaid, balance, status, isActive, createdByName, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        configId: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        projectName: { type: string }
+        year: { type: integer }
+        baseAmount: { type: number }
+        escalationFactor: { type: number }
+        grossDue: { type: number }
+        carryForward: { type: number }
+        totalDue: { type: number }
+        amountPaid: { type: number }
+        balance: { type: number }
+        status:
+          type: string
+          enum: [pending, partial, paid, waived]
+        paidAt: { type: string }
+        notes: { type: string }
+        isActive: { type: boolean }
+        createdByName: { type: string }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+
+    LcaScheduleEntry:
+      type: object
+      required: [year, yearOffset, grossDue, carryForward, totalDue, amountPaid, balance, status, hasLedgerEntry]
+      properties:
+        year: { type: integer }
+        yearOffset: { type: integer }
+        grossDue: { type: number }
+        carryForward: { type: number }
+        totalDue: { type: number }
+        amountPaid: { type: number }
+        balance: { type: number }
+        status:
+          type: string
+          enum: [pending, partial, paid, waived]
+        ledgerEntryId: { type: string, format: uuid }
+        hasLedgerEntry: { type: boolean }
+
+    LcaSummary:
+      type: object
+      required: [configCount, totalGrossDue, totalCarryForward, totalDue, totalPaid, totalBalance, pendingCount, partialCount, paidCount, waivedCount, byProject]
+      properties:
+        configCount: { type: integer }
+        totalGrossDue: { type: number }
+        totalCarryForward: { type: number }
+        totalDue: { type: number }
+        totalPaid: { type: number }
+        totalBalance: { type: number }
+        pendingCount: { type: integer }
+        partialCount: { type: integer }
+        paidCount: { type: integer }
+        waivedCount: { type: integer }
+        byProject:
+          type: array
+          items:
+            type: object
+            required: [projectId, configId, baseAmount, escalationPct, startYear, totalDue, totalPaid, balance, entryCount, pendingEntries]
+            properties:
+              projectId: { type: string, format: uuid }
+              projectName: { type: string }
+              configId: { type: string, format: uuid }
+              baseAmount: { type: number }
+              escalationPct: { type: number }
+              startYear: { type: integer }
+              totalDue: { type: number }
+              totalPaid: { type: number }
+              balance: { type: number }
+              entryCount: { type: integer }
+              pendingEntries: { type: integer }
+
+    CreateLcaConfigBody:
+      type: object
+      required: [projectId, baseAmount, effectiveStartDate]
+      properties:
+        projectId: { type: string, format: uuid }
+        agreementId: { type: string, format: uuid }
+        baseAmount: { type: number, minimum: 0.01 }
+        escalationPct: { type: number, minimum: 0, maximum: 50 }
+        effectiveStartDate: { type: string, description: "YYYY-MM-DD" }
+        notes: { type: string }
+
+    UpdateLcaConfigBody:
+      type: object
+      properties:
+        baseAmount: { type: number, minimum: 0.01 }
+        escalationPct: { type: number, minimum: 0, maximum: 50 }
+        notes: { type: string }
+        agreementId: { type: string, format: uuid }
+
+    CreateLcaLedgerEntryBody:
+      type: object
+      required: [configId, year]
+      properties:
+        configId: { type: string, format: uuid }
+        year: { type: integer, minimum: 2000, maximum: 2100 }
+        amountPaid: { type: number, minimum: 0 }
+        notes: { type: string }
+
+    UpdateLcaLedgerEntryBody:
+      type: object
+      properties:
+        amountPaid: { type: number, minimum: 0 }
+        status:
+          type: string
+          enum: [pending, partial, paid, waived]
+        notes: { type: string }
+        paidAt: { type: string }

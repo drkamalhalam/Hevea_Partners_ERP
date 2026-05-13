@@ -27,6 +27,7 @@ import {
   TrendingUp,
   Archive,
   ArrowLeftRight,
+  Coins,
 } from "lucide-react";
 import { useRole, ROLE_LABELS, ROLE_COLORS } from "@/contexts/RoleContext";
 import type { UserRole } from "@/contexts/RoleContext";
@@ -168,6 +169,12 @@ const navGroups: NavGroup[] = [
         href: "/expenditure-governance",
         icon: ShieldAlert,
         roles: ["admin", "developer"],
+      },
+      {
+        name: "LCA",
+        href: "/lca",
+        icon: Coins,
+        roles: ["admin", "developer", "landowner"],
       },
     ],
   },

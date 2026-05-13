@@ -498,3 +498,20 @@ export const recoverableAdvanceStatusEnum = pgEnum("recoverable_advance_status",
   "recovered",
   "written_off",
 ]);
+
+// ── Land Contribution Adjustment (LCA) enums ──────────────────────────────
+
+/**
+ * lcaLedgerStatusEnum — payment status of a yearly LCA ledger entry.
+ *
+ *   pending  — not yet due or no payment recorded
+ *   partial  — partial payment received; balance > 0 (will carry forward)
+ *   paid     — fully settled for the year
+ *   waived   — admin decision to waive the LCA for the year
+ */
+export const lcaLedgerStatusEnum = pgEnum("lca_ledger_status", [
+  "pending",
+  "partial",
+  "paid",
+  "waived",
+]);

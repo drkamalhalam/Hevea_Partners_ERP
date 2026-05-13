@@ -56,6 +56,8 @@ import type {
   CreateGenerationBody,
   CreateImbalanceEntry201,
   CreateImbalanceEntryBody,
+  CreateLcaConfigBody,
+  CreateLcaLedgerEntryBody,
   CreateNomineeInput,
   CreateOwnershipSnapshotBody,
   CreateTemplateBody,
@@ -78,6 +80,9 @@ import type {
   GetLandNotionalContributionParams,
   GetLandNotionalHistory200,
   GetLandNotionalHistoryParams,
+  GetLcaSchedule200,
+  GetLcaScheduleParams,
+  GetLcaSummaryParams,
   GetOwnershipSummary200,
   GetOwnershipSummaryParams,
   GetUserActivityParams,
@@ -90,6 +95,9 @@ import type {
   InitiateMaturityBody,
   InitiateNomineeActivationBody,
   LandNotionalState,
+  LcaConfig,
+  LcaLedgerEntry,
+  LcaSummary,
   ListAdvancesParams,
   ListBurdenRecords200,
   ListBurdenRecordsParams,
@@ -104,6 +112,8 @@ import type {
   ListExpendituresParams,
   ListImbalanceLedger200,
   ListImbalanceLedgerParams,
+  ListLcaConfigsParams,
+  ListLcaLedgerParams,
   ListOwnershipSnapshots200,
   ListOwnershipSnapshotsParams,
   ListPartnerClaimantsParams,
@@ -165,6 +175,8 @@ import type {
   UpdateContributionBody,
   UpdateDocumentBody,
   UpdateExpenditureBody,
+  UpdateLcaConfigBody,
+  UpdateLcaLedgerEntryBody,
   UpdateMissingDeveloperCaseBody,
   UpdateNomineeActivationBody,
   UpdateNomineeInput,
@@ -14444,3 +14456,916 @@ export const useWriteOffAdvance = <
 > => {
   return useMutation(getWriteOffAdvanceMutationOptions(options));
 };
+
+/**
+ * @summary List LCA configurations
+ */
+export const getListLcaConfigsUrl = (params?: ListLcaConfigsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/lca/configs?${stringifiedParams}`
+    : `/api/lca/configs`;
+};
+
+export const listLcaConfigs = async (
+  params?: ListLcaConfigsParams,
+  options?: RequestInit,
+): Promise<LcaConfig[]> => {
+  return customFetch<LcaConfig[]>(getListLcaConfigsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListLcaConfigsQueryKey = (params?: ListLcaConfigsParams) => {
+  return [`/api/lca/configs`, ...(params ? [params] : [])] as const;
+};
+
+export const getListLcaConfigsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listLcaConfigs>>,
+  TError = ErrorType<void>,
+>(
+  params?: ListLcaConfigsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listLcaConfigs>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListLcaConfigsQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listLcaConfigs>>> = ({
+    signal,
+  }) => listLcaConfigs(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listLcaConfigs>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListLcaConfigsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listLcaConfigs>>
+>;
+export type ListLcaConfigsQueryError = ErrorType<void>;
+
+/**
+ * @summary List LCA configurations
+ */
+
+export function useListLcaConfigs<
+  TData = Awaited<ReturnType<typeof listLcaConfigs>>,
+  TError = ErrorType<void>,
+>(
+  params?: ListLcaConfigsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listLcaConfigs>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListLcaConfigsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create LCA configuration (admin/developer only)
+ */
+export const getCreateLcaConfigUrl = () => {
+  return `/api/lca/configs`;
+};
+
+export const createLcaConfig = async (
+  createLcaConfigBody: CreateLcaConfigBody,
+  options?: RequestInit,
+): Promise<LcaConfig> => {
+  return customFetch<LcaConfig>(getCreateLcaConfigUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createLcaConfigBody),
+  });
+};
+
+export const getCreateLcaConfigMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createLcaConfig>>,
+    TError,
+    { data: BodyType<CreateLcaConfigBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createLcaConfig>>,
+  TError,
+  { data: BodyType<CreateLcaConfigBody> },
+  TContext
+> => {
+  const mutationKey = ["createLcaConfig"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createLcaConfig>>,
+    { data: BodyType<CreateLcaConfigBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createLcaConfig(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateLcaConfigMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createLcaConfig>>
+>;
+export type CreateLcaConfigMutationBody = BodyType<CreateLcaConfigBody>;
+export type CreateLcaConfigMutationError = ErrorType<void>;
+
+/**
+ * @summary Create LCA configuration (admin/developer only)
+ */
+export const useCreateLcaConfig = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createLcaConfig>>,
+    TError,
+    { data: BodyType<CreateLcaConfigBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createLcaConfig>>,
+  TError,
+  { data: BodyType<CreateLcaConfigBody> },
+  TContext
+> => {
+  return useMutation(getCreateLcaConfigMutationOptions(options));
+};
+
+/**
+ * @summary Get single LCA configuration
+ */
+export const getGetLcaConfigUrl = (id: string) => {
+  return `/api/lca/configs/${id}`;
+};
+
+export const getLcaConfig = async (
+  id: string,
+  options?: RequestInit,
+): Promise<LcaConfig> => {
+  return customFetch<LcaConfig>(getGetLcaConfigUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetLcaConfigQueryKey = (id: string) => {
+  return [`/api/lca/configs/${id}`] as const;
+};
+
+export const getGetLcaConfigQueryOptions = <
+  TData = Awaited<ReturnType<typeof getLcaConfig>>,
+  TError = ErrorType<void>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getLcaConfig>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetLcaConfigQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getLcaConfig>>> = ({
+    signal,
+  }) => getLcaConfig(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getLcaConfig>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetLcaConfigQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getLcaConfig>>
+>;
+export type GetLcaConfigQueryError = ErrorType<void>;
+
+/**
+ * @summary Get single LCA configuration
+ */
+
+export function useGetLcaConfig<
+  TData = Awaited<ReturnType<typeof getLcaConfig>>,
+  TError = ErrorType<void>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getLcaConfig>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetLcaConfigQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Update LCA configuration (admin/developer only)
+ */
+export const getUpdateLcaConfigUrl = (id: string) => {
+  return `/api/lca/configs/${id}`;
+};
+
+export const updateLcaConfig = async (
+  id: string,
+  updateLcaConfigBody: UpdateLcaConfigBody,
+  options?: RequestInit,
+): Promise<LcaConfig> => {
+  return customFetch<LcaConfig>(getUpdateLcaConfigUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateLcaConfigBody),
+  });
+};
+
+export const getUpdateLcaConfigMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateLcaConfig>>,
+    TError,
+    { id: string; data: BodyType<UpdateLcaConfigBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateLcaConfig>>,
+  TError,
+  { id: string; data: BodyType<UpdateLcaConfigBody> },
+  TContext
+> => {
+  const mutationKey = ["updateLcaConfig"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateLcaConfig>>,
+    { id: string; data: BodyType<UpdateLcaConfigBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateLcaConfig(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateLcaConfigMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateLcaConfig>>
+>;
+export type UpdateLcaConfigMutationBody = BodyType<UpdateLcaConfigBody>;
+export type UpdateLcaConfigMutationError = ErrorType<void>;
+
+/**
+ * @summary Update LCA configuration (admin/developer only)
+ */
+export const useUpdateLcaConfig = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateLcaConfig>>,
+    TError,
+    { id: string; data: BodyType<UpdateLcaConfigBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateLcaConfig>>,
+  TError,
+  { id: string; data: BodyType<UpdateLcaConfigBody> },
+  TContext
+> => {
+  return useMutation(getUpdateLcaConfigMutationOptions(options));
+};
+
+/**
+ * @summary Deactivate LCA configuration (admin only)
+ */
+export const getDeactivateLcaConfigUrl = (id: string) => {
+  return `/api/lca/configs/${id}`;
+};
+
+export const deactivateLcaConfig = async (
+  id: string,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeactivateLcaConfigUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeactivateLcaConfigMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deactivateLcaConfig>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deactivateLcaConfig>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["deactivateLcaConfig"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deactivateLcaConfig>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deactivateLcaConfig(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeactivateLcaConfigMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deactivateLcaConfig>>
+>;
+
+export type DeactivateLcaConfigMutationError = ErrorType<void>;
+
+/**
+ * @summary Deactivate LCA configuration (admin only)
+ */
+export const useDeactivateLcaConfig = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deactivateLcaConfig>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deactivateLcaConfig>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getDeactivateLcaConfigMutationOptions(options));
+};
+
+/**
+ * @summary Compute yearly LCA payment schedule (projection)
+ */
+export const getGetLcaScheduleUrl = (
+  id: string,
+  params?: GetLcaScheduleParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/lca/configs/${id}/schedule?${stringifiedParams}`
+    : `/api/lca/configs/${id}/schedule`;
+};
+
+export const getLcaSchedule = async (
+  id: string,
+  params?: GetLcaScheduleParams,
+  options?: RequestInit,
+): Promise<GetLcaSchedule200> => {
+  return customFetch<GetLcaSchedule200>(getGetLcaScheduleUrl(id, params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetLcaScheduleQueryKey = (
+  id: string,
+  params?: GetLcaScheduleParams,
+) => {
+  return [
+    `/api/lca/configs/${id}/schedule`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetLcaScheduleQueryOptions = <
+  TData = Awaited<ReturnType<typeof getLcaSchedule>>,
+  TError = ErrorType<void>,
+>(
+  id: string,
+  params?: GetLcaScheduleParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getLcaSchedule>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetLcaScheduleQueryKey(id, params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getLcaSchedule>>> = ({
+    signal,
+  }) => getLcaSchedule(id, params, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getLcaSchedule>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetLcaScheduleQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getLcaSchedule>>
+>;
+export type GetLcaScheduleQueryError = ErrorType<void>;
+
+/**
+ * @summary Compute yearly LCA payment schedule (projection)
+ */
+
+export function useGetLcaSchedule<
+  TData = Awaited<ReturnType<typeof getLcaSchedule>>,
+  TError = ErrorType<void>,
+>(
+  id: string,
+  params?: GetLcaScheduleParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getLcaSchedule>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetLcaScheduleQueryOptions(id, params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List LCA ledger entries
+ */
+export const getListLcaLedgerUrl = (params?: ListLcaLedgerParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/lca/ledger?${stringifiedParams}`
+    : `/api/lca/ledger`;
+};
+
+export const listLcaLedger = async (
+  params?: ListLcaLedgerParams,
+  options?: RequestInit,
+): Promise<LcaLedgerEntry[]> => {
+  return customFetch<LcaLedgerEntry[]>(getListLcaLedgerUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListLcaLedgerQueryKey = (params?: ListLcaLedgerParams) => {
+  return [`/api/lca/ledger`, ...(params ? [params] : [])] as const;
+};
+
+export const getListLcaLedgerQueryOptions = <
+  TData = Awaited<ReturnType<typeof listLcaLedger>>,
+  TError = ErrorType<void>,
+>(
+  params?: ListLcaLedgerParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listLcaLedger>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListLcaLedgerQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listLcaLedger>>> = ({
+    signal,
+  }) => listLcaLedger(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listLcaLedger>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListLcaLedgerQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listLcaLedger>>
+>;
+export type ListLcaLedgerQueryError = ErrorType<void>;
+
+/**
+ * @summary List LCA ledger entries
+ */
+
+export function useListLcaLedger<
+  TData = Awaited<ReturnType<typeof listLcaLedger>>,
+  TError = ErrorType<void>,
+>(
+  params?: ListLcaLedgerParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listLcaLedger>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListLcaLedgerQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create LCA ledger entry (admin/developer only)
+ */
+export const getCreateLcaLedgerEntryUrl = () => {
+  return `/api/lca/ledger`;
+};
+
+export const createLcaLedgerEntry = async (
+  createLcaLedgerEntryBody: CreateLcaLedgerEntryBody,
+  options?: RequestInit,
+): Promise<LcaLedgerEntry> => {
+  return customFetch<LcaLedgerEntry>(getCreateLcaLedgerEntryUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createLcaLedgerEntryBody),
+  });
+};
+
+export const getCreateLcaLedgerEntryMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createLcaLedgerEntry>>,
+    TError,
+    { data: BodyType<CreateLcaLedgerEntryBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createLcaLedgerEntry>>,
+  TError,
+  { data: BodyType<CreateLcaLedgerEntryBody> },
+  TContext
+> => {
+  const mutationKey = ["createLcaLedgerEntry"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createLcaLedgerEntry>>,
+    { data: BodyType<CreateLcaLedgerEntryBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createLcaLedgerEntry(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateLcaLedgerEntryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createLcaLedgerEntry>>
+>;
+export type CreateLcaLedgerEntryMutationBody =
+  BodyType<CreateLcaLedgerEntryBody>;
+export type CreateLcaLedgerEntryMutationError = ErrorType<void>;
+
+/**
+ * @summary Create LCA ledger entry (admin/developer only)
+ */
+export const useCreateLcaLedgerEntry = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createLcaLedgerEntry>>,
+    TError,
+    { data: BodyType<CreateLcaLedgerEntryBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createLcaLedgerEntry>>,
+  TError,
+  { data: BodyType<CreateLcaLedgerEntryBody> },
+  TContext
+> => {
+  return useMutation(getCreateLcaLedgerEntryMutationOptions(options));
+};
+
+/**
+ * @summary Update LCA ledger payment (admin/developer only)
+ */
+export const getUpdateLcaLedgerEntryUrl = (id: string) => {
+  return `/api/lca/ledger/${id}`;
+};
+
+export const updateLcaLedgerEntry = async (
+  id: string,
+  updateLcaLedgerEntryBody: UpdateLcaLedgerEntryBody,
+  options?: RequestInit,
+): Promise<LcaLedgerEntry> => {
+  return customFetch<LcaLedgerEntry>(getUpdateLcaLedgerEntryUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateLcaLedgerEntryBody),
+  });
+};
+
+export const getUpdateLcaLedgerEntryMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateLcaLedgerEntry>>,
+    TError,
+    { id: string; data: BodyType<UpdateLcaLedgerEntryBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateLcaLedgerEntry>>,
+  TError,
+  { id: string; data: BodyType<UpdateLcaLedgerEntryBody> },
+  TContext
+> => {
+  const mutationKey = ["updateLcaLedgerEntry"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateLcaLedgerEntry>>,
+    { id: string; data: BodyType<UpdateLcaLedgerEntryBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateLcaLedgerEntry(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateLcaLedgerEntryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateLcaLedgerEntry>>
+>;
+export type UpdateLcaLedgerEntryMutationBody =
+  BodyType<UpdateLcaLedgerEntryBody>;
+export type UpdateLcaLedgerEntryMutationError = ErrorType<void>;
+
+/**
+ * @summary Update LCA ledger payment (admin/developer only)
+ */
+export const useUpdateLcaLedgerEntry = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateLcaLedgerEntry>>,
+    TError,
+    { id: string; data: BodyType<UpdateLcaLedgerEntryBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateLcaLedgerEntry>>,
+  TError,
+  { id: string; data: BodyType<UpdateLcaLedgerEntryBody> },
+  TContext
+> => {
+  return useMutation(getUpdateLcaLedgerEntryMutationOptions(options));
+};
+
+/**
+ * @summary LCA summary dashboard data
+ */
+export const getGetLcaSummaryUrl = (params?: GetLcaSummaryParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/lca/summary?${stringifiedParams}`
+    : `/api/lca/summary`;
+};
+
+export const getLcaSummary = async (
+  params?: GetLcaSummaryParams,
+  options?: RequestInit,
+): Promise<LcaSummary> => {
+  return customFetch<LcaSummary>(getGetLcaSummaryUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetLcaSummaryQueryKey = (params?: GetLcaSummaryParams) => {
+  return [`/api/lca/summary`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetLcaSummaryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getLcaSummary>>,
+  TError = ErrorType<void>,
+>(
+  params?: GetLcaSummaryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getLcaSummary>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetLcaSummaryQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getLcaSummary>>> = ({
+    signal,
+  }) => getLcaSummary(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getLcaSummary>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetLcaSummaryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getLcaSummary>>
+>;
+export type GetLcaSummaryQueryError = ErrorType<void>;
+
+/**
+ * @summary LCA summary dashboard data
+ */
+
+export function useGetLcaSummary<
+  TData = Awaited<ReturnType<typeof getLcaSummary>>,
+  TError = ErrorType<void>,
+>(
+  params?: GetLcaSummaryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getLcaSummary>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetLcaSummaryQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
