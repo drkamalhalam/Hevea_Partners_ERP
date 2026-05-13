@@ -29,6 +29,7 @@ import ActivationDashboard from "./pages/ActivationDashboard";
 import Contributions from "./pages/Contributions";
 import LandContribution from "./pages/LandContribution";
 import EconomicContributions from "./pages/EconomicContributions";
+import OwnershipGuidance from "./pages/OwnershipGuidance";
 import Expenditure from "./pages/Expenditure";
 import TemplateLibrary from "./pages/TemplateLibrary";
 
@@ -224,6 +225,7 @@ function AppRoutes() {
               <Route path="/contributions/land"><ProtectedRoute component={LandContribution} /></Route>
               <Route path="/contributions/economic"><ProtectedRoute component={EconomicContributions} /></Route>
               <Route path="/contributions"><ProtectedRoute component={Contributions} /></Route>
+              <Route path="/ownership"><ProtectedRoute component={OwnershipGuidance} /></Route>
               <Route path="/expenditure"><ProtectedRoute component={Expenditure} /></Route>
               <Route path="/templates"><ProtectedRoute component={TemplateLibrary} /></Route>
 

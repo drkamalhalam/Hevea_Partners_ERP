@@ -1965,6 +1965,59 @@ export interface ContributionVerificationEvent {
   createdAt: string;
 }
 
+export interface OwnershipPartnerEntry {
+  /** partnerId when linked, otherwise partnerName — stable grouping key */
+  partnerKey: string;
+  /** @nullable */
+  partnerId?: string | null;
+  partnerName: string;
+  landAmount: number;
+  economicAmount: number;
+  totalAmount: number;
+  /** rounded to 2 dp */
+  percentage: number;
+}
+
+export interface ProjectOwnershipDetail {
+  projectId: string;
+  projectName: string;
+  lifecycleStatus: string;
+  totalRecognizedAmount: number;
+  landTotal: number;
+  economicTotal: number;
+  entries: OwnershipPartnerEntry[];
+  partnerCount: number;
+  asOf: string;
+  isLive: boolean;
+  isFrozen: boolean;
+}
+
+export type OwnershipSnapshotSnapshotType =
+  (typeof OwnershipSnapshotSnapshotType)[keyof typeof OwnershipSnapshotSnapshotType];
+
+export const OwnershipSnapshotSnapshotType = {
+  manual: "manual",
+  auto_on_verification: "auto_on_verification",
+  maturity_declaration: "maturity_declaration",
+} as const;
+
+export interface OwnershipSnapshot {
+  id: string;
+  projectId: string;
+  snapshotType: OwnershipSnapshotSnapshotType;
+  lifecycleStatus: string;
+  totalRecognizedAmount: number;
+  landTotal: number;
+  economicTotal: number;
+  entries: OwnershipPartnerEntry[];
+  /** @nullable */
+  notes?: string | null;
+  /** @nullable */
+  triggeredByName?: string | null;
+  snapshotAt: string;
+  createdAt: string;
+}
+
 export type GetUserActivityParams = {
   limit?: number;
 };
@@ -2104,5 +2157,26 @@ export type VerifyContributionBody = {
 };
 
 export type RejectContributionBody = {
+  notes?: string;
+};
+
+export type GetOwnershipSummaryParams = {
+  projectId?: string;
+};
+
+export type GetOwnershipSummary200 = {
+  projects: ProjectOwnershipDetail[];
+};
+
+export type ListOwnershipSnapshotsParams = {
+  limit?: number;
+};
+
+export type ListOwnershipSnapshots200 = {
+  snapshots: OwnershipSnapshot[];
+  totalCount: number;
+};
+
+export type CreateOwnershipSnapshotBody = {
   notes?: string;
 };

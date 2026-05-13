@@ -113,6 +113,12 @@ const navGroups: NavGroup[] = [
         roles: ["admin", "developer", "landowner", "investor"],
       },
       {
+        name: "Ownership Guidance",
+        href: "/ownership",
+        icon: Scale,
+        roles: ["admin", "developer", "landowner", "investor"],
+      },
+      {
         name: "Expenditure",
         href: "/expenditure",
         icon: Receipt,

@@ -407,6 +407,37 @@ Counterparty-designated verification system for economic investment contribution
 
 **Generated hooks:** `useListPendingVerificationContributions`, `useRequestContributionVerification`, `useListContributionVerificationHistory`
 
+## Ownership Guidance Calculation Engine
+
+Dynamic prematurity ownership percentages based on verified land_notional + economic_investment contributions. Guidance only — not legally binding until the maturity declaration freeze.
+
+**Calculation engine:** Groups all verified `land_notional` and `economic_investment` contributions where `affectsOwnership = true` and `deletedAt IS NULL` by partner (uses `partnerId` UUID as key when linked, else `partnerName`). Computes `percentage = partnerTotal / grandTotal * 100` rounded to 2 dp. Sorted by percentage descending.
+
+**Freeze check:** Queries `projectOwnershipFreezesTable` — if a row exists for the project, `isFrozen = true` is surfaced in the response (maturity declaration workflow creates this row).
+
+**DB table:** `ownershipSnapshotsTable` (`lib/db/src/schema/ownership_snapshots.ts`) — UUID PK, projectId FK, snapshotType (manual/auto_on_verification/maturity_declaration enum), lifecycleStatus, totalRecognizedAmount, landTotal, economicTotal, entries (JSONB: `OwnershipSnapshotEntry[]`), notes, triggeredBy FK, triggeredByName, snapshotAt, createdAt. Migrated via raw psql.
+
+**API endpoints** (`artifacts/api-server/src/routes/ownership.ts`):
+- `GET /ownership/summary` — live calculation for all visible projects (`?projectId=` optional filter)
+- `GET /ownership/:projectId` — live detail for one project
+- `GET /ownership/:projectId/snapshots` — paginated snapshot history (`?limit=`)
+- `POST /ownership/:projectId/snapshots` — admin/developer only; saves a manual point-in-time snapshot
+
+**Frontend:** `artifacts/plantation-web/src/pages/OwnershipGuidance.tsx`, route `/ownership`
+- KPI row (projects, with-contributions, total-recognized, frozen count)
+- Project grid: stacked ownership bar + top-3 partner list + freeze badge, click-through to project detail
+- Project detail panel (back-navigation): 4 KPIs + 3-tab layout:
+  - **Overview**: donut pie chart (Recharts) + ranked partner bar list
+  - **Contribution Breakdown**: table with land / economic / total columns + inline mini bar + %
+  - **History**: stacked area trend chart across snapshots + snapshot history table with Save Now button
+- Save Snapshot dialog (admin/developer): optional notes, calls `POST /snapshots`, invalidates cache
+- Amber "guidance only" disclaimer + frozen-project lock badge with tooltip
+- Full recalculate button (invalidates React Query cache)
+
+**Sidebar**: "Ownership Guidance" entry in Finance group (roles: admin, developer, landowner, investor), icon `Scale`
+
+**Generated hooks:** `useGetOwnershipSummary`, `getGetOwnershipSummaryQueryKey`, `useGetProjectOwnership`, `getGetProjectOwnershipQueryKey`, `useListOwnershipSnapshots`, `getListOwnershipSnapshotsQueryKey`, `useCreateOwnershipSnapshot`
+
 ## Pointers
 
 - See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details

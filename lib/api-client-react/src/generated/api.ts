@@ -40,6 +40,7 @@ import type {
   CreateDocumentBody,
   CreateGenerationBody,
   CreateNomineeInput,
+  CreateOwnershipSnapshotBody,
   CreateTemplateBody,
   DashboardSummary,
   Document,
@@ -52,6 +53,8 @@ import type {
   GetLandNotionalContributionParams,
   GetLandNotionalHistory200,
   GetLandNotionalHistoryParams,
+  GetOwnershipSummary200,
+  GetOwnershipSummaryParams,
   GetUserActivityParams,
   GovernanceSummary,
   HealthStatus,
@@ -66,6 +69,8 @@ import type {
   ListContributionsParams,
   ListDocumentAccessLogParams,
   ListDocumentsParams,
+  ListOwnershipSnapshots200,
+  ListOwnershipSnapshotsParams,
   ListPartnerClaimantsParams,
   ListPendingVerificationContributions200,
   ListPendingVerificationContributionsParams,
@@ -78,6 +83,7 @@ import type {
   NomineeActivationWorkflow,
   OkResponse,
   OwnershipFreeze,
+  OwnershipSnapshot,
   Partner,
   PartnerClaimant,
   PartnerInput,
@@ -91,6 +97,7 @@ import type {
   ProjectLifecycle,
   ProjectLifecycleHistoryEntry,
   ProjectNominee,
+  ProjectOwnershipDetail,
   ProjectParticipant,
   ProjectUpdate,
   RejectContributionBody,
@@ -10300,4 +10307,411 @@ export const useRejectContribution = <
   TContext
 > => {
   return useMutation(getRejectContributionMutationOptions(options));
+};
+
+/**
+ * @summary Live ownership guidance for all visible projects
+ */
+export const getGetOwnershipSummaryUrl = (
+  params?: GetOwnershipSummaryParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/ownership/summary?${stringifiedParams}`
+    : `/api/ownership/summary`;
+};
+
+export const getOwnershipSummary = async (
+  params?: GetOwnershipSummaryParams,
+  options?: RequestInit,
+): Promise<GetOwnershipSummary200> => {
+  return customFetch<GetOwnershipSummary200>(
+    getGetOwnershipSummaryUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetOwnershipSummaryQueryKey = (
+  params?: GetOwnershipSummaryParams,
+) => {
+  return [`/api/ownership/summary`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetOwnershipSummaryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getOwnershipSummary>>,
+  TError = ErrorType<void>,
+>(
+  params?: GetOwnershipSummaryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getOwnershipSummary>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetOwnershipSummaryQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getOwnershipSummary>>
+  > = ({ signal }) =>
+    getOwnershipSummary(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getOwnershipSummary>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetOwnershipSummaryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getOwnershipSummary>>
+>;
+export type GetOwnershipSummaryQueryError = ErrorType<void>;
+
+/**
+ * @summary Live ownership guidance for all visible projects
+ */
+
+export function useGetOwnershipSummary<
+  TData = Awaited<ReturnType<typeof getOwnershipSummary>>,
+  TError = ErrorType<void>,
+>(
+  params?: GetOwnershipSummaryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getOwnershipSummary>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetOwnershipSummaryQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Live ownership detail for one project
+ */
+export const getGetProjectOwnershipUrl = (projectId: string) => {
+  return `/api/ownership/${projectId}`;
+};
+
+export const getProjectOwnership = async (
+  projectId: string,
+  options?: RequestInit,
+): Promise<ProjectOwnershipDetail> => {
+  return customFetch<ProjectOwnershipDetail>(
+    getGetProjectOwnershipUrl(projectId),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetProjectOwnershipQueryKey = (projectId: string) => {
+  return [`/api/ownership/${projectId}`] as const;
+};
+
+export const getGetProjectOwnershipQueryOptions = <
+  TData = Awaited<ReturnType<typeof getProjectOwnership>>,
+  TError = ErrorType<void>,
+>(
+  projectId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getProjectOwnership>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetProjectOwnershipQueryKey(projectId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getProjectOwnership>>
+  > = ({ signal }) =>
+    getProjectOwnership(projectId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!projectId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getProjectOwnership>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetProjectOwnershipQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getProjectOwnership>>
+>;
+export type GetProjectOwnershipQueryError = ErrorType<void>;
+
+/**
+ * @summary Live ownership detail for one project
+ */
+
+export function useGetProjectOwnership<
+  TData = Awaited<ReturnType<typeof getProjectOwnership>>,
+  TError = ErrorType<void>,
+>(
+  projectId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getProjectOwnership>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetProjectOwnershipQueryOptions(projectId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Snapshot history for a project
+ */
+export const getListOwnershipSnapshotsUrl = (
+  projectId: string,
+  params?: ListOwnershipSnapshotsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/ownership/${projectId}/snapshots?${stringifiedParams}`
+    : `/api/ownership/${projectId}/snapshots`;
+};
+
+export const listOwnershipSnapshots = async (
+  projectId: string,
+  params?: ListOwnershipSnapshotsParams,
+  options?: RequestInit,
+): Promise<ListOwnershipSnapshots200> => {
+  return customFetch<ListOwnershipSnapshots200>(
+    getListOwnershipSnapshotsUrl(projectId, params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListOwnershipSnapshotsQueryKey = (
+  projectId: string,
+  params?: ListOwnershipSnapshotsParams,
+) => {
+  return [
+    `/api/ownership/${projectId}/snapshots`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListOwnershipSnapshotsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listOwnershipSnapshots>>,
+  TError = ErrorType<void>,
+>(
+  projectId: string,
+  params?: ListOwnershipSnapshotsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listOwnershipSnapshots>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getListOwnershipSnapshotsQueryKey(projectId, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listOwnershipSnapshots>>
+  > = ({ signal }) =>
+    listOwnershipSnapshots(projectId, params, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!projectId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listOwnershipSnapshots>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListOwnershipSnapshotsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listOwnershipSnapshots>>
+>;
+export type ListOwnershipSnapshotsQueryError = ErrorType<void>;
+
+/**
+ * @summary Snapshot history for a project
+ */
+
+export function useListOwnershipSnapshots<
+  TData = Awaited<ReturnType<typeof listOwnershipSnapshots>>,
+  TError = ErrorType<void>,
+>(
+  projectId: string,
+  params?: ListOwnershipSnapshotsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listOwnershipSnapshots>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListOwnershipSnapshotsQueryOptions(
+    projectId,
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Save a manual ownership snapshot
+ */
+export const getCreateOwnershipSnapshotUrl = (projectId: string) => {
+  return `/api/ownership/${projectId}/snapshots`;
+};
+
+export const createOwnershipSnapshot = async (
+  projectId: string,
+  createOwnershipSnapshotBody: CreateOwnershipSnapshotBody,
+  options?: RequestInit,
+): Promise<OwnershipSnapshot> => {
+  return customFetch<OwnershipSnapshot>(
+    getCreateOwnershipSnapshotUrl(projectId),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(createOwnershipSnapshotBody),
+    },
+  );
+};
+
+export const getCreateOwnershipSnapshotMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createOwnershipSnapshot>>,
+    TError,
+    { projectId: string; data: BodyType<CreateOwnershipSnapshotBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createOwnershipSnapshot>>,
+  TError,
+  { projectId: string; data: BodyType<CreateOwnershipSnapshotBody> },
+  TContext
+> => {
+  const mutationKey = ["createOwnershipSnapshot"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createOwnershipSnapshot>>,
+    { projectId: string; data: BodyType<CreateOwnershipSnapshotBody> }
+  > = (props) => {
+    const { projectId, data } = props ?? {};
+
+    return createOwnershipSnapshot(projectId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateOwnershipSnapshotMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createOwnershipSnapshot>>
+>;
+export type CreateOwnershipSnapshotMutationBody =
+  BodyType<CreateOwnershipSnapshotBody>;
+export type CreateOwnershipSnapshotMutationError = ErrorType<void>;
+
+/**
+ * @summary Save a manual ownership snapshot
+ */
+export const useCreateOwnershipSnapshot = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createOwnershipSnapshot>>,
+    TError,
+    { projectId: string; data: BodyType<CreateOwnershipSnapshotBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createOwnershipSnapshot>>,
+  TError,
+  { projectId: string; data: BodyType<CreateOwnershipSnapshotBody> },
+  TContext
+> => {
+  return useMutation(getCreateOwnershipSnapshotMutationOptions(options));
 };

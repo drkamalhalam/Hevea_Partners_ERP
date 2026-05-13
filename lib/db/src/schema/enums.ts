@@ -334,6 +334,20 @@ export const contributionVerificationEventTypeEnum = pgEnum(
   ],
 );
 
+// ── Ownership snapshot enums ──────────────────────────────────────────────
+
+/**
+ * What triggered an ownership snapshot to be saved.
+ *   manual                — admin/developer explicitly requested it
+ *   auto_on_verification  — automatically taken when a contribution is verified
+ *   maturity_declaration  — taken as part of the maturity declaration workflow
+ */
+export const ownershipSnapshotTypeEnum = pgEnum("ownership_snapshot_type", [
+  "manual",
+  "auto_on_verification",
+  "maturity_declaration",
+]);
+
 // ── Audit enums ───────────────────────────────────────────────────────────
 
 export const dbOperationEnum = pgEnum("db_operation", [

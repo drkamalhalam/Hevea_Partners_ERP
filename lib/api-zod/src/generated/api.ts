@@ -4066,3 +4066,139 @@ export const RejectContributionResponse = zod.object({
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date().nullish(),
 });
+
+/**
+ * @summary Live ownership guidance for all visible projects
+ */
+export const GetOwnershipSummaryQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+});
+
+export const GetOwnershipSummaryResponse = zod.object({
+  projects: zod.array(
+    zod.object({
+      projectId: zod.string().uuid(),
+      projectName: zod.string(),
+      lifecycleStatus: zod.string(),
+      totalRecognizedAmount: zod.number(),
+      landTotal: zod.number(),
+      economicTotal: zod.number(),
+      entries: zod.array(
+        zod.object({
+          partnerKey: zod
+            .string()
+            .describe(
+              "partnerId when linked, otherwise partnerName — stable grouping key",
+            ),
+          partnerId: zod.string().uuid().nullish(),
+          partnerName: zod.string(),
+          landAmount: zod.number(),
+          economicAmount: zod.number(),
+          totalAmount: zod.number(),
+          percentage: zod.number().describe("rounded to 2 dp"),
+        }),
+      ),
+      partnerCount: zod.number(),
+      asOf: zod.coerce.date(),
+      isLive: zod.boolean(),
+      isFrozen: zod.boolean(),
+    }),
+  ),
+});
+
+/**
+ * @summary Live ownership detail for one project
+ */
+export const GetProjectOwnershipParams = zod.object({
+  projectId: zod.coerce.string().uuid(),
+});
+
+export const GetProjectOwnershipResponse = zod.object({
+  projectId: zod.string().uuid(),
+  projectName: zod.string(),
+  lifecycleStatus: zod.string(),
+  totalRecognizedAmount: zod.number(),
+  landTotal: zod.number(),
+  economicTotal: zod.number(),
+  entries: zod.array(
+    zod.object({
+      partnerKey: zod
+        .string()
+        .describe(
+          "partnerId when linked, otherwise partnerName — stable grouping key",
+        ),
+      partnerId: zod.string().uuid().nullish(),
+      partnerName: zod.string(),
+      landAmount: zod.number(),
+      economicAmount: zod.number(),
+      totalAmount: zod.number(),
+      percentage: zod.number().describe("rounded to 2 dp"),
+    }),
+  ),
+  partnerCount: zod.number(),
+  asOf: zod.coerce.date(),
+  isLive: zod.boolean(),
+  isFrozen: zod.boolean(),
+});
+
+/**
+ * @summary Snapshot history for a project
+ */
+export const ListOwnershipSnapshotsParams = zod.object({
+  projectId: zod.coerce.string().uuid(),
+});
+
+export const listOwnershipSnapshotsQueryLimitDefault = 20;
+
+export const ListOwnershipSnapshotsQueryParams = zod.object({
+  limit: zod.coerce.number().default(listOwnershipSnapshotsQueryLimitDefault),
+});
+
+export const ListOwnershipSnapshotsResponse = zod.object({
+  snapshots: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      projectId: zod.string().uuid(),
+      snapshotType: zod.enum([
+        "manual",
+        "auto_on_verification",
+        "maturity_declaration",
+      ]),
+      lifecycleStatus: zod.string(),
+      totalRecognizedAmount: zod.number(),
+      landTotal: zod.number(),
+      economicTotal: zod.number(),
+      entries: zod.array(
+        zod.object({
+          partnerKey: zod
+            .string()
+            .describe(
+              "partnerId when linked, otherwise partnerName — stable grouping key",
+            ),
+          partnerId: zod.string().uuid().nullish(),
+          partnerName: zod.string(),
+          landAmount: zod.number(),
+          economicAmount: zod.number(),
+          totalAmount: zod.number(),
+          percentage: zod.number().describe("rounded to 2 dp"),
+        }),
+      ),
+      notes: zod.string().nullish(),
+      triggeredByName: zod.string().nullish(),
+      snapshotAt: zod.coerce.date(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  totalCount: zod.number(),
+});
+
+/**
+ * @summary Save a manual ownership snapshot
+ */
+export const CreateOwnershipSnapshotParams = zod.object({
+  projectId: zod.coerce.string().uuid(),
+});
+
+export const CreateOwnershipSnapshotBody = zod.object({
+  notes: zod.string().optional(),
+});

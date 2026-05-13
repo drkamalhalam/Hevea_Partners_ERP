@@ -20,6 +20,7 @@ import templatesRouter from "./templates";
 import generationsRouter from "./generations";
 import documentsRouter from "./documents";
 import contributionsRouter from "./contributions";
+import ownershipRouter from "./ownership";
 import devRouter from "./dev";
 
 const router: IRouter = Router();
@@ -57,5 +58,6 @@ router.use("/templates", templatesRouter);
 router.use("/agreements", generationsRouter);
 router.use("/documents", documentsRouter);
 router.use("/contributions", contributionsRouter);
+router.use("/ownership", ownershipRouter);
 
 export default router;
