@@ -5355,6 +5355,188 @@ export interface PayableComputation {
   disclaimer: string;
 }
 
+export type SettlementRecordRecommendedBreakdown = {
+  [key: string]: unknown;
+} | null;
+
+export type SettlementRecordActualBreakdown = { [key: string]: unknown } | null;
+
+export type SettlementRecordStatus =
+  (typeof SettlementRecordStatus)[keyof typeof SettlementRecordStatus];
+
+export const SettlementRecordStatus = {
+  draft: "draft",
+  recommended: "recommended",
+  overridden: "overridden",
+  finalized: "finalized",
+  disputed: "disputed",
+} as const;
+
+export interface SettlementRecord {
+  id: string;
+  projectId: string;
+  projectName?: string | null;
+  partnerId?: string | null;
+  partnerName?: string | null;
+  settlementType: string;
+  sourceReferenceId?: string | null;
+  periodLabel: string;
+  periodStart?: string | null;
+  periodEnd?: string | null;
+  recommendedAmount?: string | null;
+  recommendedBreakdown?: SettlementRecordRecommendedBreakdown;
+  recommendedAt?: string | null;
+  recommendedBy?: string | null;
+  recommendedByName?: string | null;
+  actualAmount?: string | null;
+  actualBreakdown?: SettlementRecordActualBreakdown;
+  isOverridden: boolean;
+  overrideRemarks?: string | null;
+  overrideCount: number;
+  lastOverriddenAt?: string | null;
+  lastOverriddenBy?: string | null;
+  lastOverriddenByName?: string | null;
+  lastOverriddenByRole?: string | null;
+  status: SettlementRecordStatus;
+  finalizedAt?: string | null;
+  finalizedBy?: string | null;
+  finalizedByName?: string | null;
+  finalizedByRole?: string | null;
+  finalizationNotes?: string | null;
+  notes?: string | null;
+  isActive: boolean;
+  createdBy?: string | null;
+  createdByName?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type SettlementOverrideEventEventType =
+  (typeof SettlementOverrideEventEventType)[keyof typeof SettlementOverrideEventEventType];
+
+export const SettlementOverrideEventEventType = {
+  created: "created",
+  updated: "updated",
+  recommendation_set: "recommendation_set",
+  overridden: "overridden",
+  finalized: "finalized",
+  disputed: "disputed",
+  reopened: "reopened",
+  archived: "archived",
+} as const;
+
+export type SettlementOverrideEventMetadata = { [key: string]: unknown } | null;
+
+export interface SettlementOverrideEvent {
+  id: string;
+  settlementRecordId: string;
+  projectId?: string | null;
+  partnerId?: string | null;
+  eventType: SettlementOverrideEventEventType;
+  previousAmount?: string | null;
+  newAmount?: string | null;
+  previousStatus?: string | null;
+  newStatus?: string | null;
+  performedBy?: string | null;
+  performedByName?: string | null;
+  performedByRole?: string | null;
+  remarks?: string | null;
+  metadata?: SettlementOverrideEventMetadata;
+  performedAt: string;
+}
+
+export type SettlementComparisonRecommendedBreakdown = {
+  [key: string]: unknown;
+} | null;
+
+export type SettlementComparisonRecommended = {
+  amount?: string | null;
+  breakdown?: SettlementComparisonRecommendedBreakdown;
+  setAt?: string | null;
+  setBy?: string | null;
+};
+
+export type SettlementComparisonActualBreakdown = {
+  [key: string]: unknown;
+} | null;
+
+export type SettlementComparisonActual = {
+  amount?: string | null;
+  breakdown?: SettlementComparisonActualBreakdown;
+  lastOverriddenAt?: string | null;
+  lastOverriddenBy?: string | null;
+  lastOverriddenByRole?: string | null;
+  overrideRemarks?: string | null;
+};
+
+export type SettlementComparisonDeltaDirection =
+  (typeof SettlementComparisonDeltaDirection)[keyof typeof SettlementComparisonDeltaDirection];
+
+export const SettlementComparisonDeltaDirection = {
+  increase: "increase",
+  decrease: "decrease",
+  unchanged: "unchanged",
+} as const;
+
+export type SettlementComparisonDelta = {
+  amount: string;
+  percentChange: string;
+  direction: SettlementComparisonDeltaDirection;
+};
+
+export type SettlementComparisonFinalization = {
+  finalizedAt?: string | null;
+  finalizedBy?: string | null;
+  finalizedByRole?: string | null;
+  notes?: string | null;
+} | null;
+
+export type SettlementComparisonOverrideTimelineItem = {
+  previousAmount?: string | null;
+  newAmount?: string | null;
+  performedBy?: string | null;
+  performedByRole?: string | null;
+  remarks?: string | null;
+  performedAt?: string;
+};
+
+export interface SettlementComparison {
+  settlementRecordId: string;
+  periodLabel: string;
+  status: string;
+  isOverridden: boolean;
+  overrideCount: number;
+  recommended: SettlementComparisonRecommended;
+  actual: SettlementComparisonActual;
+  delta: SettlementComparisonDelta;
+  finalization?: SettlementComparisonFinalization;
+  overrideTimeline: SettlementComparisonOverrideTimelineItem[];
+}
+
+export type CreateSettlementRecordBodyRecommendedBreakdown = {
+  [key: string]: unknown;
+} | null;
+
+export interface CreateSettlementRecordBody {
+  projectId: string;
+  partnerId?: string | null;
+  settlementType: string;
+  sourceReferenceId?: string | null;
+  periodLabel: string;
+  periodStart?: string | null;
+  periodEnd?: string | null;
+  recommendedAmount?: number | null;
+  recommendedBreakdown?: CreateSettlementRecordBodyRecommendedBreakdown;
+  notes?: string | null;
+}
+
+export interface UpdateSettlementRecordBody {
+  periodLabel?: string;
+  periodStart?: string | null;
+  periodEnd?: string | null;
+  notes?: string | null;
+}
+
 export type GetUserActivityParams = {
   limit?: number;
 };
@@ -6202,6 +6384,104 @@ export type GetSettlementPriorityParams = {
 export type GetLossAbsorptionSummaryParams = {
   projectId: string;
   partnerId: string;
+};
+
+export type ListSettlementRecordsParams = {
+  projectId?: string;
+  partnerId?: string;
+  status?: ListSettlementRecordsStatus;
+  type?: string;
+};
+
+export type ListSettlementRecordsStatus =
+  (typeof ListSettlementRecordsStatus)[keyof typeof ListSettlementRecordsStatus];
+
+export const ListSettlementRecordsStatus = {
+  draft: "draft",
+  recommended: "recommended",
+  overridden: "overridden",
+  finalized: "finalized",
+  disputed: "disputed",
+} as const;
+
+export type ListSettlementRecords200 = {
+  records: SettlementRecord[];
+  total: number;
+};
+
+export type CreateSettlementRecord201 = {
+  record: SettlementRecord;
+};
+
+export type GetSettlementRecord200 = {
+  record: SettlementRecord;
+  events: SettlementOverrideEvent[];
+};
+
+export type UpdateSettlementRecord200 = {
+  record: SettlementRecord;
+};
+
+export type ArchiveSettlementRecord200 = {
+  success: boolean;
+};
+
+export type SetSettlementRecommendationBodyRecommendedBreakdown = {
+  [key: string]: unknown;
+} | null;
+
+export type SetSettlementRecommendationBody = {
+  recommendedAmount: number;
+  recommendedBreakdown?: SetSettlementRecommendationBodyRecommendedBreakdown;
+  remarks?: string | null;
+};
+
+export type SetSettlementRecommendation200 = {
+  record: SettlementRecord;
+};
+
+export type OverrideSettlementBodyActualBreakdown = {
+  [key: string]: unknown;
+} | null;
+
+export type OverrideSettlementBody = {
+  actualAmount: number;
+  overrideRemarks: string;
+  actualBreakdown?: OverrideSettlementBodyActualBreakdown;
+};
+
+export type OverrideSettlement200 = {
+  record: SettlementRecord;
+};
+
+export type FinalizeSettlementBody = {
+  finalizationNotes?: string | null;
+};
+
+export type FinalizeSettlement200 = {
+  record: SettlementRecord;
+};
+
+export type DisputeSettlementBody = {
+  remarks: string;
+};
+
+export type DisputeSettlement200 = {
+  record: SettlementRecord;
+};
+
+export type ReopenSettlementBody = {
+  remarks: string;
+};
+
+export type ReopenSettlement200 = {
+  record: SettlementRecord;
+};
+
+export type GetSettlementAudit200 = {
+  settlementRecordId: string;
+  events: SettlementOverrideEvent[];
+  total: number;
 };
 
 export type ComputePayableParams = {

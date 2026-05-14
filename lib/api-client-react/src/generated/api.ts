@@ -43,6 +43,7 @@ import type {
   ApproveExpenditureVerificationBody,
   ArchiveDistributionPreview200,
   ArchiveFiftyPctSession200,
+  ArchiveSettlementRecord200,
   AssignProjectInput,
   AutoGenerateLcaLedgerBody,
   AutoGenerateLcaResult,
@@ -103,6 +104,8 @@ import type {
   CreateSaleDeductionBody,
   CreateSaleDocumentBody,
   CreateSaleLineItemBody,
+  CreateSettlementRecord201,
+  CreateSettlementRecordBody,
   CreateStockMovementBody,
   CreateTaskBody,
   CreateTemplateBody,
@@ -112,6 +115,8 @@ import type {
   DeletePayableAdjustment200,
   DeleteProductionEntry200,
   DeleteStockMovement200,
+  DisputeSettlement200,
+  DisputeSettlementBody,
   DistributionPreview,
   DistributionPreviewDetail,
   DistributionPreviewPage,
@@ -130,6 +135,8 @@ import type {
   FiftyPctSessionSummaryResult,
   FileMissingDeveloperCaseBody,
   FinalizePayableSnapshot200,
+  FinalizeSettlement200,
+  FinalizeSettlementBody,
   FinancialAccessLogListResponse,
   GenerateAgreementDocument422,
   GenerateDocumentRequest,
@@ -162,7 +169,9 @@ import type {
   GetProductionLogSummaryParams,
   GetSaleGovernanceAlertsParams,
   GetSalesSummaryParams,
+  GetSettlementAudit200,
   GetSettlementPriorityParams,
+  GetSettlementRecord200,
   GetUserActivityParams,
   GovernanceSummary,
   HealthStatus,
@@ -229,6 +238,8 @@ import type {
   ListProductionRecordsParams,
   ListSaleDocumentsParams,
   ListSalesParams,
+  ListSettlementRecords200,
+  ListSettlementRecordsParams,
   ListStockMovementsParams,
   ListTasksParams,
   ListTemplatesParams,
@@ -248,6 +259,8 @@ import type {
   OkResponse,
   OperationalAlert,
   OperationalTask,
+  OverrideSettlement200,
+  OverrideSettlementBody,
   OwnershipFreeze,
   OwnershipLookupResult,
   OwnershipSnapshot,
@@ -283,6 +296,8 @@ import type {
   RejectExpenditureBody,
   RejectExpenditureVerification200,
   RejectExpenditureVerificationBody,
+  ReopenSettlement200,
+  ReopenSettlementBody,
   RequestContributionVerificationBody,
   RequestExpenditureVerificationOtp200,
   RequestUploadUrlBody,
@@ -300,7 +315,10 @@ import type {
   SalesSummary,
   SalesTransaction,
   SeedImbalanceLedger200,
+  SetSettlementRecommendation200,
+  SetSettlementRecommendationBody,
   SetUserRoleInput,
+  SettlementComparison,
   SettlementPriority,
   StockBalance,
   StockMovement,
@@ -343,6 +361,8 @@ import type {
   UpdateSaleBody,
   UpdateSaleDocumentBody,
   UpdateSaleLineItemBody,
+  UpdateSettlementRecord200,
+  UpdateSettlementRecordBody,
   UpdateTaskBody,
   UpdateTemplateBody,
   UpsertAccountingProfileBody,
@@ -25847,6 +25867,1079 @@ export function useGetLossAbsorptionSummary<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetLossAbsorptionSummaryQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List settlement records
+ */
+export const getListSettlementRecordsUrl = (
+  params?: ListSettlementRecordsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/settlement?${stringifiedParams}`
+    : `/api/settlement`;
+};
+
+export const listSettlementRecords = async (
+  params?: ListSettlementRecordsParams,
+  options?: RequestInit,
+): Promise<ListSettlementRecords200> => {
+  return customFetch<ListSettlementRecords200>(
+    getListSettlementRecordsUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListSettlementRecordsQueryKey = (
+  params?: ListSettlementRecordsParams,
+) => {
+  return [`/api/settlement`, ...(params ? [params] : [])] as const;
+};
+
+export const getListSettlementRecordsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listSettlementRecords>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListSettlementRecordsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listSettlementRecords>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListSettlementRecordsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listSettlementRecords>>
+  > = ({ signal }) =>
+    listSettlementRecords(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listSettlementRecords>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListSettlementRecordsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listSettlementRecords>>
+>;
+export type ListSettlementRecordsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List settlement records
+ */
+
+export function useListSettlementRecords<
+  TData = Awaited<ReturnType<typeof listSettlementRecords>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListSettlementRecordsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listSettlementRecords>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListSettlementRecordsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a new settlement record
+ */
+export const getCreateSettlementRecordUrl = () => {
+  return `/api/settlement`;
+};
+
+export const createSettlementRecord = async (
+  createSettlementRecordBody: CreateSettlementRecordBody,
+  options?: RequestInit,
+): Promise<CreateSettlementRecord201> => {
+  return customFetch<CreateSettlementRecord201>(
+    getCreateSettlementRecordUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(createSettlementRecordBody),
+    },
+  );
+};
+
+export const getCreateSettlementRecordMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createSettlementRecord>>,
+    TError,
+    { data: BodyType<CreateSettlementRecordBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createSettlementRecord>>,
+  TError,
+  { data: BodyType<CreateSettlementRecordBody> },
+  TContext
+> => {
+  const mutationKey = ["createSettlementRecord"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createSettlementRecord>>,
+    { data: BodyType<CreateSettlementRecordBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createSettlementRecord(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateSettlementRecordMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createSettlementRecord>>
+>;
+export type CreateSettlementRecordMutationBody =
+  BodyType<CreateSettlementRecordBody>;
+export type CreateSettlementRecordMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create a new settlement record
+ */
+export const useCreateSettlementRecord = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createSettlementRecord>>,
+    TError,
+    { data: BodyType<CreateSettlementRecordBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createSettlementRecord>>,
+  TError,
+  { data: BodyType<CreateSettlementRecordBody> },
+  TContext
+> => {
+  return useMutation(getCreateSettlementRecordMutationOptions(options));
+};
+
+/**
+ * @summary Get settlement record with audit events
+ */
+export const getGetSettlementRecordUrl = (id: string) => {
+  return `/api/settlement/${id}`;
+};
+
+export const getSettlementRecord = async (
+  id: string,
+  options?: RequestInit,
+): Promise<GetSettlementRecord200> => {
+  return customFetch<GetSettlementRecord200>(getGetSettlementRecordUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetSettlementRecordQueryKey = (id: string) => {
+  return [`/api/settlement/${id}`] as const;
+};
+
+export const getGetSettlementRecordQueryOptions = <
+  TData = Awaited<ReturnType<typeof getSettlementRecord>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getSettlementRecord>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetSettlementRecordQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getSettlementRecord>>
+  > = ({ signal }) => getSettlementRecord(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getSettlementRecord>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetSettlementRecordQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getSettlementRecord>>
+>;
+export type GetSettlementRecordQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get settlement record with audit events
+ */
+
+export function useGetSettlementRecord<
+  TData = Awaited<ReturnType<typeof getSettlementRecord>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getSettlementRecord>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetSettlementRecordQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Update settlement record metadata (draft only)
+ */
+export const getUpdateSettlementRecordUrl = (id: string) => {
+  return `/api/settlement/${id}`;
+};
+
+export const updateSettlementRecord = async (
+  id: string,
+  updateSettlementRecordBody: UpdateSettlementRecordBody,
+  options?: RequestInit,
+): Promise<UpdateSettlementRecord200> => {
+  return customFetch<UpdateSettlementRecord200>(
+    getUpdateSettlementRecordUrl(id),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(updateSettlementRecordBody),
+    },
+  );
+};
+
+export const getUpdateSettlementRecordMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateSettlementRecord>>,
+    TError,
+    { id: string; data: BodyType<UpdateSettlementRecordBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateSettlementRecord>>,
+  TError,
+  { id: string; data: BodyType<UpdateSettlementRecordBody> },
+  TContext
+> => {
+  const mutationKey = ["updateSettlementRecord"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateSettlementRecord>>,
+    { id: string; data: BodyType<UpdateSettlementRecordBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateSettlementRecord(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateSettlementRecordMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateSettlementRecord>>
+>;
+export type UpdateSettlementRecordMutationBody =
+  BodyType<UpdateSettlementRecordBody>;
+export type UpdateSettlementRecordMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update settlement record metadata (draft only)
+ */
+export const useUpdateSettlementRecord = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateSettlementRecord>>,
+    TError,
+    { id: string; data: BodyType<UpdateSettlementRecordBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateSettlementRecord>>,
+  TError,
+  { id: string; data: BodyType<UpdateSettlementRecordBody> },
+  TContext
+> => {
+  return useMutation(getUpdateSettlementRecordMutationOptions(options));
+};
+
+/**
+ * @summary Soft-archive settlement record (admin only)
+ */
+export const getArchiveSettlementRecordUrl = (id: string) => {
+  return `/api/settlement/${id}`;
+};
+
+export const archiveSettlementRecord = async (
+  id: string,
+  options?: RequestInit,
+): Promise<ArchiveSettlementRecord200> => {
+  return customFetch<ArchiveSettlementRecord200>(
+    getArchiveSettlementRecordUrl(id),
+    {
+      ...options,
+      method: "DELETE",
+    },
+  );
+};
+
+export const getArchiveSettlementRecordMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof archiveSettlementRecord>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof archiveSettlementRecord>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["archiveSettlementRecord"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof archiveSettlementRecord>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return archiveSettlementRecord(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ArchiveSettlementRecordMutationResult = NonNullable<
+  Awaited<ReturnType<typeof archiveSettlementRecord>>
+>;
+
+export type ArchiveSettlementRecordMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Soft-archive settlement record (admin only)
+ */
+export const useArchiveSettlementRecord = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof archiveSettlementRecord>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof archiveSettlementRecord>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getArchiveSettlementRecordMutationOptions(options));
+};
+
+/**
+ * @summary Set or update the system recommendation amount
+ */
+export const getSetSettlementRecommendationUrl = (id: string) => {
+  return `/api/settlement/${id}/set-recommendation`;
+};
+
+export const setSettlementRecommendation = async (
+  id: string,
+  setSettlementRecommendationBody: SetSettlementRecommendationBody,
+  options?: RequestInit,
+): Promise<SetSettlementRecommendation200> => {
+  return customFetch<SetSettlementRecommendation200>(
+    getSetSettlementRecommendationUrl(id),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(setSettlementRecommendationBody),
+    },
+  );
+};
+
+export const getSetSettlementRecommendationMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof setSettlementRecommendation>>,
+    TError,
+    { id: string; data: BodyType<SetSettlementRecommendationBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof setSettlementRecommendation>>,
+  TError,
+  { id: string; data: BodyType<SetSettlementRecommendationBody> },
+  TContext
+> => {
+  const mutationKey = ["setSettlementRecommendation"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof setSettlementRecommendation>>,
+    { id: string; data: BodyType<SetSettlementRecommendationBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return setSettlementRecommendation(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SetSettlementRecommendationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof setSettlementRecommendation>>
+>;
+export type SetSettlementRecommendationMutationBody =
+  BodyType<SetSettlementRecommendationBody>;
+export type SetSettlementRecommendationMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Set or update the system recommendation amount
+ */
+export const useSetSettlementRecommendation = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof setSettlementRecommendation>>,
+    TError,
+    { id: string; data: BodyType<SetSettlementRecommendationBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof setSettlementRecommendation>>,
+  TError,
+  { id: string; data: BodyType<SetSettlementRecommendationBody> },
+  TContext
+> => {
+  return useMutation(getSetSettlementRecommendationMutationOptions(options));
+};
+
+/**
+ * @summary Override the settlement amount (any authenticated user, remarks required)
+ */
+export const getOverrideSettlementUrl = (id: string) => {
+  return `/api/settlement/${id}/override`;
+};
+
+export const overrideSettlement = async (
+  id: string,
+  overrideSettlementBody: OverrideSettlementBody,
+  options?: RequestInit,
+): Promise<OverrideSettlement200> => {
+  return customFetch<OverrideSettlement200>(getOverrideSettlementUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(overrideSettlementBody),
+  });
+};
+
+export const getOverrideSettlementMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof overrideSettlement>>,
+    TError,
+    { id: string; data: BodyType<OverrideSettlementBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof overrideSettlement>>,
+  TError,
+  { id: string; data: BodyType<OverrideSettlementBody> },
+  TContext
+> => {
+  const mutationKey = ["overrideSettlement"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof overrideSettlement>>,
+    { id: string; data: BodyType<OverrideSettlementBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return overrideSettlement(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type OverrideSettlementMutationResult = NonNullable<
+  Awaited<ReturnType<typeof overrideSettlement>>
+>;
+export type OverrideSettlementMutationBody = BodyType<OverrideSettlementBody>;
+export type OverrideSettlementMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Override the settlement amount (any authenticated user, remarks required)
+ */
+export const useOverrideSettlement = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof overrideSettlement>>,
+    TError,
+    { id: string; data: BodyType<OverrideSettlementBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof overrideSettlement>>,
+  TError,
+  { id: string; data: BodyType<OverrideSettlementBody> },
+  TContext
+> => {
+  return useMutation(getOverrideSettlementMutationOptions(options));
+};
+
+/**
+ * @summary Finalize settlement (admin/developer — Project Developer authority)
+ */
+export const getFinalizeSettlementUrl = (id: string) => {
+  return `/api/settlement/${id}/finalize`;
+};
+
+export const finalizeSettlement = async (
+  id: string,
+  finalizeSettlementBody?: FinalizeSettlementBody,
+  options?: RequestInit,
+): Promise<FinalizeSettlement200> => {
+  return customFetch<FinalizeSettlement200>(getFinalizeSettlementUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(finalizeSettlementBody),
+  });
+};
+
+export const getFinalizeSettlementMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof finalizeSettlement>>,
+    TError,
+    { id: string; data: BodyType<FinalizeSettlementBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof finalizeSettlement>>,
+  TError,
+  { id: string; data: BodyType<FinalizeSettlementBody> },
+  TContext
+> => {
+  const mutationKey = ["finalizeSettlement"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof finalizeSettlement>>,
+    { id: string; data: BodyType<FinalizeSettlementBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return finalizeSettlement(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type FinalizeSettlementMutationResult = NonNullable<
+  Awaited<ReturnType<typeof finalizeSettlement>>
+>;
+export type FinalizeSettlementMutationBody = BodyType<FinalizeSettlementBody>;
+export type FinalizeSettlementMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Finalize settlement (admin/developer — Project Developer authority)
+ */
+export const useFinalizeSettlement = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof finalizeSettlement>>,
+    TError,
+    { id: string; data: BodyType<FinalizeSettlementBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof finalizeSettlement>>,
+  TError,
+  { id: string; data: BodyType<FinalizeSettlementBody> },
+  TContext
+> => {
+  return useMutation(getFinalizeSettlementMutationOptions(options));
+};
+
+/**
+ * @summary Mark settlement as disputed
+ */
+export const getDisputeSettlementUrl = (id: string) => {
+  return `/api/settlement/${id}/dispute`;
+};
+
+export const disputeSettlement = async (
+  id: string,
+  disputeSettlementBody: DisputeSettlementBody,
+  options?: RequestInit,
+): Promise<DisputeSettlement200> => {
+  return customFetch<DisputeSettlement200>(getDisputeSettlementUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(disputeSettlementBody),
+  });
+};
+
+export const getDisputeSettlementMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof disputeSettlement>>,
+    TError,
+    { id: string; data: BodyType<DisputeSettlementBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof disputeSettlement>>,
+  TError,
+  { id: string; data: BodyType<DisputeSettlementBody> },
+  TContext
+> => {
+  const mutationKey = ["disputeSettlement"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof disputeSettlement>>,
+    { id: string; data: BodyType<DisputeSettlementBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return disputeSettlement(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DisputeSettlementMutationResult = NonNullable<
+  Awaited<ReturnType<typeof disputeSettlement>>
+>;
+export type DisputeSettlementMutationBody = BodyType<DisputeSettlementBody>;
+export type DisputeSettlementMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Mark settlement as disputed
+ */
+export const useDisputeSettlement = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof disputeSettlement>>,
+    TError,
+    { id: string; data: BodyType<DisputeSettlementBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof disputeSettlement>>,
+  TError,
+  { id: string; data: BodyType<DisputeSettlementBody> },
+  TContext
+> => {
+  return useMutation(getDisputeSettlementMutationOptions(options));
+};
+
+/**
+ * @summary Reopen a finalized settlement (admin only)
+ */
+export const getReopenSettlementUrl = (id: string) => {
+  return `/api/settlement/${id}/reopen`;
+};
+
+export const reopenSettlement = async (
+  id: string,
+  reopenSettlementBody: ReopenSettlementBody,
+  options?: RequestInit,
+): Promise<ReopenSettlement200> => {
+  return customFetch<ReopenSettlement200>(getReopenSettlementUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(reopenSettlementBody),
+  });
+};
+
+export const getReopenSettlementMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reopenSettlement>>,
+    TError,
+    { id: string; data: BodyType<ReopenSettlementBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof reopenSettlement>>,
+  TError,
+  { id: string; data: BodyType<ReopenSettlementBody> },
+  TContext
+> => {
+  const mutationKey = ["reopenSettlement"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof reopenSettlement>>,
+    { id: string; data: BodyType<ReopenSettlementBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return reopenSettlement(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ReopenSettlementMutationResult = NonNullable<
+  Awaited<ReturnType<typeof reopenSettlement>>
+>;
+export type ReopenSettlementMutationBody = BodyType<ReopenSettlementBody>;
+export type ReopenSettlementMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Reopen a finalized settlement (admin only)
+ */
+export const useReopenSettlement = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reopenSettlement>>,
+    TError,
+    { id: string; data: BodyType<ReopenSettlementBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof reopenSettlement>>,
+  TError,
+  { id: string; data: BodyType<ReopenSettlementBody> },
+  TContext
+> => {
+  return useMutation(getReopenSettlementMutationOptions(options));
+};
+
+/**
+ * @summary Get immutable audit trail for a settlement record
+ */
+export const getGetSettlementAuditUrl = (id: string) => {
+  return `/api/settlement/${id}/audit`;
+};
+
+export const getSettlementAudit = async (
+  id: string,
+  options?: RequestInit,
+): Promise<GetSettlementAudit200> => {
+  return customFetch<GetSettlementAudit200>(getGetSettlementAuditUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetSettlementAuditQueryKey = (id: string) => {
+  return [`/api/settlement/${id}/audit`] as const;
+};
+
+export const getGetSettlementAuditQueryOptions = <
+  TData = Awaited<ReturnType<typeof getSettlementAudit>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getSettlementAudit>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetSettlementAuditQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getSettlementAudit>>
+  > = ({ signal }) => getSettlementAudit(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getSettlementAudit>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetSettlementAuditQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getSettlementAudit>>
+>;
+export type GetSettlementAuditQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get immutable audit trail for a settlement record
+ */
+
+export function useGetSettlementAudit<
+  TData = Awaited<ReturnType<typeof getSettlementAudit>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getSettlementAudit>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetSettlementAuditQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Side-by-side comparison of recommended vs actual settlement
+ */
+export const getGetSettlementComparisonUrl = (id: string) => {
+  return `/api/settlement/${id}/comparison`;
+};
+
+export const getSettlementComparison = async (
+  id: string,
+  options?: RequestInit,
+): Promise<SettlementComparison> => {
+  return customFetch<SettlementComparison>(getGetSettlementComparisonUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetSettlementComparisonQueryKey = (id: string) => {
+  return [`/api/settlement/${id}/comparison`] as const;
+};
+
+export const getGetSettlementComparisonQueryOptions = <
+  TData = Awaited<ReturnType<typeof getSettlementComparison>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getSettlementComparison>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetSettlementComparisonQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getSettlementComparison>>
+  > = ({ signal }) =>
+    getSettlementComparison(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getSettlementComparison>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetSettlementComparisonQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getSettlementComparison>>
+>;
+export type GetSettlementComparisonQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Side-by-side comparison of recommended vs actual settlement
+ */
+
+export function useGetSettlementComparison<
+  TData = Awaited<ReturnType<typeof getSettlementComparison>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getSettlementComparison>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetSettlementComparisonQueryOptions(id, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

@@ -10250,6 +10250,624 @@ export const GetLossAbsorptionSummaryResponse = zod.object({
 });
 
 /**
+ * @summary List settlement records
+ */
+export const ListSettlementRecordsQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+  partnerId: zod.coerce.string().uuid().optional(),
+  status: zod
+    .enum(["draft", "recommended", "overridden", "finalized", "disputed"])
+    .optional(),
+  type: zod.coerce.string().optional(),
+});
+
+export const ListSettlementRecordsResponse = zod.object({
+  records: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      projectId: zod.string().uuid(),
+      projectName: zod.string().nullish(),
+      partnerId: zod.string().uuid().nullish(),
+      partnerName: zod.string().nullish(),
+      settlementType: zod.string(),
+      sourceReferenceId: zod.string().uuid().nullish(),
+      periodLabel: zod.string(),
+      periodStart: zod.string().nullish(),
+      periodEnd: zod.string().nullish(),
+      recommendedAmount: zod.string().nullish(),
+      recommendedBreakdown: zod.object({}).passthrough().nullish(),
+      recommendedAt: zod.coerce.date().nullish(),
+      recommendedBy: zod.string().uuid().nullish(),
+      recommendedByName: zod.string().nullish(),
+      actualAmount: zod.string().nullish(),
+      actualBreakdown: zod.object({}).passthrough().nullish(),
+      isOverridden: zod.boolean(),
+      overrideRemarks: zod.string().nullish(),
+      overrideCount: zod.number(),
+      lastOverriddenAt: zod.coerce.date().nullish(),
+      lastOverriddenBy: zod.string().uuid().nullish(),
+      lastOverriddenByName: zod.string().nullish(),
+      lastOverriddenByRole: zod.string().nullish(),
+      status: zod.enum([
+        "draft",
+        "recommended",
+        "overridden",
+        "finalized",
+        "disputed",
+      ]),
+      finalizedAt: zod.coerce.date().nullish(),
+      finalizedBy: zod.string().uuid().nullish(),
+      finalizedByName: zod.string().nullish(),
+      finalizedByRole: zod.string().nullish(),
+      finalizationNotes: zod.string().nullish(),
+      notes: zod.string().nullish(),
+      isActive: zod.boolean(),
+      createdBy: zod.string().uuid().nullish(),
+      createdByName: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    }),
+  ),
+  total: zod.number(),
+});
+
+/**
+ * @summary Create a new settlement record
+ */
+export const CreateSettlementRecordBody = zod.object({
+  projectId: zod.string().uuid(),
+  partnerId: zod.string().uuid().nullish(),
+  settlementType: zod.string(),
+  sourceReferenceId: zod.string().uuid().nullish(),
+  periodLabel: zod.string(),
+  periodStart: zod.string().nullish(),
+  periodEnd: zod.string().nullish(),
+  recommendedAmount: zod.number().nullish(),
+  recommendedBreakdown: zod.object({}).passthrough().nullish(),
+  notes: zod.string().nullish(),
+});
+
+/**
+ * @summary Get settlement record with audit events
+ */
+export const GetSettlementRecordParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const GetSettlementRecordResponse = zod.object({
+  record: zod.object({
+    id: zod.string().uuid(),
+    projectId: zod.string().uuid(),
+    projectName: zod.string().nullish(),
+    partnerId: zod.string().uuid().nullish(),
+    partnerName: zod.string().nullish(),
+    settlementType: zod.string(),
+    sourceReferenceId: zod.string().uuid().nullish(),
+    periodLabel: zod.string(),
+    periodStart: zod.string().nullish(),
+    periodEnd: zod.string().nullish(),
+    recommendedAmount: zod.string().nullish(),
+    recommendedBreakdown: zod.object({}).passthrough().nullish(),
+    recommendedAt: zod.coerce.date().nullish(),
+    recommendedBy: zod.string().uuid().nullish(),
+    recommendedByName: zod.string().nullish(),
+    actualAmount: zod.string().nullish(),
+    actualBreakdown: zod.object({}).passthrough().nullish(),
+    isOverridden: zod.boolean(),
+    overrideRemarks: zod.string().nullish(),
+    overrideCount: zod.number(),
+    lastOverriddenAt: zod.coerce.date().nullish(),
+    lastOverriddenBy: zod.string().uuid().nullish(),
+    lastOverriddenByName: zod.string().nullish(),
+    lastOverriddenByRole: zod.string().nullish(),
+    status: zod.enum([
+      "draft",
+      "recommended",
+      "overridden",
+      "finalized",
+      "disputed",
+    ]),
+    finalizedAt: zod.coerce.date().nullish(),
+    finalizedBy: zod.string().uuid().nullish(),
+    finalizedByName: zod.string().nullish(),
+    finalizedByRole: zod.string().nullish(),
+    finalizationNotes: zod.string().nullish(),
+    notes: zod.string().nullish(),
+    isActive: zod.boolean(),
+    createdBy: zod.string().uuid().nullish(),
+    createdByName: zod.string().nullish(),
+    createdAt: zod.coerce.date(),
+    updatedAt: zod.coerce.date(),
+  }),
+  events: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      settlementRecordId: zod.string().uuid(),
+      projectId: zod.string().uuid().nullish(),
+      partnerId: zod.string().uuid().nullish(),
+      eventType: zod.enum([
+        "created",
+        "updated",
+        "recommendation_set",
+        "overridden",
+        "finalized",
+        "disputed",
+        "reopened",
+        "archived",
+      ]),
+      previousAmount: zod.string().nullish(),
+      newAmount: zod.string().nullish(),
+      previousStatus: zod.string().nullish(),
+      newStatus: zod.string().nullish(),
+      performedBy: zod.string().uuid().nullish(),
+      performedByName: zod.string().nullish(),
+      performedByRole: zod.string().nullish(),
+      remarks: zod.string().nullish(),
+      metadata: zod.object({}).passthrough().nullish(),
+      performedAt: zod.coerce.date(),
+    }),
+  ),
+});
+
+/**
+ * @summary Update settlement record metadata (draft only)
+ */
+export const UpdateSettlementRecordParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const UpdateSettlementRecordBody = zod.object({
+  periodLabel: zod.string().optional(),
+  periodStart: zod.string().nullish(),
+  periodEnd: zod.string().nullish(),
+  notes: zod.string().nullish(),
+});
+
+export const UpdateSettlementRecordResponse = zod.object({
+  record: zod.object({
+    id: zod.string().uuid(),
+    projectId: zod.string().uuid(),
+    projectName: zod.string().nullish(),
+    partnerId: zod.string().uuid().nullish(),
+    partnerName: zod.string().nullish(),
+    settlementType: zod.string(),
+    sourceReferenceId: zod.string().uuid().nullish(),
+    periodLabel: zod.string(),
+    periodStart: zod.string().nullish(),
+    periodEnd: zod.string().nullish(),
+    recommendedAmount: zod.string().nullish(),
+    recommendedBreakdown: zod.object({}).passthrough().nullish(),
+    recommendedAt: zod.coerce.date().nullish(),
+    recommendedBy: zod.string().uuid().nullish(),
+    recommendedByName: zod.string().nullish(),
+    actualAmount: zod.string().nullish(),
+    actualBreakdown: zod.object({}).passthrough().nullish(),
+    isOverridden: zod.boolean(),
+    overrideRemarks: zod.string().nullish(),
+    overrideCount: zod.number(),
+    lastOverriddenAt: zod.coerce.date().nullish(),
+    lastOverriddenBy: zod.string().uuid().nullish(),
+    lastOverriddenByName: zod.string().nullish(),
+    lastOverriddenByRole: zod.string().nullish(),
+    status: zod.enum([
+      "draft",
+      "recommended",
+      "overridden",
+      "finalized",
+      "disputed",
+    ]),
+    finalizedAt: zod.coerce.date().nullish(),
+    finalizedBy: zod.string().uuid().nullish(),
+    finalizedByName: zod.string().nullish(),
+    finalizedByRole: zod.string().nullish(),
+    finalizationNotes: zod.string().nullish(),
+    notes: zod.string().nullish(),
+    isActive: zod.boolean(),
+    createdBy: zod.string().uuid().nullish(),
+    createdByName: zod.string().nullish(),
+    createdAt: zod.coerce.date(),
+    updatedAt: zod.coerce.date(),
+  }),
+});
+
+/**
+ * @summary Soft-archive settlement record (admin only)
+ */
+export const ArchiveSettlementRecordParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const ArchiveSettlementRecordResponse = zod.object({
+  success: zod.boolean(),
+});
+
+/**
+ * @summary Set or update the system recommendation amount
+ */
+export const SetSettlementRecommendationParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const SetSettlementRecommendationBody = zod.object({
+  recommendedAmount: zod.number(),
+  recommendedBreakdown: zod.object({}).passthrough().nullish(),
+  remarks: zod.string().nullish(),
+});
+
+export const SetSettlementRecommendationResponse = zod.object({
+  record: zod.object({
+    id: zod.string().uuid(),
+    projectId: zod.string().uuid(),
+    projectName: zod.string().nullish(),
+    partnerId: zod.string().uuid().nullish(),
+    partnerName: zod.string().nullish(),
+    settlementType: zod.string(),
+    sourceReferenceId: zod.string().uuid().nullish(),
+    periodLabel: zod.string(),
+    periodStart: zod.string().nullish(),
+    periodEnd: zod.string().nullish(),
+    recommendedAmount: zod.string().nullish(),
+    recommendedBreakdown: zod.object({}).passthrough().nullish(),
+    recommendedAt: zod.coerce.date().nullish(),
+    recommendedBy: zod.string().uuid().nullish(),
+    recommendedByName: zod.string().nullish(),
+    actualAmount: zod.string().nullish(),
+    actualBreakdown: zod.object({}).passthrough().nullish(),
+    isOverridden: zod.boolean(),
+    overrideRemarks: zod.string().nullish(),
+    overrideCount: zod.number(),
+    lastOverriddenAt: zod.coerce.date().nullish(),
+    lastOverriddenBy: zod.string().uuid().nullish(),
+    lastOverriddenByName: zod.string().nullish(),
+    lastOverriddenByRole: zod.string().nullish(),
+    status: zod.enum([
+      "draft",
+      "recommended",
+      "overridden",
+      "finalized",
+      "disputed",
+    ]),
+    finalizedAt: zod.coerce.date().nullish(),
+    finalizedBy: zod.string().uuid().nullish(),
+    finalizedByName: zod.string().nullish(),
+    finalizedByRole: zod.string().nullish(),
+    finalizationNotes: zod.string().nullish(),
+    notes: zod.string().nullish(),
+    isActive: zod.boolean(),
+    createdBy: zod.string().uuid().nullish(),
+    createdByName: zod.string().nullish(),
+    createdAt: zod.coerce.date(),
+    updatedAt: zod.coerce.date(),
+  }),
+});
+
+/**
+ * @summary Override the settlement amount (any authenticated user, remarks required)
+ */
+export const OverrideSettlementParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const OverrideSettlementBody = zod.object({
+  actualAmount: zod.number(),
+  overrideRemarks: zod.string(),
+  actualBreakdown: zod.object({}).passthrough().nullish(),
+});
+
+export const OverrideSettlementResponse = zod.object({
+  record: zod.object({
+    id: zod.string().uuid(),
+    projectId: zod.string().uuid(),
+    projectName: zod.string().nullish(),
+    partnerId: zod.string().uuid().nullish(),
+    partnerName: zod.string().nullish(),
+    settlementType: zod.string(),
+    sourceReferenceId: zod.string().uuid().nullish(),
+    periodLabel: zod.string(),
+    periodStart: zod.string().nullish(),
+    periodEnd: zod.string().nullish(),
+    recommendedAmount: zod.string().nullish(),
+    recommendedBreakdown: zod.object({}).passthrough().nullish(),
+    recommendedAt: zod.coerce.date().nullish(),
+    recommendedBy: zod.string().uuid().nullish(),
+    recommendedByName: zod.string().nullish(),
+    actualAmount: zod.string().nullish(),
+    actualBreakdown: zod.object({}).passthrough().nullish(),
+    isOverridden: zod.boolean(),
+    overrideRemarks: zod.string().nullish(),
+    overrideCount: zod.number(),
+    lastOverriddenAt: zod.coerce.date().nullish(),
+    lastOverriddenBy: zod.string().uuid().nullish(),
+    lastOverriddenByName: zod.string().nullish(),
+    lastOverriddenByRole: zod.string().nullish(),
+    status: zod.enum([
+      "draft",
+      "recommended",
+      "overridden",
+      "finalized",
+      "disputed",
+    ]),
+    finalizedAt: zod.coerce.date().nullish(),
+    finalizedBy: zod.string().uuid().nullish(),
+    finalizedByName: zod.string().nullish(),
+    finalizedByRole: zod.string().nullish(),
+    finalizationNotes: zod.string().nullish(),
+    notes: zod.string().nullish(),
+    isActive: zod.boolean(),
+    createdBy: zod.string().uuid().nullish(),
+    createdByName: zod.string().nullish(),
+    createdAt: zod.coerce.date(),
+    updatedAt: zod.coerce.date(),
+  }),
+});
+
+/**
+ * @summary Finalize settlement (admin/developer — Project Developer authority)
+ */
+export const FinalizeSettlementParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const FinalizeSettlementBody = zod.object({
+  finalizationNotes: zod.string().nullish(),
+});
+
+export const FinalizeSettlementResponse = zod.object({
+  record: zod.object({
+    id: zod.string().uuid(),
+    projectId: zod.string().uuid(),
+    projectName: zod.string().nullish(),
+    partnerId: zod.string().uuid().nullish(),
+    partnerName: zod.string().nullish(),
+    settlementType: zod.string(),
+    sourceReferenceId: zod.string().uuid().nullish(),
+    periodLabel: zod.string(),
+    periodStart: zod.string().nullish(),
+    periodEnd: zod.string().nullish(),
+    recommendedAmount: zod.string().nullish(),
+    recommendedBreakdown: zod.object({}).passthrough().nullish(),
+    recommendedAt: zod.coerce.date().nullish(),
+    recommendedBy: zod.string().uuid().nullish(),
+    recommendedByName: zod.string().nullish(),
+    actualAmount: zod.string().nullish(),
+    actualBreakdown: zod.object({}).passthrough().nullish(),
+    isOverridden: zod.boolean(),
+    overrideRemarks: zod.string().nullish(),
+    overrideCount: zod.number(),
+    lastOverriddenAt: zod.coerce.date().nullish(),
+    lastOverriddenBy: zod.string().uuid().nullish(),
+    lastOverriddenByName: zod.string().nullish(),
+    lastOverriddenByRole: zod.string().nullish(),
+    status: zod.enum([
+      "draft",
+      "recommended",
+      "overridden",
+      "finalized",
+      "disputed",
+    ]),
+    finalizedAt: zod.coerce.date().nullish(),
+    finalizedBy: zod.string().uuid().nullish(),
+    finalizedByName: zod.string().nullish(),
+    finalizedByRole: zod.string().nullish(),
+    finalizationNotes: zod.string().nullish(),
+    notes: zod.string().nullish(),
+    isActive: zod.boolean(),
+    createdBy: zod.string().uuid().nullish(),
+    createdByName: zod.string().nullish(),
+    createdAt: zod.coerce.date(),
+    updatedAt: zod.coerce.date(),
+  }),
+});
+
+/**
+ * @summary Mark settlement as disputed
+ */
+export const DisputeSettlementParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const DisputeSettlementBody = zod.object({
+  remarks: zod.string(),
+});
+
+export const DisputeSettlementResponse = zod.object({
+  record: zod.object({
+    id: zod.string().uuid(),
+    projectId: zod.string().uuid(),
+    projectName: zod.string().nullish(),
+    partnerId: zod.string().uuid().nullish(),
+    partnerName: zod.string().nullish(),
+    settlementType: zod.string(),
+    sourceReferenceId: zod.string().uuid().nullish(),
+    periodLabel: zod.string(),
+    periodStart: zod.string().nullish(),
+    periodEnd: zod.string().nullish(),
+    recommendedAmount: zod.string().nullish(),
+    recommendedBreakdown: zod.object({}).passthrough().nullish(),
+    recommendedAt: zod.coerce.date().nullish(),
+    recommendedBy: zod.string().uuid().nullish(),
+    recommendedByName: zod.string().nullish(),
+    actualAmount: zod.string().nullish(),
+    actualBreakdown: zod.object({}).passthrough().nullish(),
+    isOverridden: zod.boolean(),
+    overrideRemarks: zod.string().nullish(),
+    overrideCount: zod.number(),
+    lastOverriddenAt: zod.coerce.date().nullish(),
+    lastOverriddenBy: zod.string().uuid().nullish(),
+    lastOverriddenByName: zod.string().nullish(),
+    lastOverriddenByRole: zod.string().nullish(),
+    status: zod.enum([
+      "draft",
+      "recommended",
+      "overridden",
+      "finalized",
+      "disputed",
+    ]),
+    finalizedAt: zod.coerce.date().nullish(),
+    finalizedBy: zod.string().uuid().nullish(),
+    finalizedByName: zod.string().nullish(),
+    finalizedByRole: zod.string().nullish(),
+    finalizationNotes: zod.string().nullish(),
+    notes: zod.string().nullish(),
+    isActive: zod.boolean(),
+    createdBy: zod.string().uuid().nullish(),
+    createdByName: zod.string().nullish(),
+    createdAt: zod.coerce.date(),
+    updatedAt: zod.coerce.date(),
+  }),
+});
+
+/**
+ * @summary Reopen a finalized settlement (admin only)
+ */
+export const ReopenSettlementParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const ReopenSettlementBody = zod.object({
+  remarks: zod.string(),
+});
+
+export const ReopenSettlementResponse = zod.object({
+  record: zod.object({
+    id: zod.string().uuid(),
+    projectId: zod.string().uuid(),
+    projectName: zod.string().nullish(),
+    partnerId: zod.string().uuid().nullish(),
+    partnerName: zod.string().nullish(),
+    settlementType: zod.string(),
+    sourceReferenceId: zod.string().uuid().nullish(),
+    periodLabel: zod.string(),
+    periodStart: zod.string().nullish(),
+    periodEnd: zod.string().nullish(),
+    recommendedAmount: zod.string().nullish(),
+    recommendedBreakdown: zod.object({}).passthrough().nullish(),
+    recommendedAt: zod.coerce.date().nullish(),
+    recommendedBy: zod.string().uuid().nullish(),
+    recommendedByName: zod.string().nullish(),
+    actualAmount: zod.string().nullish(),
+    actualBreakdown: zod.object({}).passthrough().nullish(),
+    isOverridden: zod.boolean(),
+    overrideRemarks: zod.string().nullish(),
+    overrideCount: zod.number(),
+    lastOverriddenAt: zod.coerce.date().nullish(),
+    lastOverriddenBy: zod.string().uuid().nullish(),
+    lastOverriddenByName: zod.string().nullish(),
+    lastOverriddenByRole: zod.string().nullish(),
+    status: zod.enum([
+      "draft",
+      "recommended",
+      "overridden",
+      "finalized",
+      "disputed",
+    ]),
+    finalizedAt: zod.coerce.date().nullish(),
+    finalizedBy: zod.string().uuid().nullish(),
+    finalizedByName: zod.string().nullish(),
+    finalizedByRole: zod.string().nullish(),
+    finalizationNotes: zod.string().nullish(),
+    notes: zod.string().nullish(),
+    isActive: zod.boolean(),
+    createdBy: zod.string().uuid().nullish(),
+    createdByName: zod.string().nullish(),
+    createdAt: zod.coerce.date(),
+    updatedAt: zod.coerce.date(),
+  }),
+});
+
+/**
+ * @summary Get immutable audit trail for a settlement record
+ */
+export const GetSettlementAuditParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const GetSettlementAuditResponse = zod.object({
+  settlementRecordId: zod.string().uuid(),
+  events: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      settlementRecordId: zod.string().uuid(),
+      projectId: zod.string().uuid().nullish(),
+      partnerId: zod.string().uuid().nullish(),
+      eventType: zod.enum([
+        "created",
+        "updated",
+        "recommendation_set",
+        "overridden",
+        "finalized",
+        "disputed",
+        "reopened",
+        "archived",
+      ]),
+      previousAmount: zod.string().nullish(),
+      newAmount: zod.string().nullish(),
+      previousStatus: zod.string().nullish(),
+      newStatus: zod.string().nullish(),
+      performedBy: zod.string().uuid().nullish(),
+      performedByName: zod.string().nullish(),
+      performedByRole: zod.string().nullish(),
+      remarks: zod.string().nullish(),
+      metadata: zod.object({}).passthrough().nullish(),
+      performedAt: zod.coerce.date(),
+    }),
+  ),
+  total: zod.number(),
+});
+
+/**
+ * @summary Side-by-side comparison of recommended vs actual settlement
+ */
+export const GetSettlementComparisonParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const GetSettlementComparisonResponse = zod.object({
+  settlementRecordId: zod.string().uuid(),
+  periodLabel: zod.string(),
+  status: zod.string(),
+  isOverridden: zod.boolean(),
+  overrideCount: zod.number(),
+  recommended: zod.object({
+    amount: zod.string().nullish(),
+    breakdown: zod.object({}).passthrough().nullish(),
+    setAt: zod.coerce.date().nullish(),
+    setBy: zod.string().nullish(),
+  }),
+  actual: zod.object({
+    amount: zod.string().nullish(),
+    breakdown: zod.object({}).passthrough().nullish(),
+    lastOverriddenAt: zod.coerce.date().nullish(),
+    lastOverriddenBy: zod.string().nullish(),
+    lastOverriddenByRole: zod.string().nullish(),
+    overrideRemarks: zod.string().nullish(),
+  }),
+  delta: zod.object({
+    amount: zod.string(),
+    percentChange: zod.string(),
+    direction: zod.enum(["increase", "decrease", "unchanged"]),
+  }),
+  finalization: zod
+    .object({
+      finalizedAt: zod.coerce.date().nullish(),
+      finalizedBy: zod.string().nullish(),
+      finalizedByRole: zod.string().nullish(),
+      notes: zod.string().nullish(),
+    })
+    .nullish(),
+  overrideTimeline: zod.array(
+    zod.object({
+      previousAmount: zod.string().nullish(),
+      newAmount: zod.string().nullish(),
+      performedBy: zod.string().nullish(),
+      performedByRole: zod.string().nullish(),
+      remarks: zod.string().nullish(),
+      performedAt: zod.coerce.date().optional(),
+    }),
+  ),
+});
+
+/**
  * @summary Compute live payable recommendation for a partner
  */
 export const ComputePayableQueryParams = zod.object({

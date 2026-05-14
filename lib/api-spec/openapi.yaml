@@ -6645,6 +6645,313 @@ paths:
               schema:
                 $ref: "#/components/schemas/LossAbsorptionSummary"
 
+  /settlement:
+    get:
+      summary: List settlement records
+      operationId: listSettlementRecords
+      tags: [settlement]
+      parameters:
+        - name: projectId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: partnerId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: status
+          in: query
+          schema: { type: string, enum: [draft, recommended, overridden, finalized, disputed] }
+        - name: type
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: List of settlement records
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [records, total]
+                properties:
+                  records: { type: array, items: { $ref: "#/components/schemas/SettlementRecord" } }
+                  total: { type: integer }
+    post:
+      summary: Create a new settlement record
+      operationId: createSettlementRecord
+      tags: [settlement]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateSettlementRecordBody" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [record]
+                properties:
+                  record: { $ref: "#/components/schemas/SettlementRecord" }
+
+  /settlement/{id}:
+    get:
+      summary: Get settlement record with audit events
+      operationId: getSettlementRecord
+      tags: [settlement]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Record with events
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [record, events]
+                properties:
+                  record: { $ref: "#/components/schemas/SettlementRecord" }
+                  events: { type: array, items: { $ref: "#/components/schemas/SettlementOverrideEvent" } }
+    patch:
+      summary: Update settlement record metadata (draft only)
+      operationId: updateSettlementRecord
+      tags: [settlement]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateSettlementRecordBody" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [record]
+                properties:
+                  record: { $ref: "#/components/schemas/SettlementRecord" }
+    delete:
+      summary: Soft-archive settlement record (admin only)
+      operationId: archiveSettlementRecord
+      tags: [settlement]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Archived
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success]
+                properties:
+                  success: { type: boolean }
+
+  /settlement/{id}/set-recommendation:
+    post:
+      summary: Set or update the system recommendation amount
+      operationId: setSettlementRecommendation
+      tags: [settlement]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [recommendedAmount]
+              properties:
+                recommendedAmount: { type: number }
+                recommendedBreakdown: { type: object, nullable: true }
+                remarks: { type: string, nullable: true }
+      responses:
+        "200":
+          description: Recommendation set
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [record]
+                properties:
+                  record: { $ref: "#/components/schemas/SettlementRecord" }
+
+  /settlement/{id}/override:
+    post:
+      summary: Override the settlement amount (any authenticated user, remarks required)
+      operationId: overrideSettlement
+      tags: [settlement]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [actualAmount, overrideRemarks]
+              properties:
+                actualAmount: { type: number }
+                overrideRemarks: { type: string }
+                actualBreakdown: { type: object, nullable: true }
+      responses:
+        "200":
+          description: Override applied
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [record]
+                properties:
+                  record: { $ref: "#/components/schemas/SettlementRecord" }
+
+  /settlement/{id}/finalize:
+    post:
+      summary: Finalize settlement (admin/developer — Project Developer authority)
+      operationId: finalizeSettlement
+      tags: [settlement]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                finalizationNotes: { type: string, nullable: true }
+      responses:
+        "200":
+          description: Finalized
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [record]
+                properties:
+                  record: { $ref: "#/components/schemas/SettlementRecord" }
+
+  /settlement/{id}/dispute:
+    post:
+      summary: Mark settlement as disputed
+      operationId: disputeSettlement
+      tags: [settlement]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [remarks]
+              properties:
+                remarks: { type: string }
+      responses:
+        "200":
+          description: Marked as disputed
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [record]
+                properties:
+                  record: { $ref: "#/components/schemas/SettlementRecord" }
+
+  /settlement/{id}/reopen:
+    post:
+      summary: Reopen a finalized settlement (admin only)
+      operationId: reopenSettlement
+      tags: [settlement]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [remarks]
+              properties:
+                remarks: { type: string }
+      responses:
+        "200":
+          description: Reopened
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [record]
+                properties:
+                  record: { $ref: "#/components/schemas/SettlementRecord" }
+
+  /settlement/{id}/audit:
+    get:
+      summary: Get immutable audit trail for a settlement record
+      operationId: getSettlementAudit
+      tags: [settlement]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Audit trail
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [settlementRecordId, events, total]
+                properties:
+                  settlementRecordId: { type: string, format: uuid }
+                  events: { type: array, items: { $ref: "#/components/schemas/SettlementOverrideEvent" } }
+                  total: { type: integer }
+
+  /settlement/{id}/comparison:
+    get:
+      summary: Side-by-side comparison of recommended vs actual settlement
+      operationId: getSettlementComparison
+      tags: [settlement]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Comparison panel data
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SettlementComparison" }
+
   /payable/compute:
     get:
       summary: Compute live payable recommendation for a partner
@@ -12154,3 +12461,139 @@ components:
         breakdown: { type: object }
         computedAt: { type: string, format: date-time }
         disclaimer: { type: string }
+
+    SettlementRecord:
+      type: object
+      required: [id, projectId, settlementType, periodLabel, status, isOverridden, overrideCount, isActive, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        projectName: { type: string, nullable: true }
+        partnerId: { type: string, format: uuid, nullable: true }
+        partnerName: { type: string, nullable: true }
+        settlementType: { type: string }
+        sourceReferenceId: { type: string, format: uuid, nullable: true }
+        periodLabel: { type: string }
+        periodStart: { type: string, nullable: true }
+        periodEnd: { type: string, nullable: true }
+        recommendedAmount: { type: string, nullable: true }
+        recommendedBreakdown: { type: object, nullable: true }
+        recommendedAt: { type: string, format: date-time, nullable: true }
+        recommendedBy: { type: string, format: uuid, nullable: true }
+        recommendedByName: { type: string, nullable: true }
+        actualAmount: { type: string, nullable: true }
+        actualBreakdown: { type: object, nullable: true }
+        isOverridden: { type: boolean }
+        overrideRemarks: { type: string, nullable: true }
+        overrideCount: { type: integer }
+        lastOverriddenAt: { type: string, format: date-time, nullable: true }
+        lastOverriddenBy: { type: string, format: uuid, nullable: true }
+        lastOverriddenByName: { type: string, nullable: true }
+        lastOverriddenByRole: { type: string, nullable: true }
+        status: { type: string, enum: [draft, recommended, overridden, finalized, disputed] }
+        finalizedAt: { type: string, format: date-time, nullable: true }
+        finalizedBy: { type: string, format: uuid, nullable: true }
+        finalizedByName: { type: string, nullable: true }
+        finalizedByRole: { type: string, nullable: true }
+        finalizationNotes: { type: string, nullable: true }
+        notes: { type: string, nullable: true }
+        isActive: { type: boolean }
+        createdBy: { type: string, format: uuid, nullable: true }
+        createdByName: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    SettlementOverrideEvent:
+      type: object
+      required: [id, settlementRecordId, eventType, performedAt]
+      properties:
+        id: { type: string, format: uuid }
+        settlementRecordId: { type: string, format: uuid }
+        projectId: { type: string, format: uuid, nullable: true }
+        partnerId: { type: string, format: uuid, nullable: true }
+        eventType: { type: string, enum: [created, updated, recommendation_set, overridden, finalized, disputed, reopened, archived] }
+        previousAmount: { type: string, nullable: true }
+        newAmount: { type: string, nullable: true }
+        previousStatus: { type: string, nullable: true }
+        newStatus: { type: string, nullable: true }
+        performedBy: { type: string, format: uuid, nullable: true }
+        performedByName: { type: string, nullable: true }
+        performedByRole: { type: string, nullable: true }
+        remarks: { type: string, nullable: true }
+        metadata: { type: object, nullable: true }
+        performedAt: { type: string, format: date-time }
+
+    SettlementComparison:
+      type: object
+      required: [settlementRecordId, periodLabel, status, isOverridden, overrideCount, recommended, actual, delta, overrideTimeline]
+      properties:
+        settlementRecordId: { type: string, format: uuid }
+        periodLabel: { type: string }
+        status: { type: string }
+        isOverridden: { type: boolean }
+        overrideCount: { type: integer }
+        recommended:
+          type: object
+          properties:
+            amount: { type: string, nullable: true }
+            breakdown: { type: object, nullable: true }
+            setAt: { type: string, format: date-time, nullable: true }
+            setBy: { type: string, nullable: true }
+        actual:
+          type: object
+          properties:
+            amount: { type: string, nullable: true }
+            breakdown: { type: object, nullable: true }
+            lastOverriddenAt: { type: string, format: date-time, nullable: true }
+            lastOverriddenBy: { type: string, nullable: true }
+            lastOverriddenByRole: { type: string, nullable: true }
+            overrideRemarks: { type: string, nullable: true }
+        delta:
+          type: object
+          required: [amount, percentChange, direction]
+          properties:
+            amount: { type: string }
+            percentChange: { type: string }
+            direction: { type: string, enum: [increase, decrease, unchanged] }
+        finalization:
+          type: object
+          nullable: true
+          properties:
+            finalizedAt: { type: string, format: date-time, nullable: true }
+            finalizedBy: { type: string, nullable: true }
+            finalizedByRole: { type: string, nullable: true }
+            notes: { type: string, nullable: true }
+        overrideTimeline:
+          type: array
+          items:
+            type: object
+            properties:
+              previousAmount: { type: string, nullable: true }
+              newAmount: { type: string, nullable: true }
+              performedBy: { type: string, nullable: true }
+              performedByRole: { type: string, nullable: true }
+              remarks: { type: string, nullable: true }
+              performedAt: { type: string, format: date-time }
+
+    CreateSettlementRecordBody:
+      type: object
+      required: [projectId, settlementType, periodLabel]
+      properties:
+        projectId: { type: string, format: uuid }
+        partnerId: { type: string, format: uuid, nullable: true }
+        settlementType: { type: string }
+        sourceReferenceId: { type: string, format: uuid, nullable: true }
+        periodLabel: { type: string }
+        periodStart: { type: string, nullable: true }
+        periodEnd: { type: string, nullable: true }
+        recommendedAmount: { type: number, nullable: true }
+        recommendedBreakdown: { type: object, nullable: true }
+        notes: { type: string, nullable: true }
+
+    UpdateSettlementRecordBody:
+      type: object
+      properties:
+        periodLabel: { type: string }
+        periodStart: { type: string, nullable: true }
+        periodEnd: { type: string, nullable: true }
+        notes: { type: string, nullable: true }

@@ -35,6 +35,7 @@ import {
   Layers,
   Calculator,
   TrendingDown,
+  GitCompare,
 } from "lucide-react";
 import { useRole, ROLE_LABELS, ROLE_COLORS } from "@/contexts/RoleContext";
 import type { UserRole } from "@/contexts/RoleContext";
@@ -346,6 +347,12 @@ const navGroups: NavGroup[] = [
         name: "Loss Absorption",
         href: "/loss-absorption",
         icon: TrendingDown,
+        roles: ["admin", "developer"] as UserRole[],
+      },
+      {
+        name: "Final Settlement",
+        href: "/final-settlement",
+        icon: GitCompare,
         roles: ["admin", "developer"] as UserRole[],
       },
       {

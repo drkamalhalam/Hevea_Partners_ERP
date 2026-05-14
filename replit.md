@@ -1045,6 +1045,50 @@ Advisory-only engine tracking expected vs actual operational burden per (project
 
 **Generated hooks:** `useListLossAbsorptionRecords`, `useCreateLossAbsorptionRecord`, `useUpdateLossAbsorptionRecord`, `useConfirmLossAbsorptionRecord`, `useDeleteLossAbsorptionRecord`, `useListNegativeBalanceEntries`, `useCreateNegativeBalanceEntry`, `useUpdateNegativeBalanceEntry`, `useGetSettlementPriority`, `useGetLossAbsorptionSummary`
 
+## Manual Settlement Override & Finalization System
+
+Governance layer that sits above all settlement engines (50% revenue, payable, LCA, loss absorption). System generates recommendations; any partner may override; Project Developer has final authority. Every state change writes an immutable audit event.
+
+**Status machine (forward-only except admin reopen):**
+```
+draft → recommended → overridden → finalized
+              ↘ disputed (from any non-finalized state)
+finalized → overridden  (admin reopen only, requires justified remarks)
+```
+
+**Authority model:**
+- Any authenticated user: `POST /settlement/:id/override` (remarks mandatory, min 5 chars)
+- Admin / Developer: create, set-recommendation, finalize, dispute, archive
+- Admin only: reopen finalized records, archive
+
+**DB tables** (`lib/db/src/schema/settlement_overrides.ts`):
+- `settlement_records` — main record; `settlementType` discriminator links to source engine (fifty_pct / payable / lca / loss_absorption / manual); `sourceReferenceId` UUID back-pointer (unenforced, flexible); stores both `recommendedAmount` + `recommendedBreakdown` (write-once) and `actualAmount` + `actualBreakdown` (editable until finalized); override metadata: `isOverridden`, `overrideCount`, `lastOverriddenBy`, `lastOverriddenByRole`, `overrideRemarks`; finalization: `finalizedAt`, `finalizedBy`, `finalizedByRole`, `finalizationNotes`
+- `settlement_override_events` — **IMMUTABLE** audit trail; `eventType` ∈ {created, updated, recommendation_set, overridden, finalized, disputed, reopened, archived}; full before/after snapshot: `previousAmount`, `newAmount`, `previousStatus`, `newStatus`; actor: `performedBy`, `performedByName`, `performedByRole`; `metadata` JSONB for breakdown snapshots
+
+**API** (`artifacts/api-server/src/routes/settlement_overrides.ts`, mounted at `/settlement`):
+- `GET /settlement` — list with project/partner/status/type filters (RBAC-scoped)
+- `POST /settlement` — create record; if `recommendedAmount` provided, transitions to `recommended` immediately
+- `GET /settlement/:id` — full record + all audit events
+- `PATCH /settlement/:id` — update period metadata (draft/recommended only)
+- `POST /settlement/:id/set-recommendation` — admin/developer sets/updates recommendation; creates `recommendation_set` event
+- `POST /settlement/:id/override` — **any authenticated user**; requires `overrideRemarks` ≥ 5 chars; creates `overridden` event with full snapshot
+- `POST /settlement/:id/finalize` — admin/developer locks record; creates `finalized` event
+- `POST /settlement/:id/dispute` — marks disputed; creates `disputed` event (requires remarks)
+- `POST /settlement/:id/reopen` — admin only; requires remarks; creates `reopened` event
+- `GET /settlement/:id/audit` — full immutable event trail
+- `GET /settlement/:id/comparison` — side-by-side recommended vs actual with delta, override timeline
+
+**Frontend** (`artifacts/plantation-web/src/pages/FinalSettlement.tsx`, route `/final-settlement`):
+- Authority banner explaining 3-tier permission model
+- 5 KPI cards: Total / Pending / Overridden / Disputed / Finalized
+- Filters: project, partner, status, type (all use `"__all__"` sentinel for Radix Select)
+- Split layout: records table (left) + detail panel (right, opens on row click or Eye button)
+- Detail panel tabs: **Comparison** (side-by-side recommended vs actual, delta card, override timeline) | **Audit Trail** (vertical chronological timeline, expandable metadata)
+- Dialogs: Create / Override (mandatory remarks) / Finalize (shows recommended vs actual preview) / Dispute / Reopen (admin-only, justified remarks)
+- Sidebar: Settlement group, icon GitCompare (admin/developer only)
+
+**Generated hooks:** `useListSettlementRecords`, `useCreateSettlementRecord`, `useGetSettlementRecord`, `useUpdateSettlementRecord`, `useSetSettlementRecommendation`, `useOverrideSettlement`, `useFinalizeSettlement`, `useDisputeSettlement`, `useReopenSettlement`, `useArchiveSettlementRecord`, `useGetSettlementAudit`, `useGetSettlementComparison`
+
 ## Pointers
 
 - See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
