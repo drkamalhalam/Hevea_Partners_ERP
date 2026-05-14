@@ -6,11 +6,13 @@
  * approval through a tribal/customary + developer-approval + document-verification
  * governance workflow before any claim is considered settled.
  *
- * Four top-level tabs:
- *   1. Claims           — list + create + detail (status workflow)
- *   2. Verification     — claimant verification dashboard
- *   3. Share Division   — manual share allocation interface
- *   4. Documents        — document registration + verification
+ * Six top-level tabs:
+ *   1. Dashboard        — KPI overview, pending actions, recent claims
+ *   2. Claims           — list + create + detail (status workflow)
+ *   3. Verification     — claimant verification dashboard
+ *   4. Share Division   — manual share allocation interface
+ *   5. Documents        — document registration + verification
+ *   6. Analytics        — ownership continuity analytics, workflow funnel
  */
 
 import { useState, useMemo } from "react";
@@ -32,16 +34,32 @@ import {
   useDeleteInheritanceDocument,
   useListPartners,
   useListProjects,
+  useGetInheritanceDashboard,
+  useGetInheritanceAnalytics,
+  useListInheritanceOwnershipHistory,
+  useRecordInheritanceOwnershipHistory,
   getListInheritanceClaimsQueryKey,
   getGetInheritanceClaimQueryKey,
   getListInheritanceSharesQueryKey,
   getListInheritanceDocumentsQueryKey,
+  getGetInheritanceDashboardQueryKey,
+  getGetInheritanceAnalyticsQueryKey,
+  getListInheritanceOwnershipHistoryQueryKey,
 } from "@workspace/api-client-react";
 import type {
   InheritanceClaim,
   InheritanceClaimantShare,
   InheritanceDocument,
 } from "@workspace/api-client-react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+} from "recharts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -76,6 +94,13 @@ import {
   CircleDot,
   Check,
   Layers,
+  LayoutDashboard,
+  BarChart2,
+  History,
+  TrendingUp,
+  GitBranch,
+  BookOpen,
+  CalendarClock,
 } from "lucide-react";
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -285,7 +310,8 @@ export default function InheritanceClaims() {
   const isAdmin = role === "admin";
   const canEdit = role === "admin" || role === "developer";
 
-  const [tab, setTab] = useState<"claims" | "verification" | "shares" | "documents">("claims");
+  const [tab, setTab] = useState<"dashboard" | "claims" | "verification" | "shares" | "documents" | "analytics">("dashboard");
+  const [analyticsPid, setAnalyticsPid] = useState("all");
 
   // ── Claims tab state ────────────────────────────────────────────────
   const [filterProject, setFilterProject] = useState("all");
@@ -335,6 +361,15 @@ export default function InheritanceClaims() {
 
   // ── Verification dashboard claim selection
   const [verifyClaimId, setVerifyClaimId] = useState("none");
+
+  // ── Ownership history form state ─────────────────────────────────────
+  const [showHistoryForm, setShowHistoryForm] = useState(false);
+  const [histClaimantName, setHistClaimantName] = useState("");
+  const [histRelationship, setHistRelationship] = useState("");
+  const [histSharePct, setHistSharePct] = useState("");
+  const [histEffectiveDate, setHistEffectiveDate] = useState("");
+  const [histNotes, setHistNotes] = useState("");
+  const [histError, setHistError] = useState<string | null>(null);
 
   // ── Data fetches ────────────────────────────────────────────────────
 
@@ -403,8 +438,36 @@ export default function InheritanceClaims() {
     },
   );
 
+  // ── Dashboard + Analytics fetches ────────────────────────────────────
+  const dashPid = undefined; // always show all projects in dashboard
+  const { data: dashboardRaw, isLoading: dashboardLoading } = useGetInheritanceDashboard(
+    {},
+    { query: { queryKey: getGetInheritanceDashboardQueryKey({}) } },
+  );
+  const dashboard = (dashboardRaw as any)?.dashboard;
+
+  const analyticsPidParam = analyticsPid === "all" ? undefined : analyticsPid;
+  const { data: analyticsRaw, isLoading: analyticsLoading } = useGetInheritanceAnalytics(
+    analyticsPidParam ? { projectId: analyticsPidParam } : {},
+    { query: { queryKey: getGetInheritanceAnalyticsQueryKey(analyticsPidParam ? { projectId: analyticsPidParam } : {}) } },
+  );
+  const analytics = (analyticsRaw as any)?.analytics;
+
+  // ── Ownership history fetch (per selected claim) ──────────────────────
+  const { data: historyRaw, isLoading: historyLoading } = useListInheritanceOwnershipHistory(
+    selectedClaimId ?? "",
+    {
+      query: {
+        enabled: !!selectedClaimId,
+        queryKey: getListInheritanceOwnershipHistoryQueryKey(selectedClaimId ?? ""),
+      },
+    },
+  );
+  const ownershipHistory: any[] = (historyRaw as any)?.history ?? [];
+
   // ── Mutations ────────────────────────────────────────────────────────
 
+  const recordHistoryMut = useRecordInheritanceOwnershipHistory();
   const createClaimMut = useCreateInheritanceClaim();
   const updateClaimMut = useUpdateInheritanceClaim();
   const deleteClaimMut = useDeleteInheritanceClaim();
@@ -631,12 +694,14 @@ export default function InheritanceClaims() {
         <GovernanceDisclaimerBanner />
 
         {/* Tab nav */}
-        <div className="flex gap-1 bg-slate-900 border border-slate-800 rounded-lg p-1 w-fit mb-6">
+        <div className="flex gap-1 bg-slate-900 border border-slate-800 rounded-lg p-1 w-fit mb-6 flex-wrap">
           {([
+            { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
             { id: "claims", label: "Claims", icon: Gavel },
             { id: "verification", label: "Claimant Verification", icon: Users },
             { id: "shares", label: "Share Division", icon: Scale },
             { id: "documents", label: "Documents", icon: FileText },
+            { id: "analytics", label: "Analytics", icon: BarChart2 },
           ] as const).map(({ id, label, icon: Icon }) => (
             <button
               key={id}
@@ -650,6 +715,182 @@ export default function InheritanceClaims() {
             </button>
           ))}
         </div>
+
+        {/* ══════════════════════════════════════════════
+         * TAB: DASHBOARD
+         * ══════════════════════════════════════════════ */}
+        {tab === "dashboard" && (
+          <div className="space-y-6">
+            {dashboardLoading ? (
+              <div className="flex items-center justify-center py-20">
+                <RefreshCw className="w-6 h-6 animate-spin text-slate-500" />
+              </div>
+            ) : !dashboard ? (
+              <EmptyBox icon={LayoutDashboard} label="No dashboard data available." />
+            ) : (
+              <>
+                {/* KPI row */}
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                  {[
+                    { label: "Total Claims", value: dashboard.total, color: "text-white", icon: Gavel },
+                    { label: "Pending Action", value: dashboard.pendingGovernance, color: dashboard.pendingGovernance > 0 ? "text-amber-400" : "text-emerald-400", icon: Clock },
+                    { label: "Open", value: dashboard.open, color: "text-blue-400", icon: CircleDot },
+                    { label: "Settled", value: dashboard.settled, color: "text-emerald-400", icon: CheckCircle2 },
+                    { label: "Pending Shares", value: dashboard.pendingShareCount, color: dashboard.pendingShareCount > 0 ? "text-amber-400" : "text-slate-500", icon: Scale },
+                    { label: "Pending Docs", value: dashboard.pendingDocCount, color: dashboard.pendingDocCount > 0 ? "text-amber-400" : "text-slate-500", icon: FileText },
+                  ].map(({ label, value, color, icon: Icon }) => (
+                    <div key={label} className="bg-slate-900/40 border border-slate-800 rounded-xl p-4">
+                      <div className="flex items-center gap-1.5 mb-2">
+                        <Icon className="w-3.5 h-3.5 text-slate-500" />
+                        <p className="text-[11px] text-slate-500 uppercase tracking-wider">{label}</p>
+                      </div>
+                      <p className={`text-2xl font-bold font-mono ${color}`}>{value}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Workflow status breakdown */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Status funnel */}
+                  <div className="md:col-span-2 bg-slate-900/40 border border-slate-800 rounded-xl p-5">
+                    <p className="text-sm font-medium text-white mb-4 flex items-center gap-2">
+                      <GitBranch className="w-4 h-4 text-amber-400" /> Workflow Status Breakdown
+                    </p>
+                    <div className="space-y-2.5">
+                      {([
+                        { key: "open", label: "Open", color: "bg-blue-500" },
+                        { key: "underReview", label: "Under Review", color: "bg-amber-500" },
+                        { key: "developerApproved", label: "Developer Approved", color: "bg-violet-500" },
+                        { key: "documentsVerified", label: "Documents Verified", color: "bg-cyan-500" },
+                        { key: "approved", label: "Governance Approved", color: "bg-emerald-500" },
+                        { key: "settled", label: "Settled", color: "bg-purple-500" },
+                        { key: "rejected", label: "Rejected", color: "bg-red-500" },
+                      ] as const).map(({ key, label, color }) => {
+                        const val = (dashboard as any)[key] ?? 0;
+                        const pct = dashboard.total > 0 ? (val / dashboard.total) * 100 : 0;
+                        return (
+                          <div key={key} className="flex items-center gap-3">
+                            <div className="w-36 text-xs text-slate-400 shrink-0 text-right">{label}</div>
+                            <div className="flex-1 h-4 bg-slate-800 rounded-full overflow-hidden">
+                              <div className={`h-full ${color} rounded-full transition-all`} style={{ width: `${pct}%` }} />
+                            </div>
+                            <div className="w-6 text-xs text-slate-300 font-mono">{val}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Claim type + project count */}
+                  <div className="space-y-3">
+                    <div className="bg-slate-900/40 border border-slate-800 rounded-xl p-5">
+                      <p className="text-sm font-medium text-white mb-3 flex items-center gap-2">
+                        <BookOpen className="w-4 h-4 text-slate-400" /> Claim Type
+                      </p>
+                      {[
+                        { key: "death", label: "Death", color: "text-red-400", bg: "bg-red-900/20 border-red-800/30" },
+                        { key: "incapacity", label: "Incapacity", color: "text-amber-400", bg: "bg-amber-900/20 border-amber-800/30" },
+                        { key: "voluntary_transfer", label: "Voluntary Transfer", color: "text-blue-400", bg: "bg-blue-900/20 border-blue-800/30" },
+                      ].map(({ key, label, color, bg }) => (
+                        <div key={key} className={`flex items-center justify-between px-3 py-2 rounded-lg border mb-2 ${bg}`}>
+                          <span className={`text-xs font-medium ${color}`}>{label}</span>
+                          <span className="text-sm font-bold text-white font-mono">{(dashboard.byType as any)?.[key] ?? 0}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="bg-slate-900/40 border border-slate-800 rounded-xl p-5">
+                      <p className="text-[11px] text-slate-500 uppercase tracking-wider mb-1">Projects with Active Cases</p>
+                      <p className="text-3xl font-bold font-mono text-amber-400">{dashboard.projectsWithActiveClaims}</p>
+                      <p className="text-xs text-slate-500 mt-1">projects have open inheritance workflows</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Pending action alerts */}
+                {(dashboard.pendingShareCount > 0 || dashboard.pendingDocCount > 0) && (
+                  <div className="bg-amber-950/20 border border-amber-800/30 rounded-xl p-4">
+                    <p className="text-sm font-medium text-amber-300 mb-3 flex items-center gap-2">
+                      <AlertTriangle className="w-4 h-4" /> Pending Actions Required
+                    </p>
+                    <div className="flex flex-wrap gap-3">
+                      {dashboard.pendingShareCount > 0 && (
+                        <button
+                          onClick={() => setTab("shares")}
+                          className="flex items-center gap-2 px-3 py-1.5 bg-amber-900/20 border border-amber-700/40 rounded-lg text-xs text-amber-300 hover:bg-amber-900/30"
+                        >
+                          <Scale className="w-3.5 h-3.5" />
+                          {dashboard.pendingShareCount} share proposal{dashboard.pendingShareCount > 1 ? "s" : ""} awaiting approval
+                        </button>
+                      )}
+                      {dashboard.pendingDocCount > 0 && (
+                        <button
+                          onClick={() => setTab("documents")}
+                          className="flex items-center gap-2 px-3 py-1.5 bg-amber-900/20 border border-amber-700/40 rounded-lg text-xs text-amber-300 hover:bg-amber-900/30"
+                        >
+                          <FileText className="w-3.5 h-3.5" />
+                          {dashboard.pendingDocCount} document{dashboard.pendingDocCount > 1 ? "s" : ""} pending verification
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Recent claims */}
+                <div className="bg-slate-900/40 border border-slate-800 rounded-xl p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <p className="text-sm font-medium text-white flex items-center gap-2">
+                      <CalendarClock className="w-4 h-4 text-slate-400" /> Recent Claims
+                    </p>
+                    <button
+                      onClick={() => setTab("claims")}
+                      className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1"
+                    >
+                      View all <ChevronRight className="w-3 h-3" />
+                    </button>
+                  </div>
+                  {dashboard.recentClaims.length === 0 ? (
+                    <p className="text-sm text-slate-500 py-4 text-center">No claims filed yet.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {dashboard.recentClaims.map((c: any) => {
+                        const project = projects.find((p) => p.id === c.projectId);
+                        return (
+                          <div
+                            key={c.id}
+                            className="flex items-center gap-3 px-4 py-2.5 bg-slate-900/60 border border-slate-800 rounded-lg hover:border-slate-700 cursor-pointer"
+                            onClick={() => { setSelectedClaimId(c.id); setTab("claims"); }}
+                          >
+                            <StatusBadge status={c.status} />
+                            <ClaimTypeBadge type={c.claimType} />
+                            <span className="text-sm text-white font-medium flex-1 truncate">
+                              {project?.name ?? c.projectId.slice(0, 8)}
+                            </span>
+                            {c.description && (
+                              <span className="text-xs text-slate-500 truncate max-w-xs">{c.description}</span>
+                            )}
+                            <span className="text-xs text-slate-500 shrink-0">
+                              {new Date(c.createdAt).toLocaleDateString("en-IN")}
+                            </span>
+                            <ChevronRight className="w-3.5 h-3.5 text-slate-600" />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Governance disclaimer reminder */}
+                <div className="bg-slate-900/40 border border-slate-700/50 rounded-xl p-4 text-xs text-slate-400 flex items-start gap-3">
+                  <Info className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-slate-300 mb-0.5">No Automatic Redistribution</p>
+                    <p>Ownership shares are never automatically redistributed. All share allocations require manual entry by admin/developer, followed by explicit governance approval. Settled claims create an audit record but do not modify any ownership table directly.</p>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        )}
 
         {/* ══════════════════════════════════════════════
          * TAB: CLAIMS
@@ -968,6 +1209,163 @@ export default function InheritanceClaims() {
                     </div>
                   )}
                 </div>
+
+                {/* ── Ownership History Section ─────────────────────────── */}
+                {["approved", "settled"].includes(detail.claim.status) && (
+                  <div className="bg-slate-900/40 border border-slate-800 rounded-xl p-5">
+                    <div className="flex items-center justify-between mb-4">
+                      <p className="text-sm font-medium text-white flex items-center gap-2">
+                        <History className="w-4 h-4 text-emerald-400" /> Ownership Transfer Records
+                        <span className="text-xs text-slate-500 font-normal">— finalized allocations audit trail</span>
+                      </p>
+                      {isAdmin && !showHistoryForm && (
+                        <Button
+                          size="sm"
+                          onClick={() => { setShowHistoryForm(true); setHistError(null); }}
+                          className="bg-emerald-800 hover:bg-emerald-700 text-white text-xs"
+                        >
+                          <Plus className="w-3 h-3 mr-1" /> Record Transfer
+                        </Button>
+                      )}
+                    </div>
+
+                    {/* Record transfer form (admin only) */}
+                    {isAdmin && showHistoryForm && (
+                      <div className="border border-emerald-700/40 rounded-lg p-4 bg-emerald-950/10 mb-4 space-y-3">
+                        <p className="text-xs font-medium text-emerald-300">Record Ownership Transfer</p>
+                        <p className="text-[11px] text-slate-500">
+                          Record the finalized ownership transfer for a claimant receiving shares from this claim.
+                          This is a write-once audit record — no data is automatically modified.
+                        </p>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <Label className="text-xs text-slate-400">Claimant Name *</Label>
+                            <Input
+                              value={histClaimantName}
+                              onChange={(e) => setHistClaimantName(e.target.value)}
+                              placeholder="Full name of claimant"
+                              className="bg-slate-900 border-slate-700 text-slate-200 placeholder:text-slate-600 h-8 text-xs mt-1"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-xs text-slate-400">Relationship</Label>
+                            <Input
+                              value={histRelationship}
+                              onChange={(e) => setHistRelationship(e.target.value)}
+                              placeholder="e.g. Son, Daughter, Spouse"
+                              className="bg-slate-900 border-slate-700 text-slate-200 placeholder:text-slate-600 h-8 text-xs mt-1"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-xs text-slate-400">Share % Transferred *</Label>
+                            <Input
+                              value={histSharePct}
+                              onChange={(e) => setHistSharePct(e.target.value)}
+                              placeholder="e.g. 33.33"
+                              type="number"
+                              min="0.01"
+                              max="100"
+                              step="0.01"
+                              className="bg-slate-900 border-slate-700 text-slate-200 placeholder:text-slate-600 h-8 text-xs mt-1"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-xs text-slate-400">Effective Date *</Label>
+                            <Input
+                              value={histEffectiveDate}
+                              onChange={(e) => setHistEffectiveDate(e.target.value)}
+                              type="date"
+                              className="bg-slate-900 border-slate-700 text-slate-200 h-8 text-xs mt-1"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <Label className="text-xs text-slate-400">Notes</Label>
+                          <Textarea
+                            value={histNotes}
+                            onChange={(e) => setHistNotes(e.target.value)}
+                            placeholder="Governance reference, council decision, document reference…"
+                            className="bg-slate-900 border-slate-700 text-slate-200 placeholder:text-slate-600 resize-none h-16 text-xs mt-1"
+                          />
+                        </div>
+                        {histError && <p className="text-red-400 text-xs">{histError}</p>}
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={async () => {
+                              setHistError(null);
+                              if (!histClaimantName.trim()) return setHistError("Claimant name is required.");
+                              if (!histSharePct || parseFloat(histSharePct) <= 0) return setHistError("Share % must be a positive number.");
+                              if (!histEffectiveDate) return setHistError("Effective date is required.");
+                              try {
+                                await recordHistoryMut.mutateAsync({
+                                  id: selectedClaimId!,
+                                  data: {
+                                    claimantName: histClaimantName.trim(),
+                                    relationship: histRelationship.trim() || undefined,
+                                    sharePercentage: histSharePct,
+                                    effectiveDate: new Date(histEffectiveDate).toISOString(),
+                                    notes: histNotes.trim() || undefined,
+                                  },
+                                });
+                                qc.invalidateQueries({ queryKey: getListInheritanceOwnershipHistoryQueryKey(selectedClaimId!) });
+                                setShowHistoryForm(false);
+                                setHistClaimantName(""); setHistRelationship(""); setHistSharePct(""); setHistEffectiveDate(""); setHistNotes("");
+                              } catch (e: any) {
+                                setHistError(e?.message ?? "Failed to record transfer.");
+                              }
+                            }}
+                            disabled={recordHistoryMut.isPending}
+                            className="bg-emerald-700 hover:bg-emerald-600 text-white text-xs"
+                          >
+                            {recordHistoryMut.isPending && <RefreshCw className="w-3 h-3 animate-spin mr-1" />}
+                            Save Transfer Record
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={() => { setShowHistoryForm(false); setHistError(null); }} className="text-slate-400 text-xs">Cancel</Button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* History list */}
+                    {historyLoading ? (
+                      <div className="flex items-center justify-center py-8">
+                        <RefreshCw className="w-4 h-4 animate-spin text-slate-500" />
+                      </div>
+                    ) : ownershipHistory.length === 0 ? (
+                      <div className="py-6 text-center">
+                        <History className="w-6 h-6 text-slate-600 mx-auto mb-2" />
+                        <p className="text-xs text-slate-500">No ownership transfers recorded for this claim.</p>
+                        {isAdmin && !showHistoryForm && (
+                          <p className="text-[11px] text-slate-600 mt-1">Once the claim is fully settled, use "Record Transfer" to create the audit trail.</p>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <div className="grid grid-cols-5 gap-2 px-3 py-1.5 text-[10px] font-medium text-slate-500 uppercase tracking-wider">
+                          <div>Claimant</div>
+                          <div>Relationship</div>
+                          <div>Share %</div>
+                          <div>Effective Date</div>
+                          <div>Recorded By</div>
+                        </div>
+                        {ownershipHistory.map((h: any) => (
+                          <div key={h.id} className="grid grid-cols-5 gap-2 px-3 py-2.5 bg-slate-900/60 border border-slate-800 rounded-lg text-xs">
+                            <div className="text-white font-medium truncate">{h.claimantName}</div>
+                            <div className="text-slate-400">{h.relationship ?? "—"}</div>
+                            <div className="text-emerald-400 font-mono font-semibold">{parseFloat(h.sharePercentage).toFixed(4)}%</div>
+                            <div className="text-slate-400">{new Date(h.effectiveDate).toLocaleDateString("en-IN")}</div>
+                            <div className="text-slate-400">{h.recordedByName ?? "—"}</div>
+                          </div>
+                        ))}
+                        <div className="flex items-center justify-end px-3 py-2 text-xs text-slate-500">
+                          Total transferred: <span className="ml-1 font-mono text-emerald-400 font-semibold">
+                            {ownershipHistory.reduce((s: number, h: any) => s + parseFloat(h.sharePercentage), 0).toFixed(4)}%
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Summary cards */}
                 <div className="grid grid-cols-4 gap-3">
@@ -1791,6 +2189,160 @@ export default function InheritanceClaims() {
                     )}
                   </div>
                 )}
+              </>
+            )}
+          </div>
+        )}
+
+        {/* ══════════════════════════════════════════════
+         * TAB: ANALYTICS
+         * ══════════════════════════════════════════════ */}
+        {tab === "analytics" && (
+          <div className="space-y-6">
+            {/* Project filter */}
+            <div className="flex items-center gap-3">
+              <Select value={analyticsPid} onValueChange={setAnalyticsPid}>
+                <SelectTrigger className="bg-slate-900/60 border-slate-700 text-slate-200 w-56 h-8 text-xs">
+                  <SelectValue placeholder="All projects" />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-900 border-slate-700 text-slate-200">
+                  <SelectItem value="all">All Projects</SelectItem>
+                  {projects.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-slate-500">Filter analytics by project</p>
+            </div>
+
+            {analyticsLoading ? (
+              <div className="flex items-center justify-center py-20">
+                <RefreshCw className="w-6 h-6 animate-spin text-slate-500" />
+              </div>
+            ) : !analytics ? (
+              <EmptyBox icon={BarChart2} label="No analytics data." />
+            ) : (
+              <>
+                {/* KPI row */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {[
+                    { label: "Avg. Days to Settlement", value: analytics.avgDaysToSettlement != null ? `${analytics.avgDaysToSettlement}d` : "—", color: "text-white" },
+                    { label: "Approved Allocations", value: analytics.approvedAllocationsCount, color: "text-emerald-400" },
+                    { label: "Projects Settled", value: analytics.settledProjectsCount, color: "text-purple-400" },
+                    { label: "Ownership Records", value: analytics.ownershipHistoryCount, color: "text-blue-400" },
+                  ].map(({ label, value, color }) => (
+                    <div key={label} className="bg-slate-900/40 border border-slate-800 rounded-xl p-4">
+                      <p className="text-[11px] text-slate-500 uppercase tracking-wider mb-1">{label}</p>
+                      <p className={`text-2xl font-bold font-mono ${color}`}>{value}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Monthly new claims chart */}
+                {analytics.monthlyOpened?.length > 0 && (
+                  <div className="bg-slate-900/40 border border-slate-800 rounded-xl p-5">
+                    <p className="text-sm font-medium text-white mb-4 flex items-center gap-2">
+                      <TrendingUp className="w-4 h-4 text-amber-400" /> New Claims by Month (Last 12 Months)
+                    </p>
+                    <div className="h-48">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={analytics.monthlyOpened} margin={{ top: 5, right: 5, bottom: 5, left: -20 }}>
+                          <XAxis dataKey="month" tick={{ fill: "#64748b", fontSize: 11 }} />
+                          <YAxis allowDecimals={false} tick={{ fill: "#64748b", fontSize: 11 }} />
+                          <Tooltip
+                            contentStyle={{ background: "#0f172a", border: "1px solid #334155", borderRadius: 8, fontSize: 12 }}
+                            labelStyle={{ color: "#94a3b8" }}
+                            itemStyle={{ color: "#f59e0b" }}
+                          />
+                          <Bar dataKey="count" radius={[3, 3, 0, 0]}>
+                            {analytics.monthlyOpened.map((_: any, i: number) => (
+                              <Cell key={i} fill="#f59e0b" fillOpacity={0.8} />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                )}
+
+                {/* Workflow funnel */}
+                {analytics.funnelCounts?.length > 0 && (
+                  <div className="bg-slate-900/40 border border-slate-800 rounded-xl p-5">
+                    <p className="text-sm font-medium text-white mb-4 flex items-center gap-2">
+                      <GitBranch className="w-4 h-4 text-slate-400" /> Settlement Funnel (Claims Reaching Each Stage)
+                    </p>
+                    <div className="space-y-2">
+                      {analytics.funnelCounts.map(({ stage, count: cnt }: { stage: string; count: number }, i: number) => {
+                        const max = analytics.funnelCounts[0]?.count ?? 1;
+                        const pct = max > 0 ? (cnt / max) * 100 : 0;
+                        const colors = ["bg-blue-500", "bg-amber-500", "bg-violet-500", "bg-cyan-500", "bg-emerald-500", "bg-purple-500"];
+                        return (
+                          <div key={stage} className="flex items-center gap-3">
+                            <div className="w-40 text-xs text-slate-400 shrink-0 text-right capitalize">{stage.replace(/_/g, " ")}</div>
+                            <div className="flex-1 h-4 bg-slate-800 rounded-full overflow-hidden">
+                              <div className={`h-full ${colors[i % colors.length]} rounded-full transition-all`} style={{ width: `${pct}%` }} />
+                            </div>
+                            <div className="w-6 text-xs text-slate-300 font-mono">{cnt}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Claim type distribution */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-slate-900/40 border border-slate-800 rounded-xl p-5">
+                    <p className="text-sm font-medium text-white mb-3 flex items-center gap-2">
+                      <BookOpen className="w-4 h-4 text-slate-400" /> Claims by Type
+                    </p>
+                    {[
+                      { key: "death", label: "Death", color: "bg-red-500" },
+                      { key: "incapacity", label: "Incapacity", color: "bg-amber-500" },
+                      { key: "voluntary_transfer", label: "Voluntary Transfer", color: "bg-blue-500" },
+                    ].map(({ key, label, color }) => {
+                      const val = (analytics.claimsByType as any)?.[key] ?? 0;
+                      const total = (analytics.claimsByType?.death ?? 0) + (analytics.claimsByType?.incapacity ?? 0) + (analytics.claimsByType?.voluntary_transfer ?? 0);
+                      const pct = total > 0 ? (val / total) * 100 : 0;
+                      return (
+                        <div key={key} className="mb-2.5">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs text-slate-400">{label}</span>
+                            <span className="text-xs font-mono text-white">{val}</span>
+                          </div>
+                          <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
+                            <div className={`h-full ${color} rounded-full`} style={{ width: `${pct}%` }} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Recent ownership history */}
+                  <div className="bg-slate-900/40 border border-slate-800 rounded-xl p-5">
+                    <p className="text-sm font-medium text-white mb-3 flex items-center gap-2">
+                      <History className="w-4 h-4 text-slate-400" /> Recent Ownership Transfers
+                    </p>
+                    {(analytics.ownershipHistoryRecent?.length ?? 0) === 0 ? (
+                      <p className="text-xs text-slate-500 py-4 text-center">No ownership transfers recorded yet.</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {analytics.ownershipHistoryRecent.map((h: any) => (
+                          <div key={h.id} className="flex items-center gap-3 px-3 py-2 bg-slate-900/60 border border-slate-800 rounded-lg">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs text-white truncate">{h.claimantName}</p>
+                              <p className="text-[11px] text-slate-500">{h.fromPartnerName} · {h.relationship ?? "—"}</p>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <p className="text-xs font-mono text-emerald-400">{parseFloat(h.sharePercentage).toFixed(2)}%</p>
+                              <p className="text-[11px] text-slate-500">{new Date(h.effectiveDate).toLocaleDateString("en-IN")}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
               </>
             )}
           </div>

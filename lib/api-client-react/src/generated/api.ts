@@ -210,6 +210,10 @@ import type {
   GetGovernanceMeeting200,
   GetImbalancePartnerSummary200,
   GetImbalanceSummaryParams,
+  GetInheritanceAnalytics200,
+  GetInheritanceAnalyticsParams,
+  GetInheritanceDashboard200,
+  GetInheritanceDashboardParams,
   GetInventoryAnalyticsParams,
   GetInventoryStockBalanceParams,
   GetInventoryStockSummaryParams,
@@ -307,6 +311,7 @@ import type {
   ListImbalanceLedgerParams,
   ListInheritanceClaimsParams,
   ListInheritanceDocuments200,
+  ListInheritanceOwnershipHistory200,
   ListLandownerLedgerEntriesParams,
   ListLcaConfigsParams,
   ListLcaLedgerParams,
@@ -403,8 +408,10 @@ import type {
   RecordAdvanceRecoveryBody,
   RecordDistributionPayment200,
   RecordDistributionPaymentBody,
+  RecordInheritanceOwnershipHistory201,
   RecordLcaPayment201,
   RecordLcaPaymentBody,
+  RecordOwnershipHistoryBody,
   RecordRofrResponseBody,
   RecoverableAdvance,
   RecoverableAdvanceDetail,
@@ -34121,6 +34128,406 @@ export const useDeleteInheritanceDocument = <
   TContext
 > => {
   return useMutation(getDeleteInheritanceDocumentMutationOptions(options));
+};
+
+/**
+ * @summary Aggregate KPI dashboard for inheritance claims
+ */
+export const getGetInheritanceDashboardUrl = (
+  params?: GetInheritanceDashboardParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/inheritance-claims/dashboard?${stringifiedParams}`
+    : `/api/inheritance-claims/dashboard`;
+};
+
+export const getInheritanceDashboard = async (
+  params?: GetInheritanceDashboardParams,
+  options?: RequestInit,
+): Promise<GetInheritanceDashboard200> => {
+  return customFetch<GetInheritanceDashboard200>(
+    getGetInheritanceDashboardUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetInheritanceDashboardQueryKey = (
+  params?: GetInheritanceDashboardParams,
+) => {
+  return [
+    `/api/inheritance-claims/dashboard`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetInheritanceDashboardQueryOptions = <
+  TData = Awaited<ReturnType<typeof getInheritanceDashboard>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetInheritanceDashboardParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getInheritanceDashboard>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetInheritanceDashboardQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getInheritanceDashboard>>
+  > = ({ signal }) =>
+    getInheritanceDashboard(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getInheritanceDashboard>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetInheritanceDashboardQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getInheritanceDashboard>>
+>;
+export type GetInheritanceDashboardQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Aggregate KPI dashboard for inheritance claims
+ */
+
+export function useGetInheritanceDashboard<
+  TData = Awaited<ReturnType<typeof getInheritanceDashboard>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetInheritanceDashboardParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getInheritanceDashboard>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetInheritanceDashboardQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Ownership continuity analytics and workflow funnel
+ */
+export const getGetInheritanceAnalyticsUrl = (
+  params?: GetInheritanceAnalyticsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/inheritance-claims/analytics?${stringifiedParams}`
+    : `/api/inheritance-claims/analytics`;
+};
+
+export const getInheritanceAnalytics = async (
+  params?: GetInheritanceAnalyticsParams,
+  options?: RequestInit,
+): Promise<GetInheritanceAnalytics200> => {
+  return customFetch<GetInheritanceAnalytics200>(
+    getGetInheritanceAnalyticsUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetInheritanceAnalyticsQueryKey = (
+  params?: GetInheritanceAnalyticsParams,
+) => {
+  return [
+    `/api/inheritance-claims/analytics`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetInheritanceAnalyticsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getInheritanceAnalytics>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetInheritanceAnalyticsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getInheritanceAnalytics>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetInheritanceAnalyticsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getInheritanceAnalytics>>
+  > = ({ signal }) =>
+    getInheritanceAnalytics(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getInheritanceAnalytics>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetInheritanceAnalyticsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getInheritanceAnalytics>>
+>;
+export type GetInheritanceAnalyticsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Ownership continuity analytics and workflow funnel
+ */
+
+export function useGetInheritanceAnalytics<
+  TData = Awaited<ReturnType<typeof getInheritanceAnalytics>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetInheritanceAnalyticsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getInheritanceAnalytics>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetInheritanceAnalyticsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List ownership history records for a claim
+ */
+export const getListInheritanceOwnershipHistoryUrl = (id: string) => {
+  return `/api/inheritance-claims/${id}/history`;
+};
+
+export const listInheritanceOwnershipHistory = async (
+  id: string,
+  options?: RequestInit,
+): Promise<ListInheritanceOwnershipHistory200> => {
+  return customFetch<ListInheritanceOwnershipHistory200>(
+    getListInheritanceOwnershipHistoryUrl(id),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListInheritanceOwnershipHistoryQueryKey = (id: string) => {
+  return [`/api/inheritance-claims/${id}/history`] as const;
+};
+
+export const getListInheritanceOwnershipHistoryQueryOptions = <
+  TData = Awaited<ReturnType<typeof listInheritanceOwnershipHistory>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listInheritanceOwnershipHistory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListInheritanceOwnershipHistoryQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listInheritanceOwnershipHistory>>
+  > = ({ signal }) =>
+    listInheritanceOwnershipHistory(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listInheritanceOwnershipHistory>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListInheritanceOwnershipHistoryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listInheritanceOwnershipHistory>>
+>;
+export type ListInheritanceOwnershipHistoryQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List ownership history records for a claim
+ */
+
+export function useListInheritanceOwnershipHistory<
+  TData = Awaited<ReturnType<typeof listInheritanceOwnershipHistory>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listInheritanceOwnershipHistory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListInheritanceOwnershipHistoryQueryOptions(
+    id,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Record an ownership transfer for a settled/approved claim (admin only)
+ */
+export const getRecordInheritanceOwnershipHistoryUrl = (id: string) => {
+  return `/api/inheritance-claims/${id}/history`;
+};
+
+export const recordInheritanceOwnershipHistory = async (
+  id: string,
+  recordOwnershipHistoryBody: RecordOwnershipHistoryBody,
+  options?: RequestInit,
+): Promise<RecordInheritanceOwnershipHistory201> => {
+  return customFetch<RecordInheritanceOwnershipHistory201>(
+    getRecordInheritanceOwnershipHistoryUrl(id),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(recordOwnershipHistoryBody),
+    },
+  );
+};
+
+export const getRecordInheritanceOwnershipHistoryMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof recordInheritanceOwnershipHistory>>,
+    TError,
+    { id: string; data: BodyType<RecordOwnershipHistoryBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof recordInheritanceOwnershipHistory>>,
+  TError,
+  { id: string; data: BodyType<RecordOwnershipHistoryBody> },
+  TContext
+> => {
+  const mutationKey = ["recordInheritanceOwnershipHistory"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof recordInheritanceOwnershipHistory>>,
+    { id: string; data: BodyType<RecordOwnershipHistoryBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return recordInheritanceOwnershipHistory(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RecordInheritanceOwnershipHistoryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof recordInheritanceOwnershipHistory>>
+>;
+export type RecordInheritanceOwnershipHistoryMutationBody =
+  BodyType<RecordOwnershipHistoryBody>;
+export type RecordInheritanceOwnershipHistoryMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Record an ownership transfer for a settled/approved claim (admin only)
+ */
+export const useRecordInheritanceOwnershipHistory = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof recordInheritanceOwnershipHistory>>,
+    TError,
+    { id: string; data: BodyType<RecordOwnershipHistoryBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof recordInheritanceOwnershipHistory>>,
+  TError,
+  { id: string; data: BodyType<RecordOwnershipHistoryBody> },
+  TContext
+> => {
+  return useMutation(
+    getRecordInheritanceOwnershipHistoryMutationOptions(options),
+  );
 };
 
 /**

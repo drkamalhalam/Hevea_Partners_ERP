@@ -8533,6 +8533,79 @@ paths:
                   deleted: { type: boolean }
 
 
+  /inheritance-claims/dashboard:
+    get:
+      operationId: getInheritanceDashboard
+      summary: Aggregate KPI dashboard for inheritance claims
+      tags: [Inheritance]
+      parameters:
+        - { in: query, name: projectId, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Dashboard data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dashboard: { $ref: "#/components/schemas/InheritanceDashboard" }
+
+  /inheritance-claims/analytics:
+    get:
+      operationId: getInheritanceAnalytics
+      summary: Ownership continuity analytics and workflow funnel
+      tags: [Inheritance]
+      parameters:
+        - { in: query, name: projectId, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Analytics data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  analytics: { $ref: "#/components/schemas/InheritanceAnalytics" }
+
+  /inheritance-claims/{id}/history:
+    get:
+      operationId: listInheritanceOwnershipHistory
+      summary: List ownership history records for a claim
+      tags: [Inheritance]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Ownership history list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  history:
+                    type: array
+                    items: { $ref: "#/components/schemas/InheritanceOwnershipHistory" }
+    post:
+      operationId: recordInheritanceOwnershipHistory
+      summary: Record an ownership transfer for a settled/approved claim (admin only)
+      tags: [Inheritance]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RecordOwnershipHistoryBody" }
+      responses:
+        "201":
+          description: Created history record
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  history: { $ref: "#/components/schemas/InheritanceOwnershipHistory" }
+
   # ── Prematurity Death Succession Workflow ───────────────────────────────
 
   /prematurity-succession/dashboard:
@@ -15604,6 +15677,104 @@ components:
         totalProposedPct: { type: number }
         totalApprovedPct: { type: number }
         total: { type: integer }
+
+    InheritanceOwnershipHistory:
+      type: object
+      required: [id, claimId, projectId, fromPartnerId, fromPartnerName, claimantName, sharePercentage, effectiveDate, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        claimId: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        fromPartnerId: { type: string, format: uuid }
+        fromPartnerName: { type: string }
+        claimantId: { type: string, format: uuid, nullable: true }
+        claimantName: { type: string }
+        relationship: { type: string, nullable: true }
+        sharePercentage: { type: string }
+        effectiveDate: { type: string, format: date-time }
+        notes: { type: string, nullable: true }
+        recordedBy: { type: string, format: uuid, nullable: true }
+        recordedByName: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+
+    RecordOwnershipHistoryBody:
+      type: object
+      required: [claimantName, sharePercentage, effectiveDate]
+      properties:
+        claimantId: { type: string, format: uuid }
+        claimantName: { type: string }
+        relationship: { type: string }
+        sharePercentage: { type: string }
+        effectiveDate: { type: string, format: date-time }
+        notes: { type: string }
+        fromPartnerName: { type: string }
+
+    InheritanceDashboard:
+      type: object
+      properties:
+        total: { type: integer }
+        open: { type: integer }
+        underReview: { type: integer }
+        developerApproved: { type: integer }
+        documentsVerified: { type: integer }
+        approved: { type: integer }
+        settled: { type: integer }
+        rejected: { type: integer }
+        pendingGovernance: { type: integer }
+        projectsWithActiveClaims: { type: integer }
+        pendingShareCount: { type: integer }
+        pendingDocCount: { type: integer }
+        byType:
+          type: object
+          properties:
+            death: { type: integer }
+            incapacity: { type: integer }
+            voluntary_transfer: { type: integer }
+        recentClaims:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string }
+              status: { type: string }
+              claimType: { type: string }
+              projectId: { type: string }
+              partnerId: { type: string }
+              createdAt: { type: string }
+              description: { type: string, nullable: true }
+              initiatedByName: { type: string, nullable: true }
+
+    InheritanceAnalytics:
+      type: object
+      properties:
+        funnelCounts:
+          type: array
+          items:
+            type: object
+            properties:
+              stage: { type: string }
+              count: { type: integer }
+        avgDaysToSettlement: { type: integer, nullable: true }
+        monthlyOpened:
+          type: array
+          items:
+            type: object
+            properties:
+              month: { type: string }
+              count: { type: integer }
+        ownershipHistoryCount: { type: integer }
+        ownershipHistoryRecent:
+          type: array
+          items: { $ref: "#/components/schemas/InheritanceOwnershipHistory" }
+        approvedAllocationsCount: { type: integer }
+        settledProjectsCount: { type: integer }
+        activeProjectsCount: { type: integer }
+        claimsByType:
+          type: object
+          properties:
+            death: { type: integer }
+            incapacity: { type: integer }
+            voluntary_transfer: { type: integer }
 
     # ── Prematurity Death Succession ─────────────────────────────────────────
 

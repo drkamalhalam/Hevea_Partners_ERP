@@ -21,12 +21,13 @@
  */
 
 import { Router } from "express";
-import { and, eq, inArray, desc, sql } from "drizzle-orm";
+import { and, eq, inArray, desc, sql, count, ne } from "drizzle-orm";
 import {
   db,
   inheritanceClaimsTable,
   inheritanceClaimantSharesTable,
   inheritanceDocumentsTable,
+  inheritanceOwnershipHistoryTable,
   partnerClaimantsTable,
   partnersTable,
   projectsTable,
@@ -718,6 +719,348 @@ router.delete("/:id/documents/:docId", requireRole("admin"), async (req, res) =>
   } catch (err) {
     req.log.error({ err }, "Failed to delete document");
     res.status(500).json({ error: "Failed to delete document" });
+  }
+});
+
+// ── GET /dashboard ────────────────────────────────────────────────────────
+// Must be before /:id routes
+router.get("/dashboard", requireRole("admin", "developer"), async (req, res) => {
+  try {
+    const { projectId } = req.query as { projectId?: string };
+
+    const whereProject = projectId
+      ? eq(inheritanceClaimsTable.projectId, projectId)
+      : undefined;
+
+    const allClaims = await db
+      .select({
+        id: inheritanceClaimsTable.id,
+        status: inheritanceClaimsTable.status,
+        claimType: inheritanceClaimsTable.claimType,
+        projectId: inheritanceClaimsTable.projectId,
+        partnerId: inheritanceClaimsTable.partnerId,
+        createdAt: inheritanceClaimsTable.createdAt,
+        approvedAt: inheritanceClaimsTable.approvedAt,
+        developerApprovedAt: inheritanceClaimsTable.developerApprovedAt,
+        initiatedByName: inheritanceClaimsTable.initiatedByName,
+        description: inheritanceClaimsTable.description,
+      })
+      .from(inheritanceClaimsTable)
+      .where(
+        and(
+          eq(inheritanceClaimsTable.isActive, true),
+          whereProject,
+        ),
+      )
+      .orderBy(desc(inheritanceClaimsTable.createdAt));
+
+    const total = allClaims.length;
+    const open = allClaims.filter((c) => c.status === "open").length;
+    const underReview = allClaims.filter((c) => c.status === "under_review").length;
+    const developerApproved = allClaims.filter((c) => c.status === "developer_approved").length;
+    const documentsVerified = allClaims.filter((c) => c.status === "documents_verified").length;
+    const approved = allClaims.filter((c) => c.status === "approved").length;
+    const settled = allClaims.filter((c) => c.status === "settled").length;
+    const rejected = allClaims.filter((c) => c.status === "rejected").length;
+    const pendingGovernance = open + underReview + developerApproved + documentsVerified + approved;
+
+    // Claims by type
+    const byType = {
+      death: allClaims.filter((c) => c.claimType === "death").length,
+      incapacity: allClaims.filter((c) => c.claimType === "incapacity").length,
+      voluntary_transfer: allClaims.filter((c) => c.claimType === "voluntary_transfer").length,
+    };
+
+    // Projects with active inheritance cases
+    const projectsWithActiveClaims = new Set(
+      allClaims.filter((c) => !["settled", "rejected"].includes(c.status)).map((c) => c.projectId),
+    ).size;
+
+    // Recent activity (last 10 active claims)
+    const recentClaims = allClaims.slice(0, 10).map((c) => ({
+      id: c.id,
+      status: c.status,
+      claimType: c.claimType,
+      projectId: c.projectId,
+      partnerId: c.partnerId,
+      createdAt: c.createdAt,
+      description: c.description,
+      initiatedByName: c.initiatedByName,
+    }));
+
+    // Pending share approvals across all claims
+    const pendingShares = await db
+      .select({ claimId: inheritanceClaimantSharesTable.claimId })
+      .from(inheritanceClaimantSharesTable)
+      .where(eq(inheritanceClaimantSharesTable.status, "proposed"));
+    const pendingShareCount = pendingShares.length;
+
+    // Pending document verifications across all claims
+    const pendingDocs = await db
+      .select({ claimId: inheritanceDocumentsTable.claimId })
+      .from(inheritanceDocumentsTable)
+      .where(
+        and(
+          eq(inheritanceDocumentsTable.verificationStatus, "pending"),
+          eq(inheritanceDocumentsTable.isActive, true),
+        ),
+      );
+    const pendingDocCount = pendingDocs.length;
+
+    res.json({
+      dashboard: {
+        total,
+        open,
+        underReview,
+        developerApproved,
+        documentsVerified,
+        approved,
+        settled,
+        rejected,
+        pendingGovernance,
+        projectsWithActiveClaims,
+        pendingShareCount,
+        pendingDocCount,
+        byType,
+        recentClaims,
+      },
+    });
+  } catch (err) {
+    req.log.error({ err }, "Failed to fetch inheritance dashboard");
+    res.status(500).json({ error: "Failed to fetch dashboard" });
+  }
+});
+
+// ── GET /analytics ────────────────────────────────────────────────────────
+router.get("/analytics", requireRole("admin", "developer"), async (req, res) => {
+  try {
+    const { projectId } = req.query as { projectId?: string };
+
+    const whereBase = and(
+      eq(inheritanceClaimsTable.isActive, true),
+      projectId ? eq(inheritanceClaimsTable.projectId, projectId) : undefined,
+    );
+
+    const allClaims = await db
+      .select()
+      .from(inheritanceClaimsTable)
+      .where(whereBase)
+      .orderBy(inheritanceClaimsTable.createdAt);
+
+    // Workflow funnel: how many reached each stage
+    const stages = [
+      "open",
+      "under_review",
+      "developer_approved",
+      "documents_verified",
+      "approved",
+      "settled",
+    ] as const;
+
+    const funnelCounts = stages.map((stage) => ({
+      stage,
+      count: allClaims.filter((c) => c.status === stage || /* reached or passed */ [
+        "under_review", "developer_approved", "documents_verified", "approved", "settled",
+      ].includes(c.status) && stages.indexOf(c.status as typeof stages[number]) >= stages.indexOf(stage)).length,
+    }));
+
+    // Average days to settlement (for settled claims)
+    const settledClaims = allClaims.filter((c) => c.status === "settled" && c.approvedAt);
+    const avgDaysToSettlement = settledClaims.length > 0
+      ? Math.round(
+          settledClaims.reduce((sum, c) => {
+            const days = (new Date(c.approvedAt!).getTime() - new Date(c.createdAt).getTime()) / (1000 * 60 * 60 * 24);
+            return sum + days;
+          }, 0) / settledClaims.length,
+        )
+      : null;
+
+    // Claims opened by month (last 12 months)
+    const now = new Date();
+    const monthlyOpened = Array.from({ length: 12 }, (_, i) => {
+      const d = new Date(now.getFullYear(), now.getMonth() - 11 + i, 1);
+      const label = d.toLocaleString("en-IN", { month: "short", year: "2-digit" });
+      const count = allClaims.filter((c) => {
+        const cd = new Date(c.createdAt);
+        return cd.getFullYear() === d.getFullYear() && cd.getMonth() === d.getMonth();
+      }).length;
+      return { month: label, count };
+    });
+
+    // Ownership history entries
+    const historyRows = await db
+      .select()
+      .from(inheritanceOwnershipHistoryTable)
+      .where(
+        projectId ? eq(inheritanceOwnershipHistoryTable.projectId, projectId) : undefined,
+      )
+      .orderBy(desc(inheritanceOwnershipHistoryTable.effectiveDate));
+
+    // Share allocation summary (approved allocations)
+    const approvedShares = await db
+      .select({
+        claimId: inheritanceClaimantSharesTable.claimId,
+        proposedSharePct: inheritanceClaimantSharesTable.proposedSharePct,
+        claimantId: inheritanceClaimantSharesTable.claimantId,
+        status: inheritanceClaimantSharesTable.status,
+      })
+      .from(inheritanceClaimantSharesTable)
+      .where(eq(inheritanceClaimantSharesTable.status, "approved"));
+
+    // Continuity coverage: projects that had claims and now have settled them
+    const settledProjects = new Set(allClaims.filter((c) => c.status === "settled").map((c) => c.projectId));
+    const activeProjects = new Set(allClaims.filter((c) => !["settled", "rejected"].includes(c.status)).map((c) => c.projectId));
+
+    res.json({
+      analytics: {
+        funnelCounts,
+        avgDaysToSettlement,
+        monthlyOpened,
+        ownershipHistoryCount: historyRows.length,
+        ownershipHistoryRecent: historyRows.slice(0, 5).map((h) => ({
+          id: h.id,
+          claimId: h.claimId,
+          projectId: h.projectId,
+          fromPartnerName: h.fromPartnerName,
+          claimantName: h.claimantName,
+          relationship: h.relationship,
+          sharePercentage: h.sharePercentage,
+          effectiveDate: h.effectiveDate,
+          recordedByName: h.recordedByName,
+          notes: h.notes,
+        })),
+        approvedAllocationsCount: approvedShares.length,
+        settledProjectsCount: settledProjects.size,
+        activeProjectsCount: activeProjects.size,
+        claimsByType: {
+          death: allClaims.filter((c) => c.claimType === "death").length,
+          incapacity: allClaims.filter((c) => c.claimType === "incapacity").length,
+          voluntary_transfer: allClaims.filter((c) => c.claimType === "voluntary_transfer").length,
+        },
+      },
+    });
+  } catch (err) {
+    req.log.error({ err }, "Failed to fetch inheritance analytics");
+    res.status(500).json({ error: "Failed to fetch analytics" });
+  }
+});
+
+// ── GET /:id/history ──────────────────────────────────────────────────────
+router.get("/:id/history", requireRole("admin", "developer"), async (req, res) => {
+  try {
+    const claimId = req.params.id as string;
+    const [claim] = await db
+      .select({ id: inheritanceClaimsTable.id })
+      .from(inheritanceClaimsTable)
+      .where(eq(inheritanceClaimsTable.id, claimId))
+      .limit(1);
+    if (!claim) { res.status(404).json({ error: "Claim not found." }); return; }
+
+    const rows = await db
+      .select()
+      .from(inheritanceOwnershipHistoryTable)
+      .where(eq(inheritanceOwnershipHistoryTable.claimId, claimId))
+      .orderBy(desc(inheritanceOwnershipHistoryTable.effectiveDate));
+
+    res.json({
+      history: rows.map((h) => ({
+        id: h.id,
+        claimId: h.claimId,
+        projectId: h.projectId,
+        fromPartnerId: h.fromPartnerId,
+        fromPartnerName: h.fromPartnerName,
+        claimantId: h.claimantId,
+        claimantName: h.claimantName,
+        relationship: h.relationship,
+        sharePercentage: h.sharePercentage,
+        effectiveDate: h.effectiveDate,
+        notes: h.notes,
+        recordedBy: h.recordedBy,
+        recordedByName: h.recordedByName,
+        createdAt: h.createdAt,
+      })),
+    });
+  } catch (err) {
+    req.log.error({ err }, "Failed to fetch ownership history");
+    res.status(500).json({ error: "Failed to fetch ownership history" });
+  }
+});
+
+// ── POST /:id/history ─────────────────────────────────────────────────────
+router.post("/:id/history", requireRole("admin"), async (req, res) => {
+  try {
+    const claimId = req.params.id as string;
+    const { userId: clerkUserId } = getAuth(req);
+    const actor = clerkUserId ? await resolveUser(clerkUserId) : null;
+
+    const [claim] = await db
+      .select({
+        id: inheritanceClaimsTable.id,
+        status: inheritanceClaimsTable.status,
+        projectId: inheritanceClaimsTable.projectId,
+        partnerId: inheritanceClaimsTable.partnerId,
+      })
+      .from(inheritanceClaimsTable)
+      .where(eq(inheritanceClaimsTable.id, claimId))
+      .limit(1);
+
+    if (!claim) { res.status(404).json({ error: "Claim not found." }); return; }
+    if (!["approved", "settled"].includes(claim.status)) {
+      res.status(409).json({ error: "Ownership history can only be recorded for approved or settled claims." });
+      return;
+    }
+
+    const { claimantId, claimantName, relationship, sharePercentage, effectiveDate, notes, fromPartnerName } =
+      req.body as {
+        claimantId?: string;
+        claimantName: string;
+        relationship?: string;
+        sharePercentage: string;
+        effectiveDate: string;
+        notes?: string;
+        fromPartnerName?: string;
+      };
+
+    if (!claimantName?.trim()) { res.status(400).json({ error: "claimantName is required." }); return; }
+    if (!sharePercentage || isNaN(parseFloat(sharePercentage))) { res.status(400).json({ error: "sharePercentage is required and must be a number." }); return; }
+    if (!effectiveDate) { res.status(400).json({ error: "effectiveDate is required." }); return; }
+
+    const pct = parseFloat(sharePercentage);
+    if (pct <= 0 || pct > 100) { res.status(400).json({ error: "sharePercentage must be between 0.0001 and 100." }); return; }
+
+    // Look up the partner name if not provided
+    let resolvedFromPartnerName = fromPartnerName?.trim() || "";
+    if (!resolvedFromPartnerName) {
+      const [partner] = await db
+        .select({ name: partnersTable.name })
+        .from(partnersTable)
+        .where(eq(partnersTable.id, claim.partnerId))
+        .limit(1);
+      resolvedFromPartnerName = partner?.name ?? "Unknown Partner";
+    }
+
+    const [row] = await db
+      .insert(inheritanceOwnershipHistoryTable)
+      .values({
+        claimId,
+        projectId: claim.projectId,
+        fromPartnerId: claim.partnerId,
+        fromPartnerName: resolvedFromPartnerName,
+        claimantId: claimantId || null,
+        claimantName: claimantName.trim(),
+        relationship: relationship?.trim() || null,
+        sharePercentage: pct.toFixed(4),
+        effectiveDate: new Date(effectiveDate),
+        notes: notes?.trim() || null,
+        recordedBy: actor?.id ?? null,
+        recordedByName: actor?.displayName ?? null,
+      })
+      .returning();
+
+    res.status(201).json({ history: row });
+  } catch (err) {
+    req.log.error({ err }, "Failed to record ownership history");
+    res.status(500).json({ error: "Failed to record ownership history" });
   }
 });
 

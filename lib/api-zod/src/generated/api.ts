@@ -13938,6 +13938,162 @@ export const DeleteInheritanceDocumentResponse = zod.object({
 });
 
 /**
+ * @summary Aggregate KPI dashboard for inheritance claims
+ */
+export const GetInheritanceDashboardQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+});
+
+export const GetInheritanceDashboardResponse = zod.object({
+  dashboard: zod
+    .object({
+      total: zod.number().optional(),
+      open: zod.number().optional(),
+      underReview: zod.number().optional(),
+      developerApproved: zod.number().optional(),
+      documentsVerified: zod.number().optional(),
+      approved: zod.number().optional(),
+      settled: zod.number().optional(),
+      rejected: zod.number().optional(),
+      pendingGovernance: zod.number().optional(),
+      projectsWithActiveClaims: zod.number().optional(),
+      pendingShareCount: zod.number().optional(),
+      pendingDocCount: zod.number().optional(),
+      byType: zod
+        .object({
+          death: zod.number().optional(),
+          incapacity: zod.number().optional(),
+          voluntary_transfer: zod.number().optional(),
+        })
+        .optional(),
+      recentClaims: zod
+        .array(
+          zod.object({
+            id: zod.string().optional(),
+            status: zod.string().optional(),
+            claimType: zod.string().optional(),
+            projectId: zod.string().optional(),
+            partnerId: zod.string().optional(),
+            createdAt: zod.string().optional(),
+            description: zod.string().nullish(),
+            initiatedByName: zod.string().nullish(),
+          }),
+        )
+        .optional(),
+    })
+    .optional(),
+});
+
+/**
+ * @summary Ownership continuity analytics and workflow funnel
+ */
+export const GetInheritanceAnalyticsQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+});
+
+export const GetInheritanceAnalyticsResponse = zod.object({
+  analytics: zod
+    .object({
+      funnelCounts: zod
+        .array(
+          zod.object({
+            stage: zod.string().optional(),
+            count: zod.number().optional(),
+          }),
+        )
+        .optional(),
+      avgDaysToSettlement: zod.number().nullish(),
+      monthlyOpened: zod
+        .array(
+          zod.object({
+            month: zod.string().optional(),
+            count: zod.number().optional(),
+          }),
+        )
+        .optional(),
+      ownershipHistoryCount: zod.number().optional(),
+      ownershipHistoryRecent: zod
+        .array(
+          zod.object({
+            id: zod.string().uuid(),
+            claimId: zod.string().uuid(),
+            projectId: zod.string().uuid(),
+            fromPartnerId: zod.string().uuid(),
+            fromPartnerName: zod.string(),
+            claimantId: zod.string().uuid().nullish(),
+            claimantName: zod.string(),
+            relationship: zod.string().nullish(),
+            sharePercentage: zod.string(),
+            effectiveDate: zod.coerce.date(),
+            notes: zod.string().nullish(),
+            recordedBy: zod.string().uuid().nullish(),
+            recordedByName: zod.string().nullish(),
+            createdAt: zod.coerce.date(),
+          }),
+        )
+        .optional(),
+      approvedAllocationsCount: zod.number().optional(),
+      settledProjectsCount: zod.number().optional(),
+      activeProjectsCount: zod.number().optional(),
+      claimsByType: zod
+        .object({
+          death: zod.number().optional(),
+          incapacity: zod.number().optional(),
+          voluntary_transfer: zod.number().optional(),
+        })
+        .optional(),
+    })
+    .optional(),
+});
+
+/**
+ * @summary List ownership history records for a claim
+ */
+export const ListInheritanceOwnershipHistoryParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const ListInheritanceOwnershipHistoryResponse = zod.object({
+  history: zod
+    .array(
+      zod.object({
+        id: zod.string().uuid(),
+        claimId: zod.string().uuid(),
+        projectId: zod.string().uuid(),
+        fromPartnerId: zod.string().uuid(),
+        fromPartnerName: zod.string(),
+        claimantId: zod.string().uuid().nullish(),
+        claimantName: zod.string(),
+        relationship: zod.string().nullish(),
+        sharePercentage: zod.string(),
+        effectiveDate: zod.coerce.date(),
+        notes: zod.string().nullish(),
+        recordedBy: zod.string().uuid().nullish(),
+        recordedByName: zod.string().nullish(),
+        createdAt: zod.coerce.date(),
+      }),
+    )
+    .optional(),
+});
+
+/**
+ * @summary Record an ownership transfer for a settled/approved claim (admin only)
+ */
+export const RecordInheritanceOwnershipHistoryParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const RecordInheritanceOwnershipHistoryBody = zod.object({
+  claimantId: zod.string().uuid().optional(),
+  claimantName: zod.string(),
+  relationship: zod.string().optional(),
+  sharePercentage: zod.string(),
+  effectiveDate: zod.coerce.date(),
+  notes: zod.string().optional(),
+  fromPartnerName: zod.string().optional(),
+});
+
+/**
  * @summary Full dashboard — participations, pending OTPs, accumulation summary
  */
 export const GetPrematuritySuccessionDashboardQueryParams = zod.object({

@@ -6598,6 +6598,95 @@ export interface InheritanceSharesPage {
   total: number;
 }
 
+export interface InheritanceOwnershipHistory {
+  id: string;
+  claimId: string;
+  projectId: string;
+  fromPartnerId: string;
+  fromPartnerName: string;
+  claimantId?: string | null;
+  claimantName: string;
+  relationship?: string | null;
+  sharePercentage: string;
+  effectiveDate: string;
+  notes?: string | null;
+  recordedBy?: string | null;
+  recordedByName?: string | null;
+  createdAt: string;
+}
+
+export interface RecordOwnershipHistoryBody {
+  claimantId?: string;
+  claimantName: string;
+  relationship?: string;
+  sharePercentage: string;
+  effectiveDate: string;
+  notes?: string;
+  fromPartnerName?: string;
+}
+
+export type InheritanceDashboardByType = {
+  death?: number;
+  incapacity?: number;
+  voluntary_transfer?: number;
+};
+
+export type InheritanceDashboardRecentClaimsItem = {
+  id?: string;
+  status?: string;
+  claimType?: string;
+  projectId?: string;
+  partnerId?: string;
+  createdAt?: string;
+  description?: string | null;
+  initiatedByName?: string | null;
+};
+
+export interface InheritanceDashboard {
+  total?: number;
+  open?: number;
+  underReview?: number;
+  developerApproved?: number;
+  documentsVerified?: number;
+  approved?: number;
+  settled?: number;
+  rejected?: number;
+  pendingGovernance?: number;
+  projectsWithActiveClaims?: number;
+  pendingShareCount?: number;
+  pendingDocCount?: number;
+  byType?: InheritanceDashboardByType;
+  recentClaims?: InheritanceDashboardRecentClaimsItem[];
+}
+
+export type InheritanceAnalyticsFunnelCountsItem = {
+  stage?: string;
+  count?: number;
+};
+
+export type InheritanceAnalyticsMonthlyOpenedItem = {
+  month?: string;
+  count?: number;
+};
+
+export type InheritanceAnalyticsClaimsByType = {
+  death?: number;
+  incapacity?: number;
+  voluntary_transfer?: number;
+};
+
+export interface InheritanceAnalytics {
+  funnelCounts?: InheritanceAnalyticsFunnelCountsItem[];
+  avgDaysToSettlement?: number | null;
+  monthlyOpened?: InheritanceAnalyticsMonthlyOpenedItem[];
+  ownershipHistoryCount?: number;
+  ownershipHistoryRecent?: InheritanceOwnershipHistory[];
+  approvedAllocationsCount?: number;
+  settledProjectsCount?: number;
+  activeProjectsCount?: number;
+  claimsByType?: InheritanceAnalyticsClaimsByType;
+}
+
 export type ClaimantParticipationRecordParticipationStatus =
   (typeof ClaimantParticipationRecordParticipationStatus)[keyof typeof ClaimantParticipationRecordParticipationStatus];
 
@@ -8437,6 +8526,30 @@ export type UpdateInheritanceDocument200 = {
 
 export type DeleteInheritanceDocument200 = {
   deleted?: boolean;
+};
+
+export type GetInheritanceDashboardParams = {
+  projectId?: string;
+};
+
+export type GetInheritanceDashboard200 = {
+  dashboard?: InheritanceDashboard;
+};
+
+export type GetInheritanceAnalyticsParams = {
+  projectId?: string;
+};
+
+export type GetInheritanceAnalytics200 = {
+  analytics?: InheritanceAnalytics;
+};
+
+export type ListInheritanceOwnershipHistory200 = {
+  history?: InheritanceOwnershipHistory[];
+};
+
+export type RecordInheritanceOwnershipHistory201 = {
+  history?: InheritanceOwnershipHistory;
 };
 
 export type GetPrematuritySuccessionDashboardParams = {
