@@ -972,6 +972,52 @@ Land contribution EXCLUDED from EPP — only additional economic contributions q
 
 **Generated hooks:** `useListFiftyPctSessions`, `useCreateFiftyPctSession`, `useUpdateFiftyPctSession`, `useConfirmFiftyPctSession`, `useArchiveFiftyPctSession`, `useGetFiftyPctSession`, `useGetFiftyPctSessionSummary`, `useLookupFiftyPctRevenue`, `useLookupFiftyPctLca`, `useLookupFiftyPctPartners`, `useListEppEntries`, `useCreateEppEntry`, `useUpdateEppEntry`, `useDeleteEppEntry`
 
+## Actual Payable Calculation System
+
+Settlement recommendation engine that synthesises confirmed data across all financial modules into a single advisory "Actual Payable" figure. Final settlement remains manual; no legal or financial obligation is created by a recommendation.
+
+**Formula:**
+```
+Profit Share (confirmed 50% sessions where partner is landowner)
++ Recoverable Advances Outstanding (advances partner made, not yet recovered)
++ Pending Recoveries (landowner ledger isRecoverable, not fully settled)
++ Pending LCA Balance (outstanding land contribution adjustments)
++ Prior Imbalance Adjustments (net confirmed credit/debit entries)
+− Negative Carry Balances (carry-forward deductions)
+══════════════════════════════════════════════════════
+= Actual Payable Recommendation
+```
+
+**DB tables** (`lib/db/src/schema/payable.ts`):
+- `payable_adjustments` — UUID PK, projectId/partnerId FK (restrict), adjustmentType (imbalance_adjustment/carry_balance/other_credit/other_debit), direction (credit/debit), amount, periodLabel, description, reference, status (draft/confirmed), confirmedAt/By/Name, notes, isActive, createdBy/Name, audit cols
+- `payable_snapshots` — UUID PK, projectId/partnerId FK (restrict), periodLabel, computedAt, profitShareAmount, profitShareSource, recoverableAdvancesAmount, pendingRecoveriesAmount, pendingLcaAmount, priorAdjustmentsAmount, negativeCarryAmount, actualPayable, status (draft/finalized), generatedBy/Name, notes, breakdown (jsonb), isActive, audit cols
+
+**API endpoints** (`artifacts/api-server/src/routes/payable.ts`), mounted at `/payable`:
+- `GET /payable/compute?projectId&partnerId` — live computation pulling from five sources (fifty_pct_sessions, recoverable_advances, landowner_ledger_entries, lca_ledger_entries, payable_adjustments); returns full breakdown object per component
+- `GET /payable/adjustments?projectId&partnerId&type&status` — list manual adjustments
+- `POST /payable/adjustments` — create adjustment (admin/developer; draft by default)
+- `PATCH /payable/adjustments/:id` — update draft adjustment (admin/developer)
+- `POST /payable/adjustments/:id/confirm` — lock adjustment as confirmed (admin/developer)
+- `DELETE /payable/adjustments/:id` — soft-delete (admin only; sets isActive=false)
+- `GET /payable/snapshots?projectId&partnerId` — list saved recommendation snapshots
+- `POST /payable/snapshots` — save snapshot (re-computes live at save time, stores immutable amounts + breakdown jsonb)
+- `GET /payable/snapshots/:id` — single snapshot
+- `POST /payable/snapshots/:id/finalize` — finalize snapshot (admin only; status → finalized)
+
+**Frontend:** `artifacts/plantation-web/src/pages/PartnerPayable.tsx` at `/partner-payable`
+- **Sidebar:** "Partner Payable" in Settlement group (admin/developer only), icon: Calculator
+- **Project + Partner selectors** at top; advisory banner prominently displayed
+- **6 KPI cards:** Profit Share | Rec. Advances | Pending Recoveries | Pending LCA | Adjustments | Carry Deduction
+- **Formula card:** step-by-step visual formula with per-row amounts and subtitles
+- **Horizontal bar chart:** component breakdown (Recharts, non-zero components only)
+- **Tabs:**
+  - **Breakdown:** expandable sections per component, each with source data tables (sessions, advance records, ledger entries, LCA ledger rows, adjustment entries)
+  - **Adjustments:** CRUD for manual imbalance/carry entries; confirm/edit/delete per row; advisory note that only confirmed entries are included in calculation
+  - **History:** list of saved snapshots with status (draft/finalized), component breakdown row, finalize action for admin
+- **Save Recommendation dialog:** period label + notes, shows live payable preview; creates immutable snapshot
+
+**Generated hooks:** `useComputePayable`, `useListPayableAdjustments`, `useCreatePayableAdjustment`, `useUpdatePayableAdjustment`, `useDeletePayableAdjustment`, `useConfirmPayableAdjustment`, `useListPayableSnapshots`, `useCreatePayableSnapshot`, `useGetPayableSnapshot`, `useFinalizePayableSnapshot`
+
 ## Pointers
 
 - See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details

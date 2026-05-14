@@ -57,9 +57,11 @@ import type {
   Buyer,
   CancelAgreementActivationBody,
   CancelMaturityBody,
+  ComputePayableParams,
   ConfirmExpenditureVerificationOtp200,
   ConfirmExpenditureVerificationOtpBody,
   ConfirmFiftyPctSession200,
+  ConfirmPayableAdjustment200,
   ContributionDisputeSummary,
   ContributionEntry,
   ContributionSummary,
@@ -86,6 +88,10 @@ import type {
   CreateLcaLedgerEntryBody,
   CreateNomineeInput,
   CreateOwnershipSnapshotBody,
+  CreatePayableAdjustment201,
+  CreatePayableAdjustmentBody,
+  CreatePayableSnapshot201,
+  CreatePayableSnapshotBody,
   CreateProductionBatchBody,
   CreateProductionEntryBody,
   CreateSaleBody,
@@ -97,6 +103,7 @@ import type {
   CreateTemplateBody,
   DashboardSummary,
   DeleteEppEntry200,
+  DeletePayableAdjustment200,
   DeleteProductionEntry200,
   DeleteStockMovement200,
   DistributionPreview,
@@ -116,6 +123,7 @@ import type {
   FiftyPctSessionPage,
   FiftyPctSessionSummaryResult,
   FileMissingDeveloperCaseBody,
+  FinalizePayableSnapshot200,
   FinancialAccessLogListResponse,
   GenerateAgreementDocument422,
   GenerateDocumentRequest,
@@ -143,6 +151,7 @@ import type {
   GetOperationalAccessLogSummaryParams,
   GetOwnershipSummary200,
   GetOwnershipSummaryParams,
+  GetPayableSnapshot200,
   GetProductionLogSummaryParams,
   GetSaleGovernanceAlertsParams,
   GetSalesSummaryParams,
@@ -196,6 +205,10 @@ import type {
   ListOwnershipSnapshots200,
   ListOwnershipSnapshotsParams,
   ListPartnerClaimantsParams,
+  ListPayableAdjustments200,
+  ListPayableAdjustmentsParams,
+  ListPayableSnapshots200,
+  ListPayableSnapshotsParams,
   ListPendingVerificationContributions200,
   ListPendingVerificationContributionsParams,
   ListPendingVerifications200,
@@ -231,6 +244,7 @@ import type {
   PartnerPortfolio,
   PartnerUpdate,
   PatchBurdenRecoveryAdjustment,
+  PayableComputation,
   ProductionBatch,
   ProductionBatchDetail,
   ProductionEntry,
@@ -304,6 +318,8 @@ import type {
   UpdateNomineeActivationBody,
   UpdateNomineeInput,
   UpdateParticipantInput,
+  UpdatePayableAdjustment200,
+  UpdatePayableAdjustmentBody,
   UpdateProductionEntryBody,
   UpdateProfileInput,
   UpdateSaleBody,
@@ -24863,3 +24879,919 @@ export function useListOperationalAccessLogs<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Compute live payable recommendation for a partner
+ */
+export const getComputePayableUrl = (params: ComputePayableParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/payable/compute?${stringifiedParams}`
+    : `/api/payable/compute`;
+};
+
+export const computePayable = async (
+  params: ComputePayableParams,
+  options?: RequestInit,
+): Promise<PayableComputation> => {
+  return customFetch<PayableComputation>(getComputePayableUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getComputePayableQueryKey = (params?: ComputePayableParams) => {
+  return [`/api/payable/compute`, ...(params ? [params] : [])] as const;
+};
+
+export const getComputePayableQueryOptions = <
+  TData = Awaited<ReturnType<typeof computePayable>>,
+  TError = ErrorType<unknown>,
+>(
+  params: ComputePayableParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof computePayable>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getComputePayableQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof computePayable>>> = ({
+    signal,
+  }) => computePayable(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof computePayable>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ComputePayableQueryResult = NonNullable<
+  Awaited<ReturnType<typeof computePayable>>
+>;
+export type ComputePayableQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Compute live payable recommendation for a partner
+ */
+
+export function useComputePayable<
+  TData = Awaited<ReturnType<typeof computePayable>>,
+  TError = ErrorType<unknown>,
+>(
+  params: ComputePayableParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof computePayable>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getComputePayableQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List payable adjustments
+ */
+export const getListPayableAdjustmentsUrl = (
+  params?: ListPayableAdjustmentsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/payable/adjustments?${stringifiedParams}`
+    : `/api/payable/adjustments`;
+};
+
+export const listPayableAdjustments = async (
+  params?: ListPayableAdjustmentsParams,
+  options?: RequestInit,
+): Promise<ListPayableAdjustments200> => {
+  return customFetch<ListPayableAdjustments200>(
+    getListPayableAdjustmentsUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListPayableAdjustmentsQueryKey = (
+  params?: ListPayableAdjustmentsParams,
+) => {
+  return [`/api/payable/adjustments`, ...(params ? [params] : [])] as const;
+};
+
+export const getListPayableAdjustmentsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listPayableAdjustments>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListPayableAdjustmentsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listPayableAdjustments>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListPayableAdjustmentsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listPayableAdjustments>>
+  > = ({ signal }) =>
+    listPayableAdjustments(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listPayableAdjustments>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListPayableAdjustmentsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listPayableAdjustments>>
+>;
+export type ListPayableAdjustmentsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List payable adjustments
+ */
+
+export function useListPayableAdjustments<
+  TData = Awaited<ReturnType<typeof listPayableAdjustments>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListPayableAdjustmentsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listPayableAdjustments>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListPayableAdjustmentsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a payable adjustment
+ */
+export const getCreatePayableAdjustmentUrl = () => {
+  return `/api/payable/adjustments`;
+};
+
+export const createPayableAdjustment = async (
+  createPayableAdjustmentBody: CreatePayableAdjustmentBody,
+  options?: RequestInit,
+): Promise<CreatePayableAdjustment201> => {
+  return customFetch<CreatePayableAdjustment201>(
+    getCreatePayableAdjustmentUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(createPayableAdjustmentBody),
+    },
+  );
+};
+
+export const getCreatePayableAdjustmentMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createPayableAdjustment>>,
+    TError,
+    { data: BodyType<CreatePayableAdjustmentBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createPayableAdjustment>>,
+  TError,
+  { data: BodyType<CreatePayableAdjustmentBody> },
+  TContext
+> => {
+  const mutationKey = ["createPayableAdjustment"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createPayableAdjustment>>,
+    { data: BodyType<CreatePayableAdjustmentBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createPayableAdjustment(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreatePayableAdjustmentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createPayableAdjustment>>
+>;
+export type CreatePayableAdjustmentMutationBody =
+  BodyType<CreatePayableAdjustmentBody>;
+export type CreatePayableAdjustmentMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create a payable adjustment
+ */
+export const useCreatePayableAdjustment = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createPayableAdjustment>>,
+    TError,
+    { data: BodyType<CreatePayableAdjustmentBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createPayableAdjustment>>,
+  TError,
+  { data: BodyType<CreatePayableAdjustmentBody> },
+  TContext
+> => {
+  return useMutation(getCreatePayableAdjustmentMutationOptions(options));
+};
+
+/**
+ * @summary Update a draft adjustment
+ */
+export const getUpdatePayableAdjustmentUrl = (id: string) => {
+  return `/api/payable/adjustments/${id}`;
+};
+
+export const updatePayableAdjustment = async (
+  id: string,
+  updatePayableAdjustmentBody: UpdatePayableAdjustmentBody,
+  options?: RequestInit,
+): Promise<UpdatePayableAdjustment200> => {
+  return customFetch<UpdatePayableAdjustment200>(
+    getUpdatePayableAdjustmentUrl(id),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(updatePayableAdjustmentBody),
+    },
+  );
+};
+
+export const getUpdatePayableAdjustmentMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updatePayableAdjustment>>,
+    TError,
+    { id: string; data: BodyType<UpdatePayableAdjustmentBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updatePayableAdjustment>>,
+  TError,
+  { id: string; data: BodyType<UpdatePayableAdjustmentBody> },
+  TContext
+> => {
+  const mutationKey = ["updatePayableAdjustment"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updatePayableAdjustment>>,
+    { id: string; data: BodyType<UpdatePayableAdjustmentBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updatePayableAdjustment(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdatePayableAdjustmentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updatePayableAdjustment>>
+>;
+export type UpdatePayableAdjustmentMutationBody =
+  BodyType<UpdatePayableAdjustmentBody>;
+export type UpdatePayableAdjustmentMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update a draft adjustment
+ */
+export const useUpdatePayableAdjustment = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updatePayableAdjustment>>,
+    TError,
+    { id: string; data: BodyType<UpdatePayableAdjustmentBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updatePayableAdjustment>>,
+  TError,
+  { id: string; data: BodyType<UpdatePayableAdjustmentBody> },
+  TContext
+> => {
+  return useMutation(getUpdatePayableAdjustmentMutationOptions(options));
+};
+
+/**
+ * @summary Soft-delete an adjustment (admin only)
+ */
+export const getDeletePayableAdjustmentUrl = (id: string) => {
+  return `/api/payable/adjustments/${id}`;
+};
+
+export const deletePayableAdjustment = async (
+  id: string,
+  options?: RequestInit,
+): Promise<DeletePayableAdjustment200> => {
+  return customFetch<DeletePayableAdjustment200>(
+    getDeletePayableAdjustmentUrl(id),
+    {
+      ...options,
+      method: "DELETE",
+    },
+  );
+};
+
+export const getDeletePayableAdjustmentMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deletePayableAdjustment>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deletePayableAdjustment>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["deletePayableAdjustment"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deletePayableAdjustment>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deletePayableAdjustment(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeletePayableAdjustmentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deletePayableAdjustment>>
+>;
+
+export type DeletePayableAdjustmentMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Soft-delete an adjustment (admin only)
+ */
+export const useDeletePayableAdjustment = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deletePayableAdjustment>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deletePayableAdjustment>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getDeletePayableAdjustmentMutationOptions(options));
+};
+
+/**
+ * @summary Confirm a draft adjustment
+ */
+export const getConfirmPayableAdjustmentUrl = (id: string) => {
+  return `/api/payable/adjustments/${id}/confirm`;
+};
+
+export const confirmPayableAdjustment = async (
+  id: string,
+  options?: RequestInit,
+): Promise<ConfirmPayableAdjustment200> => {
+  return customFetch<ConfirmPayableAdjustment200>(
+    getConfirmPayableAdjustmentUrl(id),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getConfirmPayableAdjustmentMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof confirmPayableAdjustment>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof confirmPayableAdjustment>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["confirmPayableAdjustment"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof confirmPayableAdjustment>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return confirmPayableAdjustment(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ConfirmPayableAdjustmentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof confirmPayableAdjustment>>
+>;
+
+export type ConfirmPayableAdjustmentMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Confirm a draft adjustment
+ */
+export const useConfirmPayableAdjustment = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof confirmPayableAdjustment>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof confirmPayableAdjustment>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getConfirmPayableAdjustmentMutationOptions(options));
+};
+
+/**
+ * @summary List payable snapshots
+ */
+export const getListPayableSnapshotsUrl = (
+  params?: ListPayableSnapshotsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/payable/snapshots?${stringifiedParams}`
+    : `/api/payable/snapshots`;
+};
+
+export const listPayableSnapshots = async (
+  params?: ListPayableSnapshotsParams,
+  options?: RequestInit,
+): Promise<ListPayableSnapshots200> => {
+  return customFetch<ListPayableSnapshots200>(
+    getListPayableSnapshotsUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListPayableSnapshotsQueryKey = (
+  params?: ListPayableSnapshotsParams,
+) => {
+  return [`/api/payable/snapshots`, ...(params ? [params] : [])] as const;
+};
+
+export const getListPayableSnapshotsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listPayableSnapshots>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListPayableSnapshotsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listPayableSnapshots>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListPayableSnapshotsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listPayableSnapshots>>
+  > = ({ signal }) =>
+    listPayableSnapshots(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listPayableSnapshots>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListPayableSnapshotsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listPayableSnapshots>>
+>;
+export type ListPayableSnapshotsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List payable snapshots
+ */
+
+export function useListPayableSnapshots<
+  TData = Awaited<ReturnType<typeof listPayableSnapshots>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListPayableSnapshotsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listPayableSnapshots>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListPayableSnapshotsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Save a recommendation snapshot
+ */
+export const getCreatePayableSnapshotUrl = () => {
+  return `/api/payable/snapshots`;
+};
+
+export const createPayableSnapshot = async (
+  createPayableSnapshotBody: CreatePayableSnapshotBody,
+  options?: RequestInit,
+): Promise<CreatePayableSnapshot201> => {
+  return customFetch<CreatePayableSnapshot201>(getCreatePayableSnapshotUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createPayableSnapshotBody),
+  });
+};
+
+export const getCreatePayableSnapshotMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createPayableSnapshot>>,
+    TError,
+    { data: BodyType<CreatePayableSnapshotBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createPayableSnapshot>>,
+  TError,
+  { data: BodyType<CreatePayableSnapshotBody> },
+  TContext
+> => {
+  const mutationKey = ["createPayableSnapshot"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createPayableSnapshot>>,
+    { data: BodyType<CreatePayableSnapshotBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createPayableSnapshot(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreatePayableSnapshotMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createPayableSnapshot>>
+>;
+export type CreatePayableSnapshotMutationBody =
+  BodyType<CreatePayableSnapshotBody>;
+export type CreatePayableSnapshotMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Save a recommendation snapshot
+ */
+export const useCreatePayableSnapshot = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createPayableSnapshot>>,
+    TError,
+    { data: BodyType<CreatePayableSnapshotBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createPayableSnapshot>>,
+  TError,
+  { data: BodyType<CreatePayableSnapshotBody> },
+  TContext
+> => {
+  return useMutation(getCreatePayableSnapshotMutationOptions(options));
+};
+
+/**
+ * @summary Get a single snapshot
+ */
+export const getGetPayableSnapshotUrl = (id: string) => {
+  return `/api/payable/snapshots/${id}`;
+};
+
+export const getPayableSnapshot = async (
+  id: string,
+  options?: RequestInit,
+): Promise<GetPayableSnapshot200> => {
+  return customFetch<GetPayableSnapshot200>(getGetPayableSnapshotUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetPayableSnapshotQueryKey = (id: string) => {
+  return [`/api/payable/snapshots/${id}`] as const;
+};
+
+export const getGetPayableSnapshotQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPayableSnapshot>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPayableSnapshot>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetPayableSnapshotQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getPayableSnapshot>>
+  > = ({ signal }) => getPayableSnapshot(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPayableSnapshot>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPayableSnapshotQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPayableSnapshot>>
+>;
+export type GetPayableSnapshotQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get a single snapshot
+ */
+
+export function useGetPayableSnapshot<
+  TData = Awaited<ReturnType<typeof getPayableSnapshot>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPayableSnapshot>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPayableSnapshotQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Finalize a snapshot (admin only)
+ */
+export const getFinalizePayableSnapshotUrl = (id: string) => {
+  return `/api/payable/snapshots/${id}/finalize`;
+};
+
+export const finalizePayableSnapshot = async (
+  id: string,
+  options?: RequestInit,
+): Promise<FinalizePayableSnapshot200> => {
+  return customFetch<FinalizePayableSnapshot200>(
+    getFinalizePayableSnapshotUrl(id),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getFinalizePayableSnapshotMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof finalizePayableSnapshot>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof finalizePayableSnapshot>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["finalizePayableSnapshot"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof finalizePayableSnapshot>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return finalizePayableSnapshot(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type FinalizePayableSnapshotMutationResult = NonNullable<
+  Awaited<ReturnType<typeof finalizePayableSnapshot>>
+>;
+
+export type FinalizePayableSnapshotMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Finalize a snapshot (admin only)
+ */
+export const useFinalizePayableSnapshot = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof finalizePayableSnapshot>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof finalizePayableSnapshot>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getFinalizePayableSnapshotMutationOptions(options));
+};

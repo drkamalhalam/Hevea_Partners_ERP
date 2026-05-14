@@ -6399,6 +6399,244 @@ paths:
               schema:
                 $ref: "#/components/schemas/AccessLogPage"
 
+  /payable/compute:
+    get:
+      summary: Compute live payable recommendation for a partner
+      operationId: computePayable
+      tags: [payable]
+      parameters:
+        - name: projectId
+          in: query
+          required: true
+          schema: { type: string, format: uuid }
+        - name: partnerId
+          in: query
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Payable computation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PayableComputation"
+
+  /payable/adjustments:
+    get:
+      summary: List payable adjustments
+      operationId: listPayableAdjustments
+      tags: [payable]
+      parameters:
+        - name: projectId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: partnerId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: type
+          in: query
+          schema: { type: string }
+        - name: status
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: List of adjustments
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [adjustments, total]
+                properties:
+                  adjustments:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/PayableAdjustment"
+                  total: { type: integer }
+    post:
+      summary: Create a payable adjustment
+      operationId: createPayableAdjustment
+      tags: [payable]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePayableAdjustmentBody"
+      responses:
+        "201":
+          description: Adjustment created
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [adjustment]
+                properties:
+                  adjustment:
+                    $ref: "#/components/schemas/PayableAdjustment"
+
+  /payable/adjustments/{id}:
+    patch:
+      summary: Update a draft adjustment
+      operationId: updatePayableAdjustment
+      tags: [payable]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePayableAdjustmentBody"
+      responses:
+        "200":
+          description: Updated adjustment
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [adjustment]
+                properties:
+                  adjustment:
+                    $ref: "#/components/schemas/PayableAdjustment"
+    delete:
+      summary: Soft-delete an adjustment (admin only)
+      operationId: deletePayableAdjustment
+      tags: [payable]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+
+  /payable/adjustments/{id}/confirm:
+    post:
+      summary: Confirm a draft adjustment
+      operationId: confirmPayableAdjustment
+      tags: [payable]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Confirmed adjustment
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [adjustment]
+                properties:
+                  adjustment:
+                    $ref: "#/components/schemas/PayableAdjustment"
+
+  /payable/snapshots:
+    get:
+      summary: List payable snapshots
+      operationId: listPayableSnapshots
+      tags: [payable]
+      parameters:
+        - name: projectId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: partnerId
+          in: query
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: List of snapshots
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [snapshots, total]
+                properties:
+                  snapshots:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/PayableSnapshot"
+                  total: { type: integer }
+    post:
+      summary: Save a recommendation snapshot
+      operationId: createPayableSnapshot
+      tags: [payable]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePayableSnapshotBody"
+      responses:
+        "201":
+          description: Snapshot created
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [snapshot, computation]
+                properties:
+                  snapshot:
+                    $ref: "#/components/schemas/PayableSnapshot"
+                  computation:
+                    $ref: "#/components/schemas/PayableComputation"
+
+  /payable/snapshots/{id}:
+    get:
+      summary: Get a single snapshot
+      operationId: getPayableSnapshot
+      tags: [payable]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Snapshot
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [snapshot]
+                properties:
+                  snapshot:
+                    $ref: "#/components/schemas/PayableSnapshot"
+
+  /payable/snapshots/{id}/finalize:
+    post:
+      summary: Finalize a snapshot (admin only)
+      operationId: finalizePayableSnapshot
+      tags: [payable]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Finalized snapshot
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [snapshot]
+                properties:
+                  snapshot:
+                    $ref: "#/components/schemas/PayableSnapshot"
+
 components:
   schemas:
     HealthStatus:
@@ -11355,3 +11593,111 @@ components:
               id: { type: string, format: uuid }
               name: { type: string }
               phone: { type: string, nullable: true }
+
+    PayableAdjustment:
+      type: object
+      required: [id, projectId, partnerId, adjustmentType, direction, amount, description, status, isActive, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        partnerId: { type: string, format: uuid }
+        adjustmentType: { type: string }
+        direction: { type: string, enum: [credit, debit] }
+        amount: { type: number }
+        periodLabel: { type: string, nullable: true }
+        description: { type: string }
+        reference: { type: string, nullable: true }
+        status: { type: string, enum: [draft, confirmed] }
+        confirmedAt: { type: string, format: date-time, nullable: true }
+        confirmedBy: { type: string, format: uuid, nullable: true }
+        confirmedByName: { type: string, nullable: true }
+        notes: { type: string, nullable: true }
+        isActive: { type: boolean }
+        createdBy: { type: string, format: uuid, nullable: true }
+        createdByName: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    CreatePayableAdjustmentBody:
+      type: object
+      required: [projectId, partnerId, adjustmentType, direction, amount, description]
+      properties:
+        projectId: { type: string, format: uuid }
+        partnerId: { type: string, format: uuid }
+        adjustmentType:
+          type: string
+          enum: [imbalance_adjustment, carry_balance, other_credit, other_debit]
+        direction: { type: string, enum: [credit, debit] }
+        amount: { type: number }
+        periodLabel: { type: string }
+        description: { type: string }
+        reference: { type: string }
+        notes: { type: string }
+
+    UpdatePayableAdjustmentBody:
+      type: object
+      properties:
+        adjustmentType:
+          type: string
+          enum: [imbalance_adjustment, carry_balance, other_credit, other_debit]
+        direction: { type: string, enum: [credit, debit] }
+        amount: { type: number }
+        periodLabel: { type: string }
+        description: { type: string }
+        reference: { type: string }
+        notes: { type: string }
+
+    PayableSnapshot:
+      type: object
+      required: [id, projectId, partnerId, periodLabel, computedAt, profitShareAmount, profitShareSource, recoverableAdvancesAmount, pendingRecoveriesAmount, pendingLcaAmount, priorAdjustmentsAmount, negativeCarryAmount, actualPayable, status, isActive, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        partnerId: { type: string, format: uuid }
+        periodLabel: { type: string }
+        computedAt: { type: string, format: date-time }
+        profitShareAmount: { type: number }
+        profitShareSource: { type: string }
+        recoverableAdvancesAmount: { type: number }
+        pendingRecoveriesAmount: { type: number }
+        pendingLcaAmount: { type: number }
+        priorAdjustmentsAmount: { type: number }
+        negativeCarryAmount: { type: number }
+        actualPayable: { type: number }
+        status: { type: string, enum: [draft, finalized] }
+        generatedBy: { type: string, format: uuid, nullable: true }
+        generatedByName: { type: string, nullable: true }
+        notes: { type: string, nullable: true }
+        breakdown: { type: object, nullable: true }
+        isActive: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    CreatePayableSnapshotBody:
+      type: object
+      required: [projectId, partnerId, periodLabel]
+      properties:
+        projectId: { type: string, format: uuid }
+        partnerId: { type: string, format: uuid }
+        periodLabel: { type: string }
+        notes: { type: string }
+
+    PayableComputation:
+      type: object
+      required: [projectId, partnerId, profitShareAmount, profitShareSource, recoverableAdvancesAmount, pendingRecoveriesAmount, pendingLcaAmount, priorAdjustmentsAmount, negativeCarryAmount, actualPayable, breakdown, computedAt, disclaimer]
+      properties:
+        projectId: { type: string, format: uuid }
+        partnerId: { type: string, format: uuid }
+        projectName: { type: string, nullable: true }
+        partnerName: { type: string, nullable: true }
+        profitShareAmount: { type: number }
+        profitShareSource: { type: string }
+        recoverableAdvancesAmount: { type: number }
+        pendingRecoveriesAmount: { type: number }
+        pendingLcaAmount: { type: number }
+        priorAdjustmentsAmount: { type: number }
+        negativeCarryAmount: { type: number }
+        actualPayable: { type: number }
+        breakdown: { type: object }
+        computedAt: { type: string, format: date-time }
+        disclaimer: { type: string }

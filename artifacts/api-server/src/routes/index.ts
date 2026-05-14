@@ -42,6 +42,7 @@ import operationalAlertsRouter from "./operational_alerts";
 import operationalAccessLogsRouter from "./operational_access_logs";
 import distributionPreviewsRouter from "./distribution_previews";
 import fiftyPctRouter from "./fifty_pct";
+import payableRouter from "./payable";
 import devRouter from "./dev";
 
 const router: IRouter = Router();
@@ -101,5 +102,6 @@ router.use("/operational-alerts", operationalAlertsRouter);
 router.use("/operational-access-logs", operationalAccessLogsRouter);
 router.use("/distribution-previews", distributionPreviewsRouter);
 router.use("/fifty-pct", fiftyPctRouter);
+router.use("/payable", payableRouter);
 
 export default router;

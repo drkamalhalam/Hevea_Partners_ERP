@@ -4949,6 +4949,163 @@ export interface FiftyPctPartnersLookupResult {
   partners: FiftyPctPartnersLookupResultPartnersItem[];
 }
 
+export type PayableAdjustmentDirection =
+  (typeof PayableAdjustmentDirection)[keyof typeof PayableAdjustmentDirection];
+
+export const PayableAdjustmentDirection = {
+  credit: "credit",
+  debit: "debit",
+} as const;
+
+export type PayableAdjustmentStatus =
+  (typeof PayableAdjustmentStatus)[keyof typeof PayableAdjustmentStatus];
+
+export const PayableAdjustmentStatus = {
+  draft: "draft",
+  confirmed: "confirmed",
+} as const;
+
+export interface PayableAdjustment {
+  id: string;
+  projectId: string;
+  partnerId: string;
+  adjustmentType: string;
+  direction: PayableAdjustmentDirection;
+  amount: number;
+  periodLabel?: string | null;
+  description: string;
+  reference?: string | null;
+  status: PayableAdjustmentStatus;
+  confirmedAt?: string | null;
+  confirmedBy?: string | null;
+  confirmedByName?: string | null;
+  notes?: string | null;
+  isActive: boolean;
+  createdBy?: string | null;
+  createdByName?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CreatePayableAdjustmentBodyAdjustmentType =
+  (typeof CreatePayableAdjustmentBodyAdjustmentType)[keyof typeof CreatePayableAdjustmentBodyAdjustmentType];
+
+export const CreatePayableAdjustmentBodyAdjustmentType = {
+  imbalance_adjustment: "imbalance_adjustment",
+  carry_balance: "carry_balance",
+  other_credit: "other_credit",
+  other_debit: "other_debit",
+} as const;
+
+export type CreatePayableAdjustmentBodyDirection =
+  (typeof CreatePayableAdjustmentBodyDirection)[keyof typeof CreatePayableAdjustmentBodyDirection];
+
+export const CreatePayableAdjustmentBodyDirection = {
+  credit: "credit",
+  debit: "debit",
+} as const;
+
+export interface CreatePayableAdjustmentBody {
+  projectId: string;
+  partnerId: string;
+  adjustmentType: CreatePayableAdjustmentBodyAdjustmentType;
+  direction: CreatePayableAdjustmentBodyDirection;
+  amount: number;
+  periodLabel?: string;
+  description: string;
+  reference?: string;
+  notes?: string;
+}
+
+export type UpdatePayableAdjustmentBodyAdjustmentType =
+  (typeof UpdatePayableAdjustmentBodyAdjustmentType)[keyof typeof UpdatePayableAdjustmentBodyAdjustmentType];
+
+export const UpdatePayableAdjustmentBodyAdjustmentType = {
+  imbalance_adjustment: "imbalance_adjustment",
+  carry_balance: "carry_balance",
+  other_credit: "other_credit",
+  other_debit: "other_debit",
+} as const;
+
+export type UpdatePayableAdjustmentBodyDirection =
+  (typeof UpdatePayableAdjustmentBodyDirection)[keyof typeof UpdatePayableAdjustmentBodyDirection];
+
+export const UpdatePayableAdjustmentBodyDirection = {
+  credit: "credit",
+  debit: "debit",
+} as const;
+
+export interface UpdatePayableAdjustmentBody {
+  adjustmentType?: UpdatePayableAdjustmentBodyAdjustmentType;
+  direction?: UpdatePayableAdjustmentBodyDirection;
+  amount?: number;
+  periodLabel?: string;
+  description?: string;
+  reference?: string;
+  notes?: string;
+}
+
+export type PayableSnapshotStatus =
+  (typeof PayableSnapshotStatus)[keyof typeof PayableSnapshotStatus];
+
+export const PayableSnapshotStatus = {
+  draft: "draft",
+  finalized: "finalized",
+} as const;
+
+export type PayableSnapshotBreakdown = { [key: string]: unknown } | null;
+
+export interface PayableSnapshot {
+  id: string;
+  projectId: string;
+  partnerId: string;
+  periodLabel: string;
+  computedAt: string;
+  profitShareAmount: number;
+  profitShareSource: string;
+  recoverableAdvancesAmount: number;
+  pendingRecoveriesAmount: number;
+  pendingLcaAmount: number;
+  priorAdjustmentsAmount: number;
+  negativeCarryAmount: number;
+  actualPayable: number;
+  status: PayableSnapshotStatus;
+  generatedBy?: string | null;
+  generatedByName?: string | null;
+  notes?: string | null;
+  breakdown?: PayableSnapshotBreakdown;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreatePayableSnapshotBody {
+  projectId: string;
+  partnerId: string;
+  periodLabel: string;
+  notes?: string;
+}
+
+export type PayableComputationBreakdown = { [key: string]: unknown };
+
+export interface PayableComputation {
+  projectId: string;
+  partnerId: string;
+  projectName?: string | null;
+  partnerName?: string | null;
+  profitShareAmount: number;
+  profitShareSource: string;
+  recoverableAdvancesAmount: number;
+  pendingRecoveriesAmount: number;
+  pendingLcaAmount: number;
+  priorAdjustmentsAmount: number;
+  negativeCarryAmount: number;
+  actualPayable: number;
+  breakdown: PayableComputationBreakdown;
+  computedAt: string;
+  disclaimer: string;
+}
+
 export type GetUserActivityParams = {
   limit?: number;
 };
@@ -5735,3 +5892,59 @@ export const ListOperationalAccessLogsAccessDenied = {
   true: "true",
   false: "false",
 } as const;
+
+export type ComputePayableParams = {
+  projectId: string;
+  partnerId: string;
+};
+
+export type ListPayableAdjustmentsParams = {
+  projectId?: string;
+  partnerId?: string;
+  type?: string;
+  status?: string;
+};
+
+export type ListPayableAdjustments200 = {
+  adjustments: PayableAdjustment[];
+  total: number;
+};
+
+export type CreatePayableAdjustment201 = {
+  adjustment: PayableAdjustment;
+};
+
+export type UpdatePayableAdjustment200 = {
+  adjustment: PayableAdjustment;
+};
+
+export type DeletePayableAdjustment200 = {
+  ok?: boolean;
+};
+
+export type ConfirmPayableAdjustment200 = {
+  adjustment: PayableAdjustment;
+};
+
+export type ListPayableSnapshotsParams = {
+  projectId?: string;
+  partnerId?: string;
+};
+
+export type ListPayableSnapshots200 = {
+  snapshots: PayableSnapshot[];
+  total: number;
+};
+
+export type CreatePayableSnapshot201 = {
+  snapshot: PayableSnapshot;
+  computation: PayableComputation;
+};
+
+export type GetPayableSnapshot200 = {
+  snapshot: PayableSnapshot;
+};
+
+export type FinalizePayableSnapshot200 = {
+  snapshot: PayableSnapshot;
+};

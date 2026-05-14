@@ -33,6 +33,7 @@ import {
   Coins,
   PieChart,
   Layers,
+  Calculator,
 } from "lucide-react";
 import { useRole, ROLE_LABELS, ROLE_COLORS } from "@/contexts/RoleContext";
 import type { UserRole } from "@/contexts/RoleContext";
@@ -332,6 +333,12 @@ const navGroups: NavGroup[] = [
         name: "50% Revenue Settlement",
         href: "/fifty-pct-settlement",
         icon: PieChart,
+        roles: ["admin", "developer"] as UserRole[],
+      },
+      {
+        name: "Partner Payable",
+        href: "/partner-payable",
+        icon: Calculator,
         roles: ["admin", "developer"] as UserRole[],
       },
       {

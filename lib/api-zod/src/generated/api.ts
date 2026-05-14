@@ -9801,3 +9801,289 @@ export const ListOperationalAccessLogsResponse = zod.object({
   limit: zod.number(),
   offset: zod.number(),
 });
+
+/**
+ * @summary Compute live payable recommendation for a partner
+ */
+export const ComputePayableQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid(),
+  partnerId: zod.coerce.string().uuid(),
+});
+
+export const ComputePayableResponse = zod.object({
+  projectId: zod.string().uuid(),
+  partnerId: zod.string().uuid(),
+  projectName: zod.string().nullish(),
+  partnerName: zod.string().nullish(),
+  profitShareAmount: zod.number(),
+  profitShareSource: zod.string(),
+  recoverableAdvancesAmount: zod.number(),
+  pendingRecoveriesAmount: zod.number(),
+  pendingLcaAmount: zod.number(),
+  priorAdjustmentsAmount: zod.number(),
+  negativeCarryAmount: zod.number(),
+  actualPayable: zod.number(),
+  breakdown: zod.object({}).passthrough(),
+  computedAt: zod.coerce.date(),
+  disclaimer: zod.string(),
+});
+
+/**
+ * @summary List payable adjustments
+ */
+export const ListPayableAdjustmentsQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+  partnerId: zod.coerce.string().uuid().optional(),
+  type: zod.coerce.string().optional(),
+  status: zod.coerce.string().optional(),
+});
+
+export const ListPayableAdjustmentsResponse = zod.object({
+  adjustments: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      projectId: zod.string().uuid(),
+      partnerId: zod.string().uuid(),
+      adjustmentType: zod.string(),
+      direction: zod.enum(["credit", "debit"]),
+      amount: zod.number(),
+      periodLabel: zod.string().nullish(),
+      description: zod.string(),
+      reference: zod.string().nullish(),
+      status: zod.enum(["draft", "confirmed"]),
+      confirmedAt: zod.coerce.date().nullish(),
+      confirmedBy: zod.string().uuid().nullish(),
+      confirmedByName: zod.string().nullish(),
+      notes: zod.string().nullish(),
+      isActive: zod.boolean(),
+      createdBy: zod.string().uuid().nullish(),
+      createdByName: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    }),
+  ),
+  total: zod.number(),
+});
+
+/**
+ * @summary Create a payable adjustment
+ */
+export const CreatePayableAdjustmentBody = zod.object({
+  projectId: zod.string().uuid(),
+  partnerId: zod.string().uuid(),
+  adjustmentType: zod.enum([
+    "imbalance_adjustment",
+    "carry_balance",
+    "other_credit",
+    "other_debit",
+  ]),
+  direction: zod.enum(["credit", "debit"]),
+  amount: zod.number(),
+  periodLabel: zod.string().optional(),
+  description: zod.string(),
+  reference: zod.string().optional(),
+  notes: zod.string().optional(),
+});
+
+/**
+ * @summary Update a draft adjustment
+ */
+export const UpdatePayableAdjustmentParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const UpdatePayableAdjustmentBody = zod.object({
+  adjustmentType: zod
+    .enum([
+      "imbalance_adjustment",
+      "carry_balance",
+      "other_credit",
+      "other_debit",
+    ])
+    .optional(),
+  direction: zod.enum(["credit", "debit"]).optional(),
+  amount: zod.number().optional(),
+  periodLabel: zod.string().optional(),
+  description: zod.string().optional(),
+  reference: zod.string().optional(),
+  notes: zod.string().optional(),
+});
+
+export const UpdatePayableAdjustmentResponse = zod.object({
+  adjustment: zod.object({
+    id: zod.string().uuid(),
+    projectId: zod.string().uuid(),
+    partnerId: zod.string().uuid(),
+    adjustmentType: zod.string(),
+    direction: zod.enum(["credit", "debit"]),
+    amount: zod.number(),
+    periodLabel: zod.string().nullish(),
+    description: zod.string(),
+    reference: zod.string().nullish(),
+    status: zod.enum(["draft", "confirmed"]),
+    confirmedAt: zod.coerce.date().nullish(),
+    confirmedBy: zod.string().uuid().nullish(),
+    confirmedByName: zod.string().nullish(),
+    notes: zod.string().nullish(),
+    isActive: zod.boolean(),
+    createdBy: zod.string().uuid().nullish(),
+    createdByName: zod.string().nullish(),
+    createdAt: zod.coerce.date(),
+    updatedAt: zod.coerce.date(),
+  }),
+});
+
+/**
+ * @summary Soft-delete an adjustment (admin only)
+ */
+export const DeletePayableAdjustmentParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const DeletePayableAdjustmentResponse = zod.object({
+  ok: zod.boolean().optional(),
+});
+
+/**
+ * @summary Confirm a draft adjustment
+ */
+export const ConfirmPayableAdjustmentParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const ConfirmPayableAdjustmentResponse = zod.object({
+  adjustment: zod.object({
+    id: zod.string().uuid(),
+    projectId: zod.string().uuid(),
+    partnerId: zod.string().uuid(),
+    adjustmentType: zod.string(),
+    direction: zod.enum(["credit", "debit"]),
+    amount: zod.number(),
+    periodLabel: zod.string().nullish(),
+    description: zod.string(),
+    reference: zod.string().nullish(),
+    status: zod.enum(["draft", "confirmed"]),
+    confirmedAt: zod.coerce.date().nullish(),
+    confirmedBy: zod.string().uuid().nullish(),
+    confirmedByName: zod.string().nullish(),
+    notes: zod.string().nullish(),
+    isActive: zod.boolean(),
+    createdBy: zod.string().uuid().nullish(),
+    createdByName: zod.string().nullish(),
+    createdAt: zod.coerce.date(),
+    updatedAt: zod.coerce.date(),
+  }),
+});
+
+/**
+ * @summary List payable snapshots
+ */
+export const ListPayableSnapshotsQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+  partnerId: zod.coerce.string().uuid().optional(),
+});
+
+export const ListPayableSnapshotsResponse = zod.object({
+  snapshots: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      projectId: zod.string().uuid(),
+      partnerId: zod.string().uuid(),
+      periodLabel: zod.string(),
+      computedAt: zod.coerce.date(),
+      profitShareAmount: zod.number(),
+      profitShareSource: zod.string(),
+      recoverableAdvancesAmount: zod.number(),
+      pendingRecoveriesAmount: zod.number(),
+      pendingLcaAmount: zod.number(),
+      priorAdjustmentsAmount: zod.number(),
+      negativeCarryAmount: zod.number(),
+      actualPayable: zod.number(),
+      status: zod.enum(["draft", "finalized"]),
+      generatedBy: zod.string().uuid().nullish(),
+      generatedByName: zod.string().nullish(),
+      notes: zod.string().nullish(),
+      breakdown: zod.object({}).passthrough().nullish(),
+      isActive: zod.boolean(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    }),
+  ),
+  total: zod.number(),
+});
+
+/**
+ * @summary Save a recommendation snapshot
+ */
+export const CreatePayableSnapshotBody = zod.object({
+  projectId: zod.string().uuid(),
+  partnerId: zod.string().uuid(),
+  periodLabel: zod.string(),
+  notes: zod.string().optional(),
+});
+
+/**
+ * @summary Get a single snapshot
+ */
+export const GetPayableSnapshotParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const GetPayableSnapshotResponse = zod.object({
+  snapshot: zod.object({
+    id: zod.string().uuid(),
+    projectId: zod.string().uuid(),
+    partnerId: zod.string().uuid(),
+    periodLabel: zod.string(),
+    computedAt: zod.coerce.date(),
+    profitShareAmount: zod.number(),
+    profitShareSource: zod.string(),
+    recoverableAdvancesAmount: zod.number(),
+    pendingRecoveriesAmount: zod.number(),
+    pendingLcaAmount: zod.number(),
+    priorAdjustmentsAmount: zod.number(),
+    negativeCarryAmount: zod.number(),
+    actualPayable: zod.number(),
+    status: zod.enum(["draft", "finalized"]),
+    generatedBy: zod.string().uuid().nullish(),
+    generatedByName: zod.string().nullish(),
+    notes: zod.string().nullish(),
+    breakdown: zod.object({}).passthrough().nullish(),
+    isActive: zod.boolean(),
+    createdAt: zod.coerce.date(),
+    updatedAt: zod.coerce.date(),
+  }),
+});
+
+/**
+ * @summary Finalize a snapshot (admin only)
+ */
+export const FinalizePayableSnapshotParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const FinalizePayableSnapshotResponse = zod.object({
+  snapshot: zod.object({
+    id: zod.string().uuid(),
+    projectId: zod.string().uuid(),
+    partnerId: zod.string().uuid(),
+    periodLabel: zod.string(),
+    computedAt: zod.coerce.date(),
+    profitShareAmount: zod.number(),
+    profitShareSource: zod.string(),
+    recoverableAdvancesAmount: zod.number(),
+    pendingRecoveriesAmount: zod.number(),
+    pendingLcaAmount: zod.number(),
+    priorAdjustmentsAmount: zod.number(),
+    negativeCarryAmount: zod.number(),
+    actualPayable: zod.number(),
+    status: zod.enum(["draft", "finalized"]),
+    generatedBy: zod.string().uuid().nullish(),
+    generatedByName: zod.string().nullish(),
+    notes: zod.string().nullish(),
+    breakdown: zod.object({}).passthrough().nullish(),
+    isActive: zod.boolean(),
+    createdAt: zod.coerce.date(),
+    updatedAt: zod.coerce.date(),
+  }),
+});
