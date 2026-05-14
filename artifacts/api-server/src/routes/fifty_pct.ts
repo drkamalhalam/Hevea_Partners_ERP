@@ -27,9 +27,15 @@ import {
   lcaLedgerTable,
   partnersTable,
 } from "@workspace/db";
-import { eq, and, desc, gte, lte } from "drizzle-orm";
+import { eq, and, desc, gte, lte, inArray } from "drizzle-orm";
 import { getAuth } from "@clerk/express";
 import { requireRole } from "../middlewares/auth";
+import {
+  requireSettlementAccess,
+  getProjectScopeFilter,
+  logSettlementAccess,
+  enforceProjectAccess,
+} from "../middlewares/settlement_security";
 import { z } from "zod/v4";
 
 const router = Router();
@@ -236,7 +242,13 @@ router.get("/partners-lookup", async (req, res) => {
 
 // ── GET /fifty-pct ────────────────────────────────────────────────────────
 
-router.get("/", async (req, res) => {
+router.get("/", requireSettlementAccess, async (req, res) => {
+  const projectScope = getProjectScopeFilter(req);
+  if (projectScope !== null && projectScope.length === 0) {
+    logSettlementAccess(req, "fifty_pct_sessions", "list");
+    return res.json({ sessions: [], total: 0 });
+  }
+
   const { projectId, status } = req.query as {
     projectId?: string;
     status?: string;
@@ -245,6 +257,7 @@ router.get("/", async (req, res) => {
   const conditions: ReturnType<typeof eq>[] = [];
   if (projectId) conditions.push(eq(fiftyPctSessionsTable.projectId, projectId));
   if (status) conditions.push(eq(fiftyPctSessionsTable.status, status));
+  if (projectScope !== null) conditions.push(inArray(fiftyPctSessionsTable.projectId, projectScope));
 
   const sessions = await db
     .select()
@@ -252,6 +265,7 @@ router.get("/", async (req, res) => {
     .where(conditions.length ? and(...conditions) : undefined)
     .orderBy(desc(fiftyPctSessionsTable.createdAt));
 
+  logSettlementAccess(req, "fifty_pct_sessions", "list");
   return res.json({ sessions, total: sessions.length });
 });
 
@@ -308,7 +322,7 @@ router.post(
 
 // ── GET /fifty-pct/:id ───────────────────────────────────────────────────
 
-router.get("/:id", async (req, res) => {
+router.get("/:id", requireSettlementAccess, async (req, res) => {
   const { id } = req.params as { id: string };
 
   const [session] = await db
@@ -318,6 +332,7 @@ router.get("/:id", async (req, res) => {
     .limit(1);
 
   if (!session) return res.status(404).json({ error: "Session not found" });
+  if (!enforceProjectAccess(req, res, session.projectId, "fifty_pct_sessions")) return;
 
   const entries = await db
     .select()
@@ -331,6 +346,7 @@ router.get("/:id", async (req, res) => {
     .where(eq(projectsTable.id, session.projectId))
     .limit(1);
 
+  logSettlementAccess(req, "fifty_pct_sessions", "view", id, session.projectId ?? undefined);
   return res.json({
     session: { ...session, projectName: project[0]?.name ?? null },
     eppEntries: entries,
@@ -493,8 +509,17 @@ router.delete(
 
 // ── GET /fifty-pct/:id/epp ───────────────────────────────────────────────
 
-router.get("/:id/epp", async (req, res) => {
+router.get("/:id/epp", requireSettlementAccess, async (req, res) => {
   const { id } = req.params as { id: string };
+
+  const [session] = await db
+    .select({ projectId: fiftyPctSessionsTable.projectId })
+    .from(fiftyPctSessionsTable)
+    .where(eq(fiftyPctSessionsTable.id, id))
+    .limit(1);
+
+  if (session && !enforceProjectAccess(req, res, session.projectId, "fifty_pct_epp")) return;
+
   const entries = await db
     .select()
     .from(eppEntriesTable)
@@ -510,6 +535,7 @@ router.get("/:id/epp", async (req, res) => {
     0,
   );
 
+  logSettlementAccess(req, "fifty_pct_epp", "list", id);
   return res.json({
     entries,
     totalPct: Math.round(totalPct * 10000) / 10000,
@@ -651,7 +677,7 @@ router.delete(
 
 // ── GET /fifty-pct/:id/summary ────────────────────────────────────────────
 
-router.get("/:id/summary", async (req, res) => {
+router.get("/:id/summary", requireSettlementAccess, async (req, res) => {
   const { id } = req.params as { id: string };
 
   const [session] = await db
@@ -661,6 +687,7 @@ router.get("/:id/summary", async (req, res) => {
     .limit(1);
 
   if (!session) return res.status(404).json({ error: "Session not found" });
+  if (!enforceProjectAccess(req, res, session.projectId, "fifty_pct_sessions")) return;
 
   const entries = await db
     .select()
@@ -737,6 +764,7 @@ router.get("/:id/summary", async (req, res) => {
       warnings,
     },
   });
+  logSettlementAccess(req, "fifty_pct_sessions", "summary", id, session.projectId ?? undefined);
 });
 
 export default router;

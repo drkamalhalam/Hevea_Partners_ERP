@@ -22,8 +22,14 @@ import {
   projectsTable,
   partnersTable,
 } from "@workspace/db";
-import { eq, and, desc, isNull, or } from "drizzle-orm";
+import { eq, and, desc, isNull, or, inArray } from "drizzle-orm";
 import { requireRole } from "../middlewares/auth";
+import {
+  requireSettlementAccess,
+  getProjectScopeFilter,
+  logSettlementAccess,
+  enforceProjectAccess,
+} from "../middlewares/settlement_security";
 
 const router = Router();
 
@@ -74,12 +80,18 @@ async function writeEvent(payload: {
 
 // ── GET /settlement — list records ────────────────────────────────────────
 
-router.get("/", async (req, res) => {
+router.get("/", requireSettlementAccess, async (req, res) => {
   const auth = getAuth(req);
   if (!auth.userId) return res.status(401).json({ error: "Unauthorized" });
 
   const user = await resolveUser(auth.userId);
   if (!user) return res.status(403).json({ error: "User not registered" });
+
+  const projectScope = getProjectScopeFilter(req);
+  if (projectScope !== null && projectScope.length === 0) {
+    logSettlementAccess(req, "settlement_records", "list");
+    return res.json({ records: [], total: 0 });
+  }
 
   const { projectId, partnerId, status, type } = req.query as Record<string, string | undefined>;
 
@@ -121,6 +133,7 @@ router.get("/", async (req, res) => {
   if (partnerId) filters.push(eq(settlementRecordsTable.partnerId, partnerId));
   if (status) filters.push(eq(settlementRecordsTable.status, status));
   if (type) filters.push(eq(settlementRecordsTable.settlementType, type));
+  if (projectScope !== null) filters.push(inArray(settlementRecordsTable.projectId, projectScope));
 
   const rows = await db
     .select({
@@ -155,6 +168,7 @@ router.get("/", async (req, res) => {
     .where(and(...filters))
     .orderBy(desc(settlementRecordsTable.createdAt));
 
+  logSettlementAccess(req, "settlement_records", "list");
   return res.json({ records: rows, total: rows.length });
 });
 
@@ -230,7 +244,7 @@ router.post(
 
 // ── GET /settlement/:id — get single record with events ──────────────────
 
-router.get("/:id", async (req, res) => {
+router.get("/:id", requireSettlementAccess, async (req, res) => {
   const auth = getAuth(req);
   if (!auth.userId) return res.status(401).json({ error: "Unauthorized" });
 
@@ -243,6 +257,7 @@ router.get("/:id", async (req, res) => {
     .limit(1);
 
   if (!record) return res.status(404).json({ error: "Record not found" });
+  if (!enforceProjectAccess(req, res, record.projectId, "settlement_records")) return;
 
   const events = await db
     .select()
@@ -250,6 +265,7 @@ router.get("/:id", async (req, res) => {
     .where(eq(settlementOverrideEventsTable.settlementRecordId, id))
     .orderBy(desc(settlementOverrideEventsTable.performedAt));
 
+  logSettlementAccess(req, "settlement_records", "view", id, record.projectId ?? undefined);
   return res.json({ record, events });
 });
 
@@ -621,7 +637,7 @@ router.post(
 
 // ── GET /settlement/:id/audit — immutable audit trail ────────────────────
 
-router.get("/:id/audit", async (req, res) => {
+router.get("/:id/audit", requireSettlementAccess, async (req, res) => {
   const auth = getAuth(req);
   if (!auth.userId) return res.status(401).json({ error: "Unauthorized" });
 
@@ -634,6 +650,7 @@ router.get("/:id/audit", async (req, res) => {
     .limit(1);
 
   if (!record) return res.status(404).json({ error: "Record not found" });
+  if (!enforceProjectAccess(req, res, record.projectId, "settlement_records_audit")) return;
 
   const events = await db
     .select()
@@ -641,12 +658,13 @@ router.get("/:id/audit", async (req, res) => {
     .where(eq(settlementOverrideEventsTable.settlementRecordId, id))
     .orderBy(desc(settlementOverrideEventsTable.performedAt));
 
+  logSettlementAccess(req, "settlement_records", "audit", id, record.projectId ?? undefined);
   return res.json({ settlementRecordId: id, events, total: events.length });
 });
 
 // ── GET /settlement/:id/comparison — recommended vs actual ───────────────
 
-router.get("/:id/comparison", async (req, res) => {
+router.get("/:id/comparison", requireSettlementAccess, async (req, res) => {
   const auth = getAuth(req);
   if (!auth.userId) return res.status(401).json({ error: "Unauthorized" });
 
@@ -659,6 +677,7 @@ router.get("/:id/comparison", async (req, res) => {
     .limit(1);
 
   if (!record) return res.status(404).json({ error: "Record not found" });
+  if (!enforceProjectAccess(req, res, record.projectId, "settlement_records_comparison")) return;
 
   const events = await db
     .select()
@@ -666,6 +685,7 @@ router.get("/:id/comparison", async (req, res) => {
     .where(eq(settlementOverrideEventsTable.settlementRecordId, id))
     .orderBy(desc(settlementOverrideEventsTable.performedAt));
 
+  logSettlementAccess(req, "settlement_records", "comparison", id, record.projectId ?? undefined);
   const recommendedAmt = parseFloat(record.recommendedAmount ?? "0");
   const actualAmt = parseFloat(record.actualAmount ?? "0");
   const diff = actualAmt - recommendedAmt;

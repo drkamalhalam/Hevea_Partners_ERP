@@ -366,7 +366,7 @@ const navGroups: NavGroup[] = [
         name: "Distribution Records",
         href: "/distribution-records",
         icon: Database,
-        roles: ["admin", "developer"] as UserRole[],
+        roles: ["admin", "developer", "landowner"] as UserRole[],
       },
       {
         name: "Settlement Governance",

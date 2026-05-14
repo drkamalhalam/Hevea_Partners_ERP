@@ -256,7 +256,7 @@ export default function FiftyPctSettlement() {
 
   // Page state
   const [mode, setMode] = useState<"list" | "new" | "detail">("list");
-  const [filterProjectId, setFilterProjectId] = useState("");
+  const [filterProjectId, setFilterProjectId] = useState("all");
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
   const [detailTab, setDetailTab] = useState<"split" | "epp" | "landowner" | "analytics">("split");
 
@@ -292,12 +292,13 @@ export default function FiftyPctSettlement() {
 
   const { data: projects = [] } = useListProjects();
 
+  const filterPid = filterProjectId === "all" ? undefined : filterProjectId;
   const { data: sessionsPage, isLoading: sessionsLoading } = useListFiftyPctSessions(
-    { projectId: filterProjectId || undefined },
+    { projectId: filterPid },
     {
       query: {
         enabled: mode === "list",
-        queryKey: getListFiftyPctSessionsQueryKey({ projectId: filterProjectId || undefined }),
+        queryKey: getListFiftyPctSessionsQueryKey({ projectId: filterPid }),
       },
     },
   );
@@ -642,7 +643,7 @@ export default function FiftyPctSettlement() {
                   <SelectValue placeholder="Filter by project (optional)" />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-900 border-slate-700 text-slate-200">
-                  <SelectItem value="">All projects</SelectItem>
+                  <SelectItem value="all">All projects</SelectItem>
                   {projects.map((p: Project) => (
                     <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                   ))}

@@ -20,8 +20,14 @@ import {
   projectsTable,
   partnersTable,
 } from "@workspace/db";
-import { eq, and, desc, or, sql, isNull } from "drizzle-orm";
+import { eq, and, desc, or, sql, isNull, inArray } from "drizzle-orm";
 import { requireRole } from "../middlewares/auth";
+import {
+  requireSettlementAccess,
+  getProjectScopeFilter,
+  logSettlementAccess,
+  enforceProjectAccess,
+} from "../middlewares/settlement_security";
 
 const router = Router();
 
@@ -90,12 +96,18 @@ function computeDerived(
 
 // ── GET /distribution-records — list ─────────────────────────────────────
 
-router.get("/", async (req, res) => {
+router.get("/", requireSettlementAccess, async (req, res) => {
   const auth = getAuth(req);
   if (!auth.userId) return res.status(401).json({ error: "Unauthorized" });
 
   const user = await resolveUser(auth.userId);
   if (!user) return res.status(403).json({ error: "User not registered" });
+
+  const projectScope = getProjectScopeFilter(req);
+  if (projectScope !== null && projectScope.length === 0) {
+    logSettlementAccess(req, "distribution_records", "list");
+    return res.json({ records: [], total: 0 });
+  }
 
   const {
     projectId, partnerId, status, settlementType,
@@ -110,6 +122,7 @@ router.get("/", async (req, res) => {
   if (partnerId) filters.push(eq(distributionRecordsTable.partnerId, partnerId));
   if (status) filters.push(eq(distributionRecordsTable.status, status));
   if (settlementType) filters.push(eq(distributionRecordsTable.settlementType, settlementType));
+  if (projectScope !== null) filters.push(inArray(distributionRecordsTable.projectId, projectScope));
 
   const rows = await db
     .select({
@@ -146,6 +159,7 @@ router.get("/", async (req, res) => {
     .where(filters.length > 0 ? and(...filters) : undefined)
     .orderBy(desc(distributionRecordsTable.createdAt));
 
+  logSettlementAccess(req, "distribution_records", "list");
   return res.json({ records: rows, total: rows.length });
 });
 
@@ -223,15 +237,24 @@ router.post(
 
 // ── GET /distribution-records/summary ─────────────────────────────────────
 
-router.get("/summary", async (req, res) => {
+router.get("/summary", requireSettlementAccess, async (req, res) => {
   const auth = getAuth(req);
   if (!auth.userId) return res.status(401).json({ error: "Unauthorized" });
+
+  const projectScope = getProjectScopeFilter(req);
+  if (projectScope !== null && projectScope.length === 0) {
+    logSettlementAccess(req, "distribution_records", "summary");
+    return res.json({ totalRecords: 0, totalGrossRevenue: "0.00", totalRecommended: "0.00",
+      totalPaid: "0.00", totalPending: "0.00", totalCarryForward: "0.00",
+      totalPriorCarry: "0.00", paymentRate: "0.0", byStatus: {} });
+  }
 
   const { projectId, partnerId } = req.query as Record<string, string | undefined>;
 
   const filters: ReturnType<typeof eq>[] = [eq(distributionRecordsTable.isActive, true)];
   if (projectId) filters.push(eq(distributionRecordsTable.projectId, projectId));
   if (partnerId) filters.push(eq(distributionRecordsTable.partnerId, partnerId));
+  if (projectScope !== null) filters.push(inArray(distributionRecordsTable.projectId, projectScope));
 
   const rows = await db
     .select({
@@ -259,6 +282,7 @@ router.get("/summary", async (req, res) => {
     byStatus[r.status] = (byStatus[r.status] ?? 0) + 1;
   }
 
+  logSettlementAccess(req, "distribution_records", "summary");
   return res.json({
     totalRecords,
     totalGrossRevenue: totalGrossRevenue.toFixed(2),
@@ -274,9 +298,15 @@ router.get("/summary", async (req, res) => {
 
 // ── GET /distribution-records/pending-payable ─────────────────────────────
 
-router.get("/pending-payable", async (req, res) => {
+router.get("/pending-payable", requireSettlementAccess, async (req, res) => {
   const auth = getAuth(req);
   if (!auth.userId) return res.status(401).json({ error: "Unauthorized" });
+
+  const projectScope = getProjectScopeFilter(req);
+  if (projectScope !== null && projectScope.length === 0) {
+    logSettlementAccess(req, "distribution_records", "pending_payable");
+    return res.json({ records: [], total: 0, totalPendingAmount: "0.00" });
+  }
 
   const { projectId, partnerId } = req.query as Record<string, string | undefined>;
 
@@ -285,6 +315,7 @@ router.get("/pending-payable", async (req, res) => {
   ];
   if (projectId) filters.push(eq(distributionRecordsTable.projectId, projectId));
   if (partnerId) filters.push(eq(distributionRecordsTable.partnerId, partnerId));
+  if (projectScope !== null) filters.push(inArray(distributionRecordsTable.projectId, projectScope));
 
   const rows = await db
     .select({
@@ -316,6 +347,7 @@ router.get("/pending-payable", async (req, res) => {
 
   const total = rows.reduce((s, r) => s + parseFloat(r.pendingPayable ?? "0"), 0);
 
+  logSettlementAccess(req, "distribution_records", "pending_payable");
   return res.json({
     records: rows,
     total: rows.length,
@@ -325,7 +357,7 @@ router.get("/pending-payable", async (req, res) => {
 
 // ── GET /distribution-records/archive ────────────────────────────────────
 
-router.get("/archive", async (req, res) => {
+router.get("/archive", requireRole("admin", "developer"), async (req, res) => {
   const auth = getAuth(req);
   if (!auth.userId) return res.status(401).json({ error: "Unauthorized" });
 
@@ -369,9 +401,15 @@ router.get("/archive", async (req, res) => {
 
 // ── GET /distribution-records/partner-history/:partnerId ──────────────────
 
-router.get("/partner-history/:partnerId", async (req, res) => {
+router.get("/partner-history/:partnerId", requireSettlementAccess, async (req, res) => {
   const auth = getAuth(req);
   if (!auth.userId) return res.status(401).json({ error: "Unauthorized" });
+
+  const projectScope = getProjectScopeFilter(req);
+  if (projectScope !== null && projectScope.length === 0) {
+    logSettlementAccess(req, "distribution_records", "partner_history");
+    return res.json({ partnerId: req.params.partnerId, records: [], total: 0, summary: { totalPaid: "0.00", totalPending: "0.00", totalRecommended: "0.00", paymentRate: "0.0" } });
+  }
 
   const { partnerId } = req.params as { partnerId: string };
   const { projectId } = req.query as Record<string, string | undefined>;
@@ -380,6 +418,7 @@ router.get("/partner-history/:partnerId", async (req, res) => {
     eq(distributionRecordsTable.partnerId, partnerId),
   ];
   if (projectId) filters.push(eq(distributionRecordsTable.projectId, projectId));
+  if (projectScope !== null) filters.push(inArray(distributionRecordsTable.projectId, projectScope));
 
   const records = await db
     .select({
@@ -414,6 +453,7 @@ router.get("/partner-history/:partnerId", async (req, res) => {
   const totalPending = records.reduce((s, r) => s + parseFloat(r.pendingPayable ?? "0"), 0);
   const totalRecommended = records.reduce((s, r) => s + parseFloat(r.settlementRecommendation ?? "0"), 0);
 
+  logSettlementAccess(req, "distribution_records", "partner_history", partnerId);
   return res.json({
     partnerId,
     records,
@@ -429,7 +469,7 @@ router.get("/partner-history/:partnerId", async (req, res) => {
 
 // ── GET /distribution-records/:id — get single record ────────────────────
 
-router.get("/:id", async (req, res) => {
+router.get("/:id", requireSettlementAccess, async (req, res) => {
   const auth = getAuth(req);
   if (!auth.userId) return res.status(401).json({ error: "Unauthorized" });
 
@@ -442,6 +482,7 @@ router.get("/:id", async (req, res) => {
     .limit(1);
 
   if (!record) return res.status(404).json({ error: "Record not found" });
+  if (!enforceProjectAccess(req, res, record.projectId, "distribution_records")) return;
 
   const events = await db
     .select()
@@ -449,6 +490,7 @@ router.get("/:id", async (req, res) => {
     .where(eq(distributionPaymentEventsTable.distributionRecordId, id))
     .orderBy(desc(distributionPaymentEventsTable.performedAt));
 
+  logSettlementAccess(req, "distribution_records", "view", id, record.projectId ?? undefined);
   return res.json({ record, events });
 });
 
@@ -712,19 +754,20 @@ router.post(
 
 // ── GET /distribution-records/:id/events — event log ─────────────────────
 
-router.get("/:id/events", async (req, res) => {
+router.get("/:id/events", requireSettlementAccess, async (req, res) => {
   const auth = getAuth(req);
   if (!auth.userId) return res.status(401).json({ error: "Unauthorized" });
 
   const { id } = req.params as { id: string };
 
   const [record] = await db
-    .select({ id: distributionRecordsTable.id })
+    .select({ id: distributionRecordsTable.id, projectId: distributionRecordsTable.projectId })
     .from(distributionRecordsTable)
     .where(eq(distributionRecordsTable.id, id))
     .limit(1);
 
   if (!record) return res.status(404).json({ error: "Record not found" });
+  if (!enforceProjectAccess(req, res, record.projectId, "distribution_records_events")) return;
 
   const events = await db
     .select()
@@ -732,6 +775,7 @@ router.get("/:id/events", async (req, res) => {
     .where(eq(distributionPaymentEventsTable.distributionRecordId, id))
     .orderBy(desc(distributionPaymentEventsTable.performedAt));
 
+  logSettlementAccess(req, "distribution_records", "events", id, record.projectId ?? undefined);
   return res.json({ distributionRecordId: id, events, total: events.length });
 });
 

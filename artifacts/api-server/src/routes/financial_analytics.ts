@@ -15,6 +15,11 @@
 import { Router } from "express";
 import { getAuth } from "@clerk/express";
 import {
+  requireSettlementAccess,
+  getProjectScopeFilter,
+  logSettlementAccess,
+} from "../middlewares/settlement_security";
+import {
   db,
   fiftyPctSessionsTable,
   eppEntriesTable,
@@ -30,15 +35,8 @@ import { eq, and, inArray, sql, desc } from "drizzle-orm";
 const router = Router();
 
 // ── Auth guard ─────────────────────────────────────────────────────────────
-
-function requireAuth(req: Parameters<typeof getAuth>[0], res: { status: (n: number) => { json: (b: unknown) => unknown } }) {
-  const auth = getAuth(req);
-  if (!auth.userId) {
-    res.status(401).json({ error: "Unauthorized" });
-    return false;
-  }
-  return true;
-}
+// requireSettlementAccess (imported) blocks employee + operational_staff.
+// All analytics endpoints use it to enforce the settlement access matrix.
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -47,14 +45,23 @@ const toFixed = (v: number) => v.toFixed(2);
 
 // ── GET /financial-analytics/summary ──────────────────────────────────────
 
-router.get("/summary", async (req, res) => {
-  if (!requireAuth(req, res)) return;
-
+router.get("/summary", requireSettlementAccess, async (req, res) => {
   const { projectId } = req.query as { projectId?: string };
+  const projectScope = getProjectScopeFilter(req);
+  if (projectScope !== null && projectScope.length === 0) {
+    return res.json({ grossRevenue: "0.00", landownerSplit: "0.00", participantPoolSplit: "0.00",
+      operationalCost: "0.00", lcaDeducted: "0.00", landownerNet: "0.00", eppTotalAllocated: "0.00",
+      sessions: { confirmed: 0, draft: 0 }, lca: { totalDue: "0.00", totalPaid: "0.00", totalPending: "0.00", pendingCount: 0 },
+      negativeBalance: { totalDeficit: "0.00" }, distribution: { totalGross: "0.00", totalPaid: "0.00", totalPending: "0.00", paidCount: 0, pendingCount: 0 },
+      settlements: { total: 0, finalized: 0, disputed: 0, overridden: 0, totalRecommended: "0.00", totalActual: "0.00" },
+      recoverableAdjustments: { total: "0.00", count: 0 } });
+  }
+  const scopeFilter = (col: Parameters<typeof eq>[0]) =>
+    projectId ? eq(col, projectId) : projectScope !== null ? inArray(col, projectScope) : undefined;
 
   const sessionFilter = and(
     inArray(fiftyPctSessionsTable.status, ["confirmed", "draft"]),
-    projectId ? eq(fiftyPctSessionsTable.projectId, projectId) : undefined
+    scopeFilter(fiftyPctSessionsTable.projectId),
   );
 
   const [sessionAgg] = await db
@@ -71,13 +78,13 @@ router.get("/summary", async (req, res) => {
     .from(fiftyPctSessionsTable)
     .where(sessionFilter);
 
-  const eppFilter = projectId ? eq(eppEntriesTable.projectId, projectId) : undefined;
+  const eppFilter = scopeFilter(eppEntriesTable.projectId);
   const [eppAgg] = await db
     .select({ totalAllocated: sql<string>`COALESCE(SUM(${eppEntriesTable.allocatedAmount}), 0)` })
     .from(eppEntriesTable)
     .where(eppFilter);
 
-  const lcaFilter = projectId ? eq(lcaLedgerTable.projectId, projectId) : undefined;
+  const lcaFilter = scopeFilter(lcaLedgerTable.projectId);
   const [lcaAgg] = await db
     .select({
       totalDue:    sql<number>`COALESCE(SUM(${lcaLedgerTable.totalDue}), 0)`,
@@ -101,7 +108,7 @@ router.get("/summary", async (req, res) => {
 
   const distFilter = and(
     eq(distributionRecordsTable.isActive, true),
-    projectId ? eq(distributionRecordsTable.projectId, projectId) : undefined
+    scopeFilter(distributionRecordsTable.projectId),
   );
   const [distAgg] = await db
     .select({
@@ -114,7 +121,7 @@ router.get("/summary", async (req, res) => {
     .from(distributionRecordsTable)
     .where(distFilter);
 
-  const settlFilter = projectId ? eq(settlementRecordsTable.projectId, projectId) : undefined;
+  const settlFilter = scopeFilter(settlementRecordsTable.projectId);
   const [settlAgg] = await db
     .select({
       total:          sql<number>`COUNT(*)`,
@@ -129,7 +136,7 @@ router.get("/summary", async (req, res) => {
 
   const adjFilter = and(
     inArray(payableAdjustmentsTable.status, ["draft", "confirmed"]),
-    projectId ? eq(payableAdjustmentsTable.projectId, projectId) : undefined
+    scopeFilter(payableAdjustmentsTable.projectId),
   );
   const [adjAgg] = await db
     .select({
@@ -180,19 +187,23 @@ router.get("/summary", async (req, res) => {
       count: Number(adjAgg?.count ?? 0),
     },
   });
+  logSettlementAccess(req, "financial_analytics", "summary");
 });
 
 // ── GET /financial-analytics/revenue-trend ────────────────────────────────
 
-router.get("/revenue-trend", async (req, res) => {
-  if (!requireAuth(req, res)) return;
-
+router.get("/revenue-trend", requireSettlementAccess, async (req, res) => {
   const { projectId, limit: limitStr } = req.query as { projectId?: string; limit?: string };
   const limitN = Math.min(parseInt(limitStr ?? "20", 10), 50);
+  const projectScope = getProjectScopeFilter(req);
+  if (projectScope !== null && projectScope.length === 0) {
+    logSettlementAccess(req, "financial_analytics", "revenue_trend");
+    return res.json({ trend: [], rawSessions: [] });
+  }
+  const scopeFilter = (col: Parameters<typeof eq>[0]) =>
+    projectId ? eq(col, projectId) : projectScope !== null ? inArray(col, projectScope) : undefined;
 
-  const filter = and(
-    projectId ? eq(fiftyPctSessionsTable.projectId, projectId) : undefined,
-  );
+  const filter = and(scopeFilter(fiftyPctSessionsTable.projectId));
 
   const rows = await db
     .select({
@@ -251,19 +262,25 @@ router.get("/revenue-trend", async (req, res) => {
     landownerNet:        parseFloat(p.landownerNet.toFixed(2)),
   }));
 
+  logSettlementAccess(req, "financial_analytics", "revenue_trend");
   return res.json({ trend, rawSessions: rows });
 });
 
 // ── GET /financial-analytics/settlement-analytics ─────────────────────────
 
-router.get("/settlement-analytics", async (req, res) => {
-  if (!requireAuth(req, res)) return;
-
+router.get("/settlement-analytics", requireSettlementAccess, async (req, res) => {
   const { projectId } = req.query as { projectId?: string };
+  const projectScope = getProjectScopeFilter(req);
+  if (projectScope !== null && projectScope.length === 0) {
+    logSettlementAccess(req, "financial_analytics", "settlement_analytics");
+    return res.json({ byType: [], lcaByYear: [] });
+  }
+  const scopeFilter = (col: Parameters<typeof eq>[0]) =>
+    projectId ? eq(col, projectId) : projectScope !== null ? inArray(col, projectScope) : undefined;
 
   const baseFilter = and(
     sql`${settlementRecordsTable.status} != 'archived'`,
-    projectId ? eq(settlementRecordsTable.projectId, projectId) : undefined
+    scopeFilter(settlementRecordsTable.projectId),
   );
 
   // By type aggregation
@@ -309,10 +326,11 @@ router.get("/settlement-analytics", async (req, res) => {
       count:      sql<number>`COUNT(*)`,
     })
     .from(lcaLedgerTable)
-    .where(projectId ? eq(lcaLedgerTable.projectId, projectId) : undefined)
+    .where(scopeFilter(lcaLedgerTable.projectId))
     .groupBy(lcaLedgerTable.year)
     .orderBy(lcaLedgerTable.year);
 
+  logSettlementAccess(req, "financial_analytics", "settlement_analytics");
   return res.json({
     byType,
     lcaByYear: lcaByYear.map(r => ({
@@ -328,8 +346,14 @@ router.get("/settlement-analytics", async (req, res) => {
 
 // ── GET /financial-analytics/project-profitability ────────────────────────
 
-router.get("/project-profitability", async (req, res) => {
-  if (!requireAuth(req, res)) return;
+router.get("/project-profitability", requireSettlementAccess, async (req, res) => {
+  const projectScope = getProjectScopeFilter(req);
+  if (projectScope !== null && projectScope.length === 0) {
+    logSettlementAccess(req, "financial_analytics", "project_profitability");
+    return res.json({ projects: [] });
+  }
+  const scopeFilter = (col: Parameters<typeof eq>[0]) =>
+    projectScope !== null ? inArray(col, projectScope) : undefined;
 
   // Aggregate fifty_pct_sessions by project
   const sessionsByProject = await db
@@ -347,6 +371,7 @@ router.get("/project-profitability", async (req, res) => {
     })
     .from(fiftyPctSessionsTable)
     .leftJoin(projectsTable, eq(fiftyPctSessionsTable.projectId, projectsTable.id))
+    .where(scopeFilter(fiftyPctSessionsTable.projectId))
     .groupBy(fiftyPctSessionsTable.projectId, projectsTable.name)
     .orderBy(desc(sql`SUM(${fiftyPctSessionsTable.grossRevenue})`));
 
@@ -358,6 +383,7 @@ router.get("/project-profitability", async (req, res) => {
       participantCount: sql<number>`COUNT(DISTINCT ${eppEntriesTable.participantKey})`,
     })
     .from(eppEntriesTable)
+    .where(scopeFilter(eppEntriesTable.projectId))
     .groupBy(eppEntriesTable.projectId);
 
   const eppMap = Object.fromEntries(eppByProject.map(r => [r.projectId, r]));
@@ -370,7 +396,7 @@ router.get("/project-profitability", async (req, res) => {
       totalPending: sql<string>`COALESCE(SUM(${distributionRecordsTable.pendingPayable}), 0)`,
     })
     .from(distributionRecordsTable)
-    .where(eq(distributionRecordsTable.isActive, true))
+    .where(and(eq(distributionRecordsTable.isActive, true), scopeFilter(distributionRecordsTable.projectId)))
     .groupBy(distributionRecordsTable.projectId);
 
   const distMap = Object.fromEntries(distByProject.map(r => [r.projectId, r]));
@@ -383,6 +409,7 @@ router.get("/project-profitability", async (req, res) => {
       totalBal:    sql<number>`COALESCE(SUM(${lcaLedgerTable.balance}), 0)`,
     })
     .from(lcaLedgerTable)
+    .where(scopeFilter(lcaLedgerTable.projectId))
     .groupBy(lcaLedgerTable.projectId);
 
   const lcaMap = Object.fromEntries(lcaByProject.map(r => [r.projectId, r]));
@@ -415,19 +442,25 @@ router.get("/project-profitability", async (req, res) => {
     };
   });
 
+  logSettlementAccess(req, "financial_analytics", "project_profitability");
   return res.json({ projects });
 });
 
 // ── GET /financial-analytics/allocation-breakdown ─────────────────────────
 
-router.get("/allocation-breakdown", async (req, res) => {
-  if (!requireAuth(req, res)) return;
-
+router.get("/allocation-breakdown", requireSettlementAccess, async (req, res) => {
   const { projectId } = req.query as { projectId?: string };
+  const projectScope = getProjectScopeFilter(req);
+  if (projectScope !== null && projectScope.length === 0) {
+    logSettlementAccess(req, "financial_analytics", "allocation_breakdown");
+    return res.json({ grossRevenue: "0.00", breakdown: [] });
+  }
+  const scopeFilter = (col: Parameters<typeof eq>[0]) =>
+    projectId ? eq(col, projectId) : projectScope !== null ? inArray(col, projectScope) : undefined;
 
   const filter = and(
     eq(fiftyPctSessionsTable.status, "confirmed"),
-    projectId ? eq(fiftyPctSessionsTable.projectId, projectId) : undefined
+    scopeFilter(fiftyPctSessionsTable.projectId),
   );
 
   const [agg] = await db
@@ -449,6 +482,7 @@ router.get("/allocation-breakdown", async (req, res) => {
 
   const pct = (v: number) => gross > 0 ? parseFloat(((v / gross) * 100).toFixed(1)) : 0;
 
+  logSettlementAccess(req, "financial_analytics", "allocation_breakdown");
   return res.json({
     grossRevenue: toFixed(gross),
     breakdown: [

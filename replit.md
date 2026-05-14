@@ -1158,3 +1158,43 @@ Real-time financial monitoring dashboard for distribution and settlement health.
 **Generated hooks:** `useGetSettlementGovernanceSummary`, `useListSettlementGovernanceAlerts`, `useGetSettlementTasks`, `useGetSettlementDiscrepancies`
 
 **OpenAPI schemas:** `SettlementAlert`, `SettlementGovernanceSummary`, `SettlementTaskCenter`, `DiscrepancyReport`
+
+## Settlement Security Layer
+
+Role-based access control and financial audit logging enforced on all settlement, distribution, and analytics endpoints. Implemented as a shared middleware module with three utilities.
+
+**Access Matrix:**
+| Role | Settlement Read | Distribution Read | 50% Settlement | Financial Analytics |
+|---|---|---|---|---|
+| `admin` | Full (all projects) | Full (all projects) | Full (all projects) | Full (all projects) |
+| `developer` | Full (all projects) | Full (all projects) | Full (all projects) | Full (all projects) |
+| `landowner` | Own projects only | Own projects only (Distribution Records sidebar visible) | Own projects only | Own projects only |
+| `investor` | Own projects only | Own projects only | Own projects only (EPP data) | Own projects only |
+| `employee` | **BLOCKED (403)** | **BLOCKED (403)** | **BLOCKED (403)** | **BLOCKED (403)** |
+| `operational_staff` | **BLOCKED (403)** | **BLOCKED (403)** | **BLOCKED (403)** | **BLOCKED (403)** |
+
+**Middleware file:** `artifacts/api-server/src/middlewares/settlement_security.ts`
+- `requireSettlementAccess` — Express middleware; rejects employee + operational_staff with 403
+- `getProjectScopeFilter(req)` — returns `null` (admin/developer: see all) or `string[]` (restricted roles: their project UUIDs). If empty array → caller returns empty result immediately
+- `logSettlementAccess(req, resource, action, resourceId?, projectId?)` — fire-and-forget write to `financial_access_logs` table. Never throws. Captures userId, userRole, IP, userAgent
+- `enforceProjectAccess(req, res, projectId, resource)` — single-record project check; sends 403 and returns false if access denied
+
+**Applied to all GET endpoints in:**
+- `settlement_overrides.ts` — GET /, GET /:id, GET /:id/audit, GET /:id/comparison
+- `distribution_records.ts` — GET /, GET /summary, GET /pending-payable, GET /archive (admin/developer only), GET /partner-history/:partnerId, GET /:id, GET /:id/events
+- `fifty_pct.ts` — GET /, GET /:id, GET /:id/epp, GET /:id/summary
+- `financial_analytics.ts` — all 5 analytics endpoints with `scopeFilter()` helper injected into every sub-query
+
+**Project scope filtering pattern:**
+```
+const projectScope = getProjectScopeFilter(req); // null or string[]
+if (projectScope !== null && projectScope.length === 0) return res.json(empty);
+// In filter arrays:
+if (projectScope !== null) filters.push(inArray(table.projectId, projectScope));
+// For analytics with inline ternary conditions:
+const scopeFilter = (col) => projectId ? eq(col, projectId) : projectScope !== null ? inArray(col, projectScope) : undefined;
+```
+
+**Audit logging:** Every settlement data access (list, view, create, update, finalize, override) writes a row to `financial_access_logs` via `logSettlementAccess`. Readable at `GET /financial-access-logs` (admin: full history; developer: last 7 days).
+
+**Frontend sidebar:** "Distribution Records" expanded to include `landowner` role. All other Settlement group items remain admin/developer only.
