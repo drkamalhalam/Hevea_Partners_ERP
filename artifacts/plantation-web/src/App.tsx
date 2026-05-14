@@ -81,6 +81,7 @@ import Notifications from "./pages/Notifications";
 import ProjectMaturityDeclaration from "./pages/ProjectMaturityDeclaration";
 import NomineeActivationPage from "./pages/NomineeActivationPage";
 import ProjectClosurePage from "./pages/ProjectClosurePage";
+import OwnershipTransfers from "./pages/OwnershipTransfers";
 // Layout
 import NotFound from "@/pages/not-found";
 import Layout from "./components/layout/Layout";
@@ -290,6 +291,7 @@ function AppRoutes() {
               <Route path="/final-settlement"><ProtectedRoute component={FinalSettlement} /></Route>
               <Route path="/distribution-records"><ProtectedRoute component={DistributionRecords} /></Route>
               <Route path="/settlement-governance"><ProtectedRoute component={SettlementGovernance} /></Route>
+              <Route path="/ownership-transfers"><ProtectedRoute component={OwnershipTransfers} /></Route>
               <Route path="/sales"><ProtectedRoute component={Sales} /></Route>
               <Route path="/distribution"><ProtectedRoute component={Distribution} /></Route>
 

@@ -4652,6 +4652,702 @@ export const CreateOwnershipSnapshotBody = zod.object({
 });
 
 /**
+ * @summary List ownership transfer requests
+ */
+export const ListOwnershipTransfersQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+  status: zod.coerce.string().optional(),
+  transferorPartnerId: zod.coerce.string().uuid().optional(),
+});
+
+export const ListOwnershipTransfersResponse = zod.object({
+  transfers: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      projectId: zod.string().uuid(),
+      projectName: zod.string().nullish(),
+      projectLifecycle: zod.string().nullish(),
+      transferorPartnerId: zod.string().uuid(),
+      transferorName: zod.string(),
+      offeredPercentage: zod.string(),
+      offeredValue: zod.string().nullish(),
+      transferType: zod.enum(["internal", "third_party"]),
+      buyerPartnerId: zod.string().uuid().nullish(),
+      buyerName: zod.string(),
+      buyerContact: zod.string().nullish(),
+      status: zod.enum([
+        "draft",
+        "pending_rofr",
+        "rofr_accepted",
+        "rofr_rejected",
+        "pending_approval",
+        "approved",
+        "executed",
+        "cancelled",
+        "expired",
+      ]),
+      rofrDeadline: zod.coerce.date().nullish(),
+      rofrResponses: zod.array(
+        zod.object({
+          partnerId: zod.string().uuid(),
+          partnerName: zod.string(),
+          response: zod.enum(["pending", "accepted", "rejected"]),
+          respondedAt: zod.coerce.date().nullish(),
+          notes: zod.string().nullish(),
+        }),
+      ),
+      linkedSnapshotId: zod.string().uuid().nullish(),
+      reason: zod.string().nullish(),
+      adminNotes: zod.string().nullish(),
+      approvedAt: zod.coerce.date().nullish(),
+      approvedBy: zod.string().uuid().nullish(),
+      approvedByName: zod.string().nullish(),
+      executedAt: zod.coerce.date().nullish(),
+      executedBy: zod.string().uuid().nullish(),
+      executedByName: zod.string().nullish(),
+      executionNotes: zod.string().nullish(),
+      cancelledAt: zod.coerce.date().nullish(),
+      cancelledBy: zod.string().uuid().nullish(),
+      cancelledByName: zod.string().nullish(),
+      cancellationReason: zod.string().nullish(),
+      submittedAt: zod.coerce.date().nullish(),
+      submittedByName: zod.string().nullish(),
+      createdByName: zod.string().nullish(),
+      isActive: zod.boolean(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    }),
+  ),
+  total: zod.number(),
+});
+
+/**
+ * @summary Create a new transfer request
+ */
+export const CreateOwnershipTransferBody = zod.object({
+  projectId: zod.string().uuid(),
+  transferorPartnerId: zod.string().uuid(),
+  offeredPercentage: zod.number(),
+  offeredValue: zod.number().nullish(),
+  transferType: zod.enum(["internal", "third_party"]),
+  buyerPartnerId: zod.string().uuid().nullish(),
+  buyerName: zod.string(),
+  buyerContact: zod.string().nullish(),
+  reason: zod.string().nullish(),
+  linkedSnapshotId: zod.string().uuid().nullish(),
+});
+
+/**
+ * @summary Pending transfers dashboard (admin/developer)
+ */
+export const GetOwnershipTransferDashboardResponse = zod.object({
+  pendingTransfers: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      projectId: zod.string().uuid(),
+      projectName: zod.string().nullish(),
+      projectLifecycle: zod.string().nullish(),
+      transferorPartnerId: zod.string().uuid(),
+      transferorName: zod.string(),
+      offeredPercentage: zod.string(),
+      offeredValue: zod.string().nullish(),
+      transferType: zod.enum(["internal", "third_party"]),
+      buyerPartnerId: zod.string().uuid().nullish(),
+      buyerName: zod.string(),
+      buyerContact: zod.string().nullish(),
+      status: zod.enum([
+        "draft",
+        "pending_rofr",
+        "rofr_accepted",
+        "rofr_rejected",
+        "pending_approval",
+        "approved",
+        "executed",
+        "cancelled",
+        "expired",
+      ]),
+      rofrDeadline: zod.coerce.date().nullish(),
+      rofrResponses: zod.array(
+        zod.object({
+          partnerId: zod.string().uuid(),
+          partnerName: zod.string(),
+          response: zod.enum(["pending", "accepted", "rejected"]),
+          respondedAt: zod.coerce.date().nullish(),
+          notes: zod.string().nullish(),
+        }),
+      ),
+      linkedSnapshotId: zod.string().uuid().nullish(),
+      reason: zod.string().nullish(),
+      adminNotes: zod.string().nullish(),
+      approvedAt: zod.coerce.date().nullish(),
+      approvedBy: zod.string().uuid().nullish(),
+      approvedByName: zod.string().nullish(),
+      executedAt: zod.coerce.date().nullish(),
+      executedBy: zod.string().uuid().nullish(),
+      executedByName: zod.string().nullish(),
+      executionNotes: zod.string().nullish(),
+      cancelledAt: zod.coerce.date().nullish(),
+      cancelledBy: zod.string().uuid().nullish(),
+      cancelledByName: zod.string().nullish(),
+      cancellationReason: zod.string().nullish(),
+      submittedAt: zod.coerce.date().nullish(),
+      submittedByName: zod.string().nullish(),
+      createdByName: zod.string().nullish(),
+      isActive: zod.boolean(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    }),
+  ),
+  totalPending: zod.number(),
+  byStatus: zod.object({}).passthrough(),
+});
+
+/**
+ * @summary Get a single transfer request
+ */
+export const GetOwnershipTransferParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const GetOwnershipTransferResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  projectName: zod.string().nullish(),
+  projectLifecycle: zod.string().nullish(),
+  transferorPartnerId: zod.string().uuid(),
+  transferorName: zod.string(),
+  offeredPercentage: zod.string(),
+  offeredValue: zod.string().nullish(),
+  transferType: zod.enum(["internal", "third_party"]),
+  buyerPartnerId: zod.string().uuid().nullish(),
+  buyerName: zod.string(),
+  buyerContact: zod.string().nullish(),
+  status: zod.enum([
+    "draft",
+    "pending_rofr",
+    "rofr_accepted",
+    "rofr_rejected",
+    "pending_approval",
+    "approved",
+    "executed",
+    "cancelled",
+    "expired",
+  ]),
+  rofrDeadline: zod.coerce.date().nullish(),
+  rofrResponses: zod.array(
+    zod.object({
+      partnerId: zod.string().uuid(),
+      partnerName: zod.string(),
+      response: zod.enum(["pending", "accepted", "rejected"]),
+      respondedAt: zod.coerce.date().nullish(),
+      notes: zod.string().nullish(),
+    }),
+  ),
+  linkedSnapshotId: zod.string().uuid().nullish(),
+  reason: zod.string().nullish(),
+  adminNotes: zod.string().nullish(),
+  approvedAt: zod.coerce.date().nullish(),
+  approvedBy: zod.string().uuid().nullish(),
+  approvedByName: zod.string().nullish(),
+  executedAt: zod.coerce.date().nullish(),
+  executedBy: zod.string().uuid().nullish(),
+  executedByName: zod.string().nullish(),
+  executionNotes: zod.string().nullish(),
+  cancelledAt: zod.coerce.date().nullish(),
+  cancelledBy: zod.string().uuid().nullish(),
+  cancelledByName: zod.string().nullish(),
+  cancellationReason: zod.string().nullish(),
+  submittedAt: zod.coerce.date().nullish(),
+  submittedByName: zod.string().nullish(),
+  createdByName: zod.string().nullish(),
+  isActive: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Update a draft transfer request
+ */
+export const UpdateOwnershipTransferParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const UpdateOwnershipTransferBody = zod.object({
+  offeredPercentage: zod.number().nullish(),
+  offeredValue: zod.number().nullish(),
+  buyerPartnerId: zod.string().uuid().nullish(),
+  buyerName: zod.string().nullish(),
+  buyerContact: zod.string().nullish(),
+  reason: zod.string().nullish(),
+  linkedSnapshotId: zod.string().uuid().nullish(),
+  adminNotes: zod.string().nullish(),
+});
+
+export const UpdateOwnershipTransferResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  projectName: zod.string().nullish(),
+  projectLifecycle: zod.string().nullish(),
+  transferorPartnerId: zod.string().uuid(),
+  transferorName: zod.string(),
+  offeredPercentage: zod.string(),
+  offeredValue: zod.string().nullish(),
+  transferType: zod.enum(["internal", "third_party"]),
+  buyerPartnerId: zod.string().uuid().nullish(),
+  buyerName: zod.string(),
+  buyerContact: zod.string().nullish(),
+  status: zod.enum([
+    "draft",
+    "pending_rofr",
+    "rofr_accepted",
+    "rofr_rejected",
+    "pending_approval",
+    "approved",
+    "executed",
+    "cancelled",
+    "expired",
+  ]),
+  rofrDeadline: zod.coerce.date().nullish(),
+  rofrResponses: zod.array(
+    zod.object({
+      partnerId: zod.string().uuid(),
+      partnerName: zod.string(),
+      response: zod.enum(["pending", "accepted", "rejected"]),
+      respondedAt: zod.coerce.date().nullish(),
+      notes: zod.string().nullish(),
+    }),
+  ),
+  linkedSnapshotId: zod.string().uuid().nullish(),
+  reason: zod.string().nullish(),
+  adminNotes: zod.string().nullish(),
+  approvedAt: zod.coerce.date().nullish(),
+  approvedBy: zod.string().uuid().nullish(),
+  approvedByName: zod.string().nullish(),
+  executedAt: zod.coerce.date().nullish(),
+  executedBy: zod.string().uuid().nullish(),
+  executedByName: zod.string().nullish(),
+  executionNotes: zod.string().nullish(),
+  cancelledAt: zod.coerce.date().nullish(),
+  cancelledBy: zod.string().uuid().nullish(),
+  cancelledByName: zod.string().nullish(),
+  cancellationReason: zod.string().nullish(),
+  submittedAt: zod.coerce.date().nullish(),
+  submittedByName: zod.string().nullish(),
+  createdByName: zod.string().nullish(),
+  isActive: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Submit draft for ROFR or direct approval
+ */
+export const SubmitOwnershipTransferParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const submitOwnershipTransferBodySkipRofrDefault = false;
+
+export const SubmitOwnershipTransferBody = zod.object({
+  skipRofr: zod.boolean().default(submitOwnershipTransferBodySkipRofrDefault),
+});
+
+export const SubmitOwnershipTransferResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  projectName: zod.string().nullish(),
+  projectLifecycle: zod.string().nullish(),
+  transferorPartnerId: zod.string().uuid(),
+  transferorName: zod.string(),
+  offeredPercentage: zod.string(),
+  offeredValue: zod.string().nullish(),
+  transferType: zod.enum(["internal", "third_party"]),
+  buyerPartnerId: zod.string().uuid().nullish(),
+  buyerName: zod.string(),
+  buyerContact: zod.string().nullish(),
+  status: zod.enum([
+    "draft",
+    "pending_rofr",
+    "rofr_accepted",
+    "rofr_rejected",
+    "pending_approval",
+    "approved",
+    "executed",
+    "cancelled",
+    "expired",
+  ]),
+  rofrDeadline: zod.coerce.date().nullish(),
+  rofrResponses: zod.array(
+    zod.object({
+      partnerId: zod.string().uuid(),
+      partnerName: zod.string(),
+      response: zod.enum(["pending", "accepted", "rejected"]),
+      respondedAt: zod.coerce.date().nullish(),
+      notes: zod.string().nullish(),
+    }),
+  ),
+  linkedSnapshotId: zod.string().uuid().nullish(),
+  reason: zod.string().nullish(),
+  adminNotes: zod.string().nullish(),
+  approvedAt: zod.coerce.date().nullish(),
+  approvedBy: zod.string().uuid().nullish(),
+  approvedByName: zod.string().nullish(),
+  executedAt: zod.coerce.date().nullish(),
+  executedBy: zod.string().uuid().nullish(),
+  executedByName: zod.string().nullish(),
+  executionNotes: zod.string().nullish(),
+  cancelledAt: zod.coerce.date().nullish(),
+  cancelledBy: zod.string().uuid().nullish(),
+  cancelledByName: zod.string().nullish(),
+  cancellationReason: zod.string().nullish(),
+  submittedAt: zod.coerce.date().nullish(),
+  submittedByName: zod.string().nullish(),
+  createdByName: zod.string().nullish(),
+  isActive: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Record a partner's ROFR response
+ */
+export const RecordRofrResponseParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const RecordRofrResponseBody = zod.object({
+  partnerId: zod.string().uuid(),
+  partnerName: zod.string(),
+  response: zod.enum(["accepted", "rejected"]),
+  notes: zod.string().nullish(),
+});
+
+export const RecordRofrResponseResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  projectName: zod.string().nullish(),
+  projectLifecycle: zod.string().nullish(),
+  transferorPartnerId: zod.string().uuid(),
+  transferorName: zod.string(),
+  offeredPercentage: zod.string(),
+  offeredValue: zod.string().nullish(),
+  transferType: zod.enum(["internal", "third_party"]),
+  buyerPartnerId: zod.string().uuid().nullish(),
+  buyerName: zod.string(),
+  buyerContact: zod.string().nullish(),
+  status: zod.enum([
+    "draft",
+    "pending_rofr",
+    "rofr_accepted",
+    "rofr_rejected",
+    "pending_approval",
+    "approved",
+    "executed",
+    "cancelled",
+    "expired",
+  ]),
+  rofrDeadline: zod.coerce.date().nullish(),
+  rofrResponses: zod.array(
+    zod.object({
+      partnerId: zod.string().uuid(),
+      partnerName: zod.string(),
+      response: zod.enum(["pending", "accepted", "rejected"]),
+      respondedAt: zod.coerce.date().nullish(),
+      notes: zod.string().nullish(),
+    }),
+  ),
+  linkedSnapshotId: zod.string().uuid().nullish(),
+  reason: zod.string().nullish(),
+  adminNotes: zod.string().nullish(),
+  approvedAt: zod.coerce.date().nullish(),
+  approvedBy: zod.string().uuid().nullish(),
+  approvedByName: zod.string().nullish(),
+  executedAt: zod.coerce.date().nullish(),
+  executedBy: zod.string().uuid().nullish(),
+  executedByName: zod.string().nullish(),
+  executionNotes: zod.string().nullish(),
+  cancelledAt: zod.coerce.date().nullish(),
+  cancelledBy: zod.string().uuid().nullish(),
+  cancelledByName: zod.string().nullish(),
+  cancellationReason: zod.string().nullish(),
+  submittedAt: zod.coerce.date().nullish(),
+  submittedByName: zod.string().nullish(),
+  createdByName: zod.string().nullish(),
+  isActive: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Finalize ROFR outcome (accepted or rejected)
+ */
+export const FinalizeRofrParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const FinalizeRofrBody = zod.object({
+  outcome: zod.enum(["rofr_accepted", "rofr_rejected"]),
+  notes: zod.string().nullish(),
+});
+
+export const FinalizeRofrResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  projectName: zod.string().nullish(),
+  projectLifecycle: zod.string().nullish(),
+  transferorPartnerId: zod.string().uuid(),
+  transferorName: zod.string(),
+  offeredPercentage: zod.string(),
+  offeredValue: zod.string().nullish(),
+  transferType: zod.enum(["internal", "third_party"]),
+  buyerPartnerId: zod.string().uuid().nullish(),
+  buyerName: zod.string(),
+  buyerContact: zod.string().nullish(),
+  status: zod.enum([
+    "draft",
+    "pending_rofr",
+    "rofr_accepted",
+    "rofr_rejected",
+    "pending_approval",
+    "approved",
+    "executed",
+    "cancelled",
+    "expired",
+  ]),
+  rofrDeadline: zod.coerce.date().nullish(),
+  rofrResponses: zod.array(
+    zod.object({
+      partnerId: zod.string().uuid(),
+      partnerName: zod.string(),
+      response: zod.enum(["pending", "accepted", "rejected"]),
+      respondedAt: zod.coerce.date().nullish(),
+      notes: zod.string().nullish(),
+    }),
+  ),
+  linkedSnapshotId: zod.string().uuid().nullish(),
+  reason: zod.string().nullish(),
+  adminNotes: zod.string().nullish(),
+  approvedAt: zod.coerce.date().nullish(),
+  approvedBy: zod.string().uuid().nullish(),
+  approvedByName: zod.string().nullish(),
+  executedAt: zod.coerce.date().nullish(),
+  executedBy: zod.string().uuid().nullish(),
+  executedByName: zod.string().nullish(),
+  executionNotes: zod.string().nullish(),
+  cancelledAt: zod.coerce.date().nullish(),
+  cancelledBy: zod.string().uuid().nullish(),
+  cancelledByName: zod.string().nullish(),
+  cancellationReason: zod.string().nullish(),
+  submittedAt: zod.coerce.date().nullish(),
+  submittedByName: zod.string().nullish(),
+  createdByName: zod.string().nullish(),
+  isActive: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Approve a transfer request (admin/developer)
+ */
+export const ApproveOwnershipTransferParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const ApproveOwnershipTransferBody = zod.object({
+  adminNotes: zod.string().nullish(),
+});
+
+export const ApproveOwnershipTransferResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  projectName: zod.string().nullish(),
+  projectLifecycle: zod.string().nullish(),
+  transferorPartnerId: zod.string().uuid(),
+  transferorName: zod.string(),
+  offeredPercentage: zod.string(),
+  offeredValue: zod.string().nullish(),
+  transferType: zod.enum(["internal", "third_party"]),
+  buyerPartnerId: zod.string().uuid().nullish(),
+  buyerName: zod.string(),
+  buyerContact: zod.string().nullish(),
+  status: zod.enum([
+    "draft",
+    "pending_rofr",
+    "rofr_accepted",
+    "rofr_rejected",
+    "pending_approval",
+    "approved",
+    "executed",
+    "cancelled",
+    "expired",
+  ]),
+  rofrDeadline: zod.coerce.date().nullish(),
+  rofrResponses: zod.array(
+    zod.object({
+      partnerId: zod.string().uuid(),
+      partnerName: zod.string(),
+      response: zod.enum(["pending", "accepted", "rejected"]),
+      respondedAt: zod.coerce.date().nullish(),
+      notes: zod.string().nullish(),
+    }),
+  ),
+  linkedSnapshotId: zod.string().uuid().nullish(),
+  reason: zod.string().nullish(),
+  adminNotes: zod.string().nullish(),
+  approvedAt: zod.coerce.date().nullish(),
+  approvedBy: zod.string().uuid().nullish(),
+  approvedByName: zod.string().nullish(),
+  executedAt: zod.coerce.date().nullish(),
+  executedBy: zod.string().uuid().nullish(),
+  executedByName: zod.string().nullish(),
+  executionNotes: zod.string().nullish(),
+  cancelledAt: zod.coerce.date().nullish(),
+  cancelledBy: zod.string().uuid().nullish(),
+  cancelledByName: zod.string().nullish(),
+  cancellationReason: zod.string().nullish(),
+  submittedAt: zod.coerce.date().nullish(),
+  submittedByName: zod.string().nullish(),
+  createdByName: zod.string().nullish(),
+  isActive: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Mark transfer as executed (admin only — explicit action required)
+ */
+export const ExecuteOwnershipTransferParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const ExecuteOwnershipTransferBody = zod.object({
+  executionNotes: zod.string(),
+});
+
+export const ExecuteOwnershipTransferResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  projectName: zod.string().nullish(),
+  projectLifecycle: zod.string().nullish(),
+  transferorPartnerId: zod.string().uuid(),
+  transferorName: zod.string(),
+  offeredPercentage: zod.string(),
+  offeredValue: zod.string().nullish(),
+  transferType: zod.enum(["internal", "third_party"]),
+  buyerPartnerId: zod.string().uuid().nullish(),
+  buyerName: zod.string(),
+  buyerContact: zod.string().nullish(),
+  status: zod.enum([
+    "draft",
+    "pending_rofr",
+    "rofr_accepted",
+    "rofr_rejected",
+    "pending_approval",
+    "approved",
+    "executed",
+    "cancelled",
+    "expired",
+  ]),
+  rofrDeadline: zod.coerce.date().nullish(),
+  rofrResponses: zod.array(
+    zod.object({
+      partnerId: zod.string().uuid(),
+      partnerName: zod.string(),
+      response: zod.enum(["pending", "accepted", "rejected"]),
+      respondedAt: zod.coerce.date().nullish(),
+      notes: zod.string().nullish(),
+    }),
+  ),
+  linkedSnapshotId: zod.string().uuid().nullish(),
+  reason: zod.string().nullish(),
+  adminNotes: zod.string().nullish(),
+  approvedAt: zod.coerce.date().nullish(),
+  approvedBy: zod.string().uuid().nullish(),
+  approvedByName: zod.string().nullish(),
+  executedAt: zod.coerce.date().nullish(),
+  executedBy: zod.string().uuid().nullish(),
+  executedByName: zod.string().nullish(),
+  executionNotes: zod.string().nullish(),
+  cancelledAt: zod.coerce.date().nullish(),
+  cancelledBy: zod.string().uuid().nullish(),
+  cancelledByName: zod.string().nullish(),
+  cancellationReason: zod.string().nullish(),
+  submittedAt: zod.coerce.date().nullish(),
+  submittedByName: zod.string().nullish(),
+  createdByName: zod.string().nullish(),
+  isActive: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Cancel a transfer request
+ */
+export const CancelOwnershipTransferParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const CancelOwnershipTransferBody = zod.object({
+  cancellationReason: zod.string(),
+});
+
+export const CancelOwnershipTransferResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  projectName: zod.string().nullish(),
+  projectLifecycle: zod.string().nullish(),
+  transferorPartnerId: zod.string().uuid(),
+  transferorName: zod.string(),
+  offeredPercentage: zod.string(),
+  offeredValue: zod.string().nullish(),
+  transferType: zod.enum(["internal", "third_party"]),
+  buyerPartnerId: zod.string().uuid().nullish(),
+  buyerName: zod.string(),
+  buyerContact: zod.string().nullish(),
+  status: zod.enum([
+    "draft",
+    "pending_rofr",
+    "rofr_accepted",
+    "rofr_rejected",
+    "pending_approval",
+    "approved",
+    "executed",
+    "cancelled",
+    "expired",
+  ]),
+  rofrDeadline: zod.coerce.date().nullish(),
+  rofrResponses: zod.array(
+    zod.object({
+      partnerId: zod.string().uuid(),
+      partnerName: zod.string(),
+      response: zod.enum(["pending", "accepted", "rejected"]),
+      respondedAt: zod.coerce.date().nullish(),
+      notes: zod.string().nullish(),
+    }),
+  ),
+  linkedSnapshotId: zod.string().uuid().nullish(),
+  reason: zod.string().nullish(),
+  adminNotes: zod.string().nullish(),
+  approvedAt: zod.coerce.date().nullish(),
+  approvedBy: zod.string().uuid().nullish(),
+  approvedByName: zod.string().nullish(),
+  executedAt: zod.coerce.date().nullish(),
+  executedBy: zod.string().uuid().nullish(),
+  executedByName: zod.string().nullish(),
+  executionNotes: zod.string().nullish(),
+  cancelledAt: zod.coerce.date().nullish(),
+  cancelledBy: zod.string().uuid().nullish(),
+  cancelledByName: zod.string().nullish(),
+  cancellationReason: zod.string().nullish(),
+  submittedAt: zod.coerce.date().nullish(),
+  submittedByName: zod.string().nullish(),
+  createdByName: zod.string().nullish(),
+  isActive: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
  * @summary List expenditure records with optional filters
  */
 export const ListExpendituresQueryParams = zod.object({

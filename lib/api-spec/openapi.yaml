@@ -3035,6 +3035,295 @@ paths:
         "403": { description: Forbidden }
         "404": { description: Not found }
 
+  /ownership-transfers:
+    get:
+      operationId: listOwnershipTransfers
+      summary: List ownership transfer requests
+      tags: [OwnershipTransfers]
+      parameters:
+        - in: query
+          name: projectId
+          schema: { type: string, format: uuid }
+        - in: query
+          name: status
+          schema: { type: string }
+        - in: query
+          name: transferorPartnerId
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Transfer list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [transfers, total]
+                properties:
+                  transfers:
+                    type: array
+                    items: { $ref: "#/components/schemas/OwnershipTransfer" }
+                  total: { type: integer }
+        "401": { description: Unauthorized }
+    post:
+      operationId: createOwnershipTransfer
+      summary: Create a new transfer request
+      tags: [OwnershipTransfers]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateOwnershipTransferBody" }
+      responses:
+        "201":
+          description: Transfer created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OwnershipTransfer" }
+        "400": { description: Validation error }
+        "401": { description: Unauthorized }
+        "404": { description: Not found }
+        "422": { description: Business rule violation }
+
+  /ownership-transfers/dashboard:
+    get:
+      operationId: getOwnershipTransferDashboard
+      summary: Pending transfers dashboard (admin/developer)
+      tags: [OwnershipTransfers]
+      responses:
+        "200":
+          description: Dashboard data
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [pendingTransfers, totalPending, byStatus]
+                properties:
+                  pendingTransfers:
+                    type: array
+                    items: { $ref: "#/components/schemas/OwnershipTransfer" }
+                  totalPending: { type: integer }
+                  byStatus: { type: object }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+
+  /ownership-transfers/{id}:
+    get:
+      operationId: getOwnershipTransfer
+      summary: Get a single transfer request
+      tags: [OwnershipTransfers]
+      parameters:
+        - in: path
+          name: id
+          schema: { type: string, format: uuid }
+          required: true
+      responses:
+        "200":
+          description: Transfer record
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OwnershipTransfer" }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+        "404": { description: Not found }
+    patch:
+      operationId: updateOwnershipTransfer
+      summary: Update a draft transfer request
+      tags: [OwnershipTransfers]
+      parameters:
+        - in: path
+          name: id
+          schema: { type: string, format: uuid }
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateOwnershipTransferBody" }
+      responses:
+        "200":
+          description: Updated transfer
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OwnershipTransfer" }
+        "400": { description: Validation error }
+        "401": { description: Unauthorized }
+        "422": { description: Not editable in current status }
+
+  /ownership-transfers/{id}/submit:
+    post:
+      operationId: submitOwnershipTransfer
+      summary: Submit draft for ROFR or direct approval
+      tags: [OwnershipTransfers]
+      parameters:
+        - in: path
+          name: id
+          schema: { type: string, format: uuid }
+          required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                skipRofr: { type: boolean, default: false }
+      responses:
+        "200":
+          description: Submitted
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OwnershipTransfer" }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+        "422": { description: Business rule violation }
+
+  /ownership-transfers/{id}/rofr-response:
+    post:
+      operationId: recordRofrResponse
+      summary: Record a partner's ROFR response
+      tags: [OwnershipTransfers]
+      parameters:
+        - in: path
+          name: id
+          schema: { type: string, format: uuid }
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [partnerId, partnerName, response]
+              properties:
+                partnerId: { type: string, format: uuid }
+                partnerName: { type: string }
+                response: { type: string, enum: [accepted, rejected] }
+                notes: { type: string, nullable: true }
+      responses:
+        "200":
+          description: Response recorded
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OwnershipTransfer" }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+        "422": { description: Invalid status for ROFR response }
+
+  /ownership-transfers/{id}/finalize-rofr:
+    post:
+      operationId: finalizeRofr
+      summary: Finalize ROFR outcome (accepted or rejected)
+      tags: [OwnershipTransfers]
+      parameters:
+        - in: path
+          name: id
+          schema: { type: string, format: uuid }
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [outcome]
+              properties:
+                outcome: { type: string, enum: [rofr_accepted, rofr_rejected] }
+                notes: { type: string, nullable: true }
+      responses:
+        "200":
+          description: ROFR finalized
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OwnershipTransfer" }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+        "422": { description: Invalid status }
+
+  /ownership-transfers/{id}/approve:
+    post:
+      operationId: approveOwnershipTransfer
+      summary: Approve a transfer request (admin/developer)
+      tags: [OwnershipTransfers]
+      parameters:
+        - in: path
+          name: id
+          schema: { type: string, format: uuid }
+          required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                adminNotes: { type: string, nullable: true }
+      responses:
+        "200":
+          description: Approved
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OwnershipTransfer" }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+        "422": { description: Business rule violation }
+
+  /ownership-transfers/{id}/execute:
+    post:
+      operationId: executeOwnershipTransfer
+      summary: Mark transfer as executed (admin only — explicit action required)
+      tags: [OwnershipTransfers]
+      parameters:
+        - in: path
+          name: id
+          schema: { type: string, format: uuid }
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [executionNotes]
+              properties:
+                executionNotes: { type: string }
+      responses:
+        "200":
+          description: Executed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OwnershipTransfer" }
+        "400": { description: Execution notes required }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden (admin only) }
+        "422": { description: Must be approved first }
+
+  /ownership-transfers/{id}/cancel:
+    post:
+      operationId: cancelOwnershipTransfer
+      summary: Cancel a transfer request
+      tags: [OwnershipTransfers]
+      parameters:
+        - in: path
+          name: id
+          schema: { type: string, format: uuid }
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [cancellationReason]
+              properties:
+                cancellationReason: { type: string }
+      responses:
+        "200":
+          description: Cancelled
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OwnershipTransfer" }
+        "400": { description: Reason required }
+        "401": { description: Unauthorized }
+        "422": { description: Already terminal }
+
   /expenditures:
     get:
       operationId: listExpenditures
@@ -10087,6 +10376,87 @@ components:
         createdAt:
           type: string
           format: date-time
+    RofrResponse:
+      type: object
+      required: [partnerId, partnerName, response]
+      properties:
+        partnerId: { type: string, format: uuid }
+        partnerName: { type: string }
+        response: { type: string, enum: [pending, accepted, rejected] }
+        respondedAt: { type: string, format: date-time, nullable: true }
+        notes: { type: string, nullable: true }
+
+    OwnershipTransfer:
+      type: object
+      required: [id, projectId, transferorPartnerId, transferorName, offeredPercentage, transferType, buyerName, status, rofrResponses, isActive, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        projectName: { type: string, nullable: true }
+        projectLifecycle: { type: string, nullable: true }
+        transferorPartnerId: { type: string, format: uuid }
+        transferorName: { type: string }
+        offeredPercentage: { type: string }
+        offeredValue: { type: string, nullable: true }
+        transferType: { type: string, enum: [internal, third_party] }
+        buyerPartnerId: { type: string, format: uuid, nullable: true }
+        buyerName: { type: string }
+        buyerContact: { type: string, nullable: true }
+        status:
+          type: string
+          enum: [draft, pending_rofr, rofr_accepted, rofr_rejected, pending_approval, approved, executed, cancelled, expired]
+        rofrDeadline: { type: string, format: date-time, nullable: true }
+        rofrResponses:
+          type: array
+          items: { $ref: "#/components/schemas/RofrResponse" }
+        linkedSnapshotId: { type: string, format: uuid, nullable: true }
+        reason: { type: string, nullable: true }
+        adminNotes: { type: string, nullable: true }
+        approvedAt: { type: string, format: date-time, nullable: true }
+        approvedBy: { type: string, format: uuid, nullable: true }
+        approvedByName: { type: string, nullable: true }
+        executedAt: { type: string, format: date-time, nullable: true }
+        executedBy: { type: string, format: uuid, nullable: true }
+        executedByName: { type: string, nullable: true }
+        executionNotes: { type: string, nullable: true }
+        cancelledAt: { type: string, format: date-time, nullable: true }
+        cancelledBy: { type: string, format: uuid, nullable: true }
+        cancelledByName: { type: string, nullable: true }
+        cancellationReason: { type: string, nullable: true }
+        submittedAt: { type: string, format: date-time, nullable: true }
+        submittedByName: { type: string, nullable: true }
+        createdByName: { type: string, nullable: true }
+        isActive: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    CreateOwnershipTransferBody:
+      type: object
+      required: [projectId, transferorPartnerId, offeredPercentage, transferType, buyerName]
+      properties:
+        projectId: { type: string, format: uuid }
+        transferorPartnerId: { type: string, format: uuid }
+        offeredPercentage: { type: number }
+        offeredValue: { type: number, nullable: true }
+        transferType: { type: string, enum: [internal, third_party] }
+        buyerPartnerId: { type: string, format: uuid, nullable: true }
+        buyerName: { type: string }
+        buyerContact: { type: string, nullable: true }
+        reason: { type: string, nullable: true }
+        linkedSnapshotId: { type: string, format: uuid, nullable: true }
+
+    UpdateOwnershipTransferBody:
+      type: object
+      properties:
+        offeredPercentage: { type: number, nullable: true }
+        offeredValue: { type: number, nullable: true }
+        buyerPartnerId: { type: string, format: uuid, nullable: true }
+        buyerName: { type: string, nullable: true }
+        buyerContact: { type: string, nullable: true }
+        reason: { type: string, nullable: true }
+        linkedSnapshotId: { type: string, format: uuid, nullable: true }
+        adminNotes: { type: string, nullable: true }
+
     ContributionDisputeSummary:
       type: object
       required: [totalDisputed, totalPending, totalRejected, projects, blockedProjectIds]

@@ -2274,6 +2274,116 @@ export interface OwnershipSnapshot {
   createdAt: string;
 }
 
+export type RofrResponseResponse =
+  (typeof RofrResponseResponse)[keyof typeof RofrResponseResponse];
+
+export const RofrResponseResponse = {
+  pending: "pending",
+  accepted: "accepted",
+  rejected: "rejected",
+} as const;
+
+export interface RofrResponse {
+  partnerId: string;
+  partnerName: string;
+  response: RofrResponseResponse;
+  respondedAt?: string | null;
+  notes?: string | null;
+}
+
+export type OwnershipTransferTransferType =
+  (typeof OwnershipTransferTransferType)[keyof typeof OwnershipTransferTransferType];
+
+export const OwnershipTransferTransferType = {
+  internal: "internal",
+  third_party: "third_party",
+} as const;
+
+export type OwnershipTransferStatus =
+  (typeof OwnershipTransferStatus)[keyof typeof OwnershipTransferStatus];
+
+export const OwnershipTransferStatus = {
+  draft: "draft",
+  pending_rofr: "pending_rofr",
+  rofr_accepted: "rofr_accepted",
+  rofr_rejected: "rofr_rejected",
+  pending_approval: "pending_approval",
+  approved: "approved",
+  executed: "executed",
+  cancelled: "cancelled",
+  expired: "expired",
+} as const;
+
+export interface OwnershipTransfer {
+  id: string;
+  projectId: string;
+  projectName?: string | null;
+  projectLifecycle?: string | null;
+  transferorPartnerId: string;
+  transferorName: string;
+  offeredPercentage: string;
+  offeredValue?: string | null;
+  transferType: OwnershipTransferTransferType;
+  buyerPartnerId?: string | null;
+  buyerName: string;
+  buyerContact?: string | null;
+  status: OwnershipTransferStatus;
+  rofrDeadline?: string | null;
+  rofrResponses: RofrResponse[];
+  linkedSnapshotId?: string | null;
+  reason?: string | null;
+  adminNotes?: string | null;
+  approvedAt?: string | null;
+  approvedBy?: string | null;
+  approvedByName?: string | null;
+  executedAt?: string | null;
+  executedBy?: string | null;
+  executedByName?: string | null;
+  executionNotes?: string | null;
+  cancelledAt?: string | null;
+  cancelledBy?: string | null;
+  cancelledByName?: string | null;
+  cancellationReason?: string | null;
+  submittedAt?: string | null;
+  submittedByName?: string | null;
+  createdByName?: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CreateOwnershipTransferBodyTransferType =
+  (typeof CreateOwnershipTransferBodyTransferType)[keyof typeof CreateOwnershipTransferBodyTransferType];
+
+export const CreateOwnershipTransferBodyTransferType = {
+  internal: "internal",
+  third_party: "third_party",
+} as const;
+
+export interface CreateOwnershipTransferBody {
+  projectId: string;
+  transferorPartnerId: string;
+  offeredPercentage: number;
+  offeredValue?: number | null;
+  transferType: CreateOwnershipTransferBodyTransferType;
+  buyerPartnerId?: string | null;
+  buyerName: string;
+  buyerContact?: string | null;
+  reason?: string | null;
+  linkedSnapshotId?: string | null;
+}
+
+export interface UpdateOwnershipTransferBody {
+  offeredPercentage?: number | null;
+  offeredValue?: number | null;
+  buyerPartnerId?: string | null;
+  buyerName?: string | null;
+  buyerContact?: string | null;
+  reason?: string | null;
+  linkedSnapshotId?: string | null;
+  adminNotes?: string | null;
+}
+
 export type ContributionDisputeSummaryProjectsItem = {
   projectId: string;
   disputed: number;
@@ -6068,6 +6178,71 @@ export type ListOwnershipSnapshots200 = {
 
 export type CreateOwnershipSnapshotBody = {
   notes?: string;
+};
+
+export type ListOwnershipTransfersParams = {
+  projectId?: string;
+  status?: string;
+  transferorPartnerId?: string;
+};
+
+export type ListOwnershipTransfers200 = {
+  transfers: OwnershipTransfer[];
+  total: number;
+};
+
+export type GetOwnershipTransferDashboard200ByStatus = {
+  [key: string]: unknown;
+};
+
+export type GetOwnershipTransferDashboard200 = {
+  pendingTransfers: OwnershipTransfer[];
+  totalPending: number;
+  byStatus: GetOwnershipTransferDashboard200ByStatus;
+};
+
+export type SubmitOwnershipTransferBody = {
+  skipRofr?: boolean;
+};
+
+export type RecordRofrResponseBodyResponse =
+  (typeof RecordRofrResponseBodyResponse)[keyof typeof RecordRofrResponseBodyResponse];
+
+export const RecordRofrResponseBodyResponse = {
+  accepted: "accepted",
+  rejected: "rejected",
+} as const;
+
+export type RecordRofrResponseBody = {
+  partnerId: string;
+  partnerName: string;
+  response: RecordRofrResponseBodyResponse;
+  notes?: string | null;
+};
+
+export type FinalizeRofrBodyOutcome =
+  (typeof FinalizeRofrBodyOutcome)[keyof typeof FinalizeRofrBodyOutcome];
+
+export const FinalizeRofrBodyOutcome = {
+  rofr_accepted: "rofr_accepted",
+  rofr_rejected: "rofr_rejected",
+} as const;
+
+export type FinalizeRofrBody = {
+  outcome: FinalizeRofrBodyOutcome;
+  notes?: string | null;
+};
+
+export type ApproveOwnershipTransferBody = {
+  adminNotes?: string | null;
+};
+
+export type ExecuteOwnershipTransferBody = {
+  executionNotes: string;
+};
+
+export type CancelOwnershipTransferBody = {
+  cancellationReason: string;
 };
 
 export type ListExpendituresParams = {

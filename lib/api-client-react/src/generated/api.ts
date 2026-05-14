@@ -42,6 +42,7 @@ import type {
   ApproveExpenditureBody,
   ApproveExpenditureVerification200,
   ApproveExpenditureVerificationBody,
+  ApproveOwnershipTransferBody,
   ArchiveDistributionPreview200,
   ArchiveDistributionRecord200,
   ArchiveDistributionRecordBody,
@@ -61,6 +62,7 @@ import type {
   Buyer,
   CancelAgreementActivationBody,
   CancelMaturityBody,
+  CancelOwnershipTransferBody,
   CarryForwardDistributionRecord200,
   CarryForwardDistributionRecordBody,
   ComputePayableParams,
@@ -101,6 +103,7 @@ import type {
   CreateNegativeBalanceEntryBody,
   CreateNomineeInput,
   CreateOwnershipSnapshotBody,
+  CreateOwnershipTransferBody,
   CreatePayableAdjustment201,
   CreatePayableAdjustmentBody,
   CreatePayableSnapshot201,
@@ -133,6 +136,7 @@ import type {
   DocumentAccessLogEntry,
   EppEntriesResult,
   ErrorResponse,
+  ExecuteOwnershipTransferBody,
   ExpenditureEntry,
   ExpenditureSummary,
   ExpenditureVerificationDetail,
@@ -144,6 +148,7 @@ import type {
   FiftyPctSessionSummaryResult,
   FileMissingDeveloperCaseBody,
   FinalizePayableSnapshot200,
+  FinalizeRofrBody,
   FinalizeSettlement200,
   FinalizeSettlementBody,
   FinancialAccessLogListResponse,
@@ -183,6 +188,7 @@ import type {
   GetOperationalAccessLogSummaryParams,
   GetOwnershipSummary200,
   GetOwnershipSummaryParams,
+  GetOwnershipTransferDashboard200,
   GetPartnerDistributionHistoryParams,
   GetPayableSnapshot200,
   GetProductionLogSummaryParams,
@@ -252,6 +258,8 @@ import type {
   ListOperationalAlertsParams,
   ListOwnershipSnapshots200,
   ListOwnershipSnapshotsParams,
+  ListOwnershipTransfers200,
+  ListOwnershipTransfersParams,
   ListPartnerClaimantsParams,
   ListPayableAdjustments200,
   ListPayableAdjustmentsParams,
@@ -293,6 +301,7 @@ import type {
   OwnershipFreeze,
   OwnershipLookupResult,
   OwnershipSnapshot,
+  OwnershipTransfer,
   Partner,
   PartnerClaimant,
   PartnerDistributionHistory,
@@ -323,6 +332,7 @@ import type {
   RecordDistributionPaymentBody,
   RecordLcaPayment201,
   RecordLcaPaymentBody,
+  RecordRofrResponseBody,
   RecoverableAdvance,
   RecoverableAdvanceDetail,
   RejectContributionBody,
@@ -360,6 +370,7 @@ import type {
   StockBalance,
   StockMovement,
   StockSummary,
+  SubmitOwnershipTransferBody,
   SuccessResponse,
   TaskSummary,
   TransitionLifecycleBody,
@@ -392,6 +403,7 @@ import type {
   UpdateNegativeBalanceEntryBody,
   UpdateNomineeActivationBody,
   UpdateNomineeInput,
+  UpdateOwnershipTransferBody,
   UpdateParticipantInput,
   UpdatePayableAdjustment200,
   UpdatePayableAdjustmentBody,
@@ -11642,6 +11654,978 @@ export const useCreateOwnershipSnapshot = <
   TContext
 > => {
   return useMutation(getCreateOwnershipSnapshotMutationOptions(options));
+};
+
+/**
+ * @summary List ownership transfer requests
+ */
+export const getListOwnershipTransfersUrl = (
+  params?: ListOwnershipTransfersParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/ownership-transfers?${stringifiedParams}`
+    : `/api/ownership-transfers`;
+};
+
+export const listOwnershipTransfers = async (
+  params?: ListOwnershipTransfersParams,
+  options?: RequestInit,
+): Promise<ListOwnershipTransfers200> => {
+  return customFetch<ListOwnershipTransfers200>(
+    getListOwnershipTransfersUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListOwnershipTransfersQueryKey = (
+  params?: ListOwnershipTransfersParams,
+) => {
+  return [`/api/ownership-transfers`, ...(params ? [params] : [])] as const;
+};
+
+export const getListOwnershipTransfersQueryOptions = <
+  TData = Awaited<ReturnType<typeof listOwnershipTransfers>>,
+  TError = ErrorType<void>,
+>(
+  params?: ListOwnershipTransfersParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listOwnershipTransfers>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListOwnershipTransfersQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listOwnershipTransfers>>
+  > = ({ signal }) =>
+    listOwnershipTransfers(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listOwnershipTransfers>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListOwnershipTransfersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listOwnershipTransfers>>
+>;
+export type ListOwnershipTransfersQueryError = ErrorType<void>;
+
+/**
+ * @summary List ownership transfer requests
+ */
+
+export function useListOwnershipTransfers<
+  TData = Awaited<ReturnType<typeof listOwnershipTransfers>>,
+  TError = ErrorType<void>,
+>(
+  params?: ListOwnershipTransfersParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listOwnershipTransfers>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListOwnershipTransfersQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a new transfer request
+ */
+export const getCreateOwnershipTransferUrl = () => {
+  return `/api/ownership-transfers`;
+};
+
+export const createOwnershipTransfer = async (
+  createOwnershipTransferBody: CreateOwnershipTransferBody,
+  options?: RequestInit,
+): Promise<OwnershipTransfer> => {
+  return customFetch<OwnershipTransfer>(getCreateOwnershipTransferUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createOwnershipTransferBody),
+  });
+};
+
+export const getCreateOwnershipTransferMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createOwnershipTransfer>>,
+    TError,
+    { data: BodyType<CreateOwnershipTransferBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createOwnershipTransfer>>,
+  TError,
+  { data: BodyType<CreateOwnershipTransferBody> },
+  TContext
+> => {
+  const mutationKey = ["createOwnershipTransfer"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createOwnershipTransfer>>,
+    { data: BodyType<CreateOwnershipTransferBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createOwnershipTransfer(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateOwnershipTransferMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createOwnershipTransfer>>
+>;
+export type CreateOwnershipTransferMutationBody =
+  BodyType<CreateOwnershipTransferBody>;
+export type CreateOwnershipTransferMutationError = ErrorType<void>;
+
+/**
+ * @summary Create a new transfer request
+ */
+export const useCreateOwnershipTransfer = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createOwnershipTransfer>>,
+    TError,
+    { data: BodyType<CreateOwnershipTransferBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createOwnershipTransfer>>,
+  TError,
+  { data: BodyType<CreateOwnershipTransferBody> },
+  TContext
+> => {
+  return useMutation(getCreateOwnershipTransferMutationOptions(options));
+};
+
+/**
+ * @summary Pending transfers dashboard (admin/developer)
+ */
+export const getGetOwnershipTransferDashboardUrl = () => {
+  return `/api/ownership-transfers/dashboard`;
+};
+
+export const getOwnershipTransferDashboard = async (
+  options?: RequestInit,
+): Promise<GetOwnershipTransferDashboard200> => {
+  return customFetch<GetOwnershipTransferDashboard200>(
+    getGetOwnershipTransferDashboardUrl(),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetOwnershipTransferDashboardQueryKey = () => {
+  return [`/api/ownership-transfers/dashboard`] as const;
+};
+
+export const getGetOwnershipTransferDashboardQueryOptions = <
+  TData = Awaited<ReturnType<typeof getOwnershipTransferDashboard>>,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getOwnershipTransferDashboard>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetOwnershipTransferDashboardQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getOwnershipTransferDashboard>>
+  > = ({ signal }) =>
+    getOwnershipTransferDashboard({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getOwnershipTransferDashboard>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetOwnershipTransferDashboardQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getOwnershipTransferDashboard>>
+>;
+export type GetOwnershipTransferDashboardQueryError = ErrorType<void>;
+
+/**
+ * @summary Pending transfers dashboard (admin/developer)
+ */
+
+export function useGetOwnershipTransferDashboard<
+  TData = Awaited<ReturnType<typeof getOwnershipTransferDashboard>>,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getOwnershipTransferDashboard>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetOwnershipTransferDashboardQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get a single transfer request
+ */
+export const getGetOwnershipTransferUrl = (id: string) => {
+  return `/api/ownership-transfers/${id}`;
+};
+
+export const getOwnershipTransfer = async (
+  id: string,
+  options?: RequestInit,
+): Promise<OwnershipTransfer> => {
+  return customFetch<OwnershipTransfer>(getGetOwnershipTransferUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetOwnershipTransferQueryKey = (id: string) => {
+  return [`/api/ownership-transfers/${id}`] as const;
+};
+
+export const getGetOwnershipTransferQueryOptions = <
+  TData = Awaited<ReturnType<typeof getOwnershipTransfer>>,
+  TError = ErrorType<void>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getOwnershipTransfer>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetOwnershipTransferQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getOwnershipTransfer>>
+  > = ({ signal }) => getOwnershipTransfer(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getOwnershipTransfer>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetOwnershipTransferQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getOwnershipTransfer>>
+>;
+export type GetOwnershipTransferQueryError = ErrorType<void>;
+
+/**
+ * @summary Get a single transfer request
+ */
+
+export function useGetOwnershipTransfer<
+  TData = Awaited<ReturnType<typeof getOwnershipTransfer>>,
+  TError = ErrorType<void>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getOwnershipTransfer>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetOwnershipTransferQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Update a draft transfer request
+ */
+export const getUpdateOwnershipTransferUrl = (id: string) => {
+  return `/api/ownership-transfers/${id}`;
+};
+
+export const updateOwnershipTransfer = async (
+  id: string,
+  updateOwnershipTransferBody: UpdateOwnershipTransferBody,
+  options?: RequestInit,
+): Promise<OwnershipTransfer> => {
+  return customFetch<OwnershipTransfer>(getUpdateOwnershipTransferUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateOwnershipTransferBody),
+  });
+};
+
+export const getUpdateOwnershipTransferMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateOwnershipTransfer>>,
+    TError,
+    { id: string; data: BodyType<UpdateOwnershipTransferBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateOwnershipTransfer>>,
+  TError,
+  { id: string; data: BodyType<UpdateOwnershipTransferBody> },
+  TContext
+> => {
+  const mutationKey = ["updateOwnershipTransfer"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateOwnershipTransfer>>,
+    { id: string; data: BodyType<UpdateOwnershipTransferBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateOwnershipTransfer(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateOwnershipTransferMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateOwnershipTransfer>>
+>;
+export type UpdateOwnershipTransferMutationBody =
+  BodyType<UpdateOwnershipTransferBody>;
+export type UpdateOwnershipTransferMutationError = ErrorType<void>;
+
+/**
+ * @summary Update a draft transfer request
+ */
+export const useUpdateOwnershipTransfer = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateOwnershipTransfer>>,
+    TError,
+    { id: string; data: BodyType<UpdateOwnershipTransferBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateOwnershipTransfer>>,
+  TError,
+  { id: string; data: BodyType<UpdateOwnershipTransferBody> },
+  TContext
+> => {
+  return useMutation(getUpdateOwnershipTransferMutationOptions(options));
+};
+
+/**
+ * @summary Submit draft for ROFR or direct approval
+ */
+export const getSubmitOwnershipTransferUrl = (id: string) => {
+  return `/api/ownership-transfers/${id}/submit`;
+};
+
+export const submitOwnershipTransfer = async (
+  id: string,
+  submitOwnershipTransferBody: SubmitOwnershipTransferBody,
+  options?: RequestInit,
+): Promise<OwnershipTransfer> => {
+  return customFetch<OwnershipTransfer>(getSubmitOwnershipTransferUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(submitOwnershipTransferBody),
+  });
+};
+
+export const getSubmitOwnershipTransferMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof submitOwnershipTransfer>>,
+    TError,
+    { id: string; data: BodyType<SubmitOwnershipTransferBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof submitOwnershipTransfer>>,
+  TError,
+  { id: string; data: BodyType<SubmitOwnershipTransferBody> },
+  TContext
+> => {
+  const mutationKey = ["submitOwnershipTransfer"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof submitOwnershipTransfer>>,
+    { id: string; data: BodyType<SubmitOwnershipTransferBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return submitOwnershipTransfer(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SubmitOwnershipTransferMutationResult = NonNullable<
+  Awaited<ReturnType<typeof submitOwnershipTransfer>>
+>;
+export type SubmitOwnershipTransferMutationBody =
+  BodyType<SubmitOwnershipTransferBody>;
+export type SubmitOwnershipTransferMutationError = ErrorType<void>;
+
+/**
+ * @summary Submit draft for ROFR or direct approval
+ */
+export const useSubmitOwnershipTransfer = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof submitOwnershipTransfer>>,
+    TError,
+    { id: string; data: BodyType<SubmitOwnershipTransferBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof submitOwnershipTransfer>>,
+  TError,
+  { id: string; data: BodyType<SubmitOwnershipTransferBody> },
+  TContext
+> => {
+  return useMutation(getSubmitOwnershipTransferMutationOptions(options));
+};
+
+/**
+ * @summary Record a partner's ROFR response
+ */
+export const getRecordRofrResponseUrl = (id: string) => {
+  return `/api/ownership-transfers/${id}/rofr-response`;
+};
+
+export const recordRofrResponse = async (
+  id: string,
+  recordRofrResponseBody: RecordRofrResponseBody,
+  options?: RequestInit,
+): Promise<OwnershipTransfer> => {
+  return customFetch<OwnershipTransfer>(getRecordRofrResponseUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(recordRofrResponseBody),
+  });
+};
+
+export const getRecordRofrResponseMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof recordRofrResponse>>,
+    TError,
+    { id: string; data: BodyType<RecordRofrResponseBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof recordRofrResponse>>,
+  TError,
+  { id: string; data: BodyType<RecordRofrResponseBody> },
+  TContext
+> => {
+  const mutationKey = ["recordRofrResponse"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof recordRofrResponse>>,
+    { id: string; data: BodyType<RecordRofrResponseBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return recordRofrResponse(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RecordRofrResponseMutationResult = NonNullable<
+  Awaited<ReturnType<typeof recordRofrResponse>>
+>;
+export type RecordRofrResponseMutationBody = BodyType<RecordRofrResponseBody>;
+export type RecordRofrResponseMutationError = ErrorType<void>;
+
+/**
+ * @summary Record a partner's ROFR response
+ */
+export const useRecordRofrResponse = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof recordRofrResponse>>,
+    TError,
+    { id: string; data: BodyType<RecordRofrResponseBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof recordRofrResponse>>,
+  TError,
+  { id: string; data: BodyType<RecordRofrResponseBody> },
+  TContext
+> => {
+  return useMutation(getRecordRofrResponseMutationOptions(options));
+};
+
+/**
+ * @summary Finalize ROFR outcome (accepted or rejected)
+ */
+export const getFinalizeRofrUrl = (id: string) => {
+  return `/api/ownership-transfers/${id}/finalize-rofr`;
+};
+
+export const finalizeRofr = async (
+  id: string,
+  finalizeRofrBody: FinalizeRofrBody,
+  options?: RequestInit,
+): Promise<OwnershipTransfer> => {
+  return customFetch<OwnershipTransfer>(getFinalizeRofrUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(finalizeRofrBody),
+  });
+};
+
+export const getFinalizeRofrMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof finalizeRofr>>,
+    TError,
+    { id: string; data: BodyType<FinalizeRofrBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof finalizeRofr>>,
+  TError,
+  { id: string; data: BodyType<FinalizeRofrBody> },
+  TContext
+> => {
+  const mutationKey = ["finalizeRofr"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof finalizeRofr>>,
+    { id: string; data: BodyType<FinalizeRofrBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return finalizeRofr(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type FinalizeRofrMutationResult = NonNullable<
+  Awaited<ReturnType<typeof finalizeRofr>>
+>;
+export type FinalizeRofrMutationBody = BodyType<FinalizeRofrBody>;
+export type FinalizeRofrMutationError = ErrorType<void>;
+
+/**
+ * @summary Finalize ROFR outcome (accepted or rejected)
+ */
+export const useFinalizeRofr = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof finalizeRofr>>,
+    TError,
+    { id: string; data: BodyType<FinalizeRofrBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof finalizeRofr>>,
+  TError,
+  { id: string; data: BodyType<FinalizeRofrBody> },
+  TContext
+> => {
+  return useMutation(getFinalizeRofrMutationOptions(options));
+};
+
+/**
+ * @summary Approve a transfer request (admin/developer)
+ */
+export const getApproveOwnershipTransferUrl = (id: string) => {
+  return `/api/ownership-transfers/${id}/approve`;
+};
+
+export const approveOwnershipTransfer = async (
+  id: string,
+  approveOwnershipTransferBody: ApproveOwnershipTransferBody,
+  options?: RequestInit,
+): Promise<OwnershipTransfer> => {
+  return customFetch<OwnershipTransfer>(getApproveOwnershipTransferUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(approveOwnershipTransferBody),
+  });
+};
+
+export const getApproveOwnershipTransferMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof approveOwnershipTransfer>>,
+    TError,
+    { id: string; data: BodyType<ApproveOwnershipTransferBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof approveOwnershipTransfer>>,
+  TError,
+  { id: string; data: BodyType<ApproveOwnershipTransferBody> },
+  TContext
+> => {
+  const mutationKey = ["approveOwnershipTransfer"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof approveOwnershipTransfer>>,
+    { id: string; data: BodyType<ApproveOwnershipTransferBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return approveOwnershipTransfer(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ApproveOwnershipTransferMutationResult = NonNullable<
+  Awaited<ReturnType<typeof approveOwnershipTransfer>>
+>;
+export type ApproveOwnershipTransferMutationBody =
+  BodyType<ApproveOwnershipTransferBody>;
+export type ApproveOwnershipTransferMutationError = ErrorType<void>;
+
+/**
+ * @summary Approve a transfer request (admin/developer)
+ */
+export const useApproveOwnershipTransfer = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof approveOwnershipTransfer>>,
+    TError,
+    { id: string; data: BodyType<ApproveOwnershipTransferBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof approveOwnershipTransfer>>,
+  TError,
+  { id: string; data: BodyType<ApproveOwnershipTransferBody> },
+  TContext
+> => {
+  return useMutation(getApproveOwnershipTransferMutationOptions(options));
+};
+
+/**
+ * @summary Mark transfer as executed (admin only — explicit action required)
+ */
+export const getExecuteOwnershipTransferUrl = (id: string) => {
+  return `/api/ownership-transfers/${id}/execute`;
+};
+
+export const executeOwnershipTransfer = async (
+  id: string,
+  executeOwnershipTransferBody: ExecuteOwnershipTransferBody,
+  options?: RequestInit,
+): Promise<OwnershipTransfer> => {
+  return customFetch<OwnershipTransfer>(getExecuteOwnershipTransferUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(executeOwnershipTransferBody),
+  });
+};
+
+export const getExecuteOwnershipTransferMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof executeOwnershipTransfer>>,
+    TError,
+    { id: string; data: BodyType<ExecuteOwnershipTransferBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof executeOwnershipTransfer>>,
+  TError,
+  { id: string; data: BodyType<ExecuteOwnershipTransferBody> },
+  TContext
+> => {
+  const mutationKey = ["executeOwnershipTransfer"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof executeOwnershipTransfer>>,
+    { id: string; data: BodyType<ExecuteOwnershipTransferBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return executeOwnershipTransfer(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ExecuteOwnershipTransferMutationResult = NonNullable<
+  Awaited<ReturnType<typeof executeOwnershipTransfer>>
+>;
+export type ExecuteOwnershipTransferMutationBody =
+  BodyType<ExecuteOwnershipTransferBody>;
+export type ExecuteOwnershipTransferMutationError = ErrorType<void>;
+
+/**
+ * @summary Mark transfer as executed (admin only — explicit action required)
+ */
+export const useExecuteOwnershipTransfer = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof executeOwnershipTransfer>>,
+    TError,
+    { id: string; data: BodyType<ExecuteOwnershipTransferBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof executeOwnershipTransfer>>,
+  TError,
+  { id: string; data: BodyType<ExecuteOwnershipTransferBody> },
+  TContext
+> => {
+  return useMutation(getExecuteOwnershipTransferMutationOptions(options));
+};
+
+/**
+ * @summary Cancel a transfer request
+ */
+export const getCancelOwnershipTransferUrl = (id: string) => {
+  return `/api/ownership-transfers/${id}/cancel`;
+};
+
+export const cancelOwnershipTransfer = async (
+  id: string,
+  cancelOwnershipTransferBody: CancelOwnershipTransferBody,
+  options?: RequestInit,
+): Promise<OwnershipTransfer> => {
+  return customFetch<OwnershipTransfer>(getCancelOwnershipTransferUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(cancelOwnershipTransferBody),
+  });
+};
+
+export const getCancelOwnershipTransferMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof cancelOwnershipTransfer>>,
+    TError,
+    { id: string; data: BodyType<CancelOwnershipTransferBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof cancelOwnershipTransfer>>,
+  TError,
+  { id: string; data: BodyType<CancelOwnershipTransferBody> },
+  TContext
+> => {
+  const mutationKey = ["cancelOwnershipTransfer"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof cancelOwnershipTransfer>>,
+    { id: string; data: BodyType<CancelOwnershipTransferBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return cancelOwnershipTransfer(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CancelOwnershipTransferMutationResult = NonNullable<
+  Awaited<ReturnType<typeof cancelOwnershipTransfer>>
+>;
+export type CancelOwnershipTransferMutationBody =
+  BodyType<CancelOwnershipTransferBody>;
+export type CancelOwnershipTransferMutationError = ErrorType<void>;
+
+/**
+ * @summary Cancel a transfer request
+ */
+export const useCancelOwnershipTransfer = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof cancelOwnershipTransfer>>,
+    TError,
+    { id: string; data: BodyType<CancelOwnershipTransferBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof cancelOwnershipTransfer>>,
+  TError,
+  { id: string; data: BodyType<CancelOwnershipTransferBody> },
+  TContext
+> => {
+  return useMutation(getCancelOwnershipTransferMutationOptions(options));
 };
 
 /**

@@ -144,6 +144,12 @@ const navGroups: NavGroup[] = [
         roles: ["admin", "developer", "landowner", "investor"] as UserRole[],
       },
       {
+        name: "Share Transfers",
+        href: "/ownership-transfers",
+        icon: ArrowLeftRight,
+        roles: ["admin", "developer"] as UserRole[],
+      },
+      {
         name: "Dispute Centre",
         href: "/contributions/disputes",
         icon: ShieldAlert,

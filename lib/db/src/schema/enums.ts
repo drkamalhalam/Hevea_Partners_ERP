@@ -585,6 +585,44 @@ export const taskPriorityEnum = pgEnum("task_priority", [
   "urgent",
 ]);
 
+// ── Ownership transfer enums ──────────────────────────────────────────────
+
+/**
+ * Transfer type for an ownership share transfer request.
+ *   internal      — transfer to an existing registered project partner
+ *   third_party   — transfer to a person/entity not in the partner registry
+ *                   (requires ROFR completion + min ₹1L value)
+ */
+export const ownershipTransferTypeEnum = pgEnum("ownership_transfer_type", [
+  "internal",
+  "third_party",
+]);
+
+/**
+ * Status of an ownership share transfer request (forward-only state machine).
+ *
+ *   draft            — created, editable; not yet submitted
+ *   pending_rofr     — ROFR notices sent to existing partners (14-day window)
+ *   rofr_accepted    — an existing partner accepted the ROFR offer
+ *   rofr_rejected    — all existing partners declined; third-party transfer now allowed
+ *   pending_approval — awaiting governance / admin approval
+ *   approved         — admin approved; awaiting execution
+ *   executed         — transfer complete; ownership records updated by admin
+ *   cancelled        — cancelled by transferor or admin before execution
+ *   expired          — ROFR deadline passed with no responses recorded
+ */
+export const ownershipTransferStatusEnum = pgEnum("ownership_transfer_status", [
+  "draft",
+  "pending_rofr",
+  "rofr_accepted",
+  "rofr_rejected",
+  "pending_approval",
+  "approved",
+  "executed",
+  "cancelled",
+  "expired",
+]);
+
 // ── Land Contribution Adjustment (LCA) enums ──────────────────────────────
 
 /**
