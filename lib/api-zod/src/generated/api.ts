@@ -14575,3 +14575,592 @@ export const ForfeitAccumulationEntryResponse = zod.object({
     })
     .optional(),
 });
+
+/**
+ * @summary List notifications for current user
+ */
+export const ListNotificationsQueryParams = zod.object({
+  unreadOnly: zod.coerce.string().optional(),
+  type: zod.coerce.string().optional(),
+  projectId: zod.coerce.string().optional(),
+});
+
+export const ListNotificationsResponse = zod.object({
+  notifications: zod
+    .array(
+      zod.object({
+        id: zod.string().optional(),
+        type: zod.string().optional(),
+        title: zod.string().optional(),
+        message: zod.string().optional(),
+        isRead: zod.boolean().optional(),
+        readAt: zod.string().nullish(),
+        projectId: zod.string().nullish(),
+        metadata: zod.object({}).passthrough().nullish(),
+        createdAt: zod.string().optional(),
+      }),
+    )
+    .optional(),
+  total: zod.number().optional(),
+  unreadCount: zod.number().optional(),
+});
+
+/**
+ * @summary Broadcast notification to users (admin/developer)
+ */
+export const BroadcastNotificationBody = zod.object({
+  userIds: zod.array(zod.string()),
+  title: zod.string(),
+  message: zod.string(),
+  type: zod.string().optional(),
+  projectId: zod.string().optional(),
+  metadata: zod.object({}).passthrough().optional(),
+});
+
+/**
+ * @summary Get unread notification count for current user
+ */
+export const GetUnreadNotificationCountResponse = zod.object({
+  count: zod.number().optional(),
+});
+
+/**
+ * @summary Mark all notifications as read for current user
+ */
+export const MarkAllNotificationsReadResponse = zod.object({
+  markedCount: zod.number().optional(),
+});
+
+/**
+ * @summary Mark a notification as read or unread
+ */
+export const MarkNotificationReadParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const MarkNotificationReadBody = zod.object({
+  isRead: zod.boolean().optional(),
+});
+
+export const MarkNotificationReadResponse = zod.object({
+  notification: zod
+    .object({
+      id: zod.string().optional(),
+      type: zod.string().optional(),
+      title: zod.string().optional(),
+      message: zod.string().optional(),
+      isRead: zod.boolean().optional(),
+      readAt: zod.string().nullish(),
+      projectId: zod.string().nullish(),
+      metadata: zod.object({}).passthrough().nullish(),
+      createdAt: zod.string().optional(),
+    })
+    .optional(),
+});
+
+/**
+ * @summary Delete a notification
+ */
+export const DeleteNotificationParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const DeleteNotificationResponse = zod.object({
+  deleted: zod.boolean().optional(),
+});
+
+/**
+ * @summary Cross-project KPI summary report
+ */
+export const GetReportSummaryResponse = zod.object({
+  generatedAt: zod.string().optional(),
+  projects: zod
+    .object({
+      total: zod.number().optional(),
+      tapping: zod.number().optional(),
+      lifecycle: zod
+        .object({
+          prematurity: zod.number().optional(),
+          mature_production: zod.number().optional(),
+          closed: zod.number().optional(),
+        })
+        .optional(),
+      list: zod.array(zod.object({}).passthrough()).optional(),
+    })
+    .optional(),
+  partners: zod
+    .object({
+      total: zod.number().optional(),
+    })
+    .optional(),
+  agreements: zod
+    .object({
+      total: zod.number().optional(),
+      active: zod.number().optional(),
+      byStatus: zod.object({}).passthrough().optional(),
+    })
+    .optional(),
+  contributions: zod
+    .object({
+      totalAmount: zod.string().optional(),
+    })
+    .optional(),
+  production: zod
+    .object({
+      totalKg: zod.string().optional(),
+      totalRevenue: zod.string().optional(),
+      recordCount: zod.number().optional(),
+    })
+    .optional(),
+  sales: zod
+    .object({
+      totalValue: zod.string().optional(),
+      transactionCount: zod.number().optional(),
+    })
+    .optional(),
+});
+
+/**
+ * @summary Partner financial statement report
+ */
+export const GetPartnerStatementReportQueryParams = zod.object({
+  partnerId: zod.coerce.string().optional(),
+});
+
+export const GetPartnerStatementReportResponse = zod.object({
+  generatedAt: zod.string().optional(),
+  partnerId: zod.string().nullish(),
+  statements: zod
+    .array(
+      zod.object({
+        partner: zod
+          .object({
+            id: zod.string().optional(),
+            name: zod.string().optional(),
+            phone: zod.string().nullish(),
+            address: zod.string().nullish(),
+          })
+          .optional(),
+        agreements: zod
+          .object({
+            total: zod.number().optional(),
+            active: zod.number().optional(),
+            totalLandArea: zod.number().optional(),
+            items: zod.array(zod.object({}).passthrough()).optional(),
+          })
+          .optional(),
+        contributions: zod
+          .object({
+            totalAmount: zod.number().optional(),
+            verifiedAmount: zod.number().optional(),
+            pendingAmount: zod.number().optional(),
+            byType: zod.object({}).passthrough().optional(),
+          })
+          .optional(),
+        claimants: zod.number().optional(),
+      }),
+    )
+    .optional(),
+});
+
+/**
+ * @summary Production and sales summary report
+ */
+export const GetProductionReportQueryParams = zod.object({
+  projectId: zod.coerce.string().optional(),
+  year: zod.coerce.string().optional(),
+});
+
+export const GetProductionReportResponse = zod.object({
+  generatedAt: zod.string().optional(),
+  projectId: zod.string().nullish(),
+  production: zod
+    .object({
+      totals: zod.object({}).passthrough().optional(),
+      byMonth: zod.array(zod.object({}).passthrough()).optional(),
+    })
+    .optional(),
+  sales: zod
+    .object({
+      totals: zod.object({}).passthrough().optional(),
+      byMonth: zod.array(zod.object({}).passthrough()).optional(),
+    })
+    .optional(),
+});
+
+/**
+ * @summary Governance completeness health report
+ */
+export const GetGovernanceHealthReportResponse = zod.object({
+  generatedAt: zod.string().optional(),
+  overallScore: zod.number().optional(),
+  totalProjects: zod.number().optional(),
+  completeCount: zod.number().optional(),
+  attentionCount: zod.number().optional(),
+  incompleteCount: zod.number().optional(),
+  projects: zod
+    .array(
+      zod.object({
+        projectId: zod.string().optional(),
+        projectName: zod.string().optional(),
+        lifecycleStatus: zod.string().optional(),
+        hasNominee: zod.boolean().optional(),
+        totalAgreements: zod.number().optional(),
+        activeAgreements: zod.number().optional(),
+        issues: zod.array(zod.string()).optional(),
+        score: zod.number().optional(),
+        status: zod.string().optional(),
+      }),
+    )
+    .optional(),
+});
+
+/**
+ * @summary Recent activity log report
+ */
+export const GetActivityReportQueryParams = zod.object({
+  projectId: zod.coerce.string().optional(),
+  limit: zod.coerce.string().optional(),
+});
+
+export const GetActivityReportResponse = zod.object({
+  generatedAt: zod.string().optional(),
+  activities: zod
+    .array(
+      zod.object({
+        id: zod.string().optional(),
+        type: zod.string().optional(),
+        description: zod.string().optional(),
+        entityId: zod.string().optional(),
+        entityType: zod.string().optional(),
+        userId: zod.string().nullish(),
+        projectId: zod.string().nullish(),
+        metadata: zod.object({}).passthrough().nullish(),
+        createdAt: zod.string().optional(),
+      }),
+    )
+    .optional(),
+  total: zod.number().optional(),
+});
+
+/**
+ * @summary List governance meetings
+ */
+export const ListGovernanceMeetingsQueryParams = zod.object({
+  projectId: zod.coerce.string().optional(),
+  status: zod.coerce.string().optional(),
+  meetingType: zod.coerce.string().optional(),
+});
+
+export const ListGovernanceMeetingsResponse = zod.object({
+  meetings: zod
+    .array(
+      zod.object({
+        id: zod.string().optional(),
+        title: zod.string().optional(),
+        meetingType: zod.string().optional(),
+        status: zod.string().optional(),
+        meetingDate: zod.string().optional(),
+        meetingTime: zod.string().nullish(),
+        venue: zod.string().nullish(),
+        agenda: zod.string().nullish(),
+        minutes: zod.string().nullish(),
+        attendees: zod.array(zod.object({}).passthrough()).nullish(),
+        quorumMet: zod.boolean().nullish(),
+        totalAttendees: zod.number().nullish(),
+        projectId: zod.string().nullish(),
+        projectName: zod.string().nullish(),
+        createdBy: zod.string().nullish(),
+        createdByName: zod.string().nullish(),
+        completedByName: zod.string().nullish(),
+        completedAt: zod.string().nullish(),
+        isActive: zod.boolean().optional(),
+        createdAt: zod.string().optional(),
+        updatedAt: zod.string().optional(),
+      }),
+    )
+    .optional(),
+  total: zod.number().optional(),
+});
+
+/**
+ * @summary Create a governance meeting
+ */
+export const CreateGovernanceMeetingBody = zod.object({
+  title: zod.string(),
+  meetingType: zod.string().optional(),
+  meetingDate: zod.string(),
+  meetingTime: zod.string().optional(),
+  venue: zod.string().optional(),
+  agenda: zod.string().optional(),
+  projectId: zod.string().optional(),
+});
+
+/**
+ * @summary Get a governance meeting with its resolutions
+ */
+export const GetGovernanceMeetingParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const GetGovernanceMeetingResponse = zod.object({
+  meeting: zod
+    .object({
+      id: zod.string().optional(),
+      title: zod.string().optional(),
+      meetingType: zod.string().optional(),
+      status: zod.string().optional(),
+      meetingDate: zod.string().optional(),
+      meetingTime: zod.string().nullish(),
+      venue: zod.string().nullish(),
+      agenda: zod.string().nullish(),
+      minutes: zod.string().nullish(),
+      attendees: zod.array(zod.object({}).passthrough()).nullish(),
+      quorumMet: zod.boolean().nullish(),
+      totalAttendees: zod.number().nullish(),
+      projectId: zod.string().nullish(),
+      projectName: zod.string().nullish(),
+      createdBy: zod.string().nullish(),
+      createdByName: zod.string().nullish(),
+      completedByName: zod.string().nullish(),
+      completedAt: zod.string().nullish(),
+      isActive: zod.boolean().optional(),
+      createdAt: zod.string().optional(),
+      updatedAt: zod.string().optional(),
+    })
+    .optional(),
+  resolutions: zod
+    .array(
+      zod.object({
+        id: zod.string().optional(),
+        meetingId: zod.string().optional(),
+        resolutionNumber: zod.string().nullish(),
+        title: zod.string().optional(),
+        description: zod.string().nullish(),
+        status: zod.string().optional(),
+        votesFor: zod.number().nullish(),
+        votesAgainst: zod.number().nullish(),
+        votesAbstain: zod.number().nullish(),
+        votingMethod: zod.string().nullish(),
+        implementationDeadline: zod.string().nullish(),
+        implementationNotes: zod.string().nullish(),
+        implementedAt: zod.string().nullish(),
+        projectId: zod.string().nullish(),
+        recordedByName: zod.string().nullish(),
+        isActive: zod.boolean().optional(),
+        createdAt: zod.string().optional(),
+        updatedAt: zod.string().optional(),
+      }),
+    )
+    .optional(),
+});
+
+/**
+ * @summary Update meeting details or minutes
+ */
+export const UpdateGovernanceMeetingParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const UpdateGovernanceMeetingBody = zod.object({
+  title: zod.string().optional(),
+  meetingType: zod.string().optional(),
+  meetingDate: zod.string().optional(),
+  meetingTime: zod.string().optional(),
+  venue: zod.string().optional(),
+  agenda: zod.string().optional(),
+  minutes: zod.string().optional(),
+  attendees: zod.array(zod.object({}).passthrough()).optional(),
+  quorumMet: zod.boolean().optional(),
+  totalAttendees: zod.number().optional(),
+});
+
+export const UpdateGovernanceMeetingResponse = zod.object({
+  meeting: zod
+    .object({
+      id: zod.string().optional(),
+      title: zod.string().optional(),
+      meetingType: zod.string().optional(),
+      status: zod.string().optional(),
+      meetingDate: zod.string().optional(),
+      meetingTime: zod.string().nullish(),
+      venue: zod.string().nullish(),
+      agenda: zod.string().nullish(),
+      minutes: zod.string().nullish(),
+      attendees: zod.array(zod.object({}).passthrough()).nullish(),
+      quorumMet: zod.boolean().nullish(),
+      totalAttendees: zod.number().nullish(),
+      projectId: zod.string().nullish(),
+      projectName: zod.string().nullish(),
+      createdBy: zod.string().nullish(),
+      createdByName: zod.string().nullish(),
+      completedByName: zod.string().nullish(),
+      completedAt: zod.string().nullish(),
+      isActive: zod.boolean().optional(),
+      createdAt: zod.string().optional(),
+      updatedAt: zod.string().optional(),
+    })
+    .optional(),
+});
+
+/**
+ * @summary Soft-delete a meeting (admin only)
+ */
+export const DeleteGovernanceMeetingParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const DeleteGovernanceMeetingResponse = zod.object({
+  deleted: zod.boolean().optional(),
+});
+
+/**
+ * @summary Transition meeting status
+ */
+export const UpdateGovernanceMeetingStatusParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const UpdateGovernanceMeetingStatusBody = zod.object({
+  status: zod.string(),
+});
+
+export const UpdateGovernanceMeetingStatusResponse = zod.object({
+  meeting: zod
+    .object({
+      id: zod.string().optional(),
+      title: zod.string().optional(),
+      meetingType: zod.string().optional(),
+      status: zod.string().optional(),
+      meetingDate: zod.string().optional(),
+      meetingTime: zod.string().nullish(),
+      venue: zod.string().nullish(),
+      agenda: zod.string().nullish(),
+      minutes: zod.string().nullish(),
+      attendees: zod.array(zod.object({}).passthrough()).nullish(),
+      quorumMet: zod.boolean().nullish(),
+      totalAttendees: zod.number().nullish(),
+      projectId: zod.string().nullish(),
+      projectName: zod.string().nullish(),
+      createdBy: zod.string().nullish(),
+      createdByName: zod.string().nullish(),
+      completedByName: zod.string().nullish(),
+      completedAt: zod.string().nullish(),
+      isActive: zod.boolean().optional(),
+      createdAt: zod.string().optional(),
+      updatedAt: zod.string().optional(),
+    })
+    .optional(),
+});
+
+/**
+ * @summary List resolutions for a meeting
+ */
+export const ListGovernanceResolutionsParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const ListGovernanceResolutionsResponse = zod.object({
+  resolutions: zod
+    .array(
+      zod.object({
+        id: zod.string().optional(),
+        meetingId: zod.string().optional(),
+        resolutionNumber: zod.string().nullish(),
+        title: zod.string().optional(),
+        description: zod.string().nullish(),
+        status: zod.string().optional(),
+        votesFor: zod.number().nullish(),
+        votesAgainst: zod.number().nullish(),
+        votesAbstain: zod.number().nullish(),
+        votingMethod: zod.string().nullish(),
+        implementationDeadline: zod.string().nullish(),
+        implementationNotes: zod.string().nullish(),
+        implementedAt: zod.string().nullish(),
+        projectId: zod.string().nullish(),
+        recordedByName: zod.string().nullish(),
+        isActive: zod.boolean().optional(),
+        createdAt: zod.string().optional(),
+        updatedAt: zod.string().optional(),
+      }),
+    )
+    .optional(),
+  total: zod.number().optional(),
+});
+
+/**
+ * @summary Add a resolution to a meeting
+ */
+export const CreateGovernanceResolutionParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const CreateGovernanceResolutionBody = zod.object({
+  resolutionNumber: zod.string().optional(),
+  title: zod.string(),
+  description: zod.string().optional(),
+  status: zod.string().optional(),
+  votesFor: zod.number().optional(),
+  votesAgainst: zod.number().optional(),
+  votesAbstain: zod.number().optional(),
+  votingMethod: zod.string().optional(),
+  implementationDeadline: zod.string().optional(),
+  projectId: zod.string().optional(),
+});
+
+/**
+ * @summary Update a resolution
+ */
+export const UpdateGovernanceResolutionParams = zod.object({
+  id: zod.coerce.string(),
+  resolutionId: zod.coerce.string(),
+});
+
+export const UpdateGovernanceResolutionBody = zod.object({
+  title: zod.string().optional(),
+  description: zod.string().optional(),
+  status: zod.string().optional(),
+  votesFor: zod.number().optional(),
+  votesAgainst: zod.number().optional(),
+  votesAbstain: zod.number().optional(),
+  votingMethod: zod.string().optional(),
+  implementationDeadline: zod.string().optional(),
+  implementationNotes: zod.string().optional(),
+});
+
+export const UpdateGovernanceResolutionResponse = zod.object({
+  resolution: zod
+    .object({
+      id: zod.string().optional(),
+      meetingId: zod.string().optional(),
+      resolutionNumber: zod.string().nullish(),
+      title: zod.string().optional(),
+      description: zod.string().nullish(),
+      status: zod.string().optional(),
+      votesFor: zod.number().nullish(),
+      votesAgainst: zod.number().nullish(),
+      votesAbstain: zod.number().nullish(),
+      votingMethod: zod.string().nullish(),
+      implementationDeadline: zod.string().nullish(),
+      implementationNotes: zod.string().nullish(),
+      implementedAt: zod.string().nullish(),
+      projectId: zod.string().nullish(),
+      recordedByName: zod.string().nullish(),
+      isActive: zod.boolean().optional(),
+      createdAt: zod.string().optional(),
+      updatedAt: zod.string().optional(),
+    })
+    .optional(),
+});
+
+/**
+ * @summary Delete a resolution (admin only)
+ */
+export const DeleteGovernanceResolutionParams = zod.object({
+  id: zod.coerce.string(),
+  resolutionId: zod.coerce.string(),
+});
+
+export const DeleteGovernanceResolutionResponse = zod.object({
+  deleted: zod.boolean().optional(),
+});

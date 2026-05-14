@@ -8833,6 +8833,509 @@ paths:
                   entry: { $ref: "#/components/schemas/DisputedAccumulationEntry" }
 
 
+  /notifications:
+    get:
+      operationId: listNotifications
+      tags: [notifications]
+      summary: List notifications for current user
+      parameters:
+        - in: query
+          name: unreadOnly
+          schema: { type: string }
+        - in: query
+          name: type
+          schema: { type: string }
+        - in: query
+          name: projectId
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  notifications:
+                    type: array
+                    items: { $ref: "#/components/schemas/NotificationItem" }
+                  total: { type: integer }
+                  unreadCount: { type: integer }
+    post:
+      operationId: broadcastNotification
+      tags: [notifications]
+      summary: Broadcast notification to users (admin/developer)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userIds, title, message]
+              properties:
+                userIds:
+                  type: array
+                  items: { type: string }
+                title: { type: string }
+                message: { type: string }
+                type: { type: string }
+                projectId: { type: string }
+                metadata: { type: object }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  created: { type: integer }
+                  notifications:
+                    type: array
+                    items: { $ref: "#/components/schemas/NotificationItem" }
+
+  /notifications/unread-count:
+    get:
+      operationId: getUnreadNotificationCount
+      tags: [notifications]
+      summary: Get unread notification count for current user
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count: { type: integer }
+
+  /notifications/mark-all-read:
+    post:
+      operationId: markAllNotificationsRead
+      tags: [notifications]
+      summary: Mark all notifications as read for current user
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  markedCount: { type: integer }
+
+  /notifications/{id}/read:
+    patch:
+      operationId: markNotificationRead
+      tags: [notifications]
+      summary: Mark a notification as read or unread
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                isRead: { type: boolean }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  notification: { $ref: "#/components/schemas/NotificationItem" }
+
+  /notifications/{id}:
+    delete:
+      operationId: deleteNotification
+      tags: [notifications]
+      summary: Delete a notification
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted: { type: boolean }
+
+  /reports/summary:
+    get:
+      operationId: getReportSummary
+      tags: [reports]
+      summary: Cross-project KPI summary report
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ReportSummary" }
+
+  /reports/partner-statement:
+    get:
+      operationId: getPartnerStatementReport
+      tags: [reports]
+      summary: Partner financial statement report
+      parameters:
+        - in: query
+          name: partnerId
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PartnerStatementReport" }
+
+  /reports/production:
+    get:
+      operationId: getProductionReport
+      tags: [reports]
+      summary: Production and sales summary report
+      parameters:
+        - in: query
+          name: projectId
+          schema: { type: string }
+        - in: query
+          name: year
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProductionReport" }
+
+  /reports/governance-health:
+    get:
+      operationId: getGovernanceHealthReport
+      tags: [reports]
+      summary: Governance completeness health report
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/GovernanceHealthReport" }
+
+  /reports/activity:
+    get:
+      operationId: getActivityReport
+      tags: [reports]
+      summary: Recent activity log report
+      parameters:
+        - in: query
+          name: projectId
+          schema: { type: string }
+        - in: query
+          name: limit
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  generatedAt: { type: string }
+                  activities:
+                    type: array
+                    items: { $ref: "#/components/schemas/ActivityRecord" }
+                  total: { type: integer }
+
+  /governance-meetings:
+    get:
+      operationId: listGovernanceMeetings
+      tags: [governance-meetings]
+      summary: List governance meetings
+      parameters:
+        - in: query
+          name: projectId
+          schema: { type: string }
+        - in: query
+          name: status
+          schema: { type: string }
+        - in: query
+          name: meetingType
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  meetings:
+                    type: array
+                    items: { $ref: "#/components/schemas/GovernanceMeeting" }
+                  total: { type: integer }
+    post:
+      operationId: createGovernanceMeeting
+      tags: [governance-meetings]
+      summary: Create a governance meeting
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, meetingDate]
+              properties:
+                title: { type: string }
+                meetingType: { type: string }
+                meetingDate: { type: string }
+                meetingTime: { type: string }
+                venue: { type: string }
+                agenda: { type: string }
+                projectId: { type: string }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  meeting: { $ref: "#/components/schemas/GovernanceMeeting" }
+
+  /governance-meetings/{id}:
+    get:
+      operationId: getGovernanceMeeting
+      tags: [governance-meetings]
+      summary: Get a governance meeting with its resolutions
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  meeting: { $ref: "#/components/schemas/GovernanceMeeting" }
+                  resolutions:
+                    type: array
+                    items: { $ref: "#/components/schemas/GovernanceResolution" }
+    patch:
+      operationId: updateGovernanceMeeting
+      tags: [governance-meetings]
+      summary: Update meeting details or minutes
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title: { type: string }
+                meetingType: { type: string }
+                meetingDate: { type: string }
+                meetingTime: { type: string }
+                venue: { type: string }
+                agenda: { type: string }
+                minutes: { type: string }
+                attendees: { type: array, items: { type: object } }
+                quorumMet: { type: boolean }
+                totalAttendees: { type: integer }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  meeting: { $ref: "#/components/schemas/GovernanceMeeting" }
+    delete:
+      operationId: deleteGovernanceMeeting
+      tags: [governance-meetings]
+      summary: Soft-delete a meeting (admin only)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted: { type: boolean }
+
+  /governance-meetings/{id}/status:
+    patch:
+      operationId: updateGovernanceMeetingStatus
+      tags: [governance-meetings]
+      summary: Transition meeting status
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  meeting: { $ref: "#/components/schemas/GovernanceMeeting" }
+
+  /governance-meetings/{id}/resolutions:
+    get:
+      operationId: listGovernanceResolutions
+      tags: [governance-meetings]
+      summary: List resolutions for a meeting
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resolutions:
+                    type: array
+                    items: { $ref: "#/components/schemas/GovernanceResolution" }
+                  total: { type: integer }
+    post:
+      operationId: createGovernanceResolution
+      tags: [governance-meetings]
+      summary: Add a resolution to a meeting
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                resolutionNumber: { type: string }
+                title: { type: string }
+                description: { type: string }
+                status: { type: string }
+                votesFor: { type: integer }
+                votesAgainst: { type: integer }
+                votesAbstain: { type: integer }
+                votingMethod: { type: string }
+                implementationDeadline: { type: string }
+                projectId: { type: string }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resolution: { $ref: "#/components/schemas/GovernanceResolution" }
+
+  /governance-meetings/{id}/resolutions/{resolutionId}:
+    patch:
+      operationId: updateGovernanceResolution
+      tags: [governance-meetings]
+      summary: Update a resolution
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+        - in: path
+          name: resolutionId
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title: { type: string }
+                description: { type: string }
+                status: { type: string }
+                votesFor: { type: integer }
+                votesAgainst: { type: integer }
+                votesAbstain: { type: integer }
+                votingMethod: { type: string }
+                implementationDeadline: { type: string }
+                implementationNotes: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resolution: { $ref: "#/components/schemas/GovernanceResolution" }
+    delete:
+      operationId: deleteGovernanceResolution
+      tags: [governance-meetings]
+      summary: Delete a resolution (admin only)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+        - in: path
+          name: resolutionId
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted: { type: boolean }
+
 components:
   schemas:
 
@@ -15294,3 +15797,191 @@ components:
             hasPendingOtp: { type: boolean }
             hasAccumulatedFunds: { type: boolean }
             projectOperationsBlocked: { type: boolean }
+
+    NotificationItem:
+      type: object
+      properties:
+        id: { type: string }
+        type: { type: string }
+        title: { type: string }
+        message: { type: string }
+        isRead: { type: boolean }
+        readAt: { type: string, nullable: true }
+        projectId: { type: string, nullable: true }
+        metadata: { type: object, nullable: true }
+        createdAt: { type: string }
+
+    ReportSummary:
+      type: object
+      properties:
+        generatedAt: { type: string }
+        projects:
+          type: object
+          properties:
+            total: { type: integer }
+            tapping: { type: integer }
+            lifecycle:
+              type: object
+              properties:
+                prematurity: { type: integer }
+                mature_production: { type: integer }
+                closed: { type: integer }
+            list: { type: array, items: { type: object } }
+        partners:
+          type: object
+          properties:
+            total: { type: integer }
+        agreements:
+          type: object
+          properties:
+            total: { type: integer }
+            active: { type: integer }
+            byStatus: { type: object }
+        contributions:
+          type: object
+          properties:
+            totalAmount: { type: string }
+        production:
+          type: object
+          properties:
+            totalKg: { type: string }
+            totalRevenue: { type: string }
+            recordCount: { type: integer }
+        sales:
+          type: object
+          properties:
+            totalValue: { type: string }
+            transactionCount: { type: integer }
+
+    PartnerStatementReport:
+      type: object
+      properties:
+        generatedAt: { type: string }
+        partnerId: { type: string, nullable: true }
+        statements:
+          type: array
+          items:
+            type: object
+            properties:
+              partner:
+                type: object
+                properties:
+                  id: { type: string }
+                  name: { type: string }
+                  phone: { type: string, nullable: true }
+                  address: { type: string, nullable: true }
+              agreements:
+                type: object
+                properties:
+                  total: { type: integer }
+                  active: { type: integer }
+                  totalLandArea: { type: number }
+                  items: { type: array, items: { type: object } }
+              contributions:
+                type: object
+                properties:
+                  totalAmount: { type: number }
+                  verifiedAmount: { type: number }
+                  pendingAmount: { type: number }
+                  byType: { type: object }
+              claimants: { type: integer }
+
+    ProductionReport:
+      type: object
+      properties:
+        generatedAt: { type: string }
+        projectId: { type: string, nullable: true }
+        production:
+          type: object
+          properties:
+            totals: { type: object }
+            byMonth: { type: array, items: { type: object } }
+        sales:
+          type: object
+          properties:
+            totals: { type: object }
+            byMonth: { type: array, items: { type: object } }
+
+    GovernanceHealthReport:
+      type: object
+      properties:
+        generatedAt: { type: string }
+        overallScore: { type: integer }
+        totalProjects: { type: integer }
+        completeCount: { type: integer }
+        attentionCount: { type: integer }
+        incompleteCount: { type: integer }
+        projects:
+          type: array
+          items:
+            type: object
+            properties:
+              projectId: { type: string }
+              projectName: { type: string }
+              lifecycleStatus: { type: string }
+              hasNominee: { type: boolean }
+              totalAgreements: { type: integer }
+              activeAgreements: { type: integer }
+              issues: { type: array, items: { type: string } }
+              score: { type: integer }
+              status: { type: string }
+
+    ActivityRecord:
+      type: object
+      properties:
+        id: { type: string }
+        type: { type: string }
+        description: { type: string }
+        entityId: { type: string }
+        entityType: { type: string }
+        userId: { type: string, nullable: true }
+        projectId: { type: string, nullable: true }
+        metadata: { type: object, nullable: true }
+        createdAt: { type: string }
+
+    GovernanceMeeting:
+      type: object
+      properties:
+        id: { type: string }
+        title: { type: string }
+        meetingType: { type: string }
+        status: { type: string }
+        meetingDate: { type: string }
+        meetingTime: { type: string, nullable: true }
+        venue: { type: string, nullable: true }
+        agenda: { type: string, nullable: true }
+        minutes: { type: string, nullable: true }
+        attendees: { type: array, items: { type: object }, nullable: true }
+        quorumMet: { type: boolean, nullable: true }
+        totalAttendees: { type: integer, nullable: true }
+        projectId: { type: string, nullable: true }
+        projectName: { type: string, nullable: true }
+        createdBy: { type: string, nullable: true }
+        createdByName: { type: string, nullable: true }
+        completedByName: { type: string, nullable: true }
+        completedAt: { type: string, nullable: true }
+        isActive: { type: boolean }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+
+    GovernanceResolution:
+      type: object
+      properties:
+        id: { type: string }
+        meetingId: { type: string }
+        resolutionNumber: { type: string, nullable: true }
+        title: { type: string }
+        description: { type: string, nullable: true }
+        status: { type: string }
+        votesFor: { type: integer, nullable: true }
+        votesAgainst: { type: integer, nullable: true }
+        votesAbstain: { type: integer, nullable: true }
+        votingMethod: { type: string, nullable: true }
+        implementationDeadline: { type: string, nullable: true }
+        implementationNotes: { type: string, nullable: true }
+        implementedAt: { type: string, nullable: true }
+        projectId: { type: string, nullable: true }
+        recordedByName: { type: string, nullable: true }
+        isActive: { type: boolean }
+        createdAt: { type: string }
+        updatedAt: { type: string }

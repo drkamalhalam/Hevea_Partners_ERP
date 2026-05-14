@@ -52,6 +52,9 @@ import financialAnalyticsRouter from "./financial_analytics";
 import valuationsRouter from "./valuations";
 import inheritanceRouter from "./inheritance";
 import prematuritySuccessionRouter from "./prematurity_succession";
+import notificationsRouter from "./notifications_route";
+import reportsRouter from "./reports";
+import governanceMeetingsRouter from "./governance_meetings";
 import devRouter from "./dev";
 
 const router: IRouter = Router();
@@ -121,5 +124,8 @@ router.use("/financial-analytics", financialAnalyticsRouter);
 router.use("/valuations", valuationsRouter);
 router.use("/inheritance-claims", inheritanceRouter);
 router.use("/prematurity-succession", prematuritySuccessionRouter);
+router.use("/notifications", notificationsRouter);
+router.use("/reports", reportsRouter);
+router.use("/governance-meetings", governanceMeetingsRouter);
 
 export default router;

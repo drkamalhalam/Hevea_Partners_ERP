@@ -6855,6 +6855,222 @@ export interface PrematuritySuccessionDashboard {
   governanceFlags: PrematuritySuccessionDashboardGovernanceFlags;
 }
 
+export type NotificationItemMetadata = { [key: string]: unknown } | null;
+
+export interface NotificationItem {
+  id?: string;
+  type?: string;
+  title?: string;
+  message?: string;
+  isRead?: boolean;
+  readAt?: string | null;
+  projectId?: string | null;
+  metadata?: NotificationItemMetadata;
+  createdAt?: string;
+}
+
+export type ReportSummaryProjectsLifecycle = {
+  prematurity?: number;
+  mature_production?: number;
+  closed?: number;
+};
+
+export type ReportSummaryProjectsListItem = { [key: string]: unknown };
+
+export type ReportSummaryProjects = {
+  total?: number;
+  tapping?: number;
+  lifecycle?: ReportSummaryProjectsLifecycle;
+  list?: ReportSummaryProjectsListItem[];
+};
+
+export type ReportSummaryPartners = {
+  total?: number;
+};
+
+export type ReportSummaryAgreementsByStatus = { [key: string]: unknown };
+
+export type ReportSummaryAgreements = {
+  total?: number;
+  active?: number;
+  byStatus?: ReportSummaryAgreementsByStatus;
+};
+
+export type ReportSummaryContributions = {
+  totalAmount?: string;
+};
+
+export type ReportSummaryProduction = {
+  totalKg?: string;
+  totalRevenue?: string;
+  recordCount?: number;
+};
+
+export type ReportSummarySales = {
+  totalValue?: string;
+  transactionCount?: number;
+};
+
+export interface ReportSummary {
+  generatedAt?: string;
+  projects?: ReportSummaryProjects;
+  partners?: ReportSummaryPartners;
+  agreements?: ReportSummaryAgreements;
+  contributions?: ReportSummaryContributions;
+  production?: ReportSummaryProduction;
+  sales?: ReportSummarySales;
+}
+
+export type PartnerStatementReportStatementsItemPartner = {
+  id?: string;
+  name?: string;
+  phone?: string | null;
+  address?: string | null;
+};
+
+export type PartnerStatementReportStatementsItemAgreementsItemsItem = {
+  [key: string]: unknown;
+};
+
+export type PartnerStatementReportStatementsItemAgreements = {
+  total?: number;
+  active?: number;
+  totalLandArea?: number;
+  items?: PartnerStatementReportStatementsItemAgreementsItemsItem[];
+};
+
+export type PartnerStatementReportStatementsItemContributionsByType = {
+  [key: string]: unknown;
+};
+
+export type PartnerStatementReportStatementsItemContributions = {
+  totalAmount?: number;
+  verifiedAmount?: number;
+  pendingAmount?: number;
+  byType?: PartnerStatementReportStatementsItemContributionsByType;
+};
+
+export type PartnerStatementReportStatementsItem = {
+  partner?: PartnerStatementReportStatementsItemPartner;
+  agreements?: PartnerStatementReportStatementsItemAgreements;
+  contributions?: PartnerStatementReportStatementsItemContributions;
+  claimants?: number;
+};
+
+export interface PartnerStatementReport {
+  generatedAt?: string;
+  partnerId?: string | null;
+  statements?: PartnerStatementReportStatementsItem[];
+}
+
+export type ProductionReportProductionTotals = { [key: string]: unknown };
+
+export type ProductionReportProductionByMonthItem = { [key: string]: unknown };
+
+export type ProductionReportProduction = {
+  totals?: ProductionReportProductionTotals;
+  byMonth?: ProductionReportProductionByMonthItem[];
+};
+
+export type ProductionReportSalesTotals = { [key: string]: unknown };
+
+export type ProductionReportSalesByMonthItem = { [key: string]: unknown };
+
+export type ProductionReportSales = {
+  totals?: ProductionReportSalesTotals;
+  byMonth?: ProductionReportSalesByMonthItem[];
+};
+
+export interface ProductionReport {
+  generatedAt?: string;
+  projectId?: string | null;
+  production?: ProductionReportProduction;
+  sales?: ProductionReportSales;
+}
+
+export type GovernanceHealthReportProjectsItem = {
+  projectId?: string;
+  projectName?: string;
+  lifecycleStatus?: string;
+  hasNominee?: boolean;
+  totalAgreements?: number;
+  activeAgreements?: number;
+  issues?: string[];
+  score?: number;
+  status?: string;
+};
+
+export interface GovernanceHealthReport {
+  generatedAt?: string;
+  overallScore?: number;
+  totalProjects?: number;
+  completeCount?: number;
+  attentionCount?: number;
+  incompleteCount?: number;
+  projects?: GovernanceHealthReportProjectsItem[];
+}
+
+export type ActivityRecordMetadata = { [key: string]: unknown } | null;
+
+export interface ActivityRecord {
+  id?: string;
+  type?: string;
+  description?: string;
+  entityId?: string;
+  entityType?: string;
+  userId?: string | null;
+  projectId?: string | null;
+  metadata?: ActivityRecordMetadata;
+  createdAt?: string;
+}
+
+export type GovernanceMeetingAttendeesItem = { [key: string]: unknown };
+
+export interface GovernanceMeeting {
+  id?: string;
+  title?: string;
+  meetingType?: string;
+  status?: string;
+  meetingDate?: string;
+  meetingTime?: string | null;
+  venue?: string | null;
+  agenda?: string | null;
+  minutes?: string | null;
+  attendees?: GovernanceMeetingAttendeesItem[] | null;
+  quorumMet?: boolean | null;
+  totalAttendees?: number | null;
+  projectId?: string | null;
+  projectName?: string | null;
+  createdBy?: string | null;
+  createdByName?: string | null;
+  completedByName?: string | null;
+  completedAt?: string | null;
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface GovernanceResolution {
+  id?: string;
+  meetingId?: string;
+  resolutionNumber?: string | null;
+  title?: string;
+  description?: string | null;
+  status?: string;
+  votesFor?: number | null;
+  votesAgainst?: number | null;
+  votesAbstain?: number | null;
+  votingMethod?: string | null;
+  implementationDeadline?: string | null;
+  implementationNotes?: string | null;
+  implementedAt?: string | null;
+  projectId?: string | null;
+  recordedByName?: string | null;
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export type GetUserActivityParams = {
   limit?: number;
 };
@@ -8306,4 +8522,177 @@ export type ForfeitAccumulationEntryBody = {
 
 export type ForfeitAccumulationEntry200 = {
   entry?: DisputedAccumulationEntry;
+};
+
+export type ListNotificationsParams = {
+  unreadOnly?: string;
+  type?: string;
+  projectId?: string;
+};
+
+export type ListNotifications200 = {
+  notifications?: NotificationItem[];
+  total?: number;
+  unreadCount?: number;
+};
+
+export type BroadcastNotificationBodyMetadata = { [key: string]: unknown };
+
+export type BroadcastNotificationBody = {
+  userIds: string[];
+  title: string;
+  message: string;
+  type?: string;
+  projectId?: string;
+  metadata?: BroadcastNotificationBodyMetadata;
+};
+
+export type BroadcastNotification201 = {
+  created?: number;
+  notifications?: NotificationItem[];
+};
+
+export type GetUnreadNotificationCount200 = {
+  count?: number;
+};
+
+export type MarkAllNotificationsRead200 = {
+  markedCount?: number;
+};
+
+export type MarkNotificationReadBody = {
+  isRead?: boolean;
+};
+
+export type MarkNotificationRead200 = {
+  notification?: NotificationItem;
+};
+
+export type DeleteNotification200 = {
+  deleted?: boolean;
+};
+
+export type GetPartnerStatementReportParams = {
+  partnerId?: string;
+};
+
+export type GetProductionReportParams = {
+  projectId?: string;
+  year?: string;
+};
+
+export type GetActivityReportParams = {
+  projectId?: string;
+  limit?: string;
+};
+
+export type GetActivityReport200 = {
+  generatedAt?: string;
+  activities?: ActivityRecord[];
+  total?: number;
+};
+
+export type ListGovernanceMeetingsParams = {
+  projectId?: string;
+  status?: string;
+  meetingType?: string;
+};
+
+export type ListGovernanceMeetings200 = {
+  meetings?: GovernanceMeeting[];
+  total?: number;
+};
+
+export type CreateGovernanceMeetingBody = {
+  title: string;
+  meetingType?: string;
+  meetingDate: string;
+  meetingTime?: string;
+  venue?: string;
+  agenda?: string;
+  projectId?: string;
+};
+
+export type CreateGovernanceMeeting201 = {
+  meeting?: GovernanceMeeting;
+};
+
+export type GetGovernanceMeeting200 = {
+  meeting?: GovernanceMeeting;
+  resolutions?: GovernanceResolution[];
+};
+
+export type UpdateGovernanceMeetingBodyAttendeesItem = {
+  [key: string]: unknown;
+};
+
+export type UpdateGovernanceMeetingBody = {
+  title?: string;
+  meetingType?: string;
+  meetingDate?: string;
+  meetingTime?: string;
+  venue?: string;
+  agenda?: string;
+  minutes?: string;
+  attendees?: UpdateGovernanceMeetingBodyAttendeesItem[];
+  quorumMet?: boolean;
+  totalAttendees?: number;
+};
+
+export type UpdateGovernanceMeeting200 = {
+  meeting?: GovernanceMeeting;
+};
+
+export type DeleteGovernanceMeeting200 = {
+  deleted?: boolean;
+};
+
+export type UpdateGovernanceMeetingStatusBody = {
+  status: string;
+};
+
+export type UpdateGovernanceMeetingStatus200 = {
+  meeting?: GovernanceMeeting;
+};
+
+export type ListGovernanceResolutions200 = {
+  resolutions?: GovernanceResolution[];
+  total?: number;
+};
+
+export type CreateGovernanceResolutionBody = {
+  resolutionNumber?: string;
+  title: string;
+  description?: string;
+  status?: string;
+  votesFor?: number;
+  votesAgainst?: number;
+  votesAbstain?: number;
+  votingMethod?: string;
+  implementationDeadline?: string;
+  projectId?: string;
+};
+
+export type CreateGovernanceResolution201 = {
+  resolution?: GovernanceResolution;
+};
+
+export type UpdateGovernanceResolutionBody = {
+  title?: string;
+  description?: string;
+  status?: string;
+  votesFor?: number;
+  votesAgainst?: number;
+  votesAbstain?: number;
+  votingMethod?: string;
+  implementationDeadline?: string;
+  implementationNotes?: string;
+};
+
+export type UpdateGovernanceResolution200 = {
+  resolution?: GovernanceResolution;
+};
+
+export type DeleteGovernanceResolution200 = {
+  deleted?: boolean;
 };
