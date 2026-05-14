@@ -1018,6 +1018,33 @@ Profit Share (confirmed 50% sessions where partner is landowner)
 
 **Generated hooks:** `useComputePayable`, `useListPayableAdjustments`, `useCreatePayableAdjustment`, `useUpdatePayableAdjustment`, `useDeletePayableAdjustment`, `useConfirmPayableAdjustment`, `useListPayableSnapshots`, `useCreatePayableSnapshot`, `useGetPayableSnapshot`, `useFinalizePayableSnapshot`
 
+## Loss Absorption & Negative Balance Adjustment Engine
+
+Advisory-only engine tracking expected vs actual operational burden per (project, partner) pair, carry-forward imbalances, and negative balance positions. No automatic settlements triggered.
+
+**DB tables** (`lib/db/src/schema/loss_absorption.ts`):
+- `loss_absorption_records` — period-level burden tracking; derived fields: `burdenImbalance`, `lossAbsorbed`, `netAfterBurden`, `carryForwardAmount` (status: draft → confirmed; carryForwardStatus: none/pending/partial/resolved)
+- `negative_balance_entries` — append-only running balance ledger per (project, partner); referenceType classifies source (loss_absorption / lca_shortfall / settlement_deficit / burden_imbalance / manual_adjustment / recovery_credit)
+
+**API** (`artifacts/api-server/src/routes/loss_absorption.ts`, mounted at `/loss-absorption`):
+- `GET/POST /records` — list (project/partner/status filter, RBAC-scoped) + create
+- `PATCH/DELETE /records/:id` — edit draft / soft-delete (admin only)
+- `POST /records/:id/confirm` — lock record (admin/developer)
+- `GET/POST /negative-balance` — list entries + create (with auto opening-balance from last closing balance)
+- `PATCH /negative-balance/:id` — update description/notes/recoveryStatus
+- `GET /settlement-priority?projectId&partnerId` — advisory 3-tier waterfall: Tier 1 = recover past imbalances, Tier 2 = pay pending LCA, Tier 3 = distribute profit
+- `GET /summary?projectId&partnerId` — full KPI + recovery + period analytics + recent rows
+
+**Settlement priority waterfall note:** `const { id } = req.params as { id: string }` pattern required for Drizzle `eq()` type resolution (difference from `req.params.id` direct usage).
+
+**Frontend** (`artifacts/plantation-web/src/pages/LossAbsorption.tsx`, route `/loss-absorption`):
+- Amber advisory banner at top
+- Project + Partner filter dropdowns (sentinel `"__all__"` value for Radix Select compatibility)
+- 4 tabs: Overview (6 KPI cards, recovery position, period bar chart) | Loss Records (CRUD table with confirm/edit/delete) | Negative Balances (ledger table with edit) | Settlement Priority (advisory waterfall card)
+- Sidebar: Settlement group, icon TrendingDown (admin/developer only)
+
+**Generated hooks:** `useListLossAbsorptionRecords`, `useCreateLossAbsorptionRecord`, `useUpdateLossAbsorptionRecord`, `useConfirmLossAbsorptionRecord`, `useDeleteLossAbsorptionRecord`, `useListNegativeBalanceEntries`, `useCreateNegativeBalanceEntry`, `useUpdateNegativeBalanceEntry`, `useGetSettlementPriority`, `useGetLossAbsorptionSummary`
+
 ## Pointers
 
 - See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details

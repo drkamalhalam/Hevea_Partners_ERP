@@ -50,3 +50,4 @@ export * from "./operational_access_logs";
 export * from "./distribution_previews";
 export * from "./fifty_pct";
 export * from "./payable";
+export * from "./loss_absorption";

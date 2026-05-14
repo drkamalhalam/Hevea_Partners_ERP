@@ -63,6 +63,7 @@ import DistributionPreview from "./pages/DistributionPreview";
 import DistributionWorkflow from "./pages/DistributionWorkflow";
 import FiftyPctSettlement from "./pages/FiftyPctSettlement";
 import PartnerPayable from "./pages/PartnerPayable";
+import LossAbsorption from "./pages/LossAbsorption";
 import Distribution from "./pages/Distribution";
 
 // Pages — Analytics
@@ -281,6 +282,7 @@ function AppRoutes() {
               <Route path="/distribution-workflow"><ProtectedRoute component={DistributionWorkflow} /></Route>
               <Route path="/fifty-pct-settlement"><ProtectedRoute component={FiftyPctSettlement} /></Route>
               <Route path="/partner-payable"><ProtectedRoute component={PartnerPayable} /></Route>
+              <Route path="/loss-absorption"><ProtectedRoute component={LossAbsorption} /></Route>
               <Route path="/sales"><ProtectedRoute component={Sales} /></Route>
               <Route path="/distribution"><ProtectedRoute component={Distribution} /></Route>
 

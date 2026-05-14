@@ -4949,6 +4949,255 @@ export interface FiftyPctPartnersLookupResult {
   partners: FiftyPctPartnersLookupResultPartnersItem[];
 }
 
+export type LossAbsorptionRecordCarryForwardStatus =
+  (typeof LossAbsorptionRecordCarryForwardStatus)[keyof typeof LossAbsorptionRecordCarryForwardStatus];
+
+export const LossAbsorptionRecordCarryForwardStatus = {
+  none: "none",
+  pending: "pending",
+  partial: "partial",
+  resolved: "resolved",
+} as const;
+
+export type LossAbsorptionRecordStatus =
+  (typeof LossAbsorptionRecordStatus)[keyof typeof LossAbsorptionRecordStatus];
+
+export const LossAbsorptionRecordStatus = {
+  draft: "draft",
+  confirmed: "confirmed",
+} as const;
+
+export interface LossAbsorptionRecord {
+  id: string;
+  projectId: string;
+  partnerId: string;
+  projectName?: string | null;
+  partnerName?: string | null;
+  periodLabel: string;
+  periodYear?: number | null;
+  periodStart?: string | null;
+  periodEnd?: string | null;
+  expectedBurden: number;
+  actualBurden: number;
+  grossEntitlement: number;
+  burdenImbalance: number;
+  lossAbsorbed: number;
+  netAfterBurden: number;
+  carryForwardAmount: number;
+  carryForwardStatus: LossAbsorptionRecordCarryForwardStatus;
+  resolvedAmount: number;
+  resolvedAt?: string | null;
+  resolvedBy?: string | null;
+  resolvedByName?: string | null;
+  resolutionNote?: string | null;
+  status: LossAbsorptionRecordStatus;
+  confirmedAt?: string | null;
+  confirmedBy?: string | null;
+  confirmedByName?: string | null;
+  notes?: string | null;
+  isActive: boolean;
+  createdBy?: string | null;
+  createdByName?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateLossAbsorptionRecordBody {
+  projectId: string;
+  partnerId: string;
+  periodLabel: string;
+  periodYear?: number;
+  periodStart?: string;
+  periodEnd?: string;
+  expectedBurden?: number;
+  actualBurden?: number;
+  grossEntitlement?: number;
+  notes?: string;
+}
+
+export type UpdateLossAbsorptionRecordBodyCarryForwardStatus =
+  (typeof UpdateLossAbsorptionRecordBodyCarryForwardStatus)[keyof typeof UpdateLossAbsorptionRecordBodyCarryForwardStatus];
+
+export const UpdateLossAbsorptionRecordBodyCarryForwardStatus = {
+  none: "none",
+  pending: "pending",
+  partial: "partial",
+  resolved: "resolved",
+} as const;
+
+export interface UpdateLossAbsorptionRecordBody {
+  periodLabel?: string;
+  periodYear?: number;
+  periodStart?: string;
+  periodEnd?: string;
+  expectedBurden?: number;
+  actualBurden?: number;
+  grossEntitlement?: number;
+  carryForwardAmount?: number;
+  carryForwardStatus?: UpdateLossAbsorptionRecordBodyCarryForwardStatus;
+  resolvedAmount?: number;
+  resolutionNote?: string;
+  notes?: string;
+}
+
+export type NegativeBalanceEntryRecoveryStatus =
+  (typeof NegativeBalanceEntryRecoveryStatus)[keyof typeof NegativeBalanceEntryRecoveryStatus];
+
+export const NegativeBalanceEntryRecoveryStatus = {
+  pending: "pending",
+  partial: "partial",
+  recovered: "recovered",
+  waived: "waived",
+} as const;
+
+export interface NegativeBalanceEntry {
+  id: string;
+  projectId: string;
+  partnerId: string;
+  projectName?: string | null;
+  partnerName?: string | null;
+  referenceType: string;
+  referenceId?: string | null;
+  periodLabel: string;
+  openingBalance: number;
+  changeAmount: number;
+  closingBalance: number;
+  description: string;
+  notes?: string | null;
+  recoveryStatus: NegativeBalanceEntryRecoveryStatus;
+  recoveredAmount: number;
+  isActive: boolean;
+  createdBy?: string | null;
+  createdByName?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CreateNegativeBalanceEntryBodyReferenceType =
+  (typeof CreateNegativeBalanceEntryBodyReferenceType)[keyof typeof CreateNegativeBalanceEntryBodyReferenceType];
+
+export const CreateNegativeBalanceEntryBodyReferenceType = {
+  loss_absorption: "loss_absorption",
+  lca_shortfall: "lca_shortfall",
+  settlement_deficit: "settlement_deficit",
+  burden_imbalance: "burden_imbalance",
+  manual_adjustment: "manual_adjustment",
+  recovery_credit: "recovery_credit",
+} as const;
+
+export interface CreateNegativeBalanceEntryBody {
+  projectId: string;
+  partnerId: string;
+  referenceType: CreateNegativeBalanceEntryBodyReferenceType;
+  referenceId?: string;
+  periodLabel: string;
+  changeAmount: number;
+  description: string;
+  notes?: string;
+}
+
+export type UpdateNegativeBalanceEntryBodyRecoveryStatus =
+  (typeof UpdateNegativeBalanceEntryBodyRecoveryStatus)[keyof typeof UpdateNegativeBalanceEntryBodyRecoveryStatus];
+
+export const UpdateNegativeBalanceEntryBodyRecoveryStatus = {
+  pending: "pending",
+  partial: "partial",
+  recovered: "recovered",
+  waived: "waived",
+} as const;
+
+export interface UpdateNegativeBalanceEntryBody {
+  description?: string;
+  notes?: string;
+  recoveryStatus?: UpdateNegativeBalanceEntryBodyRecoveryStatus;
+  recoveredAmount?: number;
+}
+
+export type SettlementPriorityTierItems = { [key: string]: unknown };
+
+export interface SettlementPriorityTier {
+  label: string;
+  description: string;
+  obligationTotal: number;
+  allocated: number;
+  fullyFunded: boolean;
+  shortfall: number;
+  items?: SettlementPriorityTierItems;
+}
+
+export type SettlementPriorityWaterfallTier3 = { [key: string]: unknown };
+
+export type SettlementPriorityWaterfall = {
+  tier1?: SettlementPriorityTier;
+  tier2?: SettlementPriorityTier;
+  tier3?: SettlementPriorityWaterfallTier3;
+};
+
+export type SettlementPrioritySummary = {
+  availableFunds?: number;
+  tier1Obligation?: number;
+  tier1Allocated?: number;
+  tier2Obligation?: number;
+  tier2Allocated?: number;
+  tier3Allocated?: number;
+  totalObligations?: number;
+  netDistributable?: number;
+  surplusOrDeficit?: number;
+};
+
+export interface SettlementPriority {
+  projectId: string;
+  partnerId: string;
+  availableFunds: number;
+  waterfall: SettlementPriorityWaterfall;
+  summary: SettlementPrioritySummary;
+  computedAt: string;
+  disclaimer: string;
+}
+
+export type LossAbsorptionSummaryKpis = {
+  totalLossAbsorbed?: number;
+  totalCarryForwardPending?: number;
+  currentNegativeBalance?: number;
+  totalBurdenImbalance?: number;
+  confirmedRecordCount?: number;
+  draftRecordCount?: number;
+};
+
+export type LossAbsorptionSummaryRecovery = {
+  totalNegativeCreated?: number;
+  totalRecovered?: number;
+  outstanding?: number;
+  recoveryRate?: number;
+};
+
+export type LossAbsorptionSummaryPeriodAnalyticsItem = {
+  year?: number;
+  expected?: number;
+  actual?: number;
+  loss?: number;
+  net?: number;
+};
+
+export type LossAbsorptionSummaryImbalanceLedgerSummary = {
+  developerBalance?: number;
+  landownerBalance?: number;
+};
+
+export interface LossAbsorptionSummary {
+  projectId: string;
+  partnerId: string;
+  projectName?: string | null;
+  partnerName?: string | null;
+  kpis: LossAbsorptionSummaryKpis;
+  recovery: LossAbsorptionSummaryRecovery;
+  periodAnalytics: LossAbsorptionSummaryPeriodAnalyticsItem[];
+  recentLossRecords: LossAbsorptionRecord[];
+  recentNegativeEntries: NegativeBalanceEntry[];
+  imbalanceLedgerSummary: LossAbsorptionSummaryImbalanceLedgerSummary;
+  computedAt: string;
+}
+
 export type PayableAdjustmentDirection =
   (typeof PayableAdjustmentDirection)[keyof typeof PayableAdjustmentDirection];
 
@@ -5892,6 +6141,68 @@ export const ListOperationalAccessLogsAccessDenied = {
   true: "true",
   false: "false",
 } as const;
+
+export type ListLossAbsorptionRecordsParams = {
+  projectId?: string;
+  partnerId?: string;
+  status?: string;
+};
+
+export type ListLossAbsorptionRecords200 = {
+  records: LossAbsorptionRecord[];
+  total: number;
+};
+
+export type CreateLossAbsorptionRecord201 = {
+  record: LossAbsorptionRecord;
+};
+
+export type UpdateLossAbsorptionRecord200 = {
+  record: LossAbsorptionRecord;
+};
+
+export type DeleteLossAbsorptionRecord200 = {
+  ok?: boolean;
+};
+
+export type ConfirmLossAbsorptionRecord200 = {
+  record: LossAbsorptionRecord;
+};
+
+export type ListNegativeBalanceEntriesParams = {
+  projectId?: string;
+  partnerId?: string;
+  referenceType?: string;
+  recoveryStatus?: string;
+};
+
+export type ListNegativeBalanceEntries200CurrentBalances = {
+  [key: string]: unknown;
+};
+
+export type ListNegativeBalanceEntries200 = {
+  entries: NegativeBalanceEntry[];
+  total: number;
+  currentBalances?: ListNegativeBalanceEntries200CurrentBalances;
+};
+
+export type CreateNegativeBalanceEntry201 = {
+  entry: NegativeBalanceEntry;
+};
+
+export type UpdateNegativeBalanceEntry200 = {
+  entry: NegativeBalanceEntry;
+};
+
+export type GetSettlementPriorityParams = {
+  projectId: string;
+  partnerId: string;
+};
+
+export type GetLossAbsorptionSummaryParams = {
+  projectId: string;
+  partnerId: string;
+};
 
 export type ComputePayableParams = {
   projectId: string;

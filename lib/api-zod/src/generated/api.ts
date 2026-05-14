@@ -9803,6 +9803,453 @@ export const ListOperationalAccessLogsResponse = zod.object({
 });
 
 /**
+ * @summary List loss absorption records
+ */
+export const ListLossAbsorptionRecordsQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+  partnerId: zod.coerce.string().uuid().optional(),
+  status: zod.coerce.string().optional(),
+});
+
+export const ListLossAbsorptionRecordsResponse = zod.object({
+  records: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      projectId: zod.string().uuid(),
+      partnerId: zod.string().uuid(),
+      projectName: zod.string().nullish(),
+      partnerName: zod.string().nullish(),
+      periodLabel: zod.string(),
+      periodYear: zod.number().nullish(),
+      periodStart: zod.string().nullish(),
+      periodEnd: zod.string().nullish(),
+      expectedBurden: zod.number(),
+      actualBurden: zod.number(),
+      grossEntitlement: zod.number(),
+      burdenImbalance: zod.number(),
+      lossAbsorbed: zod.number(),
+      netAfterBurden: zod.number(),
+      carryForwardAmount: zod.number(),
+      carryForwardStatus: zod.enum(["none", "pending", "partial", "resolved"]),
+      resolvedAmount: zod.number(),
+      resolvedAt: zod.coerce.date().nullish(),
+      resolvedBy: zod.string().uuid().nullish(),
+      resolvedByName: zod.string().nullish(),
+      resolutionNote: zod.string().nullish(),
+      status: zod.enum(["draft", "confirmed"]),
+      confirmedAt: zod.coerce.date().nullish(),
+      confirmedBy: zod.string().uuid().nullish(),
+      confirmedByName: zod.string().nullish(),
+      notes: zod.string().nullish(),
+      isActive: zod.boolean(),
+      createdBy: zod.string().uuid().nullish(),
+      createdByName: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    }),
+  ),
+  total: zod.number(),
+});
+
+/**
+ * @summary Create a loss absorption record
+ */
+export const createLossAbsorptionRecordBodyExpectedBurdenDefault = 0;
+export const createLossAbsorptionRecordBodyActualBurdenDefault = 0;
+export const createLossAbsorptionRecordBodyGrossEntitlementDefault = 0;
+
+export const CreateLossAbsorptionRecordBody = zod.object({
+  projectId: zod.string().uuid(),
+  partnerId: zod.string().uuid(),
+  periodLabel: zod.string(),
+  periodYear: zod.number().optional(),
+  periodStart: zod.string().optional(),
+  periodEnd: zod.string().optional(),
+  expectedBurden: zod
+    .number()
+    .default(createLossAbsorptionRecordBodyExpectedBurdenDefault),
+  actualBurden: zod
+    .number()
+    .default(createLossAbsorptionRecordBodyActualBurdenDefault),
+  grossEntitlement: zod
+    .number()
+    .default(createLossAbsorptionRecordBodyGrossEntitlementDefault),
+  notes: zod.string().optional(),
+});
+
+/**
+ * @summary Update a draft loss absorption record
+ */
+export const UpdateLossAbsorptionRecordParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const UpdateLossAbsorptionRecordBody = zod.object({
+  periodLabel: zod.string().optional(),
+  periodYear: zod.number().optional(),
+  periodStart: zod.string().optional(),
+  periodEnd: zod.string().optional(),
+  expectedBurden: zod.number().optional(),
+  actualBurden: zod.number().optional(),
+  grossEntitlement: zod.number().optional(),
+  carryForwardAmount: zod.number().optional(),
+  carryForwardStatus: zod
+    .enum(["none", "pending", "partial", "resolved"])
+    .optional(),
+  resolvedAmount: zod.number().optional(),
+  resolutionNote: zod.string().optional(),
+  notes: zod.string().optional(),
+});
+
+export const UpdateLossAbsorptionRecordResponse = zod.object({
+  record: zod.object({
+    id: zod.string().uuid(),
+    projectId: zod.string().uuid(),
+    partnerId: zod.string().uuid(),
+    projectName: zod.string().nullish(),
+    partnerName: zod.string().nullish(),
+    periodLabel: zod.string(),
+    periodYear: zod.number().nullish(),
+    periodStart: zod.string().nullish(),
+    periodEnd: zod.string().nullish(),
+    expectedBurden: zod.number(),
+    actualBurden: zod.number(),
+    grossEntitlement: zod.number(),
+    burdenImbalance: zod.number(),
+    lossAbsorbed: zod.number(),
+    netAfterBurden: zod.number(),
+    carryForwardAmount: zod.number(),
+    carryForwardStatus: zod.enum(["none", "pending", "partial", "resolved"]),
+    resolvedAmount: zod.number(),
+    resolvedAt: zod.coerce.date().nullish(),
+    resolvedBy: zod.string().uuid().nullish(),
+    resolvedByName: zod.string().nullish(),
+    resolutionNote: zod.string().nullish(),
+    status: zod.enum(["draft", "confirmed"]),
+    confirmedAt: zod.coerce.date().nullish(),
+    confirmedBy: zod.string().uuid().nullish(),
+    confirmedByName: zod.string().nullish(),
+    notes: zod.string().nullish(),
+    isActive: zod.boolean(),
+    createdBy: zod.string().uuid().nullish(),
+    createdByName: zod.string().nullish(),
+    createdAt: zod.coerce.date(),
+    updatedAt: zod.coerce.date(),
+  }),
+});
+
+/**
+ * @summary Soft-delete a record (admin only)
+ */
+export const DeleteLossAbsorptionRecordParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const DeleteLossAbsorptionRecordResponse = zod.object({
+  ok: zod.boolean().optional(),
+});
+
+/**
+ * @summary Confirm a loss absorption record
+ */
+export const ConfirmLossAbsorptionRecordParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const ConfirmLossAbsorptionRecordResponse = zod.object({
+  record: zod.object({
+    id: zod.string().uuid(),
+    projectId: zod.string().uuid(),
+    partnerId: zod.string().uuid(),
+    projectName: zod.string().nullish(),
+    partnerName: zod.string().nullish(),
+    periodLabel: zod.string(),
+    periodYear: zod.number().nullish(),
+    periodStart: zod.string().nullish(),
+    periodEnd: zod.string().nullish(),
+    expectedBurden: zod.number(),
+    actualBurden: zod.number(),
+    grossEntitlement: zod.number(),
+    burdenImbalance: zod.number(),
+    lossAbsorbed: zod.number(),
+    netAfterBurden: zod.number(),
+    carryForwardAmount: zod.number(),
+    carryForwardStatus: zod.enum(["none", "pending", "partial", "resolved"]),
+    resolvedAmount: zod.number(),
+    resolvedAt: zod.coerce.date().nullish(),
+    resolvedBy: zod.string().uuid().nullish(),
+    resolvedByName: zod.string().nullish(),
+    resolutionNote: zod.string().nullish(),
+    status: zod.enum(["draft", "confirmed"]),
+    confirmedAt: zod.coerce.date().nullish(),
+    confirmedBy: zod.string().uuid().nullish(),
+    confirmedByName: zod.string().nullish(),
+    notes: zod.string().nullish(),
+    isActive: zod.boolean(),
+    createdBy: zod.string().uuid().nullish(),
+    createdByName: zod.string().nullish(),
+    createdAt: zod.coerce.date(),
+    updatedAt: zod.coerce.date(),
+  }),
+});
+
+/**
+ * @summary List negative balance entries
+ */
+export const ListNegativeBalanceEntriesQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+  partnerId: zod.coerce.string().uuid().optional(),
+  referenceType: zod.coerce.string().optional(),
+  recoveryStatus: zod.coerce.string().optional(),
+});
+
+export const ListNegativeBalanceEntriesResponse = zod.object({
+  entries: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      projectId: zod.string().uuid(),
+      partnerId: zod.string().uuid(),
+      projectName: zod.string().nullish(),
+      partnerName: zod.string().nullish(),
+      referenceType: zod.string(),
+      referenceId: zod.string().uuid().nullish(),
+      periodLabel: zod.string(),
+      openingBalance: zod.number(),
+      changeAmount: zod.number(),
+      closingBalance: zod.number(),
+      description: zod.string(),
+      notes: zod.string().nullish(),
+      recoveryStatus: zod.enum(["pending", "partial", "recovered", "waived"]),
+      recoveredAmount: zod.number(),
+      isActive: zod.boolean(),
+      createdBy: zod.string().uuid().nullish(),
+      createdByName: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    }),
+  ),
+  total: zod.number(),
+  currentBalances: zod.object({}).passthrough().optional(),
+});
+
+/**
+ * @summary Create a negative balance entry
+ */
+export const CreateNegativeBalanceEntryBody = zod.object({
+  projectId: zod.string().uuid(),
+  partnerId: zod.string().uuid(),
+  referenceType: zod.enum([
+    "loss_absorption",
+    "lca_shortfall",
+    "settlement_deficit",
+    "burden_imbalance",
+    "manual_adjustment",
+    "recovery_credit",
+  ]),
+  referenceId: zod.string().uuid().optional(),
+  periodLabel: zod.string(),
+  changeAmount: zod.number(),
+  description: zod.string(),
+  notes: zod.string().optional(),
+});
+
+/**
+ * @summary Update a negative balance entry
+ */
+export const UpdateNegativeBalanceEntryParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const UpdateNegativeBalanceEntryBody = zod.object({
+  description: zod.string().optional(),
+  notes: zod.string().optional(),
+  recoveryStatus: zod
+    .enum(["pending", "partial", "recovered", "waived"])
+    .optional(),
+  recoveredAmount: zod.number().optional(),
+});
+
+export const UpdateNegativeBalanceEntryResponse = zod.object({
+  entry: zod.object({
+    id: zod.string().uuid(),
+    projectId: zod.string().uuid(),
+    partnerId: zod.string().uuid(),
+    projectName: zod.string().nullish(),
+    partnerName: zod.string().nullish(),
+    referenceType: zod.string(),
+    referenceId: zod.string().uuid().nullish(),
+    periodLabel: zod.string(),
+    openingBalance: zod.number(),
+    changeAmount: zod.number(),
+    closingBalance: zod.number(),
+    description: zod.string(),
+    notes: zod.string().nullish(),
+    recoveryStatus: zod.enum(["pending", "partial", "recovered", "waived"]),
+    recoveredAmount: zod.number(),
+    isActive: zod.boolean(),
+    createdBy: zod.string().uuid().nullish(),
+    createdByName: zod.string().nullish(),
+    createdAt: zod.coerce.date(),
+    updatedAt: zod.coerce.date(),
+  }),
+});
+
+/**
+ * @summary Compute advisory settlement priority waterfall
+ */
+export const GetSettlementPriorityQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid(),
+  partnerId: zod.coerce.string().uuid(),
+});
+
+export const GetSettlementPriorityResponse = zod.object({
+  projectId: zod.string().uuid(),
+  partnerId: zod.string().uuid(),
+  availableFunds: zod.number(),
+  waterfall: zod.object({
+    tier1: zod
+      .object({
+        label: zod.string(),
+        description: zod.string(),
+        obligationTotal: zod.number(),
+        allocated: zod.number(),
+        fullyFunded: zod.boolean(),
+        shortfall: zod.number(),
+        items: zod.object({}).passthrough().optional(),
+      })
+      .optional(),
+    tier2: zod
+      .object({
+        label: zod.string(),
+        description: zod.string(),
+        obligationTotal: zod.number(),
+        allocated: zod.number(),
+        fullyFunded: zod.boolean(),
+        shortfall: zod.number(),
+        items: zod.object({}).passthrough().optional(),
+      })
+      .optional(),
+    tier3: zod.object({}).passthrough().optional(),
+  }),
+  summary: zod.object({
+    availableFunds: zod.number().optional(),
+    tier1Obligation: zod.number().optional(),
+    tier1Allocated: zod.number().optional(),
+    tier2Obligation: zod.number().optional(),
+    tier2Allocated: zod.number().optional(),
+    tier3Allocated: zod.number().optional(),
+    totalObligations: zod.number().optional(),
+    netDistributable: zod.number().optional(),
+    surplusOrDeficit: zod.number().optional(),
+  }),
+  computedAt: zod.coerce.date(),
+  disclaimer: zod.string(),
+});
+
+/**
+ * @summary Full loss absorption summary for dashboard
+ */
+export const GetLossAbsorptionSummaryQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid(),
+  partnerId: zod.coerce.string().uuid(),
+});
+
+export const GetLossAbsorptionSummaryResponse = zod.object({
+  projectId: zod.string().uuid(),
+  partnerId: zod.string().uuid(),
+  projectName: zod.string().nullish(),
+  partnerName: zod.string().nullish(),
+  kpis: zod.object({
+    totalLossAbsorbed: zod.number().optional(),
+    totalCarryForwardPending: zod.number().optional(),
+    currentNegativeBalance: zod.number().optional(),
+    totalBurdenImbalance: zod.number().optional(),
+    confirmedRecordCount: zod.number().optional(),
+    draftRecordCount: zod.number().optional(),
+  }),
+  recovery: zod.object({
+    totalNegativeCreated: zod.number().optional(),
+    totalRecovered: zod.number().optional(),
+    outstanding: zod.number().optional(),
+    recoveryRate: zod.number().optional(),
+  }),
+  periodAnalytics: zod.array(
+    zod.object({
+      year: zod.number().optional(),
+      expected: zod.number().optional(),
+      actual: zod.number().optional(),
+      loss: zod.number().optional(),
+      net: zod.number().optional(),
+    }),
+  ),
+  recentLossRecords: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      projectId: zod.string().uuid(),
+      partnerId: zod.string().uuid(),
+      projectName: zod.string().nullish(),
+      partnerName: zod.string().nullish(),
+      periodLabel: zod.string(),
+      periodYear: zod.number().nullish(),
+      periodStart: zod.string().nullish(),
+      periodEnd: zod.string().nullish(),
+      expectedBurden: zod.number(),
+      actualBurden: zod.number(),
+      grossEntitlement: zod.number(),
+      burdenImbalance: zod.number(),
+      lossAbsorbed: zod.number(),
+      netAfterBurden: zod.number(),
+      carryForwardAmount: zod.number(),
+      carryForwardStatus: zod.enum(["none", "pending", "partial", "resolved"]),
+      resolvedAmount: zod.number(),
+      resolvedAt: zod.coerce.date().nullish(),
+      resolvedBy: zod.string().uuid().nullish(),
+      resolvedByName: zod.string().nullish(),
+      resolutionNote: zod.string().nullish(),
+      status: zod.enum(["draft", "confirmed"]),
+      confirmedAt: zod.coerce.date().nullish(),
+      confirmedBy: zod.string().uuid().nullish(),
+      confirmedByName: zod.string().nullish(),
+      notes: zod.string().nullish(),
+      isActive: zod.boolean(),
+      createdBy: zod.string().uuid().nullish(),
+      createdByName: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    }),
+  ),
+  recentNegativeEntries: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      projectId: zod.string().uuid(),
+      partnerId: zod.string().uuid(),
+      projectName: zod.string().nullish(),
+      partnerName: zod.string().nullish(),
+      referenceType: zod.string(),
+      referenceId: zod.string().uuid().nullish(),
+      periodLabel: zod.string(),
+      openingBalance: zod.number(),
+      changeAmount: zod.number(),
+      closingBalance: zod.number(),
+      description: zod.string(),
+      notes: zod.string().nullish(),
+      recoveryStatus: zod.enum(["pending", "partial", "recovered", "waived"]),
+      recoveredAmount: zod.number(),
+      isActive: zod.boolean(),
+      createdBy: zod.string().uuid().nullish(),
+      createdByName: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    }),
+  ),
+  imbalanceLedgerSummary: zod.object({
+    developerBalance: zod.number().optional(),
+    landownerBalance: zod.number().optional(),
+  }),
+  computedAt: zod.coerce.date(),
+});
+
+/**
  * @summary Compute live payable recommendation for a partner
  */
 export const ComputePayableQueryParams = zod.object({

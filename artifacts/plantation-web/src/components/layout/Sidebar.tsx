@@ -34,6 +34,7 @@ import {
   PieChart,
   Layers,
   Calculator,
+  TrendingDown,
 } from "lucide-react";
 import { useRole, ROLE_LABELS, ROLE_COLORS } from "@/contexts/RoleContext";
 import type { UserRole } from "@/contexts/RoleContext";
@@ -339,6 +340,12 @@ const navGroups: NavGroup[] = [
         name: "Partner Payable",
         href: "/partner-payable",
         icon: Calculator,
+        roles: ["admin", "developer"] as UserRole[],
+      },
+      {
+        name: "Loss Absorption",
+        href: "/loss-absorption",
+        icon: TrendingDown,
         roles: ["admin", "developer"] as UserRole[],
       },
       {

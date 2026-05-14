@@ -6399,6 +6399,252 @@ paths:
               schema:
                 $ref: "#/components/schemas/AccessLogPage"
 
+  /loss-absorption/records:
+    get:
+      summary: List loss absorption records
+      operationId: listLossAbsorptionRecords
+      tags: [lossAbsorption]
+      parameters:
+        - name: projectId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: partnerId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: status
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: List of records
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [records, total]
+                properties:
+                  records:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/LossAbsorptionRecord"
+                  total: { type: integer }
+    post:
+      summary: Create a loss absorption record
+      operationId: createLossAbsorptionRecord
+      tags: [lossAbsorption]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateLossAbsorptionRecordBody"
+      responses:
+        "201":
+          description: Created record
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [record]
+                properties:
+                  record:
+                    $ref: "#/components/schemas/LossAbsorptionRecord"
+
+  /loss-absorption/records/{id}:
+    patch:
+      summary: Update a draft loss absorption record
+      operationId: updateLossAbsorptionRecord
+      tags: [lossAbsorption]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateLossAbsorptionRecordBody"
+      responses:
+        "200":
+          description: Updated record
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [record]
+                properties:
+                  record:
+                    $ref: "#/components/schemas/LossAbsorptionRecord"
+    delete:
+      summary: Soft-delete a record (admin only)
+      operationId: deleteLossAbsorptionRecord
+      tags: [lossAbsorption]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+
+  /loss-absorption/records/{id}/confirm:
+    post:
+      summary: Confirm a loss absorption record
+      operationId: confirmLossAbsorptionRecord
+      tags: [lossAbsorption]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Confirmed record
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [record]
+                properties:
+                  record:
+                    $ref: "#/components/schemas/LossAbsorptionRecord"
+
+  /loss-absorption/negative-balance:
+    get:
+      summary: List negative balance entries
+      operationId: listNegativeBalanceEntries
+      tags: [lossAbsorption]
+      parameters:
+        - name: projectId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: partnerId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: referenceType
+          in: query
+          schema: { type: string }
+        - name: recoveryStatus
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Entries and summary
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [entries, total]
+                properties:
+                  entries:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/NegativeBalanceEntry"
+                  total: { type: integer }
+                  currentBalances: { type: object }
+    post:
+      summary: Create a negative balance entry
+      operationId: createNegativeBalanceEntry
+      tags: [lossAbsorption]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateNegativeBalanceEntryBody"
+      responses:
+        "201":
+          description: Created entry
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [entry]
+                properties:
+                  entry:
+                    $ref: "#/components/schemas/NegativeBalanceEntry"
+
+  /loss-absorption/negative-balance/{id}:
+    patch:
+      summary: Update a negative balance entry
+      operationId: updateNegativeBalanceEntry
+      tags: [lossAbsorption]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateNegativeBalanceEntryBody"
+      responses:
+        "200":
+          description: Updated entry
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [entry]
+                properties:
+                  entry:
+                    $ref: "#/components/schemas/NegativeBalanceEntry"
+
+  /loss-absorption/settlement-priority:
+    get:
+      summary: Compute advisory settlement priority waterfall
+      operationId: getSettlementPriority
+      tags: [lossAbsorption]
+      parameters:
+        - name: projectId
+          in: query
+          required: true
+          schema: { type: string, format: uuid }
+        - name: partnerId
+          in: query
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Advisory settlement priority recommendation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SettlementPriority"
+
+  /loss-absorption/summary:
+    get:
+      summary: Full loss absorption summary for dashboard
+      operationId: getLossAbsorptionSummary
+      tags: [lossAbsorption]
+      parameters:
+        - name: projectId
+          in: query
+          required: true
+          schema: { type: string, format: uuid }
+        - name: partnerId
+          in: query
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LossAbsorptionSummary"
+
   /payable/compute:
     get:
       summary: Compute live payable recommendation for a partner
@@ -11593,6 +11839,213 @@ components:
               id: { type: string, format: uuid }
               name: { type: string }
               phone: { type: string, nullable: true }
+
+    LossAbsorptionRecord:
+      type: object
+      required: [id, projectId, partnerId, periodLabel, expectedBurden, actualBurden, grossEntitlement, burdenImbalance, lossAbsorbed, netAfterBurden, carryForwardAmount, carryForwardStatus, resolvedAmount, status, isActive, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        partnerId: { type: string, format: uuid }
+        projectName: { type: string, nullable: true }
+        partnerName: { type: string, nullable: true }
+        periodLabel: { type: string }
+        periodYear: { type: integer, nullable: true }
+        periodStart: { type: string, nullable: true }
+        periodEnd: { type: string, nullable: true }
+        expectedBurden: { type: number }
+        actualBurden: { type: number }
+        grossEntitlement: { type: number }
+        burdenImbalance: { type: number }
+        lossAbsorbed: { type: number }
+        netAfterBurden: { type: number }
+        carryForwardAmount: { type: number }
+        carryForwardStatus: { type: string, enum: [none, pending, partial, resolved] }
+        resolvedAmount: { type: number }
+        resolvedAt: { type: string, format: date-time, nullable: true }
+        resolvedBy: { type: string, format: uuid, nullable: true }
+        resolvedByName: { type: string, nullable: true }
+        resolutionNote: { type: string, nullable: true }
+        status: { type: string, enum: [draft, confirmed] }
+        confirmedAt: { type: string, format: date-time, nullable: true }
+        confirmedBy: { type: string, format: uuid, nullable: true }
+        confirmedByName: { type: string, nullable: true }
+        notes: { type: string, nullable: true }
+        isActive: { type: boolean }
+        createdBy: { type: string, format: uuid, nullable: true }
+        createdByName: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    CreateLossAbsorptionRecordBody:
+      type: object
+      required: [projectId, partnerId, periodLabel]
+      properties:
+        projectId: { type: string, format: uuid }
+        partnerId: { type: string, format: uuid }
+        periodLabel: { type: string }
+        periodYear: { type: integer }
+        periodStart: { type: string }
+        periodEnd: { type: string }
+        expectedBurden: { type: number, default: 0 }
+        actualBurden: { type: number, default: 0 }
+        grossEntitlement: { type: number, default: 0 }
+        notes: { type: string }
+
+    UpdateLossAbsorptionRecordBody:
+      type: object
+      properties:
+        periodLabel: { type: string }
+        periodYear: { type: integer }
+        periodStart: { type: string }
+        periodEnd: { type: string }
+        expectedBurden: { type: number }
+        actualBurden: { type: number }
+        grossEntitlement: { type: number }
+        carryForwardAmount: { type: number }
+        carryForwardStatus: { type: string, enum: [none, pending, partial, resolved] }
+        resolvedAmount: { type: number }
+        resolutionNote: { type: string }
+        notes: { type: string }
+
+    NegativeBalanceEntry:
+      type: object
+      required: [id, projectId, partnerId, referenceType, periodLabel, openingBalance, changeAmount, closingBalance, description, recoveryStatus, recoveredAmount, isActive, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        partnerId: { type: string, format: uuid }
+        projectName: { type: string, nullable: true }
+        partnerName: { type: string, nullable: true }
+        referenceType: { type: string }
+        referenceId: { type: string, format: uuid, nullable: true }
+        periodLabel: { type: string }
+        openingBalance: { type: number }
+        changeAmount: { type: number }
+        closingBalance: { type: number }
+        description: { type: string }
+        notes: { type: string, nullable: true }
+        recoveryStatus: { type: string, enum: [pending, partial, recovered, waived] }
+        recoveredAmount: { type: number }
+        isActive: { type: boolean }
+        createdBy: { type: string, format: uuid, nullable: true }
+        createdByName: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    CreateNegativeBalanceEntryBody:
+      type: object
+      required: [projectId, partnerId, referenceType, periodLabel, changeAmount, description]
+      properties:
+        projectId: { type: string, format: uuid }
+        partnerId: { type: string, format: uuid }
+        referenceType:
+          type: string
+          enum: [loss_absorption, lca_shortfall, settlement_deficit, burden_imbalance, manual_adjustment, recovery_credit]
+        referenceId: { type: string, format: uuid }
+        periodLabel: { type: string }
+        changeAmount: { type: number }
+        description: { type: string }
+        notes: { type: string }
+
+    UpdateNegativeBalanceEntryBody:
+      type: object
+      properties:
+        description: { type: string }
+        notes: { type: string }
+        recoveryStatus: { type: string, enum: [pending, partial, recovered, waived] }
+        recoveredAmount: { type: number }
+
+    SettlementPriorityTier:
+      type: object
+      required: [label, description, obligationTotal, allocated, fullyFunded, shortfall]
+      properties:
+        label: { type: string }
+        description: { type: string }
+        obligationTotal: { type: number }
+        allocated: { type: number }
+        fullyFunded: { type: boolean }
+        shortfall: { type: number }
+        items: { type: object }
+
+    SettlementPriority:
+      type: object
+      required: [projectId, partnerId, availableFunds, waterfall, summary, computedAt, disclaimer]
+      properties:
+        projectId: { type: string, format: uuid }
+        partnerId: { type: string, format: uuid }
+        availableFunds: { type: number }
+        waterfall:
+          type: object
+          properties:
+            tier1:
+              $ref: "#/components/schemas/SettlementPriorityTier"
+            tier2:
+              $ref: "#/components/schemas/SettlementPriorityTier"
+            tier3: { type: object }
+        summary:
+          type: object
+          properties:
+            availableFunds: { type: number }
+            tier1Obligation: { type: number }
+            tier1Allocated: { type: number }
+            tier2Obligation: { type: number }
+            tier2Allocated: { type: number }
+            tier3Allocated: { type: number }
+            totalObligations: { type: number }
+            netDistributable: { type: number }
+            surplusOrDeficit: { type: number }
+        computedAt: { type: string, format: date-time }
+        disclaimer: { type: string }
+
+    LossAbsorptionSummary:
+      type: object
+      required: [projectId, partnerId, kpis, recovery, periodAnalytics, recentLossRecords, recentNegativeEntries, imbalanceLedgerSummary, computedAt]
+      properties:
+        projectId: { type: string, format: uuid }
+        partnerId: { type: string, format: uuid }
+        projectName: { type: string, nullable: true }
+        partnerName: { type: string, nullable: true }
+        kpis:
+          type: object
+          properties:
+            totalLossAbsorbed: { type: number }
+            totalCarryForwardPending: { type: number }
+            currentNegativeBalance: { type: number }
+            totalBurdenImbalance: { type: number }
+            confirmedRecordCount: { type: integer }
+            draftRecordCount: { type: integer }
+        recovery:
+          type: object
+          properties:
+            totalNegativeCreated: { type: number }
+            totalRecovered: { type: number }
+            outstanding: { type: number }
+            recoveryRate: { type: number }
+        periodAnalytics:
+          type: array
+          items:
+            type: object
+            properties:
+              year: { type: integer }
+              expected: { type: number }
+              actual: { type: number }
+              loss: { type: number }
+              net: { type: number }
+        recentLossRecords:
+          type: array
+          items:
+            $ref: "#/components/schemas/LossAbsorptionRecord"
+        recentNegativeEntries:
+          type: array
+          items:
+            $ref: "#/components/schemas/NegativeBalanceEntry"
+        imbalanceLedgerSummary:
+          type: object
+          properties:
+            developerBalance: { type: number }
+            landownerBalance: { type: number }
+        computedAt: { type: string, format: date-time }
 
     PayableAdjustment:
       type: object

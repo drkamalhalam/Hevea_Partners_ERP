@@ -61,6 +61,7 @@ import type {
   ConfirmExpenditureVerificationOtp200,
   ConfirmExpenditureVerificationOtpBody,
   ConfirmFiftyPctSession200,
+  ConfirmLossAbsorptionRecord200,
   ConfirmPayableAdjustment200,
   ContributionDisputeSummary,
   ContributionEntry,
@@ -86,6 +87,10 @@ import type {
   CreateLandownerLedgerEntryBody,
   CreateLcaConfigBody,
   CreateLcaLedgerEntryBody,
+  CreateLossAbsorptionRecord201,
+  CreateLossAbsorptionRecordBody,
+  CreateNegativeBalanceEntry201,
+  CreateNegativeBalanceEntryBody,
   CreateNomineeInput,
   CreateOwnershipSnapshotBody,
   CreatePayableAdjustment201,
@@ -103,6 +108,7 @@ import type {
   CreateTemplateBody,
   DashboardSummary,
   DeleteEppEntry200,
+  DeleteLossAbsorptionRecord200,
   DeletePayableAdjustment200,
   DeleteProductionEntry200,
   DeleteStockMovement200,
@@ -148,6 +154,7 @@ import type {
   GetLcaSchedule200,
   GetLcaScheduleParams,
   GetLcaSummaryParams,
+  GetLossAbsorptionSummaryParams,
   GetOperationalAccessLogSummaryParams,
   GetOwnershipSummary200,
   GetOwnershipSummaryParams,
@@ -155,6 +162,7 @@ import type {
   GetProductionLogSummaryParams,
   GetSaleGovernanceAlertsParams,
   GetSalesSummaryParams,
+  GetSettlementPriorityParams,
   GetUserActivityParams,
   GovernanceSummary,
   HealthStatus,
@@ -200,6 +208,10 @@ import type {
   ListLandownerLedgerEntriesParams,
   ListLcaConfigsParams,
   ListLcaLedgerParams,
+  ListLossAbsorptionRecords200,
+  ListLossAbsorptionRecordsParams,
+  ListNegativeBalanceEntries200,
+  ListNegativeBalanceEntriesParams,
   ListOperationalAccessLogsParams,
   ListOperationalAlertsParams,
   ListOwnershipSnapshots200,
@@ -226,6 +238,7 @@ import type {
   LookupLcaForDistributionParams,
   LookupOwnershipForDistributionParams,
   LookupRevenueForDistributionParams,
+  LossAbsorptionSummary,
   MarkBurdenRecordRecoveredBody,
   MaturityBlockers,
   MaturityDeclaration,
@@ -288,6 +301,7 @@ import type {
   SalesTransaction,
   SeedImbalanceLedger200,
   SetUserRoleInput,
+  SettlementPriority,
   StockBalance,
   StockMovement,
   StockSummary,
@@ -314,7 +328,11 @@ import type {
   UpdateLandownerLedgerEntryBody,
   UpdateLcaConfigBody,
   UpdateLcaLedgerEntryBody,
+  UpdateLossAbsorptionRecord200,
+  UpdateLossAbsorptionRecordBody,
   UpdateMissingDeveloperCaseBody,
+  UpdateNegativeBalanceEntry200,
+  UpdateNegativeBalanceEntryBody,
   UpdateNomineeActivationBody,
   UpdateNomineeInput,
   UpdateParticipantInput,
@@ -24872,6 +24890,963 @@ export function useListOperationalAccessLogs<
     params,
     options,
   );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List loss absorption records
+ */
+export const getListLossAbsorptionRecordsUrl = (
+  params?: ListLossAbsorptionRecordsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/loss-absorption/records?${stringifiedParams}`
+    : `/api/loss-absorption/records`;
+};
+
+export const listLossAbsorptionRecords = async (
+  params?: ListLossAbsorptionRecordsParams,
+  options?: RequestInit,
+): Promise<ListLossAbsorptionRecords200> => {
+  return customFetch<ListLossAbsorptionRecords200>(
+    getListLossAbsorptionRecordsUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListLossAbsorptionRecordsQueryKey = (
+  params?: ListLossAbsorptionRecordsParams,
+) => {
+  return [`/api/loss-absorption/records`, ...(params ? [params] : [])] as const;
+};
+
+export const getListLossAbsorptionRecordsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listLossAbsorptionRecords>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListLossAbsorptionRecordsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listLossAbsorptionRecords>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListLossAbsorptionRecordsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listLossAbsorptionRecords>>
+  > = ({ signal }) =>
+    listLossAbsorptionRecords(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listLossAbsorptionRecords>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListLossAbsorptionRecordsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listLossAbsorptionRecords>>
+>;
+export type ListLossAbsorptionRecordsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List loss absorption records
+ */
+
+export function useListLossAbsorptionRecords<
+  TData = Awaited<ReturnType<typeof listLossAbsorptionRecords>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListLossAbsorptionRecordsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listLossAbsorptionRecords>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListLossAbsorptionRecordsQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a loss absorption record
+ */
+export const getCreateLossAbsorptionRecordUrl = () => {
+  return `/api/loss-absorption/records`;
+};
+
+export const createLossAbsorptionRecord = async (
+  createLossAbsorptionRecordBody: CreateLossAbsorptionRecordBody,
+  options?: RequestInit,
+): Promise<CreateLossAbsorptionRecord201> => {
+  return customFetch<CreateLossAbsorptionRecord201>(
+    getCreateLossAbsorptionRecordUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(createLossAbsorptionRecordBody),
+    },
+  );
+};
+
+export const getCreateLossAbsorptionRecordMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createLossAbsorptionRecord>>,
+    TError,
+    { data: BodyType<CreateLossAbsorptionRecordBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createLossAbsorptionRecord>>,
+  TError,
+  { data: BodyType<CreateLossAbsorptionRecordBody> },
+  TContext
+> => {
+  const mutationKey = ["createLossAbsorptionRecord"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createLossAbsorptionRecord>>,
+    { data: BodyType<CreateLossAbsorptionRecordBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createLossAbsorptionRecord(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateLossAbsorptionRecordMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createLossAbsorptionRecord>>
+>;
+export type CreateLossAbsorptionRecordMutationBody =
+  BodyType<CreateLossAbsorptionRecordBody>;
+export type CreateLossAbsorptionRecordMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create a loss absorption record
+ */
+export const useCreateLossAbsorptionRecord = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createLossAbsorptionRecord>>,
+    TError,
+    { data: BodyType<CreateLossAbsorptionRecordBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createLossAbsorptionRecord>>,
+  TError,
+  { data: BodyType<CreateLossAbsorptionRecordBody> },
+  TContext
+> => {
+  return useMutation(getCreateLossAbsorptionRecordMutationOptions(options));
+};
+
+/**
+ * @summary Update a draft loss absorption record
+ */
+export const getUpdateLossAbsorptionRecordUrl = (id: string) => {
+  return `/api/loss-absorption/records/${id}`;
+};
+
+export const updateLossAbsorptionRecord = async (
+  id: string,
+  updateLossAbsorptionRecordBody: UpdateLossAbsorptionRecordBody,
+  options?: RequestInit,
+): Promise<UpdateLossAbsorptionRecord200> => {
+  return customFetch<UpdateLossAbsorptionRecord200>(
+    getUpdateLossAbsorptionRecordUrl(id),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(updateLossAbsorptionRecordBody),
+    },
+  );
+};
+
+export const getUpdateLossAbsorptionRecordMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateLossAbsorptionRecord>>,
+    TError,
+    { id: string; data: BodyType<UpdateLossAbsorptionRecordBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateLossAbsorptionRecord>>,
+  TError,
+  { id: string; data: BodyType<UpdateLossAbsorptionRecordBody> },
+  TContext
+> => {
+  const mutationKey = ["updateLossAbsorptionRecord"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateLossAbsorptionRecord>>,
+    { id: string; data: BodyType<UpdateLossAbsorptionRecordBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateLossAbsorptionRecord(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateLossAbsorptionRecordMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateLossAbsorptionRecord>>
+>;
+export type UpdateLossAbsorptionRecordMutationBody =
+  BodyType<UpdateLossAbsorptionRecordBody>;
+export type UpdateLossAbsorptionRecordMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update a draft loss absorption record
+ */
+export const useUpdateLossAbsorptionRecord = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateLossAbsorptionRecord>>,
+    TError,
+    { id: string; data: BodyType<UpdateLossAbsorptionRecordBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateLossAbsorptionRecord>>,
+  TError,
+  { id: string; data: BodyType<UpdateLossAbsorptionRecordBody> },
+  TContext
+> => {
+  return useMutation(getUpdateLossAbsorptionRecordMutationOptions(options));
+};
+
+/**
+ * @summary Soft-delete a record (admin only)
+ */
+export const getDeleteLossAbsorptionRecordUrl = (id: string) => {
+  return `/api/loss-absorption/records/${id}`;
+};
+
+export const deleteLossAbsorptionRecord = async (
+  id: string,
+  options?: RequestInit,
+): Promise<DeleteLossAbsorptionRecord200> => {
+  return customFetch<DeleteLossAbsorptionRecord200>(
+    getDeleteLossAbsorptionRecordUrl(id),
+    {
+      ...options,
+      method: "DELETE",
+    },
+  );
+};
+
+export const getDeleteLossAbsorptionRecordMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteLossAbsorptionRecord>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteLossAbsorptionRecord>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["deleteLossAbsorptionRecord"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteLossAbsorptionRecord>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteLossAbsorptionRecord(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteLossAbsorptionRecordMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteLossAbsorptionRecord>>
+>;
+
+export type DeleteLossAbsorptionRecordMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Soft-delete a record (admin only)
+ */
+export const useDeleteLossAbsorptionRecord = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteLossAbsorptionRecord>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteLossAbsorptionRecord>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getDeleteLossAbsorptionRecordMutationOptions(options));
+};
+
+/**
+ * @summary Confirm a loss absorption record
+ */
+export const getConfirmLossAbsorptionRecordUrl = (id: string) => {
+  return `/api/loss-absorption/records/${id}/confirm`;
+};
+
+export const confirmLossAbsorptionRecord = async (
+  id: string,
+  options?: RequestInit,
+): Promise<ConfirmLossAbsorptionRecord200> => {
+  return customFetch<ConfirmLossAbsorptionRecord200>(
+    getConfirmLossAbsorptionRecordUrl(id),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getConfirmLossAbsorptionRecordMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof confirmLossAbsorptionRecord>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof confirmLossAbsorptionRecord>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["confirmLossAbsorptionRecord"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof confirmLossAbsorptionRecord>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return confirmLossAbsorptionRecord(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ConfirmLossAbsorptionRecordMutationResult = NonNullable<
+  Awaited<ReturnType<typeof confirmLossAbsorptionRecord>>
+>;
+
+export type ConfirmLossAbsorptionRecordMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Confirm a loss absorption record
+ */
+export const useConfirmLossAbsorptionRecord = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof confirmLossAbsorptionRecord>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof confirmLossAbsorptionRecord>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getConfirmLossAbsorptionRecordMutationOptions(options));
+};
+
+/**
+ * @summary List negative balance entries
+ */
+export const getListNegativeBalanceEntriesUrl = (
+  params?: ListNegativeBalanceEntriesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/loss-absorption/negative-balance?${stringifiedParams}`
+    : `/api/loss-absorption/negative-balance`;
+};
+
+export const listNegativeBalanceEntries = async (
+  params?: ListNegativeBalanceEntriesParams,
+  options?: RequestInit,
+): Promise<ListNegativeBalanceEntries200> => {
+  return customFetch<ListNegativeBalanceEntries200>(
+    getListNegativeBalanceEntriesUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListNegativeBalanceEntriesQueryKey = (
+  params?: ListNegativeBalanceEntriesParams,
+) => {
+  return [
+    `/api/loss-absorption/negative-balance`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListNegativeBalanceEntriesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listNegativeBalanceEntries>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListNegativeBalanceEntriesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listNegativeBalanceEntries>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListNegativeBalanceEntriesQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listNegativeBalanceEntries>>
+  > = ({ signal }) =>
+    listNegativeBalanceEntries(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listNegativeBalanceEntries>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListNegativeBalanceEntriesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listNegativeBalanceEntries>>
+>;
+export type ListNegativeBalanceEntriesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List negative balance entries
+ */
+
+export function useListNegativeBalanceEntries<
+  TData = Awaited<ReturnType<typeof listNegativeBalanceEntries>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListNegativeBalanceEntriesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listNegativeBalanceEntries>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListNegativeBalanceEntriesQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a negative balance entry
+ */
+export const getCreateNegativeBalanceEntryUrl = () => {
+  return `/api/loss-absorption/negative-balance`;
+};
+
+export const createNegativeBalanceEntry = async (
+  createNegativeBalanceEntryBody: CreateNegativeBalanceEntryBody,
+  options?: RequestInit,
+): Promise<CreateNegativeBalanceEntry201> => {
+  return customFetch<CreateNegativeBalanceEntry201>(
+    getCreateNegativeBalanceEntryUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(createNegativeBalanceEntryBody),
+    },
+  );
+};
+
+export const getCreateNegativeBalanceEntryMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createNegativeBalanceEntry>>,
+    TError,
+    { data: BodyType<CreateNegativeBalanceEntryBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createNegativeBalanceEntry>>,
+  TError,
+  { data: BodyType<CreateNegativeBalanceEntryBody> },
+  TContext
+> => {
+  const mutationKey = ["createNegativeBalanceEntry"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createNegativeBalanceEntry>>,
+    { data: BodyType<CreateNegativeBalanceEntryBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createNegativeBalanceEntry(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateNegativeBalanceEntryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createNegativeBalanceEntry>>
+>;
+export type CreateNegativeBalanceEntryMutationBody =
+  BodyType<CreateNegativeBalanceEntryBody>;
+export type CreateNegativeBalanceEntryMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create a negative balance entry
+ */
+export const useCreateNegativeBalanceEntry = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createNegativeBalanceEntry>>,
+    TError,
+    { data: BodyType<CreateNegativeBalanceEntryBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createNegativeBalanceEntry>>,
+  TError,
+  { data: BodyType<CreateNegativeBalanceEntryBody> },
+  TContext
+> => {
+  return useMutation(getCreateNegativeBalanceEntryMutationOptions(options));
+};
+
+/**
+ * @summary Update a negative balance entry
+ */
+export const getUpdateNegativeBalanceEntryUrl = (id: string) => {
+  return `/api/loss-absorption/negative-balance/${id}`;
+};
+
+export const updateNegativeBalanceEntry = async (
+  id: string,
+  updateNegativeBalanceEntryBody: UpdateNegativeBalanceEntryBody,
+  options?: RequestInit,
+): Promise<UpdateNegativeBalanceEntry200> => {
+  return customFetch<UpdateNegativeBalanceEntry200>(
+    getUpdateNegativeBalanceEntryUrl(id),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(updateNegativeBalanceEntryBody),
+    },
+  );
+};
+
+export const getUpdateNegativeBalanceEntryMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateNegativeBalanceEntry>>,
+    TError,
+    { id: string; data: BodyType<UpdateNegativeBalanceEntryBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateNegativeBalanceEntry>>,
+  TError,
+  { id: string; data: BodyType<UpdateNegativeBalanceEntryBody> },
+  TContext
+> => {
+  const mutationKey = ["updateNegativeBalanceEntry"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateNegativeBalanceEntry>>,
+    { id: string; data: BodyType<UpdateNegativeBalanceEntryBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateNegativeBalanceEntry(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateNegativeBalanceEntryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateNegativeBalanceEntry>>
+>;
+export type UpdateNegativeBalanceEntryMutationBody =
+  BodyType<UpdateNegativeBalanceEntryBody>;
+export type UpdateNegativeBalanceEntryMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update a negative balance entry
+ */
+export const useUpdateNegativeBalanceEntry = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateNegativeBalanceEntry>>,
+    TError,
+    { id: string; data: BodyType<UpdateNegativeBalanceEntryBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateNegativeBalanceEntry>>,
+  TError,
+  { id: string; data: BodyType<UpdateNegativeBalanceEntryBody> },
+  TContext
+> => {
+  return useMutation(getUpdateNegativeBalanceEntryMutationOptions(options));
+};
+
+/**
+ * @summary Compute advisory settlement priority waterfall
+ */
+export const getGetSettlementPriorityUrl = (
+  params: GetSettlementPriorityParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/loss-absorption/settlement-priority?${stringifiedParams}`
+    : `/api/loss-absorption/settlement-priority`;
+};
+
+export const getSettlementPriority = async (
+  params: GetSettlementPriorityParams,
+  options?: RequestInit,
+): Promise<SettlementPriority> => {
+  return customFetch<SettlementPriority>(getGetSettlementPriorityUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetSettlementPriorityQueryKey = (
+  params?: GetSettlementPriorityParams,
+) => {
+  return [
+    `/api/loss-absorption/settlement-priority`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetSettlementPriorityQueryOptions = <
+  TData = Awaited<ReturnType<typeof getSettlementPriority>>,
+  TError = ErrorType<unknown>,
+>(
+  params: GetSettlementPriorityParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getSettlementPriority>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetSettlementPriorityQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getSettlementPriority>>
+  > = ({ signal }) =>
+    getSettlementPriority(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getSettlementPriority>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetSettlementPriorityQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getSettlementPriority>>
+>;
+export type GetSettlementPriorityQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Compute advisory settlement priority waterfall
+ */
+
+export function useGetSettlementPriority<
+  TData = Awaited<ReturnType<typeof getSettlementPriority>>,
+  TError = ErrorType<unknown>,
+>(
+  params: GetSettlementPriorityParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getSettlementPriority>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetSettlementPriorityQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Full loss absorption summary for dashboard
+ */
+export const getGetLossAbsorptionSummaryUrl = (
+  params: GetLossAbsorptionSummaryParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/loss-absorption/summary?${stringifiedParams}`
+    : `/api/loss-absorption/summary`;
+};
+
+export const getLossAbsorptionSummary = async (
+  params: GetLossAbsorptionSummaryParams,
+  options?: RequestInit,
+): Promise<LossAbsorptionSummary> => {
+  return customFetch<LossAbsorptionSummary>(
+    getGetLossAbsorptionSummaryUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetLossAbsorptionSummaryQueryKey = (
+  params?: GetLossAbsorptionSummaryParams,
+) => {
+  return [`/api/loss-absorption/summary`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetLossAbsorptionSummaryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getLossAbsorptionSummary>>,
+  TError = ErrorType<unknown>,
+>(
+  params: GetLossAbsorptionSummaryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getLossAbsorptionSummary>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetLossAbsorptionSummaryQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getLossAbsorptionSummary>>
+  > = ({ signal }) =>
+    getLossAbsorptionSummary(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getLossAbsorptionSummary>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetLossAbsorptionSummaryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getLossAbsorptionSummary>>
+>;
+export type GetLossAbsorptionSummaryQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Full loss absorption summary for dashboard
+ */
+
+export function useGetLossAbsorptionSummary<
+  TData = Awaited<ReturnType<typeof getLossAbsorptionSummary>>,
+  TError = ErrorType<unknown>,
+>(
+  params: GetLossAbsorptionSummaryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getLossAbsorptionSummary>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetLossAbsorptionSummaryQueryOptions(params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;
