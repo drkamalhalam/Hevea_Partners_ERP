@@ -7190,6 +7190,260 @@ paths:
                   snapshot:
                     $ref: "#/components/schemas/PayableSnapshot"
 
+  /distribution-records:
+    get:
+      summary: List distribution records
+      operationId: listDistributionRecords
+      tags: [distribution-records]
+      parameters:
+        - { name: projectId, in: query, schema: { type: string, format: uuid } }
+        - { name: partnerId, in: query, schema: { type: string, format: uuid } }
+        - { name: status, in: query, schema: { type: string } }
+        - { name: settlementType, in: query, schema: { type: string } }
+        - { name: periodLabel, in: query, schema: { type: string } }
+        - { name: includeArchived, in: query, schema: { type: string } }
+      responses:
+        "200":
+          description: List of distribution records
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [records, total]
+                properties:
+                  records: { type: array, items: { $ref: "#/components/schemas/DistributionRecord" } }
+                  total: { type: integer }
+    post:
+      summary: Create a distribution record
+      operationId: createDistributionRecord
+      tags: [distribution-records]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDistributionRecordBody"
+      responses:
+        "201":
+          description: Created record
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [record]
+                properties:
+                  record: { $ref: "#/components/schemas/DistributionRecord" }
+
+  /distribution-records/summary:
+    get:
+      summary: Distribution records summary / KPIs
+      operationId: getDistributionSummary
+      tags: [distribution-records]
+      parameters:
+        - { name: projectId, in: query, schema: { type: string, format: uuid } }
+        - { name: partnerId, in: query, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Aggregated KPI summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DistributionSummary"
+
+  /distribution-records/pending-payable:
+    get:
+      summary: Pending payable report
+      operationId: getDistributionPendingPayable
+      tags: [distribution-records]
+      parameters:
+        - { name: projectId, in: query, schema: { type: string, format: uuid } }
+        - { name: partnerId, in: query, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: All records with pending balance > 0
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [records, total, totalPendingAmount]
+                properties:
+                  records: { type: array, items: { $ref: "#/components/schemas/DistributionRecord" } }
+                  total: { type: integer }
+                  totalPendingAmount: { type: string }
+
+  /distribution-records/archive:
+    get:
+      summary: Settlement archive (all historical records)
+      operationId: getDistributionArchive
+      tags: [distribution-records]
+      parameters:
+        - { name: projectId, in: query, schema: { type: string, format: uuid } }
+        - { name: partnerId, in: query, schema: { type: string, format: uuid } }
+        - { name: status, in: query, schema: { type: string } }
+      responses:
+        "200":
+          description: Full settlement archive including inactive
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [records, total]
+                properties:
+                  records: { type: array, items: { $ref: "#/components/schemas/DistributionRecord" } }
+                  total: { type: integer }
+
+  /distribution-records/partner-history/{partnerId}:
+    get:
+      summary: Full payment history for a partner
+      operationId: getPartnerDistributionHistory
+      tags: [distribution-records]
+      parameters:
+        - { name: partnerId, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: projectId, in: query, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Partner payment history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartnerDistributionHistory"
+
+  /distribution-records/{id}:
+    get:
+      summary: Get single distribution record with event log
+      operationId: getDistributionRecord
+      tags: [distribution-records]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Record with events
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [record, events]
+                properties:
+                  record: { $ref: "#/components/schemas/DistributionRecord" }
+                  events: { type: array, items: { $ref: "#/components/schemas/DistributionPaymentEvent" } }
+    patch:
+      summary: Update distribution record metadata
+      operationId: updateDistributionRecord
+      tags: [distribution-records]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateDistributionRecordBody"
+      responses:
+        "200":
+          description: Updated record
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [record]
+                properties:
+                  record: { $ref: "#/components/schemas/DistributionRecord" }
+
+  /distribution-records/{id}/record-payment:
+    post:
+      summary: Record a payment against a distribution record
+      operationId: recordDistributionPayment
+      tags: [distribution-records]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecordDistributionPaymentBody"
+      responses:
+        "200":
+          description: Updated record after payment
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [record]
+                properties:
+                  record: { $ref: "#/components/schemas/DistributionRecord" }
+
+  /distribution-records/{id}/carry-forward:
+    post:
+      summary: Mark record balance as carried forward to next period
+      operationId: carryForwardDistributionRecord
+      tags: [distribution-records]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                remarks: { type: string, nullable: true }
+      responses:
+        "200":
+          description: Record marked carried forward
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [record, carryForwardBalance]
+                properties:
+                  record: { $ref: "#/components/schemas/DistributionRecord" }
+                  carryForwardBalance: { type: number }
+
+  /distribution-records/{id}/archive:
+    post:
+      summary: Soft-archive a distribution record (admin only)
+      operationId: archiveDistributionRecord
+      tags: [distribution-records]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                remarks: { type: string, nullable: true }
+      responses:
+        "200":
+          description: Record archived
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [record]
+                properties:
+                  record: { $ref: "#/components/schemas/DistributionRecord" }
+
+  /distribution-records/{id}/events:
+    get:
+      summary: Get immutable payment event log for a record
+      operationId: listDistributionPaymentEvents
+      tags: [distribution-records]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Payment event trail
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [distributionRecordId, events, total]
+                properties:
+                  distributionRecordId: { type: string, format: uuid }
+                  events: { type: array, items: { $ref: "#/components/schemas/DistributionPaymentEvent" } }
+                  total: { type: integer }
+
 components:
   schemas:
     HealthStatus:
@@ -12597,3 +12851,134 @@ components:
         periodStart: { type: string, nullable: true }
         periodEnd: { type: string, nullable: true }
         notes: { type: string, nullable: true }
+
+    DistributionRecord:
+      type: object
+      required: [id, projectId, accountingPeriodLabel, grossRevenue, settlementRecommendation, totalPaid, pendingPayable, priorCarryForward, carryForwardBalance, status, isPermanentRecord, isActive, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        projectName: { type: string, nullable: true }
+        partnerId: { type: string, format: uuid, nullable: true }
+        partnerName: { type: string, nullable: true }
+        accountingPeriodLabel: { type: string }
+        periodStart: { type: string, nullable: true }
+        periodEnd: { type: string, nullable: true }
+        linkedSaleIds: { type: array, items: { type: string } }
+        linkedSettlementId: { type: string, format: uuid, nullable: true }
+        settlementType: { type: string, nullable: true }
+        grossRevenue: { type: string }
+        settlementRecommendation: { type: string }
+        totalPaid: { type: string }
+        pendingPayable: { type: string }
+        priorCarryForward: { type: string }
+        carryForwardBalance: { type: string }
+        carriedFromRecordId: { type: string, format: uuid, nullable: true }
+        carriedToRecordId: { type: string, format: uuid, nullable: true }
+        lastPaymentDate: { type: string, nullable: true }
+        lastPaymentRef: { type: string, nullable: true }
+        paymentProofUrl: { type: string, nullable: true }
+        paymentProofNotes: { type: string, nullable: true }
+        status: { type: string }
+        isPermanentRecord: { type: boolean }
+        isActive: { type: boolean }
+        notes: { type: string, nullable: true }
+        createdByName: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    DistributionPaymentEvent:
+      type: object
+      required: [id, distributionRecordId, eventType, performedAt]
+      properties:
+        id: { type: string, format: uuid }
+        distributionRecordId: { type: string, format: uuid }
+        projectId: { type: string, format: uuid, nullable: true }
+        partnerId: { type: string, format: uuid, nullable: true }
+        eventType: { type: string }
+        paymentAmount: { type: string, nullable: true }
+        cumulativePaid: { type: string, nullable: true }
+        remainingBalance: { type: string, nullable: true }
+        previousStatus: { type: string, nullable: true }
+        newStatus: { type: string, nullable: true }
+        paymentDate: { type: string, nullable: true }
+        paymentRef: { type: string, nullable: true }
+        remarks: { type: string, nullable: true }
+        metadata: { type: object, nullable: true }
+        performedBy: { type: string, format: uuid, nullable: true }
+        performedByName: { type: string, nullable: true }
+        performedByRole: { type: string, nullable: true }
+        performedAt: { type: string, format: date-time }
+
+    DistributionSummary:
+      type: object
+      required: [totalRecords, totalGrossRevenue, totalRecommended, totalPaid, totalPending, totalCarryForward, totalPriorCarry, paymentRate, byStatus]
+      properties:
+        totalRecords: { type: integer }
+        totalGrossRevenue: { type: string }
+        totalRecommended: { type: string }
+        totalPaid: { type: string }
+        totalPending: { type: string }
+        totalCarryForward: { type: string }
+        totalPriorCarry: { type: string }
+        paymentRate: { type: string }
+        byStatus: { type: object }
+
+    PartnerDistributionHistory:
+      type: object
+      required: [partnerId, records, total, summary]
+      properties:
+        partnerId: { type: string, format: uuid }
+        records: { type: array, items: { $ref: "#/components/schemas/DistributionRecord" } }
+        total: { type: integer }
+        summary:
+          type: object
+          required: [totalPaid, totalPending, totalRecommended, paymentRate]
+          properties:
+            totalPaid: { type: string }
+            totalPending: { type: string }
+            totalRecommended: { type: string }
+            paymentRate: { type: string }
+
+    CreateDistributionRecordBody:
+      type: object
+      required: [projectId, accountingPeriodLabel]
+      properties:
+        projectId: { type: string, format: uuid }
+        partnerId: { type: string, format: uuid, nullable: true }
+        accountingPeriodLabel: { type: string }
+        periodStart: { type: string, nullable: true }
+        periodEnd: { type: string, nullable: true }
+        linkedSaleIds: { type: array, items: { type: string } }
+        linkedSettlementId: { type: string, format: uuid, nullable: true }
+        settlementType: { type: string, nullable: true }
+        grossRevenue: { type: number, nullable: true }
+        settlementRecommendation: { type: number, nullable: true }
+        priorCarryForward: { type: number, nullable: true }
+        notes: { type: string, nullable: true }
+
+    UpdateDistributionRecordBody:
+      type: object
+      properties:
+        accountingPeriodLabel: { type: string }
+        periodStart: { type: string, nullable: true }
+        periodEnd: { type: string, nullable: true }
+        linkedSaleIds: { type: array, items: { type: string } }
+        settlementType: { type: string, nullable: true }
+        linkedSettlementId: { type: string, format: uuid, nullable: true }
+        grossRevenue: { type: number, nullable: true }
+        settlementRecommendation: { type: number, nullable: true }
+        priorCarryForward: { type: number, nullable: true }
+        paymentProofUrl: { type: string, nullable: true }
+        paymentProofNotes: { type: string, nullable: true }
+        notes: { type: string, nullable: true }
+
+    RecordDistributionPaymentBody:
+      type: object
+      required: [paymentAmount]
+      properties:
+        paymentAmount: { type: number }
+        paymentDate: { type: string, nullable: true }
+        paymentRef: { type: string, nullable: true }
+        remarks: { type: string, nullable: true }
+        paymentProofUrl: { type: string, nullable: true }

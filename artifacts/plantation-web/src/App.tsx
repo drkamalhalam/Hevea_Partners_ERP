@@ -65,6 +65,7 @@ import FiftyPctSettlement from "./pages/FiftyPctSettlement";
 import PartnerPayable from "./pages/PartnerPayable";
 import LossAbsorption from "./pages/LossAbsorption";
 import FinalSettlement from "./pages/FinalSettlement";
+import DistributionRecords from "./pages/DistributionRecords";
 import Distribution from "./pages/Distribution";
 
 // Pages — Analytics
@@ -285,6 +286,7 @@ function AppRoutes() {
               <Route path="/partner-payable"><ProtectedRoute component={PartnerPayable} /></Route>
               <Route path="/loss-absorption"><ProtectedRoute component={LossAbsorption} /></Route>
               <Route path="/final-settlement"><ProtectedRoute component={FinalSettlement} /></Route>
+              <Route path="/distribution-records"><ProtectedRoute component={DistributionRecords} /></Route>
               <Route path="/sales"><ProtectedRoute component={Sales} /></Route>
               <Route path="/distribution"><ProtectedRoute component={Distribution} /></Route>
 

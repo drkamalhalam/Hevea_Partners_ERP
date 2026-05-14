@@ -11152,3 +11152,539 @@ export const FinalizePayableSnapshotResponse = zod.object({
     updatedAt: zod.coerce.date(),
   }),
 });
+
+/**
+ * @summary List distribution records
+ */
+export const ListDistributionRecordsQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+  partnerId: zod.coerce.string().uuid().optional(),
+  status: zod.coerce.string().optional(),
+  settlementType: zod.coerce.string().optional(),
+  periodLabel: zod.coerce.string().optional(),
+  includeArchived: zod.coerce.string().optional(),
+});
+
+export const ListDistributionRecordsResponse = zod.object({
+  records: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      projectId: zod.string().uuid(),
+      projectName: zod.string().nullish(),
+      partnerId: zod.string().uuid().nullish(),
+      partnerName: zod.string().nullish(),
+      accountingPeriodLabel: zod.string(),
+      periodStart: zod.string().nullish(),
+      periodEnd: zod.string().nullish(),
+      linkedSaleIds: zod.array(zod.string()).optional(),
+      linkedSettlementId: zod.string().uuid().nullish(),
+      settlementType: zod.string().nullish(),
+      grossRevenue: zod.string(),
+      settlementRecommendation: zod.string(),
+      totalPaid: zod.string(),
+      pendingPayable: zod.string(),
+      priorCarryForward: zod.string(),
+      carryForwardBalance: zod.string(),
+      carriedFromRecordId: zod.string().uuid().nullish(),
+      carriedToRecordId: zod.string().uuid().nullish(),
+      lastPaymentDate: zod.string().nullish(),
+      lastPaymentRef: zod.string().nullish(),
+      paymentProofUrl: zod.string().nullish(),
+      paymentProofNotes: zod.string().nullish(),
+      status: zod.string(),
+      isPermanentRecord: zod.boolean(),
+      isActive: zod.boolean(),
+      notes: zod.string().nullish(),
+      createdByName: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    }),
+  ),
+  total: zod.number(),
+});
+
+/**
+ * @summary Create a distribution record
+ */
+export const CreateDistributionRecordBody = zod.object({
+  projectId: zod.string().uuid(),
+  partnerId: zod.string().uuid().nullish(),
+  accountingPeriodLabel: zod.string(),
+  periodStart: zod.string().nullish(),
+  periodEnd: zod.string().nullish(),
+  linkedSaleIds: zod.array(zod.string()).optional(),
+  linkedSettlementId: zod.string().uuid().nullish(),
+  settlementType: zod.string().nullish(),
+  grossRevenue: zod.number().nullish(),
+  settlementRecommendation: zod.number().nullish(),
+  priorCarryForward: zod.number().nullish(),
+  notes: zod.string().nullish(),
+});
+
+/**
+ * @summary Distribution records summary / KPIs
+ */
+export const GetDistributionSummaryQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+  partnerId: zod.coerce.string().uuid().optional(),
+});
+
+export const GetDistributionSummaryResponse = zod.object({
+  totalRecords: zod.number(),
+  totalGrossRevenue: zod.string(),
+  totalRecommended: zod.string(),
+  totalPaid: zod.string(),
+  totalPending: zod.string(),
+  totalCarryForward: zod.string(),
+  totalPriorCarry: zod.string(),
+  paymentRate: zod.string(),
+  byStatus: zod.object({}).passthrough(),
+});
+
+/**
+ * @summary Pending payable report
+ */
+export const GetDistributionPendingPayableQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+  partnerId: zod.coerce.string().uuid().optional(),
+});
+
+export const GetDistributionPendingPayableResponse = zod.object({
+  records: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      projectId: zod.string().uuid(),
+      projectName: zod.string().nullish(),
+      partnerId: zod.string().uuid().nullish(),
+      partnerName: zod.string().nullish(),
+      accountingPeriodLabel: zod.string(),
+      periodStart: zod.string().nullish(),
+      periodEnd: zod.string().nullish(),
+      linkedSaleIds: zod.array(zod.string()).optional(),
+      linkedSettlementId: zod.string().uuid().nullish(),
+      settlementType: zod.string().nullish(),
+      grossRevenue: zod.string(),
+      settlementRecommendation: zod.string(),
+      totalPaid: zod.string(),
+      pendingPayable: zod.string(),
+      priorCarryForward: zod.string(),
+      carryForwardBalance: zod.string(),
+      carriedFromRecordId: zod.string().uuid().nullish(),
+      carriedToRecordId: zod.string().uuid().nullish(),
+      lastPaymentDate: zod.string().nullish(),
+      lastPaymentRef: zod.string().nullish(),
+      paymentProofUrl: zod.string().nullish(),
+      paymentProofNotes: zod.string().nullish(),
+      status: zod.string(),
+      isPermanentRecord: zod.boolean(),
+      isActive: zod.boolean(),
+      notes: zod.string().nullish(),
+      createdByName: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    }),
+  ),
+  total: zod.number(),
+  totalPendingAmount: zod.string(),
+});
+
+/**
+ * @summary Settlement archive (all historical records)
+ */
+export const GetDistributionArchiveQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+  partnerId: zod.coerce.string().uuid().optional(),
+  status: zod.coerce.string().optional(),
+});
+
+export const GetDistributionArchiveResponse = zod.object({
+  records: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      projectId: zod.string().uuid(),
+      projectName: zod.string().nullish(),
+      partnerId: zod.string().uuid().nullish(),
+      partnerName: zod.string().nullish(),
+      accountingPeriodLabel: zod.string(),
+      periodStart: zod.string().nullish(),
+      periodEnd: zod.string().nullish(),
+      linkedSaleIds: zod.array(zod.string()).optional(),
+      linkedSettlementId: zod.string().uuid().nullish(),
+      settlementType: zod.string().nullish(),
+      grossRevenue: zod.string(),
+      settlementRecommendation: zod.string(),
+      totalPaid: zod.string(),
+      pendingPayable: zod.string(),
+      priorCarryForward: zod.string(),
+      carryForwardBalance: zod.string(),
+      carriedFromRecordId: zod.string().uuid().nullish(),
+      carriedToRecordId: zod.string().uuid().nullish(),
+      lastPaymentDate: zod.string().nullish(),
+      lastPaymentRef: zod.string().nullish(),
+      paymentProofUrl: zod.string().nullish(),
+      paymentProofNotes: zod.string().nullish(),
+      status: zod.string(),
+      isPermanentRecord: zod.boolean(),
+      isActive: zod.boolean(),
+      notes: zod.string().nullish(),
+      createdByName: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    }),
+  ),
+  total: zod.number(),
+});
+
+/**
+ * @summary Full payment history for a partner
+ */
+export const GetPartnerDistributionHistoryParams = zod.object({
+  partnerId: zod.coerce.string().uuid(),
+});
+
+export const GetPartnerDistributionHistoryQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+});
+
+export const GetPartnerDistributionHistoryResponse = zod.object({
+  partnerId: zod.string().uuid(),
+  records: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      projectId: zod.string().uuid(),
+      projectName: zod.string().nullish(),
+      partnerId: zod.string().uuid().nullish(),
+      partnerName: zod.string().nullish(),
+      accountingPeriodLabel: zod.string(),
+      periodStart: zod.string().nullish(),
+      periodEnd: zod.string().nullish(),
+      linkedSaleIds: zod.array(zod.string()).optional(),
+      linkedSettlementId: zod.string().uuid().nullish(),
+      settlementType: zod.string().nullish(),
+      grossRevenue: zod.string(),
+      settlementRecommendation: zod.string(),
+      totalPaid: zod.string(),
+      pendingPayable: zod.string(),
+      priorCarryForward: zod.string(),
+      carryForwardBalance: zod.string(),
+      carriedFromRecordId: zod.string().uuid().nullish(),
+      carriedToRecordId: zod.string().uuid().nullish(),
+      lastPaymentDate: zod.string().nullish(),
+      lastPaymentRef: zod.string().nullish(),
+      paymentProofUrl: zod.string().nullish(),
+      paymentProofNotes: zod.string().nullish(),
+      status: zod.string(),
+      isPermanentRecord: zod.boolean(),
+      isActive: zod.boolean(),
+      notes: zod.string().nullish(),
+      createdByName: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    }),
+  ),
+  total: zod.number(),
+  summary: zod.object({
+    totalPaid: zod.string(),
+    totalPending: zod.string(),
+    totalRecommended: zod.string(),
+    paymentRate: zod.string(),
+  }),
+});
+
+/**
+ * @summary Get single distribution record with event log
+ */
+export const GetDistributionRecordParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const GetDistributionRecordResponse = zod.object({
+  record: zod.object({
+    id: zod.string().uuid(),
+    projectId: zod.string().uuid(),
+    projectName: zod.string().nullish(),
+    partnerId: zod.string().uuid().nullish(),
+    partnerName: zod.string().nullish(),
+    accountingPeriodLabel: zod.string(),
+    periodStart: zod.string().nullish(),
+    periodEnd: zod.string().nullish(),
+    linkedSaleIds: zod.array(zod.string()).optional(),
+    linkedSettlementId: zod.string().uuid().nullish(),
+    settlementType: zod.string().nullish(),
+    grossRevenue: zod.string(),
+    settlementRecommendation: zod.string(),
+    totalPaid: zod.string(),
+    pendingPayable: zod.string(),
+    priorCarryForward: zod.string(),
+    carryForwardBalance: zod.string(),
+    carriedFromRecordId: zod.string().uuid().nullish(),
+    carriedToRecordId: zod.string().uuid().nullish(),
+    lastPaymentDate: zod.string().nullish(),
+    lastPaymentRef: zod.string().nullish(),
+    paymentProofUrl: zod.string().nullish(),
+    paymentProofNotes: zod.string().nullish(),
+    status: zod.string(),
+    isPermanentRecord: zod.boolean(),
+    isActive: zod.boolean(),
+    notes: zod.string().nullish(),
+    createdByName: zod.string().nullish(),
+    createdAt: zod.coerce.date(),
+    updatedAt: zod.coerce.date(),
+  }),
+  events: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      distributionRecordId: zod.string().uuid(),
+      projectId: zod.string().uuid().nullish(),
+      partnerId: zod.string().uuid().nullish(),
+      eventType: zod.string(),
+      paymentAmount: zod.string().nullish(),
+      cumulativePaid: zod.string().nullish(),
+      remainingBalance: zod.string().nullish(),
+      previousStatus: zod.string().nullish(),
+      newStatus: zod.string().nullish(),
+      paymentDate: zod.string().nullish(),
+      paymentRef: zod.string().nullish(),
+      remarks: zod.string().nullish(),
+      metadata: zod.object({}).passthrough().nullish(),
+      performedBy: zod.string().uuid().nullish(),
+      performedByName: zod.string().nullish(),
+      performedByRole: zod.string().nullish(),
+      performedAt: zod.coerce.date(),
+    }),
+  ),
+});
+
+/**
+ * @summary Update distribution record metadata
+ */
+export const UpdateDistributionRecordParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const UpdateDistributionRecordBody = zod.object({
+  accountingPeriodLabel: zod.string().optional(),
+  periodStart: zod.string().nullish(),
+  periodEnd: zod.string().nullish(),
+  linkedSaleIds: zod.array(zod.string()).optional(),
+  settlementType: zod.string().nullish(),
+  linkedSettlementId: zod.string().uuid().nullish(),
+  grossRevenue: zod.number().nullish(),
+  settlementRecommendation: zod.number().nullish(),
+  priorCarryForward: zod.number().nullish(),
+  paymentProofUrl: zod.string().nullish(),
+  paymentProofNotes: zod.string().nullish(),
+  notes: zod.string().nullish(),
+});
+
+export const UpdateDistributionRecordResponse = zod.object({
+  record: zod.object({
+    id: zod.string().uuid(),
+    projectId: zod.string().uuid(),
+    projectName: zod.string().nullish(),
+    partnerId: zod.string().uuid().nullish(),
+    partnerName: zod.string().nullish(),
+    accountingPeriodLabel: zod.string(),
+    periodStart: zod.string().nullish(),
+    periodEnd: zod.string().nullish(),
+    linkedSaleIds: zod.array(zod.string()).optional(),
+    linkedSettlementId: zod.string().uuid().nullish(),
+    settlementType: zod.string().nullish(),
+    grossRevenue: zod.string(),
+    settlementRecommendation: zod.string(),
+    totalPaid: zod.string(),
+    pendingPayable: zod.string(),
+    priorCarryForward: zod.string(),
+    carryForwardBalance: zod.string(),
+    carriedFromRecordId: zod.string().uuid().nullish(),
+    carriedToRecordId: zod.string().uuid().nullish(),
+    lastPaymentDate: zod.string().nullish(),
+    lastPaymentRef: zod.string().nullish(),
+    paymentProofUrl: zod.string().nullish(),
+    paymentProofNotes: zod.string().nullish(),
+    status: zod.string(),
+    isPermanentRecord: zod.boolean(),
+    isActive: zod.boolean(),
+    notes: zod.string().nullish(),
+    createdByName: zod.string().nullish(),
+    createdAt: zod.coerce.date(),
+    updatedAt: zod.coerce.date(),
+  }),
+});
+
+/**
+ * @summary Record a payment against a distribution record
+ */
+export const RecordDistributionPaymentParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const RecordDistributionPaymentBody = zod.object({
+  paymentAmount: zod.number(),
+  paymentDate: zod.string().nullish(),
+  paymentRef: zod.string().nullish(),
+  remarks: zod.string().nullish(),
+  paymentProofUrl: zod.string().nullish(),
+});
+
+export const RecordDistributionPaymentResponse = zod.object({
+  record: zod.object({
+    id: zod.string().uuid(),
+    projectId: zod.string().uuid(),
+    projectName: zod.string().nullish(),
+    partnerId: zod.string().uuid().nullish(),
+    partnerName: zod.string().nullish(),
+    accountingPeriodLabel: zod.string(),
+    periodStart: zod.string().nullish(),
+    periodEnd: zod.string().nullish(),
+    linkedSaleIds: zod.array(zod.string()).optional(),
+    linkedSettlementId: zod.string().uuid().nullish(),
+    settlementType: zod.string().nullish(),
+    grossRevenue: zod.string(),
+    settlementRecommendation: zod.string(),
+    totalPaid: zod.string(),
+    pendingPayable: zod.string(),
+    priorCarryForward: zod.string(),
+    carryForwardBalance: zod.string(),
+    carriedFromRecordId: zod.string().uuid().nullish(),
+    carriedToRecordId: zod.string().uuid().nullish(),
+    lastPaymentDate: zod.string().nullish(),
+    lastPaymentRef: zod.string().nullish(),
+    paymentProofUrl: zod.string().nullish(),
+    paymentProofNotes: zod.string().nullish(),
+    status: zod.string(),
+    isPermanentRecord: zod.boolean(),
+    isActive: zod.boolean(),
+    notes: zod.string().nullish(),
+    createdByName: zod.string().nullish(),
+    createdAt: zod.coerce.date(),
+    updatedAt: zod.coerce.date(),
+  }),
+});
+
+/**
+ * @summary Mark record balance as carried forward to next period
+ */
+export const CarryForwardDistributionRecordParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const CarryForwardDistributionRecordBody = zod.object({
+  remarks: zod.string().nullish(),
+});
+
+export const CarryForwardDistributionRecordResponse = zod.object({
+  record: zod.object({
+    id: zod.string().uuid(),
+    projectId: zod.string().uuid(),
+    projectName: zod.string().nullish(),
+    partnerId: zod.string().uuid().nullish(),
+    partnerName: zod.string().nullish(),
+    accountingPeriodLabel: zod.string(),
+    periodStart: zod.string().nullish(),
+    periodEnd: zod.string().nullish(),
+    linkedSaleIds: zod.array(zod.string()).optional(),
+    linkedSettlementId: zod.string().uuid().nullish(),
+    settlementType: zod.string().nullish(),
+    grossRevenue: zod.string(),
+    settlementRecommendation: zod.string(),
+    totalPaid: zod.string(),
+    pendingPayable: zod.string(),
+    priorCarryForward: zod.string(),
+    carryForwardBalance: zod.string(),
+    carriedFromRecordId: zod.string().uuid().nullish(),
+    carriedToRecordId: zod.string().uuid().nullish(),
+    lastPaymentDate: zod.string().nullish(),
+    lastPaymentRef: zod.string().nullish(),
+    paymentProofUrl: zod.string().nullish(),
+    paymentProofNotes: zod.string().nullish(),
+    status: zod.string(),
+    isPermanentRecord: zod.boolean(),
+    isActive: zod.boolean(),
+    notes: zod.string().nullish(),
+    createdByName: zod.string().nullish(),
+    createdAt: zod.coerce.date(),
+    updatedAt: zod.coerce.date(),
+  }),
+  carryForwardBalance: zod.number(),
+});
+
+/**
+ * @summary Soft-archive a distribution record (admin only)
+ */
+export const ArchiveDistributionRecordParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const ArchiveDistributionRecordBody = zod.object({
+  remarks: zod.string().nullish(),
+});
+
+export const ArchiveDistributionRecordResponse = zod.object({
+  record: zod.object({
+    id: zod.string().uuid(),
+    projectId: zod.string().uuid(),
+    projectName: zod.string().nullish(),
+    partnerId: zod.string().uuid().nullish(),
+    partnerName: zod.string().nullish(),
+    accountingPeriodLabel: zod.string(),
+    periodStart: zod.string().nullish(),
+    periodEnd: zod.string().nullish(),
+    linkedSaleIds: zod.array(zod.string()).optional(),
+    linkedSettlementId: zod.string().uuid().nullish(),
+    settlementType: zod.string().nullish(),
+    grossRevenue: zod.string(),
+    settlementRecommendation: zod.string(),
+    totalPaid: zod.string(),
+    pendingPayable: zod.string(),
+    priorCarryForward: zod.string(),
+    carryForwardBalance: zod.string(),
+    carriedFromRecordId: zod.string().uuid().nullish(),
+    carriedToRecordId: zod.string().uuid().nullish(),
+    lastPaymentDate: zod.string().nullish(),
+    lastPaymentRef: zod.string().nullish(),
+    paymentProofUrl: zod.string().nullish(),
+    paymentProofNotes: zod.string().nullish(),
+    status: zod.string(),
+    isPermanentRecord: zod.boolean(),
+    isActive: zod.boolean(),
+    notes: zod.string().nullish(),
+    createdByName: zod.string().nullish(),
+    createdAt: zod.coerce.date(),
+    updatedAt: zod.coerce.date(),
+  }),
+});
+
+/**
+ * @summary Get immutable payment event log for a record
+ */
+export const ListDistributionPaymentEventsParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const ListDistributionPaymentEventsResponse = zod.object({
+  distributionRecordId: zod.string().uuid(),
+  events: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      distributionRecordId: zod.string().uuid(),
+      projectId: zod.string().uuid().nullish(),
+      partnerId: zod.string().uuid().nullish(),
+      eventType: zod.string(),
+      paymentAmount: zod.string().nullish(),
+      cumulativePaid: zod.string().nullish(),
+      remainingBalance: zod.string().nullish(),
+      previousStatus: zod.string().nullish(),
+      newStatus: zod.string().nullish(),
+      paymentDate: zod.string().nullish(),
+      paymentRef: zod.string().nullish(),
+      remarks: zod.string().nullish(),
+      metadata: zod.object({}).passthrough().nullish(),
+      performedBy: zod.string().uuid().nullish(),
+      performedByName: zod.string().nullish(),
+      performedByRole: zod.string().nullish(),
+      performedAt: zod.coerce.date(),
+    }),
+  ),
+  total: zod.number(),
+});

@@ -42,6 +42,8 @@ import type {
   ApproveExpenditureVerification200,
   ApproveExpenditureVerificationBody,
   ArchiveDistributionPreview200,
+  ArchiveDistributionRecord200,
+  ArchiveDistributionRecordBody,
   ArchiveFiftyPctSession200,
   ArchiveSettlementRecord200,
   AssignProjectInput,
@@ -58,6 +60,8 @@ import type {
   Buyer,
   CancelAgreementActivationBody,
   CancelMaturityBody,
+  CarryForwardDistributionRecord200,
+  CarryForwardDistributionRecordBody,
   ComputePayableParams,
   ConfirmExpenditureVerificationOtp200,
   ConfirmExpenditureVerificationOtpBody,
@@ -76,6 +80,8 @@ import type {
   CreateClaimantInput,
   CreateContributionBody,
   CreateDistributionPreviewBody,
+  CreateDistributionRecord201,
+  CreateDistributionRecordBody,
   CreateDocumentBody,
   CreateEppEntry201,
   CreateEppEntryBody,
@@ -120,6 +126,7 @@ import type {
   DistributionPreview,
   DistributionPreviewDetail,
   DistributionPreviewPage,
+  DistributionSummary,
   Document,
   DocumentAccessLogEntry,
   EppEntriesResult,
@@ -144,6 +151,12 @@ import type {
   GetBurdenRecoverySummaryParams,
   GetBurdenSummaryParams,
   GetContributionSummaryParams,
+  GetDistributionArchive200,
+  GetDistributionArchiveParams,
+  GetDistributionPendingPayable200,
+  GetDistributionPendingPayableParams,
+  GetDistributionRecord200,
+  GetDistributionSummaryParams,
   GetExpenditureSummaryParams,
   GetImbalancePartnerSummary200,
   GetImbalanceSummaryParams,
@@ -165,6 +178,7 @@ import type {
   GetOperationalAccessLogSummaryParams,
   GetOwnershipSummary200,
   GetOwnershipSummaryParams,
+  GetPartnerDistributionHistoryParams,
   GetPayableSnapshot200,
   GetProductionLogSummaryParams,
   GetSaleGovernanceAlertsParams,
@@ -205,7 +219,10 @@ import type {
   ListContributionVerificationHistory200,
   ListContributions200,
   ListContributionsParams,
+  ListDistributionPaymentEvents200,
   ListDistributionPreviewsParams,
+  ListDistributionRecords200,
+  ListDistributionRecordsParams,
   ListDocumentAccessLogParams,
   ListDocumentsParams,
   ListExpenditures200,
@@ -266,6 +283,7 @@ import type {
   OwnershipSnapshot,
   Partner,
   PartnerClaimant,
+  PartnerDistributionHistory,
   PartnerInput,
   PartnerPortfolio,
   PartnerUpdate,
@@ -288,6 +306,8 @@ import type {
   ProjectUpdate,
   RaiseContributionDisputeBody,
   RecordAdvanceRecoveryBody,
+  RecordDistributionPayment200,
+  RecordDistributionPaymentBody,
   RecordLcaPayment201,
   RecordLcaPaymentBody,
   RecoverableAdvance,
@@ -337,6 +357,8 @@ import type {
   UpdateClosureWorkflowBody,
   UpdateContributionBody,
   UpdateDistributionPreviewBody,
+  UpdateDistributionRecord200,
+  UpdateDistributionRecordBody,
   UpdateDocumentBody,
   UpdateEppEntry200,
   UpdateEppEntryBody,
@@ -27863,3 +27885,1191 @@ export const useFinalizePayableSnapshot = <
 > => {
   return useMutation(getFinalizePayableSnapshotMutationOptions(options));
 };
+
+/**
+ * @summary List distribution records
+ */
+export const getListDistributionRecordsUrl = (
+  params?: ListDistributionRecordsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/distribution-records?${stringifiedParams}`
+    : `/api/distribution-records`;
+};
+
+export const listDistributionRecords = async (
+  params?: ListDistributionRecordsParams,
+  options?: RequestInit,
+): Promise<ListDistributionRecords200> => {
+  return customFetch<ListDistributionRecords200>(
+    getListDistributionRecordsUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListDistributionRecordsQueryKey = (
+  params?: ListDistributionRecordsParams,
+) => {
+  return [`/api/distribution-records`, ...(params ? [params] : [])] as const;
+};
+
+export const getListDistributionRecordsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listDistributionRecords>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListDistributionRecordsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listDistributionRecords>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListDistributionRecordsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listDistributionRecords>>
+  > = ({ signal }) =>
+    listDistributionRecords(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listDistributionRecords>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListDistributionRecordsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listDistributionRecords>>
+>;
+export type ListDistributionRecordsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List distribution records
+ */
+
+export function useListDistributionRecords<
+  TData = Awaited<ReturnType<typeof listDistributionRecords>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListDistributionRecordsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listDistributionRecords>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListDistributionRecordsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a distribution record
+ */
+export const getCreateDistributionRecordUrl = () => {
+  return `/api/distribution-records`;
+};
+
+export const createDistributionRecord = async (
+  createDistributionRecordBody: CreateDistributionRecordBody,
+  options?: RequestInit,
+): Promise<CreateDistributionRecord201> => {
+  return customFetch<CreateDistributionRecord201>(
+    getCreateDistributionRecordUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(createDistributionRecordBody),
+    },
+  );
+};
+
+export const getCreateDistributionRecordMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createDistributionRecord>>,
+    TError,
+    { data: BodyType<CreateDistributionRecordBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createDistributionRecord>>,
+  TError,
+  { data: BodyType<CreateDistributionRecordBody> },
+  TContext
+> => {
+  const mutationKey = ["createDistributionRecord"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createDistributionRecord>>,
+    { data: BodyType<CreateDistributionRecordBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createDistributionRecord(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateDistributionRecordMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createDistributionRecord>>
+>;
+export type CreateDistributionRecordMutationBody =
+  BodyType<CreateDistributionRecordBody>;
+export type CreateDistributionRecordMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create a distribution record
+ */
+export const useCreateDistributionRecord = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createDistributionRecord>>,
+    TError,
+    { data: BodyType<CreateDistributionRecordBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createDistributionRecord>>,
+  TError,
+  { data: BodyType<CreateDistributionRecordBody> },
+  TContext
+> => {
+  return useMutation(getCreateDistributionRecordMutationOptions(options));
+};
+
+/**
+ * @summary Distribution records summary / KPIs
+ */
+export const getGetDistributionSummaryUrl = (
+  params?: GetDistributionSummaryParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/distribution-records/summary?${stringifiedParams}`
+    : `/api/distribution-records/summary`;
+};
+
+export const getDistributionSummary = async (
+  params?: GetDistributionSummaryParams,
+  options?: RequestInit,
+): Promise<DistributionSummary> => {
+  return customFetch<DistributionSummary>(
+    getGetDistributionSummaryUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetDistributionSummaryQueryKey = (
+  params?: GetDistributionSummaryParams,
+) => {
+  return [
+    `/api/distribution-records/summary`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetDistributionSummaryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getDistributionSummary>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetDistributionSummaryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getDistributionSummary>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetDistributionSummaryQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getDistributionSummary>>
+  > = ({ signal }) =>
+    getDistributionSummary(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getDistributionSummary>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetDistributionSummaryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getDistributionSummary>>
+>;
+export type GetDistributionSummaryQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Distribution records summary / KPIs
+ */
+
+export function useGetDistributionSummary<
+  TData = Awaited<ReturnType<typeof getDistributionSummary>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetDistributionSummaryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getDistributionSummary>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetDistributionSummaryQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Pending payable report
+ */
+export const getGetDistributionPendingPayableUrl = (
+  params?: GetDistributionPendingPayableParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/distribution-records/pending-payable?${stringifiedParams}`
+    : `/api/distribution-records/pending-payable`;
+};
+
+export const getDistributionPendingPayable = async (
+  params?: GetDistributionPendingPayableParams,
+  options?: RequestInit,
+): Promise<GetDistributionPendingPayable200> => {
+  return customFetch<GetDistributionPendingPayable200>(
+    getGetDistributionPendingPayableUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetDistributionPendingPayableQueryKey = (
+  params?: GetDistributionPendingPayableParams,
+) => {
+  return [
+    `/api/distribution-records/pending-payable`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetDistributionPendingPayableQueryOptions = <
+  TData = Awaited<ReturnType<typeof getDistributionPendingPayable>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetDistributionPendingPayableParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getDistributionPendingPayable>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetDistributionPendingPayableQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getDistributionPendingPayable>>
+  > = ({ signal }) =>
+    getDistributionPendingPayable(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getDistributionPendingPayable>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetDistributionPendingPayableQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getDistributionPendingPayable>>
+>;
+export type GetDistributionPendingPayableQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Pending payable report
+ */
+
+export function useGetDistributionPendingPayable<
+  TData = Awaited<ReturnType<typeof getDistributionPendingPayable>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetDistributionPendingPayableParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getDistributionPendingPayable>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetDistributionPendingPayableQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Settlement archive (all historical records)
+ */
+export const getGetDistributionArchiveUrl = (
+  params?: GetDistributionArchiveParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/distribution-records/archive?${stringifiedParams}`
+    : `/api/distribution-records/archive`;
+};
+
+export const getDistributionArchive = async (
+  params?: GetDistributionArchiveParams,
+  options?: RequestInit,
+): Promise<GetDistributionArchive200> => {
+  return customFetch<GetDistributionArchive200>(
+    getGetDistributionArchiveUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetDistributionArchiveQueryKey = (
+  params?: GetDistributionArchiveParams,
+) => {
+  return [
+    `/api/distribution-records/archive`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetDistributionArchiveQueryOptions = <
+  TData = Awaited<ReturnType<typeof getDistributionArchive>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetDistributionArchiveParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getDistributionArchive>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetDistributionArchiveQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getDistributionArchive>>
+  > = ({ signal }) =>
+    getDistributionArchive(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getDistributionArchive>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetDistributionArchiveQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getDistributionArchive>>
+>;
+export type GetDistributionArchiveQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Settlement archive (all historical records)
+ */
+
+export function useGetDistributionArchive<
+  TData = Awaited<ReturnType<typeof getDistributionArchive>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetDistributionArchiveParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getDistributionArchive>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetDistributionArchiveQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Full payment history for a partner
+ */
+export const getGetPartnerDistributionHistoryUrl = (
+  partnerId: string,
+  params?: GetPartnerDistributionHistoryParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/distribution-records/partner-history/${partnerId}?${stringifiedParams}`
+    : `/api/distribution-records/partner-history/${partnerId}`;
+};
+
+export const getPartnerDistributionHistory = async (
+  partnerId: string,
+  params?: GetPartnerDistributionHistoryParams,
+  options?: RequestInit,
+): Promise<PartnerDistributionHistory> => {
+  return customFetch<PartnerDistributionHistory>(
+    getGetPartnerDistributionHistoryUrl(partnerId, params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetPartnerDistributionHistoryQueryKey = (
+  partnerId: string,
+  params?: GetPartnerDistributionHistoryParams,
+) => {
+  return [
+    `/api/distribution-records/partner-history/${partnerId}`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetPartnerDistributionHistoryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPartnerDistributionHistory>>,
+  TError = ErrorType<unknown>,
+>(
+  partnerId: string,
+  params?: GetPartnerDistributionHistoryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPartnerDistributionHistory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getGetPartnerDistributionHistoryQueryKey(partnerId, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getPartnerDistributionHistory>>
+  > = ({ signal }) =>
+    getPartnerDistributionHistory(partnerId, params, {
+      signal,
+      ...requestOptions,
+    });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!partnerId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPartnerDistributionHistory>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPartnerDistributionHistoryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPartnerDistributionHistory>>
+>;
+export type GetPartnerDistributionHistoryQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Full payment history for a partner
+ */
+
+export function useGetPartnerDistributionHistory<
+  TData = Awaited<ReturnType<typeof getPartnerDistributionHistory>>,
+  TError = ErrorType<unknown>,
+>(
+  partnerId: string,
+  params?: GetPartnerDistributionHistoryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPartnerDistributionHistory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPartnerDistributionHistoryQueryOptions(
+    partnerId,
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get single distribution record with event log
+ */
+export const getGetDistributionRecordUrl = (id: string) => {
+  return `/api/distribution-records/${id}`;
+};
+
+export const getDistributionRecord = async (
+  id: string,
+  options?: RequestInit,
+): Promise<GetDistributionRecord200> => {
+  return customFetch<GetDistributionRecord200>(
+    getGetDistributionRecordUrl(id),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetDistributionRecordQueryKey = (id: string) => {
+  return [`/api/distribution-records/${id}`] as const;
+};
+
+export const getGetDistributionRecordQueryOptions = <
+  TData = Awaited<ReturnType<typeof getDistributionRecord>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getDistributionRecord>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetDistributionRecordQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getDistributionRecord>>
+  > = ({ signal }) => getDistributionRecord(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getDistributionRecord>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetDistributionRecordQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getDistributionRecord>>
+>;
+export type GetDistributionRecordQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get single distribution record with event log
+ */
+
+export function useGetDistributionRecord<
+  TData = Awaited<ReturnType<typeof getDistributionRecord>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getDistributionRecord>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetDistributionRecordQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Update distribution record metadata
+ */
+export const getUpdateDistributionRecordUrl = (id: string) => {
+  return `/api/distribution-records/${id}`;
+};
+
+export const updateDistributionRecord = async (
+  id: string,
+  updateDistributionRecordBody: UpdateDistributionRecordBody,
+  options?: RequestInit,
+): Promise<UpdateDistributionRecord200> => {
+  return customFetch<UpdateDistributionRecord200>(
+    getUpdateDistributionRecordUrl(id),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(updateDistributionRecordBody),
+    },
+  );
+};
+
+export const getUpdateDistributionRecordMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateDistributionRecord>>,
+    TError,
+    { id: string; data: BodyType<UpdateDistributionRecordBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateDistributionRecord>>,
+  TError,
+  { id: string; data: BodyType<UpdateDistributionRecordBody> },
+  TContext
+> => {
+  const mutationKey = ["updateDistributionRecord"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateDistributionRecord>>,
+    { id: string; data: BodyType<UpdateDistributionRecordBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateDistributionRecord(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateDistributionRecordMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateDistributionRecord>>
+>;
+export type UpdateDistributionRecordMutationBody =
+  BodyType<UpdateDistributionRecordBody>;
+export type UpdateDistributionRecordMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update distribution record metadata
+ */
+export const useUpdateDistributionRecord = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateDistributionRecord>>,
+    TError,
+    { id: string; data: BodyType<UpdateDistributionRecordBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateDistributionRecord>>,
+  TError,
+  { id: string; data: BodyType<UpdateDistributionRecordBody> },
+  TContext
+> => {
+  return useMutation(getUpdateDistributionRecordMutationOptions(options));
+};
+
+/**
+ * @summary Record a payment against a distribution record
+ */
+export const getRecordDistributionPaymentUrl = (id: string) => {
+  return `/api/distribution-records/${id}/record-payment`;
+};
+
+export const recordDistributionPayment = async (
+  id: string,
+  recordDistributionPaymentBody: RecordDistributionPaymentBody,
+  options?: RequestInit,
+): Promise<RecordDistributionPayment200> => {
+  return customFetch<RecordDistributionPayment200>(
+    getRecordDistributionPaymentUrl(id),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(recordDistributionPaymentBody),
+    },
+  );
+};
+
+export const getRecordDistributionPaymentMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof recordDistributionPayment>>,
+    TError,
+    { id: string; data: BodyType<RecordDistributionPaymentBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof recordDistributionPayment>>,
+  TError,
+  { id: string; data: BodyType<RecordDistributionPaymentBody> },
+  TContext
+> => {
+  const mutationKey = ["recordDistributionPayment"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof recordDistributionPayment>>,
+    { id: string; data: BodyType<RecordDistributionPaymentBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return recordDistributionPayment(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RecordDistributionPaymentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof recordDistributionPayment>>
+>;
+export type RecordDistributionPaymentMutationBody =
+  BodyType<RecordDistributionPaymentBody>;
+export type RecordDistributionPaymentMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Record a payment against a distribution record
+ */
+export const useRecordDistributionPayment = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof recordDistributionPayment>>,
+    TError,
+    { id: string; data: BodyType<RecordDistributionPaymentBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof recordDistributionPayment>>,
+  TError,
+  { id: string; data: BodyType<RecordDistributionPaymentBody> },
+  TContext
+> => {
+  return useMutation(getRecordDistributionPaymentMutationOptions(options));
+};
+
+/**
+ * @summary Mark record balance as carried forward to next period
+ */
+export const getCarryForwardDistributionRecordUrl = (id: string) => {
+  return `/api/distribution-records/${id}/carry-forward`;
+};
+
+export const carryForwardDistributionRecord = async (
+  id: string,
+  carryForwardDistributionRecordBody: CarryForwardDistributionRecordBody,
+  options?: RequestInit,
+): Promise<CarryForwardDistributionRecord200> => {
+  return customFetch<CarryForwardDistributionRecord200>(
+    getCarryForwardDistributionRecordUrl(id),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(carryForwardDistributionRecordBody),
+    },
+  );
+};
+
+export const getCarryForwardDistributionRecordMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof carryForwardDistributionRecord>>,
+    TError,
+    { id: string; data: BodyType<CarryForwardDistributionRecordBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof carryForwardDistributionRecord>>,
+  TError,
+  { id: string; data: BodyType<CarryForwardDistributionRecordBody> },
+  TContext
+> => {
+  const mutationKey = ["carryForwardDistributionRecord"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof carryForwardDistributionRecord>>,
+    { id: string; data: BodyType<CarryForwardDistributionRecordBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return carryForwardDistributionRecord(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CarryForwardDistributionRecordMutationResult = NonNullable<
+  Awaited<ReturnType<typeof carryForwardDistributionRecord>>
+>;
+export type CarryForwardDistributionRecordMutationBody =
+  BodyType<CarryForwardDistributionRecordBody>;
+export type CarryForwardDistributionRecordMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Mark record balance as carried forward to next period
+ */
+export const useCarryForwardDistributionRecord = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof carryForwardDistributionRecord>>,
+    TError,
+    { id: string; data: BodyType<CarryForwardDistributionRecordBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof carryForwardDistributionRecord>>,
+  TError,
+  { id: string; data: BodyType<CarryForwardDistributionRecordBody> },
+  TContext
+> => {
+  return useMutation(getCarryForwardDistributionRecordMutationOptions(options));
+};
+
+/**
+ * @summary Soft-archive a distribution record (admin only)
+ */
+export const getArchiveDistributionRecordUrl = (id: string) => {
+  return `/api/distribution-records/${id}/archive`;
+};
+
+export const archiveDistributionRecord = async (
+  id: string,
+  archiveDistributionRecordBody: ArchiveDistributionRecordBody,
+  options?: RequestInit,
+): Promise<ArchiveDistributionRecord200> => {
+  return customFetch<ArchiveDistributionRecord200>(
+    getArchiveDistributionRecordUrl(id),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(archiveDistributionRecordBody),
+    },
+  );
+};
+
+export const getArchiveDistributionRecordMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof archiveDistributionRecord>>,
+    TError,
+    { id: string; data: BodyType<ArchiveDistributionRecordBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof archiveDistributionRecord>>,
+  TError,
+  { id: string; data: BodyType<ArchiveDistributionRecordBody> },
+  TContext
+> => {
+  const mutationKey = ["archiveDistributionRecord"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof archiveDistributionRecord>>,
+    { id: string; data: BodyType<ArchiveDistributionRecordBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return archiveDistributionRecord(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ArchiveDistributionRecordMutationResult = NonNullable<
+  Awaited<ReturnType<typeof archiveDistributionRecord>>
+>;
+export type ArchiveDistributionRecordMutationBody =
+  BodyType<ArchiveDistributionRecordBody>;
+export type ArchiveDistributionRecordMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Soft-archive a distribution record (admin only)
+ */
+export const useArchiveDistributionRecord = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof archiveDistributionRecord>>,
+    TError,
+    { id: string; data: BodyType<ArchiveDistributionRecordBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof archiveDistributionRecord>>,
+  TError,
+  { id: string; data: BodyType<ArchiveDistributionRecordBody> },
+  TContext
+> => {
+  return useMutation(getArchiveDistributionRecordMutationOptions(options));
+};
+
+/**
+ * @summary Get immutable payment event log for a record
+ */
+export const getListDistributionPaymentEventsUrl = (id: string) => {
+  return `/api/distribution-records/${id}/events`;
+};
+
+export const listDistributionPaymentEvents = async (
+  id: string,
+  options?: RequestInit,
+): Promise<ListDistributionPaymentEvents200> => {
+  return customFetch<ListDistributionPaymentEvents200>(
+    getListDistributionPaymentEventsUrl(id),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListDistributionPaymentEventsQueryKey = (id: string) => {
+  return [`/api/distribution-records/${id}/events`] as const;
+};
+
+export const getListDistributionPaymentEventsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listDistributionPaymentEvents>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listDistributionPaymentEvents>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListDistributionPaymentEventsQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listDistributionPaymentEvents>>
+  > = ({ signal }) =>
+    listDistributionPaymentEvents(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listDistributionPaymentEvents>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListDistributionPaymentEventsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listDistributionPaymentEvents>>
+>;
+export type ListDistributionPaymentEventsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get immutable payment event log for a record
+ */
+
+export function useListDistributionPaymentEvents<
+  TData = Awaited<ReturnType<typeof listDistributionPaymentEvents>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listDistributionPaymentEvents>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListDistributionPaymentEventsQueryOptions(
+    id,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}

@@ -1092,3 +1092,36 @@ finalized → overridden  (admin reopen only, requires justified remarks)
 ## Pointers
 
 - See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
+
+## Distribution Record & Payment History System
+
+Permanent ledger of per-(project, partner, period) distribution events. Records are forward-only and immutable once any payment is recorded (`isPermanentRecord = true`).
+
+**Status machine:** `draft → pending → partial → paid` · `pending/partial → carried_forward` (period close) · `any non-perm → archived` (admin only, draft only)
+
+**DB tables** (`lib/db/src/schema/distribution_records.ts`):
+- `distribution_records` — primary record: linked project, partner, accounting period label, period start/end, `linkedSaleIds` (JSONB array), `linkedSettlementId` (back-pointer), `settlementType` discriminator, `grossRevenue`, `settlementRecommendation`, `totalPaid`, `pendingPayable`, `priorCarryForward`, `carryForwardBalance`, `carriedFromRecordId`/`carriedToRecordId` (chain links), `lastPaymentDate`, `lastPaymentRef`, `paymentProofUrl`/`paymentProofNotes` (placeholder), `status`, `isPermanentRecord` (locked once payment recorded), `isActive`
+- `distribution_payment_events` — **APPEND-ONLY** event log; eventType ∈ {created, payment_recorded, partial_payment, status_changed, carried_forward, carry_forward_received, proof_attached, archived}; snapshots: `paymentAmount`, `cumulativePaid`, `remainingBalance`, `previousStatus`, `newStatus`; actor: `performedBy`, `performedByName`, `performedByRole`
+
+**API** (`artifacts/api-server/src/routes/distribution_records.ts`, mounted at `/distribution-records`):
+- `GET /distribution-records` — list (projectId/partnerId/status/settlementType/periodLabel/includeArchived filters)
+- `POST /distribution-records` — create (admin/developer); immediately marks `isPermanentRecord = false`, status `pending`
+- `GET /distribution-records/summary` — KPI aggregates: totalGrossRevenue, totalRecommended, totalPaid, totalPending, totalCarryForward, paymentRate, byStatus map
+- `GET /distribution-records/pending-payable` — all records with `pendingPayable > 0` + `totalPendingAmount`
+- `GET /distribution-records/archive` — complete historical archive, all statuses including inactive
+- `GET /distribution-records/partner-history/:partnerId` — full partner payment history across all projects with summary totals
+- `GET /distribution-records/:id` — single record + all events
+- `PATCH /distribution-records/:id` — update metadata (blocked on archived); recomputes derived pendingPayable + carryForwardBalance
+- `POST /distribution-records/:id/record-payment` — records actual payment; atomically updates totalPaid, pendingPayable, status (→ partial or paid); marks `isPermanentRecord = true`; appends payment event
+- `POST /distribution-records/:id/carry-forward` — closes period with unpaid balance; status → `carried_forward`; appends event
+- `POST /distribution-records/:id/archive` — admin only; 409 if `isPermanentRecord = true` (permanent records cannot be archived ever)
+- `GET /distribution-records/:id/events` — immutable event trail for a single record
+
+**Frontend** (`artifacts/plantation-web/src/pages/DistributionRecords.tsx`, route `/distribution-records`):
+- Four tabs: **Dashboard** (4 KPI cards + status breakdown pills + Paid/Pending/Carry-Fwd bar chart by period + preservation policy notice) | **Payment History** (records list, click to open split detail panel) | **Pending Payable** (outstanding balance report + total banner) | **Settlement Archive** (all-time historical list with permanent lock indicator)
+- Detail panel: financial grid (gross revenue/recommended/carry-fwd/paid), progress bar with % completion, carry-forward alert block, last payment metadata, proof URL link, actions (Record Payment, Carry Forward), append-only event timeline
+- Dialogs: Create Record (project/partner/period/financials/settlement type) | Record Payment (amount/date/ref/proof URL/remarks — warns balance + permanent lock) | Carry Forward (balance preview + remarks)
+- Preservation policy: `isPermanentRecord` set to `true` on first payment; `POST /:id/archive` returns 409 for permanent records; UI shows lock icon and tooltip
+- Sidebar: Settlement group, icon Database (admin/developer only)
+
+**Generated hooks:** `useListDistributionRecords`, `useCreateDistributionRecord`, `useGetDistributionRecord`, `useUpdateDistributionRecord`, `useRecordDistributionPayment`, `useCarryForwardDistributionRecord`, `useArchiveDistributionRecord`, `useListDistributionPaymentEvents`, `useGetDistributionSummary`, `useGetDistributionPendingPayable`, `useGetDistributionArchive`, `useGetPartnerDistributionHistory`

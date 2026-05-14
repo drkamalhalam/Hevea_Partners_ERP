@@ -5537,6 +5537,130 @@ export interface UpdateSettlementRecordBody {
   notes?: string | null;
 }
 
+export interface DistributionRecord {
+  id: string;
+  projectId: string;
+  projectName?: string | null;
+  partnerId?: string | null;
+  partnerName?: string | null;
+  accountingPeriodLabel: string;
+  periodStart?: string | null;
+  periodEnd?: string | null;
+  linkedSaleIds?: string[];
+  linkedSettlementId?: string | null;
+  settlementType?: string | null;
+  grossRevenue: string;
+  settlementRecommendation: string;
+  totalPaid: string;
+  pendingPayable: string;
+  priorCarryForward: string;
+  carryForwardBalance: string;
+  carriedFromRecordId?: string | null;
+  carriedToRecordId?: string | null;
+  lastPaymentDate?: string | null;
+  lastPaymentRef?: string | null;
+  paymentProofUrl?: string | null;
+  paymentProofNotes?: string | null;
+  status: string;
+  isPermanentRecord: boolean;
+  isActive: boolean;
+  notes?: string | null;
+  createdByName?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type DistributionPaymentEventMetadata = {
+  [key: string]: unknown;
+} | null;
+
+export interface DistributionPaymentEvent {
+  id: string;
+  distributionRecordId: string;
+  projectId?: string | null;
+  partnerId?: string | null;
+  eventType: string;
+  paymentAmount?: string | null;
+  cumulativePaid?: string | null;
+  remainingBalance?: string | null;
+  previousStatus?: string | null;
+  newStatus?: string | null;
+  paymentDate?: string | null;
+  paymentRef?: string | null;
+  remarks?: string | null;
+  metadata?: DistributionPaymentEventMetadata;
+  performedBy?: string | null;
+  performedByName?: string | null;
+  performedByRole?: string | null;
+  performedAt: string;
+}
+
+export type DistributionSummaryByStatus = { [key: string]: unknown };
+
+export interface DistributionSummary {
+  totalRecords: number;
+  totalGrossRevenue: string;
+  totalRecommended: string;
+  totalPaid: string;
+  totalPending: string;
+  totalCarryForward: string;
+  totalPriorCarry: string;
+  paymentRate: string;
+  byStatus: DistributionSummaryByStatus;
+}
+
+export type PartnerDistributionHistorySummary = {
+  totalPaid: string;
+  totalPending: string;
+  totalRecommended: string;
+  paymentRate: string;
+};
+
+export interface PartnerDistributionHistory {
+  partnerId: string;
+  records: DistributionRecord[];
+  total: number;
+  summary: PartnerDistributionHistorySummary;
+}
+
+export interface CreateDistributionRecordBody {
+  projectId: string;
+  partnerId?: string | null;
+  accountingPeriodLabel: string;
+  periodStart?: string | null;
+  periodEnd?: string | null;
+  linkedSaleIds?: string[];
+  linkedSettlementId?: string | null;
+  settlementType?: string | null;
+  grossRevenue?: number | null;
+  settlementRecommendation?: number | null;
+  priorCarryForward?: number | null;
+  notes?: string | null;
+}
+
+export interface UpdateDistributionRecordBody {
+  accountingPeriodLabel?: string;
+  periodStart?: string | null;
+  periodEnd?: string | null;
+  linkedSaleIds?: string[];
+  settlementType?: string | null;
+  linkedSettlementId?: string | null;
+  grossRevenue?: number | null;
+  settlementRecommendation?: number | null;
+  priorCarryForward?: number | null;
+  paymentProofUrl?: string | null;
+  paymentProofNotes?: string | null;
+  notes?: string | null;
+}
+
+export interface RecordDistributionPaymentBody {
+  paymentAmount: number;
+  paymentDate?: string | null;
+  paymentRef?: string | null;
+  remarks?: string | null;
+  paymentProofUrl?: string | null;
+}
+
 export type GetUserActivityParams = {
   limit?: number;
 };
@@ -6538,4 +6662,89 @@ export type GetPayableSnapshot200 = {
 
 export type FinalizePayableSnapshot200 = {
   snapshot: PayableSnapshot;
+};
+
+export type ListDistributionRecordsParams = {
+  projectId?: string;
+  partnerId?: string;
+  status?: string;
+  settlementType?: string;
+  periodLabel?: string;
+  includeArchived?: string;
+};
+
+export type ListDistributionRecords200 = {
+  records: DistributionRecord[];
+  total: number;
+};
+
+export type CreateDistributionRecord201 = {
+  record: DistributionRecord;
+};
+
+export type GetDistributionSummaryParams = {
+  projectId?: string;
+  partnerId?: string;
+};
+
+export type GetDistributionPendingPayableParams = {
+  projectId?: string;
+  partnerId?: string;
+};
+
+export type GetDistributionPendingPayable200 = {
+  records: DistributionRecord[];
+  total: number;
+  totalPendingAmount: string;
+};
+
+export type GetDistributionArchiveParams = {
+  projectId?: string;
+  partnerId?: string;
+  status?: string;
+};
+
+export type GetDistributionArchive200 = {
+  records: DistributionRecord[];
+  total: number;
+};
+
+export type GetPartnerDistributionHistoryParams = {
+  projectId?: string;
+};
+
+export type GetDistributionRecord200 = {
+  record: DistributionRecord;
+  events: DistributionPaymentEvent[];
+};
+
+export type UpdateDistributionRecord200 = {
+  record: DistributionRecord;
+};
+
+export type RecordDistributionPayment200 = {
+  record: DistributionRecord;
+};
+
+export type CarryForwardDistributionRecordBody = {
+  remarks?: string | null;
+};
+
+export type CarryForwardDistributionRecord200 = {
+  record: DistributionRecord;
+  carryForwardBalance: number;
+};
+
+export type ArchiveDistributionRecordBody = {
+  remarks?: string | null;
+};
+
+export type ArchiveDistributionRecord200 = {
+  record: DistributionRecord;
+};
+
+export type ListDistributionPaymentEvents200 = {
+  distributionRecordId: string;
+  events: DistributionPaymentEvent[];
+  total: number;
 };
