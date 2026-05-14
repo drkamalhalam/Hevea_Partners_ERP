@@ -54,3 +54,6 @@ export * from "./loss_absorption";
 export * from "./settlement_overrides";
 export * from "./distribution_records";
 export * from "./ownership_transfers";
+export * from "./transfer_rofr_offers";
+export * from "./transfer_otp";
+export * from "./transfer_audit";

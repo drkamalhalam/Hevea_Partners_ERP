@@ -161,6 +161,7 @@ const WIZARD_STEPS = [
   { id: 3, label: "Deductions", icon: Receipt },
   { id: 4, label: "Save", icon: Calculator },
   { id: 5, label: "EPP", icon: Users },
+  { id: 6, label: "Review", icon: CheckCircle2 },
 ];
 
 function WizardStepper({ step }: { step: number }) {
@@ -257,6 +258,7 @@ export default function FiftyPctSettlement() {
   // Page state
   const [mode, setMode] = useState<"list" | "new" | "detail">("list");
   const [filterProjectId, setFilterProjectId] = useState("all");
+  const [filterStatus, setFilterStatus] = useState<"all" | "draft" | "confirmed" | "archived">("all");
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
   const [detailTab, setDetailTab] = useState<"split" | "epp" | "landowner" | "analytics">("split");
 
@@ -293,12 +295,13 @@ export default function FiftyPctSettlement() {
   const { data: projects = [] } = useListProjects();
 
   const filterPid = filterProjectId === "all" ? undefined : filterProjectId;
+  const filterSt = filterStatus === "all" ? undefined : filterStatus;
   const { data: sessionsPage, isLoading: sessionsLoading } = useListFiftyPctSessions(
-    { projectId: filterPid },
+    { projectId: filterPid, status: filterSt as any },
     {
       query: {
         enabled: mode === "list",
-        queryKey: getListFiftyPctSessionsQueryKey({ projectId: filterPid }),
+        queryKey: getListFiftyPctSessionsQueryKey({ projectId: filterPid, status: filterSt as any }),
       },
     },
   );
@@ -637,6 +640,23 @@ export default function FiftyPctSettlement() {
          * ══════════════════════════════════════════════ */}
         {mode === "list" && (
           <div>
+            {/* Status filter tabs */}
+            <div className="flex gap-1 bg-slate-900 border border-slate-800 rounded-lg p-1 w-fit mb-4">
+              {(["all", "draft", "confirmed", "archived"] as const).map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setFilterStatus(s)}
+                  className={`px-3 py-1.5 rounded text-xs font-medium transition-colors capitalize ${
+                    filterStatus === s
+                      ? "bg-slate-700 text-white"
+                      : "text-slate-500 hover:text-slate-300"
+                  }`}
+                >
+                  {s === "all" ? "All Sessions" : s}
+                </button>
+              ))}
+            </div>
+
             <div className="flex items-center gap-3 mb-4">
               <Select value={filterProjectId} onValueChange={setFilterProjectId}>
                 <SelectTrigger className="bg-slate-900/60 border-slate-700 text-slate-200 w-72">
@@ -940,8 +960,86 @@ export default function FiftyPctSettlement() {
               </div>
             )}
 
+            {/* Step 6: Final Review */}
+            {wizardStep === 6 && wizardSessionId && (
+              <div className="space-y-5">
+                <SectionHeader icon={CheckCircle2} title="Final Review" subtitle="Complete settlement overview. Review the split, EPP allocation, and confirm when ready." />
+
+                <SplitVisual gross={effectiveGross} opCost={effectiveOpCost} lca={effectiveLca} />
+
+                {/* EPP summary */}
+                <div className="bg-blue-950/10 border border-blue-800/30 rounded-xl p-5">
+                  <p className="text-[11px] text-blue-400 uppercase tracking-wider mb-3">Economic Participant Pool — Allocation Summary</p>
+                  {wizardEppEntries.length === 0 ? (
+                    <p className="text-sm text-slate-500">No EPP participants added. You can add them from the detail view after finishing.</p>
+                  ) : (
+                    <div className="space-y-1">
+                      {wizardEppEntries.map((e) => (
+                        <div key={e.id} className="flex items-center justify-between py-2 border-b border-blue-800/20 text-sm">
+                          <div className="flex items-center gap-2">
+                            <span className="text-slate-200">{e.participantName}</span>
+                            <TypeBadge type={e.contributionType} />
+                          </div>
+                          <div className="flex items-center gap-4 font-mono text-sm">
+                            <span className="text-slate-500">{fmtPct(e.participationPct)}</span>
+                            <span className="text-blue-300 font-semibold">{fmt(e.allocatedAmount)}</span>
+                          </div>
+                        </div>
+                      ))}
+                      <div className="flex justify-between text-sm font-semibold pt-2">
+                        <span className="text-slate-400">Total EPP Allocated</span>
+                        <span className="text-blue-300 font-mono">{fmt(wizardEppEntries.reduce((s, e) => s + e.allocatedAmount, 0))}</span>
+                      </div>
+                      {(() => {
+                        const allocated = wizardEppEntries.reduce((s, e) => s + e.allocatedAmount, 0);
+                        const remainder = Math.max(0, effectiveGross / 2 - allocated);
+                        return remainder > 0.01 ? (
+                          <p className="text-xs text-amber-400 flex items-center gap-1 mt-1">
+                            <AlertTriangle className="w-3 h-3" /> {fmt(remainder)} of the EPP pool is unallocated
+                          </p>
+                        ) : (
+                          <p className="text-xs text-emerald-400 flex items-center gap-1 mt-1">
+                            <CheckCircle2 className="w-3 h-3" /> EPP fully allocated
+                          </p>
+                        );
+                      })()}
+                    </div>
+                  )}
+                </div>
+
+                {/* Metadata summary */}
+                <div className="grid grid-cols-2 gap-3 text-sm bg-slate-900/40 border border-slate-800 rounded-xl p-4">
+                  <InfoRow label="Project" value={projects.find((p: Project) => p.id === wProjectId)?.name ?? "—"} />
+                  <InfoRow label="Period" value={wPeriodLabel} />
+                  <InfoRow label="Gross Revenue" value={fmt(effectiveGross)} />
+                  <InfoRow label="Status" value="Draft" />
+                </div>
+
+                {/* Optional confirm */}
+                {isAdmin && (
+                  <div className="bg-emerald-950/20 border border-emerald-800/30 rounded-lg px-4 py-3 flex items-center justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-medium text-emerald-300">Confirm this settlement?</p>
+                      <p className="text-xs text-emerald-400/70 mt-0.5">Confirmed sessions are locked and cannot be edited.</p>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={async () => { if (wizardSessionId) await handleConfirm(wizardSessionId); }}
+                      disabled={confirmMutation.isPending}
+                      className="bg-emerald-700 hover:bg-emerald-600 text-white text-xs shrink-0"
+                    >
+                      {confirmMutation.isPending
+                        ? <RefreshCw className="w-3.5 h-3.5 animate-spin mr-1" />
+                        : <CheckCircle2 className="w-3.5 h-3.5 mr-1" />}
+                      Confirm Now
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Wizard error */}
-            {wizardStep !== 4 && wizardStep !== 5 && wizardError && (
+            {wizardStep !== 4 && wizardStep !== 5 && wizardStep !== 6 && wizardError && (
               <p className="mt-3 text-red-400 text-sm bg-red-950/20 border border-red-800/30 rounded-lg px-3 py-2 flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4 shrink-0" />{wizardError}
               </p>
@@ -968,6 +1066,11 @@ export default function FiftyPctSettlement() {
                 </Button>
               )}
               {wizardStep === 5 && (
+                <Button onClick={() => setWizardStep(6)} className="bg-blue-700 hover:bg-blue-600 text-white">
+                  Review Settlement <ChevronRight className="w-4 h-4 ml-1" />
+                </Button>
+              )}
+              {wizardStep === 6 && (
                 <Button onClick={finishWizard} className="bg-emerald-700 hover:bg-emerald-600 text-white">
                   <CheckCircle2 className="w-4 h-4 mr-2" /> Finish & View Session
                 </Button>

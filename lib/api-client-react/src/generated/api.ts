@@ -155,6 +155,7 @@ import type {
   FinancialSummary,
   GenerateAgreementDocument422,
   GenerateDocumentRequest,
+  GenerateTransferOtpBody,
   GetAdvanceSummaryParams,
   GetAllocationBreakdownParams,
   GetBurdenRecoverySummaryParams,
@@ -202,6 +203,7 @@ import type {
   GetSettlementPriorityParams,
   GetSettlementRecord200,
   GetSettlementTasksParams,
+  GetTransferRofrDashboardParams,
   GetUserActivityParams,
   GovernanceSummary,
   HealthStatus,
@@ -280,6 +282,9 @@ import type {
   ListStockMovementsParams,
   ListTasksParams,
   ListTemplatesParams,
+  ListTransferAuditEvents200,
+  ListTransferOtpEvents200,
+  ListTransferRofrOffers200,
   LookupFiftyPctLcaParams,
   LookupFiftyPctPartnersParams,
   LookupFiftyPctRevenueParams,
@@ -346,6 +351,7 @@ import type {
   RequestUploadUrlBody,
   RequestUploadUrlResponse,
   ResolveContributionDisputeBody,
+  RespondToRofrOfferBody,
   RevenueLookupResult,
   RevenueStats,
   RevenueTrend,
@@ -359,6 +365,7 @@ import type {
   SalesSummary,
   SalesTransaction,
   SeedImbalanceLedger200,
+  SendRofrOfferBody,
   SetSettlementRecommendation200,
   SetSettlementRecommendationBody,
   SetUserRoleInput,
@@ -373,6 +380,9 @@ import type {
   SubmitOwnershipTransferBody,
   SuccessResponse,
   TaskSummary,
+  TransferOtpEvent,
+  TransferRofrDashboard,
+  TransferRofrOffer,
   TransitionLifecycleBody,
   UpdateAdvanceBody,
   UpdateAgreementVariablesBody,
@@ -424,6 +434,8 @@ import type {
   VerifyContributionBody,
   VerifyNomineeActivationBody,
   VerifyOtpBody,
+  VerifyTransferOtp200,
+  VerifyTransferOtpBody,
   WaiveBurdenRecordBody,
   WriteOffAdvanceBody,
 } from "./api.schemas";
@@ -12627,6 +12639,735 @@ export const useCancelOwnershipTransfer = <
 > => {
   return useMutation(getCancelOwnershipTransferMutationOptions(options));
 };
+
+/**
+ * @summary ROFR offer management dashboard across all transfers
+ */
+export const getGetTransferRofrDashboardUrl = (
+  params?: GetTransferRofrDashboardParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/ownership-transfers/rofr-dashboard?${stringifiedParams}`
+    : `/api/ownership-transfers/rofr-dashboard`;
+};
+
+export const getTransferRofrDashboard = async (
+  params?: GetTransferRofrDashboardParams,
+  options?: RequestInit,
+): Promise<TransferRofrDashboard> => {
+  return customFetch<TransferRofrDashboard>(
+    getGetTransferRofrDashboardUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetTransferRofrDashboardQueryKey = (
+  params?: GetTransferRofrDashboardParams,
+) => {
+  return [
+    `/api/ownership-transfers/rofr-dashboard`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetTransferRofrDashboardQueryOptions = <
+  TData = Awaited<ReturnType<typeof getTransferRofrDashboard>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetTransferRofrDashboardParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getTransferRofrDashboard>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetTransferRofrDashboardQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getTransferRofrDashboard>>
+  > = ({ signal }) =>
+    getTransferRofrDashboard(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getTransferRofrDashboard>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetTransferRofrDashboardQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getTransferRofrDashboard>>
+>;
+export type GetTransferRofrDashboardQueryError = ErrorType<unknown>;
+
+/**
+ * @summary ROFR offer management dashboard across all transfers
+ */
+
+export function useGetTransferRofrDashboard<
+  TData = Awaited<ReturnType<typeof getTransferRofrDashboard>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetTransferRofrDashboardParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getTransferRofrDashboard>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetTransferRofrDashboardQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List all ROFR offers for a transfer
+ */
+export const getListTransferRofrOffersUrl = (id: string) => {
+  return `/api/ownership-transfers/${id}/rofr-offers`;
+};
+
+export const listTransferRofrOffers = async (
+  id: string,
+  options?: RequestInit,
+): Promise<ListTransferRofrOffers200> => {
+  return customFetch<ListTransferRofrOffers200>(
+    getListTransferRofrOffersUrl(id),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListTransferRofrOffersQueryKey = (id: string) => {
+  return [`/api/ownership-transfers/${id}/rofr-offers`] as const;
+};
+
+export const getListTransferRofrOffersQueryOptions = <
+  TData = Awaited<ReturnType<typeof listTransferRofrOffers>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listTransferRofrOffers>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListTransferRofrOffersQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listTransferRofrOffers>>
+  > = ({ signal }) => listTransferRofrOffers(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listTransferRofrOffers>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListTransferRofrOffersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listTransferRofrOffers>>
+>;
+export type ListTransferRofrOffersQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List all ROFR offers for a transfer
+ */
+
+export function useListTransferRofrOffers<
+  TData = Awaited<ReturnType<typeof listTransferRofrOffers>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listTransferRofrOffers>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListTransferRofrOffersQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Send a ROFR offer to a partner
+ */
+export const getSendRofrOfferUrl = (id: string) => {
+  return `/api/ownership-transfers/${id}/rofr-offers`;
+};
+
+export const sendRofrOffer = async (
+  id: string,
+  sendRofrOfferBody: SendRofrOfferBody,
+  options?: RequestInit,
+): Promise<TransferRofrOffer> => {
+  return customFetch<TransferRofrOffer>(getSendRofrOfferUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(sendRofrOfferBody),
+  });
+};
+
+export const getSendRofrOfferMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof sendRofrOffer>>,
+    TError,
+    { id: string; data: BodyType<SendRofrOfferBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof sendRofrOffer>>,
+  TError,
+  { id: string; data: BodyType<SendRofrOfferBody> },
+  TContext
+> => {
+  const mutationKey = ["sendRofrOffer"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof sendRofrOffer>>,
+    { id: string; data: BodyType<SendRofrOfferBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return sendRofrOffer(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SendRofrOfferMutationResult = NonNullable<
+  Awaited<ReturnType<typeof sendRofrOffer>>
+>;
+export type SendRofrOfferMutationBody = BodyType<SendRofrOfferBody>;
+export type SendRofrOfferMutationError = ErrorType<void>;
+
+/**
+ * @summary Send a ROFR offer to a partner
+ */
+export const useSendRofrOffer = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof sendRofrOffer>>,
+    TError,
+    { id: string; data: BodyType<SendRofrOfferBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof sendRofrOffer>>,
+  TError,
+  { id: string; data: BodyType<SendRofrOfferBody> },
+  TContext
+> => {
+  return useMutation(getSendRofrOfferMutationOptions(options));
+};
+
+/**
+ * @summary Record a partner response to a ROFR offer (requires OTP verification)
+ */
+export const getRespondToRofrOfferUrl = (id: string, offerId: string) => {
+  return `/api/ownership-transfers/${id}/rofr-offers/${offerId}/respond`;
+};
+
+export const respondToRofrOffer = async (
+  id: string,
+  offerId: string,
+  respondToRofrOfferBody: RespondToRofrOfferBody,
+  options?: RequestInit,
+): Promise<TransferRofrOffer> => {
+  return customFetch<TransferRofrOffer>(getRespondToRofrOfferUrl(id, offerId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(respondToRofrOfferBody),
+  });
+};
+
+export const getRespondToRofrOfferMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof respondToRofrOffer>>,
+    TError,
+    { id: string; offerId: string; data: BodyType<RespondToRofrOfferBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof respondToRofrOffer>>,
+  TError,
+  { id: string; offerId: string; data: BodyType<RespondToRofrOfferBody> },
+  TContext
+> => {
+  const mutationKey = ["respondToRofrOffer"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof respondToRofrOffer>>,
+    { id: string; offerId: string; data: BodyType<RespondToRofrOfferBody> }
+  > = (props) => {
+    const { id, offerId, data } = props ?? {};
+
+    return respondToRofrOffer(id, offerId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RespondToRofrOfferMutationResult = NonNullable<
+  Awaited<ReturnType<typeof respondToRofrOffer>>
+>;
+export type RespondToRofrOfferMutationBody = BodyType<RespondToRofrOfferBody>;
+export type RespondToRofrOfferMutationError = ErrorType<void>;
+
+/**
+ * @summary Record a partner response to a ROFR offer (requires OTP verification)
+ */
+export const useRespondToRofrOffer = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof respondToRofrOffer>>,
+    TError,
+    { id: string; offerId: string; data: BodyType<RespondToRofrOfferBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof respondToRofrOffer>>,
+  TError,
+  { id: string; offerId: string; data: BodyType<RespondToRofrOfferBody> },
+  TContext
+> => {
+  return useMutation(getRespondToRofrOfferMutationOptions(options));
+};
+
+/**
+ * @summary Generate an OTP for a transfer action
+ */
+export const getGenerateTransferOtpUrl = (id: string) => {
+  return `/api/ownership-transfers/${id}/otp/generate`;
+};
+
+export const generateTransferOtp = async (
+  id: string,
+  generateTransferOtpBody: GenerateTransferOtpBody,
+  options?: RequestInit,
+): Promise<TransferOtpEvent> => {
+  return customFetch<TransferOtpEvent>(getGenerateTransferOtpUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(generateTransferOtpBody),
+  });
+};
+
+export const getGenerateTransferOtpMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof generateTransferOtp>>,
+    TError,
+    { id: string; data: BodyType<GenerateTransferOtpBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof generateTransferOtp>>,
+  TError,
+  { id: string; data: BodyType<GenerateTransferOtpBody> },
+  TContext
+> => {
+  const mutationKey = ["generateTransferOtp"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof generateTransferOtp>>,
+    { id: string; data: BodyType<GenerateTransferOtpBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return generateTransferOtp(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type GenerateTransferOtpMutationResult = NonNullable<
+  Awaited<ReturnType<typeof generateTransferOtp>>
+>;
+export type GenerateTransferOtpMutationBody = BodyType<GenerateTransferOtpBody>;
+export type GenerateTransferOtpMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Generate an OTP for a transfer action
+ */
+export const useGenerateTransferOtp = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof generateTransferOtp>>,
+    TError,
+    { id: string; data: BodyType<GenerateTransferOtpBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof generateTransferOtp>>,
+  TError,
+  { id: string; data: BodyType<GenerateTransferOtpBody> },
+  TContext
+> => {
+  return useMutation(getGenerateTransferOtpMutationOptions(options));
+};
+
+/**
+ * @summary Verify an OTP code for a transfer action
+ */
+export const getVerifyTransferOtpUrl = (id: string) => {
+  return `/api/ownership-transfers/${id}/otp/verify`;
+};
+
+export const verifyTransferOtp = async (
+  id: string,
+  verifyTransferOtpBody: VerifyTransferOtpBody,
+  options?: RequestInit,
+): Promise<VerifyTransferOtp200> => {
+  return customFetch<VerifyTransferOtp200>(getVerifyTransferOtpUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(verifyTransferOtpBody),
+  });
+};
+
+export const getVerifyTransferOtpMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof verifyTransferOtp>>,
+    TError,
+    { id: string; data: BodyType<VerifyTransferOtpBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof verifyTransferOtp>>,
+  TError,
+  { id: string; data: BodyType<VerifyTransferOtpBody> },
+  TContext
+> => {
+  const mutationKey = ["verifyTransferOtp"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof verifyTransferOtp>>,
+    { id: string; data: BodyType<VerifyTransferOtpBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return verifyTransferOtp(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type VerifyTransferOtpMutationResult = NonNullable<
+  Awaited<ReturnType<typeof verifyTransferOtp>>
+>;
+export type VerifyTransferOtpMutationBody = BodyType<VerifyTransferOtpBody>;
+export type VerifyTransferOtpMutationError = ErrorType<void>;
+
+/**
+ * @summary Verify an OTP code for a transfer action
+ */
+export const useVerifyTransferOtp = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof verifyTransferOtp>>,
+    TError,
+    { id: string; data: BodyType<VerifyTransferOtpBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof verifyTransferOtp>>,
+  TError,
+  { id: string; data: BodyType<VerifyTransferOtpBody> },
+  TContext
+> => {
+  return useMutation(getVerifyTransferOtpMutationOptions(options));
+};
+
+/**
+ * @summary List OTP events for a transfer
+ */
+export const getListTransferOtpEventsUrl = (id: string) => {
+  return `/api/ownership-transfers/${id}/otp-events`;
+};
+
+export const listTransferOtpEvents = async (
+  id: string,
+  options?: RequestInit,
+): Promise<ListTransferOtpEvents200> => {
+  return customFetch<ListTransferOtpEvents200>(
+    getListTransferOtpEventsUrl(id),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListTransferOtpEventsQueryKey = (id: string) => {
+  return [`/api/ownership-transfers/${id}/otp-events`] as const;
+};
+
+export const getListTransferOtpEventsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listTransferOtpEvents>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listTransferOtpEvents>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListTransferOtpEventsQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listTransferOtpEvents>>
+  > = ({ signal }) => listTransferOtpEvents(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listTransferOtpEvents>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListTransferOtpEventsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listTransferOtpEvents>>
+>;
+export type ListTransferOtpEventsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List OTP events for a transfer
+ */
+
+export function useListTransferOtpEvents<
+  TData = Awaited<ReturnType<typeof listTransferOtpEvents>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listTransferOtpEvents>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListTransferOtpEventsQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Immutable audit log for a transfer
+ */
+export const getListTransferAuditEventsUrl = (id: string) => {
+  return `/api/ownership-transfers/${id}/audit-events`;
+};
+
+export const listTransferAuditEvents = async (
+  id: string,
+  options?: RequestInit,
+): Promise<ListTransferAuditEvents200> => {
+  return customFetch<ListTransferAuditEvents200>(
+    getListTransferAuditEventsUrl(id),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListTransferAuditEventsQueryKey = (id: string) => {
+  return [`/api/ownership-transfers/${id}/audit-events`] as const;
+};
+
+export const getListTransferAuditEventsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listTransferAuditEvents>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listTransferAuditEvents>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListTransferAuditEventsQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listTransferAuditEvents>>
+  > = ({ signal }) =>
+    listTransferAuditEvents(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listTransferAuditEvents>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListTransferAuditEventsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listTransferAuditEvents>>
+>;
+export type ListTransferAuditEventsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Immutable audit log for a transfer
+ */
+
+export function useListTransferAuditEvents<
+  TData = Awaited<ReturnType<typeof listTransferAuditEvents>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listTransferAuditEvents>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListTransferAuditEventsQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary List expenditure records with optional filters

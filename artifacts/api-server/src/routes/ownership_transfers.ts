@@ -27,9 +27,12 @@ import {
   projectsTable,
   partnersTable,
   usersTable,
+  transferRofrOffersTable,
+  transferOtpEventsTable,
+  transferAuditEventsTable,
 } from "@workspace/db";
 import type { RofrResponse } from "@workspace/db";
-import { eq, and, desc, or, inArray } from "drizzle-orm";
+import { eq, and, desc, or, inArray, lt, lte, gte, isNull, ne, sql } from "drizzle-orm";
 import { getAuth } from "@clerk/express";
 import { requireRole } from "../middlewares/auth";
 import { z } from "zod/v4";
@@ -150,7 +153,7 @@ router.get("/dashboard", requireRole("admin", "developer"), async (req, res) => 
 // ── GET /ownership-transfers/:id ──────────────────────────────────────────
 
 router.get("/:id", async (req, res) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
 
   const [row] = await db
     .select({
@@ -312,7 +315,7 @@ const patchTransferSchema = z.object({
 });
 
 router.patch("/:id", async (req, res) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const parsed = patchTransferSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: "Invalid request body", details: parsed.error.issues });
 
@@ -363,7 +366,7 @@ router.patch("/:id", async (req, res) => {
 // when the buyer is an existing partner and admin/dev chooses to skip ROFR).
 
 router.post("/:id/submit", requireRole("admin", "developer"), async (req, res) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const { skipRofr = false } = req.body as { skipRofr?: boolean };
 
   const { userId: clerkUserId } = getAuth(req);
@@ -438,7 +441,7 @@ const rofrResponseSchema = z.object({
 });
 
 router.post("/:id/rofr-response", requireRole("admin", "developer"), async (req, res) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const parsed = rofrResponseSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: "Invalid body", details: parsed.error.issues });
 
@@ -500,7 +503,7 @@ const finalizeRofrSchema = z.object({
 });
 
 router.post("/:id/finalize-rofr", requireRole("admin", "developer"), async (req, res) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const parsed = finalizeRofrSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: "Invalid body", details: parsed.error.issues });
 
@@ -542,7 +545,7 @@ const approveSchema = z.object({
 });
 
 router.post("/:id/approve", requireRole("admin", "developer"), async (req, res) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const parsed = approveSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: "Invalid body" });
 
@@ -594,7 +597,7 @@ const executeSchema = z.object({
 });
 
 router.post("/:id/execute", requireRole("admin"), async (req, res) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const parsed = executeSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: "Execution notes are required", details: parsed.error.issues });
 
@@ -636,7 +639,7 @@ const cancelSchema = z.object({
 });
 
 router.post("/:id/cancel", async (req, res) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const parsed = cancelSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: "Cancellation reason is required", details: parsed.error.issues });
 
@@ -675,6 +678,527 @@ router.post("/:id/cancel", async (req, res) => {
     .returning();
 
   return res.json(updated);
+});
+
+// ══════════════════════════════════════════════════════════════════════════
+// ROFR OFFER MANAGEMENT
+// ══════════════════════════════════════════════════════════════════════════
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+
+/** Write an immutable audit event (fire-and-forget, non-fatal) */
+async function writeAudit(params: {
+  transferId: string;
+  eventType: typeof transferAuditEventsTable.$inferInsert["eventType"];
+  actorUserId?: string | null;
+  actorName?: string | null;
+  actorRole?: string | null;
+  targetPartnerId?: string | null;
+  targetPartnerName?: string | null;
+  eventData?: Record<string, unknown>;
+  summary: string;
+  ipAddress?: string | null;
+}) {
+  try {
+    await db.insert(transferAuditEventsTable).values({
+      transferId: params.transferId,
+      eventType: params.eventType,
+      actorUserId: params.actorUserId ?? null,
+      actorName: params.actorName ?? null,
+      actorRole: params.actorRole ?? null,
+      targetPartnerId: params.targetPartnerId ?? null,
+      targetPartnerName: params.targetPartnerName ?? null,
+      eventData: params.eventData ?? {},
+      summary: params.summary,
+      ipAddress: params.ipAddress ?? null,
+    });
+  } catch (_e) {
+    // Non-fatal — audit write should never break the main response
+  }
+}
+
+/** Generate a 6-digit numeric OTP code */
+function generateOtpCode(): string {
+  return String(Math.floor(100000 + Math.random() * 900000));
+}
+
+const OTP_TTL_MINUTES = 15;
+const OTP_MAX_ATTEMPTS = 5;
+
+// ── GET /ownership-transfers/rofr-dashboard ────────────────────────────────
+
+router.get("/rofr-dashboard", requireRole("admin", "developer"), async (req, res) => {
+  const { projectId } = req.query as { projectId?: string };
+
+  const now = new Date();
+  const endOfToday = new Date(now);
+  endOfToday.setHours(23, 59, 59, 999);
+
+  // Pending offers
+  const pendingOffers = await db
+    .select({
+      offer: transferRofrOffersTable,
+      transfer: ownershipTransfersTable,
+    })
+    .from(transferRofrOffersTable)
+    .innerJoin(ownershipTransfersTable, eq(transferRofrOffersTable.transferId, ownershipTransfersTable.id))
+    .where(
+      and(
+        eq(transferRofrOffersTable.status, "pending"),
+        eq(transferRofrOffersTable.isActive, true),
+        projectId ? eq(ownershipTransfersTable.projectId, projectId as string) : undefined,
+      )!,
+    )
+    .orderBy(transferRofrOffersTable.deadline);
+
+  // Expiring today
+  const expiringToday = await db
+    .select()
+    .from(transferRofrOffersTable)
+    .where(
+      and(
+        eq(transferRofrOffersTable.status, "pending"),
+        lte(transferRofrOffersTable.deadline, endOfToday),
+        gte(transferRofrOffersTable.deadline, now),
+      ),
+    );
+
+  // Expired but unresolved (deadline passed, still pending)
+  const expiredUnresolved = await db
+    .select()
+    .from(transferRofrOffersTable)
+    .where(
+      and(
+        eq(transferRofrOffersTable.status, "pending"),
+        lt(transferRofrOffersTable.deadline, now),
+      ),
+    );
+
+  // Count pending transfers overall
+  const [{ count: totalPendingTransfers }] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(ownershipTransfersTable)
+    .where(
+      and(
+        eq(ownershipTransfersTable.isActive, true),
+        or(
+          eq(ownershipTransfersTable.status, "pending_rofr"),
+          eq(ownershipTransfersTable.status, "pending_approval"),
+          eq(ownershipTransfersTable.status, "approved"),
+        ),
+      ),
+    );
+
+  // Count by ROFR offer status
+  const statusCounts = await db
+    .select({ status: transferRofrOffersTable.status, count: sql<number>`count(*)::int` })
+    .from(transferRofrOffersTable)
+    .groupBy(transferRofrOffersTable.status);
+
+  const byStatus: Record<string, number> = {};
+  for (const row of statusCounts) byStatus[row.status] = row.count;
+
+  return res.json({
+    pendingOffers,
+    expiringToday,
+    expiredUnresolved,
+    byStatus,
+    totalPendingTransfers: totalPendingTransfers ?? 0,
+  });
+});
+
+// ── GET /ownership-transfers/:id/rofr-offers ──────────────────────────────
+
+router.get("/:id/rofr-offers", async (req, res) => {
+  const id = req.params.id as string;
+  const offers = await db
+    .select()
+    .from(transferRofrOffersTable)
+    .where(eq(transferRofrOffersTable.transferId, id))
+    .orderBy(transferRofrOffersTable.offeredAt);
+  return res.json({ offers });
+});
+
+// ── POST /ownership-transfers/:id/rofr-offers ─────────────────────────────
+
+const sendOfferSchema = z.object({
+  partnerId: z.string().uuid(),
+  partnerName: z.string().min(1),
+  partnerContact: z.string().optional(),
+});
+
+router.post("/:id/rofr-offers", requireRole("admin", "developer"), async (req, res) => {
+  const id = req.params.id as string;
+  const parsed = sendOfferSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: "Invalid request", details: parsed.error.issues });
+
+  const { userId: clerkUserId } = getAuth(req);
+  const actor = await resolveActor(clerkUserId!);
+  if (!actor) return res.status(401).json({ error: "User not found" });
+
+  const [transfer] = await db
+    .select()
+    .from(ownershipTransfersTable)
+    .where(eq(ownershipTransfersTable.id, id))
+    .limit(1);
+
+  if (!transfer) return res.status(404).json({ error: "Transfer not found" });
+  if (transfer.status !== "pending_rofr") {
+    return res.status(422).json({ error: "ROFR offers can only be sent when transfer is in pending_rofr status" });
+  }
+
+  // Check for duplicate
+  const [existing] = await db
+    .select()
+    .from(transferRofrOffersTable)
+    .where(
+      and(
+        eq(transferRofrOffersTable.transferId, id),
+        eq(transferRofrOffersTable.partnerId, parsed.data.partnerId),
+        eq(transferRofrOffersTable.isActive, true),
+      ),
+    )
+    .limit(1);
+
+  if (existing) return res.status(409).json({ error: "An active ROFR offer already exists for this partner on this transfer" });
+
+  const deadline = new Date();
+  deadline.setDate(deadline.getDate() + ROFR_DAYS);
+
+  const [offer] = await db
+    .insert(transferRofrOffersTable)
+    .values({
+      transferId: id,
+      partnerId: parsed.data.partnerId,
+      partnerName: parsed.data.partnerName,
+      deadline,
+      sentByName: actor.displayName,
+      sentById: actor.id,
+    })
+    .returning();
+
+  // Write audit event
+  void writeAudit({
+    transferId: id,
+    eventType: "rofr_offer_sent",
+    actorUserId: actor.id,
+    actorName: actor.displayName,
+    actorRole: actor.role,
+    targetPartnerId: parsed.data.partnerId,
+    targetPartnerName: parsed.data.partnerName,
+    eventData: { offerId: offer.id, deadline: deadline.toISOString() },
+    summary: `ROFR offer sent to ${parsed.data.partnerName} (deadline: ${deadline.toLocaleDateString("en-IN")})`,
+  });
+
+  return res.status(201).json(offer);
+});
+
+// ── POST /ownership-transfers/:id/rofr-offers/:offerId/respond ────────────
+
+const respondSchema = z.object({
+  response: z.enum(["accepted", "rejected"]),
+  otpCode: z.string().length(6),
+  notes: z.string().optional(),
+});
+
+router.post("/:id/rofr-offers/:offerId/respond", async (req, res) => {
+  const id = req.params.id as string;
+  const offerId = req.params.offerId as string;
+  const parsed = respondSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: "Invalid request", details: parsed.error.issues });
+
+  const { userId: clerkUserId } = getAuth(req);
+  const actor = await resolveActor(clerkUserId!);
+  if (!actor) return res.status(401).json({ error: "User not found" });
+
+  const [offer] = await db
+    .select()
+    .from(transferRofrOffersTable)
+    .where(and(eq(transferRofrOffersTable.id, offerId), eq(transferRofrOffersTable.transferId, id)))
+    .limit(1);
+
+  if (!offer) return res.status(404).json({ error: "Offer not found" });
+  if (offer.status !== "pending") return res.status(409).json({ error: `Offer already has status '${offer.status}'` });
+
+  const now = new Date();
+  if (offer.deadline < now) {
+    // Mark expired
+    await db
+      .update(transferRofrOffersTable)
+      .set({ status: "expired", updatedAt: now })
+      .where(eq(transferRofrOffersTable.id, offerId));
+    return res.status(422).json({ error: "ROFR offer has expired" });
+  }
+
+  // Find the most recent pending OTP for this offer
+  const [otpEvent] = await db
+    .select()
+    .from(transferOtpEventsTable)
+    .where(
+      and(
+        eq(transferOtpEventsTable.transferId, id),
+        eq(transferOtpEventsTable.rofrOfferId, offerId),
+        eq(transferOtpEventsTable.status, "pending"),
+      ),
+    )
+    .orderBy(desc(transferOtpEventsTable.createdAt))
+    .limit(1);
+
+  if (!otpEvent) {
+    return res.status(400).json({ error: "No pending OTP found for this offer. Please generate an OTP first." });
+  }
+
+  if (otpEvent.expiresAt < now) {
+    await db.update(transferOtpEventsTable).set({ status: "expired", updatedAt: now }).where(eq(transferOtpEventsTable.id, otpEvent.id));
+    void writeAudit({ transferId: id, eventType: "otp_failed", actorUserId: actor.id, actorName: actor.displayName, actorRole: actor.role, eventData: { otpId: otpEvent.id, purpose: otpEvent.purpose, recipientName: otpEvent.recipientName, reason: "expired" }, summary: `OTP expired for ${otpEvent.recipientName}` });
+    return res.status(400).json({ error: "OTP has expired. Please generate a new OTP." });
+  }
+
+  // Verify code
+  const codeMatch = otpEvent.otpPlaintext === parsed.data.otpCode;
+
+  if (!codeMatch) {
+    const newAttempts = otpEvent.failedAttempts + 1;
+    if (newAttempts >= OTP_MAX_ATTEMPTS) {
+      await db.update(transferOtpEventsTable).set({ status: "cancelled", failedAttempts: newAttempts, updatedAt: now }).where(eq(transferOtpEventsTable.id, otpEvent.id));
+      void writeAudit({ transferId: id, eventType: "otp_failed", actorUserId: actor.id, actorName: actor.displayName, actorRole: actor.role, eventData: { otpId: otpEvent.id, attempt: newAttempts, reason: "max_attempts" }, summary: `OTP cancelled after ${newAttempts} failed attempts for ${otpEvent.recipientName}` });
+      return res.status(429).json({ error: "Too many failed attempts. OTP cancelled. Please generate a new OTP." });
+    }
+    await db.update(transferOtpEventsTable).set({ failedAttempts: newAttempts, updatedAt: now }).where(eq(transferOtpEventsTable.id, otpEvent.id));
+    void writeAudit({ transferId: id, eventType: "otp_failed", actorUserId: actor.id, actorName: actor.displayName, actorRole: actor.role, eventData: { otpId: otpEvent.id, attempt: newAttempts }, summary: `OTP verification failed (attempt ${newAttempts}) for ${otpEvent.recipientName}` });
+    return res.status(400).json({ error: `Invalid OTP code. ${OTP_MAX_ATTEMPTS - newAttempts} attempts remaining.` });
+  }
+
+  // OTP verified — mark it
+  await db.update(transferOtpEventsTable).set({
+    status: "verified",
+    verifiedAt: now,
+    verifiedByUserId: actor.id,
+    verifiedByName: actor.displayName,
+    updatedAt: now,
+  }).where(eq(transferOtpEventsTable.id, otpEvent.id));
+
+  void writeAudit({ transferId: id, eventType: "otp_verified", actorUserId: actor.id, actorName: actor.displayName, actorRole: actor.role, eventData: { otpId: otpEvent.id, purpose: otpEvent.purpose, recipientName: otpEvent.recipientName }, summary: `OTP verified for ${otpEvent.recipientName}` });
+
+  // Record ROFR response
+  const [updatedOffer] = await db
+    .update(transferRofrOffersTable)
+    .set({
+      status: parsed.data.response,
+      respondedAt: now,
+      responseNotes: parsed.data.notes ?? null,
+      verifiedViaOtpId: otpEvent.id,
+      updatedAt: now,
+    })
+    .where(eq(transferRofrOffersTable.id, offerId))
+    .returning();
+
+  // Also update the JSONB array on the transfer for backwards compat
+  const [currentTransfer] = await db.select().from(ownershipTransfersTable).where(eq(ownershipTransfersTable.id, id)).limit(1);
+  if (currentTransfer) {
+    const existing = (currentTransfer.rofrResponses ?? []) as RofrResponse[];
+    const updated = existing.map(r =>
+      r.partnerId === offer.partnerId
+        ? { ...r, response: parsed.data.response, respondedAt: now.toISOString(), notes: parsed.data.notes ?? null }
+        : r,
+    );
+    if (!updated.find(r => r.partnerId === offer.partnerId)) {
+      updated.push({ partnerId: offer.partnerId, partnerName: offer.partnerName, response: parsed.data.response, respondedAt: now.toISOString(), notes: parsed.data.notes ?? null });
+    }
+    await db.update(ownershipTransfersTable).set({ rofrResponses: updated, updatedAt: now }).where(eq(ownershipTransfersTable.id, id));
+  }
+
+  void writeAudit({
+    transferId: id,
+    eventType: "rofr_response_recorded",
+    actorUserId: actor.id,
+    actorName: actor.displayName,
+    actorRole: actor.role,
+    targetPartnerId: offer.partnerId,
+    targetPartnerName: offer.partnerName,
+    eventData: { offerId, response: parsed.data.response, otpId: otpEvent.id },
+    summary: `${offer.partnerName} ${parsed.data.response === "accepted" ? "accepted" : "declined"} the ROFR offer (OTP verified)`,
+  });
+
+  return res.json(updatedOffer);
+});
+
+// ══════════════════════════════════════════════════════════════════════════
+// OTP MANAGEMENT
+// ══════════════════════════════════════════════════════════════════════════
+
+// ── POST /ownership-transfers/:id/otp/generate ────────────────────────────
+
+const generateOtpSchema = z.object({
+  purpose: z.enum(["rofr_acceptance", "rofr_rejection", "transfer_execution", "transfer_submission"]),
+  recipientName: z.string().min(1),
+  recipientContact: z.string().optional(),
+  rofrOfferId: z.string().uuid().optional(),
+});
+
+router.post("/:id/otp/generate", requireRole("admin", "developer"), async (req, res) => {
+  const id = req.params.id as string;
+  const parsed = generateOtpSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: "Invalid request", details: parsed.error.issues });
+
+  const { userId: clerkUserId } = getAuth(req);
+  const actor = await resolveActor(clerkUserId!);
+  if (!actor) return res.status(401).json({ error: "User not found" });
+
+  const [transfer] = await db.select().from(ownershipTransfersTable).where(eq(ownershipTransfersTable.id, id)).limit(1);
+  if (!transfer) return res.status(404).json({ error: "Transfer not found" });
+
+  const code = generateOtpCode();
+  const expiresAt = new Date(Date.now() + OTP_TTL_MINUTES * 60 * 1000);
+
+  // Cancel any existing pending OTPs for the same transfer + purpose + offer
+  await db
+    .update(transferOtpEventsTable)
+    .set({ status: "cancelled", updatedAt: new Date() })
+    .where(
+      and(
+        eq(transferOtpEventsTable.transferId, id),
+        eq(transferOtpEventsTable.purpose, parsed.data.purpose),
+        eq(transferOtpEventsTable.status, "pending"),
+        parsed.data.rofrOfferId ? eq(transferOtpEventsTable.rofrOfferId, parsed.data.rofrOfferId) : isNull(transferOtpEventsTable.rofrOfferId),
+      ),
+    );
+
+  const [otpEvent] = await db
+    .insert(transferOtpEventsTable)
+    .values({
+      transferId: id,
+      purpose: parsed.data.purpose,
+      recipientName: parsed.data.recipientName,
+      recipientContact: parsed.data.recipientContact ?? null,
+      otpPlaintext: code, // placeholder mode — remove when real provider wired
+      delivery: "placeholder",
+      expiresAt,
+      rofrOfferId: parsed.data.rofrOfferId ?? null,
+      requestedByUserId: actor.id,
+      requestedByName: actor.displayName,
+    })
+    .returning();
+
+  void writeAudit({
+    transferId: id,
+    eventType: "otp_generated",
+    actorUserId: actor.id,
+    actorName: actor.displayName,
+    actorRole: actor.role,
+    eventData: { otpId: otpEvent.id, purpose: parsed.data.purpose, recipientName: parsed.data.recipientName, delivery: "placeholder", expiresAt: expiresAt.toISOString() },
+    summary: `OTP generated for ${parsed.data.recipientName} (purpose: ${parsed.data.purpose}, expires in ${OTP_TTL_MINUTES} min)`,
+  });
+
+  // Return with devModePlaintextCode for placeholder mode
+  return res.status(201).json({
+    ...otpEvent,
+    devModePlaintextCode: code,
+  });
+});
+
+// ── POST /ownership-transfers/:id/otp/verify ──────────────────────────────
+
+const verifyOtpSchema = z.object({
+  otpId: z.string().uuid(),
+  otpCode: z.string().length(6),
+});
+
+router.post("/:id/otp/verify", async (req, res) => {
+  const id = req.params.id as string;
+  const parsed = verifyOtpSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: "Invalid request", details: parsed.error.issues });
+
+  const { userId: clerkUserId } = getAuth(req);
+  const actor = await resolveActor(clerkUserId!);
+  if (!actor) return res.status(401).json({ error: "User not found" });
+
+  const [otpEvent] = await db
+    .select()
+    .from(transferOtpEventsTable)
+    .where(and(eq(transferOtpEventsTable.id, parsed.data.otpId), eq(transferOtpEventsTable.transferId, id)))
+    .limit(1);
+
+  if (!otpEvent) return res.status(404).json({ error: "OTP event not found" });
+  if (otpEvent.status === "verified") return res.status(400).json({ error: "OTP already verified" });
+  if (otpEvent.status === "cancelled") return res.status(400).json({ error: "OTP has been cancelled" });
+
+  const now = new Date();
+  if (otpEvent.status === "expired" || otpEvent.expiresAt < now) {
+    await db.update(transferOtpEventsTable).set({ status: "expired", updatedAt: now }).where(eq(transferOtpEventsTable.id, otpEvent.id));
+    return res.status(400).json({ error: "OTP has expired" });
+  }
+
+  if (otpEvent.failedAttempts >= OTP_MAX_ATTEMPTS) {
+    return res.status(429).json({ error: "Too many failed attempts. OTP is locked." });
+  }
+
+  const codeMatch = otpEvent.otpPlaintext === parsed.data.otpCode;
+
+  if (!codeMatch) {
+    const newAttempts = otpEvent.failedAttempts + 1;
+    const newStatus = newAttempts >= OTP_MAX_ATTEMPTS ? "cancelled" : "pending";
+    await db.update(transferOtpEventsTable).set({ failedAttempts: newAttempts, status: newStatus, updatedAt: now }).where(eq(transferOtpEventsTable.id, otpEvent.id));
+    void writeAudit({ transferId: id, eventType: "otp_failed", actorUserId: actor.id, actorName: actor.displayName, actorRole: actor.role, eventData: { otpId: otpEvent.id, attempt: newAttempts }, summary: `OTP verification failed (attempt ${newAttempts})` });
+    if (newStatus === "cancelled") return res.status(429).json({ error: "Too many failed attempts. OTP cancelled." });
+    return res.status(400).json({ error: `Invalid OTP. ${OTP_MAX_ATTEMPTS - newAttempts} attempts remaining.`, verified: false, otpEvent: { ...otpEvent, failedAttempts: newAttempts } });
+  }
+
+  const [updatedOtp] = await db
+    .update(transferOtpEventsTable)
+    .set({ status: "verified", verifiedAt: now, verifiedByUserId: actor.id, verifiedByName: actor.displayName, updatedAt: now })
+    .where(eq(transferOtpEventsTable.id, otpEvent.id))
+    .returning();
+
+  void writeAudit({ transferId: id, eventType: "otp_verified", actorUserId: actor.id, actorName: actor.displayName, actorRole: actor.role, eventData: { otpId: otpEvent.id, purpose: otpEvent.purpose, recipientName: otpEvent.recipientName }, summary: `OTP verified for ${otpEvent.recipientName} (purpose: ${otpEvent.purpose})` });
+
+  return res.json({ verified: true, otpEvent: updatedOtp });
+});
+
+// ── GET /ownership-transfers/:id/otp-events ───────────────────────────────
+
+router.get("/:id/otp-events", requireRole("admin", "developer"), async (req, res) => {
+  const id = req.params.id as string;
+  const otpEvents = await db
+    .select()
+    .from(transferOtpEventsTable)
+    .where(eq(transferOtpEventsTable.transferId, id))
+    .orderBy(desc(transferOtpEventsTable.createdAt));
+
+  // Redact plaintext codes for completed / expired OTPs (only show for pending)
+  const sanitised = otpEvents.map(e => ({
+    ...e,
+    otpPlaintext: null, // never expose in list
+    devModePlaintextCode: e.status === "pending" && e.delivery === "placeholder" ? e.otpPlaintext : null,
+  }));
+
+  return res.json({ otpEvents: sanitised });
+});
+
+// ══════════════════════════════════════════════════════════════════════════
+// AUDIT LOG
+// ══════════════════════════════════════════════════════════════════════════
+
+// ── GET /ownership-transfers/:id/audit-events ─────────────────────────────
+
+router.get("/:id/audit-events", async (req, res) => {
+  const id = req.params.id as string;
+
+  // Verify transfer exists and user has access
+  const [transfer] = await db.select({ id: ownershipTransfersTable.id, projectId: ownershipTransfersTable.projectId })
+    .from(ownershipTransfersTable).where(eq(ownershipTransfersTable.id, id)).limit(1);
+  if (!transfer) return res.status(404).json({ error: "Transfer not found" });
+
+  const scope = getProjectScope(req);
+  if (scope !== null && !scope.includes(transfer.projectId)) return res.status(403).json({ error: "Access denied" });
+
+  const events = await db
+    .select()
+    .from(transferAuditEventsTable)
+    .where(eq(transferAuditEventsTable.transferId, id))
+    .orderBy(transferAuditEventsTable.createdAt);
+
+  return res.json({ events });
 });
 
 export default router;

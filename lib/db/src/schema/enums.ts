@@ -623,6 +623,57 @@ export const ownershipTransferStatusEnum = pgEnum("ownership_transfer_status", [
   "expired",
 ]);
 
+// ── Transfer ROFR Offer enums ─────────────────────────────────────────────
+
+export const transferRofrOfferStatusEnum = pgEnum("transfer_rofr_offer_status", [
+  "pending",    // notified, awaiting response
+  "accepted",   // partner wants to exercise ROFR
+  "rejected",   // partner declines ROFR
+  "expired",    // deadline passed, treated as rejected
+]);
+
+// ── Transfer OTP enums ────────────────────────────────────────────────────
+
+/** What action the OTP is authorising */
+export const transferOtpPurposeEnum = pgEnum("transfer_otp_purpose", [
+  "rofr_acceptance",   // partner accepting a ROFR offer
+  "rofr_rejection",    // partner formally declining a ROFR offer
+  "transfer_execution",// transferor confirming execution
+  "transfer_submission",// transferor submitting the request
+]);
+
+export const transferOtpStatusEnum = pgEnum("transfer_otp_status", [
+  "pending",    // generated, not yet used
+  "verified",   // successfully verified
+  "expired",    // TTL elapsed before verification
+  "cancelled",  // superseded by a new OTP
+]);
+
+/** Delivery channel used (placeholder until real provider is wired) */
+export const transferOtpDeliveryEnum = pgEnum("transfer_otp_delivery", [
+  "placeholder", // dev-mode: code is returned directly in the API response
+  "email",       // future: delivered via email
+  "sms",         // future: delivered via SMS
+]);
+
+// ── Transfer audit event type enum ────────────────────────────────────────
+
+export const transferAuditEventTypeEnum = pgEnum("transfer_audit_event_type", [
+  "created",
+  "submitted",
+  "rofr_offer_sent",
+  "rofr_response_recorded",
+  "rofr_finalized",
+  "otp_generated",
+  "otp_verified",
+  "otp_failed",
+  "approved",
+  "executed",
+  "cancelled",
+  "expired",
+  "note_added",
+]);
+
 // ── Land Contribution Adjustment (LCA) enums ──────────────────────────────
 
 /**

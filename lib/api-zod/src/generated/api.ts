@@ -5348,6 +5348,365 @@ export const CancelOwnershipTransferResponse = zod.object({
 });
 
 /**
+ * @summary ROFR offer management dashboard across all transfers
+ */
+export const GetTransferRofrDashboardQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+});
+
+export const GetTransferRofrDashboardResponse = zod.object({
+  pendingOffers: zod.array(
+    zod.object({
+      offer: zod.object({
+        id: zod.string().uuid(),
+        transferId: zod.string().uuid(),
+        partnerId: zod.string().uuid(),
+        partnerName: zod.string(),
+        offeredAt: zod.coerce.date(),
+        deadline: zod.coerce.date(),
+        status: zod.enum(["pending", "accepted", "rejected", "expired"]),
+        respondedAt: zod.coerce.date().nullish(),
+        responseNotes: zod.string().nullish(),
+        verifiedViaOtpId: zod.string().uuid().nullish(),
+        sentByName: zod.string().nullish(),
+        sentById: zod.string().uuid().nullish(),
+        isActive: zod.boolean(),
+        createdAt: zod.coerce.date(),
+        updatedAt: zod.coerce.date(),
+      }),
+      transfer: zod.object({
+        id: zod.string().uuid(),
+        projectId: zod.string().uuid(),
+        projectName: zod.string().nullish(),
+        projectLifecycle: zod.string().nullish(),
+        transferorPartnerId: zod.string().uuid(),
+        transferorName: zod.string(),
+        offeredPercentage: zod.string(),
+        offeredValue: zod.string().nullish(),
+        transferType: zod.enum(["internal", "third_party"]),
+        buyerPartnerId: zod.string().uuid().nullish(),
+        buyerName: zod.string(),
+        buyerContact: zod.string().nullish(),
+        status: zod.enum([
+          "draft",
+          "pending_rofr",
+          "rofr_accepted",
+          "rofr_rejected",
+          "pending_approval",
+          "approved",
+          "executed",
+          "cancelled",
+          "expired",
+        ]),
+        rofrDeadline: zod.coerce.date().nullish(),
+        rofrResponses: zod.array(
+          zod.object({
+            partnerId: zod.string().uuid(),
+            partnerName: zod.string(),
+            response: zod.enum(["pending", "accepted", "rejected"]),
+            respondedAt: zod.coerce.date().nullish(),
+            notes: zod.string().nullish(),
+          }),
+        ),
+        linkedSnapshotId: zod.string().uuid().nullish(),
+        reason: zod.string().nullish(),
+        adminNotes: zod.string().nullish(),
+        approvedAt: zod.coerce.date().nullish(),
+        approvedBy: zod.string().uuid().nullish(),
+        approvedByName: zod.string().nullish(),
+        executedAt: zod.coerce.date().nullish(),
+        executedBy: zod.string().uuid().nullish(),
+        executedByName: zod.string().nullish(),
+        executionNotes: zod.string().nullish(),
+        cancelledAt: zod.coerce.date().nullish(),
+        cancelledBy: zod.string().uuid().nullish(),
+        cancelledByName: zod.string().nullish(),
+        cancellationReason: zod.string().nullish(),
+        submittedAt: zod.coerce.date().nullish(),
+        submittedByName: zod.string().nullish(),
+        createdByName: zod.string().nullish(),
+        isActive: zod.boolean(),
+        createdAt: zod.coerce.date(),
+        updatedAt: zod.coerce.date(),
+      }),
+    }),
+  ),
+  expiringToday: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      transferId: zod.string().uuid(),
+      partnerId: zod.string().uuid(),
+      partnerName: zod.string(),
+      offeredAt: zod.coerce.date(),
+      deadline: zod.coerce.date(),
+      status: zod.enum(["pending", "accepted", "rejected", "expired"]),
+      respondedAt: zod.coerce.date().nullish(),
+      responseNotes: zod.string().nullish(),
+      verifiedViaOtpId: zod.string().uuid().nullish(),
+      sentByName: zod.string().nullish(),
+      sentById: zod.string().uuid().nullish(),
+      isActive: zod.boolean(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    }),
+  ),
+  expiredUnresolved: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      transferId: zod.string().uuid(),
+      partnerId: zod.string().uuid(),
+      partnerName: zod.string(),
+      offeredAt: zod.coerce.date(),
+      deadline: zod.coerce.date(),
+      status: zod.enum(["pending", "accepted", "rejected", "expired"]),
+      respondedAt: zod.coerce.date().nullish(),
+      responseNotes: zod.string().nullish(),
+      verifiedViaOtpId: zod.string().uuid().nullish(),
+      sentByName: zod.string().nullish(),
+      sentById: zod.string().uuid().nullish(),
+      isActive: zod.boolean(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    }),
+  ),
+  byStatus: zod.record(zod.string(), zod.number()),
+  totalPendingTransfers: zod.number(),
+});
+
+/**
+ * @summary List all ROFR offers for a transfer
+ */
+export const ListTransferRofrOffersParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const ListTransferRofrOffersResponse = zod.object({
+  offers: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      transferId: zod.string().uuid(),
+      partnerId: zod.string().uuid(),
+      partnerName: zod.string(),
+      offeredAt: zod.coerce.date(),
+      deadline: zod.coerce.date(),
+      status: zod.enum(["pending", "accepted", "rejected", "expired"]),
+      respondedAt: zod.coerce.date().nullish(),
+      responseNotes: zod.string().nullish(),
+      verifiedViaOtpId: zod.string().uuid().nullish(),
+      sentByName: zod.string().nullish(),
+      sentById: zod.string().uuid().nullish(),
+      isActive: zod.boolean(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    }),
+  ),
+});
+
+/**
+ * @summary Send a ROFR offer to a partner
+ */
+export const SendRofrOfferParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const SendRofrOfferBody = zod.object({
+  partnerId: zod.string().uuid(),
+  partnerName: zod.string(),
+  partnerContact: zod.string().nullish(),
+});
+
+/**
+ * @summary Record a partner response to a ROFR offer (requires OTP verification)
+ */
+export const RespondToRofrOfferParams = zod.object({
+  id: zod.coerce.string().uuid(),
+  offerId: zod.coerce.string().uuid(),
+});
+
+export const respondToRofrOfferBodyOtpCodeMin = 6;
+export const respondToRofrOfferBodyOtpCodeMax = 6;
+
+export const RespondToRofrOfferBody = zod.object({
+  response: zod.enum(["accepted", "rejected"]),
+  otpCode: zod
+    .string()
+    .min(respondToRofrOfferBodyOtpCodeMin)
+    .max(respondToRofrOfferBodyOtpCodeMax),
+  notes: zod.string().nullish(),
+});
+
+export const RespondToRofrOfferResponse = zod.object({
+  id: zod.string().uuid(),
+  transferId: zod.string().uuid(),
+  partnerId: zod.string().uuid(),
+  partnerName: zod.string(),
+  offeredAt: zod.coerce.date(),
+  deadline: zod.coerce.date(),
+  status: zod.enum(["pending", "accepted", "rejected", "expired"]),
+  respondedAt: zod.coerce.date().nullish(),
+  responseNotes: zod.string().nullish(),
+  verifiedViaOtpId: zod.string().uuid().nullish(),
+  sentByName: zod.string().nullish(),
+  sentById: zod.string().uuid().nullish(),
+  isActive: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Generate an OTP for a transfer action
+ */
+export const GenerateTransferOtpParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const GenerateTransferOtpBody = zod.object({
+  purpose: zod.enum([
+    "rofr_acceptance",
+    "rofr_rejection",
+    "transfer_execution",
+    "transfer_submission",
+  ]),
+  recipientName: zod.string(),
+  recipientContact: zod.string().nullish(),
+  rofrOfferId: zod.string().uuid().nullish(),
+});
+
+/**
+ * @summary Verify an OTP code for a transfer action
+ */
+export const VerifyTransferOtpParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const verifyTransferOtpBodyOtpCodeMin = 6;
+export const verifyTransferOtpBodyOtpCodeMax = 6;
+
+export const VerifyTransferOtpBody = zod.object({
+  otpId: zod.string().uuid(),
+  otpCode: zod
+    .string()
+    .min(verifyTransferOtpBodyOtpCodeMin)
+    .max(verifyTransferOtpBodyOtpCodeMax),
+});
+
+export const VerifyTransferOtpResponse = zod.object({
+  verified: zod.boolean(),
+  otpEvent: zod.object({
+    id: zod.string().uuid(),
+    transferId: zod.string().uuid(),
+    purpose: zod.enum([
+      "rofr_acceptance",
+      "rofr_rejection",
+      "transfer_execution",
+      "transfer_submission",
+    ]),
+    recipientUserId: zod.string().uuid().nullish(),
+    recipientName: zod.string(),
+    recipientContact: zod.string().nullish(),
+    delivery: zod.enum(["placeholder", "email", "sms"]),
+    status: zod.enum(["pending", "verified", "expired", "cancelled"]),
+    expiresAt: zod.coerce.date(),
+    verifiedAt: zod.coerce.date().nullish(),
+    verifiedByName: zod.string().nullish(),
+    failedAttempts: zod.number(),
+    rofrOfferId: zod.string().uuid().nullish(),
+    requestedByName: zod.string().nullish(),
+    isActive: zod.boolean(),
+    createdAt: zod.coerce.date(),
+    updatedAt: zod.coerce.date().optional(),
+    devModePlaintextCode: zod
+      .string()
+      .nullish()
+      .describe(
+        "Only present when delivery=placeholder. Remove when real provider is wired.",
+      ),
+  }),
+});
+
+/**
+ * @summary List OTP events for a transfer
+ */
+export const ListTransferOtpEventsParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const ListTransferOtpEventsResponse = zod.object({
+  otpEvents: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      transferId: zod.string().uuid(),
+      purpose: zod.enum([
+        "rofr_acceptance",
+        "rofr_rejection",
+        "transfer_execution",
+        "transfer_submission",
+      ]),
+      recipientUserId: zod.string().uuid().nullish(),
+      recipientName: zod.string(),
+      recipientContact: zod.string().nullish(),
+      delivery: zod.enum(["placeholder", "email", "sms"]),
+      status: zod.enum(["pending", "verified", "expired", "cancelled"]),
+      expiresAt: zod.coerce.date(),
+      verifiedAt: zod.coerce.date().nullish(),
+      verifiedByName: zod.string().nullish(),
+      failedAttempts: zod.number(),
+      rofrOfferId: zod.string().uuid().nullish(),
+      requestedByName: zod.string().nullish(),
+      isActive: zod.boolean(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date().optional(),
+      devModePlaintextCode: zod
+        .string()
+        .nullish()
+        .describe(
+          "Only present when delivery=placeholder. Remove when real provider is wired.",
+        ),
+    }),
+  ),
+});
+
+/**
+ * @summary Immutable audit log for a transfer
+ */
+export const ListTransferAuditEventsParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const ListTransferAuditEventsResponse = zod.object({
+  events: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      transferId: zod.string().uuid(),
+      eventType: zod.enum([
+        "created",
+        "submitted",
+        "rofr_offer_sent",
+        "rofr_response_recorded",
+        "rofr_finalized",
+        "otp_generated",
+        "otp_verified",
+        "otp_failed",
+        "approved",
+        "executed",
+        "cancelled",
+        "expired",
+        "note_added",
+      ]),
+      actorUserId: zod.string().uuid().nullish(),
+      actorName: zod.string().nullish(),
+      actorRole: zod.string().nullish(),
+      targetPartnerId: zod.string().uuid().nullish(),
+      targetPartnerName: zod.string().nullish(),
+      eventData: zod.record(zod.string(), zod.unknown()),
+      summary: zod.string(),
+      ipAddress: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+});
+
+/**
  * @summary List expenditure records with optional filters
  */
 export const ListExpendituresQueryParams = zod.object({

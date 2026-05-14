@@ -2384,6 +2384,136 @@ export interface UpdateOwnershipTransferBody {
   adminNotes?: string | null;
 }
 
+export type TransferRofrOfferStatus =
+  (typeof TransferRofrOfferStatus)[keyof typeof TransferRofrOfferStatus];
+
+export const TransferRofrOfferStatus = {
+  pending: "pending",
+  accepted: "accepted",
+  rejected: "rejected",
+  expired: "expired",
+} as const;
+
+export interface TransferRofrOffer {
+  id: string;
+  transferId: string;
+  partnerId: string;
+  partnerName: string;
+  offeredAt: string;
+  deadline: string;
+  status: TransferRofrOfferStatus;
+  respondedAt?: string | null;
+  responseNotes?: string | null;
+  verifiedViaOtpId?: string | null;
+  sentByName?: string | null;
+  sentById?: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type TransferOtpEventPurpose =
+  (typeof TransferOtpEventPurpose)[keyof typeof TransferOtpEventPurpose];
+
+export const TransferOtpEventPurpose = {
+  rofr_acceptance: "rofr_acceptance",
+  rofr_rejection: "rofr_rejection",
+  transfer_execution: "transfer_execution",
+  transfer_submission: "transfer_submission",
+} as const;
+
+export type TransferOtpEventDelivery =
+  (typeof TransferOtpEventDelivery)[keyof typeof TransferOtpEventDelivery];
+
+export const TransferOtpEventDelivery = {
+  placeholder: "placeholder",
+  email: "email",
+  sms: "sms",
+} as const;
+
+export type TransferOtpEventStatus =
+  (typeof TransferOtpEventStatus)[keyof typeof TransferOtpEventStatus];
+
+export const TransferOtpEventStatus = {
+  pending: "pending",
+  verified: "verified",
+  expired: "expired",
+  cancelled: "cancelled",
+} as const;
+
+export interface TransferOtpEvent {
+  id: string;
+  transferId: string;
+  purpose: TransferOtpEventPurpose;
+  recipientUserId?: string | null;
+  recipientName: string;
+  recipientContact?: string | null;
+  delivery: TransferOtpEventDelivery;
+  status: TransferOtpEventStatus;
+  expiresAt: string;
+  verifiedAt?: string | null;
+  verifiedByName?: string | null;
+  failedAttempts: number;
+  rofrOfferId?: string | null;
+  requestedByName?: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt?: string;
+  /** Only present when delivery=placeholder. Remove when real provider is wired. */
+  devModePlaintextCode?: string | null;
+}
+
+export type TransferAuditEventEventType =
+  (typeof TransferAuditEventEventType)[keyof typeof TransferAuditEventEventType];
+
+export const TransferAuditEventEventType = {
+  created: "created",
+  submitted: "submitted",
+  rofr_offer_sent: "rofr_offer_sent",
+  rofr_response_recorded: "rofr_response_recorded",
+  rofr_finalized: "rofr_finalized",
+  otp_generated: "otp_generated",
+  otp_verified: "otp_verified",
+  otp_failed: "otp_failed",
+  approved: "approved",
+  executed: "executed",
+  cancelled: "cancelled",
+  expired: "expired",
+  note_added: "note_added",
+} as const;
+
+export type TransferAuditEventEventData = { [key: string]: unknown };
+
+export interface TransferAuditEvent {
+  id: string;
+  transferId: string;
+  eventType: TransferAuditEventEventType;
+  actorUserId?: string | null;
+  actorName?: string | null;
+  actorRole?: string | null;
+  targetPartnerId?: string | null;
+  targetPartnerName?: string | null;
+  eventData: TransferAuditEventEventData;
+  summary: string;
+  ipAddress?: string | null;
+  createdAt: string;
+}
+
+export type TransferRofrDashboardPendingOffersItem = {
+  offer: TransferRofrOffer;
+  transfer: OwnershipTransfer;
+};
+
+export type TransferRofrDashboardByStatus = { [key: string]: number };
+
+export interface TransferRofrDashboard {
+  pendingOffers: TransferRofrDashboardPendingOffersItem[];
+  expiringToday: TransferRofrOffer[];
+  expiredUnresolved: TransferRofrOffer[];
+  byStatus: TransferRofrDashboardByStatus;
+  totalPendingTransfers: number;
+}
+
 export type ContributionDisputeSummaryProjectsItem = {
   projectId: string;
   disputed: number;
@@ -6243,6 +6373,77 @@ export type ExecuteOwnershipTransferBody = {
 
 export type CancelOwnershipTransferBody = {
   cancellationReason: string;
+};
+
+export type GetTransferRofrDashboardParams = {
+  projectId?: string;
+};
+
+export type ListTransferRofrOffers200 = {
+  offers: TransferRofrOffer[];
+};
+
+export type SendRofrOfferBody = {
+  partnerId: string;
+  partnerName: string;
+  partnerContact?: string | null;
+};
+
+export type RespondToRofrOfferBodyResponse =
+  (typeof RespondToRofrOfferBodyResponse)[keyof typeof RespondToRofrOfferBodyResponse];
+
+export const RespondToRofrOfferBodyResponse = {
+  accepted: "accepted",
+  rejected: "rejected",
+} as const;
+
+export type RespondToRofrOfferBody = {
+  response: RespondToRofrOfferBodyResponse;
+  /**
+   * @minLength 6
+   * @maxLength 6
+   */
+  otpCode: string;
+  notes?: string | null;
+};
+
+export type GenerateTransferOtpBodyPurpose =
+  (typeof GenerateTransferOtpBodyPurpose)[keyof typeof GenerateTransferOtpBodyPurpose];
+
+export const GenerateTransferOtpBodyPurpose = {
+  rofr_acceptance: "rofr_acceptance",
+  rofr_rejection: "rofr_rejection",
+  transfer_execution: "transfer_execution",
+  transfer_submission: "transfer_submission",
+} as const;
+
+export type GenerateTransferOtpBody = {
+  purpose: GenerateTransferOtpBodyPurpose;
+  recipientName: string;
+  recipientContact?: string | null;
+  rofrOfferId?: string | null;
+};
+
+export type VerifyTransferOtpBody = {
+  otpId: string;
+  /**
+   * @minLength 6
+   * @maxLength 6
+   */
+  otpCode: string;
+};
+
+export type VerifyTransferOtp200 = {
+  verified: boolean;
+  otpEvent: TransferOtpEvent;
+};
+
+export type ListTransferOtpEvents200 = {
+  otpEvents: TransferOtpEvent[];
+};
+
+export type ListTransferAuditEvents200 = {
+  events: TransferAuditEvent[];
 };
 
 export type ListExpendituresParams = {

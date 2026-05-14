@@ -3324,6 +3324,217 @@ paths:
         "401": { description: Unauthorized }
         "422": { description: Already terminal }
 
+  /ownership-transfers/rofr-dashboard:
+    get:
+      operationId: getTransferRofrDashboard
+      summary: ROFR offer management dashboard across all transfers
+      tags: [OwnershipTransfers]
+      parameters:
+        - in: query
+          name: projectId
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Dashboard data
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TransferRofrDashboard" }
+
+  /ownership-transfers/{id}/rofr-offers:
+    get:
+      operationId: listTransferRofrOffers
+      summary: List all ROFR offers for a transfer
+      tags: [OwnershipTransfers]
+      parameters:
+        - in: path
+          name: id
+          schema: { type: string, format: uuid }
+          required: true
+      responses:
+        "200":
+          description: ROFR offer list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [offers]
+                properties:
+                  offers:
+                    type: array
+                    items: { $ref: "#/components/schemas/TransferRofrOffer" }
+    post:
+      operationId: sendRofrOffer
+      summary: Send a ROFR offer to a partner
+      tags: [OwnershipTransfers]
+      parameters:
+        - in: path
+          name: id
+          schema: { type: string, format: uuid }
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [partnerId, partnerName]
+              properties:
+                partnerId: { type: string, format: uuid }
+                partnerName: { type: string }
+                partnerContact: { type: string, nullable: true }
+      responses:
+        "201":
+          description: Offer sent
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TransferRofrOffer" }
+        "409": { description: Offer already exists for this partner }
+
+  /ownership-transfers/{id}/rofr-offers/{offerId}/respond:
+    post:
+      operationId: respondToRofrOffer
+      summary: Record a partner response to a ROFR offer (requires OTP verification)
+      tags: [OwnershipTransfers]
+      parameters:
+        - in: path
+          name: id
+          schema: { type: string, format: uuid }
+          required: true
+        - in: path
+          name: offerId
+          schema: { type: string, format: uuid }
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [response, otpCode]
+              properties:
+                response: { type: string, enum: [accepted, rejected] }
+                otpCode: { type: string, minLength: 6, maxLength: 6 }
+                notes: { type: string, nullable: true }
+      responses:
+        "200":
+          description: Response recorded
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TransferRofrOffer" }
+        "400": { description: Invalid OTP or response }
+        "409": { description: Already responded }
+
+  /ownership-transfers/{id}/otp/generate:
+    post:
+      operationId: generateTransferOtp
+      summary: Generate an OTP for a transfer action
+      tags: [OwnershipTransfers]
+      parameters:
+        - in: path
+          name: id
+          schema: { type: string, format: uuid }
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [purpose, recipientName]
+              properties:
+                purpose:
+                  type: string
+                  enum: [rofr_acceptance, rofr_rejection, transfer_execution, transfer_submission]
+                recipientName: { type: string }
+                recipientContact: { type: string, nullable: true }
+                rofrOfferId: { type: string, format: uuid, nullable: true }
+      responses:
+        "201":
+          description: OTP generated (devModePlaintextCode present in placeholder mode)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TransferOtpEvent" }
+
+  /ownership-transfers/{id}/otp/verify:
+    post:
+      operationId: verifyTransferOtp
+      summary: Verify an OTP code for a transfer action
+      tags: [OwnershipTransfers]
+      parameters:
+        - in: path
+          name: id
+          schema: { type: string, format: uuid }
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [otpId, otpCode]
+              properties:
+                otpId: { type: string, format: uuid }
+                otpCode: { type: string, minLength: 6, maxLength: 6 }
+      responses:
+        "200":
+          description: OTP verified
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [verified, otpEvent]
+                properties:
+                  verified: { type: boolean }
+                  otpEvent: { $ref: "#/components/schemas/TransferOtpEvent" }
+        "400": { description: Invalid or expired OTP }
+        "429": { description: Too many failed attempts }
+
+  /ownership-transfers/{id}/otp-events:
+    get:
+      operationId: listTransferOtpEvents
+      summary: List OTP events for a transfer
+      tags: [OwnershipTransfers]
+      parameters:
+        - in: path
+          name: id
+          schema: { type: string, format: uuid }
+          required: true
+      responses:
+        "200":
+          description: OTP event list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [otpEvents]
+                properties:
+                  otpEvents:
+                    type: array
+                    items: { $ref: "#/components/schemas/TransferOtpEvent" }
+
+  /ownership-transfers/{id}/audit-events:
+    get:
+      operationId: listTransferAuditEvents
+      summary: Immutable audit log for a transfer
+      tags: [OwnershipTransfers]
+      parameters:
+        - in: path
+          name: id
+          schema: { type: string, format: uuid }
+          required: true
+      responses:
+        "200":
+          description: Audit event list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [events]
+                properties:
+                  events:
+                    type: array
+                    items: { $ref: "#/components/schemas/TransferAuditEvent" }
+
   /expenditures:
     get:
       operationId: listExpenditures
@@ -10456,6 +10667,91 @@ components:
         reason: { type: string, nullable: true }
         linkedSnapshotId: { type: string, format: uuid, nullable: true }
         adminNotes: { type: string, nullable: true }
+
+    TransferRofrOffer:
+      type: object
+      required: [id, transferId, partnerId, partnerName, offeredAt, deadline, status, isActive, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        transferId: { type: string, format: uuid }
+        partnerId: { type: string, format: uuid }
+        partnerName: { type: string }
+        offeredAt: { type: string, format: date-time }
+        deadline: { type: string, format: date-time }
+        status: { type: string, enum: [pending, accepted, rejected, expired] }
+        respondedAt: { type: string, format: date-time, nullable: true }
+        responseNotes: { type: string, nullable: true }
+        verifiedViaOtpId: { type: string, format: uuid, nullable: true }
+        sentByName: { type: string, nullable: true }
+        sentById: { type: string, format: uuid, nullable: true }
+        isActive: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    TransferOtpEvent:
+      type: object
+      required: [id, transferId, purpose, recipientName, delivery, status, expiresAt, failedAttempts, isActive, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        transferId: { type: string, format: uuid }
+        purpose: { type: string, enum: [rofr_acceptance, rofr_rejection, transfer_execution, transfer_submission] }
+        recipientUserId: { type: string, format: uuid, nullable: true }
+        recipientName: { type: string }
+        recipientContact: { type: string, nullable: true }
+        delivery: { type: string, enum: [placeholder, email, sms] }
+        status: { type: string, enum: [pending, verified, expired, cancelled] }
+        expiresAt: { type: string, format: date-time }
+        verifiedAt: { type: string, format: date-time, nullable: true }
+        verifiedByName: { type: string, nullable: true }
+        failedAttempts: { type: integer }
+        rofrOfferId: { type: string, format: uuid, nullable: true }
+        requestedByName: { type: string, nullable: true }
+        isActive: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        devModePlaintextCode: { type: string, nullable: true, description: "Only present when delivery=placeholder. Remove when real provider is wired." }
+
+    TransferAuditEvent:
+      type: object
+      required: [id, transferId, eventType, eventData, summary, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        transferId: { type: string, format: uuid }
+        eventType:
+          type: string
+          enum: [created, submitted, rofr_offer_sent, rofr_response_recorded, rofr_finalized, otp_generated, otp_verified, otp_failed, approved, executed, cancelled, expired, note_added]
+        actorUserId: { type: string, format: uuid, nullable: true }
+        actorName: { type: string, nullable: true }
+        actorRole: { type: string, nullable: true }
+        targetPartnerId: { type: string, format: uuid, nullable: true }
+        targetPartnerName: { type: string, nullable: true }
+        eventData: { type: object, additionalProperties: true }
+        summary: { type: string }
+        ipAddress: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+
+    TransferRofrDashboard:
+      type: object
+      required: [pendingOffers, expiringToday, expiredUnresolved, byStatus, totalPendingTransfers]
+      properties:
+        pendingOffers:
+          type: array
+          items:
+            type: object
+            required: [offer, transfer]
+            properties:
+              offer: { $ref: "#/components/schemas/TransferRofrOffer" }
+              transfer: { $ref: "#/components/schemas/OwnershipTransfer" }
+        expiringToday:
+          type: array
+          items: { $ref: "#/components/schemas/TransferRofrOffer" }
+        expiredUnresolved:
+          type: array
+          items: { $ref: "#/components/schemas/TransferRofrOffer" }
+        byStatus:
+          type: object
+          additionalProperties: { type: integer }
+        totalPendingTransfers: { type: integer }
 
     ContributionDisputeSummary:
       type: object
