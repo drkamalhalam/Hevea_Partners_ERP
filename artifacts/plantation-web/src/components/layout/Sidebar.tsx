@@ -163,6 +163,12 @@ const navGroups: NavGroup[] = [
         roles: ["admin", "developer"] as UserRole[],
       },
       {
+        name: "Succession Workflow",
+        href: "/prematurity-succession",
+        icon: Sprout,
+        roles: ["admin", "developer"] as UserRole[],
+      },
+      {
         name: "Dispute Centre",
         href: "/contributions/disputes",
         icon: ShieldAlert,

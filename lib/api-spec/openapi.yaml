@@ -8533,6 +8533,306 @@ paths:
                   deleted: { type: boolean }
 
 
+  # ── Prematurity Death Succession Workflow ───────────────────────────────
+
+  /prematurity-succession/dashboard:
+    get:
+      operationId: getPrematuritySuccessionDashboard
+      summary: Full dashboard — participations, pending OTPs, accumulation summary
+      tags: [PrematuritySuccession]
+      parameters:
+        - { in: query, name: projectId, schema: { type: string, format: uuid } }
+        - { in: query, name: claimId, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Dashboard data
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PrematuritySuccessionDashboard" }
+
+  /prematurity-succession/participations:
+    get:
+      operationId: listClaimantParticipations
+      summary: List claimant participation records
+      tags: [PrematuritySuccession]
+      parameters:
+        - { in: query, name: projectId, schema: { type: string, format: uuid } }
+        - { in: query, name: claimId, schema: { type: string, format: uuid } }
+        - { in: query, name: status, schema: { type: string } }
+      responses:
+        "200":
+          description: Participation records
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ClaimantParticipationPage" }
+    post:
+      operationId: createClaimantParticipation
+      summary: Activate a claimant to continue deceased partner's participation
+      tags: [PrematuritySuccession]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateClaimantParticipationBody" }
+      responses:
+        "201":
+          description: Created participation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  participation: { $ref: "#/components/schemas/ClaimantParticipationRecord" }
+
+  /prematurity-succession/participations/{id}:
+    patch:
+      operationId: updateClaimantParticipation
+      summary: Update participation status / contribution toggle
+      tags: [PrematuritySuccession]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateClaimantParticipationBody" }
+      responses:
+        "200":
+          description: Updated participation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  participation: { $ref: "#/components/schemas/ClaimantParticipationRecord" }
+    delete:
+      operationId: deleteClaimantParticipation
+      summary: Deactivate participation record (admin only)
+      tags: [PrematuritySuccession]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted: { type: boolean }
+
+  /prematurity-succession/contributions:
+    get:
+      operationId: listClaimantContributions
+      summary: List claimant contributions with OTP status
+      tags: [PrematuritySuccession]
+      parameters:
+        - { in: query, name: projectId, schema: { type: string, format: uuid } }
+        - { in: query, name: claimId, schema: { type: string, format: uuid } }
+        - { in: query, name: claimantId, schema: { type: string, format: uuid } }
+        - { in: query, name: status, schema: { type: string } }
+      responses:
+        "200":
+          description: Contributions list
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ClaimantContributionPage" }
+    post:
+      operationId: createClaimantContribution
+      summary: Submit a claimant contribution (starts in pending_otp state)
+      tags: [PrematuritySuccession]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateClaimantContributionBody" }
+      responses:
+        "201":
+          description: Created contribution
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  contribution: { $ref: "#/components/schemas/ClaimantContribution" }
+
+  /prematurity-succession/contributions/{id}:
+    patch:
+      operationId: updateClaimantContribution
+      summary: Update notes or reject a contribution
+      tags: [PrematuritySuccession]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateClaimantContributionBody" }
+      responses:
+        "200":
+          description: Updated contribution
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  contribution: { $ref: "#/components/schemas/ClaimantContribution" }
+
+  /prematurity-succession/contributions/{id}/request-otp:
+    post:
+      operationId: requestContributionOtp
+      summary: Generate OTP for developer to relay to claimant
+      tags: [PrematuritySuccession]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: OTP generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  contribution: { $ref: "#/components/schemas/ClaimantContribution" }
+                  otp: { type: string }
+                  message: { type: string }
+
+  /prematurity-succession/contributions/{id}/verify-otp:
+    post:
+      operationId: verifyContributionOtp
+      summary: Developer verifies OTP → contribution confirmed
+      tags: [PrematuritySuccession]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [otpCode]
+              properties:
+                otpCode: { type: string }
+      responses:
+        "200":
+          description: Verified and confirmed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  contribution: { $ref: "#/components/schemas/ClaimantContribution" }
+                  message: { type: string }
+
+  /prematurity-succession/accumulation:
+    get:
+      operationId: listDisputedAccumulation
+      summary: List disputed accumulation ledger entries
+      tags: [PrematuritySuccession]
+      parameters:
+        - { in: query, name: projectId, schema: { type: string, format: uuid } }
+        - { in: query, name: claimId, schema: { type: string, format: uuid } }
+        - { in: query, name: claimantId, schema: { type: string, format: uuid } }
+        - { in: query, name: status, schema: { type: string } }
+      responses:
+        "200":
+          description: Accumulation entries
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DisputedAccumulationPage" }
+    post:
+      operationId: createDisputedAccumulationEntry
+      summary: Add an accumulation entry for a disputed claimant
+      tags: [PrematuritySuccession]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateDisputedAccumulationBody" }
+      responses:
+        "201":
+          description: Created entry
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entry: { $ref: "#/components/schemas/DisputedAccumulationEntry" }
+
+  /prematurity-succession/accumulation/{id}:
+    patch:
+      operationId: updateDisputedAccumulationEntry
+      summary: Update accumulation entry description/amount
+      tags: [PrematuritySuccession]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                description: { type: string, nullable: true }
+                amount: { type: number }
+      responses:
+        "200":
+          description: Updated entry
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entry: { $ref: "#/components/schemas/DisputedAccumulationEntry" }
+
+  /prematurity-succession/accumulation/{id}/release:
+    post:
+      operationId: releaseAccumulationEntry
+      summary: Release accumulated amount to a claimant after resolution (admin)
+      tags: [PrematuritySuccession]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReleaseAccumulationBody" }
+      responses:
+        "200":
+          description: Released
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entry: { $ref: "#/components/schemas/DisputedAccumulationEntry" }
+
+  /prematurity-succession/accumulation/{id}/forfeit:
+    post:
+      operationId: forfeitAccumulationEntry
+      summary: Forfeit accumulated amount (court/tribal council order) (admin)
+      tags: [PrematuritySuccession]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                releaseNotes: { type: string }
+      responses:
+        "200":
+          description: Forfeited
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entry: { $ref: "#/components/schemas/DisputedAccumulationEntry" }
+
+
 components:
   schemas:
 
@@ -14801,3 +15101,196 @@ components:
         totalProposedPct: { type: number }
         totalApprovedPct: { type: number }
         total: { type: integer }
+
+    # ── Prematurity Death Succession ─────────────────────────────────────────
+
+    ClaimantParticipationRecord:
+      type: object
+      required: [id, claimId, claimantId, projectId, partnerId, isContributing, participationStatus, isActive, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        claimId: { type: string, format: uuid }
+        claimantId: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        partnerId: { type: string, format: uuid }
+        claimantName: { type: string, nullable: true }
+        relationship: { type: string, nullable: true }
+        claimantStatus: { type: string, nullable: true }
+        partnerName: { type: string, nullable: true }
+        projectName: { type: string, nullable: true }
+        inheritedSharePct: { type: string, nullable: true }
+        isContributing: { type: boolean }
+        participationStatus: { type: string, enum: [active, suspended, disputed, resolved, withdrawn] }
+        contributionActivatedAt: { type: string, nullable: true }
+        activatedBy: { type: string, format: uuid, nullable: true }
+        activatedByName: { type: string, nullable: true }
+        notes: { type: string, nullable: true }
+        isActive: { type: boolean }
+        createdBy: { type: string, format: uuid, nullable: true }
+        createdByName: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    ClaimantParticipationPage:
+      type: object
+      required: [participations, total]
+      properties:
+        participations: { type: array, items: { $ref: "#/components/schemas/ClaimantParticipationRecord" } }
+        total: { type: integer }
+
+    CreateClaimantParticipationBody:
+      type: object
+      required: [claimId, claimantId, projectId, partnerId]
+      properties:
+        claimId: { type: string, format: uuid }
+        claimantId: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        partnerId: { type: string, format: uuid }
+        inheritedSharePct: { type: number, minimum: 0.0001, maximum: 100 }
+        isContributing: { type: boolean }
+        notes: { type: string }
+
+    UpdateClaimantParticipationBody:
+      type: object
+      properties:
+        participationStatus: { type: string, enum: [active, suspended, disputed, resolved, withdrawn] }
+        isContributing: { type: boolean }
+        inheritedSharePct: { type: number, minimum: 0.0001, maximum: 100 }
+        notes: { type: string, nullable: true }
+
+    ClaimantContribution:
+      type: object
+      required: [id, participationRecordId, claimantId, projectId, claimId, periodLabel, amount, contributionType, status, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        participationRecordId: { type: string, format: uuid }
+        claimantId: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        claimId: { type: string, format: uuid }
+        claimantName: { type: string, nullable: true }
+        projectName: { type: string, nullable: true }
+        periodLabel: { type: string }
+        amount: { type: string }
+        contributionType: { type: string }
+        description: { type: string, nullable: true }
+        status: { type: string, enum: [pending_otp, otp_sent, confirmed, rejected] }
+        otpCode: { type: string, nullable: true }
+        otpRequestedAt: { type: string, nullable: true }
+        otpSentAt: { type: string, nullable: true }
+        otpVerifiedAt: { type: string, nullable: true }
+        otpVerifiedBy: { type: string, format: uuid, nullable: true }
+        otpVerifiedByName: { type: string, nullable: true }
+        rejectionReason: { type: string, nullable: true }
+        notes: { type: string, nullable: true }
+        submittedBy: { type: string, format: uuid, nullable: true }
+        submittedByName: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    ClaimantContributionPage:
+      type: object
+      required: [contributions, total]
+      properties:
+        contributions: { type: array, items: { $ref: "#/components/schemas/ClaimantContribution" } }
+        total: { type: integer }
+
+    CreateClaimantContributionBody:
+      type: object
+      required: [participationRecordId, claimantId, projectId, claimId, periodLabel, amount]
+      properties:
+        participationRecordId: { type: string, format: uuid }
+        claimantId: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        claimId: { type: string, format: uuid }
+        periodLabel: { type: string }
+        amount: { type: number, minimum: 0.01 }
+        contributionType: { type: string, enum: [cash, in_kind, service] }
+        description: { type: string }
+        notes: { type: string }
+
+    UpdateClaimantContributionBody:
+      type: object
+      properties:
+        notes: { type: string, nullable: true }
+        rejectionReason: { type: string, nullable: true }
+        status: { type: string, enum: [rejected] }
+
+    DisputedAccumulationEntry:
+      type: object
+      required: [id, claimId, projectId, periodLabel, amount, accumulationType, status, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        claimId: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        claimantId: { type: string, format: uuid, nullable: true }
+        claimantName: { type: string, nullable: true }
+        projectName: { type: string, nullable: true }
+        periodLabel: { type: string }
+        periodYear: { type: integer, nullable: true }
+        amount: { type: string }
+        accumulationType: { type: string, enum: [contribution, revenue_entitlement, lca_credit, other] }
+        description: { type: string, nullable: true }
+        status: { type: string, enum: [accumulating, released, forfeited] }
+        releasedToClaimantId: { type: string, format: uuid, nullable: true }
+        releasedToClaimantName: { type: string, nullable: true }
+        releasedAt: { type: string, nullable: true }
+        releasedBy: { type: string, format: uuid, nullable: true }
+        releasedByName: { type: string, nullable: true }
+        releaseNotes: { type: string, nullable: true }
+        createdBy: { type: string, format: uuid, nullable: true }
+        createdByName: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    DisputedAccumulationPage:
+      type: object
+      required: [entries, total, totalAccumulatingAmount]
+      properties:
+        entries: { type: array, items: { $ref: "#/components/schemas/DisputedAccumulationEntry" } }
+        total: { type: integer }
+        totalAccumulatingAmount: { type: number }
+
+    CreateDisputedAccumulationBody:
+      type: object
+      required: [claimId, projectId, periodLabel, amount]
+      properties:
+        claimId: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        claimantId: { type: string, format: uuid }
+        periodLabel: { type: string }
+        periodYear: { type: integer }
+        amount: { type: number, minimum: 0.01 }
+        accumulationType: { type: string, enum: [contribution, revenue_entitlement, lca_credit, other] }
+        description: { type: string }
+
+    ReleaseAccumulationBody:
+      type: object
+      properties:
+        releasedToClaimantId: { type: string, format: uuid }
+        releasedToClaimantName: { type: string }
+        releaseNotes: { type: string }
+
+    PrematuritySuccessionDashboard:
+      type: object
+      required: [summary, participations, pendingOtpContributions, accumulationEntries, governanceFlags]
+      properties:
+        summary:
+          type: object
+          properties:
+            totalParticipations: { type: integer }
+            activeParticipations: { type: integer }
+            disputedParticipations: { type: integer }
+            contributingClaimants: { type: integer }
+            pendingOtpCount: { type: integer }
+            accumulatingEntries: { type: integer }
+            totalAccumulatedAmount: { type: number }
+        participations: { type: array, items: { $ref: "#/components/schemas/ClaimantParticipationRecord" } }
+        pendingOtpContributions: { type: array, items: { $ref: "#/components/schemas/ClaimantContribution" } }
+        accumulationEntries: { type: array, items: { $ref: "#/components/schemas/DisputedAccumulationEntry" } }
+        governanceFlags:
+          type: object
+          properties:
+            hasDisputedClaimants: { type: boolean }
+            hasPendingOtp: { type: boolean }
+            hasAccumulatedFunds: { type: boolean }
+            projectOperationsBlocked: { type: boolean }

@@ -13936,3 +13936,642 @@ export const DeleteInheritanceDocumentParams = zod.object({
 export const DeleteInheritanceDocumentResponse = zod.object({
   deleted: zod.boolean().optional(),
 });
+
+/**
+ * @summary Full dashboard — participations, pending OTPs, accumulation summary
+ */
+export const GetPrematuritySuccessionDashboardQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+  claimId: zod.coerce.string().uuid().optional(),
+});
+
+export const GetPrematuritySuccessionDashboardResponse = zod.object({
+  summary: zod.object({
+    totalParticipations: zod.number().optional(),
+    activeParticipations: zod.number().optional(),
+    disputedParticipations: zod.number().optional(),
+    contributingClaimants: zod.number().optional(),
+    pendingOtpCount: zod.number().optional(),
+    accumulatingEntries: zod.number().optional(),
+    totalAccumulatedAmount: zod.number().optional(),
+  }),
+  participations: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      claimId: zod.string().uuid(),
+      claimantId: zod.string().uuid(),
+      projectId: zod.string().uuid(),
+      partnerId: zod.string().uuid(),
+      claimantName: zod.string().nullish(),
+      relationship: zod.string().nullish(),
+      claimantStatus: zod.string().nullish(),
+      partnerName: zod.string().nullish(),
+      projectName: zod.string().nullish(),
+      inheritedSharePct: zod.string().nullish(),
+      isContributing: zod.boolean(),
+      participationStatus: zod.enum([
+        "active",
+        "suspended",
+        "disputed",
+        "resolved",
+        "withdrawn",
+      ]),
+      contributionActivatedAt: zod.string().nullish(),
+      activatedBy: zod.string().uuid().nullish(),
+      activatedByName: zod.string().nullish(),
+      notes: zod.string().nullish(),
+      isActive: zod.boolean(),
+      createdBy: zod.string().uuid().nullish(),
+      createdByName: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date().optional(),
+    }),
+  ),
+  pendingOtpContributions: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      participationRecordId: zod.string().uuid(),
+      claimantId: zod.string().uuid(),
+      projectId: zod.string().uuid(),
+      claimId: zod.string().uuid(),
+      claimantName: zod.string().nullish(),
+      projectName: zod.string().nullish(),
+      periodLabel: zod.string(),
+      amount: zod.string(),
+      contributionType: zod.string(),
+      description: zod.string().nullish(),
+      status: zod.enum(["pending_otp", "otp_sent", "confirmed", "rejected"]),
+      otpCode: zod.string().nullish(),
+      otpRequestedAt: zod.string().nullish(),
+      otpSentAt: zod.string().nullish(),
+      otpVerifiedAt: zod.string().nullish(),
+      otpVerifiedBy: zod.string().uuid().nullish(),
+      otpVerifiedByName: zod.string().nullish(),
+      rejectionReason: zod.string().nullish(),
+      notes: zod.string().nullish(),
+      submittedBy: zod.string().uuid().nullish(),
+      submittedByName: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date().optional(),
+    }),
+  ),
+  accumulationEntries: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      claimId: zod.string().uuid(),
+      projectId: zod.string().uuid(),
+      claimantId: zod.string().uuid().nullish(),
+      claimantName: zod.string().nullish(),
+      projectName: zod.string().nullish(),
+      periodLabel: zod.string(),
+      periodYear: zod.number().nullish(),
+      amount: zod.string(),
+      accumulationType: zod.enum([
+        "contribution",
+        "revenue_entitlement",
+        "lca_credit",
+        "other",
+      ]),
+      description: zod.string().nullish(),
+      status: zod.enum(["accumulating", "released", "forfeited"]),
+      releasedToClaimantId: zod.string().uuid().nullish(),
+      releasedToClaimantName: zod.string().nullish(),
+      releasedAt: zod.string().nullish(),
+      releasedBy: zod.string().uuid().nullish(),
+      releasedByName: zod.string().nullish(),
+      releaseNotes: zod.string().nullish(),
+      createdBy: zod.string().uuid().nullish(),
+      createdByName: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date().optional(),
+    }),
+  ),
+  governanceFlags: zod.object({
+    hasDisputedClaimants: zod.boolean().optional(),
+    hasPendingOtp: zod.boolean().optional(),
+    hasAccumulatedFunds: zod.boolean().optional(),
+    projectOperationsBlocked: zod.boolean().optional(),
+  }),
+});
+
+/**
+ * @summary List claimant participation records
+ */
+export const ListClaimantParticipationsQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+  claimId: zod.coerce.string().uuid().optional(),
+  status: zod.coerce.string().optional(),
+});
+
+export const ListClaimantParticipationsResponse = zod.object({
+  participations: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      claimId: zod.string().uuid(),
+      claimantId: zod.string().uuid(),
+      projectId: zod.string().uuid(),
+      partnerId: zod.string().uuid(),
+      claimantName: zod.string().nullish(),
+      relationship: zod.string().nullish(),
+      claimantStatus: zod.string().nullish(),
+      partnerName: zod.string().nullish(),
+      projectName: zod.string().nullish(),
+      inheritedSharePct: zod.string().nullish(),
+      isContributing: zod.boolean(),
+      participationStatus: zod.enum([
+        "active",
+        "suspended",
+        "disputed",
+        "resolved",
+        "withdrawn",
+      ]),
+      contributionActivatedAt: zod.string().nullish(),
+      activatedBy: zod.string().uuid().nullish(),
+      activatedByName: zod.string().nullish(),
+      notes: zod.string().nullish(),
+      isActive: zod.boolean(),
+      createdBy: zod.string().uuid().nullish(),
+      createdByName: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date().optional(),
+    }),
+  ),
+  total: zod.number(),
+});
+
+/**
+ * @summary Activate a claimant to continue deceased partner's participation
+ */
+export const createClaimantParticipationBodyInheritedSharePctMin = 0.0001;
+export const createClaimantParticipationBodyInheritedSharePctMax = 100;
+
+export const CreateClaimantParticipationBody = zod.object({
+  claimId: zod.string().uuid(),
+  claimantId: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  partnerId: zod.string().uuid(),
+  inheritedSharePct: zod
+    .number()
+    .min(createClaimantParticipationBodyInheritedSharePctMin)
+    .max(createClaimantParticipationBodyInheritedSharePctMax)
+    .optional(),
+  isContributing: zod.boolean().optional(),
+  notes: zod.string().optional(),
+});
+
+/**
+ * @summary Update participation status / contribution toggle
+ */
+export const UpdateClaimantParticipationParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const updateClaimantParticipationBodyInheritedSharePctMin = 0.0001;
+export const updateClaimantParticipationBodyInheritedSharePctMax = 100;
+
+export const UpdateClaimantParticipationBody = zod.object({
+  participationStatus: zod
+    .enum(["active", "suspended", "disputed", "resolved", "withdrawn"])
+    .optional(),
+  isContributing: zod.boolean().optional(),
+  inheritedSharePct: zod
+    .number()
+    .min(updateClaimantParticipationBodyInheritedSharePctMin)
+    .max(updateClaimantParticipationBodyInheritedSharePctMax)
+    .optional(),
+  notes: zod.string().nullish(),
+});
+
+export const UpdateClaimantParticipationResponse = zod.object({
+  participation: zod
+    .object({
+      id: zod.string().uuid(),
+      claimId: zod.string().uuid(),
+      claimantId: zod.string().uuid(),
+      projectId: zod.string().uuid(),
+      partnerId: zod.string().uuid(),
+      claimantName: zod.string().nullish(),
+      relationship: zod.string().nullish(),
+      claimantStatus: zod.string().nullish(),
+      partnerName: zod.string().nullish(),
+      projectName: zod.string().nullish(),
+      inheritedSharePct: zod.string().nullish(),
+      isContributing: zod.boolean(),
+      participationStatus: zod.enum([
+        "active",
+        "suspended",
+        "disputed",
+        "resolved",
+        "withdrawn",
+      ]),
+      contributionActivatedAt: zod.string().nullish(),
+      activatedBy: zod.string().uuid().nullish(),
+      activatedByName: zod.string().nullish(),
+      notes: zod.string().nullish(),
+      isActive: zod.boolean(),
+      createdBy: zod.string().uuid().nullish(),
+      createdByName: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date().optional(),
+    })
+    .optional(),
+});
+
+/**
+ * @summary Deactivate participation record (admin only)
+ */
+export const DeleteClaimantParticipationParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const DeleteClaimantParticipationResponse = zod.object({
+  deleted: zod.boolean().optional(),
+});
+
+/**
+ * @summary List claimant contributions with OTP status
+ */
+export const ListClaimantContributionsQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+  claimId: zod.coerce.string().uuid().optional(),
+  claimantId: zod.coerce.string().uuid().optional(),
+  status: zod.coerce.string().optional(),
+});
+
+export const ListClaimantContributionsResponse = zod.object({
+  contributions: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      participationRecordId: zod.string().uuid(),
+      claimantId: zod.string().uuid(),
+      projectId: zod.string().uuid(),
+      claimId: zod.string().uuid(),
+      claimantName: zod.string().nullish(),
+      projectName: zod.string().nullish(),
+      periodLabel: zod.string(),
+      amount: zod.string(),
+      contributionType: zod.string(),
+      description: zod.string().nullish(),
+      status: zod.enum(["pending_otp", "otp_sent", "confirmed", "rejected"]),
+      otpCode: zod.string().nullish(),
+      otpRequestedAt: zod.string().nullish(),
+      otpSentAt: zod.string().nullish(),
+      otpVerifiedAt: zod.string().nullish(),
+      otpVerifiedBy: zod.string().uuid().nullish(),
+      otpVerifiedByName: zod.string().nullish(),
+      rejectionReason: zod.string().nullish(),
+      notes: zod.string().nullish(),
+      submittedBy: zod.string().uuid().nullish(),
+      submittedByName: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date().optional(),
+    }),
+  ),
+  total: zod.number(),
+});
+
+/**
+ * @summary Submit a claimant contribution (starts in pending_otp state)
+ */
+export const createClaimantContributionBodyAmountMin = 0.01;
+
+export const CreateClaimantContributionBody = zod.object({
+  participationRecordId: zod.string().uuid(),
+  claimantId: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  claimId: zod.string().uuid(),
+  periodLabel: zod.string(),
+  amount: zod.number().min(createClaimantContributionBodyAmountMin),
+  contributionType: zod.enum(["cash", "in_kind", "service"]).optional(),
+  description: zod.string().optional(),
+  notes: zod.string().optional(),
+});
+
+/**
+ * @summary Update notes or reject a contribution
+ */
+export const UpdateClaimantContributionParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const UpdateClaimantContributionBody = zod.object({
+  notes: zod.string().nullish(),
+  rejectionReason: zod.string().nullish(),
+  status: zod.enum(["rejected"]).optional(),
+});
+
+export const UpdateClaimantContributionResponse = zod.object({
+  contribution: zod
+    .object({
+      id: zod.string().uuid(),
+      participationRecordId: zod.string().uuid(),
+      claimantId: zod.string().uuid(),
+      projectId: zod.string().uuid(),
+      claimId: zod.string().uuid(),
+      claimantName: zod.string().nullish(),
+      projectName: zod.string().nullish(),
+      periodLabel: zod.string(),
+      amount: zod.string(),
+      contributionType: zod.string(),
+      description: zod.string().nullish(),
+      status: zod.enum(["pending_otp", "otp_sent", "confirmed", "rejected"]),
+      otpCode: zod.string().nullish(),
+      otpRequestedAt: zod.string().nullish(),
+      otpSentAt: zod.string().nullish(),
+      otpVerifiedAt: zod.string().nullish(),
+      otpVerifiedBy: zod.string().uuid().nullish(),
+      otpVerifiedByName: zod.string().nullish(),
+      rejectionReason: zod.string().nullish(),
+      notes: zod.string().nullish(),
+      submittedBy: zod.string().uuid().nullish(),
+      submittedByName: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date().optional(),
+    })
+    .optional(),
+});
+
+/**
+ * @summary Generate OTP for developer to relay to claimant
+ */
+export const RequestContributionOtpParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const RequestContributionOtpResponse = zod.object({
+  contribution: zod
+    .object({
+      id: zod.string().uuid(),
+      participationRecordId: zod.string().uuid(),
+      claimantId: zod.string().uuid(),
+      projectId: zod.string().uuid(),
+      claimId: zod.string().uuid(),
+      claimantName: zod.string().nullish(),
+      projectName: zod.string().nullish(),
+      periodLabel: zod.string(),
+      amount: zod.string(),
+      contributionType: zod.string(),
+      description: zod.string().nullish(),
+      status: zod.enum(["pending_otp", "otp_sent", "confirmed", "rejected"]),
+      otpCode: zod.string().nullish(),
+      otpRequestedAt: zod.string().nullish(),
+      otpSentAt: zod.string().nullish(),
+      otpVerifiedAt: zod.string().nullish(),
+      otpVerifiedBy: zod.string().uuid().nullish(),
+      otpVerifiedByName: zod.string().nullish(),
+      rejectionReason: zod.string().nullish(),
+      notes: zod.string().nullish(),
+      submittedBy: zod.string().uuid().nullish(),
+      submittedByName: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date().optional(),
+    })
+    .optional(),
+  otp: zod.string().optional(),
+  message: zod.string().optional(),
+});
+
+/**
+ * @summary Developer verifies OTP → contribution confirmed
+ */
+export const VerifyContributionOtpParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const VerifyContributionOtpBody = zod.object({
+  otpCode: zod.string(),
+});
+
+export const VerifyContributionOtpResponse = zod.object({
+  contribution: zod
+    .object({
+      id: zod.string().uuid(),
+      participationRecordId: zod.string().uuid(),
+      claimantId: zod.string().uuid(),
+      projectId: zod.string().uuid(),
+      claimId: zod.string().uuid(),
+      claimantName: zod.string().nullish(),
+      projectName: zod.string().nullish(),
+      periodLabel: zod.string(),
+      amount: zod.string(),
+      contributionType: zod.string(),
+      description: zod.string().nullish(),
+      status: zod.enum(["pending_otp", "otp_sent", "confirmed", "rejected"]),
+      otpCode: zod.string().nullish(),
+      otpRequestedAt: zod.string().nullish(),
+      otpSentAt: zod.string().nullish(),
+      otpVerifiedAt: zod.string().nullish(),
+      otpVerifiedBy: zod.string().uuid().nullish(),
+      otpVerifiedByName: zod.string().nullish(),
+      rejectionReason: zod.string().nullish(),
+      notes: zod.string().nullish(),
+      submittedBy: zod.string().uuid().nullish(),
+      submittedByName: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date().optional(),
+    })
+    .optional(),
+  message: zod.string().optional(),
+});
+
+/**
+ * @summary List disputed accumulation ledger entries
+ */
+export const ListDisputedAccumulationQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+  claimId: zod.coerce.string().uuid().optional(),
+  claimantId: zod.coerce.string().uuid().optional(),
+  status: zod.coerce.string().optional(),
+});
+
+export const ListDisputedAccumulationResponse = zod.object({
+  entries: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      claimId: zod.string().uuid(),
+      projectId: zod.string().uuid(),
+      claimantId: zod.string().uuid().nullish(),
+      claimantName: zod.string().nullish(),
+      projectName: zod.string().nullish(),
+      periodLabel: zod.string(),
+      periodYear: zod.number().nullish(),
+      amount: zod.string(),
+      accumulationType: zod.enum([
+        "contribution",
+        "revenue_entitlement",
+        "lca_credit",
+        "other",
+      ]),
+      description: zod.string().nullish(),
+      status: zod.enum(["accumulating", "released", "forfeited"]),
+      releasedToClaimantId: zod.string().uuid().nullish(),
+      releasedToClaimantName: zod.string().nullish(),
+      releasedAt: zod.string().nullish(),
+      releasedBy: zod.string().uuid().nullish(),
+      releasedByName: zod.string().nullish(),
+      releaseNotes: zod.string().nullish(),
+      createdBy: zod.string().uuid().nullish(),
+      createdByName: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date().optional(),
+    }),
+  ),
+  total: zod.number(),
+  totalAccumulatingAmount: zod.number(),
+});
+
+/**
+ * @summary Add an accumulation entry for a disputed claimant
+ */
+export const createDisputedAccumulationEntryBodyAmountMin = 0.01;
+
+export const CreateDisputedAccumulationEntryBody = zod.object({
+  claimId: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  claimantId: zod.string().uuid().optional(),
+  periodLabel: zod.string(),
+  periodYear: zod.number().optional(),
+  amount: zod.number().min(createDisputedAccumulationEntryBodyAmountMin),
+  accumulationType: zod
+    .enum(["contribution", "revenue_entitlement", "lca_credit", "other"])
+    .optional(),
+  description: zod.string().optional(),
+});
+
+/**
+ * @summary Update accumulation entry description/amount
+ */
+export const UpdateDisputedAccumulationEntryParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const UpdateDisputedAccumulationEntryBody = zod.object({
+  description: zod.string().nullish(),
+  amount: zod.number().optional(),
+});
+
+export const UpdateDisputedAccumulationEntryResponse = zod.object({
+  entry: zod
+    .object({
+      id: zod.string().uuid(),
+      claimId: zod.string().uuid(),
+      projectId: zod.string().uuid(),
+      claimantId: zod.string().uuid().nullish(),
+      claimantName: zod.string().nullish(),
+      projectName: zod.string().nullish(),
+      periodLabel: zod.string(),
+      periodYear: zod.number().nullish(),
+      amount: zod.string(),
+      accumulationType: zod.enum([
+        "contribution",
+        "revenue_entitlement",
+        "lca_credit",
+        "other",
+      ]),
+      description: zod.string().nullish(),
+      status: zod.enum(["accumulating", "released", "forfeited"]),
+      releasedToClaimantId: zod.string().uuid().nullish(),
+      releasedToClaimantName: zod.string().nullish(),
+      releasedAt: zod.string().nullish(),
+      releasedBy: zod.string().uuid().nullish(),
+      releasedByName: zod.string().nullish(),
+      releaseNotes: zod.string().nullish(),
+      createdBy: zod.string().uuid().nullish(),
+      createdByName: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date().optional(),
+    })
+    .optional(),
+});
+
+/**
+ * @summary Release accumulated amount to a claimant after resolution (admin)
+ */
+export const ReleaseAccumulationEntryParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const ReleaseAccumulationEntryBody = zod.object({
+  releasedToClaimantId: zod.string().uuid().optional(),
+  releasedToClaimantName: zod.string().optional(),
+  releaseNotes: zod.string().optional(),
+});
+
+export const ReleaseAccumulationEntryResponse = zod.object({
+  entry: zod
+    .object({
+      id: zod.string().uuid(),
+      claimId: zod.string().uuid(),
+      projectId: zod.string().uuid(),
+      claimantId: zod.string().uuid().nullish(),
+      claimantName: zod.string().nullish(),
+      projectName: zod.string().nullish(),
+      periodLabel: zod.string(),
+      periodYear: zod.number().nullish(),
+      amount: zod.string(),
+      accumulationType: zod.enum([
+        "contribution",
+        "revenue_entitlement",
+        "lca_credit",
+        "other",
+      ]),
+      description: zod.string().nullish(),
+      status: zod.enum(["accumulating", "released", "forfeited"]),
+      releasedToClaimantId: zod.string().uuid().nullish(),
+      releasedToClaimantName: zod.string().nullish(),
+      releasedAt: zod.string().nullish(),
+      releasedBy: zod.string().uuid().nullish(),
+      releasedByName: zod.string().nullish(),
+      releaseNotes: zod.string().nullish(),
+      createdBy: zod.string().uuid().nullish(),
+      createdByName: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date().optional(),
+    })
+    .optional(),
+});
+
+/**
+ * @summary Forfeit accumulated amount (court/tribal council order) (admin)
+ */
+export const ForfeitAccumulationEntryParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const ForfeitAccumulationEntryBody = zod.object({
+  releaseNotes: zod.string().optional(),
+});
+
+export const ForfeitAccumulationEntryResponse = zod.object({
+  entry: zod
+    .object({
+      id: zod.string().uuid(),
+      claimId: zod.string().uuid(),
+      projectId: zod.string().uuid(),
+      claimantId: zod.string().uuid().nullish(),
+      claimantName: zod.string().nullish(),
+      projectName: zod.string().nullish(),
+      periodLabel: zod.string(),
+      periodYear: zod.number().nullish(),
+      amount: zod.string(),
+      accumulationType: zod.enum([
+        "contribution",
+        "revenue_entitlement",
+        "lca_credit",
+        "other",
+      ]),
+      description: zod.string().nullish(),
+      status: zod.enum(["accumulating", "released", "forfeited"]),
+      releasedToClaimantId: zod.string().uuid().nullish(),
+      releasedToClaimantName: zod.string().nullish(),
+      releasedAt: zod.string().nullish(),
+      releasedBy: zod.string().uuid().nullish(),
+      releasedByName: zod.string().nullish(),
+      releaseNotes: zod.string().nullish(),
+      createdBy: zod.string().uuid().nullish(),
+      createdByName: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date().optional(),
+    })
+    .optional(),
+});

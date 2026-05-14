@@ -59,3 +59,4 @@ export * from "./transfer_otp";
 export * from "./transfer_audit";
 export * from "./valuations";
 export * from "./inheritance";
+export * from "./prematurity_succession";

@@ -1238,3 +1238,45 @@ open → under_review → developer_approved → documents_verified → approved
 **Generated hooks:** `useListInheritanceClaims`, `useCreateInheritanceClaim`, `useGetInheritanceClaim`, `useUpdateInheritanceClaim`, `useDeleteInheritanceClaim`, `useTransitionInheritanceClaimStatus`, `useListInheritanceShares`, `useCreateInheritanceShare`, `useUpdateInheritanceShare`, `useDeleteInheritanceShare`, `useListInheritanceDocuments`, `useCreateInheritanceDocument`, `useUpdateInheritanceDocument`, `useDeleteInheritanceDocument`
 
 **Sidebar:** "Inheritance Claims" added to Ownership group (admin/developer only), `Gavel` icon
+
+## Prematurity Death Succession Workflow
+
+When a partner dies before the project reaches maturity (prematurity lifecycle phase), claimants can independently continue the deceased partner's participation position. **Project operations are NEVER frozen** — this workflow only tracks succession continuation.
+
+**Core design rules:**
+- Claimants participate independently (not jointly) — each has their own participation record
+- Contributions require OTP verification by the Project Developer before confirmation
+- Disputed claimant amounts accumulate in a separate ledger (not lost) pending resolution
+- `projectOperationsBlocked` is always `false` — enforced in both API and UI
+
+**DB tables** (`lib/db/src/schema/prematurity_succession.ts`):
+- `claimant_participation_records` — one per (claimId, claimantId), tracks participationStatus (active/suspended/disputed/resolved/withdrawn), inheritedSharePct, isContributing, contributionActivatedAt, audit chain
+- `claimant_contributions` — individual contributions; OTP flow: `pending_otp → otp_sent → confirmed/rejected`; otpCode stored plain (6-digit numeric); otpVerifiedBy = Project Developer
+- `disputed_accumulation_ledger` — holds amounts during active dispute; accumulationType (contribution/revenue_entitlement/lca_credit/other); status (accumulating/released/forfeited); release or forfeit by admin
+
+**API endpoints** (`artifacts/api-server/src/routes/prematurity_succession.ts`, mounted at `/prematurity-succession`):
+- `GET /dashboard` — KPI summary + pending OTP list + accumulation entries + governance flags
+- `GET/POST /participations` — list/activate claimant participations (POST validates claim must be `claimType="death"`)
+- `PATCH/DELETE /participations/:id` — update status/contribution toggle / deactivate (admin)
+- `GET/POST /contributions` — list/submit contributions (status starts at `pending_otp`)
+- `POST /contributions/:id/request-otp` — generates 6-digit OTP, returns it for developer to relay out-of-band
+- `POST /contributions/:id/verify-otp` — developer enters OTP → status → `confirmed`
+- `PATCH /contributions/:id` — update notes or reject
+- `GET/POST /accumulation` — list/create accumulation entries for disputed amounts
+- `PATCH /accumulation/:id` — update description/amount
+- `POST /accumulation/:id/release` — release to resolved claimant (admin only)
+- `POST /accumulation/:id/forfeit` — mark forfeited by court/tribal council order (admin only)
+
+**Frontend** (`artifacts/plantation-web/src/pages/PrematuritySuccession.tsx`, route `/prematurity-succession`):
+- **Dashboard tab** — 4 KPIs (active, disputed, pending OTP, accumulated amount), governance alert banners for each flag, pending OTP quick-view table, non-freeze notice
+- **Participation tab** — filterable table of all active participation records; toggle contributing on/off; status transitions (active → disputed → resolved); deactivate; Add Participation dialog with claim/project/partner/claimant selectors + inherited share % input
+- **OTP Queue tab** — filterable contribution table; "Gen OTP" generates a 6-digit code shown in a modal for developer to relay; "Verify" dialog for developer to enter the claimant's OTP; reject action with reason; Add Contribution dialog linked to a participation record
+- **Accumulation tab** — disputed ledger with running total banner; Release dialog (select claimant + notes); Forfeit confirmation (irreversible); Add Entry dialog (type, period, amount, optional claimant)
+
+**Governance alerts** (in `artifacts/api-server/src/routes/governance.ts`):
+- `DISPUTED_SUCCESSION_CLAIMANTS` (attention_required) — per project, when any claimant participation has status = "disputed"
+- `PENDING_OTP_SUCCESSION_CONTRIBUTIONS` (pending) — per project, when any contribution has status = "pending_otp" or "otp_sent"
+
+**Sidebar:** "Succession Workflow" added to Ownership group (admin/developer only), `Sprout` icon
+
+**Generated hooks:** `useGetPrematuritySuccessionDashboard`, `useListClaimantParticipations`, `useCreateClaimantParticipation`, `useUpdateClaimantParticipation`, `useDeleteClaimantParticipation`, `useListClaimantContributions`, `useCreateClaimantContribution`, `useRequestContributionOtp`, `useVerifyContributionOtp`, `useUpdateClaimantContribution`, `useListDisputedAccumulation`, `useCreateDisputedAccumulationEntry`, `useUpdateDisputedAccumulationEntry`, `useReleaseAccumulationEntry`, `useForfeitAccumulationEntry`

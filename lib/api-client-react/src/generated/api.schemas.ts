@@ -6598,6 +6598,263 @@ export interface InheritanceSharesPage {
   total: number;
 }
 
+export type ClaimantParticipationRecordParticipationStatus =
+  (typeof ClaimantParticipationRecordParticipationStatus)[keyof typeof ClaimantParticipationRecordParticipationStatus];
+
+export const ClaimantParticipationRecordParticipationStatus = {
+  active: "active",
+  suspended: "suspended",
+  disputed: "disputed",
+  resolved: "resolved",
+  withdrawn: "withdrawn",
+} as const;
+
+export interface ClaimantParticipationRecord {
+  id: string;
+  claimId: string;
+  claimantId: string;
+  projectId: string;
+  partnerId: string;
+  claimantName?: string | null;
+  relationship?: string | null;
+  claimantStatus?: string | null;
+  partnerName?: string | null;
+  projectName?: string | null;
+  inheritedSharePct?: string | null;
+  isContributing: boolean;
+  participationStatus: ClaimantParticipationRecordParticipationStatus;
+  contributionActivatedAt?: string | null;
+  activatedBy?: string | null;
+  activatedByName?: string | null;
+  notes?: string | null;
+  isActive: boolean;
+  createdBy?: string | null;
+  createdByName?: string | null;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface ClaimantParticipationPage {
+  participations: ClaimantParticipationRecord[];
+  total: number;
+}
+
+export interface CreateClaimantParticipationBody {
+  claimId: string;
+  claimantId: string;
+  projectId: string;
+  partnerId: string;
+  /**
+   * @minimum 0.0001
+   * @maximum 100
+   */
+  inheritedSharePct?: number;
+  isContributing?: boolean;
+  notes?: string;
+}
+
+export type UpdateClaimantParticipationBodyParticipationStatus =
+  (typeof UpdateClaimantParticipationBodyParticipationStatus)[keyof typeof UpdateClaimantParticipationBodyParticipationStatus];
+
+export const UpdateClaimantParticipationBodyParticipationStatus = {
+  active: "active",
+  suspended: "suspended",
+  disputed: "disputed",
+  resolved: "resolved",
+  withdrawn: "withdrawn",
+} as const;
+
+export interface UpdateClaimantParticipationBody {
+  participationStatus?: UpdateClaimantParticipationBodyParticipationStatus;
+  isContributing?: boolean;
+  /**
+   * @minimum 0.0001
+   * @maximum 100
+   */
+  inheritedSharePct?: number;
+  notes?: string | null;
+}
+
+export type ClaimantContributionStatus =
+  (typeof ClaimantContributionStatus)[keyof typeof ClaimantContributionStatus];
+
+export const ClaimantContributionStatus = {
+  pending_otp: "pending_otp",
+  otp_sent: "otp_sent",
+  confirmed: "confirmed",
+  rejected: "rejected",
+} as const;
+
+export interface ClaimantContribution {
+  id: string;
+  participationRecordId: string;
+  claimantId: string;
+  projectId: string;
+  claimId: string;
+  claimantName?: string | null;
+  projectName?: string | null;
+  periodLabel: string;
+  amount: string;
+  contributionType: string;
+  description?: string | null;
+  status: ClaimantContributionStatus;
+  otpCode?: string | null;
+  otpRequestedAt?: string | null;
+  otpSentAt?: string | null;
+  otpVerifiedAt?: string | null;
+  otpVerifiedBy?: string | null;
+  otpVerifiedByName?: string | null;
+  rejectionReason?: string | null;
+  notes?: string | null;
+  submittedBy?: string | null;
+  submittedByName?: string | null;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface ClaimantContributionPage {
+  contributions: ClaimantContribution[];
+  total: number;
+}
+
+export type CreateClaimantContributionBodyContributionType =
+  (typeof CreateClaimantContributionBodyContributionType)[keyof typeof CreateClaimantContributionBodyContributionType];
+
+export const CreateClaimantContributionBodyContributionType = {
+  cash: "cash",
+  in_kind: "in_kind",
+  service: "service",
+} as const;
+
+export interface CreateClaimantContributionBody {
+  participationRecordId: string;
+  claimantId: string;
+  projectId: string;
+  claimId: string;
+  periodLabel: string;
+  /** @minimum 0.01 */
+  amount: number;
+  contributionType?: CreateClaimantContributionBodyContributionType;
+  description?: string;
+  notes?: string;
+}
+
+export type UpdateClaimantContributionBodyStatus =
+  (typeof UpdateClaimantContributionBodyStatus)[keyof typeof UpdateClaimantContributionBodyStatus];
+
+export const UpdateClaimantContributionBodyStatus = {
+  rejected: "rejected",
+} as const;
+
+export interface UpdateClaimantContributionBody {
+  notes?: string | null;
+  rejectionReason?: string | null;
+  status?: UpdateClaimantContributionBodyStatus;
+}
+
+export type DisputedAccumulationEntryAccumulationType =
+  (typeof DisputedAccumulationEntryAccumulationType)[keyof typeof DisputedAccumulationEntryAccumulationType];
+
+export const DisputedAccumulationEntryAccumulationType = {
+  contribution: "contribution",
+  revenue_entitlement: "revenue_entitlement",
+  lca_credit: "lca_credit",
+  other: "other",
+} as const;
+
+export type DisputedAccumulationEntryStatus =
+  (typeof DisputedAccumulationEntryStatus)[keyof typeof DisputedAccumulationEntryStatus];
+
+export const DisputedAccumulationEntryStatus = {
+  accumulating: "accumulating",
+  released: "released",
+  forfeited: "forfeited",
+} as const;
+
+export interface DisputedAccumulationEntry {
+  id: string;
+  claimId: string;
+  projectId: string;
+  claimantId?: string | null;
+  claimantName?: string | null;
+  projectName?: string | null;
+  periodLabel: string;
+  periodYear?: number | null;
+  amount: string;
+  accumulationType: DisputedAccumulationEntryAccumulationType;
+  description?: string | null;
+  status: DisputedAccumulationEntryStatus;
+  releasedToClaimantId?: string | null;
+  releasedToClaimantName?: string | null;
+  releasedAt?: string | null;
+  releasedBy?: string | null;
+  releasedByName?: string | null;
+  releaseNotes?: string | null;
+  createdBy?: string | null;
+  createdByName?: string | null;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface DisputedAccumulationPage {
+  entries: DisputedAccumulationEntry[];
+  total: number;
+  totalAccumulatingAmount: number;
+}
+
+export type CreateDisputedAccumulationBodyAccumulationType =
+  (typeof CreateDisputedAccumulationBodyAccumulationType)[keyof typeof CreateDisputedAccumulationBodyAccumulationType];
+
+export const CreateDisputedAccumulationBodyAccumulationType = {
+  contribution: "contribution",
+  revenue_entitlement: "revenue_entitlement",
+  lca_credit: "lca_credit",
+  other: "other",
+} as const;
+
+export interface CreateDisputedAccumulationBody {
+  claimId: string;
+  projectId: string;
+  claimantId?: string;
+  periodLabel: string;
+  periodYear?: number;
+  /** @minimum 0.01 */
+  amount: number;
+  accumulationType?: CreateDisputedAccumulationBodyAccumulationType;
+  description?: string;
+}
+
+export interface ReleaseAccumulationBody {
+  releasedToClaimantId?: string;
+  releasedToClaimantName?: string;
+  releaseNotes?: string;
+}
+
+export type PrematuritySuccessionDashboardSummary = {
+  totalParticipations?: number;
+  activeParticipations?: number;
+  disputedParticipations?: number;
+  contributingClaimants?: number;
+  pendingOtpCount?: number;
+  accumulatingEntries?: number;
+  totalAccumulatedAmount?: number;
+};
+
+export type PrematuritySuccessionDashboardGovernanceFlags = {
+  hasDisputedClaimants?: boolean;
+  hasPendingOtp?: boolean;
+  hasAccumulatedFunds?: boolean;
+  projectOperationsBlocked?: boolean;
+};
+
+export interface PrematuritySuccessionDashboard {
+  summary: PrematuritySuccessionDashboardSummary;
+  participations: ClaimantParticipationRecord[];
+  pendingOtpContributions: ClaimantContribution[];
+  accumulationEntries: DisputedAccumulationEntry[];
+  governanceFlags: PrematuritySuccessionDashboardGovernanceFlags;
+}
+
 export type GetUserActivityParams = {
   limit?: number;
 };
@@ -7964,4 +8221,89 @@ export type UpdateInheritanceDocument200 = {
 
 export type DeleteInheritanceDocument200 = {
   deleted?: boolean;
+};
+
+export type GetPrematuritySuccessionDashboardParams = {
+  projectId?: string;
+  claimId?: string;
+};
+
+export type ListClaimantParticipationsParams = {
+  projectId?: string;
+  claimId?: string;
+  status?: string;
+};
+
+export type CreateClaimantParticipation201 = {
+  participation?: ClaimantParticipationRecord;
+};
+
+export type UpdateClaimantParticipation200 = {
+  participation?: ClaimantParticipationRecord;
+};
+
+export type DeleteClaimantParticipation200 = {
+  deleted?: boolean;
+};
+
+export type ListClaimantContributionsParams = {
+  projectId?: string;
+  claimId?: string;
+  claimantId?: string;
+  status?: string;
+};
+
+export type CreateClaimantContribution201 = {
+  contribution?: ClaimantContribution;
+};
+
+export type UpdateClaimantContribution200 = {
+  contribution?: ClaimantContribution;
+};
+
+export type RequestContributionOtp200 = {
+  contribution?: ClaimantContribution;
+  otp?: string;
+  message?: string;
+};
+
+export type VerifyContributionOtpBody = {
+  otpCode: string;
+};
+
+export type VerifyContributionOtp200 = {
+  contribution?: ClaimantContribution;
+  message?: string;
+};
+
+export type ListDisputedAccumulationParams = {
+  projectId?: string;
+  claimId?: string;
+  claimantId?: string;
+  status?: string;
+};
+
+export type CreateDisputedAccumulationEntry201 = {
+  entry?: DisputedAccumulationEntry;
+};
+
+export type UpdateDisputedAccumulationEntryBody = {
+  description?: string | null;
+  amount?: number;
+};
+
+export type UpdateDisputedAccumulationEntry200 = {
+  entry?: DisputedAccumulationEntry;
+};
+
+export type ReleaseAccumulationEntry200 = {
+  entry?: DisputedAccumulationEntry;
+};
+
+export type ForfeitAccumulationEntryBody = {
+  releaseNotes?: string;
+};
+
+export type ForfeitAccumulationEntry200 = {
+  entry?: DisputedAccumulationEntry;
 };

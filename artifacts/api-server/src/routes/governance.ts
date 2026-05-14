@@ -16,6 +16,8 @@ import {
   contributionsTable,
   expenditureVerificationRequestsTable,
   burdenRecordsTable,
+  claimantParticipationRecordsTable,
+  claimantContributionsTable,
 } from "@workspace/db";
 import { eq, inArray, isNull, and } from "drizzle-orm";
 import { requireRole } from "../middlewares/auth";
@@ -37,7 +39,9 @@ type GovernanceIssueCode =
   | "PENDING_CONTRIBUTIONS"
   | "REJECTED_EXPENDITURE"
   | "PENDING_EXPENDITURE_VERIFICATION"
-  | "UNRESOLVED_BURDEN_IMBALANCE";
+  | "UNRESOLVED_BURDEN_IMBALANCE"
+  | "DISPUTED_SUCCESSION_CLAIMANTS"
+  | "PENDING_OTP_SUCCESSION_CONTRIBUTIONS";
 
 interface GovernanceAlert {
   code: GovernanceIssueCode;
@@ -636,6 +640,64 @@ router.get("/summary", async (req, res) => {
               issues: [alert],
             });
           }
+        }
+      }
+    }
+
+    // ── Prematurity succession alerts (admin/developer only) ──────────────
+    if (isAdminOrDev) {
+      // Disputed claimant participations
+      const disputedParticipations = await db
+        .select({ id: claimantParticipationRecordsTable.id, projectId: claimantParticipationRecordsTable.projectId })
+        .from(claimantParticipationRecordsTable)
+        .where(and(
+          eq(claimantParticipationRecordsTable.participationStatus, "disputed"),
+          eq(claimantParticipationRecordsTable.isActive, true),
+        ));
+
+      const disputedByProject = new Map<string, number>();
+      for (const r of disputedParticipations) {
+        disputedByProject.set(r.projectId, (disputedByProject.get(r.projectId) ?? 0) + 1);
+      }
+      for (const [pid, count] of disputedByProject.entries()) {
+        const existing = projectAlerts.find((p) => p.projectId === pid);
+        const alert: GovernanceAlert = {
+          code: "DISPUTED_SUCCESSION_CLAIMANTS",
+          severity: "attention_required",
+          message: `${count} claimant${count > 1 ? "s" : ""} in active succession dispute — funds accumulating in disputed ledger pending resolution`,
+        };
+        if (existing) {
+          existing.issues.push(alert);
+          existing.status = worstSeverity(existing.issues);
+        } else {
+          const proj = visibleProjects.find((p) => p.id === pid);
+          if (proj) projectAlerts.push({ projectId: pid, projectName: proj.name, status: "attention_required", issues: [alert] });
+        }
+      }
+
+      // Pending OTP succession contributions
+      const pendingOtpContribs = await db
+        .select({ id: claimantContributionsTable.id, projectId: claimantContributionsTable.projectId })
+        .from(claimantContributionsTable)
+        .where(inArray(claimantContributionsTable.status, ["pending_otp", "otp_sent"]));
+
+      const pendingOtpByProject = new Map<string, number>();
+      for (const r of pendingOtpContribs) {
+        pendingOtpByProject.set(r.projectId, (pendingOtpByProject.get(r.projectId) ?? 0) + 1);
+      }
+      for (const [pid, count] of pendingOtpByProject.entries()) {
+        const existing = projectAlerts.find((p) => p.projectId === pid);
+        const alert: GovernanceAlert = {
+          code: "PENDING_OTP_SUCCESSION_CONTRIBUTIONS",
+          severity: "pending",
+          message: `${count} claimant contribution${count > 1 ? "s" : ""} awaiting OTP verification by Project Developer`,
+        };
+        if (existing) {
+          existing.issues.push(alert);
+          existing.status = worstSeverity(existing.issues);
+        } else {
+          const proj = visibleProjects.find((p) => p.id === pid);
+          if (proj) projectAlerts.push({ projectId: pid, projectName: proj.name, status: "pending", issues: [alert] });
         }
       }
     }

@@ -84,6 +84,7 @@ import ProjectClosurePage from "./pages/ProjectClosurePage";
 import OwnershipTransfers from "./pages/OwnershipTransfers";
 import ValuationEngine from "./pages/ValuationEngine";
 import InheritanceClaims from "./pages/InheritanceClaims";
+import PrematuritySuccession from "./pages/PrematuritySuccession";
 // Layout
 import NotFound from "@/pages/not-found";
 import Layout from "./components/layout/Layout";
@@ -296,6 +297,7 @@ function AppRoutes() {
               <Route path="/ownership-transfers"><ProtectedRoute component={OwnershipTransfers} /></Route>
               <Route path="/valuation-engine"><ProtectedRoute component={ValuationEngine} /></Route>
               <Route path="/inheritance-claims"><ProtectedRoute component={InheritanceClaims} /></Route>
+              <Route path="/prematurity-succession"><ProtectedRoute component={PrematuritySuccession} /></Route>
               <Route path="/sales"><ProtectedRoute component={Sales} /></Route>
               <Route path="/distribution"><ProtectedRoute component={Distribution} /></Route>
 

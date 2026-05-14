@@ -65,6 +65,8 @@ import type {
   CancelOwnershipTransferBody,
   CarryForwardDistributionRecord200,
   CarryForwardDistributionRecordBody,
+  ClaimantContributionPage,
+  ClaimantParticipationPage,
   ComputePayableParams,
   ConfirmExpenditureVerificationOtp200,
   ConfirmExpenditureVerificationOtpBody,
@@ -80,8 +82,14 @@ import type {
   CreateBurdenRecoveryEvent,
   CreateBurdenRuleBody,
   CreateBuyerBody,
+  CreateClaimantContribution201,
+  CreateClaimantContributionBody,
   CreateClaimantInput,
+  CreateClaimantParticipation201,
+  CreateClaimantParticipationBody,
   CreateContributionBody,
+  CreateDisputedAccumulationBody,
+  CreateDisputedAccumulationEntry201,
   CreateDistributionPreviewBody,
   CreateDistributionRecord201,
   CreateDistributionRecordBody,
@@ -130,6 +138,7 @@ import type {
   CreateValuationRun201,
   CreateValuationRunBody,
   DashboardSummary,
+  DeleteClaimantParticipation200,
   DeleteEppEntry200,
   DeleteInheritanceClaim200,
   DeleteInheritanceDocument200,
@@ -143,6 +152,7 @@ import type {
   DiscrepancyReport,
   DisputeSettlement200,
   DisputeSettlementBody,
+  DisputedAccumulationPage,
   DistributionPreview,
   DistributionPreviewDetail,
   DistributionPreviewPage,
@@ -168,6 +178,8 @@ import type {
   FinalizeSettlementBody,
   FinancialAccessLogListResponse,
   FinancialSummary,
+  ForfeitAccumulationEntry200,
+  ForfeitAccumulationEntryBody,
   GenerateAgreementDocument422,
   GenerateDocumentRequest,
   GenerateTransferOtpBody,
@@ -207,6 +219,7 @@ import type {
   GetOwnershipTransferDashboard200,
   GetPartnerDistributionHistoryParams,
   GetPayableSnapshot200,
+  GetPrematuritySuccessionDashboardParams,
   GetProductionLogSummaryParams,
   GetProjectProfitabilityParams,
   GetRevenueTrendParams,
@@ -255,9 +268,12 @@ import type {
   ListBurdenRules200,
   ListBurdenRulesParams,
   ListBuyersParams,
+  ListClaimantContributionsParams,
+  ListClaimantParticipationsParams,
   ListContributionVerificationHistory200,
   ListContributions200,
   ListContributionsParams,
+  ListDisputedAccumulationParams,
   ListDistributionPaymentEvents200,
   ListDistributionPreviewsParams,
   ListDistributionRecords200,
@@ -340,6 +356,7 @@ import type {
   PartnerUpdate,
   PatchBurdenRecoveryAdjustment,
   PayableComputation,
+  PrematuritySuccessionDashboard,
   ProductionBatch,
   ProductionBatchDetail,
   ProductionEntry,
@@ -369,8 +386,11 @@ import type {
   RejectExpenditureBody,
   RejectExpenditureVerification200,
   RejectExpenditureVerificationBody,
+  ReleaseAccumulationBody,
+  ReleaseAccumulationEntry200,
   ReopenSettlement200,
   ReopenSettlementBody,
+  RequestContributionOtp200,
   RequestContributionVerificationBody,
   RequestExpenditureVerificationOtp200,
   RequestUploadUrlBody,
@@ -418,9 +438,15 @@ import type {
   UpdateBurdenRecordBody,
   UpdateBurdenRuleBody,
   UpdateBuyerBody,
+  UpdateClaimantContribution200,
+  UpdateClaimantContributionBody,
   UpdateClaimantInput,
+  UpdateClaimantParticipation200,
+  UpdateClaimantParticipationBody,
   UpdateClosureWorkflowBody,
   UpdateContributionBody,
+  UpdateDisputedAccumulationEntry200,
+  UpdateDisputedAccumulationEntryBody,
   UpdateDistributionPreviewBody,
   UpdateDistributionRecord200,
   UpdateDistributionRecordBody,
@@ -473,6 +499,8 @@ import type {
   VerifyAgreementActivationOtp400,
   VerifyAgreementActivationOtpBody,
   VerifyContributionBody,
+  VerifyContributionOtp200,
+  VerifyContributionOtpBody,
   VerifyNomineeActivationBody,
   VerifyOtpBody,
   VerifyTransferOtp200,
@@ -34060,4 +34088,1432 @@ export const useDeleteInheritanceDocument = <
   TContext
 > => {
   return useMutation(getDeleteInheritanceDocumentMutationOptions(options));
+};
+
+/**
+ * @summary Full dashboard — participations, pending OTPs, accumulation summary
+ */
+export const getGetPrematuritySuccessionDashboardUrl = (
+  params?: GetPrematuritySuccessionDashboardParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/prematurity-succession/dashboard?${stringifiedParams}`
+    : `/api/prematurity-succession/dashboard`;
+};
+
+export const getPrematuritySuccessionDashboard = async (
+  params?: GetPrematuritySuccessionDashboardParams,
+  options?: RequestInit,
+): Promise<PrematuritySuccessionDashboard> => {
+  return customFetch<PrematuritySuccessionDashboard>(
+    getGetPrematuritySuccessionDashboardUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetPrematuritySuccessionDashboardQueryKey = (
+  params?: GetPrematuritySuccessionDashboardParams,
+) => {
+  return [
+    `/api/prematurity-succession/dashboard`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetPrematuritySuccessionDashboardQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPrematuritySuccessionDashboard>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetPrematuritySuccessionDashboardParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPrematuritySuccessionDashboard>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getGetPrematuritySuccessionDashboardQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getPrematuritySuccessionDashboard>>
+  > = ({ signal }) =>
+    getPrematuritySuccessionDashboard(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPrematuritySuccessionDashboard>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPrematuritySuccessionDashboardQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPrematuritySuccessionDashboard>>
+>;
+export type GetPrematuritySuccessionDashboardQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Full dashboard — participations, pending OTPs, accumulation summary
+ */
+
+export function useGetPrematuritySuccessionDashboard<
+  TData = Awaited<ReturnType<typeof getPrematuritySuccessionDashboard>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetPrematuritySuccessionDashboardParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPrematuritySuccessionDashboard>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPrematuritySuccessionDashboardQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List claimant participation records
+ */
+export const getListClaimantParticipationsUrl = (
+  params?: ListClaimantParticipationsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/prematurity-succession/participations?${stringifiedParams}`
+    : `/api/prematurity-succession/participations`;
+};
+
+export const listClaimantParticipations = async (
+  params?: ListClaimantParticipationsParams,
+  options?: RequestInit,
+): Promise<ClaimantParticipationPage> => {
+  return customFetch<ClaimantParticipationPage>(
+    getListClaimantParticipationsUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListClaimantParticipationsQueryKey = (
+  params?: ListClaimantParticipationsParams,
+) => {
+  return [
+    `/api/prematurity-succession/participations`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListClaimantParticipationsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listClaimantParticipations>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListClaimantParticipationsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listClaimantParticipations>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListClaimantParticipationsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listClaimantParticipations>>
+  > = ({ signal }) =>
+    listClaimantParticipations(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listClaimantParticipations>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListClaimantParticipationsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listClaimantParticipations>>
+>;
+export type ListClaimantParticipationsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List claimant participation records
+ */
+
+export function useListClaimantParticipations<
+  TData = Awaited<ReturnType<typeof listClaimantParticipations>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListClaimantParticipationsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listClaimantParticipations>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListClaimantParticipationsQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Activate a claimant to continue deceased partner's participation
+ */
+export const getCreateClaimantParticipationUrl = () => {
+  return `/api/prematurity-succession/participations`;
+};
+
+export const createClaimantParticipation = async (
+  createClaimantParticipationBody: CreateClaimantParticipationBody,
+  options?: RequestInit,
+): Promise<CreateClaimantParticipation201> => {
+  return customFetch<CreateClaimantParticipation201>(
+    getCreateClaimantParticipationUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(createClaimantParticipationBody),
+    },
+  );
+};
+
+export const getCreateClaimantParticipationMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createClaimantParticipation>>,
+    TError,
+    { data: BodyType<CreateClaimantParticipationBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createClaimantParticipation>>,
+  TError,
+  { data: BodyType<CreateClaimantParticipationBody> },
+  TContext
+> => {
+  const mutationKey = ["createClaimantParticipation"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createClaimantParticipation>>,
+    { data: BodyType<CreateClaimantParticipationBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createClaimantParticipation(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateClaimantParticipationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createClaimantParticipation>>
+>;
+export type CreateClaimantParticipationMutationBody =
+  BodyType<CreateClaimantParticipationBody>;
+export type CreateClaimantParticipationMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Activate a claimant to continue deceased partner's participation
+ */
+export const useCreateClaimantParticipation = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createClaimantParticipation>>,
+    TError,
+    { data: BodyType<CreateClaimantParticipationBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createClaimantParticipation>>,
+  TError,
+  { data: BodyType<CreateClaimantParticipationBody> },
+  TContext
+> => {
+  return useMutation(getCreateClaimantParticipationMutationOptions(options));
+};
+
+/**
+ * @summary Update participation status / contribution toggle
+ */
+export const getUpdateClaimantParticipationUrl = (id: string) => {
+  return `/api/prematurity-succession/participations/${id}`;
+};
+
+export const updateClaimantParticipation = async (
+  id: string,
+  updateClaimantParticipationBody: UpdateClaimantParticipationBody,
+  options?: RequestInit,
+): Promise<UpdateClaimantParticipation200> => {
+  return customFetch<UpdateClaimantParticipation200>(
+    getUpdateClaimantParticipationUrl(id),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(updateClaimantParticipationBody),
+    },
+  );
+};
+
+export const getUpdateClaimantParticipationMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateClaimantParticipation>>,
+    TError,
+    { id: string; data: BodyType<UpdateClaimantParticipationBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateClaimantParticipation>>,
+  TError,
+  { id: string; data: BodyType<UpdateClaimantParticipationBody> },
+  TContext
+> => {
+  const mutationKey = ["updateClaimantParticipation"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateClaimantParticipation>>,
+    { id: string; data: BodyType<UpdateClaimantParticipationBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateClaimantParticipation(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateClaimantParticipationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateClaimantParticipation>>
+>;
+export type UpdateClaimantParticipationMutationBody =
+  BodyType<UpdateClaimantParticipationBody>;
+export type UpdateClaimantParticipationMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update participation status / contribution toggle
+ */
+export const useUpdateClaimantParticipation = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateClaimantParticipation>>,
+    TError,
+    { id: string; data: BodyType<UpdateClaimantParticipationBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateClaimantParticipation>>,
+  TError,
+  { id: string; data: BodyType<UpdateClaimantParticipationBody> },
+  TContext
+> => {
+  return useMutation(getUpdateClaimantParticipationMutationOptions(options));
+};
+
+/**
+ * @summary Deactivate participation record (admin only)
+ */
+export const getDeleteClaimantParticipationUrl = (id: string) => {
+  return `/api/prematurity-succession/participations/${id}`;
+};
+
+export const deleteClaimantParticipation = async (
+  id: string,
+  options?: RequestInit,
+): Promise<DeleteClaimantParticipation200> => {
+  return customFetch<DeleteClaimantParticipation200>(
+    getDeleteClaimantParticipationUrl(id),
+    {
+      ...options,
+      method: "DELETE",
+    },
+  );
+};
+
+export const getDeleteClaimantParticipationMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteClaimantParticipation>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteClaimantParticipation>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["deleteClaimantParticipation"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteClaimantParticipation>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteClaimantParticipation(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteClaimantParticipationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteClaimantParticipation>>
+>;
+
+export type DeleteClaimantParticipationMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Deactivate participation record (admin only)
+ */
+export const useDeleteClaimantParticipation = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteClaimantParticipation>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteClaimantParticipation>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getDeleteClaimantParticipationMutationOptions(options));
+};
+
+/**
+ * @summary List claimant contributions with OTP status
+ */
+export const getListClaimantContributionsUrl = (
+  params?: ListClaimantContributionsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/prematurity-succession/contributions?${stringifiedParams}`
+    : `/api/prematurity-succession/contributions`;
+};
+
+export const listClaimantContributions = async (
+  params?: ListClaimantContributionsParams,
+  options?: RequestInit,
+): Promise<ClaimantContributionPage> => {
+  return customFetch<ClaimantContributionPage>(
+    getListClaimantContributionsUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListClaimantContributionsQueryKey = (
+  params?: ListClaimantContributionsParams,
+) => {
+  return [
+    `/api/prematurity-succession/contributions`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListClaimantContributionsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listClaimantContributions>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListClaimantContributionsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listClaimantContributions>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListClaimantContributionsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listClaimantContributions>>
+  > = ({ signal }) =>
+    listClaimantContributions(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listClaimantContributions>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListClaimantContributionsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listClaimantContributions>>
+>;
+export type ListClaimantContributionsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List claimant contributions with OTP status
+ */
+
+export function useListClaimantContributions<
+  TData = Awaited<ReturnType<typeof listClaimantContributions>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListClaimantContributionsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listClaimantContributions>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListClaimantContributionsQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Submit a claimant contribution (starts in pending_otp state)
+ */
+export const getCreateClaimantContributionUrl = () => {
+  return `/api/prematurity-succession/contributions`;
+};
+
+export const createClaimantContribution = async (
+  createClaimantContributionBody: CreateClaimantContributionBody,
+  options?: RequestInit,
+): Promise<CreateClaimantContribution201> => {
+  return customFetch<CreateClaimantContribution201>(
+    getCreateClaimantContributionUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(createClaimantContributionBody),
+    },
+  );
+};
+
+export const getCreateClaimantContributionMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createClaimantContribution>>,
+    TError,
+    { data: BodyType<CreateClaimantContributionBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createClaimantContribution>>,
+  TError,
+  { data: BodyType<CreateClaimantContributionBody> },
+  TContext
+> => {
+  const mutationKey = ["createClaimantContribution"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createClaimantContribution>>,
+    { data: BodyType<CreateClaimantContributionBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createClaimantContribution(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateClaimantContributionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createClaimantContribution>>
+>;
+export type CreateClaimantContributionMutationBody =
+  BodyType<CreateClaimantContributionBody>;
+export type CreateClaimantContributionMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Submit a claimant contribution (starts in pending_otp state)
+ */
+export const useCreateClaimantContribution = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createClaimantContribution>>,
+    TError,
+    { data: BodyType<CreateClaimantContributionBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createClaimantContribution>>,
+  TError,
+  { data: BodyType<CreateClaimantContributionBody> },
+  TContext
+> => {
+  return useMutation(getCreateClaimantContributionMutationOptions(options));
+};
+
+/**
+ * @summary Update notes or reject a contribution
+ */
+export const getUpdateClaimantContributionUrl = (id: string) => {
+  return `/api/prematurity-succession/contributions/${id}`;
+};
+
+export const updateClaimantContribution = async (
+  id: string,
+  updateClaimantContributionBody: UpdateClaimantContributionBody,
+  options?: RequestInit,
+): Promise<UpdateClaimantContribution200> => {
+  return customFetch<UpdateClaimantContribution200>(
+    getUpdateClaimantContributionUrl(id),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(updateClaimantContributionBody),
+    },
+  );
+};
+
+export const getUpdateClaimantContributionMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateClaimantContribution>>,
+    TError,
+    { id: string; data: BodyType<UpdateClaimantContributionBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateClaimantContribution>>,
+  TError,
+  { id: string; data: BodyType<UpdateClaimantContributionBody> },
+  TContext
+> => {
+  const mutationKey = ["updateClaimantContribution"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateClaimantContribution>>,
+    { id: string; data: BodyType<UpdateClaimantContributionBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateClaimantContribution(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateClaimantContributionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateClaimantContribution>>
+>;
+export type UpdateClaimantContributionMutationBody =
+  BodyType<UpdateClaimantContributionBody>;
+export type UpdateClaimantContributionMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update notes or reject a contribution
+ */
+export const useUpdateClaimantContribution = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateClaimantContribution>>,
+    TError,
+    { id: string; data: BodyType<UpdateClaimantContributionBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateClaimantContribution>>,
+  TError,
+  { id: string; data: BodyType<UpdateClaimantContributionBody> },
+  TContext
+> => {
+  return useMutation(getUpdateClaimantContributionMutationOptions(options));
+};
+
+/**
+ * @summary Generate OTP for developer to relay to claimant
+ */
+export const getRequestContributionOtpUrl = (id: string) => {
+  return `/api/prematurity-succession/contributions/${id}/request-otp`;
+};
+
+export const requestContributionOtp = async (
+  id: string,
+  options?: RequestInit,
+): Promise<RequestContributionOtp200> => {
+  return customFetch<RequestContributionOtp200>(
+    getRequestContributionOtpUrl(id),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getRequestContributionOtpMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof requestContributionOtp>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof requestContributionOtp>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["requestContributionOtp"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof requestContributionOtp>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return requestContributionOtp(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RequestContributionOtpMutationResult = NonNullable<
+  Awaited<ReturnType<typeof requestContributionOtp>>
+>;
+
+export type RequestContributionOtpMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Generate OTP for developer to relay to claimant
+ */
+export const useRequestContributionOtp = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof requestContributionOtp>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof requestContributionOtp>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getRequestContributionOtpMutationOptions(options));
+};
+
+/**
+ * @summary Developer verifies OTP → contribution confirmed
+ */
+export const getVerifyContributionOtpUrl = (id: string) => {
+  return `/api/prematurity-succession/contributions/${id}/verify-otp`;
+};
+
+export const verifyContributionOtp = async (
+  id: string,
+  verifyContributionOtpBody: VerifyContributionOtpBody,
+  options?: RequestInit,
+): Promise<VerifyContributionOtp200> => {
+  return customFetch<VerifyContributionOtp200>(
+    getVerifyContributionOtpUrl(id),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(verifyContributionOtpBody),
+    },
+  );
+};
+
+export const getVerifyContributionOtpMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof verifyContributionOtp>>,
+    TError,
+    { id: string; data: BodyType<VerifyContributionOtpBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof verifyContributionOtp>>,
+  TError,
+  { id: string; data: BodyType<VerifyContributionOtpBody> },
+  TContext
+> => {
+  const mutationKey = ["verifyContributionOtp"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof verifyContributionOtp>>,
+    { id: string; data: BodyType<VerifyContributionOtpBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return verifyContributionOtp(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type VerifyContributionOtpMutationResult = NonNullable<
+  Awaited<ReturnType<typeof verifyContributionOtp>>
+>;
+export type VerifyContributionOtpMutationBody =
+  BodyType<VerifyContributionOtpBody>;
+export type VerifyContributionOtpMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Developer verifies OTP → contribution confirmed
+ */
+export const useVerifyContributionOtp = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof verifyContributionOtp>>,
+    TError,
+    { id: string; data: BodyType<VerifyContributionOtpBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof verifyContributionOtp>>,
+  TError,
+  { id: string; data: BodyType<VerifyContributionOtpBody> },
+  TContext
+> => {
+  return useMutation(getVerifyContributionOtpMutationOptions(options));
+};
+
+/**
+ * @summary List disputed accumulation ledger entries
+ */
+export const getListDisputedAccumulationUrl = (
+  params?: ListDisputedAccumulationParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/prematurity-succession/accumulation?${stringifiedParams}`
+    : `/api/prematurity-succession/accumulation`;
+};
+
+export const listDisputedAccumulation = async (
+  params?: ListDisputedAccumulationParams,
+  options?: RequestInit,
+): Promise<DisputedAccumulationPage> => {
+  return customFetch<DisputedAccumulationPage>(
+    getListDisputedAccumulationUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListDisputedAccumulationQueryKey = (
+  params?: ListDisputedAccumulationParams,
+) => {
+  return [
+    `/api/prematurity-succession/accumulation`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListDisputedAccumulationQueryOptions = <
+  TData = Awaited<ReturnType<typeof listDisputedAccumulation>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListDisputedAccumulationParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listDisputedAccumulation>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListDisputedAccumulationQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listDisputedAccumulation>>
+  > = ({ signal }) =>
+    listDisputedAccumulation(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listDisputedAccumulation>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListDisputedAccumulationQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listDisputedAccumulation>>
+>;
+export type ListDisputedAccumulationQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List disputed accumulation ledger entries
+ */
+
+export function useListDisputedAccumulation<
+  TData = Awaited<ReturnType<typeof listDisputedAccumulation>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListDisputedAccumulationParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listDisputedAccumulation>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListDisputedAccumulationQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Add an accumulation entry for a disputed claimant
+ */
+export const getCreateDisputedAccumulationEntryUrl = () => {
+  return `/api/prematurity-succession/accumulation`;
+};
+
+export const createDisputedAccumulationEntry = async (
+  createDisputedAccumulationBody: CreateDisputedAccumulationBody,
+  options?: RequestInit,
+): Promise<CreateDisputedAccumulationEntry201> => {
+  return customFetch<CreateDisputedAccumulationEntry201>(
+    getCreateDisputedAccumulationEntryUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(createDisputedAccumulationBody),
+    },
+  );
+};
+
+export const getCreateDisputedAccumulationEntryMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createDisputedAccumulationEntry>>,
+    TError,
+    { data: BodyType<CreateDisputedAccumulationBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createDisputedAccumulationEntry>>,
+  TError,
+  { data: BodyType<CreateDisputedAccumulationBody> },
+  TContext
+> => {
+  const mutationKey = ["createDisputedAccumulationEntry"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createDisputedAccumulationEntry>>,
+    { data: BodyType<CreateDisputedAccumulationBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createDisputedAccumulationEntry(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateDisputedAccumulationEntryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createDisputedAccumulationEntry>>
+>;
+export type CreateDisputedAccumulationEntryMutationBody =
+  BodyType<CreateDisputedAccumulationBody>;
+export type CreateDisputedAccumulationEntryMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Add an accumulation entry for a disputed claimant
+ */
+export const useCreateDisputedAccumulationEntry = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createDisputedAccumulationEntry>>,
+    TError,
+    { data: BodyType<CreateDisputedAccumulationBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createDisputedAccumulationEntry>>,
+  TError,
+  { data: BodyType<CreateDisputedAccumulationBody> },
+  TContext
+> => {
+  return useMutation(
+    getCreateDisputedAccumulationEntryMutationOptions(options),
+  );
+};
+
+/**
+ * @summary Update accumulation entry description/amount
+ */
+export const getUpdateDisputedAccumulationEntryUrl = (id: string) => {
+  return `/api/prematurity-succession/accumulation/${id}`;
+};
+
+export const updateDisputedAccumulationEntry = async (
+  id: string,
+  updateDisputedAccumulationEntryBody: UpdateDisputedAccumulationEntryBody,
+  options?: RequestInit,
+): Promise<UpdateDisputedAccumulationEntry200> => {
+  return customFetch<UpdateDisputedAccumulationEntry200>(
+    getUpdateDisputedAccumulationEntryUrl(id),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(updateDisputedAccumulationEntryBody),
+    },
+  );
+};
+
+export const getUpdateDisputedAccumulationEntryMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateDisputedAccumulationEntry>>,
+    TError,
+    { id: string; data: BodyType<UpdateDisputedAccumulationEntryBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateDisputedAccumulationEntry>>,
+  TError,
+  { id: string; data: BodyType<UpdateDisputedAccumulationEntryBody> },
+  TContext
+> => {
+  const mutationKey = ["updateDisputedAccumulationEntry"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateDisputedAccumulationEntry>>,
+    { id: string; data: BodyType<UpdateDisputedAccumulationEntryBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateDisputedAccumulationEntry(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateDisputedAccumulationEntryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateDisputedAccumulationEntry>>
+>;
+export type UpdateDisputedAccumulationEntryMutationBody =
+  BodyType<UpdateDisputedAccumulationEntryBody>;
+export type UpdateDisputedAccumulationEntryMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update accumulation entry description/amount
+ */
+export const useUpdateDisputedAccumulationEntry = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateDisputedAccumulationEntry>>,
+    TError,
+    { id: string; data: BodyType<UpdateDisputedAccumulationEntryBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateDisputedAccumulationEntry>>,
+  TError,
+  { id: string; data: BodyType<UpdateDisputedAccumulationEntryBody> },
+  TContext
+> => {
+  return useMutation(
+    getUpdateDisputedAccumulationEntryMutationOptions(options),
+  );
+};
+
+/**
+ * @summary Release accumulated amount to a claimant after resolution (admin)
+ */
+export const getReleaseAccumulationEntryUrl = (id: string) => {
+  return `/api/prematurity-succession/accumulation/${id}/release`;
+};
+
+export const releaseAccumulationEntry = async (
+  id: string,
+  releaseAccumulationBody: ReleaseAccumulationBody,
+  options?: RequestInit,
+): Promise<ReleaseAccumulationEntry200> => {
+  return customFetch<ReleaseAccumulationEntry200>(
+    getReleaseAccumulationEntryUrl(id),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(releaseAccumulationBody),
+    },
+  );
+};
+
+export const getReleaseAccumulationEntryMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof releaseAccumulationEntry>>,
+    TError,
+    { id: string; data: BodyType<ReleaseAccumulationBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof releaseAccumulationEntry>>,
+  TError,
+  { id: string; data: BodyType<ReleaseAccumulationBody> },
+  TContext
+> => {
+  const mutationKey = ["releaseAccumulationEntry"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof releaseAccumulationEntry>>,
+    { id: string; data: BodyType<ReleaseAccumulationBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return releaseAccumulationEntry(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ReleaseAccumulationEntryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof releaseAccumulationEntry>>
+>;
+export type ReleaseAccumulationEntryMutationBody =
+  BodyType<ReleaseAccumulationBody>;
+export type ReleaseAccumulationEntryMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Release accumulated amount to a claimant after resolution (admin)
+ */
+export const useReleaseAccumulationEntry = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof releaseAccumulationEntry>>,
+    TError,
+    { id: string; data: BodyType<ReleaseAccumulationBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof releaseAccumulationEntry>>,
+  TError,
+  { id: string; data: BodyType<ReleaseAccumulationBody> },
+  TContext
+> => {
+  return useMutation(getReleaseAccumulationEntryMutationOptions(options));
+};
+
+/**
+ * @summary Forfeit accumulated amount (court/tribal council order) (admin)
+ */
+export const getForfeitAccumulationEntryUrl = (id: string) => {
+  return `/api/prematurity-succession/accumulation/${id}/forfeit`;
+};
+
+export const forfeitAccumulationEntry = async (
+  id: string,
+  forfeitAccumulationEntryBody: ForfeitAccumulationEntryBody,
+  options?: RequestInit,
+): Promise<ForfeitAccumulationEntry200> => {
+  return customFetch<ForfeitAccumulationEntry200>(
+    getForfeitAccumulationEntryUrl(id),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(forfeitAccumulationEntryBody),
+    },
+  );
+};
+
+export const getForfeitAccumulationEntryMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof forfeitAccumulationEntry>>,
+    TError,
+    { id: string; data: BodyType<ForfeitAccumulationEntryBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof forfeitAccumulationEntry>>,
+  TError,
+  { id: string; data: BodyType<ForfeitAccumulationEntryBody> },
+  TContext
+> => {
+  const mutationKey = ["forfeitAccumulationEntry"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof forfeitAccumulationEntry>>,
+    { id: string; data: BodyType<ForfeitAccumulationEntryBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return forfeitAccumulationEntry(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ForfeitAccumulationEntryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof forfeitAccumulationEntry>>
+>;
+export type ForfeitAccumulationEntryMutationBody =
+  BodyType<ForfeitAccumulationEntryBody>;
+export type ForfeitAccumulationEntryMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Forfeit accumulated amount (court/tribal council order) (admin)
+ */
+export const useForfeitAccumulationEntry = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof forfeitAccumulationEntry>>,
+    TError,
+    { id: string; data: BodyType<ForfeitAccumulationEntryBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof forfeitAccumulationEntry>>,
+  TError,
+  { id: string; data: BodyType<ForfeitAccumulationEntryBody> },
+  TContext
+> => {
+  return useMutation(getForfeitAccumulationEntryMutationOptions(options));
 };
