@@ -7444,6 +7444,72 @@ paths:
                   events: { type: array, items: { $ref: "#/components/schemas/DistributionPaymentEvent" } }
                   total: { type: integer }
 
+  /settlement-governance/summary:
+    get:
+      summary: Settlement governance health summary + alert counts
+      operationId: getSettlementGovernanceSummary
+      tags: [settlement-governance]
+      responses:
+        "200":
+          description: Governance summary with KPIs and alert counts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SettlementGovernanceSummary"
+
+  /settlement-governance/alerts:
+    get:
+      summary: List all governance alerts
+      operationId: listSettlementGovernanceAlerts
+      tags: [settlement-governance]
+      parameters:
+        - { name: category, in: query, schema: { type: string } }
+        - { name: severity, in: query, schema: { type: string } }
+        - { name: projectId, in: query, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Sorted list of alerts
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [alerts, total]
+                properties:
+                  alerts: { type: array, items: { $ref: "#/components/schemas/SettlementAlert" } }
+                  total: { type: integer }
+
+  /settlement-governance/tasks:
+    get:
+      summary: Pending settlement task center
+      operationId: getSettlementTasks
+      tags: [settlement-governance]
+      parameters:
+        - { name: projectId, in: query, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Actionable pending tasks
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SettlementTaskCenter"
+
+  /settlement-governance/discrepancies:
+    get:
+      summary: Distribution discrepancy monitoring (override diffs)
+      operationId: getSettlementDiscrepancies
+      tags: [settlement-governance]
+      parameters:
+        - { name: projectId, in: query, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Override discrepancy report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiscrepancyReport"
+
+
+
 components:
   schemas:
     HealthStatus:
@@ -12982,3 +13048,78 @@ components:
         paymentRef: { type: string, nullable: true }
         remarks: { type: string, nullable: true }
         paymentProofUrl: { type: string, nullable: true }
+
+    SettlementAlert:
+      type: object
+      required: [id, category, severity, title, description, detectedAt]
+      properties:
+        id: { type: string }
+        category: { type: string }
+        severity: { type: string }
+        title: { type: string }
+        description: { type: string }
+        projectId: { type: string, format: uuid, nullable: true }
+        projectName: { type: string, nullable: true }
+        partnerId: { type: string, format: uuid, nullable: true }
+        partnerName: { type: string, nullable: true }
+        amount: { type: number, nullable: true }
+        referenceId: { type: string, nullable: true }
+        referenceType: { type: string, nullable: true }
+        detectedAt: { type: string, format: date-time }
+        actionUrl: { type: string, nullable: true }
+        metadata: { type: object }
+
+    SettlementGovernanceSummary:
+      type: object
+      required: [totalAlerts, bySeverity, byCategory, totalExposure, healthScore, summary]
+      properties:
+        totalAlerts: { type: integer }
+        bySeverity:
+          type: object
+          properties:
+            CRITICAL: { type: integer }
+            HIGH: { type: integer }
+            MEDIUM: { type: integer }
+            LOW: { type: integer }
+        byCategory: { type: object }
+        totalExposure: { type: string }
+        healthScore: { type: number }
+        summary:
+          type: object
+          properties:
+            pendingSettlements: { type: integer }
+            largeOverrides: { type: integer }
+            unpaidLca: { type: integer }
+            negativeBalances: { type: integer }
+            missingFinalizations: { type: integer }
+            unresolvedDisputes: { type: integer }
+
+    SettlementTaskCenter:
+      type: object
+      required: [pendingPayments, pendingFinalizations, openDisputes, taskCounts]
+      properties:
+        pendingPayments: { type: array, items: { type: object } }
+        pendingFinalizations: { type: array, items: { type: object } }
+        openDisputes: { type: array, items: { type: object } }
+        taskCounts:
+          type: object
+          properties:
+            pendingPayments: { type: integer }
+            pendingFinalizations: { type: integer }
+            openDisputes: { type: integer }
+            total: { type: integer }
+
+    DiscrepancyReport:
+      type: object
+      required: [discrepancies, total, totalDiscrepancyAmount, flagCounts]
+      properties:
+        discrepancies: { type: array, items: { type: object } }
+        total: { type: integer }
+        totalDiscrepancyAmount: { type: string }
+        flagCounts:
+          type: object
+          properties:
+            CRITICAL: { type: integer }
+            HIGH: { type: integer }
+            MEDIUM: { type: integer }
+            OK: { type: integer }

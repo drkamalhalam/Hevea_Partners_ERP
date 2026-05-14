@@ -1125,3 +1125,36 @@ Permanent ledger of per-(project, partner, period) distribution events. Records 
 - Sidebar: Settlement group, icon Database (admin/developer only)
 
 **Generated hooks:** `useListDistributionRecords`, `useCreateDistributionRecord`, `useGetDistributionRecord`, `useUpdateDistributionRecord`, `useRecordDistributionPayment`, `useCarryForwardDistributionRecord`, `useArchiveDistributionRecord`, `useListDistributionPaymentEvents`, `useGetDistributionSummary`, `useGetDistributionPendingPayable`, `useGetDistributionArchive`, `useGetPartnerDistributionHistory`
+
+## Settlement Governance & Distribution Monitoring System
+
+Real-time financial monitoring dashboard for distribution and settlement health. Six alert categories with severity scoring, a task center, and discrepancy analysis.
+
+**Six alert categories:**
+| Category | Trigger | Severity |
+|---|---|---|
+| `PENDING_SETTLEMENT` | distribution_records with status pending/partial and pendingPayable > 0 | CRITICAL (≥₹5L), HIGH (≥₹1L), MEDIUM |
+| `LARGE_OVERRIDE` | settlement_records where override diff > 20% of recommended | CRITICAL (≥50%), HIGH (≥30%), MEDIUM |
+| `UNPAID_LCA` | lca_ledger with status pending/partial and balance > 0 | CRITICAL/HIGH/MEDIUM by balance amount |
+| `NEGATIVE_BALANCE` | Latest closingBalance < 0 per (project, partner) from negative_balance_entries | CRITICAL/HIGH by deficit size |
+| `MISSING_FINALIZATION` | settlement_records in recommended/overridden state for > 14 days | CRITICAL (≥60 days), HIGH (≥30 days), MEDIUM |
+| `UNRESOLVED_DISPUTE` | settlement_records with status = disputed | Always HIGH |
+
+**Health score:** `100 − CRITICAL×25 − HIGH×10 − MEDIUM×5 − LOW×1` (clamped 0–100)
+
+**API endpoints** (`artifacts/api-server/src/routes/settlement_governance.ts`, mounted at `/settlement-governance`):
+- `GET /settlement-governance/summary` — aggregate health score + alert counts by severity + category + total financial exposure
+- `GET /settlement-governance/alerts` — all alerts sorted CRITICAL→LOW, filterable by category/severity/projectId
+- `GET /settlement-governance/tasks` — three queues: pendingPayments (distribution records), pendingFinalizations (settlement records in recommended/overridden), openDisputes
+- `GET /settlement-governance/discrepancies` — all overridden settlement_records with diff%, diffFlag (CRITICAL/HIGH/MEDIUM/OK), total discrepancy amount, flag counts
+
+**Frontend** (`artifacts/plantation-web/src/pages/SettlementGovernance.tsx`, route `/settlement-governance`):
+- **Overview tab**: health gauge (0–100 with colour), 4 severity KPI cards (click to filter alerts tab), 6-category grid (click to filter), task summary quick-links, all-clear state
+- **Alerts tab**: filterable by category + severity; colour-coded alert cards with severity badge, category icon, exposure amount, project/partner labels, action link
+- **Task Center tab**: three queues — Pending Payments (amber), Awaiting Finalization (orange), Open Disputes (red) — each with amount, date, clickable row to relevant page
+- **Discrepancies tab**: override diff table with Recommended/Actual/Δ columns, diff%, diffFlag badge, override count, total discrepancy banner
+- Sidebar: Settlement group, `ShieldAlert` icon, admin/developer only
+
+**Generated hooks:** `useGetSettlementGovernanceSummary`, `useListSettlementGovernanceAlerts`, `useGetSettlementTasks`, `useGetSettlementDiscrepancies`
+
+**OpenAPI schemas:** `SettlementAlert`, `SettlementGovernanceSummary`, `SettlementTaskCenter`, `DiscrepancyReport`

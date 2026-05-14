@@ -363,6 +363,12 @@ const navGroups: NavGroup[] = [
         roles: ["admin", "developer"] as UserRole[],
       },
       {
+        name: "Settlement Governance",
+        href: "/settlement-governance",
+        icon: ShieldAlert,
+        roles: ["admin", "developer"] as UserRole[],
+      },
+      {
         name: "Distribution Workflow",
         href: "/distribution-workflow",
         icon: Layers,

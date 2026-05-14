@@ -5661,6 +5661,93 @@ export interface RecordDistributionPaymentBody {
   paymentProofUrl?: string | null;
 }
 
+export type SettlementAlertMetadata = { [key: string]: unknown };
+
+export interface SettlementAlert {
+  id: string;
+  category: string;
+  severity: string;
+  title: string;
+  description: string;
+  projectId?: string | null;
+  projectName?: string | null;
+  partnerId?: string | null;
+  partnerName?: string | null;
+  amount?: number | null;
+  referenceId?: string | null;
+  referenceType?: string | null;
+  detectedAt: string;
+  actionUrl?: string | null;
+  metadata?: SettlementAlertMetadata;
+}
+
+export type SettlementGovernanceSummaryBySeverity = {
+  CRITICAL?: number;
+  HIGH?: number;
+  MEDIUM?: number;
+  LOW?: number;
+};
+
+export type SettlementGovernanceSummaryByCategory = { [key: string]: unknown };
+
+export type SettlementGovernanceSummarySummary = {
+  pendingSettlements?: number;
+  largeOverrides?: number;
+  unpaidLca?: number;
+  negativeBalances?: number;
+  missingFinalizations?: number;
+  unresolvedDisputes?: number;
+};
+
+export interface SettlementGovernanceSummary {
+  totalAlerts: number;
+  bySeverity: SettlementGovernanceSummaryBySeverity;
+  byCategory: SettlementGovernanceSummaryByCategory;
+  totalExposure: string;
+  healthScore: number;
+  summary: SettlementGovernanceSummarySummary;
+}
+
+export type SettlementTaskCenterPendingPaymentsItem = {
+  [key: string]: unknown;
+};
+
+export type SettlementTaskCenterPendingFinalizationsItem = {
+  [key: string]: unknown;
+};
+
+export type SettlementTaskCenterOpenDisputesItem = { [key: string]: unknown };
+
+export type SettlementTaskCenterTaskCounts = {
+  pendingPayments?: number;
+  pendingFinalizations?: number;
+  openDisputes?: number;
+  total?: number;
+};
+
+export interface SettlementTaskCenter {
+  pendingPayments: SettlementTaskCenterPendingPaymentsItem[];
+  pendingFinalizations: SettlementTaskCenterPendingFinalizationsItem[];
+  openDisputes: SettlementTaskCenterOpenDisputesItem[];
+  taskCounts: SettlementTaskCenterTaskCounts;
+}
+
+export type DiscrepancyReportDiscrepanciesItem = { [key: string]: unknown };
+
+export type DiscrepancyReportFlagCounts = {
+  CRITICAL?: number;
+  HIGH?: number;
+  MEDIUM?: number;
+  OK?: number;
+};
+
+export interface DiscrepancyReport {
+  discrepancies: DiscrepancyReportDiscrepanciesItem[];
+  total: number;
+  totalDiscrepancyAmount: string;
+  flagCounts: DiscrepancyReportFlagCounts;
+}
+
 export type GetUserActivityParams = {
   limit?: number;
 };
@@ -6747,4 +6834,23 @@ export type ListDistributionPaymentEvents200 = {
   distributionRecordId: string;
   events: DistributionPaymentEvent[];
   total: number;
+};
+
+export type ListSettlementGovernanceAlertsParams = {
+  category?: string;
+  severity?: string;
+  projectId?: string;
+};
+
+export type ListSettlementGovernanceAlerts200 = {
+  alerts: SettlementAlert[];
+  total: number;
+};
+
+export type GetSettlementTasksParams = {
+  projectId?: string;
+};
+
+export type GetSettlementDiscrepanciesParams = {
+  projectId?: string;
 };

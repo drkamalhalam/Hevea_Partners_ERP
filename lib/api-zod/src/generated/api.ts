@@ -11688,3 +11688,97 @@ export const ListDistributionPaymentEventsResponse = zod.object({
   ),
   total: zod.number(),
 });
+
+/**
+ * @summary Settlement governance health summary + alert counts
+ */
+export const GetSettlementGovernanceSummaryResponse = zod.object({
+  totalAlerts: zod.number(),
+  bySeverity: zod.object({
+    CRITICAL: zod.number().optional(),
+    HIGH: zod.number().optional(),
+    MEDIUM: zod.number().optional(),
+    LOW: zod.number().optional(),
+  }),
+  byCategory: zod.object({}).passthrough(),
+  totalExposure: zod.string(),
+  healthScore: zod.number(),
+  summary: zod.object({
+    pendingSettlements: zod.number().optional(),
+    largeOverrides: zod.number().optional(),
+    unpaidLca: zod.number().optional(),
+    negativeBalances: zod.number().optional(),
+    missingFinalizations: zod.number().optional(),
+    unresolvedDisputes: zod.number().optional(),
+  }),
+});
+
+/**
+ * @summary List all governance alerts
+ */
+export const ListSettlementGovernanceAlertsQueryParams = zod.object({
+  category: zod.coerce.string().optional(),
+  severity: zod.coerce.string().optional(),
+  projectId: zod.coerce.string().uuid().optional(),
+});
+
+export const ListSettlementGovernanceAlertsResponse = zod.object({
+  alerts: zod.array(
+    zod.object({
+      id: zod.string(),
+      category: zod.string(),
+      severity: zod.string(),
+      title: zod.string(),
+      description: zod.string(),
+      projectId: zod.string().uuid().nullish(),
+      projectName: zod.string().nullish(),
+      partnerId: zod.string().uuid().nullish(),
+      partnerName: zod.string().nullish(),
+      amount: zod.number().nullish(),
+      referenceId: zod.string().nullish(),
+      referenceType: zod.string().nullish(),
+      detectedAt: zod.coerce.date(),
+      actionUrl: zod.string().nullish(),
+      metadata: zod.object({}).passthrough().optional(),
+    }),
+  ),
+  total: zod.number(),
+});
+
+/**
+ * @summary Pending settlement task center
+ */
+export const GetSettlementTasksQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+});
+
+export const GetSettlementTasksResponse = zod.object({
+  pendingPayments: zod.array(zod.object({}).passthrough()),
+  pendingFinalizations: zod.array(zod.object({}).passthrough()),
+  openDisputes: zod.array(zod.object({}).passthrough()),
+  taskCounts: zod.object({
+    pendingPayments: zod.number().optional(),
+    pendingFinalizations: zod.number().optional(),
+    openDisputes: zod.number().optional(),
+    total: zod.number().optional(),
+  }),
+});
+
+/**
+ * @summary Distribution discrepancy monitoring (override diffs)
+ */
+export const GetSettlementDiscrepanciesQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+});
+
+export const GetSettlementDiscrepanciesResponse = zod.object({
+  discrepancies: zod.array(zod.object({}).passthrough()),
+  total: zod.number(),
+  totalDiscrepancyAmount: zod.string(),
+  flagCounts: zod.object({
+    CRITICAL: zod.number().optional(),
+    HIGH: zod.number().optional(),
+    MEDIUM: zod.number().optional(),
+    OK: zod.number().optional(),
+  }),
+});

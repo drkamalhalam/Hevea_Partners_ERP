@@ -121,6 +121,7 @@ import type {
   DeletePayableAdjustment200,
   DeleteProductionEntry200,
   DeleteStockMovement200,
+  DiscrepancyReport,
   DisputeSettlement200,
   DisputeSettlementBody,
   DistributionPreview,
@@ -184,8 +185,10 @@ import type {
   GetSaleGovernanceAlertsParams,
   GetSalesSummaryParams,
   GetSettlementAudit200,
+  GetSettlementDiscrepanciesParams,
   GetSettlementPriorityParams,
   GetSettlementRecord200,
+  GetSettlementTasksParams,
   GetUserActivityParams,
   GovernanceSummary,
   HealthStatus,
@@ -255,6 +258,8 @@ import type {
   ListProductionRecordsParams,
   ListSaleDocumentsParams,
   ListSalesParams,
+  ListSettlementGovernanceAlerts200,
+  ListSettlementGovernanceAlertsParams,
   ListSettlementRecords200,
   ListSettlementRecordsParams,
   ListStockMovementsParams,
@@ -339,7 +344,9 @@ import type {
   SetSettlementRecommendationBody,
   SetUserRoleInput,
   SettlementComparison,
+  SettlementGovernanceSummary,
   SettlementPriority,
+  SettlementTaskCenter,
   StockBalance,
   StockMovement,
   StockSummary,
@@ -29064,6 +29071,404 @@ export function useListDistributionPaymentEvents<
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getListDistributionPaymentEventsQueryOptions(
     id,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Settlement governance health summary + alert counts
+ */
+export const getGetSettlementGovernanceSummaryUrl = () => {
+  return `/api/settlement-governance/summary`;
+};
+
+export const getSettlementGovernanceSummary = async (
+  options?: RequestInit,
+): Promise<SettlementGovernanceSummary> => {
+  return customFetch<SettlementGovernanceSummary>(
+    getGetSettlementGovernanceSummaryUrl(),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetSettlementGovernanceSummaryQueryKey = () => {
+  return [`/api/settlement-governance/summary`] as const;
+};
+
+export const getGetSettlementGovernanceSummaryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getSettlementGovernanceSummary>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getSettlementGovernanceSummary>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetSettlementGovernanceSummaryQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getSettlementGovernanceSummary>>
+  > = ({ signal }) =>
+    getSettlementGovernanceSummary({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getSettlementGovernanceSummary>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetSettlementGovernanceSummaryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getSettlementGovernanceSummary>>
+>;
+export type GetSettlementGovernanceSummaryQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Settlement governance health summary + alert counts
+ */
+
+export function useGetSettlementGovernanceSummary<
+  TData = Awaited<ReturnType<typeof getSettlementGovernanceSummary>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getSettlementGovernanceSummary>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetSettlementGovernanceSummaryQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List all governance alerts
+ */
+export const getListSettlementGovernanceAlertsUrl = (
+  params?: ListSettlementGovernanceAlertsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/settlement-governance/alerts?${stringifiedParams}`
+    : `/api/settlement-governance/alerts`;
+};
+
+export const listSettlementGovernanceAlerts = async (
+  params?: ListSettlementGovernanceAlertsParams,
+  options?: RequestInit,
+): Promise<ListSettlementGovernanceAlerts200> => {
+  return customFetch<ListSettlementGovernanceAlerts200>(
+    getListSettlementGovernanceAlertsUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListSettlementGovernanceAlertsQueryKey = (
+  params?: ListSettlementGovernanceAlertsParams,
+) => {
+  return [
+    `/api/settlement-governance/alerts`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListSettlementGovernanceAlertsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listSettlementGovernanceAlerts>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListSettlementGovernanceAlertsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listSettlementGovernanceAlerts>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListSettlementGovernanceAlertsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listSettlementGovernanceAlerts>>
+  > = ({ signal }) =>
+    listSettlementGovernanceAlerts(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listSettlementGovernanceAlerts>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListSettlementGovernanceAlertsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listSettlementGovernanceAlerts>>
+>;
+export type ListSettlementGovernanceAlertsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List all governance alerts
+ */
+
+export function useListSettlementGovernanceAlerts<
+  TData = Awaited<ReturnType<typeof listSettlementGovernanceAlerts>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListSettlementGovernanceAlertsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listSettlementGovernanceAlerts>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListSettlementGovernanceAlertsQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Pending settlement task center
+ */
+export const getGetSettlementTasksUrl = (params?: GetSettlementTasksParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/settlement-governance/tasks?${stringifiedParams}`
+    : `/api/settlement-governance/tasks`;
+};
+
+export const getSettlementTasks = async (
+  params?: GetSettlementTasksParams,
+  options?: RequestInit,
+): Promise<SettlementTaskCenter> => {
+  return customFetch<SettlementTaskCenter>(getGetSettlementTasksUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetSettlementTasksQueryKey = (
+  params?: GetSettlementTasksParams,
+) => {
+  return [
+    `/api/settlement-governance/tasks`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetSettlementTasksQueryOptions = <
+  TData = Awaited<ReturnType<typeof getSettlementTasks>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetSettlementTasksParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getSettlementTasks>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetSettlementTasksQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getSettlementTasks>>
+  > = ({ signal }) => getSettlementTasks(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getSettlementTasks>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetSettlementTasksQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getSettlementTasks>>
+>;
+export type GetSettlementTasksQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Pending settlement task center
+ */
+
+export function useGetSettlementTasks<
+  TData = Awaited<ReturnType<typeof getSettlementTasks>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetSettlementTasksParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getSettlementTasks>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetSettlementTasksQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Distribution discrepancy monitoring (override diffs)
+ */
+export const getGetSettlementDiscrepanciesUrl = (
+  params?: GetSettlementDiscrepanciesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/settlement-governance/discrepancies?${stringifiedParams}`
+    : `/api/settlement-governance/discrepancies`;
+};
+
+export const getSettlementDiscrepancies = async (
+  params?: GetSettlementDiscrepanciesParams,
+  options?: RequestInit,
+): Promise<DiscrepancyReport> => {
+  return customFetch<DiscrepancyReport>(
+    getGetSettlementDiscrepanciesUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetSettlementDiscrepanciesQueryKey = (
+  params?: GetSettlementDiscrepanciesParams,
+) => {
+  return [
+    `/api/settlement-governance/discrepancies`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetSettlementDiscrepanciesQueryOptions = <
+  TData = Awaited<ReturnType<typeof getSettlementDiscrepancies>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetSettlementDiscrepanciesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getSettlementDiscrepancies>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetSettlementDiscrepanciesQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getSettlementDiscrepancies>>
+  > = ({ signal }) =>
+    getSettlementDiscrepancies(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getSettlementDiscrepancies>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetSettlementDiscrepanciesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getSettlementDiscrepancies>>
+>;
+export type GetSettlementDiscrepanciesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Distribution discrepancy monitoring (override diffs)
+ */
+
+export function useGetSettlementDiscrepancies<
+  TData = Awaited<ReturnType<typeof getSettlementDiscrepancies>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetSettlementDiscrepanciesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getSettlementDiscrepancies>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetSettlementDiscrepanciesQueryOptions(
+    params,
     options,
   );
 
