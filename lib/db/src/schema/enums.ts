@@ -690,3 +690,64 @@ export const lcaLedgerStatusEnum = pgEnum("lca_ledger_status", [
   "paid",
   "waived",
 ]);
+
+// ── Inheritance & succession enums ────────────────────────────────────────
+
+/**
+ * Type of inheritance claim being filed.
+ *   death               — partner has passed; succession via heirs
+ *   incapacity          — partner is incapacitated; nominee/guardian taking over
+ *   voluntary_transfer  — partner voluntarily transfers stake to designated heir
+ */
+export const inheritanceClaimTypeEnum = pgEnum("inheritance_claim_type", [
+  "death",
+  "incapacity",
+  "voluntary_transfer",
+]);
+
+/**
+ * Status of an inheritance claim workflow.
+ * Forward-only: open → under_review → developer_approved → documents_verified → approved → settled
+ * OR: open/under_review/developer_approved → rejected
+ */
+export const inheritanceClaimStatusEnum = pgEnum("inheritance_claim_status", [
+  "open",
+  "under_review",
+  "developer_approved",
+  "documents_verified",
+  "approved",
+  "rejected",
+  "settled",
+]);
+
+/**
+ * Status of a manually proposed claimant share allocation.
+ * System NEVER auto-computes shares — admin/developer must enter each value.
+ */
+export const inheritanceShareStatusEnum = pgEnum("inheritance_share_status", [
+  "proposed",
+  "approved",
+  "disputed",
+]);
+
+/**
+ * Category of document submitted as part of an inheritance claim.
+ */
+export const inheritanceDocumentTypeEnum = pgEnum("inheritance_document_type", [
+  "death_certificate",
+  "succession_certificate",
+  "court_order",
+  "tribal_council_letter",
+  "id_proof",
+  "affidavit",
+  "land_record",
+  "other",
+]);
+
+/**
+ * Verification status of a submitted inheritance document.
+ */
+export const inheritanceDocumentVerificationEnum = pgEnum(
+  "inheritance_document_verification",
+  ["pending", "verified", "rejected"],
+);

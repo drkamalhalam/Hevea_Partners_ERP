@@ -50,6 +50,7 @@ import distributionRecordsRouter from "./distribution_records";
 import settlementGovernanceRouter from "./settlement_governance";
 import financialAnalyticsRouter from "./financial_analytics";
 import valuationsRouter from "./valuations";
+import inheritanceRouter from "./inheritance";
 import devRouter from "./dev";
 
 const router: IRouter = Router();
@@ -117,5 +118,6 @@ router.use("/distribution-records", distributionRecordsRouter);
 router.use("/settlement-governance", settlementGovernanceRouter);
 router.use("/financial-analytics", financialAnalyticsRouter);
 router.use("/valuations", valuationsRouter);
+router.use("/inheritance-claims", inheritanceRouter);
 
 export default router;

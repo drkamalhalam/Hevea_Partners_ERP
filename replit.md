@@ -1198,3 +1198,43 @@ const scopeFilter = (col) => projectId ? eq(col, projectId) : projectScope !== n
 **Audit logging:** Every settlement data access (list, view, create, update, finalize, override) writes a row to `financial_access_logs` via `logSettlementAccess`. Readable at `GET /financial-access-logs` (admin: full history; developer: last 7 days).
 
 **Frontend sidebar:** "Distribution Records" expanded to include `landowner` role. All other Settlement group items remain admin/developer only.
+
+## Inheritance & Claimant Succession Workflow
+
+Tribal/customary process for registering and resolving succession events (death, incapacity, voluntary transfer) for partner stakes in a project. System enforces **manual-only** share division — no automatic computation ever occurs.
+
+**Status workflow (forward-only, irreversible except rejection):**
+```
+open → under_review → developer_approved → documents_verified → approved → settled
+         └──────────────────────────────────────────────────────────────→ rejected
+```
+
+**DB tables** (`lib/db/src/schema/inheritance.ts`):
+- `inheritanceClaimsTable` — UUID PK, partnerId FK, projectId FK, claimType (death/incapacity/voluntary_transfer), status enum, initiatedBy/developerApprovedBy/approvedBy/rejectedBy audit chain, rejectionReason, settlementNotes, reviewNotes, isActive, full audit cols
+- `inheritanceClaimantSharesTable` — UUID PK, claimId FK (cascade), claimantId FK (partnerClaimants), proposedSharePct (numeric string), status (proposed/approved/disputed), proposedBy/approvedBy audit, disputeNotes; unique(claimId, claimantId)
+- `inheritanceDocumentsTable` — UUID PK, claimId FK, claimantId FK (nullable), documentType (death_certificate/succession_certificate/court_order/tribal_council_letter/id_proof/affidavit/land_record/other), documentTitle, fileObjectPath (nullable — placeholder-first), verificationStatus (pending/verified/rejected), verifiedBy/verifiedAt, isActive, full audit cols
+
+**Enums added to `lib/db/src/schema/enums.ts`:** `inheritanceClaimTypeEnum`, `inheritanceClaimStatusEnum`, `inheritanceShareStatusEnum`, `inheritanceDocumentTypeEnum`, `inheritanceDocumentVerificationEnum`
+
+**API endpoints** (`artifacts/api-server/src/routes/inheritance.ts`, mounted at `/inheritance-claims`):
+- `GET /` — list claims (filterable by projectId, partnerId, status)
+- `POST /` — create claim (admin/developer)
+- `GET /:id` — full detail: claim + claimants (from partnerClaimants for same partner+project) + shares + documents + summary
+- `PATCH /:id` — update description/reviewNotes/settlementNotes
+- `DELETE /:id` — soft-delete (admin only)
+- `PATCH /:id/status` — forward-only status transition with role-stamped audit fields; rejects invalid transitions
+- `GET /:id/shares` / `POST /:id/shares` — list / propose share (guards: total > 100% blocked)
+- `PATCH /:id/shares/:shareId` / `DELETE /:id/shares/:shareId` — update/approve/dispute/remove share
+- `GET /:id/documents` / `POST /:id/documents` — list / register document placeholder
+- `PATCH /:id/documents/:docId` / `DELETE /:id/documents/:docId` — update/verify/soft-remove document
+
+**Frontend** (`artifacts/plantation-web/src/pages/InheritanceClaims.tsx`, route `/inheritance-claims`):
+- **Claims tab** — filterable list (status pills + project/partner dropdowns); click to open claim detail with status stepper, workflow action buttons (advance/reject/settle), claimants panel, review notes
+- **Claimant Verification tab** — per-claim claimant verification status overview with document progress bars and summary readiness checklist
+- **Share Division tab** — manual-only share proposal interface; stacked progress bar (approved/proposed); per-row approve/dispute/revoke actions; total % guard with warning banner
+- **Documents tab** — placeholder-first registration; inline verify/reject with notes; per-claim document summary
+- `GovernanceDisclaimerBanner` displayed on all tabs: system never auto-computes or auto-transfers shares
+
+**Generated hooks:** `useListInheritanceClaims`, `useCreateInheritanceClaim`, `useGetInheritanceClaim`, `useUpdateInheritanceClaim`, `useDeleteInheritanceClaim`, `useTransitionInheritanceClaimStatus`, `useListInheritanceShares`, `useCreateInheritanceShare`, `useUpdateInheritanceShare`, `useDeleteInheritanceShare`, `useListInheritanceDocuments`, `useCreateInheritanceDocument`, `useUpdateInheritanceDocument`, `useDeleteInheritanceDocument`
+
+**Sidebar:** "Inheritance Claims" added to Ownership group (admin/developer only), `Gavel` icon

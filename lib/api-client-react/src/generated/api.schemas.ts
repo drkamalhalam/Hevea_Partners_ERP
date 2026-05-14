@@ -6320,6 +6320,284 @@ export interface ValuationPreview {
   warnings: string[];
 }
 
+export type InheritanceClaimClaimType =
+  (typeof InheritanceClaimClaimType)[keyof typeof InheritanceClaimClaimType];
+
+export const InheritanceClaimClaimType = {
+  death: "death",
+  incapacity: "incapacity",
+  voluntary_transfer: "voluntary_transfer",
+} as const;
+
+export type InheritanceClaimStatus =
+  (typeof InheritanceClaimStatus)[keyof typeof InheritanceClaimStatus];
+
+export const InheritanceClaimStatus = {
+  open: "open",
+  under_review: "under_review",
+  developer_approved: "developer_approved",
+  documents_verified: "documents_verified",
+  approved: "approved",
+  rejected: "rejected",
+  settled: "settled",
+} as const;
+
+export interface InheritanceClaim {
+  id: string;
+  partnerId: string;
+  projectId: string;
+  partnerName?: string | null;
+  projectName?: string | null;
+  claimType: InheritanceClaimClaimType;
+  status: InheritanceClaimStatus;
+  description?: string | null;
+  initiatedBy?: string | null;
+  initiatedByName?: string | null;
+  developerApprovedBy?: string | null;
+  developerApprovedByName?: string | null;
+  developerApprovedAt?: string | null;
+  approvedBy?: string | null;
+  approvedByName?: string | null;
+  approvedAt?: string | null;
+  rejectedBy?: string | null;
+  rejectedByName?: string | null;
+  rejectedAt?: string | null;
+  rejectionReason?: string | null;
+  settlementNotes?: string | null;
+  reviewNotes?: string | null;
+  isActive: boolean;
+  createdBy?: string | null;
+  createdByName?: string | null;
+  createdAt: string;
+  updatedAt?: string | null;
+}
+
+export interface InheritanceClaimPage {
+  claims: InheritanceClaim[];
+  total: number;
+}
+
+export type InheritanceClaimantShareStatus =
+  (typeof InheritanceClaimantShareStatus)[keyof typeof InheritanceClaimantShareStatus];
+
+export const InheritanceClaimantShareStatus = {
+  proposed: "proposed",
+  approved: "approved",
+  disputed: "disputed",
+} as const;
+
+export interface InheritanceClaimantShare {
+  id: string;
+  claimId: string;
+  claimantId: string;
+  claimantName?: string | null;
+  relationship?: string | null;
+  claimantStatus?: string | null;
+  proposedSharePct: string;
+  shareNotes?: string | null;
+  status: InheritanceClaimantShareStatus;
+  proposedBy?: string | null;
+  proposedByName?: string | null;
+  approvedBy?: string | null;
+  approvedByName?: string | null;
+  approvedAt?: string | null;
+  disputeNotes?: string | null;
+  createdAt: string;
+  updatedAt?: string | null;
+}
+
+export type InheritanceDocumentDocumentType =
+  (typeof InheritanceDocumentDocumentType)[keyof typeof InheritanceDocumentDocumentType];
+
+export const InheritanceDocumentDocumentType = {
+  death_certificate: "death_certificate",
+  succession_certificate: "succession_certificate",
+  court_order: "court_order",
+  tribal_council_letter: "tribal_council_letter",
+  id_proof: "id_proof",
+  affidavit: "affidavit",
+  land_record: "land_record",
+  other: "other",
+} as const;
+
+export type InheritanceDocumentVerificationStatus =
+  (typeof InheritanceDocumentVerificationStatus)[keyof typeof InheritanceDocumentVerificationStatus];
+
+export const InheritanceDocumentVerificationStatus = {
+  pending: "pending",
+  verified: "verified",
+  rejected: "rejected",
+} as const;
+
+export interface InheritanceDocument {
+  id: string;
+  claimId: string;
+  claimantId?: string | null;
+  documentType: InheritanceDocumentDocumentType;
+  documentTitle: string;
+  description?: string | null;
+  fileObjectPath?: string | null;
+  mimeType?: string | null;
+  verificationStatus: InheritanceDocumentVerificationStatus;
+  verificationNotes?: string | null;
+  uploadedBy?: string | null;
+  uploadedByName?: string | null;
+  verifiedBy?: string | null;
+  verifiedByName?: string | null;
+  verifiedAt?: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt?: string | null;
+}
+
+export type InheritanceClaimDetailClaimantsItem = {
+  id?: string;
+  claimantName?: string;
+  relationship?: string;
+  phone?: string;
+  address?: string;
+  status?: string;
+  notes?: string | null;
+};
+
+export type InheritanceClaimDetailSummary = {
+  claimantCount?: number;
+  shareCount?: number;
+  totalProposedPct?: number;
+  totalApprovedPct?: number;
+  documentCount?: number;
+  verifiedDocumentCount?: number;
+  pendingDocumentCount?: number;
+  allSharesApproved?: boolean;
+  allDocumentsVerified?: boolean;
+};
+
+export interface InheritanceClaimDetail {
+  claim: InheritanceClaim;
+  claimants: InheritanceClaimDetailClaimantsItem[];
+  shares: InheritanceClaimantShare[];
+  documents: InheritanceDocument[];
+  summary: InheritanceClaimDetailSummary;
+}
+
+export type CreateInheritanceClaimBodyClaimType =
+  (typeof CreateInheritanceClaimBodyClaimType)[keyof typeof CreateInheritanceClaimBodyClaimType];
+
+export const CreateInheritanceClaimBodyClaimType = {
+  death: "death",
+  incapacity: "incapacity",
+  voluntary_transfer: "voluntary_transfer",
+} as const;
+
+export interface CreateInheritanceClaimBody {
+  partnerId: string;
+  projectId: string;
+  claimType: CreateInheritanceClaimBodyClaimType;
+  description?: string;
+}
+
+export interface UpdateInheritanceClaimBody {
+  description?: string | null;
+  reviewNotes?: string | null;
+  settlementNotes?: string | null;
+}
+
+export type TransitionInheritanceClaimStatusBodyToStatus =
+  (typeof TransitionInheritanceClaimStatusBodyToStatus)[keyof typeof TransitionInheritanceClaimStatusBodyToStatus];
+
+export const TransitionInheritanceClaimStatusBodyToStatus = {
+  under_review: "under_review",
+  developer_approved: "developer_approved",
+  documents_verified: "documents_verified",
+  approved: "approved",
+  rejected: "rejected",
+  settled: "settled",
+} as const;
+
+export interface TransitionInheritanceClaimStatusBody {
+  toStatus: TransitionInheritanceClaimStatusBodyToStatus;
+  reason?: string;
+  notes?: string;
+}
+
+export interface CreateInheritanceShareBody {
+  claimantId: string;
+  /**
+   * @minimum 0.0001
+   * @maximum 100
+   */
+  proposedSharePct: number;
+  shareNotes?: string;
+}
+
+export type UpdateInheritanceShareBodyStatus =
+  (typeof UpdateInheritanceShareBodyStatus)[keyof typeof UpdateInheritanceShareBodyStatus];
+
+export const UpdateInheritanceShareBodyStatus = {
+  proposed: "proposed",
+  approved: "approved",
+  disputed: "disputed",
+} as const;
+
+export interface UpdateInheritanceShareBody {
+  /**
+   * @minimum 0.0001
+   * @maximum 100
+   */
+  proposedSharePct?: number;
+  shareNotes?: string | null;
+  status?: UpdateInheritanceShareBodyStatus;
+  disputeNotes?: string | null;
+}
+
+export type CreateInheritanceDocumentBodyDocumentType =
+  (typeof CreateInheritanceDocumentBodyDocumentType)[keyof typeof CreateInheritanceDocumentBodyDocumentType];
+
+export const CreateInheritanceDocumentBodyDocumentType = {
+  death_certificate: "death_certificate",
+  succession_certificate: "succession_certificate",
+  court_order: "court_order",
+  tribal_council_letter: "tribal_council_letter",
+  id_proof: "id_proof",
+  affidavit: "affidavit",
+  land_record: "land_record",
+  other: "other",
+} as const;
+
+export interface CreateInheritanceDocumentBody {
+  claimantId?: string;
+  documentType: CreateInheritanceDocumentBodyDocumentType;
+  documentTitle: string;
+  description?: string;
+  fileObjectPath?: string;
+  mimeType?: string;
+}
+
+export type UpdateInheritanceDocumentBodyVerificationStatus =
+  (typeof UpdateInheritanceDocumentBodyVerificationStatus)[keyof typeof UpdateInheritanceDocumentBodyVerificationStatus];
+
+export const UpdateInheritanceDocumentBodyVerificationStatus = {
+  pending: "pending",
+  verified: "verified",
+  rejected: "rejected",
+} as const;
+
+export interface UpdateInheritanceDocumentBody {
+  documentTitle?: string;
+  description?: string | null;
+  fileObjectPath?: string | null;
+  mimeType?: string | null;
+  verificationStatus?: UpdateInheritanceDocumentBodyVerificationStatus;
+  verificationNotes?: string | null;
+}
+
+export interface InheritanceSharesPage {
+  shares: InheritanceClaimantShare[];
+  totalProposedPct: number;
+  totalApprovedPct: number;
+  total: number;
+}
+
 export type GetUserActivityParams = {
   limit?: number;
 };
@@ -7634,5 +7912,56 @@ export type UpdateValuationRun200 = {
 };
 
 export type DeleteValuationRun200 = {
+  deleted?: boolean;
+};
+
+export type ListInheritanceClaimsParams = {
+  projectId?: string;
+  partnerId?: string;
+  status?: string;
+};
+
+export type CreateInheritanceClaim201 = {
+  claim?: InheritanceClaim;
+};
+
+export type UpdateInheritanceClaim200 = {
+  claim?: InheritanceClaim;
+};
+
+export type DeleteInheritanceClaim200 = {
+  deleted?: boolean;
+};
+
+export type TransitionInheritanceClaimStatus200 = {
+  claim?: InheritanceClaim;
+};
+
+export type CreateInheritanceShare201 = {
+  share?: InheritanceClaimantShare;
+};
+
+export type UpdateInheritanceShare200 = {
+  share?: InheritanceClaimantShare;
+};
+
+export type DeleteInheritanceShare200 = {
+  deleted?: boolean;
+};
+
+export type ListInheritanceDocuments200 = {
+  documents?: InheritanceDocument[];
+  total?: number;
+};
+
+export type CreateInheritanceDocument201 = {
+  document?: InheritanceDocument;
+};
+
+export type UpdateInheritanceDocument200 = {
+  document?: InheritanceDocument;
+};
+
+export type DeleteInheritanceDocument200 = {
   deleted?: boolean;
 };

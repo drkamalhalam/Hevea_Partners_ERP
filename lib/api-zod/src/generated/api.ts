@@ -13382,3 +13382,557 @@ export const DeleteValuationRunParams = zod.object({
 export const DeleteValuationRunResponse = zod.object({
   deleted: zod.boolean().optional(),
 });
+
+/**
+ * @summary List inheritance claims
+ */
+export const ListInheritanceClaimsQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+  partnerId: zod.coerce.string().uuid().optional(),
+  status: zod.coerce.string().optional(),
+});
+
+export const ListInheritanceClaimsResponse = zod.object({
+  claims: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      partnerId: zod.string().uuid(),
+      projectId: zod.string().uuid(),
+      partnerName: zod.string().nullish(),
+      projectName: zod.string().nullish(),
+      claimType: zod.enum(["death", "incapacity", "voluntary_transfer"]),
+      status: zod.enum([
+        "open",
+        "under_review",
+        "developer_approved",
+        "documents_verified",
+        "approved",
+        "rejected",
+        "settled",
+      ]),
+      description: zod.string().nullish(),
+      initiatedBy: zod.string().uuid().nullish(),
+      initiatedByName: zod.string().nullish(),
+      developerApprovedBy: zod.string().uuid().nullish(),
+      developerApprovedByName: zod.string().nullish(),
+      developerApprovedAt: zod.string().nullish(),
+      approvedBy: zod.string().uuid().nullish(),
+      approvedByName: zod.string().nullish(),
+      approvedAt: zod.string().nullish(),
+      rejectedBy: zod.string().uuid().nullish(),
+      rejectedByName: zod.string().nullish(),
+      rejectedAt: zod.string().nullish(),
+      rejectionReason: zod.string().nullish(),
+      settlementNotes: zod.string().nullish(),
+      reviewNotes: zod.string().nullish(),
+      isActive: zod.boolean(),
+      createdBy: zod.string().uuid().nullish(),
+      createdByName: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.string().nullish(),
+    }),
+  ),
+  total: zod.number(),
+});
+
+/**
+ * @summary Create a new inheritance claim
+ */
+export const CreateInheritanceClaimBody = zod.object({
+  partnerId: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  claimType: zod.enum(["death", "incapacity", "voluntary_transfer"]),
+  description: zod.string().optional(),
+});
+
+/**
+ * @summary Get inheritance claim detail (with claimants, shares, documents)
+ */
+export const GetInheritanceClaimParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const GetInheritanceClaimResponse = zod.object({
+  claim: zod.object({
+    id: zod.string().uuid(),
+    partnerId: zod.string().uuid(),
+    projectId: zod.string().uuid(),
+    partnerName: zod.string().nullish(),
+    projectName: zod.string().nullish(),
+    claimType: zod.enum(["death", "incapacity", "voluntary_transfer"]),
+    status: zod.enum([
+      "open",
+      "under_review",
+      "developer_approved",
+      "documents_verified",
+      "approved",
+      "rejected",
+      "settled",
+    ]),
+    description: zod.string().nullish(),
+    initiatedBy: zod.string().uuid().nullish(),
+    initiatedByName: zod.string().nullish(),
+    developerApprovedBy: zod.string().uuid().nullish(),
+    developerApprovedByName: zod.string().nullish(),
+    developerApprovedAt: zod.string().nullish(),
+    approvedBy: zod.string().uuid().nullish(),
+    approvedByName: zod.string().nullish(),
+    approvedAt: zod.string().nullish(),
+    rejectedBy: zod.string().uuid().nullish(),
+    rejectedByName: zod.string().nullish(),
+    rejectedAt: zod.string().nullish(),
+    rejectionReason: zod.string().nullish(),
+    settlementNotes: zod.string().nullish(),
+    reviewNotes: zod.string().nullish(),
+    isActive: zod.boolean(),
+    createdBy: zod.string().uuid().nullish(),
+    createdByName: zod.string().nullish(),
+    createdAt: zod.coerce.date(),
+    updatedAt: zod.string().nullish(),
+  }),
+  claimants: zod.array(
+    zod.object({
+      id: zod.string().uuid().optional(),
+      claimantName: zod.string().optional(),
+      relationship: zod.string().optional(),
+      phone: zod.string().optional(),
+      address: zod.string().optional(),
+      status: zod.string().optional(),
+      notes: zod.string().nullish(),
+    }),
+  ),
+  shares: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      claimId: zod.string().uuid(),
+      claimantId: zod.string().uuid(),
+      claimantName: zod.string().nullish(),
+      relationship: zod.string().nullish(),
+      claimantStatus: zod.string().nullish(),
+      proposedSharePct: zod.string(),
+      shareNotes: zod.string().nullish(),
+      status: zod.enum(["proposed", "approved", "disputed"]),
+      proposedBy: zod.string().uuid().nullish(),
+      proposedByName: zod.string().nullish(),
+      approvedBy: zod.string().uuid().nullish(),
+      approvedByName: zod.string().nullish(),
+      approvedAt: zod.string().nullish(),
+      disputeNotes: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.string().nullish(),
+    }),
+  ),
+  documents: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      claimId: zod.string().uuid(),
+      claimantId: zod.string().uuid().nullish(),
+      documentType: zod.enum([
+        "death_certificate",
+        "succession_certificate",
+        "court_order",
+        "tribal_council_letter",
+        "id_proof",
+        "affidavit",
+        "land_record",
+        "other",
+      ]),
+      documentTitle: zod.string(),
+      description: zod.string().nullish(),
+      fileObjectPath: zod.string().nullish(),
+      mimeType: zod.string().nullish(),
+      verificationStatus: zod.enum(["pending", "verified", "rejected"]),
+      verificationNotes: zod.string().nullish(),
+      uploadedBy: zod.string().uuid().nullish(),
+      uploadedByName: zod.string().nullish(),
+      verifiedBy: zod.string().uuid().nullish(),
+      verifiedByName: zod.string().nullish(),
+      verifiedAt: zod.string().nullish(),
+      isActive: zod.boolean(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.string().nullish(),
+    }),
+  ),
+  summary: zod.object({
+    claimantCount: zod.number().optional(),
+    shareCount: zod.number().optional(),
+    totalProposedPct: zod.number().optional(),
+    totalApprovedPct: zod.number().optional(),
+    documentCount: zod.number().optional(),
+    verifiedDocumentCount: zod.number().optional(),
+    pendingDocumentCount: zod.number().optional(),
+    allSharesApproved: zod.boolean().optional(),
+    allDocumentsVerified: zod.boolean().optional(),
+  }),
+});
+
+/**
+ * @summary Update claim description / review notes
+ */
+export const UpdateInheritanceClaimParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const UpdateInheritanceClaimBody = zod.object({
+  description: zod.string().nullish(),
+  reviewNotes: zod.string().nullish(),
+  settlementNotes: zod.string().nullish(),
+});
+
+export const UpdateInheritanceClaimResponse = zod.object({
+  claim: zod
+    .object({
+      id: zod.string().uuid(),
+      partnerId: zod.string().uuid(),
+      projectId: zod.string().uuid(),
+      partnerName: zod.string().nullish(),
+      projectName: zod.string().nullish(),
+      claimType: zod.enum(["death", "incapacity", "voluntary_transfer"]),
+      status: zod.enum([
+        "open",
+        "under_review",
+        "developer_approved",
+        "documents_verified",
+        "approved",
+        "rejected",
+        "settled",
+      ]),
+      description: zod.string().nullish(),
+      initiatedBy: zod.string().uuid().nullish(),
+      initiatedByName: zod.string().nullish(),
+      developerApprovedBy: zod.string().uuid().nullish(),
+      developerApprovedByName: zod.string().nullish(),
+      developerApprovedAt: zod.string().nullish(),
+      approvedBy: zod.string().uuid().nullish(),
+      approvedByName: zod.string().nullish(),
+      approvedAt: zod.string().nullish(),
+      rejectedBy: zod.string().uuid().nullish(),
+      rejectedByName: zod.string().nullish(),
+      rejectedAt: zod.string().nullish(),
+      rejectionReason: zod.string().nullish(),
+      settlementNotes: zod.string().nullish(),
+      reviewNotes: zod.string().nullish(),
+      isActive: zod.boolean(),
+      createdBy: zod.string().uuid().nullish(),
+      createdByName: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.string().nullish(),
+    })
+    .optional(),
+});
+
+/**
+ * @summary Soft-delete inheritance claim (admin only)
+ */
+export const DeleteInheritanceClaimParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const DeleteInheritanceClaimResponse = zod.object({
+  deleted: zod.boolean().optional(),
+});
+
+/**
+ * @summary Advance or reject claim status (forward-only workflow)
+ */
+export const TransitionInheritanceClaimStatusParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const TransitionInheritanceClaimStatusBody = zod.object({
+  toStatus: zod.enum([
+    "under_review",
+    "developer_approved",
+    "documents_verified",
+    "approved",
+    "rejected",
+    "settled",
+  ]),
+  reason: zod.string().optional(),
+  notes: zod.string().optional(),
+});
+
+export const TransitionInheritanceClaimStatusResponse = zod.object({
+  claim: zod
+    .object({
+      id: zod.string().uuid(),
+      partnerId: zod.string().uuid(),
+      projectId: zod.string().uuid(),
+      partnerName: zod.string().nullish(),
+      projectName: zod.string().nullish(),
+      claimType: zod.enum(["death", "incapacity", "voluntary_transfer"]),
+      status: zod.enum([
+        "open",
+        "under_review",
+        "developer_approved",
+        "documents_verified",
+        "approved",
+        "rejected",
+        "settled",
+      ]),
+      description: zod.string().nullish(),
+      initiatedBy: zod.string().uuid().nullish(),
+      initiatedByName: zod.string().nullish(),
+      developerApprovedBy: zod.string().uuid().nullish(),
+      developerApprovedByName: zod.string().nullish(),
+      developerApprovedAt: zod.string().nullish(),
+      approvedBy: zod.string().uuid().nullish(),
+      approvedByName: zod.string().nullish(),
+      approvedAt: zod.string().nullish(),
+      rejectedBy: zod.string().uuid().nullish(),
+      rejectedByName: zod.string().nullish(),
+      rejectedAt: zod.string().nullish(),
+      rejectionReason: zod.string().nullish(),
+      settlementNotes: zod.string().nullish(),
+      reviewNotes: zod.string().nullish(),
+      isActive: zod.boolean(),
+      createdBy: zod.string().uuid().nullish(),
+      createdByName: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.string().nullish(),
+    })
+    .optional(),
+});
+
+/**
+ * @summary List share proposals for a claim
+ */
+export const ListInheritanceSharesParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const ListInheritanceSharesResponse = zod.object({
+  shares: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      claimId: zod.string().uuid(),
+      claimantId: zod.string().uuid(),
+      claimantName: zod.string().nullish(),
+      relationship: zod.string().nullish(),
+      claimantStatus: zod.string().nullish(),
+      proposedSharePct: zod.string(),
+      shareNotes: zod.string().nullish(),
+      status: zod.enum(["proposed", "approved", "disputed"]),
+      proposedBy: zod.string().uuid().nullish(),
+      proposedByName: zod.string().nullish(),
+      approvedBy: zod.string().uuid().nullish(),
+      approvedByName: zod.string().nullish(),
+      approvedAt: zod.string().nullish(),
+      disputeNotes: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.string().nullish(),
+    }),
+  ),
+  totalProposedPct: zod.number(),
+  totalApprovedPct: zod.number(),
+  total: zod.number(),
+});
+
+/**
+ * @summary Propose a manual share allocation (never auto-computed)
+ */
+export const CreateInheritanceShareParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const createInheritanceShareBodyProposedSharePctMin = 0.0001;
+export const createInheritanceShareBodyProposedSharePctMax = 100;
+
+export const CreateInheritanceShareBody = zod.object({
+  claimantId: zod.string().uuid(),
+  proposedSharePct: zod
+    .number()
+    .min(createInheritanceShareBodyProposedSharePctMin)
+    .max(createInheritanceShareBodyProposedSharePctMax),
+  shareNotes: zod.string().optional(),
+});
+
+/**
+ * @summary Update share allocation / approve / mark disputed
+ */
+export const UpdateInheritanceShareParams = zod.object({
+  id: zod.coerce.string().uuid(),
+  shareId: zod.coerce.string().uuid(),
+});
+
+export const updateInheritanceShareBodyProposedSharePctMin = 0.0001;
+export const updateInheritanceShareBodyProposedSharePctMax = 100;
+
+export const UpdateInheritanceShareBody = zod.object({
+  proposedSharePct: zod
+    .number()
+    .min(updateInheritanceShareBodyProposedSharePctMin)
+    .max(updateInheritanceShareBodyProposedSharePctMax)
+    .optional(),
+  shareNotes: zod.string().nullish(),
+  status: zod.enum(["proposed", "approved", "disputed"]).optional(),
+  disputeNotes: zod.string().nullish(),
+});
+
+export const UpdateInheritanceShareResponse = zod.object({
+  share: zod
+    .object({
+      id: zod.string().uuid(),
+      claimId: zod.string().uuid(),
+      claimantId: zod.string().uuid(),
+      claimantName: zod.string().nullish(),
+      relationship: zod.string().nullish(),
+      claimantStatus: zod.string().nullish(),
+      proposedSharePct: zod.string(),
+      shareNotes: zod.string().nullish(),
+      status: zod.enum(["proposed", "approved", "disputed"]),
+      proposedBy: zod.string().uuid().nullish(),
+      proposedByName: zod.string().nullish(),
+      approvedBy: zod.string().uuid().nullish(),
+      approvedByName: zod.string().nullish(),
+      approvedAt: zod.string().nullish(),
+      disputeNotes: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.string().nullish(),
+    })
+    .optional(),
+});
+
+/**
+ * @summary Remove a share proposal (admin only)
+ */
+export const DeleteInheritanceShareParams = zod.object({
+  id: zod.coerce.string().uuid(),
+  shareId: zod.coerce.string().uuid(),
+});
+
+export const DeleteInheritanceShareResponse = zod.object({
+  deleted: zod.boolean().optional(),
+});
+
+/**
+ * @summary List documents for a claim
+ */
+export const ListInheritanceDocumentsParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const ListInheritanceDocumentsResponse = zod.object({
+  documents: zod
+    .array(
+      zod.object({
+        id: zod.string().uuid(),
+        claimId: zod.string().uuid(),
+        claimantId: zod.string().uuid().nullish(),
+        documentType: zod.enum([
+          "death_certificate",
+          "succession_certificate",
+          "court_order",
+          "tribal_council_letter",
+          "id_proof",
+          "affidavit",
+          "land_record",
+          "other",
+        ]),
+        documentTitle: zod.string(),
+        description: zod.string().nullish(),
+        fileObjectPath: zod.string().nullish(),
+        mimeType: zod.string().nullish(),
+        verificationStatus: zod.enum(["pending", "verified", "rejected"]),
+        verificationNotes: zod.string().nullish(),
+        uploadedBy: zod.string().uuid().nullish(),
+        uploadedByName: zod.string().nullish(),
+        verifiedBy: zod.string().uuid().nullish(),
+        verifiedByName: zod.string().nullish(),
+        verifiedAt: zod.string().nullish(),
+        isActive: zod.boolean(),
+        createdAt: zod.coerce.date(),
+        updatedAt: zod.string().nullish(),
+      }),
+    )
+    .optional(),
+  total: zod.number().optional(),
+});
+
+/**
+ * @summary Register a document placeholder for a claim
+ */
+export const CreateInheritanceDocumentParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const CreateInheritanceDocumentBody = zod.object({
+  claimantId: zod.string().uuid().optional(),
+  documentType: zod.enum([
+    "death_certificate",
+    "succession_certificate",
+    "court_order",
+    "tribal_council_letter",
+    "id_proof",
+    "affidavit",
+    "land_record",
+    "other",
+  ]),
+  documentTitle: zod.string(),
+  description: zod.string().optional(),
+  fileObjectPath: zod.string().optional(),
+  mimeType: zod.string().optional(),
+});
+
+/**
+ * @summary Update or verify a document
+ */
+export const UpdateInheritanceDocumentParams = zod.object({
+  id: zod.coerce.string().uuid(),
+  docId: zod.coerce.string().uuid(),
+});
+
+export const UpdateInheritanceDocumentBody = zod.object({
+  documentTitle: zod.string().optional(),
+  description: zod.string().nullish(),
+  fileObjectPath: zod.string().nullish(),
+  mimeType: zod.string().nullish(),
+  verificationStatus: zod.enum(["pending", "verified", "rejected"]).optional(),
+  verificationNotes: zod.string().nullish(),
+});
+
+export const UpdateInheritanceDocumentResponse = zod.object({
+  document: zod
+    .object({
+      id: zod.string().uuid(),
+      claimId: zod.string().uuid(),
+      claimantId: zod.string().uuid().nullish(),
+      documentType: zod.enum([
+        "death_certificate",
+        "succession_certificate",
+        "court_order",
+        "tribal_council_letter",
+        "id_proof",
+        "affidavit",
+        "land_record",
+        "other",
+      ]),
+      documentTitle: zod.string(),
+      description: zod.string().nullish(),
+      fileObjectPath: zod.string().nullish(),
+      mimeType: zod.string().nullish(),
+      verificationStatus: zod.enum(["pending", "verified", "rejected"]),
+      verificationNotes: zod.string().nullish(),
+      uploadedBy: zod.string().uuid().nullish(),
+      uploadedByName: zod.string().nullish(),
+      verifiedBy: zod.string().uuid().nullish(),
+      verifiedByName: zod.string().nullish(),
+      verifiedAt: zod.string().nullish(),
+      isActive: zod.boolean(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.string().nullish(),
+    })
+    .optional(),
+});
+
+/**
+ * @summary Soft-remove a document (admin only)
+ */
+export const DeleteInheritanceDocumentParams = zod.object({
+  id: zod.coerce.string().uuid(),
+  docId: zod.coerce.string().uuid(),
+});
+
+export const DeleteInheritanceDocumentResponse = zod.object({
+  deleted: zod.boolean().optional(),
+});

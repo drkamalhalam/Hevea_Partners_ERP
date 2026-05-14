@@ -37,6 +37,7 @@ import {
   TrendingDown,
   GitCompare,
   Database,
+  Gavel,
 } from "lucide-react";
 import { useRole, ROLE_LABELS, ROLE_COLORS } from "@/contexts/RoleContext";
 import type { UserRole } from "@/contexts/RoleContext";
@@ -153,6 +154,12 @@ const navGroups: NavGroup[] = [
         name: "Valuation Engine",
         href: "/valuation-engine",
         icon: Scale,
+        roles: ["admin", "developer"] as UserRole[],
+      },
+      {
+        name: "Inheritance Claims",
+        href: "/inheritance-claims",
+        icon: Gavel,
         roles: ["admin", "developer"] as UserRole[],
       },
       {

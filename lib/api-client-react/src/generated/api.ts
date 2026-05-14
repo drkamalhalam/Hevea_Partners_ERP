@@ -94,6 +94,12 @@ import type {
   CreateGenerationBody,
   CreateImbalanceEntry201,
   CreateImbalanceEntryBody,
+  CreateInheritanceClaim201,
+  CreateInheritanceClaimBody,
+  CreateInheritanceDocument201,
+  CreateInheritanceDocumentBody,
+  CreateInheritanceShare201,
+  CreateInheritanceShareBody,
   CreateLandownerLedgerEntryBody,
   CreateLcaConfigBody,
   CreateLcaLedgerEntryBody,
@@ -125,6 +131,9 @@ import type {
   CreateValuationRunBody,
   DashboardSummary,
   DeleteEppEntry200,
+  DeleteInheritanceClaim200,
+  DeleteInheritanceDocument200,
+  DeleteInheritanceShare200,
   DeleteLossAbsorptionRecord200,
   DeletePayableAdjustment200,
   DeleteProductionEntry200,
@@ -217,6 +226,9 @@ import type {
   ImbalanceSummary,
   ImportValuationProfitRecords200,
   ImportValuationProfitRecordsBody,
+  InheritanceClaimDetail,
+  InheritanceClaimPage,
+  InheritanceSharesPage,
   InitiateAgreementActivation409,
   InitiateAgreementActivationBody,
   InitiateClosureBody,
@@ -258,6 +270,8 @@ import type {
   ListFinancialAccessLogsParams,
   ListImbalanceLedger200,
   ListImbalanceLedgerParams,
+  ListInheritanceClaimsParams,
+  ListInheritanceDocuments200,
   ListLandownerLedgerEntriesParams,
   ListLcaConfigsParams,
   ListLcaLedgerParams,
@@ -394,6 +408,8 @@ import type {
   TransferOtpEvent,
   TransferRofrDashboard,
   TransferRofrOffer,
+  TransitionInheritanceClaimStatus200,
+  TransitionInheritanceClaimStatusBody,
   TransitionLifecycleBody,
   UpdateAdvanceBody,
   UpdateAgreementVariablesBody,
@@ -414,6 +430,12 @@ import type {
   UpdateExpenditureBody,
   UpdateFiftyPctSession200,
   UpdateFiftyPctSessionBody,
+  UpdateInheritanceClaim200,
+  UpdateInheritanceClaimBody,
+  UpdateInheritanceDocument200,
+  UpdateInheritanceDocumentBody,
+  UpdateInheritanceShare200,
+  UpdateInheritanceShareBody,
   UpdateLandownerLedgerEntryBody,
   UpdateLcaConfigBody,
   UpdateLcaLedgerEntryBody,
@@ -32757,4 +32779,1285 @@ export const useDeleteValuationRun = <
   TContext
 > => {
   return useMutation(getDeleteValuationRunMutationOptions(options));
+};
+
+/**
+ * @summary List inheritance claims
+ */
+export const getListInheritanceClaimsUrl = (
+  params?: ListInheritanceClaimsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/inheritance-claims?${stringifiedParams}`
+    : `/api/inheritance-claims`;
+};
+
+export const listInheritanceClaims = async (
+  params?: ListInheritanceClaimsParams,
+  options?: RequestInit,
+): Promise<InheritanceClaimPage> => {
+  return customFetch<InheritanceClaimPage>(
+    getListInheritanceClaimsUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListInheritanceClaimsQueryKey = (
+  params?: ListInheritanceClaimsParams,
+) => {
+  return [`/api/inheritance-claims`, ...(params ? [params] : [])] as const;
+};
+
+export const getListInheritanceClaimsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listInheritanceClaims>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListInheritanceClaimsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listInheritanceClaims>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListInheritanceClaimsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listInheritanceClaims>>
+  > = ({ signal }) =>
+    listInheritanceClaims(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listInheritanceClaims>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListInheritanceClaimsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listInheritanceClaims>>
+>;
+export type ListInheritanceClaimsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List inheritance claims
+ */
+
+export function useListInheritanceClaims<
+  TData = Awaited<ReturnType<typeof listInheritanceClaims>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListInheritanceClaimsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listInheritanceClaims>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListInheritanceClaimsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a new inheritance claim
+ */
+export const getCreateInheritanceClaimUrl = () => {
+  return `/api/inheritance-claims`;
+};
+
+export const createInheritanceClaim = async (
+  createInheritanceClaimBody: CreateInheritanceClaimBody,
+  options?: RequestInit,
+): Promise<CreateInheritanceClaim201> => {
+  return customFetch<CreateInheritanceClaim201>(
+    getCreateInheritanceClaimUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(createInheritanceClaimBody),
+    },
+  );
+};
+
+export const getCreateInheritanceClaimMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createInheritanceClaim>>,
+    TError,
+    { data: BodyType<CreateInheritanceClaimBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createInheritanceClaim>>,
+  TError,
+  { data: BodyType<CreateInheritanceClaimBody> },
+  TContext
+> => {
+  const mutationKey = ["createInheritanceClaim"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createInheritanceClaim>>,
+    { data: BodyType<CreateInheritanceClaimBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createInheritanceClaim(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateInheritanceClaimMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createInheritanceClaim>>
+>;
+export type CreateInheritanceClaimMutationBody =
+  BodyType<CreateInheritanceClaimBody>;
+export type CreateInheritanceClaimMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create a new inheritance claim
+ */
+export const useCreateInheritanceClaim = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createInheritanceClaim>>,
+    TError,
+    { data: BodyType<CreateInheritanceClaimBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createInheritanceClaim>>,
+  TError,
+  { data: BodyType<CreateInheritanceClaimBody> },
+  TContext
+> => {
+  return useMutation(getCreateInheritanceClaimMutationOptions(options));
+};
+
+/**
+ * @summary Get inheritance claim detail (with claimants, shares, documents)
+ */
+export const getGetInheritanceClaimUrl = (id: string) => {
+  return `/api/inheritance-claims/${id}`;
+};
+
+export const getInheritanceClaim = async (
+  id: string,
+  options?: RequestInit,
+): Promise<InheritanceClaimDetail> => {
+  return customFetch<InheritanceClaimDetail>(getGetInheritanceClaimUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetInheritanceClaimQueryKey = (id: string) => {
+  return [`/api/inheritance-claims/${id}`] as const;
+};
+
+export const getGetInheritanceClaimQueryOptions = <
+  TData = Awaited<ReturnType<typeof getInheritanceClaim>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getInheritanceClaim>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetInheritanceClaimQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getInheritanceClaim>>
+  > = ({ signal }) => getInheritanceClaim(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getInheritanceClaim>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetInheritanceClaimQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getInheritanceClaim>>
+>;
+export type GetInheritanceClaimQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get inheritance claim detail (with claimants, shares, documents)
+ */
+
+export function useGetInheritanceClaim<
+  TData = Awaited<ReturnType<typeof getInheritanceClaim>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getInheritanceClaim>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetInheritanceClaimQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Update claim description / review notes
+ */
+export const getUpdateInheritanceClaimUrl = (id: string) => {
+  return `/api/inheritance-claims/${id}`;
+};
+
+export const updateInheritanceClaim = async (
+  id: string,
+  updateInheritanceClaimBody: UpdateInheritanceClaimBody,
+  options?: RequestInit,
+): Promise<UpdateInheritanceClaim200> => {
+  return customFetch<UpdateInheritanceClaim200>(
+    getUpdateInheritanceClaimUrl(id),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(updateInheritanceClaimBody),
+    },
+  );
+};
+
+export const getUpdateInheritanceClaimMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateInheritanceClaim>>,
+    TError,
+    { id: string; data: BodyType<UpdateInheritanceClaimBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateInheritanceClaim>>,
+  TError,
+  { id: string; data: BodyType<UpdateInheritanceClaimBody> },
+  TContext
+> => {
+  const mutationKey = ["updateInheritanceClaim"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateInheritanceClaim>>,
+    { id: string; data: BodyType<UpdateInheritanceClaimBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateInheritanceClaim(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateInheritanceClaimMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateInheritanceClaim>>
+>;
+export type UpdateInheritanceClaimMutationBody =
+  BodyType<UpdateInheritanceClaimBody>;
+export type UpdateInheritanceClaimMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update claim description / review notes
+ */
+export const useUpdateInheritanceClaim = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateInheritanceClaim>>,
+    TError,
+    { id: string; data: BodyType<UpdateInheritanceClaimBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateInheritanceClaim>>,
+  TError,
+  { id: string; data: BodyType<UpdateInheritanceClaimBody> },
+  TContext
+> => {
+  return useMutation(getUpdateInheritanceClaimMutationOptions(options));
+};
+
+/**
+ * @summary Soft-delete inheritance claim (admin only)
+ */
+export const getDeleteInheritanceClaimUrl = (id: string) => {
+  return `/api/inheritance-claims/${id}`;
+};
+
+export const deleteInheritanceClaim = async (
+  id: string,
+  options?: RequestInit,
+): Promise<DeleteInheritanceClaim200> => {
+  return customFetch<DeleteInheritanceClaim200>(
+    getDeleteInheritanceClaimUrl(id),
+    {
+      ...options,
+      method: "DELETE",
+    },
+  );
+};
+
+export const getDeleteInheritanceClaimMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteInheritanceClaim>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteInheritanceClaim>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["deleteInheritanceClaim"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteInheritanceClaim>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteInheritanceClaim(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteInheritanceClaimMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteInheritanceClaim>>
+>;
+
+export type DeleteInheritanceClaimMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Soft-delete inheritance claim (admin only)
+ */
+export const useDeleteInheritanceClaim = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteInheritanceClaim>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteInheritanceClaim>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getDeleteInheritanceClaimMutationOptions(options));
+};
+
+/**
+ * @summary Advance or reject claim status (forward-only workflow)
+ */
+export const getTransitionInheritanceClaimStatusUrl = (id: string) => {
+  return `/api/inheritance-claims/${id}/status`;
+};
+
+export const transitionInheritanceClaimStatus = async (
+  id: string,
+  transitionInheritanceClaimStatusBody: TransitionInheritanceClaimStatusBody,
+  options?: RequestInit,
+): Promise<TransitionInheritanceClaimStatus200> => {
+  return customFetch<TransitionInheritanceClaimStatus200>(
+    getTransitionInheritanceClaimStatusUrl(id),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(transitionInheritanceClaimStatusBody),
+    },
+  );
+};
+
+export const getTransitionInheritanceClaimStatusMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof transitionInheritanceClaimStatus>>,
+    TError,
+    { id: string; data: BodyType<TransitionInheritanceClaimStatusBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof transitionInheritanceClaimStatus>>,
+  TError,
+  { id: string; data: BodyType<TransitionInheritanceClaimStatusBody> },
+  TContext
+> => {
+  const mutationKey = ["transitionInheritanceClaimStatus"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof transitionInheritanceClaimStatus>>,
+    { id: string; data: BodyType<TransitionInheritanceClaimStatusBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return transitionInheritanceClaimStatus(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type TransitionInheritanceClaimStatusMutationResult = NonNullable<
+  Awaited<ReturnType<typeof transitionInheritanceClaimStatus>>
+>;
+export type TransitionInheritanceClaimStatusMutationBody =
+  BodyType<TransitionInheritanceClaimStatusBody>;
+export type TransitionInheritanceClaimStatusMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Advance or reject claim status (forward-only workflow)
+ */
+export const useTransitionInheritanceClaimStatus = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof transitionInheritanceClaimStatus>>,
+    TError,
+    { id: string; data: BodyType<TransitionInheritanceClaimStatusBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof transitionInheritanceClaimStatus>>,
+  TError,
+  { id: string; data: BodyType<TransitionInheritanceClaimStatusBody> },
+  TContext
+> => {
+  return useMutation(
+    getTransitionInheritanceClaimStatusMutationOptions(options),
+  );
+};
+
+/**
+ * @summary List share proposals for a claim
+ */
+export const getListInheritanceSharesUrl = (id: string) => {
+  return `/api/inheritance-claims/${id}/shares`;
+};
+
+export const listInheritanceShares = async (
+  id: string,
+  options?: RequestInit,
+): Promise<InheritanceSharesPage> => {
+  return customFetch<InheritanceSharesPage>(getListInheritanceSharesUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListInheritanceSharesQueryKey = (id: string) => {
+  return [`/api/inheritance-claims/${id}/shares`] as const;
+};
+
+export const getListInheritanceSharesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listInheritanceShares>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listInheritanceShares>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListInheritanceSharesQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listInheritanceShares>>
+  > = ({ signal }) => listInheritanceShares(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listInheritanceShares>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListInheritanceSharesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listInheritanceShares>>
+>;
+export type ListInheritanceSharesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List share proposals for a claim
+ */
+
+export function useListInheritanceShares<
+  TData = Awaited<ReturnType<typeof listInheritanceShares>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listInheritanceShares>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListInheritanceSharesQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Propose a manual share allocation (never auto-computed)
+ */
+export const getCreateInheritanceShareUrl = (id: string) => {
+  return `/api/inheritance-claims/${id}/shares`;
+};
+
+export const createInheritanceShare = async (
+  id: string,
+  createInheritanceShareBody: CreateInheritanceShareBody,
+  options?: RequestInit,
+): Promise<CreateInheritanceShare201> => {
+  return customFetch<CreateInheritanceShare201>(
+    getCreateInheritanceShareUrl(id),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(createInheritanceShareBody),
+    },
+  );
+};
+
+export const getCreateInheritanceShareMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createInheritanceShare>>,
+    TError,
+    { id: string; data: BodyType<CreateInheritanceShareBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createInheritanceShare>>,
+  TError,
+  { id: string; data: BodyType<CreateInheritanceShareBody> },
+  TContext
+> => {
+  const mutationKey = ["createInheritanceShare"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createInheritanceShare>>,
+    { id: string; data: BodyType<CreateInheritanceShareBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return createInheritanceShare(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateInheritanceShareMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createInheritanceShare>>
+>;
+export type CreateInheritanceShareMutationBody =
+  BodyType<CreateInheritanceShareBody>;
+export type CreateInheritanceShareMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Propose a manual share allocation (never auto-computed)
+ */
+export const useCreateInheritanceShare = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createInheritanceShare>>,
+    TError,
+    { id: string; data: BodyType<CreateInheritanceShareBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createInheritanceShare>>,
+  TError,
+  { id: string; data: BodyType<CreateInheritanceShareBody> },
+  TContext
+> => {
+  return useMutation(getCreateInheritanceShareMutationOptions(options));
+};
+
+/**
+ * @summary Update share allocation / approve / mark disputed
+ */
+export const getUpdateInheritanceShareUrl = (id: string, shareId: string) => {
+  return `/api/inheritance-claims/${id}/shares/${shareId}`;
+};
+
+export const updateInheritanceShare = async (
+  id: string,
+  shareId: string,
+  updateInheritanceShareBody: UpdateInheritanceShareBody,
+  options?: RequestInit,
+): Promise<UpdateInheritanceShare200> => {
+  return customFetch<UpdateInheritanceShare200>(
+    getUpdateInheritanceShareUrl(id, shareId),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(updateInheritanceShareBody),
+    },
+  );
+};
+
+export const getUpdateInheritanceShareMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateInheritanceShare>>,
+    TError,
+    { id: string; shareId: string; data: BodyType<UpdateInheritanceShareBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateInheritanceShare>>,
+  TError,
+  { id: string; shareId: string; data: BodyType<UpdateInheritanceShareBody> },
+  TContext
+> => {
+  const mutationKey = ["updateInheritanceShare"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateInheritanceShare>>,
+    { id: string; shareId: string; data: BodyType<UpdateInheritanceShareBody> }
+  > = (props) => {
+    const { id, shareId, data } = props ?? {};
+
+    return updateInheritanceShare(id, shareId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateInheritanceShareMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateInheritanceShare>>
+>;
+export type UpdateInheritanceShareMutationBody =
+  BodyType<UpdateInheritanceShareBody>;
+export type UpdateInheritanceShareMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update share allocation / approve / mark disputed
+ */
+export const useUpdateInheritanceShare = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateInheritanceShare>>,
+    TError,
+    { id: string; shareId: string; data: BodyType<UpdateInheritanceShareBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateInheritanceShare>>,
+  TError,
+  { id: string; shareId: string; data: BodyType<UpdateInheritanceShareBody> },
+  TContext
+> => {
+  return useMutation(getUpdateInheritanceShareMutationOptions(options));
+};
+
+/**
+ * @summary Remove a share proposal (admin only)
+ */
+export const getDeleteInheritanceShareUrl = (id: string, shareId: string) => {
+  return `/api/inheritance-claims/${id}/shares/${shareId}`;
+};
+
+export const deleteInheritanceShare = async (
+  id: string,
+  shareId: string,
+  options?: RequestInit,
+): Promise<DeleteInheritanceShare200> => {
+  return customFetch<DeleteInheritanceShare200>(
+    getDeleteInheritanceShareUrl(id, shareId),
+    {
+      ...options,
+      method: "DELETE",
+    },
+  );
+};
+
+export const getDeleteInheritanceShareMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteInheritanceShare>>,
+    TError,
+    { id: string; shareId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteInheritanceShare>>,
+  TError,
+  { id: string; shareId: string },
+  TContext
+> => {
+  const mutationKey = ["deleteInheritanceShare"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteInheritanceShare>>,
+    { id: string; shareId: string }
+  > = (props) => {
+    const { id, shareId } = props ?? {};
+
+    return deleteInheritanceShare(id, shareId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteInheritanceShareMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteInheritanceShare>>
+>;
+
+export type DeleteInheritanceShareMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Remove a share proposal (admin only)
+ */
+export const useDeleteInheritanceShare = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteInheritanceShare>>,
+    TError,
+    { id: string; shareId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteInheritanceShare>>,
+  TError,
+  { id: string; shareId: string },
+  TContext
+> => {
+  return useMutation(getDeleteInheritanceShareMutationOptions(options));
+};
+
+/**
+ * @summary List documents for a claim
+ */
+export const getListInheritanceDocumentsUrl = (id: string) => {
+  return `/api/inheritance-claims/${id}/documents`;
+};
+
+export const listInheritanceDocuments = async (
+  id: string,
+  options?: RequestInit,
+): Promise<ListInheritanceDocuments200> => {
+  return customFetch<ListInheritanceDocuments200>(
+    getListInheritanceDocumentsUrl(id),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListInheritanceDocumentsQueryKey = (id: string) => {
+  return [`/api/inheritance-claims/${id}/documents`] as const;
+};
+
+export const getListInheritanceDocumentsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listInheritanceDocuments>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listInheritanceDocuments>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListInheritanceDocumentsQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listInheritanceDocuments>>
+  > = ({ signal }) =>
+    listInheritanceDocuments(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listInheritanceDocuments>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListInheritanceDocumentsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listInheritanceDocuments>>
+>;
+export type ListInheritanceDocumentsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List documents for a claim
+ */
+
+export function useListInheritanceDocuments<
+  TData = Awaited<ReturnType<typeof listInheritanceDocuments>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listInheritanceDocuments>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListInheritanceDocumentsQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Register a document placeholder for a claim
+ */
+export const getCreateInheritanceDocumentUrl = (id: string) => {
+  return `/api/inheritance-claims/${id}/documents`;
+};
+
+export const createInheritanceDocument = async (
+  id: string,
+  createInheritanceDocumentBody: CreateInheritanceDocumentBody,
+  options?: RequestInit,
+): Promise<CreateInheritanceDocument201> => {
+  return customFetch<CreateInheritanceDocument201>(
+    getCreateInheritanceDocumentUrl(id),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(createInheritanceDocumentBody),
+    },
+  );
+};
+
+export const getCreateInheritanceDocumentMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createInheritanceDocument>>,
+    TError,
+    { id: string; data: BodyType<CreateInheritanceDocumentBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createInheritanceDocument>>,
+  TError,
+  { id: string; data: BodyType<CreateInheritanceDocumentBody> },
+  TContext
+> => {
+  const mutationKey = ["createInheritanceDocument"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createInheritanceDocument>>,
+    { id: string; data: BodyType<CreateInheritanceDocumentBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return createInheritanceDocument(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateInheritanceDocumentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createInheritanceDocument>>
+>;
+export type CreateInheritanceDocumentMutationBody =
+  BodyType<CreateInheritanceDocumentBody>;
+export type CreateInheritanceDocumentMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Register a document placeholder for a claim
+ */
+export const useCreateInheritanceDocument = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createInheritanceDocument>>,
+    TError,
+    { id: string; data: BodyType<CreateInheritanceDocumentBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createInheritanceDocument>>,
+  TError,
+  { id: string; data: BodyType<CreateInheritanceDocumentBody> },
+  TContext
+> => {
+  return useMutation(getCreateInheritanceDocumentMutationOptions(options));
+};
+
+/**
+ * @summary Update or verify a document
+ */
+export const getUpdateInheritanceDocumentUrl = (id: string, docId: string) => {
+  return `/api/inheritance-claims/${id}/documents/${docId}`;
+};
+
+export const updateInheritanceDocument = async (
+  id: string,
+  docId: string,
+  updateInheritanceDocumentBody: UpdateInheritanceDocumentBody,
+  options?: RequestInit,
+): Promise<UpdateInheritanceDocument200> => {
+  return customFetch<UpdateInheritanceDocument200>(
+    getUpdateInheritanceDocumentUrl(id, docId),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(updateInheritanceDocumentBody),
+    },
+  );
+};
+
+export const getUpdateInheritanceDocumentMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateInheritanceDocument>>,
+    TError,
+    {
+      id: string;
+      docId: string;
+      data: BodyType<UpdateInheritanceDocumentBody>;
+    },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateInheritanceDocument>>,
+  TError,
+  { id: string; docId: string; data: BodyType<UpdateInheritanceDocumentBody> },
+  TContext
+> => {
+  const mutationKey = ["updateInheritanceDocument"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateInheritanceDocument>>,
+    { id: string; docId: string; data: BodyType<UpdateInheritanceDocumentBody> }
+  > = (props) => {
+    const { id, docId, data } = props ?? {};
+
+    return updateInheritanceDocument(id, docId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateInheritanceDocumentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateInheritanceDocument>>
+>;
+export type UpdateInheritanceDocumentMutationBody =
+  BodyType<UpdateInheritanceDocumentBody>;
+export type UpdateInheritanceDocumentMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update or verify a document
+ */
+export const useUpdateInheritanceDocument = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateInheritanceDocument>>,
+    TError,
+    {
+      id: string;
+      docId: string;
+      data: BodyType<UpdateInheritanceDocumentBody>;
+    },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateInheritanceDocument>>,
+  TError,
+  { id: string; docId: string; data: BodyType<UpdateInheritanceDocumentBody> },
+  TContext
+> => {
+  return useMutation(getUpdateInheritanceDocumentMutationOptions(options));
+};
+
+/**
+ * @summary Soft-remove a document (admin only)
+ */
+export const getDeleteInheritanceDocumentUrl = (id: string, docId: string) => {
+  return `/api/inheritance-claims/${id}/documents/${docId}`;
+};
+
+export const deleteInheritanceDocument = async (
+  id: string,
+  docId: string,
+  options?: RequestInit,
+): Promise<DeleteInheritanceDocument200> => {
+  return customFetch<DeleteInheritanceDocument200>(
+    getDeleteInheritanceDocumentUrl(id, docId),
+    {
+      ...options,
+      method: "DELETE",
+    },
+  );
+};
+
+export const getDeleteInheritanceDocumentMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteInheritanceDocument>>,
+    TError,
+    { id: string; docId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteInheritanceDocument>>,
+  TError,
+  { id: string; docId: string },
+  TContext
+> => {
+  const mutationKey = ["deleteInheritanceDocument"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteInheritanceDocument>>,
+    { id: string; docId: string }
+  > = (props) => {
+    const { id, docId } = props ?? {};
+
+    return deleteInheritanceDocument(id, docId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteInheritanceDocumentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteInheritanceDocument>>
+>;
+
+export type DeleteInheritanceDocumentMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Soft-remove a document (admin only)
+ */
+export const useDeleteInheritanceDocument = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteInheritanceDocument>>,
+    TError,
+    { id: string; docId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteInheritanceDocument>>,
+  TError,
+  { id: string; docId: string },
+  TContext
+> => {
+  return useMutation(getDeleteInheritanceDocumentMutationOptions(options));
 };

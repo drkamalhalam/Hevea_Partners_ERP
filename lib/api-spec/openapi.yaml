@@ -8275,6 +8275,264 @@ paths:
                 properties:
                   deleted: { type: boolean }
 
+  # ── Inheritance & Claimant Succession ───────────────────────────────────
+
+  /inheritance-claims:
+    get:
+      operationId: listInheritanceClaims
+      summary: List inheritance claims
+      tags: [Inheritance]
+      parameters:
+        - { in: query, name: projectId, schema: { type: string, format: uuid } }
+        - { in: query, name: partnerId, schema: { type: string, format: uuid } }
+        - { in: query, name: status, schema: { type: string } }
+      responses:
+        "200":
+          description: Inheritance claims list
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InheritanceClaimPage" }
+    post:
+      operationId: createInheritanceClaim
+      summary: Create a new inheritance claim
+      tags: [Inheritance]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateInheritanceClaimBody" }
+      responses:
+        "201":
+          description: Created claim
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  claim: { $ref: "#/components/schemas/InheritanceClaim" }
+
+  /inheritance-claims/{id}:
+    get:
+      operationId: getInheritanceClaim
+      summary: Get inheritance claim detail (with claimants, shares, documents)
+      tags: [Inheritance]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Claim detail
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InheritanceClaimDetail" }
+    patch:
+      operationId: updateInheritanceClaim
+      summary: Update claim description / review notes
+      tags: [Inheritance]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateInheritanceClaimBody" }
+      responses:
+        "200":
+          description: Updated claim
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  claim: { $ref: "#/components/schemas/InheritanceClaim" }
+    delete:
+      operationId: deleteInheritanceClaim
+      summary: Soft-delete inheritance claim (admin only)
+      tags: [Inheritance]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted: { type: boolean }
+
+  /inheritance-claims/{id}/status:
+    patch:
+      operationId: transitionInheritanceClaimStatus
+      summary: Advance or reject claim status (forward-only workflow)
+      tags: [Inheritance]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TransitionInheritanceClaimStatusBody" }
+      responses:
+        "200":
+          description: Updated claim
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  claim: { $ref: "#/components/schemas/InheritanceClaim" }
+
+  /inheritance-claims/{id}/shares:
+    get:
+      operationId: listInheritanceShares
+      summary: List share proposals for a claim
+      tags: [Inheritance]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Shares list
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InheritanceSharesPage" }
+    post:
+      operationId: createInheritanceShare
+      summary: Propose a manual share allocation (never auto-computed)
+      tags: [Inheritance]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateInheritanceShareBody" }
+      responses:
+        "201":
+          description: Created share proposal
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  share: { $ref: "#/components/schemas/InheritanceClaimantShare" }
+
+  /inheritance-claims/{id}/shares/{shareId}:
+    patch:
+      operationId: updateInheritanceShare
+      summary: Update share allocation / approve / mark disputed
+      tags: [Inheritance]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+        - { in: path, name: shareId, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateInheritanceShareBody" }
+      responses:
+        "200":
+          description: Updated share
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  share: { $ref: "#/components/schemas/InheritanceClaimantShare" }
+    delete:
+      operationId: deleteInheritanceShare
+      summary: Remove a share proposal (admin only)
+      tags: [Inheritance]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+        - { in: path, name: shareId, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted: { type: boolean }
+
+  /inheritance-claims/{id}/documents:
+    get:
+      operationId: listInheritanceDocuments
+      summary: List documents for a claim
+      tags: [Inheritance]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Documents list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  documents: { type: array, items: { $ref: "#/components/schemas/InheritanceDocument" } }
+                  total: { type: integer }
+    post:
+      operationId: createInheritanceDocument
+      summary: Register a document placeholder for a claim
+      tags: [Inheritance]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateInheritanceDocumentBody" }
+      responses:
+        "201":
+          description: Created document
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  document: { $ref: "#/components/schemas/InheritanceDocument" }
+
+  /inheritance-claims/{id}/documents/{docId}:
+    patch:
+      operationId: updateInheritanceDocument
+      summary: Update or verify a document
+      tags: [Inheritance]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+        - { in: path, name: docId, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateInheritanceDocumentBody" }
+      responses:
+        "200":
+          description: Updated document
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  document: { $ref: "#/components/schemas/InheritanceDocument" }
+    delete:
+      operationId: deleteInheritanceDocument
+      summary: Soft-remove a document (admin only)
+      tags: [Inheritance]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+        - { in: path, name: docId, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted: { type: boolean }
+
+
 components:
   schemas:
 
@@ -14355,3 +14613,191 @@ components:
         shareValue: { type: number, nullable: true }
         formulaVersion: { type: string }
         warnings: { type: array, items: { type: string } }
+
+    # ── Inheritance & Claimant Succession ────────────────────────────────────
+
+    InheritanceClaim:
+      type: object
+      required: [id, partnerId, projectId, claimType, status, isActive, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        partnerId: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        partnerName: { type: string, nullable: true }
+        projectName: { type: string, nullable: true }
+        claimType: { type: string, enum: [death, incapacity, voluntary_transfer] }
+        status: { type: string, enum: [open, under_review, developer_approved, documents_verified, approved, rejected, settled] }
+        description: { type: string, nullable: true }
+        initiatedBy: { type: string, format: uuid, nullable: true }
+        initiatedByName: { type: string, nullable: true }
+        developerApprovedBy: { type: string, format: uuid, nullable: true }
+        developerApprovedByName: { type: string, nullable: true }
+        developerApprovedAt: { type: string, nullable: true }
+        approvedBy: { type: string, format: uuid, nullable: true }
+        approvedByName: { type: string, nullable: true }
+        approvedAt: { type: string, nullable: true }
+        rejectedBy: { type: string, format: uuid, nullable: true }
+        rejectedByName: { type: string, nullable: true }
+        rejectedAt: { type: string, nullable: true }
+        rejectionReason: { type: string, nullable: true }
+        settlementNotes: { type: string, nullable: true }
+        reviewNotes: { type: string, nullable: true }
+        isActive: { type: boolean }
+        createdBy: { type: string, format: uuid, nullable: true }
+        createdByName: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, nullable: true }
+
+    InheritanceClaimPage:
+      type: object
+      required: [claims, total]
+      properties:
+        claims: { type: array, items: { $ref: "#/components/schemas/InheritanceClaim" } }
+        total: { type: integer }
+
+    InheritanceClaimantShare:
+      type: object
+      required: [id, claimId, claimantId, proposedSharePct, status, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        claimId: { type: string, format: uuid }
+        claimantId: { type: string, format: uuid }
+        claimantName: { type: string, nullable: true }
+        relationship: { type: string, nullable: true }
+        claimantStatus: { type: string, nullable: true }
+        proposedSharePct: { type: string }
+        shareNotes: { type: string, nullable: true }
+        status: { type: string, enum: [proposed, approved, disputed] }
+        proposedBy: { type: string, format: uuid, nullable: true }
+        proposedByName: { type: string, nullable: true }
+        approvedBy: { type: string, format: uuid, nullable: true }
+        approvedByName: { type: string, nullable: true }
+        approvedAt: { type: string, nullable: true }
+        disputeNotes: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, nullable: true }
+
+    InheritanceDocument:
+      type: object
+      required: [id, claimId, documentType, documentTitle, verificationStatus, isActive, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        claimId: { type: string, format: uuid }
+        claimantId: { type: string, format: uuid, nullable: true }
+        documentType: { type: string, enum: [death_certificate, succession_certificate, court_order, tribal_council_letter, id_proof, affidavit, land_record, other] }
+        documentTitle: { type: string }
+        description: { type: string, nullable: true }
+        fileObjectPath: { type: string, nullable: true }
+        mimeType: { type: string, nullable: true }
+        verificationStatus: { type: string, enum: [pending, verified, rejected] }
+        verificationNotes: { type: string, nullable: true }
+        uploadedBy: { type: string, format: uuid, nullable: true }
+        uploadedByName: { type: string, nullable: true }
+        verifiedBy: { type: string, format: uuid, nullable: true }
+        verifiedByName: { type: string, nullable: true }
+        verifiedAt: { type: string, nullable: true }
+        isActive: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, nullable: true }
+
+    InheritanceClaimDetail:
+      type: object
+      required: [claim, claimants, shares, documents, summary]
+      properties:
+        claim: { $ref: "#/components/schemas/InheritanceClaim" }
+        claimants:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string, format: uuid }
+              claimantName: { type: string }
+              relationship: { type: string }
+              phone: { type: string }
+              address: { type: string }
+              status: { type: string }
+              notes: { type: string, nullable: true }
+        shares: { type: array, items: { $ref: "#/components/schemas/InheritanceClaimantShare" } }
+        documents: { type: array, items: { $ref: "#/components/schemas/InheritanceDocument" } }
+        summary:
+          type: object
+          properties:
+            claimantCount: { type: integer }
+            shareCount: { type: integer }
+            totalProposedPct: { type: number }
+            totalApprovedPct: { type: number }
+            documentCount: { type: integer }
+            verifiedDocumentCount: { type: integer }
+            pendingDocumentCount: { type: integer }
+            allSharesApproved: { type: boolean }
+            allDocumentsVerified: { type: boolean }
+
+    CreateInheritanceClaimBody:
+      type: object
+      required: [partnerId, projectId, claimType]
+      properties:
+        partnerId: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        claimType: { type: string, enum: [death, incapacity, voluntary_transfer] }
+        description: { type: string }
+
+    UpdateInheritanceClaimBody:
+      type: object
+      properties:
+        description: { type: string, nullable: true }
+        reviewNotes: { type: string, nullable: true }
+        settlementNotes: { type: string, nullable: true }
+
+    TransitionInheritanceClaimStatusBody:
+      type: object
+      required: [toStatus]
+      properties:
+        toStatus: { type: string, enum: [under_review, developer_approved, documents_verified, approved, rejected, settled] }
+        reason: { type: string }
+        notes: { type: string }
+
+    CreateInheritanceShareBody:
+      type: object
+      required: [claimantId, proposedSharePct]
+      properties:
+        claimantId: { type: string, format: uuid }
+        proposedSharePct: { type: number, minimum: 0.0001, maximum: 100 }
+        shareNotes: { type: string }
+
+    UpdateInheritanceShareBody:
+      type: object
+      properties:
+        proposedSharePct: { type: number, minimum: 0.0001, maximum: 100 }
+        shareNotes: { type: string, nullable: true }
+        status: { type: string, enum: [proposed, approved, disputed] }
+        disputeNotes: { type: string, nullable: true }
+
+    CreateInheritanceDocumentBody:
+      type: object
+      required: [documentType, documentTitle]
+      properties:
+        claimantId: { type: string, format: uuid }
+        documentType: { type: string, enum: [death_certificate, succession_certificate, court_order, tribal_council_letter, id_proof, affidavit, land_record, other] }
+        documentTitle: { type: string }
+        description: { type: string }
+        fileObjectPath: { type: string }
+        mimeType: { type: string }
+
+    UpdateInheritanceDocumentBody:
+      type: object
+      properties:
+        documentTitle: { type: string }
+        description: { type: string, nullable: true }
+        fileObjectPath: { type: string, nullable: true }
+        mimeType: { type: string, nullable: true }
+        verificationStatus: { type: string, enum: [pending, verified, rejected] }
+        verificationNotes: { type: string, nullable: true }
+
+    InheritanceSharesPage:
+      type: object
+      required: [shares, totalProposedPct, totalApprovedPct, total]
+      properties:
+        shares: { type: array, items: { $ref: "#/components/schemas/InheritanceClaimantShare" } }
+        totalProposedPct: { type: number }
+        totalApprovedPct: { type: number }
+        total: { type: integer }
