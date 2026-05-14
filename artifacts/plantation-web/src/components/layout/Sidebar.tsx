@@ -280,6 +280,12 @@ const navGroups: NavGroup[] = [
     label: "Analytics",
     items: [
       {
+        name: "Fin. Analytics",
+        href: "/financial-analytics",
+        icon: BarChart3,
+        roles: ["admin", "developer"],
+      },
+      {
         name: "Reports",
         href: "/reports",
         icon: BarChart3,

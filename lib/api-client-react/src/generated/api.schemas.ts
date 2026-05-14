@@ -5,6 +5,142 @@
  * Rubber Plantation Partnership API
  * OpenAPI spec version: 0.1.0
  */
+export type FinancialSummarySessions = {
+  confirmed?: number;
+  draft?: number;
+};
+
+export type FinancialSummaryLca = {
+  totalDue?: string;
+  totalPaid?: string;
+  totalPending?: string;
+  pendingCount?: number;
+};
+
+export type FinancialSummaryNegativeBalance = {
+  totalDeficit?: string;
+};
+
+export type FinancialSummaryDistribution = {
+  totalGross?: string;
+  totalPaid?: string;
+  totalPending?: string;
+  paidCount?: number;
+  pendingCount?: number;
+};
+
+export type FinancialSummarySettlements = {
+  total?: number;
+  finalized?: number;
+  disputed?: number;
+  overridden?: number;
+  totalRecommended?: string;
+  totalActual?: string;
+};
+
+export type FinancialSummaryRecoverableAdjustments = {
+  total?: string;
+  count?: number;
+};
+
+export interface FinancialSummary {
+  grossRevenue?: string;
+  landownerSplit?: string;
+  participantPoolSplit?: string;
+  operationalCost?: string;
+  lcaDeducted?: string;
+  landownerNet?: string;
+  eppTotalAllocated?: string;
+  sessions?: FinancialSummarySessions;
+  lca?: FinancialSummaryLca;
+  negativeBalance?: FinancialSummaryNegativeBalance;
+  distribution?: FinancialSummaryDistribution;
+  settlements?: FinancialSummarySettlements;
+  recoverableAdjustments?: FinancialSummaryRecoverableAdjustments;
+}
+
+export type RevenueTrendTrendItem = {
+  periodLabel?: string;
+  periodYear?: number;
+  grossRevenue?: number;
+  landownerSplit?: number;
+  participantPoolSplit?: number;
+  operationalCost?: number;
+  lcaAmount?: number;
+  landownerNet?: number;
+  sessionCount?: number;
+};
+
+export type RevenueTrendRawSessionsItem = { [key: string]: unknown };
+
+export interface RevenueTrend {
+  trend?: RevenueTrendTrendItem[];
+  rawSessions?: RevenueTrendRawSessionsItem[];
+}
+
+export type SettlementAnalyticsByTypeItem = {
+  settlementType?: string;
+  total?: number;
+  finalized?: number;
+  disputed?: number;
+  overridden?: number;
+  completionRate?: number;
+  overrideRate?: number;
+  sumRecommended?: string;
+  sumActual?: string;
+  overrideDiffPct?: number;
+};
+
+export type SettlementAnalyticsLcaByYearItem = {
+  year?: number;
+  totalDue?: number;
+  totalPaid?: number;
+  totalBal?: number;
+  count?: number;
+  paymentRate?: number;
+};
+
+export interface SettlementAnalytics {
+  byType?: SettlementAnalyticsByTypeItem[];
+  lcaByYear?: SettlementAnalyticsLcaByYearItem[];
+}
+
+export type ProjectProfitabilityReportProjectsItem = {
+  projectId?: string;
+  projectName?: string;
+  grossRevenue?: string;
+  landownerSplit?: string;
+  participantPoolSplit?: string;
+  operationalCost?: string;
+  lcaAmount?: string;
+  landownerNet?: string;
+  landownerMarginPct?: number;
+  eppAllocated?: string;
+  eppParticipants?: number;
+  distributionPaid?: string;
+  distributionPending?: string;
+  lcaPaid?: string;
+  lcaPending?: string;
+  sessionCount?: number;
+  confirmedCount?: number;
+};
+
+export interface ProjectProfitabilityReport {
+  projects?: ProjectProfitabilityReportProjectsItem[];
+}
+
+export type AllocationBreakdownBreakdownItem = {
+  name?: string;
+  value?: number;
+  pct?: number;
+  fill?: string;
+};
+
+export interface AllocationBreakdown {
+  grossRevenue?: string;
+  breakdown?: AllocationBreakdownBreakdownItem[];
+}
+
 export interface HealthStatus {
   status: string;
 }
@@ -6852,5 +6988,26 @@ export type GetSettlementTasksParams = {
 };
 
 export type GetSettlementDiscrepanciesParams = {
+  projectId?: string;
+};
+
+export type GetFinancialSummaryParams = {
+  projectId?: string;
+};
+
+export type GetRevenueTrendParams = {
+  projectId?: string;
+  limit?: number;
+};
+
+export type GetSettlementAnalyticsParams = {
+  projectId?: string;
+};
+
+export type GetProjectProfitabilityParams = {
+  projectId?: string;
+};
+
+export type GetAllocationBreakdownParams = {
   projectId?: string;
 };

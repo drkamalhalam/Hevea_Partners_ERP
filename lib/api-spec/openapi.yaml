@@ -7508,10 +7508,224 @@ paths:
               schema:
                 $ref: "#/components/schemas/DiscrepancyReport"
 
+  /financial-analytics/summary:
+    get:
+      summary: Master financial KPIs across all distribution and settlement modules
+      operationId: getFinancialSummary
+      tags: [financial-analytics]
+      parameters:
+        - { name: projectId, in: query, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Aggregate financial summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinancialSummary"
 
+  /financial-analytics/revenue-trend:
+    get:
+      summary: Period-wise revenue trend from fifty_pct sessions
+      operationId: getRevenueTrend
+      tags: [financial-analytics]
+      parameters:
+        - { name: projectId, in: query, schema: { type: string, format: uuid } }
+        - { name: limit, in: query, schema: { type: integer } }
+      responses:
+        "200":
+          description: Revenue trend data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RevenueTrend"
+
+  /financial-analytics/settlement-analytics:
+    get:
+      summary: Settlement completion rates, override stats, LCA by year
+      operationId: getSettlementAnalytics
+      tags: [financial-analytics]
+      parameters:
+        - { name: projectId, in: query, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Settlement analytics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SettlementAnalytics"
+
+  /financial-analytics/project-profitability:
+    get:
+      summary: Per-project profitability breakdown
+      operationId: getProjectProfitability
+      tags: [financial-analytics]
+      parameters:
+        - { name: projectId, in: query, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Project profitability report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectProfitabilityReport"
+
+  /financial-analytics/allocation-breakdown:
+    get:
+      summary: Revenue allocation pie chart data (confirmed sessions only)
+      operationId: getAllocationBreakdown
+      tags: [financial-analytics]
+      parameters:
+        - { name: projectId, in: query, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Revenue allocation breakdown
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AllocationBreakdown"
 
 components:
   schemas:
+
+    FinancialSummary:
+      type: object
+      properties:
+        grossRevenue: { type: string }
+        landownerSplit: { type: string }
+        participantPoolSplit: { type: string }
+        operationalCost: { type: string }
+        lcaDeducted: { type: string }
+        landownerNet: { type: string }
+        eppTotalAllocated: { type: string }
+        sessions:
+          type: object
+          properties:
+            confirmed: { type: integer }
+            draft: { type: integer }
+        lca:
+          type: object
+          properties:
+            totalDue: { type: string }
+            totalPaid: { type: string }
+            totalPending: { type: string }
+            pendingCount: { type: integer }
+        negativeBalance:
+          type: object
+          properties:
+            totalDeficit: { type: string }
+        distribution:
+          type: object
+          properties:
+            totalGross: { type: string }
+            totalPaid: { type: string }
+            totalPending: { type: string }
+            paidCount: { type: integer }
+            pendingCount: { type: integer }
+        settlements:
+          type: object
+          properties:
+            total: { type: integer }
+            finalized: { type: integer }
+            disputed: { type: integer }
+            overridden: { type: integer }
+            totalRecommended: { type: string }
+            totalActual: { type: string }
+        recoverableAdjustments:
+          type: object
+          properties:
+            total: { type: string }
+            count: { type: integer }
+
+    RevenueTrend:
+      type: object
+      properties:
+        trend:
+          type: array
+          items:
+            type: object
+            properties:
+              periodLabel: { type: string }
+              periodYear: { type: integer }
+              grossRevenue: { type: number }
+              landownerSplit: { type: number }
+              participantPoolSplit: { type: number }
+              operationalCost: { type: number }
+              lcaAmount: { type: number }
+              landownerNet: { type: number }
+              sessionCount: { type: integer }
+        rawSessions:
+          type: array
+          items: { type: object }
+
+    SettlementAnalytics:
+      type: object
+      properties:
+        byType:
+          type: array
+          items:
+            type: object
+            properties:
+              settlementType: { type: string }
+              total: { type: integer }
+              finalized: { type: integer }
+              disputed: { type: integer }
+              overridden: { type: integer }
+              completionRate: { type: number }
+              overrideRate: { type: number }
+              sumRecommended: { type: string }
+              sumActual: { type: string }
+              overrideDiffPct: { type: number }
+        lcaByYear:
+          type: array
+          items:
+            type: object
+            properties:
+              year: { type: integer }
+              totalDue: { type: number }
+              totalPaid: { type: number }
+              totalBal: { type: number }
+              count: { type: integer }
+              paymentRate: { type: number }
+
+    ProjectProfitabilityReport:
+      type: object
+      properties:
+        projects:
+          type: array
+          items:
+            type: object
+            properties:
+              projectId: { type: string, format: uuid }
+              projectName: { type: string }
+              grossRevenue: { type: string }
+              landownerSplit: { type: string }
+              participantPoolSplit: { type: string }
+              operationalCost: { type: string }
+              lcaAmount: { type: string }
+              landownerNet: { type: string }
+              landownerMarginPct: { type: number }
+              eppAllocated: { type: string }
+              eppParticipants: { type: integer }
+              distributionPaid: { type: string }
+              distributionPending: { type: string }
+              lcaPaid: { type: string }
+              lcaPending: { type: string }
+              sessionCount: { type: integer }
+              confirmedCount: { type: integer }
+
+    AllocationBreakdown:
+      type: object
+      properties:
+        grossRevenue: { type: string }
+        breakdown:
+          type: array
+          items:
+            type: object
+            properties:
+              name: { type: string }
+              value: { type: number }
+              pct: { type: number }
+              fill: { type: string }
     HealthStatus:
       type: object
       required: [status]

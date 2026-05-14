@@ -47,6 +47,7 @@ import lossAbsorptionRouter from "./loss_absorption";
 import settlementOverridesRouter from "./settlement_overrides";
 import distributionRecordsRouter from "./distribution_records";
 import settlementGovernanceRouter from "./settlement_governance";
+import financialAnalyticsRouter from "./financial_analytics";
 import devRouter from "./dev";
 
 const router: IRouter = Router();
@@ -111,5 +112,6 @@ router.use("/loss-absorption", lossAbsorptionRouter);
 router.use("/settlement", settlementOverridesRouter);
 router.use("/distribution-records", distributionRecordsRouter);
 router.use("/settlement-governance", settlementGovernanceRouter);
+router.use("/financial-analytics", financialAnalyticsRouter);
 
 export default router;

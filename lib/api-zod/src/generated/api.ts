@@ -11782,3 +11782,183 @@ export const GetSettlementDiscrepanciesResponse = zod.object({
     OK: zod.number().optional(),
   }),
 });
+
+/**
+ * @summary Master financial KPIs across all distribution and settlement modules
+ */
+export const GetFinancialSummaryQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+});
+
+export const GetFinancialSummaryResponse = zod.object({
+  grossRevenue: zod.string().optional(),
+  landownerSplit: zod.string().optional(),
+  participantPoolSplit: zod.string().optional(),
+  operationalCost: zod.string().optional(),
+  lcaDeducted: zod.string().optional(),
+  landownerNet: zod.string().optional(),
+  eppTotalAllocated: zod.string().optional(),
+  sessions: zod
+    .object({
+      confirmed: zod.number().optional(),
+      draft: zod.number().optional(),
+    })
+    .optional(),
+  lca: zod
+    .object({
+      totalDue: zod.string().optional(),
+      totalPaid: zod.string().optional(),
+      totalPending: zod.string().optional(),
+      pendingCount: zod.number().optional(),
+    })
+    .optional(),
+  negativeBalance: zod
+    .object({
+      totalDeficit: zod.string().optional(),
+    })
+    .optional(),
+  distribution: zod
+    .object({
+      totalGross: zod.string().optional(),
+      totalPaid: zod.string().optional(),
+      totalPending: zod.string().optional(),
+      paidCount: zod.number().optional(),
+      pendingCount: zod.number().optional(),
+    })
+    .optional(),
+  settlements: zod
+    .object({
+      total: zod.number().optional(),
+      finalized: zod.number().optional(),
+      disputed: zod.number().optional(),
+      overridden: zod.number().optional(),
+      totalRecommended: zod.string().optional(),
+      totalActual: zod.string().optional(),
+    })
+    .optional(),
+  recoverableAdjustments: zod
+    .object({
+      total: zod.string().optional(),
+      count: zod.number().optional(),
+    })
+    .optional(),
+});
+
+/**
+ * @summary Period-wise revenue trend from fifty_pct sessions
+ */
+export const GetRevenueTrendQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+  limit: zod.coerce.number().optional(),
+});
+
+export const GetRevenueTrendResponse = zod.object({
+  trend: zod
+    .array(
+      zod.object({
+        periodLabel: zod.string().optional(),
+        periodYear: zod.number().optional(),
+        grossRevenue: zod.number().optional(),
+        landownerSplit: zod.number().optional(),
+        participantPoolSplit: zod.number().optional(),
+        operationalCost: zod.number().optional(),
+        lcaAmount: zod.number().optional(),
+        landownerNet: zod.number().optional(),
+        sessionCount: zod.number().optional(),
+      }),
+    )
+    .optional(),
+  rawSessions: zod.array(zod.object({}).passthrough()).optional(),
+});
+
+/**
+ * @summary Settlement completion rates, override stats, LCA by year
+ */
+export const GetSettlementAnalyticsQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+});
+
+export const GetSettlementAnalyticsResponse = zod.object({
+  byType: zod
+    .array(
+      zod.object({
+        settlementType: zod.string().optional(),
+        total: zod.number().optional(),
+        finalized: zod.number().optional(),
+        disputed: zod.number().optional(),
+        overridden: zod.number().optional(),
+        completionRate: zod.number().optional(),
+        overrideRate: zod.number().optional(),
+        sumRecommended: zod.string().optional(),
+        sumActual: zod.string().optional(),
+        overrideDiffPct: zod.number().optional(),
+      }),
+    )
+    .optional(),
+  lcaByYear: zod
+    .array(
+      zod.object({
+        year: zod.number().optional(),
+        totalDue: zod.number().optional(),
+        totalPaid: zod.number().optional(),
+        totalBal: zod.number().optional(),
+        count: zod.number().optional(),
+        paymentRate: zod.number().optional(),
+      }),
+    )
+    .optional(),
+});
+
+/**
+ * @summary Per-project profitability breakdown
+ */
+export const GetProjectProfitabilityQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+});
+
+export const GetProjectProfitabilityResponse = zod.object({
+  projects: zod
+    .array(
+      zod.object({
+        projectId: zod.string().uuid().optional(),
+        projectName: zod.string().optional(),
+        grossRevenue: zod.string().optional(),
+        landownerSplit: zod.string().optional(),
+        participantPoolSplit: zod.string().optional(),
+        operationalCost: zod.string().optional(),
+        lcaAmount: zod.string().optional(),
+        landownerNet: zod.string().optional(),
+        landownerMarginPct: zod.number().optional(),
+        eppAllocated: zod.string().optional(),
+        eppParticipants: zod.number().optional(),
+        distributionPaid: zod.string().optional(),
+        distributionPending: zod.string().optional(),
+        lcaPaid: zod.string().optional(),
+        lcaPending: zod.string().optional(),
+        sessionCount: zod.number().optional(),
+        confirmedCount: zod.number().optional(),
+      }),
+    )
+    .optional(),
+});
+
+/**
+ * @summary Revenue allocation pie chart data (confirmed sessions only)
+ */
+export const GetAllocationBreakdownQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+});
+
+export const GetAllocationBreakdownResponse = zod.object({
+  grossRevenue: zod.string().optional(),
+  breakdown: zod
+    .array(
+      zod.object({
+        name: zod.string().optional(),
+        value: zod.number().optional(),
+        pct: zod.number().optional(),
+        fill: zod.string().optional(),
+      }),
+    )
+    .optional(),
+});

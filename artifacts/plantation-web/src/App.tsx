@@ -45,6 +45,7 @@ import BurdenRecovery from "./pages/BurdenRecovery";
 import LandownerProfitability from "./pages/LandownerProfitability";
 import LCAGovernance from "./pages/LCAGovernance";
 import FinancialAuditLog from "./pages/FinancialAuditLog";
+import FinancialAnalytics from "./pages/FinancialAnalytics";
 import TemplateLibrary from "./pages/TemplateLibrary";
 
 // Pages — Operations
@@ -293,6 +294,7 @@ function AppRoutes() {
               <Route path="/distribution"><ProtectedRoute component={Distribution} /></Route>
 
               {/* Analytics */}
+              <Route path="/financial-analytics"><ProtectedRoute component={FinancialAnalytics} /></Route>
               <Route path="/reports"><ProtectedRoute component={Reports} /></Route>
               <Route path="/documents"><ProtectedRoute component={Documents} /></Route>
               <Route path="/landowner-profitability"><ProtectedRoute component={LandownerProfitability} /></Route>

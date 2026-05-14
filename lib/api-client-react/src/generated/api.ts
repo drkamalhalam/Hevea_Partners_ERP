@@ -38,6 +38,7 @@ import type {
   AgreementVariablesResponse,
   AlertGenerationResult,
   AlertSummary,
+  AllocationBreakdown,
   ApproveExpenditureBody,
   ApproveExpenditureVerification200,
   ApproveExpenditureVerificationBody,
@@ -146,9 +147,11 @@ import type {
   FinalizeSettlement200,
   FinalizeSettlementBody,
   FinancialAccessLogListResponse,
+  FinancialSummary,
   GenerateAgreementDocument422,
   GenerateDocumentRequest,
   GetAdvanceSummaryParams,
+  GetAllocationBreakdownParams,
   GetBurdenRecoverySummaryParams,
   GetBurdenSummaryParams,
   GetContributionSummaryParams,
@@ -159,6 +162,7 @@ import type {
   GetDistributionRecord200,
   GetDistributionSummaryParams,
   GetExpenditureSummaryParams,
+  GetFinancialSummaryParams,
   GetImbalancePartnerSummary200,
   GetImbalanceSummaryParams,
   GetInventoryAnalyticsParams,
@@ -182,8 +186,11 @@ import type {
   GetPartnerDistributionHistoryParams,
   GetPayableSnapshot200,
   GetProductionLogSummaryParams,
+  GetProjectProfitabilityParams,
+  GetRevenueTrendParams,
   GetSaleGovernanceAlertsParams,
   GetSalesSummaryParams,
+  GetSettlementAnalyticsParams,
   GetSettlementAudit200,
   GetSettlementDiscrepanciesParams,
   GetSettlementPriorityParams,
@@ -308,6 +315,7 @@ import type {
   ProjectNominee,
   ProjectOwnershipDetail,
   ProjectParticipant,
+  ProjectProfitabilityReport,
   ProjectUpdate,
   RaiseContributionDisputeBody,
   RecordAdvanceRecoveryBody,
@@ -330,6 +338,7 @@ import type {
   ResolveContributionDisputeBody,
   RevenueLookupResult,
   RevenueStats,
+  RevenueTrend,
   ReverseLandownerLedgerEntry200,
   SaleAuditLog,
   SaleDeduction,
@@ -343,6 +352,7 @@ import type {
   SetSettlementRecommendation200,
   SetSettlementRecommendationBody,
   SetUserRoleInput,
+  SettlementAnalytics,
   SettlementComparison,
   SettlementGovernanceSummary,
   SettlementPriority,
@@ -29471,6 +29481,524 @@ export function useGetSettlementDiscrepancies<
     params,
     options,
   );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Master financial KPIs across all distribution and settlement modules
+ */
+export const getGetFinancialSummaryUrl = (
+  params?: GetFinancialSummaryParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/financial-analytics/summary?${stringifiedParams}`
+    : `/api/financial-analytics/summary`;
+};
+
+export const getFinancialSummary = async (
+  params?: GetFinancialSummaryParams,
+  options?: RequestInit,
+): Promise<FinancialSummary> => {
+  return customFetch<FinancialSummary>(getGetFinancialSummaryUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetFinancialSummaryQueryKey = (
+  params?: GetFinancialSummaryParams,
+) => {
+  return [
+    `/api/financial-analytics/summary`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetFinancialSummaryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getFinancialSummary>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetFinancialSummaryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getFinancialSummary>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetFinancialSummaryQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getFinancialSummary>>
+  > = ({ signal }) =>
+    getFinancialSummary(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getFinancialSummary>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetFinancialSummaryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getFinancialSummary>>
+>;
+export type GetFinancialSummaryQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Master financial KPIs across all distribution and settlement modules
+ */
+
+export function useGetFinancialSummary<
+  TData = Awaited<ReturnType<typeof getFinancialSummary>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetFinancialSummaryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getFinancialSummary>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetFinancialSummaryQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Period-wise revenue trend from fifty_pct sessions
+ */
+export const getGetRevenueTrendUrl = (params?: GetRevenueTrendParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/financial-analytics/revenue-trend?${stringifiedParams}`
+    : `/api/financial-analytics/revenue-trend`;
+};
+
+export const getRevenueTrend = async (
+  params?: GetRevenueTrendParams,
+  options?: RequestInit,
+): Promise<RevenueTrend> => {
+  return customFetch<RevenueTrend>(getGetRevenueTrendUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetRevenueTrendQueryKey = (params?: GetRevenueTrendParams) => {
+  return [
+    `/api/financial-analytics/revenue-trend`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetRevenueTrendQueryOptions = <
+  TData = Awaited<ReturnType<typeof getRevenueTrend>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetRevenueTrendParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getRevenueTrend>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetRevenueTrendQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getRevenueTrend>>> = ({
+    signal,
+  }) => getRevenueTrend(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getRevenueTrend>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetRevenueTrendQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getRevenueTrend>>
+>;
+export type GetRevenueTrendQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Period-wise revenue trend from fifty_pct sessions
+ */
+
+export function useGetRevenueTrend<
+  TData = Awaited<ReturnType<typeof getRevenueTrend>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetRevenueTrendParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getRevenueTrend>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetRevenueTrendQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Settlement completion rates, override stats, LCA by year
+ */
+export const getGetSettlementAnalyticsUrl = (
+  params?: GetSettlementAnalyticsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/financial-analytics/settlement-analytics?${stringifiedParams}`
+    : `/api/financial-analytics/settlement-analytics`;
+};
+
+export const getSettlementAnalytics = async (
+  params?: GetSettlementAnalyticsParams,
+  options?: RequestInit,
+): Promise<SettlementAnalytics> => {
+  return customFetch<SettlementAnalytics>(
+    getGetSettlementAnalyticsUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetSettlementAnalyticsQueryKey = (
+  params?: GetSettlementAnalyticsParams,
+) => {
+  return [
+    `/api/financial-analytics/settlement-analytics`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetSettlementAnalyticsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getSettlementAnalytics>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetSettlementAnalyticsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getSettlementAnalytics>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetSettlementAnalyticsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getSettlementAnalytics>>
+  > = ({ signal }) =>
+    getSettlementAnalytics(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getSettlementAnalytics>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetSettlementAnalyticsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getSettlementAnalytics>>
+>;
+export type GetSettlementAnalyticsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Settlement completion rates, override stats, LCA by year
+ */
+
+export function useGetSettlementAnalytics<
+  TData = Awaited<ReturnType<typeof getSettlementAnalytics>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetSettlementAnalyticsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getSettlementAnalytics>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetSettlementAnalyticsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Per-project profitability breakdown
+ */
+export const getGetProjectProfitabilityUrl = (
+  params?: GetProjectProfitabilityParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/financial-analytics/project-profitability?${stringifiedParams}`
+    : `/api/financial-analytics/project-profitability`;
+};
+
+export const getProjectProfitability = async (
+  params?: GetProjectProfitabilityParams,
+  options?: RequestInit,
+): Promise<ProjectProfitabilityReport> => {
+  return customFetch<ProjectProfitabilityReport>(
+    getGetProjectProfitabilityUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetProjectProfitabilityQueryKey = (
+  params?: GetProjectProfitabilityParams,
+) => {
+  return [
+    `/api/financial-analytics/project-profitability`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetProjectProfitabilityQueryOptions = <
+  TData = Awaited<ReturnType<typeof getProjectProfitability>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetProjectProfitabilityParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getProjectProfitability>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetProjectProfitabilityQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getProjectProfitability>>
+  > = ({ signal }) =>
+    getProjectProfitability(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getProjectProfitability>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetProjectProfitabilityQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getProjectProfitability>>
+>;
+export type GetProjectProfitabilityQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Per-project profitability breakdown
+ */
+
+export function useGetProjectProfitability<
+  TData = Awaited<ReturnType<typeof getProjectProfitability>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetProjectProfitabilityParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getProjectProfitability>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetProjectProfitabilityQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Revenue allocation pie chart data (confirmed sessions only)
+ */
+export const getGetAllocationBreakdownUrl = (
+  params?: GetAllocationBreakdownParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/financial-analytics/allocation-breakdown?${stringifiedParams}`
+    : `/api/financial-analytics/allocation-breakdown`;
+};
+
+export const getAllocationBreakdown = async (
+  params?: GetAllocationBreakdownParams,
+  options?: RequestInit,
+): Promise<AllocationBreakdown> => {
+  return customFetch<AllocationBreakdown>(
+    getGetAllocationBreakdownUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetAllocationBreakdownQueryKey = (
+  params?: GetAllocationBreakdownParams,
+) => {
+  return [
+    `/api/financial-analytics/allocation-breakdown`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetAllocationBreakdownQueryOptions = <
+  TData = Awaited<ReturnType<typeof getAllocationBreakdown>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetAllocationBreakdownParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getAllocationBreakdown>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetAllocationBreakdownQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getAllocationBreakdown>>
+  > = ({ signal }) =>
+    getAllocationBreakdown(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getAllocationBreakdown>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetAllocationBreakdownQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getAllocationBreakdown>>
+>;
+export type GetAllocationBreakdownQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Revenue allocation pie chart data (confirmed sessions only)
+ */
+
+export function useGetAllocationBreakdown<
+  TData = Awaited<ReturnType<typeof getAllocationBreakdown>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetAllocationBreakdownParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getAllocationBreakdown>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetAllocationBreakdownQueryOptions(params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;
