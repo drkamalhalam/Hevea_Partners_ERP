@@ -9409,6 +9409,54 @@ paths:
                 properties:
                   deleted: { type: boolean }
 
+
+  /nominee-succession/dashboard:
+    get:
+      operationId: getNomineeSuccessionDashboard
+      summary: Get nominee succession dashboard data
+      tags: [NomineeSuccession]
+      responses:
+        "200":
+          description: Dashboard data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NomineeSuccessionDashboard"
+
+  /nominee-succession/authority-log:
+    get:
+      operationId: listNomineeAuthorityLog
+      summary: List all completed nominee authority transfers
+      tags: [NomineeSuccession]
+      responses:
+        "200":
+          description: Authority transfer log
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/NomineeAuthorityTransfer"
+
+  /nominee-succession/missing-developer-cases:
+    get:
+      operationId: listMissingDeveloperCases
+      summary: List missing developer cases (global)
+      tags: [NomineeSuccession]
+      parameters:
+        - in: query
+          name: includeResolved
+          schema: { type: boolean }
+      responses:
+        "200":
+          description: Missing developer cases list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MissingDeveloperCaseItem"
+
 components:
   schemas:
 
@@ -16156,3 +16204,81 @@ components:
         isActive: { type: boolean }
         createdAt: { type: string }
         updatedAt: { type: string }
+
+    NomineeSuccessionDashboard:
+      type: object
+      properties:
+        kpis:
+          type: object
+          properties:
+            totalActiveWorkflows: { type: integer }
+            deathBasedPending: { type: integer }
+            voluntaryHandoverPending: { type: integer }
+            missingDeveloperCases: { type: integer }
+            nomineeEligibleCases: { type: integer }
+            recentlyActivated: { type: integer }
+            projectsWithoutNominee: { type: integer }
+        activeWorkflows:
+          type: array
+          items: { type: object }
+        missingDeveloperCases:
+          type: array
+          items: { type: object }
+        recentActivations:
+          type: array
+          items: { type: object }
+        projectsWithoutNominee:
+          type: array
+          items: { type: object }
+
+    NomineeAuthorityTransfer:
+      type: object
+      properties:
+        id: { type: string }
+        projectId: { type: string }
+        nomineeId: { type: string }
+        nomineeName: { type: string }
+        activationType: { type: string }
+        status: { type: string }
+        deathCertificateUrl: { type: string, nullable: true }
+        declarationDeedUrl: { type: string, nullable: true }
+        verifiedBy: { type: string, nullable: true }
+        verifiedByName: { type: string, nullable: true }
+        verifiedAt: { type: string, nullable: true }
+        verificationNotes: { type: string, nullable: true }
+        otpVerifiedByName: { type: string, nullable: true }
+        otpVerifiedAt: { type: string, nullable: true }
+        activatedBy: { type: string, nullable: true }
+        activatedByName: { type: string, nullable: true }
+        activatedAt: { type: string, nullable: true }
+        governanceRemarks: { type: string, nullable: true }
+        createdByName: { type: string, nullable: true }
+        createdAt: { type: string }
+        projectName: { type: string, nullable: true }
+        projectLocation: { type: string, nullable: true }
+
+    MissingDeveloperCaseItem:
+      type: object
+      properties:
+        id: { type: string }
+        projectId: { type: string }
+        status: { type: string }
+        gdEntryDate: { type: string }
+        gdNumber: { type: string, nullable: true }
+        gdDocumentUrl: { type: string, nullable: true }
+        reportedBy: { type: string, nullable: true }
+        reportedByName: { type: string, nullable: true }
+        remarks: { type: string, nullable: true }
+        resolutionNotes: { type: string, nullable: true }
+        resolvedAt: { type: string, nullable: true }
+        resolvedByName: { type: string, nullable: true }
+        isActive: { type: boolean }
+        createdAt: { type: string }
+        updatedAt: { type: string, nullable: true }
+        projectName: { type: string, nullable: true }
+        projectLocation: { type: string, nullable: true }
+        daysElapsed: { type: integer }
+        daysRemaining: { type: integer }
+        nomineeEligibleAt: { type: string }
+        isNomineeEligible: { type: boolean }
+

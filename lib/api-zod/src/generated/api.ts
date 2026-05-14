@@ -15320,3 +15320,89 @@ export const DeleteGovernanceResolutionParams = zod.object({
 export const DeleteGovernanceResolutionResponse = zod.object({
   deleted: zod.boolean().optional(),
 });
+
+/**
+ * @summary Get nominee succession dashboard data
+ */
+export const GetNomineeSuccessionDashboardResponse = zod.object({
+  kpis: zod
+    .object({
+      totalActiveWorkflows: zod.number().optional(),
+      deathBasedPending: zod.number().optional(),
+      voluntaryHandoverPending: zod.number().optional(),
+      missingDeveloperCases: zod.number().optional(),
+      nomineeEligibleCases: zod.number().optional(),
+      recentlyActivated: zod.number().optional(),
+      projectsWithoutNominee: zod.number().optional(),
+    })
+    .optional(),
+  activeWorkflows: zod.array(zod.object({}).passthrough()).optional(),
+  missingDeveloperCases: zod.array(zod.object({}).passthrough()).optional(),
+  recentActivations: zod.array(zod.object({}).passthrough()).optional(),
+  projectsWithoutNominee: zod.array(zod.object({}).passthrough()).optional(),
+});
+
+/**
+ * @summary List all completed nominee authority transfers
+ */
+export const ListNomineeAuthorityLogResponseItem = zod.object({
+  id: zod.string().optional(),
+  projectId: zod.string().optional(),
+  nomineeId: zod.string().optional(),
+  nomineeName: zod.string().optional(),
+  activationType: zod.string().optional(),
+  status: zod.string().optional(),
+  deathCertificateUrl: zod.string().nullish(),
+  declarationDeedUrl: zod.string().nullish(),
+  verifiedBy: zod.string().nullish(),
+  verifiedByName: zod.string().nullish(),
+  verifiedAt: zod.string().nullish(),
+  verificationNotes: zod.string().nullish(),
+  otpVerifiedByName: zod.string().nullish(),
+  otpVerifiedAt: zod.string().nullish(),
+  activatedBy: zod.string().nullish(),
+  activatedByName: zod.string().nullish(),
+  activatedAt: zod.string().nullish(),
+  governanceRemarks: zod.string().nullish(),
+  createdByName: zod.string().nullish(),
+  createdAt: zod.string().optional(),
+  projectName: zod.string().nullish(),
+  projectLocation: zod.string().nullish(),
+});
+export const ListNomineeAuthorityLogResponse = zod.array(
+  ListNomineeAuthorityLogResponseItem,
+);
+
+/**
+ * @summary List missing developer cases (global)
+ */
+export const ListMissingDeveloperCasesQueryParams = zod.object({
+  includeResolved: zod.coerce.boolean().optional(),
+});
+
+export const ListMissingDeveloperCasesResponseItem = zod.object({
+  id: zod.string().optional(),
+  projectId: zod.string().optional(),
+  status: zod.string().optional(),
+  gdEntryDate: zod.string().optional(),
+  gdNumber: zod.string().nullish(),
+  gdDocumentUrl: zod.string().nullish(),
+  reportedBy: zod.string().nullish(),
+  reportedByName: zod.string().nullish(),
+  remarks: zod.string().nullish(),
+  resolutionNotes: zod.string().nullish(),
+  resolvedAt: zod.string().nullish(),
+  resolvedByName: zod.string().nullish(),
+  isActive: zod.boolean().optional(),
+  createdAt: zod.string().optional(),
+  updatedAt: zod.string().nullish(),
+  projectName: zod.string().nullish(),
+  projectLocation: zod.string().nullish(),
+  daysElapsed: zod.number().optional(),
+  daysRemaining: zod.number().optional(),
+  nomineeEligibleAt: zod.string().optional(),
+  isNomineeEligible: zod.boolean().optional(),
+});
+export const ListMissingDeveloperCasesResponse = zod.array(
+  ListMissingDeveloperCasesResponseItem,
+);

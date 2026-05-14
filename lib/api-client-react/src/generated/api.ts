@@ -317,6 +317,7 @@ import type {
   ListLcaLedgerParams,
   ListLossAbsorptionRecords200,
   ListLossAbsorptionRecordsParams,
+  ListMissingDeveloperCasesParams,
   ListNegativeBalanceEntries200,
   ListNegativeBalanceEntriesParams,
   ListNotifications200,
@@ -367,7 +368,10 @@ import type {
   MaturityDeclaration,
   MaturityOtpVerification,
   MissingDeveloperCase,
+  MissingDeveloperCaseItem,
   NomineeActivationWorkflow,
+  NomineeAuthorityTransfer,
+  NomineeSuccessionDashboard,
   OkResponse,
   OperationalAlert,
   OperationalTask,
@@ -37875,3 +37879,271 @@ export const useDeleteGovernanceResolution = <
 > => {
   return useMutation(getDeleteGovernanceResolutionMutationOptions(options));
 };
+
+/**
+ * @summary Get nominee succession dashboard data
+ */
+export const getGetNomineeSuccessionDashboardUrl = () => {
+  return `/api/nominee-succession/dashboard`;
+};
+
+export const getNomineeSuccessionDashboard = async (
+  options?: RequestInit,
+): Promise<NomineeSuccessionDashboard> => {
+  return customFetch<NomineeSuccessionDashboard>(
+    getGetNomineeSuccessionDashboardUrl(),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetNomineeSuccessionDashboardQueryKey = () => {
+  return [`/api/nominee-succession/dashboard`] as const;
+};
+
+export const getGetNomineeSuccessionDashboardQueryOptions = <
+  TData = Awaited<ReturnType<typeof getNomineeSuccessionDashboard>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getNomineeSuccessionDashboard>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetNomineeSuccessionDashboardQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getNomineeSuccessionDashboard>>
+  > = ({ signal }) =>
+    getNomineeSuccessionDashboard({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getNomineeSuccessionDashboard>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetNomineeSuccessionDashboardQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getNomineeSuccessionDashboard>>
+>;
+export type GetNomineeSuccessionDashboardQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get nominee succession dashboard data
+ */
+
+export function useGetNomineeSuccessionDashboard<
+  TData = Awaited<ReturnType<typeof getNomineeSuccessionDashboard>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getNomineeSuccessionDashboard>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetNomineeSuccessionDashboardQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List all completed nominee authority transfers
+ */
+export const getListNomineeAuthorityLogUrl = () => {
+  return `/api/nominee-succession/authority-log`;
+};
+
+export const listNomineeAuthorityLog = async (
+  options?: RequestInit,
+): Promise<NomineeAuthorityTransfer[]> => {
+  return customFetch<NomineeAuthorityTransfer[]>(
+    getListNomineeAuthorityLogUrl(),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListNomineeAuthorityLogQueryKey = () => {
+  return [`/api/nominee-succession/authority-log`] as const;
+};
+
+export const getListNomineeAuthorityLogQueryOptions = <
+  TData = Awaited<ReturnType<typeof listNomineeAuthorityLog>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listNomineeAuthorityLog>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListNomineeAuthorityLogQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listNomineeAuthorityLog>>
+  > = ({ signal }) => listNomineeAuthorityLog({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listNomineeAuthorityLog>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListNomineeAuthorityLogQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listNomineeAuthorityLog>>
+>;
+export type ListNomineeAuthorityLogQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List all completed nominee authority transfers
+ */
+
+export function useListNomineeAuthorityLog<
+  TData = Awaited<ReturnType<typeof listNomineeAuthorityLog>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listNomineeAuthorityLog>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListNomineeAuthorityLogQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List missing developer cases (global)
+ */
+export const getListMissingDeveloperCasesUrl = (
+  params?: ListMissingDeveloperCasesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/nominee-succession/missing-developer-cases?${stringifiedParams}`
+    : `/api/nominee-succession/missing-developer-cases`;
+};
+
+export const listMissingDeveloperCases = async (
+  params?: ListMissingDeveloperCasesParams,
+  options?: RequestInit,
+): Promise<MissingDeveloperCaseItem[]> => {
+  return customFetch<MissingDeveloperCaseItem[]>(
+    getListMissingDeveloperCasesUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListMissingDeveloperCasesQueryKey = (
+  params?: ListMissingDeveloperCasesParams,
+) => {
+  return [
+    `/api/nominee-succession/missing-developer-cases`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListMissingDeveloperCasesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listMissingDeveloperCases>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListMissingDeveloperCasesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listMissingDeveloperCases>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListMissingDeveloperCasesQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listMissingDeveloperCases>>
+  > = ({ signal }) =>
+    listMissingDeveloperCases(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listMissingDeveloperCases>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListMissingDeveloperCasesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listMissingDeveloperCases>>
+>;
+export type ListMissingDeveloperCasesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List missing developer cases (global)
+ */
+
+export function useListMissingDeveloperCases<
+  TData = Awaited<ReturnType<typeof listMissingDeveloperCases>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListMissingDeveloperCasesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listMissingDeveloperCases>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListMissingDeveloperCasesQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}

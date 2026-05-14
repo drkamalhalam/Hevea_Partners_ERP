@@ -7160,6 +7160,89 @@ export interface GovernanceResolution {
   updatedAt?: string;
 }
 
+export type NomineeSuccessionDashboardKpis = {
+  totalActiveWorkflows?: number;
+  deathBasedPending?: number;
+  voluntaryHandoverPending?: number;
+  missingDeveloperCases?: number;
+  nomineeEligibleCases?: number;
+  recentlyActivated?: number;
+  projectsWithoutNominee?: number;
+};
+
+export type NomineeSuccessionDashboardActiveWorkflowsItem = {
+  [key: string]: unknown;
+};
+
+export type NomineeSuccessionDashboardMissingDeveloperCasesItem = {
+  [key: string]: unknown;
+};
+
+export type NomineeSuccessionDashboardRecentActivationsItem = {
+  [key: string]: unknown;
+};
+
+export type NomineeSuccessionDashboardProjectsWithoutNomineeItem = {
+  [key: string]: unknown;
+};
+
+export interface NomineeSuccessionDashboard {
+  kpis?: NomineeSuccessionDashboardKpis;
+  activeWorkflows?: NomineeSuccessionDashboardActiveWorkflowsItem[];
+  missingDeveloperCases?: NomineeSuccessionDashboardMissingDeveloperCasesItem[];
+  recentActivations?: NomineeSuccessionDashboardRecentActivationsItem[];
+  projectsWithoutNominee?: NomineeSuccessionDashboardProjectsWithoutNomineeItem[];
+}
+
+export interface NomineeAuthorityTransfer {
+  id?: string;
+  projectId?: string;
+  nomineeId?: string;
+  nomineeName?: string;
+  activationType?: string;
+  status?: string;
+  deathCertificateUrl?: string | null;
+  declarationDeedUrl?: string | null;
+  verifiedBy?: string | null;
+  verifiedByName?: string | null;
+  verifiedAt?: string | null;
+  verificationNotes?: string | null;
+  otpVerifiedByName?: string | null;
+  otpVerifiedAt?: string | null;
+  activatedBy?: string | null;
+  activatedByName?: string | null;
+  activatedAt?: string | null;
+  governanceRemarks?: string | null;
+  createdByName?: string | null;
+  createdAt?: string;
+  projectName?: string | null;
+  projectLocation?: string | null;
+}
+
+export interface MissingDeveloperCaseItem {
+  id?: string;
+  projectId?: string;
+  status?: string;
+  gdEntryDate?: string;
+  gdNumber?: string | null;
+  gdDocumentUrl?: string | null;
+  reportedBy?: string | null;
+  reportedByName?: string | null;
+  remarks?: string | null;
+  resolutionNotes?: string | null;
+  resolvedAt?: string | null;
+  resolvedByName?: string | null;
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string | null;
+  projectName?: string | null;
+  projectLocation?: string | null;
+  daysElapsed?: number;
+  daysRemaining?: number;
+  nomineeEligibleAt?: string;
+  isNomineeEligible?: boolean;
+}
+
 export type GetUserActivityParams = {
   limit?: number;
 };
@@ -8808,4 +8891,8 @@ export type UpdateGovernanceResolution200 = {
 
 export type DeleteGovernanceResolution200 = {
   deleted?: boolean;
+};
+
+export type ListMissingDeveloperCasesParams = {
+  includeResolved?: boolean;
 };

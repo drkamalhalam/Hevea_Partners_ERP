@@ -38,6 +38,7 @@ import {
   GitCompare,
   Database,
   Gavel,
+  UserCheck,
 } from "lucide-react";
 import { useRole, ROLE_LABELS, ROLE_COLORS } from "@/contexts/RoleContext";
 import type { UserRole } from "@/contexts/RoleContext";
@@ -160,6 +161,12 @@ const navGroups: NavGroup[] = [
         name: "Inheritance Claims",
         href: "/inheritance-claims",
         icon: Gavel,
+        roles: ["admin", "developer"] as UserRole[],
+      },
+      {
+        name: "Nominee Succession",
+        href: "/nominee-succession",
+        icon: UserCheck,
         roles: ["admin", "developer"] as UserRole[],
       },
       {
