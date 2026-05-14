@@ -31,6 +31,7 @@ import {
   Archive,
   ArrowLeftRight,
   Coins,
+  PieChart,
 } from "lucide-react";
 import { useRole, ROLE_LABELS, ROLE_COLORS } from "@/contexts/RoleContext";
 import type { UserRole } from "@/contexts/RoleContext";
@@ -319,6 +320,17 @@ const navGroups: NavGroup[] = [
         name: "Op. Access Log",
         href: "/operational-access-log",
         icon: ScanSearch,
+        roles: ["admin", "developer"] as UserRole[],
+      },
+    ],
+  },
+  {
+    label: "Settlement",
+    items: [
+      {
+        name: "Distribution Preview",
+        href: "/distribution-preview",
+        icon: PieChart,
         roles: ["admin", "developer"] as UserRole[],
       },
     ],

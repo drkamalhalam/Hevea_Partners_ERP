@@ -8888,6 +8888,249 @@ export const GetOperationalAccessLogSummaryResponse = zod.object({
 });
 
 /**
+ * @summary Create a model-aware distribution preview (settlement guidance)
+ */
+export const createDistributionPreviewBodyOperationalCostDefault = 0;
+export const createDistributionPreviewBodyLcaAmountDefault = 0;
+export const createDistributionPreviewBodyLcaSourceDefault = `manual`;
+
+export const CreateDistributionPreviewBody = zod.object({
+  projectId: zod.string().uuid(),
+  agreementId: zod.string().uuid().optional(),
+  periodLabel: zod.string(),
+  periodStart: zod.string().optional(),
+  periodEnd: zod.string().optional(),
+  periodYear: zod.number().optional(),
+  grossRevenue: zod.number(),
+  operationalCost: zod
+    .number()
+    .default(createDistributionPreviewBodyOperationalCostDefault),
+  lcaAmount: zod
+    .number()
+    .default(createDistributionPreviewBodyLcaAmountDefault),
+  lcaSource: zod
+    .enum(["manual", "ledger"])
+    .default(createDistributionPreviewBodyLcaSourceDefault),
+  notes: zod.string().optional(),
+  ownershipOverride: zod
+    .array(
+      zod.object({
+        partnerKey: zod.string(),
+        partnerId: zod.string().uuid().nullish(),
+        partnerName: zod.string(),
+        role: zod.enum(["landowner", "developer", "unknown"]),
+        percentage: zod.number(),
+      }),
+    )
+    .optional(),
+});
+
+/**
+ * @summary List distribution previews for a project
+ */
+export const listDistributionPreviewsQueryLimitDefault = 50;
+export const listDistributionPreviewsQueryOffsetDefault = 0;
+
+export const ListDistributionPreviewsQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+  agreementId: zod.coerce.string().uuid().optional(),
+  status: zod.enum(["draft", "confirmed"]).optional(),
+  limit: zod.coerce.number().default(listDistributionPreviewsQueryLimitDefault),
+  offset: zod.coerce
+    .number()
+    .default(listDistributionPreviewsQueryOffsetDefault),
+});
+
+export const ListDistributionPreviewsResponse = zod.object({
+  previews: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      projectId: zod.string().uuid(),
+      agreementId: zod.string().uuid().nullish(),
+      accountingModel: zod.string(),
+      periodLabel: zod.string(),
+      periodStart: zod.string().nullish(),
+      periodEnd: zod.string().nullish(),
+      periodYear: zod.number().nullish(),
+      grossRevenue: zod.number(),
+      operationalCost: zod.number(),
+      lcaAmount: zod.number(),
+      lcaSource: zod.string(),
+      notes: zod.string().nullish(),
+      distributionResult: zod.object({}).passthrough(),
+      status: zod.enum(["draft", "confirmed"]),
+      isActive: zod.boolean(),
+      confirmedAt: zod.coerce.date().nullish(),
+      confirmedByName: zod.string().nullish(),
+      calculatedByName: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    }),
+  ),
+  total: zod.number(),
+});
+
+/**
+ * @summary Fetch LCA outstanding balance for a project/year (for distribution input)
+ */
+export const LookupLcaForDistributionQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid(),
+  year: zod.coerce.number().optional(),
+});
+
+export const LookupLcaForDistributionResponse = zod.object({
+  projectId: zod.string().uuid(),
+  entries: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      year: zod.number(),
+      grossDue: zod.number(),
+      totalDue: zod.number(),
+      amountPaid: zod.number(),
+      balance: zod.number(),
+      status: zod.string(),
+    }),
+  ),
+  totalBalance: zod.number(),
+});
+
+/**
+ * @summary Get a single distribution preview with context
+ */
+export const GetDistributionPreviewParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const GetDistributionPreviewResponse = zod
+  .object({
+    id: zod.string().uuid(),
+    projectId: zod.string().uuid(),
+    agreementId: zod.string().uuid().nullish(),
+    accountingModel: zod.string(),
+    periodLabel: zod.string(),
+    periodStart: zod.string().nullish(),
+    periodEnd: zod.string().nullish(),
+    periodYear: zod.number().nullish(),
+    grossRevenue: zod.number(),
+    operationalCost: zod.number(),
+    lcaAmount: zod.number(),
+    lcaSource: zod.string(),
+    notes: zod.string().nullish(),
+    distributionResult: zod.object({}).passthrough(),
+    status: zod.enum(["draft", "confirmed"]),
+    isActive: zod.boolean(),
+    confirmedAt: zod.coerce.date().nullish(),
+    confirmedByName: zod.string().nullish(),
+    calculatedByName: zod.string().nullish(),
+    createdAt: zod.coerce.date(),
+    updatedAt: zod.coerce.date(),
+  })
+  .and(
+    zod.object({
+      projectName: zod.string().nullish(),
+      lifecycleStatus: zod.string().nullish(),
+      agreementStatus: zod.string().nullish(),
+      agreementRevenueModel: zod.string().nullish(),
+    }),
+  );
+
+/**
+ * @summary Update inputs and recalculate a draft preview
+ */
+export const UpdateDistributionPreviewParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const UpdateDistributionPreviewBody = zod.object({
+  periodLabel: zod.string().optional(),
+  periodStart: zod.string().optional(),
+  periodEnd: zod.string().optional(),
+  periodYear: zod.number().optional(),
+  grossRevenue: zod.number().optional(),
+  operationalCost: zod.number().optional(),
+  lcaAmount: zod.number().optional(),
+  lcaSource: zod.enum(["manual", "ledger"]).optional(),
+  notes: zod.string().optional(),
+  ownershipOverride: zod
+    .array(
+      zod.object({
+        partnerKey: zod.string(),
+        partnerId: zod.string().uuid().nullish(),
+        partnerName: zod.string(),
+        role: zod.enum(["landowner", "developer", "unknown"]),
+        percentage: zod.number(),
+      }),
+    )
+    .optional(),
+});
+
+export const UpdateDistributionPreviewResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  agreementId: zod.string().uuid().nullish(),
+  accountingModel: zod.string(),
+  periodLabel: zod.string(),
+  periodStart: zod.string().nullish(),
+  periodEnd: zod.string().nullish(),
+  periodYear: zod.number().nullish(),
+  grossRevenue: zod.number(),
+  operationalCost: zod.number(),
+  lcaAmount: zod.number(),
+  lcaSource: zod.string(),
+  notes: zod.string().nullish(),
+  distributionResult: zod.object({}).passthrough(),
+  status: zod.enum(["draft", "confirmed"]),
+  isActive: zod.boolean(),
+  confirmedAt: zod.coerce.date().nullish(),
+  confirmedByName: zod.string().nullish(),
+  calculatedByName: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Soft-archive a distribution preview (admin only)
+ */
+export const ArchiveDistributionPreviewParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const ArchiveDistributionPreviewResponse = zod.object({
+  ok: zod.boolean().optional(),
+});
+
+/**
+ * @summary Confirm a distribution preview as official guidance (admin only)
+ */
+export const ConfirmDistributionPreviewParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const ConfirmDistributionPreviewResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  agreementId: zod.string().uuid().nullish(),
+  accountingModel: zod.string(),
+  periodLabel: zod.string(),
+  periodStart: zod.string().nullish(),
+  periodEnd: zod.string().nullish(),
+  periodYear: zod.number().nullish(),
+  grossRevenue: zod.number(),
+  operationalCost: zod.number(),
+  lcaAmount: zod.number(),
+  lcaSource: zod.string(),
+  notes: zod.string().nullish(),
+  distributionResult: zod.object({}).passthrough(),
+  status: zod.enum(["draft", "confirmed"]),
+  isActive: zod.boolean(),
+  confirmedAt: zod.coerce.date().nullish(),
+  confirmedByName: zod.string().nullish(),
+  calculatedByName: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
  * @summary List operational access audit log entries
  */
 export const listOperationalAccessLogsQueryLimitDefault = 100;

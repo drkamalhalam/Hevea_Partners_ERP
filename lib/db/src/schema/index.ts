@@ -47,3 +47,4 @@ export * from "./sale_documents";
 export * from "./operational_tasks";
 export * from "./operational_alerts";
 export * from "./operational_access_logs";
+export * from "./distribution_previews";

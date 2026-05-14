@@ -41,6 +41,7 @@ import type {
   ApproveExpenditureBody,
   ApproveExpenditureVerification200,
   ApproveExpenditureVerificationBody,
+  ArchiveDistributionPreview200,
   AssignProjectInput,
   AutoGenerateLcaLedgerBody,
   AutoGenerateLcaResult,
@@ -68,6 +69,7 @@ import type {
   CreateBuyerBody,
   CreateClaimantInput,
   CreateContributionBody,
+  CreateDistributionPreviewBody,
   CreateDocumentBody,
   CreateExpenditureBody,
   CreateGenerationBody,
@@ -90,6 +92,9 @@ import type {
   DashboardSummary,
   DeleteProductionEntry200,
   DeleteStockMovement200,
+  DistributionPreview,
+  DistributionPreviewDetail,
+  DistributionPreviewPage,
   Document,
   DocumentAccessLogEntry,
   ErrorResponse,
@@ -147,6 +152,7 @@ import type {
   LcaFullLedger,
   LcaGovernanceSummary,
   LcaLedgerEntry,
+  LcaLookupResult,
   LcaPaymentEvent,
   LcaSummary,
   ListAdvancesParams,
@@ -159,6 +165,7 @@ import type {
   ListContributionVerificationHistory200,
   ListContributions200,
   ListContributionsParams,
+  ListDistributionPreviewsParams,
   ListDocumentAccessLogParams,
   ListDocumentsParams,
   ListExpenditures200,
@@ -185,6 +192,7 @@ import type {
   ListStockMovementsParams,
   ListTasksParams,
   ListTemplatesParams,
+  LookupLcaForDistributionParams,
   MarkBurdenRecordRecoveredBody,
   MaturityBlockers,
   MaturityDeclaration,
@@ -260,6 +268,7 @@ import type {
   UpdateClaimantInput,
   UpdateClosureWorkflowBody,
   UpdateContributionBody,
+  UpdateDistributionPreviewBody,
   UpdateDocumentBody,
   UpdateExpenditureBody,
   UpdateLandownerLedgerEntryBody,
@@ -22574,6 +22583,652 @@ export function useGetOperationalAccessLogSummary<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Create a model-aware distribution preview (settlement guidance)
+ */
+export const getCreateDistributionPreviewUrl = () => {
+  return `/api/distribution-previews`;
+};
+
+export const createDistributionPreview = async (
+  createDistributionPreviewBody: CreateDistributionPreviewBody,
+  options?: RequestInit,
+): Promise<DistributionPreview> => {
+  return customFetch<DistributionPreview>(getCreateDistributionPreviewUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createDistributionPreviewBody),
+  });
+};
+
+export const getCreateDistributionPreviewMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createDistributionPreview>>,
+    TError,
+    { data: BodyType<CreateDistributionPreviewBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createDistributionPreview>>,
+  TError,
+  { data: BodyType<CreateDistributionPreviewBody> },
+  TContext
+> => {
+  const mutationKey = ["createDistributionPreview"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createDistributionPreview>>,
+    { data: BodyType<CreateDistributionPreviewBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createDistributionPreview(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateDistributionPreviewMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createDistributionPreview>>
+>;
+export type CreateDistributionPreviewMutationBody =
+  BodyType<CreateDistributionPreviewBody>;
+export type CreateDistributionPreviewMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create a model-aware distribution preview (settlement guidance)
+ */
+export const useCreateDistributionPreview = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createDistributionPreview>>,
+    TError,
+    { data: BodyType<CreateDistributionPreviewBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createDistributionPreview>>,
+  TError,
+  { data: BodyType<CreateDistributionPreviewBody> },
+  TContext
+> => {
+  return useMutation(getCreateDistributionPreviewMutationOptions(options));
+};
+
+/**
+ * @summary List distribution previews for a project
+ */
+export const getListDistributionPreviewsUrl = (
+  params?: ListDistributionPreviewsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/distribution-previews?${stringifiedParams}`
+    : `/api/distribution-previews`;
+};
+
+export const listDistributionPreviews = async (
+  params?: ListDistributionPreviewsParams,
+  options?: RequestInit,
+): Promise<DistributionPreviewPage> => {
+  return customFetch<DistributionPreviewPage>(
+    getListDistributionPreviewsUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListDistributionPreviewsQueryKey = (
+  params?: ListDistributionPreviewsParams,
+) => {
+  return [`/api/distribution-previews`, ...(params ? [params] : [])] as const;
+};
+
+export const getListDistributionPreviewsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listDistributionPreviews>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListDistributionPreviewsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listDistributionPreviews>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListDistributionPreviewsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listDistributionPreviews>>
+  > = ({ signal }) =>
+    listDistributionPreviews(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listDistributionPreviews>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListDistributionPreviewsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listDistributionPreviews>>
+>;
+export type ListDistributionPreviewsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List distribution previews for a project
+ */
+
+export function useListDistributionPreviews<
+  TData = Awaited<ReturnType<typeof listDistributionPreviews>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListDistributionPreviewsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listDistributionPreviews>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListDistributionPreviewsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Fetch LCA outstanding balance for a project/year (for distribution input)
+ */
+export const getLookupLcaForDistributionUrl = (
+  params: LookupLcaForDistributionParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/distribution-previews/lca-lookup?${stringifiedParams}`
+    : `/api/distribution-previews/lca-lookup`;
+};
+
+export const lookupLcaForDistribution = async (
+  params: LookupLcaForDistributionParams,
+  options?: RequestInit,
+): Promise<LcaLookupResult> => {
+  return customFetch<LcaLookupResult>(getLookupLcaForDistributionUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getLookupLcaForDistributionQueryKey = (
+  params?: LookupLcaForDistributionParams,
+) => {
+  return [
+    `/api/distribution-previews/lca-lookup`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getLookupLcaForDistributionQueryOptions = <
+  TData = Awaited<ReturnType<typeof lookupLcaForDistribution>>,
+  TError = ErrorType<unknown>,
+>(
+  params: LookupLcaForDistributionParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof lookupLcaForDistribution>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getLookupLcaForDistributionQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof lookupLcaForDistribution>>
+  > = ({ signal }) =>
+    lookupLcaForDistribution(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof lookupLcaForDistribution>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type LookupLcaForDistributionQueryResult = NonNullable<
+  Awaited<ReturnType<typeof lookupLcaForDistribution>>
+>;
+export type LookupLcaForDistributionQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Fetch LCA outstanding balance for a project/year (for distribution input)
+ */
+
+export function useLookupLcaForDistribution<
+  TData = Awaited<ReturnType<typeof lookupLcaForDistribution>>,
+  TError = ErrorType<unknown>,
+>(
+  params: LookupLcaForDistributionParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof lookupLcaForDistribution>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getLookupLcaForDistributionQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get a single distribution preview with context
+ */
+export const getGetDistributionPreviewUrl = (id: string) => {
+  return `/api/distribution-previews/${id}`;
+};
+
+export const getDistributionPreview = async (
+  id: string,
+  options?: RequestInit,
+): Promise<DistributionPreviewDetail> => {
+  return customFetch<DistributionPreviewDetail>(
+    getGetDistributionPreviewUrl(id),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetDistributionPreviewQueryKey = (id: string) => {
+  return [`/api/distribution-previews/${id}`] as const;
+};
+
+export const getGetDistributionPreviewQueryOptions = <
+  TData = Awaited<ReturnType<typeof getDistributionPreview>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getDistributionPreview>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetDistributionPreviewQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getDistributionPreview>>
+  > = ({ signal }) => getDistributionPreview(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getDistributionPreview>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetDistributionPreviewQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getDistributionPreview>>
+>;
+export type GetDistributionPreviewQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get a single distribution preview with context
+ */
+
+export function useGetDistributionPreview<
+  TData = Awaited<ReturnType<typeof getDistributionPreview>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getDistributionPreview>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetDistributionPreviewQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Update inputs and recalculate a draft preview
+ */
+export const getUpdateDistributionPreviewUrl = (id: string) => {
+  return `/api/distribution-previews/${id}`;
+};
+
+export const updateDistributionPreview = async (
+  id: string,
+  updateDistributionPreviewBody: UpdateDistributionPreviewBody,
+  options?: RequestInit,
+): Promise<DistributionPreview> => {
+  return customFetch<DistributionPreview>(getUpdateDistributionPreviewUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateDistributionPreviewBody),
+  });
+};
+
+export const getUpdateDistributionPreviewMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateDistributionPreview>>,
+    TError,
+    { id: string; data: BodyType<UpdateDistributionPreviewBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateDistributionPreview>>,
+  TError,
+  { id: string; data: BodyType<UpdateDistributionPreviewBody> },
+  TContext
+> => {
+  const mutationKey = ["updateDistributionPreview"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateDistributionPreview>>,
+    { id: string; data: BodyType<UpdateDistributionPreviewBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateDistributionPreview(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateDistributionPreviewMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateDistributionPreview>>
+>;
+export type UpdateDistributionPreviewMutationBody =
+  BodyType<UpdateDistributionPreviewBody>;
+export type UpdateDistributionPreviewMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update inputs and recalculate a draft preview
+ */
+export const useUpdateDistributionPreview = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateDistributionPreview>>,
+    TError,
+    { id: string; data: BodyType<UpdateDistributionPreviewBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateDistributionPreview>>,
+  TError,
+  { id: string; data: BodyType<UpdateDistributionPreviewBody> },
+  TContext
+> => {
+  return useMutation(getUpdateDistributionPreviewMutationOptions(options));
+};
+
+/**
+ * @summary Soft-archive a distribution preview (admin only)
+ */
+export const getArchiveDistributionPreviewUrl = (id: string) => {
+  return `/api/distribution-previews/${id}`;
+};
+
+export const archiveDistributionPreview = async (
+  id: string,
+  options?: RequestInit,
+): Promise<ArchiveDistributionPreview200> => {
+  return customFetch<ArchiveDistributionPreview200>(
+    getArchiveDistributionPreviewUrl(id),
+    {
+      ...options,
+      method: "DELETE",
+    },
+  );
+};
+
+export const getArchiveDistributionPreviewMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof archiveDistributionPreview>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof archiveDistributionPreview>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["archiveDistributionPreview"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof archiveDistributionPreview>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return archiveDistributionPreview(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ArchiveDistributionPreviewMutationResult = NonNullable<
+  Awaited<ReturnType<typeof archiveDistributionPreview>>
+>;
+
+export type ArchiveDistributionPreviewMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Soft-archive a distribution preview (admin only)
+ */
+export const useArchiveDistributionPreview = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof archiveDistributionPreview>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof archiveDistributionPreview>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getArchiveDistributionPreviewMutationOptions(options));
+};
+
+/**
+ * @summary Confirm a distribution preview as official guidance (admin only)
+ */
+export const getConfirmDistributionPreviewUrl = (id: string) => {
+  return `/api/distribution-previews/${id}/confirm`;
+};
+
+export const confirmDistributionPreview = async (
+  id: string,
+  options?: RequestInit,
+): Promise<DistributionPreview> => {
+  return customFetch<DistributionPreview>(
+    getConfirmDistributionPreviewUrl(id),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getConfirmDistributionPreviewMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof confirmDistributionPreview>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof confirmDistributionPreview>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["confirmDistributionPreview"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof confirmDistributionPreview>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return confirmDistributionPreview(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ConfirmDistributionPreviewMutationResult = NonNullable<
+  Awaited<ReturnType<typeof confirmDistributionPreview>>
+>;
+
+export type ConfirmDistributionPreviewMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Confirm a distribution preview as official guidance (admin only)
+ */
+export const useConfirmDistributionPreview = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof confirmDistributionPreview>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof confirmDistributionPreview>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getConfirmDistributionPreviewMutationOptions(options));
+};
 
 /**
  * @summary List operational access audit log entries

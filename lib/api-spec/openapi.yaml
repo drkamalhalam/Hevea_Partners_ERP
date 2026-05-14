@@ -5876,6 +5876,150 @@ paths:
               schema:
                 $ref: "#/components/schemas/AccessLogSummary"
 
+  /distribution-previews:
+    post:
+      operationId: createDistributionPreview
+      summary: Create a model-aware distribution preview (settlement guidance)
+      tags: [distribution-previews]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDistributionPreviewBody"
+      responses:
+        "201":
+          description: Created distribution preview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DistributionPreview"
+    get:
+      operationId: listDistributionPreviews
+      summary: List distribution previews for a project
+      tags: [distribution-previews]
+      parameters:
+        - in: query
+          name: projectId
+          required: false
+          schema: { type: string, format: uuid }
+        - in: query
+          name: agreementId
+          schema: { type: string, format: uuid }
+        - in: query
+          name: status
+          schema: { type: string, enum: [draft, confirmed] }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 50 }
+        - in: query
+          name: offset
+          schema: { type: integer, default: 0 }
+      responses:
+        "200":
+          description: Paginated distribution previews
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DistributionPreviewPage"
+
+  /distribution-previews/lca-lookup:
+    get:
+      operationId: lookupLcaForDistribution
+      summary: Fetch LCA outstanding balance for a project/year (for distribution input)
+      tags: [distribution-previews]
+      parameters:
+        - in: query
+          name: projectId
+          required: true
+          schema: { type: string, format: uuid }
+        - in: query
+          name: year
+          schema: { type: integer }
+      responses:
+        "200":
+          description: LCA lookup result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LcaLookupResult"
+
+  /distribution-previews/{id}:
+    get:
+      operationId: getDistributionPreview
+      summary: Get a single distribution preview with context
+      tags: [distribution-previews]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Distribution preview with project/agreement context
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DistributionPreviewDetail"
+    patch:
+      operationId: updateDistributionPreview
+      summary: Update inputs and recalculate a draft preview
+      tags: [distribution-previews]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateDistributionPreviewBody"
+      responses:
+        "200":
+          description: Updated distribution preview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DistributionPreview"
+    delete:
+      operationId: archiveDistributionPreview
+      summary: Soft-archive a distribution preview (admin only)
+      tags: [distribution-previews]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Archived successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+
+  /distribution-previews/{id}/confirm:
+    post:
+      operationId: confirmDistributionPreview
+      summary: Confirm a distribution preview as official guidance (admin only)
+      tags: [distribution-previews]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Confirmed preview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DistributionPreview"
+
   /operational-access-logs:
     get:
       operationId: listOperationalAccessLogs
@@ -10389,6 +10533,175 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/AccessLogResourceBreakdown"
+
+    DistributionShareEntry:
+      type: object
+      required: [partnerKey, partnerName, role, ownershipPct, amount]
+      properties:
+        partnerKey: { type: string }
+        partnerId: { type: string, format: uuid, nullable: true }
+        partnerName: { type: string }
+        role: { type: string, enum: [landowner, developer, unknown] }
+        ownershipPct: { type: number }
+        amount: { type: number }
+
+    ContributionDistributionResult:
+      type: object
+      required: [model, grossRevenue, operationalCost, lcaAmount, costsChargedBeforeDistribution, lcaChargedBeforeDistribution, distributablePool, ownerShares, landownerTotal, developerTotal, ownershipSource, warnings]
+      properties:
+        model: { type: string, enum: [contribution] }
+        grossRevenue: { type: number }
+        operationalCost: { type: number }
+        lcaAmount: { type: number }
+        costsChargedBeforeDistribution: { type: boolean }
+        lcaChargedBeforeDistribution: { type: boolean }
+        distributablePool: { type: number }
+        ownerShares:
+          type: array
+          items:
+            $ref: "#/components/schemas/DistributionShareEntry"
+        landownerTotal: { type: number }
+        developerTotal: { type: number }
+        ownershipSource: { type: string, enum: [frozen_snapshot, agreement_shares, live_calculation, manual] }
+        warnings:
+          type: array
+          items: { type: string }
+
+    FiftyPercentDistributionResult:
+      type: object
+      required: [model, grossRevenue, operationalCost, splitPctLandowner, splitPctDeveloper, landownerGross, developerGross, landownerNet, developerNet, participantPoolGross, participantPoolNet, note, warnings]
+      properties:
+        model: { type: string, enum: [fifty_percent_revenue] }
+        grossRevenue: { type: number }
+        operationalCost: { type: number }
+        splitPctLandowner: { type: number }
+        splitPctDeveloper: { type: number }
+        landownerGross: { type: number }
+        developerGross: { type: number }
+        landownerNet: { type: number }
+        developerNet: { type: number }
+        participantPoolGross: { type: number }
+        participantPoolNet: { type: number }
+        note: { type: string }
+        warnings:
+          type: array
+          items: { type: string }
+
+    DistributionPreview:
+      type: object
+      required: [id, projectId, accountingModel, periodLabel, grossRevenue, operationalCost, lcaAmount, lcaSource, distributionResult, status, isActive, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        agreementId: { type: string, format: uuid, nullable: true }
+        accountingModel: { type: string }
+        periodLabel: { type: string }
+        periodStart: { type: string, nullable: true }
+        periodEnd: { type: string, nullable: true }
+        periodYear: { type: integer, nullable: true }
+        grossRevenue: { type: number }
+        operationalCost: { type: number }
+        lcaAmount: { type: number }
+        lcaSource: { type: string }
+        notes: { type: string, nullable: true }
+        distributionResult: { type: object }
+        status: { type: string, enum: [draft, confirmed] }
+        isActive: { type: boolean }
+        confirmedAt: { type: string, format: date-time, nullable: true }
+        confirmedByName: { type: string, nullable: true }
+        calculatedByName: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    DistributionPreviewDetail:
+      allOf:
+        - $ref: "#/components/schemas/DistributionPreview"
+        - type: object
+          properties:
+            projectName: { type: string, nullable: true }
+            lifecycleStatus: { type: string, nullable: true }
+            agreementStatus: { type: string, nullable: true }
+            agreementRevenueModel: { type: string, nullable: true }
+
+    DistributionPreviewPage:
+      type: object
+      required: [previews, total]
+      properties:
+        previews:
+          type: array
+          items:
+            $ref: "#/components/schemas/DistributionPreview"
+        total: { type: integer }
+
+    OwnershipOverrideEntry:
+      type: object
+      required: [partnerKey, partnerName, role, percentage]
+      properties:
+        partnerKey: { type: string }
+        partnerId: { type: string, format: uuid, nullable: true }
+        partnerName: { type: string }
+        role: { type: string, enum: [landowner, developer, unknown] }
+        percentage: { type: number }
+
+    CreateDistributionPreviewBody:
+      type: object
+      required: [projectId, periodLabel, grossRevenue]
+      properties:
+        projectId: { type: string, format: uuid }
+        agreementId: { type: string, format: uuid }
+        periodLabel: { type: string }
+        periodStart: { type: string }
+        periodEnd: { type: string }
+        periodYear: { type: integer }
+        grossRevenue: { type: number }
+        operationalCost: { type: number, default: 0 }
+        lcaAmount: { type: number, default: 0 }
+        lcaSource: { type: string, enum: [manual, ledger], default: manual }
+        notes: { type: string }
+        ownershipOverride:
+          type: array
+          items:
+            $ref: "#/components/schemas/OwnershipOverrideEntry"
+
+    UpdateDistributionPreviewBody:
+      type: object
+      properties:
+        periodLabel: { type: string }
+        periodStart: { type: string }
+        periodEnd: { type: string }
+        periodYear: { type: integer }
+        grossRevenue: { type: number }
+        operationalCost: { type: number }
+        lcaAmount: { type: number }
+        lcaSource: { type: string, enum: [manual, ledger] }
+        notes: { type: string }
+        ownershipOverride:
+          type: array
+          items:
+            $ref: "#/components/schemas/OwnershipOverrideEntry"
+
+    LcaLookupEntry:
+      type: object
+      required: [id, year, grossDue, totalDue, amountPaid, balance, status]
+      properties:
+        id: { type: string, format: uuid }
+        year: { type: integer }
+        grossDue: { type: number }
+        totalDue: { type: number }
+        amountPaid: { type: number }
+        balance: { type: number }
+        status: { type: string }
+
+    LcaLookupResult:
+      type: object
+      required: [projectId, entries, totalBalance]
+      properties:
+        projectId: { type: string, format: uuid }
+        entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/LcaLookupEntry"
+        totalBalance: { type: number }
 
     SuccessResponse:
       type: object

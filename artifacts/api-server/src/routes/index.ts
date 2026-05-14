@@ -40,6 +40,7 @@ import salesAuditRouter from "./sales_audit";
 import tasksRouter from "./tasks";
 import operationalAlertsRouter from "./operational_alerts";
 import operationalAccessLogsRouter from "./operational_access_logs";
+import distributionPreviewsRouter from "./distribution_previews";
 import devRouter from "./dev";
 
 const router: IRouter = Router();
@@ -97,5 +98,6 @@ router.use("/sales", salesRouter);
 router.use("/tasks", tasksRouter);
 router.use("/operational-alerts", operationalAlertsRouter);
 router.use("/operational-access-logs", operationalAccessLogsRouter);
+router.use("/distribution-previews", distributionPreviewsRouter);
 
 export default router;

@@ -4427,6 +4427,202 @@ export interface AccessLogSummary {
   byResourceType: AccessLogResourceBreakdown[];
 }
 
+export type DistributionShareEntryRole =
+  (typeof DistributionShareEntryRole)[keyof typeof DistributionShareEntryRole];
+
+export const DistributionShareEntryRole = {
+  landowner: "landowner",
+  developer: "developer",
+  unknown: "unknown",
+} as const;
+
+export interface DistributionShareEntry {
+  partnerKey: string;
+  partnerId?: string | null;
+  partnerName: string;
+  role: DistributionShareEntryRole;
+  ownershipPct: number;
+  amount: number;
+}
+
+export type ContributionDistributionResultModel =
+  (typeof ContributionDistributionResultModel)[keyof typeof ContributionDistributionResultModel];
+
+export const ContributionDistributionResultModel = {
+  contribution: "contribution",
+} as const;
+
+export type ContributionDistributionResultOwnershipSource =
+  (typeof ContributionDistributionResultOwnershipSource)[keyof typeof ContributionDistributionResultOwnershipSource];
+
+export const ContributionDistributionResultOwnershipSource = {
+  frozen_snapshot: "frozen_snapshot",
+  agreement_shares: "agreement_shares",
+  live_calculation: "live_calculation",
+  manual: "manual",
+} as const;
+
+export interface ContributionDistributionResult {
+  model: ContributionDistributionResultModel;
+  grossRevenue: number;
+  operationalCost: number;
+  lcaAmount: number;
+  costsChargedBeforeDistribution: boolean;
+  lcaChargedBeforeDistribution: boolean;
+  distributablePool: number;
+  ownerShares: DistributionShareEntry[];
+  landownerTotal: number;
+  developerTotal: number;
+  ownershipSource: ContributionDistributionResultOwnershipSource;
+  warnings: string[];
+}
+
+export type FiftyPercentDistributionResultModel =
+  (typeof FiftyPercentDistributionResultModel)[keyof typeof FiftyPercentDistributionResultModel];
+
+export const FiftyPercentDistributionResultModel = {
+  fifty_percent_revenue: "fifty_percent_revenue",
+} as const;
+
+export interface FiftyPercentDistributionResult {
+  model: FiftyPercentDistributionResultModel;
+  grossRevenue: number;
+  operationalCost: number;
+  splitPctLandowner: number;
+  splitPctDeveloper: number;
+  landownerGross: number;
+  developerGross: number;
+  landownerNet: number;
+  developerNet: number;
+  participantPoolGross: number;
+  participantPoolNet: number;
+  note: string;
+  warnings: string[];
+}
+
+export type DistributionPreviewDistributionResult = { [key: string]: unknown };
+
+export type DistributionPreviewStatus =
+  (typeof DistributionPreviewStatus)[keyof typeof DistributionPreviewStatus];
+
+export const DistributionPreviewStatus = {
+  draft: "draft",
+  confirmed: "confirmed",
+} as const;
+
+export interface DistributionPreview {
+  id: string;
+  projectId: string;
+  agreementId?: string | null;
+  accountingModel: string;
+  periodLabel: string;
+  periodStart?: string | null;
+  periodEnd?: string | null;
+  periodYear?: number | null;
+  grossRevenue: number;
+  operationalCost: number;
+  lcaAmount: number;
+  lcaSource: string;
+  notes?: string | null;
+  distributionResult: DistributionPreviewDistributionResult;
+  status: DistributionPreviewStatus;
+  isActive: boolean;
+  confirmedAt?: string | null;
+  confirmedByName?: string | null;
+  calculatedByName?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type DistributionPreviewDetail = DistributionPreview & {
+  projectName?: string | null;
+  lifecycleStatus?: string | null;
+  agreementStatus?: string | null;
+  agreementRevenueModel?: string | null;
+};
+
+export interface DistributionPreviewPage {
+  previews: DistributionPreview[];
+  total: number;
+}
+
+export type OwnershipOverrideEntryRole =
+  (typeof OwnershipOverrideEntryRole)[keyof typeof OwnershipOverrideEntryRole];
+
+export const OwnershipOverrideEntryRole = {
+  landowner: "landowner",
+  developer: "developer",
+  unknown: "unknown",
+} as const;
+
+export interface OwnershipOverrideEntry {
+  partnerKey: string;
+  partnerId?: string | null;
+  partnerName: string;
+  role: OwnershipOverrideEntryRole;
+  percentage: number;
+}
+
+export type CreateDistributionPreviewBodyLcaSource =
+  (typeof CreateDistributionPreviewBodyLcaSource)[keyof typeof CreateDistributionPreviewBodyLcaSource];
+
+export const CreateDistributionPreviewBodyLcaSource = {
+  manual: "manual",
+  ledger: "ledger",
+} as const;
+
+export interface CreateDistributionPreviewBody {
+  projectId: string;
+  agreementId?: string;
+  periodLabel: string;
+  periodStart?: string;
+  periodEnd?: string;
+  periodYear?: number;
+  grossRevenue: number;
+  operationalCost?: number;
+  lcaAmount?: number;
+  lcaSource?: CreateDistributionPreviewBodyLcaSource;
+  notes?: string;
+  ownershipOverride?: OwnershipOverrideEntry[];
+}
+
+export type UpdateDistributionPreviewBodyLcaSource =
+  (typeof UpdateDistributionPreviewBodyLcaSource)[keyof typeof UpdateDistributionPreviewBodyLcaSource];
+
+export const UpdateDistributionPreviewBodyLcaSource = {
+  manual: "manual",
+  ledger: "ledger",
+} as const;
+
+export interface UpdateDistributionPreviewBody {
+  periodLabel?: string;
+  periodStart?: string;
+  periodEnd?: string;
+  periodYear?: number;
+  grossRevenue?: number;
+  operationalCost?: number;
+  lcaAmount?: number;
+  lcaSource?: UpdateDistributionPreviewBodyLcaSource;
+  notes?: string;
+  ownershipOverride?: OwnershipOverrideEntry[];
+}
+
+export interface LcaLookupEntry {
+  id: string;
+  year: number;
+  grossDue: number;
+  totalDue: number;
+  amountPaid: number;
+  balance: number;
+  status: string;
+}
+
+export interface LcaLookupResult {
+  projectId: string;
+  entries: LcaLookupEntry[];
+  totalBalance: number;
+}
+
 export interface SuccessResponse {
   success: boolean;
 }
@@ -5099,6 +5295,31 @@ export const ListOperationalAlertsSeverity = {
 export type GetOperationalAccessLogSummaryParams = {
   from?: string;
   to?: string;
+};
+
+export type ListDistributionPreviewsParams = {
+  projectId?: string;
+  agreementId?: string;
+  status?: ListDistributionPreviewsStatus;
+  limit?: number;
+  offset?: number;
+};
+
+export type ListDistributionPreviewsStatus =
+  (typeof ListDistributionPreviewsStatus)[keyof typeof ListDistributionPreviewsStatus];
+
+export const ListDistributionPreviewsStatus = {
+  draft: "draft",
+  confirmed: "confirmed",
+} as const;
+
+export type LookupLcaForDistributionParams = {
+  projectId: string;
+  year?: number;
+};
+
+export type ArchiveDistributionPreview200 = {
+  ok?: boolean;
 };
 
 export type ListOperationalAccessLogsParams = {
