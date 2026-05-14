@@ -928,6 +928,50 @@ Every access to production, inventory, and sales records is written to `operatio
 **Schema file:** `lib/db/src/schema/operational_access_logs.ts`  
 **Utility:** `artifacts/api-server/src/lib/accessLog.ts` — `logOperationalAccess(params)`, `logDeniedAccess(...)`
 
+## 50% Revenue Model Settlement Engine
+
+Guided settlement workflow for projects on the 50% Revenue sharing model. Gross revenue is split exactly in half: the landowner side bears all operational costs and LCA; the Economic Participant Pool (EPP) is never reduced by costs and is distributed purely by verified economic participation percentages.
+
+**Formula:**
+```
+Gross Revenue ÷ 2 → Landowner Side (50%) + Economic Participant Pool (50%)
+Landowner Net = Landowner Side − Op Costs − LCA  (floored at 0)
+EPP per participant = Pool × participationPct / 100
+Land contribution EXCLUDED from EPP — only additional economic contributions qualify
+```
+
+**DB tables** (`lib/db/src/schema/fifty_pct.ts`):
+- `fifty_pct_sessions` — UUID PK, projectId FK, periodLabel, periodStart/End/Year, grossRevenue, revenueSource (sales_records/manual), linkedSaleIds (jsonb), landownerSplit, participantPoolSplit, operationalCost, lcaAmount, lcaSource, landownerNet, eppTotalAllocated, eppRemainder, status (draft/confirmed/archived), calculatedBy/Name, confirmedAt/By/Name, notes
+- `epp_entries` — UUID PK, sessionId FK (cascade), projectId FK, participantId (nullable partner FK), participantKey, participantName, participationPct, allocatedAmount, contributionType (economic_only/landowner_additional/external), isLandownerAdditional, notes
+
+**API endpoints** (`artifacts/api-server/src/routes/fifty_pct.ts`), mounted at `/fifty-pct`:
+- `GET /fifty-pct?projectId&status` — list sessions
+- `POST /fifty-pct` — create draft session (admin/developer)
+- `GET /fifty-pct/revenue-lookup?projectId&from&to` — fetch confirmed sales records for linking
+- `GET /fifty-pct/lca-lookup?projectId` — fetch outstanding LCA balances
+- `GET /fifty-pct/partners-lookup` — list active partners for EPP auto-fill
+- `GET /fifty-pct/:id` — session + EPP entries
+- `PATCH /fifty-pct/:id` — update draft session; recomputes all EPP allocations if grossRevenue changes (admin/developer)
+- `POST /fifty-pct/:id/confirm` — lock session as confirmed (admin/developer)
+- `DELETE /fifty-pct/:id` — archive session (admin only)
+- `GET /fifty-pct/:id/epp` — list EPP entries + totals
+- `POST /fifty-pct/:id/epp` — add EPP participant (admin/developer)
+- `PATCH /fifty-pct/:id/epp/:entryId` — update EPP participant (admin/developer)
+- `DELETE /fifty-pct/:id/epp/:entryId` — remove EPP participant (admin/developer)
+- `GET /fifty-pct/:id/summary` — full waterfall summary with per-participant EPP breakdown and validation warnings
+
+**Frontend:** `artifacts/plantation-web/src/pages/FiftyPctSettlement.tsx` at `/fifty-pct-settlement`
+- **Sidebar:** "50% Revenue Settlement" in Settlement group (admin/developer), icon: PieChart
+- **5-step wizard** for creating sessions: (1) Project + Period → (2) Gross Revenue (link sales or manual) → (3) Deductions (op cost + LCA from ledger or manual) → (4) Live 50/50 preview + Save → (5) Add EPP Participants
+- **List view:** all sessions with project filter, status badge, quick confirm/archive actions
+- **Detail view — 4 sub-tabs:**
+  - **Revenue Split:** side-by-side 50/50 visual cards + full waterfall ledger
+  - **Participant Pool:** EPP entry table with add/edit/remove, participation % validation, unallocated remainder warning
+  - **Landowner View:** formal ledger showing gross → deductions → net with principle explanation
+  - **Analytics:** horizontal bar charts (gross allocation + per-participant EPP), KPI cards
+
+**Generated hooks:** `useListFiftyPctSessions`, `useCreateFiftyPctSession`, `useUpdateFiftyPctSession`, `useConfirmFiftyPctSession`, `useArchiveFiftyPctSession`, `useGetFiftyPctSession`, `useGetFiftyPctSessionSummary`, `useLookupFiftyPctRevenue`, `useLookupFiftyPctLca`, `useLookupFiftyPctPartners`, `useListEppEntries`, `useCreateEppEntry`, `useUpdateEppEntry`, `useDeleteEppEntry`
+
 ## Pointers
 
 - See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details

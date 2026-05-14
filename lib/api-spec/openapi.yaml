@@ -6062,6 +6062,302 @@ paths:
               schema:
                 $ref: "#/components/schemas/DistributionPreview"
 
+  /fifty-pct:
+    get:
+      operationId: listFiftyPctSessions
+      summary: List 50% revenue model settlement sessions
+      tags: [fifty-pct]
+      parameters:
+        - in: query
+          name: projectId
+          schema: { type: string, format: uuid }
+        - in: query
+          name: status
+          schema: { type: string, enum: [draft, confirmed, archived] }
+      responses:
+        "200":
+          description: Session list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FiftyPctSessionPage"
+    post:
+      operationId: createFiftyPctSession
+      summary: Create a new 50% revenue settlement session
+      tags: [fifty-pct]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateFiftyPctSessionBody"
+      responses:
+        "201":
+          description: Created session
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  session:
+                    $ref: "#/components/schemas/FiftyPctSession"
+
+  /fifty-pct/revenue-lookup:
+    get:
+      operationId: lookupFiftyPctRevenue
+      summary: Fetch confirmed sales records for revenue linking
+      tags: [fifty-pct]
+      parameters:
+        - in: query
+          name: projectId
+          required: true
+          schema: { type: string, format: uuid }
+        - in: query
+          name: from
+          schema: { type: string }
+        - in: query
+          name: to
+          schema: { type: string }
+      responses:
+        "200":
+          description: Revenue lookup result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FiftyPctRevenueLookupResult"
+
+  /fifty-pct/lca-lookup:
+    get:
+      operationId: lookupFiftyPctLca
+      summary: Fetch LCA outstanding balances for landowner deduction
+      tags: [fifty-pct]
+      parameters:
+        - in: query
+          name: projectId
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: LCA lookup result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FiftyPctLcaLookupResult"
+
+  /fifty-pct/partners-lookup:
+    get:
+      operationId: lookupFiftyPctPartners
+      summary: Fetch project partners for EPP participant selection
+      tags: [fifty-pct]
+      parameters:
+        - in: query
+          name: projectId
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Partners list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FiftyPctPartnersLookupResult"
+
+  /fifty-pct/{id}:
+    get:
+      operationId: getFiftyPctSession
+      summary: Get a settlement session with its EPP entries
+      tags: [fifty-pct]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Session detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FiftyPctSessionDetail"
+    patch:
+      operationId: updateFiftyPctSession
+      summary: Update a draft settlement session
+      tags: [fifty-pct]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateFiftyPctSessionBody"
+      responses:
+        "200":
+          description: Updated session
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  session:
+                    $ref: "#/components/schemas/FiftyPctSession"
+    delete:
+      operationId: archiveFiftyPctSession
+      summary: Archive a settlement session (admin only)
+      tags: [fifty-pct]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Archived
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+
+  /fifty-pct/{id}/confirm:
+    post:
+      operationId: confirmFiftyPctSession
+      summary: Confirm and lock a settlement session
+      tags: [fifty-pct]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Confirmed session
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  session:
+                    $ref: "#/components/schemas/FiftyPctSession"
+
+  /fifty-pct/{id}/summary:
+    get:
+      operationId: getFiftyPctSessionSummary
+      summary: Get full waterfall summary for a session
+      tags: [fifty-pct]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Full summary with waterfall
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FiftyPctSessionSummaryResult"
+
+  /fifty-pct/{id}/epp:
+    get:
+      operationId: listEppEntries
+      summary: List EPP participant entries for a session
+      tags: [fifty-pct]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: EPP entries
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EppEntriesResult"
+    post:
+      operationId: createEppEntry
+      summary: Add an EPP participant to a session
+      tags: [fifty-pct]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateEppEntryBody"
+      responses:
+        "201":
+          description: Created EPP entry
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entry:
+                    $ref: "#/components/schemas/EppEntry"
+
+  /fifty-pct/{id}/epp/{entryId}:
+    patch:
+      operationId: updateEppEntry
+      summary: Update an EPP participant entry
+      tags: [fifty-pct]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+        - in: path
+          name: entryId
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateEppEntryBody"
+      responses:
+        "200":
+          description: Updated EPP entry
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entry:
+                    $ref: "#/components/schemas/EppEntry"
+    delete:
+      operationId: deleteEppEntry
+      summary: Remove an EPP participant entry
+      tags: [fifty-pct]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+        - in: path
+          name: entryId
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+
   /operational-access-logs:
     get:
       operationId: listOperationalAccessLogs
@@ -10837,3 +11133,225 @@ components:
       required: [success]
       properties:
         success: { type: boolean }
+
+    # ── 50% Revenue Model ────────────────────────────────────────────────
+
+    FiftyPctSession:
+      type: object
+      required: [id, projectId, periodLabel, grossRevenue, landownerSplit, participantPoolSplit, operationalCost, lcaAmount, lcaSource, landownerNet, eppTotalAllocated, eppRemainder, revenueSource, status, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        projectName: { type: string, nullable: true }
+        periodLabel: { type: string }
+        periodStart: { type: string, nullable: true }
+        periodEnd: { type: string, nullable: true }
+        periodYear: { type: integer, nullable: true }
+        grossRevenue: { type: number }
+        revenueSource: { type: string, enum: [sales_records, manual] }
+        linkedSaleIds: { type: array, items: { type: string, format: uuid } }
+        landownerSplit: { type: number }
+        participantPoolSplit: { type: number }
+        operationalCost: { type: number }
+        lcaAmount: { type: number }
+        lcaSource: { type: string, enum: [manual, ledger] }
+        landownerNet: { type: number }
+        eppTotalAllocated: { type: number }
+        eppRemainder: { type: number }
+        status: { type: string, enum: [draft, confirmed, archived] }
+        notes: { type: string, nullable: true }
+        calculatedByName: { type: string, nullable: true }
+        confirmedAt: { type: string, format: date-time, nullable: true }
+        confirmedByName: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    FiftyPctSessionDetail:
+      allOf:
+        - $ref: "#/components/schemas/FiftyPctSession"
+        - type: object
+          properties:
+            eppEntries:
+              type: array
+              items:
+                $ref: "#/components/schemas/EppEntry"
+
+    FiftyPctSessionPage:
+      type: object
+      required: [sessions, total]
+      properties:
+        sessions:
+          type: array
+          items:
+            $ref: "#/components/schemas/FiftyPctSession"
+        total: { type: integer }
+
+    EppEntry:
+      type: object
+      required: [id, sessionId, projectId, participantKey, participantName, participationPct, allocatedAmount, contributionType, isLandownerAdditional, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        sessionId: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        participantId: { type: string, format: uuid, nullable: true }
+        participantKey: { type: string }
+        participantName: { type: string }
+        participationPct: { type: number }
+        allocatedAmount: { type: number }
+        contributionType: { type: string, enum: [economic_only, landowner_additional, external] }
+        isLandownerAdditional: { type: boolean }
+        notes: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+
+    EppEntriesResult:
+      type: object
+      required: [entries, totalPct, totalAllocated]
+      properties:
+        entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/EppEntry"
+        totalPct: { type: number }
+        totalAllocated: { type: number }
+
+    CreateFiftyPctSessionBody:
+      type: object
+      required: [projectId, periodLabel, grossRevenue]
+      properties:
+        projectId: { type: string, format: uuid }
+        periodLabel: { type: string }
+        periodStart: { type: string }
+        periodEnd: { type: string }
+        periodYear: { type: integer }
+        grossRevenue: { type: number }
+        revenueSource: { type: string, enum: [sales_records, manual] }
+        linkedSaleIds: { type: array, items: { type: string, format: uuid } }
+        operationalCost: { type: number, default: 0 }
+        lcaAmount: { type: number, default: 0 }
+        lcaSource: { type: string, enum: [manual, ledger], default: manual }
+        notes: { type: string }
+
+    UpdateFiftyPctSessionBody:
+      type: object
+      properties:
+        periodLabel: { type: string }
+        periodStart: { type: string }
+        periodEnd: { type: string }
+        periodYear: { type: integer }
+        grossRevenue: { type: number }
+        revenueSource: { type: string, enum: [sales_records, manual] }
+        linkedSaleIds: { type: array, items: { type: string, format: uuid } }
+        operationalCost: { type: number }
+        lcaAmount: { type: number }
+        lcaSource: { type: string, enum: [manual, ledger] }
+        notes: { type: string }
+
+    CreateEppEntryBody:
+      type: object
+      required: [participantKey, participantName, participationPct]
+      properties:
+        participantId: { type: string, format: uuid }
+        participantKey: { type: string }
+        participantName: { type: string }
+        participationPct: { type: number }
+        contributionType: { type: string, enum: [economic_only, landowner_additional, external] }
+        isLandownerAdditional: { type: boolean }
+        notes: { type: string }
+
+    UpdateEppEntryBody:
+      type: object
+      properties:
+        participantKey: { type: string }
+        participantName: { type: string }
+        participationPct: { type: number }
+        contributionType: { type: string, enum: [economic_only, landowner_additional, external] }
+        isLandownerAdditional: { type: boolean }
+        notes: { type: string }
+
+    FiftyPctSummaryLandownerSide:
+      type: object
+      required: [gross, operationalCost, lcaAmount, net]
+      properties:
+        gross: { type: number }
+        operationalCost: { type: number }
+        lcaAmount: { type: number }
+        net: { type: number }
+
+    FiftyPctSummaryEpp:
+      type: object
+      required: [gross, totalPct, totalAllocated, remainder, entries]
+      properties:
+        gross: { type: number }
+        totalPct: { type: number }
+        totalAllocated: { type: number }
+        remainder: { type: number }
+        entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/EppEntry"
+
+    FiftyPctSummary:
+      type: object
+      required: [grossRevenue, landownerSide, economicParticipantPool, warnings]
+      properties:
+        grossRevenue: { type: number }
+        landownerSide:
+          $ref: "#/components/schemas/FiftyPctSummaryLandownerSide"
+        economicParticipantPool:
+          $ref: "#/components/schemas/FiftyPctSummaryEpp"
+        warnings:
+          type: array
+          items: { type: string }
+
+    FiftyPctSessionSummaryResult:
+      type: object
+      required: [session, eppEntries, summary]
+      properties:
+        session:
+          $ref: "#/components/schemas/FiftyPctSession"
+        eppEntries:
+          type: array
+          items:
+            $ref: "#/components/schemas/EppEntry"
+        summary:
+          $ref: "#/components/schemas/FiftyPctSummary"
+
+    FiftyPctRevenueLookupResult:
+      type: object
+      required: [sales, totalGrossRevenue]
+      properties:
+        sales:
+          type: array
+          items:
+            type: object
+            required: [id, saleNumber, saleDate, buyerName, grossRevenue]
+            properties:
+              id: { type: string, format: uuid }
+              saleNumber: { type: string }
+              saleDate: { type: string }
+              buyerName: { type: string }
+              grossRevenue: { type: number }
+        totalGrossRevenue: { type: number }
+
+    FiftyPctLcaLookupResult:
+      type: object
+      required: [entries, totalBalance]
+      properties:
+        entries:
+          type: array
+          items: { type: object }
+        totalBalance: { type: number }
+
+    FiftyPctPartnersLookupResult:
+      type: object
+      required: [partners]
+      properties:
+        partners:
+          type: array
+          items:
+            type: object
+            required: [id, name]
+            properties:
+              id: { type: string, format: uuid }
+              name: { type: string }
+              phone: { type: string, nullable: true }

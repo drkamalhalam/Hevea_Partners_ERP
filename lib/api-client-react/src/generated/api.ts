@@ -42,6 +42,7 @@ import type {
   ApproveExpenditureVerification200,
   ApproveExpenditureVerificationBody,
   ArchiveDistributionPreview200,
+  ArchiveFiftyPctSession200,
   AssignProjectInput,
   AutoGenerateLcaLedgerBody,
   AutoGenerateLcaResult,
@@ -58,6 +59,7 @@ import type {
   CancelMaturityBody,
   ConfirmExpenditureVerificationOtp200,
   ConfirmExpenditureVerificationOtpBody,
+  ConfirmFiftyPctSession200,
   ContributionDisputeSummary,
   ContributionEntry,
   ContributionSummary,
@@ -71,7 +73,11 @@ import type {
   CreateContributionBody,
   CreateDistributionPreviewBody,
   CreateDocumentBody,
+  CreateEppEntry201,
+  CreateEppEntryBody,
   CreateExpenditureBody,
+  CreateFiftyPctSession201,
+  CreateFiftyPctSessionBody,
   CreateGenerationBody,
   CreateImbalanceEntry201,
   CreateImbalanceEntryBody,
@@ -90,6 +96,7 @@ import type {
   CreateTaskBody,
   CreateTemplateBody,
   DashboardSummary,
+  DeleteEppEntry200,
   DeleteProductionEntry200,
   DeleteStockMovement200,
   DistributionPreview,
@@ -97,10 +104,17 @@ import type {
   DistributionPreviewPage,
   Document,
   DocumentAccessLogEntry,
+  EppEntriesResult,
   ErrorResponse,
   ExpenditureEntry,
   ExpenditureSummary,
   ExpenditureVerificationDetail,
+  FiftyPctLcaLookupResult,
+  FiftyPctPartnersLookupResult,
+  FiftyPctRevenueLookupResult,
+  FiftyPctSessionDetail,
+  FiftyPctSessionPage,
+  FiftyPctSessionSummaryResult,
   FileMissingDeveloperCaseBody,
   FinancialAccessLogListResponse,
   GenerateAgreementDocument422,
@@ -170,6 +184,7 @@ import type {
   ListDocumentsParams,
   ListExpenditures200,
   ListExpendituresParams,
+  ListFiftyPctSessionsParams,
   ListFinancialAccessLogsParams,
   ListImbalanceLedger200,
   ListImbalanceLedgerParams,
@@ -192,6 +207,9 @@ import type {
   ListStockMovementsParams,
   ListTasksParams,
   ListTemplatesParams,
+  LookupFiftyPctLcaParams,
+  LookupFiftyPctPartnersParams,
+  LookupFiftyPctRevenueParams,
   LookupLcaForDistributionParams,
   LookupOwnershipForDistributionParams,
   LookupRevenueForDistributionParams,
@@ -274,7 +292,11 @@ import type {
   UpdateContributionBody,
   UpdateDistributionPreviewBody,
   UpdateDocumentBody,
+  UpdateEppEntry200,
+  UpdateEppEntryBody,
   UpdateExpenditureBody,
+  UpdateFiftyPctSession200,
+  UpdateFiftyPctSessionBody,
   UpdateLandownerLedgerEntryBody,
   UpdateLcaConfigBody,
   UpdateLcaLedgerEntryBody,
@@ -23450,6 +23472,1293 @@ export const useConfirmDistributionPreview = <
   TContext
 > => {
   return useMutation(getConfirmDistributionPreviewMutationOptions(options));
+};
+
+/**
+ * @summary List 50% revenue model settlement sessions
+ */
+export const getListFiftyPctSessionsUrl = (
+  params?: ListFiftyPctSessionsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/fifty-pct?${stringifiedParams}`
+    : `/api/fifty-pct`;
+};
+
+export const listFiftyPctSessions = async (
+  params?: ListFiftyPctSessionsParams,
+  options?: RequestInit,
+): Promise<FiftyPctSessionPage> => {
+  return customFetch<FiftyPctSessionPage>(getListFiftyPctSessionsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListFiftyPctSessionsQueryKey = (
+  params?: ListFiftyPctSessionsParams,
+) => {
+  return [`/api/fifty-pct`, ...(params ? [params] : [])] as const;
+};
+
+export const getListFiftyPctSessionsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listFiftyPctSessions>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListFiftyPctSessionsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listFiftyPctSessions>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListFiftyPctSessionsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listFiftyPctSessions>>
+  > = ({ signal }) =>
+    listFiftyPctSessions(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listFiftyPctSessions>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListFiftyPctSessionsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listFiftyPctSessions>>
+>;
+export type ListFiftyPctSessionsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List 50% revenue model settlement sessions
+ */
+
+export function useListFiftyPctSessions<
+  TData = Awaited<ReturnType<typeof listFiftyPctSessions>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListFiftyPctSessionsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listFiftyPctSessions>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListFiftyPctSessionsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a new 50% revenue settlement session
+ */
+export const getCreateFiftyPctSessionUrl = () => {
+  return `/api/fifty-pct`;
+};
+
+export const createFiftyPctSession = async (
+  createFiftyPctSessionBody: CreateFiftyPctSessionBody,
+  options?: RequestInit,
+): Promise<CreateFiftyPctSession201> => {
+  return customFetch<CreateFiftyPctSession201>(getCreateFiftyPctSessionUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createFiftyPctSessionBody),
+  });
+};
+
+export const getCreateFiftyPctSessionMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createFiftyPctSession>>,
+    TError,
+    { data: BodyType<CreateFiftyPctSessionBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createFiftyPctSession>>,
+  TError,
+  { data: BodyType<CreateFiftyPctSessionBody> },
+  TContext
+> => {
+  const mutationKey = ["createFiftyPctSession"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createFiftyPctSession>>,
+    { data: BodyType<CreateFiftyPctSessionBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createFiftyPctSession(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateFiftyPctSessionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createFiftyPctSession>>
+>;
+export type CreateFiftyPctSessionMutationBody =
+  BodyType<CreateFiftyPctSessionBody>;
+export type CreateFiftyPctSessionMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create a new 50% revenue settlement session
+ */
+export const useCreateFiftyPctSession = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createFiftyPctSession>>,
+    TError,
+    { data: BodyType<CreateFiftyPctSessionBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createFiftyPctSession>>,
+  TError,
+  { data: BodyType<CreateFiftyPctSessionBody> },
+  TContext
+> => {
+  return useMutation(getCreateFiftyPctSessionMutationOptions(options));
+};
+
+/**
+ * @summary Fetch confirmed sales records for revenue linking
+ */
+export const getLookupFiftyPctRevenueUrl = (
+  params: LookupFiftyPctRevenueParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/fifty-pct/revenue-lookup?${stringifiedParams}`
+    : `/api/fifty-pct/revenue-lookup`;
+};
+
+export const lookupFiftyPctRevenue = async (
+  params: LookupFiftyPctRevenueParams,
+  options?: RequestInit,
+): Promise<FiftyPctRevenueLookupResult> => {
+  return customFetch<FiftyPctRevenueLookupResult>(
+    getLookupFiftyPctRevenueUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getLookupFiftyPctRevenueQueryKey = (
+  params?: LookupFiftyPctRevenueParams,
+) => {
+  return [
+    `/api/fifty-pct/revenue-lookup`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getLookupFiftyPctRevenueQueryOptions = <
+  TData = Awaited<ReturnType<typeof lookupFiftyPctRevenue>>,
+  TError = ErrorType<unknown>,
+>(
+  params: LookupFiftyPctRevenueParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof lookupFiftyPctRevenue>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getLookupFiftyPctRevenueQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof lookupFiftyPctRevenue>>
+  > = ({ signal }) =>
+    lookupFiftyPctRevenue(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof lookupFiftyPctRevenue>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type LookupFiftyPctRevenueQueryResult = NonNullable<
+  Awaited<ReturnType<typeof lookupFiftyPctRevenue>>
+>;
+export type LookupFiftyPctRevenueQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Fetch confirmed sales records for revenue linking
+ */
+
+export function useLookupFiftyPctRevenue<
+  TData = Awaited<ReturnType<typeof lookupFiftyPctRevenue>>,
+  TError = ErrorType<unknown>,
+>(
+  params: LookupFiftyPctRevenueParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof lookupFiftyPctRevenue>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getLookupFiftyPctRevenueQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Fetch LCA outstanding balances for landowner deduction
+ */
+export const getLookupFiftyPctLcaUrl = (params: LookupFiftyPctLcaParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/fifty-pct/lca-lookup?${stringifiedParams}`
+    : `/api/fifty-pct/lca-lookup`;
+};
+
+export const lookupFiftyPctLca = async (
+  params: LookupFiftyPctLcaParams,
+  options?: RequestInit,
+): Promise<FiftyPctLcaLookupResult> => {
+  return customFetch<FiftyPctLcaLookupResult>(getLookupFiftyPctLcaUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getLookupFiftyPctLcaQueryKey = (
+  params?: LookupFiftyPctLcaParams,
+) => {
+  return [`/api/fifty-pct/lca-lookup`, ...(params ? [params] : [])] as const;
+};
+
+export const getLookupFiftyPctLcaQueryOptions = <
+  TData = Awaited<ReturnType<typeof lookupFiftyPctLca>>,
+  TError = ErrorType<unknown>,
+>(
+  params: LookupFiftyPctLcaParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof lookupFiftyPctLca>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getLookupFiftyPctLcaQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof lookupFiftyPctLca>>
+  > = ({ signal }) => lookupFiftyPctLca(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof lookupFiftyPctLca>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type LookupFiftyPctLcaQueryResult = NonNullable<
+  Awaited<ReturnType<typeof lookupFiftyPctLca>>
+>;
+export type LookupFiftyPctLcaQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Fetch LCA outstanding balances for landowner deduction
+ */
+
+export function useLookupFiftyPctLca<
+  TData = Awaited<ReturnType<typeof lookupFiftyPctLca>>,
+  TError = ErrorType<unknown>,
+>(
+  params: LookupFiftyPctLcaParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof lookupFiftyPctLca>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getLookupFiftyPctLcaQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Fetch project partners for EPP participant selection
+ */
+export const getLookupFiftyPctPartnersUrl = (
+  params: LookupFiftyPctPartnersParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/fifty-pct/partners-lookup?${stringifiedParams}`
+    : `/api/fifty-pct/partners-lookup`;
+};
+
+export const lookupFiftyPctPartners = async (
+  params: LookupFiftyPctPartnersParams,
+  options?: RequestInit,
+): Promise<FiftyPctPartnersLookupResult> => {
+  return customFetch<FiftyPctPartnersLookupResult>(
+    getLookupFiftyPctPartnersUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getLookupFiftyPctPartnersQueryKey = (
+  params?: LookupFiftyPctPartnersParams,
+) => {
+  return [
+    `/api/fifty-pct/partners-lookup`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getLookupFiftyPctPartnersQueryOptions = <
+  TData = Awaited<ReturnType<typeof lookupFiftyPctPartners>>,
+  TError = ErrorType<unknown>,
+>(
+  params: LookupFiftyPctPartnersParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof lookupFiftyPctPartners>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getLookupFiftyPctPartnersQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof lookupFiftyPctPartners>>
+  > = ({ signal }) =>
+    lookupFiftyPctPartners(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof lookupFiftyPctPartners>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type LookupFiftyPctPartnersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof lookupFiftyPctPartners>>
+>;
+export type LookupFiftyPctPartnersQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Fetch project partners for EPP participant selection
+ */
+
+export function useLookupFiftyPctPartners<
+  TData = Awaited<ReturnType<typeof lookupFiftyPctPartners>>,
+  TError = ErrorType<unknown>,
+>(
+  params: LookupFiftyPctPartnersParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof lookupFiftyPctPartners>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getLookupFiftyPctPartnersQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get a settlement session with its EPP entries
+ */
+export const getGetFiftyPctSessionUrl = (id: string) => {
+  return `/api/fifty-pct/${id}`;
+};
+
+export const getFiftyPctSession = async (
+  id: string,
+  options?: RequestInit,
+): Promise<FiftyPctSessionDetail> => {
+  return customFetch<FiftyPctSessionDetail>(getGetFiftyPctSessionUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetFiftyPctSessionQueryKey = (id: string) => {
+  return [`/api/fifty-pct/${id}`] as const;
+};
+
+export const getGetFiftyPctSessionQueryOptions = <
+  TData = Awaited<ReturnType<typeof getFiftyPctSession>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getFiftyPctSession>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetFiftyPctSessionQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getFiftyPctSession>>
+  > = ({ signal }) => getFiftyPctSession(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getFiftyPctSession>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetFiftyPctSessionQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getFiftyPctSession>>
+>;
+export type GetFiftyPctSessionQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get a settlement session with its EPP entries
+ */
+
+export function useGetFiftyPctSession<
+  TData = Awaited<ReturnType<typeof getFiftyPctSession>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getFiftyPctSession>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetFiftyPctSessionQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Update a draft settlement session
+ */
+export const getUpdateFiftyPctSessionUrl = (id: string) => {
+  return `/api/fifty-pct/${id}`;
+};
+
+export const updateFiftyPctSession = async (
+  id: string,
+  updateFiftyPctSessionBody: UpdateFiftyPctSessionBody,
+  options?: RequestInit,
+): Promise<UpdateFiftyPctSession200> => {
+  return customFetch<UpdateFiftyPctSession200>(
+    getUpdateFiftyPctSessionUrl(id),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(updateFiftyPctSessionBody),
+    },
+  );
+};
+
+export const getUpdateFiftyPctSessionMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateFiftyPctSession>>,
+    TError,
+    { id: string; data: BodyType<UpdateFiftyPctSessionBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateFiftyPctSession>>,
+  TError,
+  { id: string; data: BodyType<UpdateFiftyPctSessionBody> },
+  TContext
+> => {
+  const mutationKey = ["updateFiftyPctSession"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateFiftyPctSession>>,
+    { id: string; data: BodyType<UpdateFiftyPctSessionBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateFiftyPctSession(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateFiftyPctSessionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateFiftyPctSession>>
+>;
+export type UpdateFiftyPctSessionMutationBody =
+  BodyType<UpdateFiftyPctSessionBody>;
+export type UpdateFiftyPctSessionMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update a draft settlement session
+ */
+export const useUpdateFiftyPctSession = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateFiftyPctSession>>,
+    TError,
+    { id: string; data: BodyType<UpdateFiftyPctSessionBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateFiftyPctSession>>,
+  TError,
+  { id: string; data: BodyType<UpdateFiftyPctSessionBody> },
+  TContext
+> => {
+  return useMutation(getUpdateFiftyPctSessionMutationOptions(options));
+};
+
+/**
+ * @summary Archive a settlement session (admin only)
+ */
+export const getArchiveFiftyPctSessionUrl = (id: string) => {
+  return `/api/fifty-pct/${id}`;
+};
+
+export const archiveFiftyPctSession = async (
+  id: string,
+  options?: RequestInit,
+): Promise<ArchiveFiftyPctSession200> => {
+  return customFetch<ArchiveFiftyPctSession200>(
+    getArchiveFiftyPctSessionUrl(id),
+    {
+      ...options,
+      method: "DELETE",
+    },
+  );
+};
+
+export const getArchiveFiftyPctSessionMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof archiveFiftyPctSession>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof archiveFiftyPctSession>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["archiveFiftyPctSession"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof archiveFiftyPctSession>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return archiveFiftyPctSession(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ArchiveFiftyPctSessionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof archiveFiftyPctSession>>
+>;
+
+export type ArchiveFiftyPctSessionMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Archive a settlement session (admin only)
+ */
+export const useArchiveFiftyPctSession = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof archiveFiftyPctSession>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof archiveFiftyPctSession>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getArchiveFiftyPctSessionMutationOptions(options));
+};
+
+/**
+ * @summary Confirm and lock a settlement session
+ */
+export const getConfirmFiftyPctSessionUrl = (id: string) => {
+  return `/api/fifty-pct/${id}/confirm`;
+};
+
+export const confirmFiftyPctSession = async (
+  id: string,
+  options?: RequestInit,
+): Promise<ConfirmFiftyPctSession200> => {
+  return customFetch<ConfirmFiftyPctSession200>(
+    getConfirmFiftyPctSessionUrl(id),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getConfirmFiftyPctSessionMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof confirmFiftyPctSession>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof confirmFiftyPctSession>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["confirmFiftyPctSession"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof confirmFiftyPctSession>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return confirmFiftyPctSession(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ConfirmFiftyPctSessionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof confirmFiftyPctSession>>
+>;
+
+export type ConfirmFiftyPctSessionMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Confirm and lock a settlement session
+ */
+export const useConfirmFiftyPctSession = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof confirmFiftyPctSession>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof confirmFiftyPctSession>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getConfirmFiftyPctSessionMutationOptions(options));
+};
+
+/**
+ * @summary Get full waterfall summary for a session
+ */
+export const getGetFiftyPctSessionSummaryUrl = (id: string) => {
+  return `/api/fifty-pct/${id}/summary`;
+};
+
+export const getFiftyPctSessionSummary = async (
+  id: string,
+  options?: RequestInit,
+): Promise<FiftyPctSessionSummaryResult> => {
+  return customFetch<FiftyPctSessionSummaryResult>(
+    getGetFiftyPctSessionSummaryUrl(id),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetFiftyPctSessionSummaryQueryKey = (id: string) => {
+  return [`/api/fifty-pct/${id}/summary`] as const;
+};
+
+export const getGetFiftyPctSessionSummaryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getFiftyPctSessionSummary>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getFiftyPctSessionSummary>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetFiftyPctSessionSummaryQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getFiftyPctSessionSummary>>
+  > = ({ signal }) =>
+    getFiftyPctSessionSummary(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getFiftyPctSessionSummary>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetFiftyPctSessionSummaryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getFiftyPctSessionSummary>>
+>;
+export type GetFiftyPctSessionSummaryQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get full waterfall summary for a session
+ */
+
+export function useGetFiftyPctSessionSummary<
+  TData = Awaited<ReturnType<typeof getFiftyPctSessionSummary>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getFiftyPctSessionSummary>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetFiftyPctSessionSummaryQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List EPP participant entries for a session
+ */
+export const getListEppEntriesUrl = (id: string) => {
+  return `/api/fifty-pct/${id}/epp`;
+};
+
+export const listEppEntries = async (
+  id: string,
+  options?: RequestInit,
+): Promise<EppEntriesResult> => {
+  return customFetch<EppEntriesResult>(getListEppEntriesUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListEppEntriesQueryKey = (id: string) => {
+  return [`/api/fifty-pct/${id}/epp`] as const;
+};
+
+export const getListEppEntriesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listEppEntries>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listEppEntries>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListEppEntriesQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listEppEntries>>> = ({
+    signal,
+  }) => listEppEntries(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listEppEntries>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListEppEntriesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listEppEntries>>
+>;
+export type ListEppEntriesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List EPP participant entries for a session
+ */
+
+export function useListEppEntries<
+  TData = Awaited<ReturnType<typeof listEppEntries>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listEppEntries>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListEppEntriesQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Add an EPP participant to a session
+ */
+export const getCreateEppEntryUrl = (id: string) => {
+  return `/api/fifty-pct/${id}/epp`;
+};
+
+export const createEppEntry = async (
+  id: string,
+  createEppEntryBody: CreateEppEntryBody,
+  options?: RequestInit,
+): Promise<CreateEppEntry201> => {
+  return customFetch<CreateEppEntry201>(getCreateEppEntryUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createEppEntryBody),
+  });
+};
+
+export const getCreateEppEntryMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createEppEntry>>,
+    TError,
+    { id: string; data: BodyType<CreateEppEntryBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createEppEntry>>,
+  TError,
+  { id: string; data: BodyType<CreateEppEntryBody> },
+  TContext
+> => {
+  const mutationKey = ["createEppEntry"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createEppEntry>>,
+    { id: string; data: BodyType<CreateEppEntryBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return createEppEntry(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateEppEntryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createEppEntry>>
+>;
+export type CreateEppEntryMutationBody = BodyType<CreateEppEntryBody>;
+export type CreateEppEntryMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Add an EPP participant to a session
+ */
+export const useCreateEppEntry = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createEppEntry>>,
+    TError,
+    { id: string; data: BodyType<CreateEppEntryBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createEppEntry>>,
+  TError,
+  { id: string; data: BodyType<CreateEppEntryBody> },
+  TContext
+> => {
+  return useMutation(getCreateEppEntryMutationOptions(options));
+};
+
+/**
+ * @summary Update an EPP participant entry
+ */
+export const getUpdateEppEntryUrl = (id: string, entryId: string) => {
+  return `/api/fifty-pct/${id}/epp/${entryId}`;
+};
+
+export const updateEppEntry = async (
+  id: string,
+  entryId: string,
+  updateEppEntryBody: UpdateEppEntryBody,
+  options?: RequestInit,
+): Promise<UpdateEppEntry200> => {
+  return customFetch<UpdateEppEntry200>(getUpdateEppEntryUrl(id, entryId), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateEppEntryBody),
+  });
+};
+
+export const getUpdateEppEntryMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateEppEntry>>,
+    TError,
+    { id: string; entryId: string; data: BodyType<UpdateEppEntryBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateEppEntry>>,
+  TError,
+  { id: string; entryId: string; data: BodyType<UpdateEppEntryBody> },
+  TContext
+> => {
+  const mutationKey = ["updateEppEntry"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateEppEntry>>,
+    { id: string; entryId: string; data: BodyType<UpdateEppEntryBody> }
+  > = (props) => {
+    const { id, entryId, data } = props ?? {};
+
+    return updateEppEntry(id, entryId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateEppEntryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateEppEntry>>
+>;
+export type UpdateEppEntryMutationBody = BodyType<UpdateEppEntryBody>;
+export type UpdateEppEntryMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update an EPP participant entry
+ */
+export const useUpdateEppEntry = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateEppEntry>>,
+    TError,
+    { id: string; entryId: string; data: BodyType<UpdateEppEntryBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateEppEntry>>,
+  TError,
+  { id: string; entryId: string; data: BodyType<UpdateEppEntryBody> },
+  TContext
+> => {
+  return useMutation(getUpdateEppEntryMutationOptions(options));
+};
+
+/**
+ * @summary Remove an EPP participant entry
+ */
+export const getDeleteEppEntryUrl = (id: string, entryId: string) => {
+  return `/api/fifty-pct/${id}/epp/${entryId}`;
+};
+
+export const deleteEppEntry = async (
+  id: string,
+  entryId: string,
+  options?: RequestInit,
+): Promise<DeleteEppEntry200> => {
+  return customFetch<DeleteEppEntry200>(getDeleteEppEntryUrl(id, entryId), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteEppEntryMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteEppEntry>>,
+    TError,
+    { id: string; entryId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteEppEntry>>,
+  TError,
+  { id: string; entryId: string },
+  TContext
+> => {
+  const mutationKey = ["deleteEppEntry"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteEppEntry>>,
+    { id: string; entryId: string }
+  > = (props) => {
+    const { id, entryId } = props ?? {};
+
+    return deleteEppEntry(id, entryId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteEppEntryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteEppEntry>>
+>;
+
+export type DeleteEppEntryMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Remove an EPP participant entry
+ */
+export const useDeleteEppEntry = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteEppEntry>>,
+    TError,
+    { id: string; entryId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteEppEntry>>,
+  TError,
+  { id: string; entryId: string },
+  TContext
+> => {
+  return useMutation(getDeleteEppEntryMutationOptions(options));
 };
 
 /**

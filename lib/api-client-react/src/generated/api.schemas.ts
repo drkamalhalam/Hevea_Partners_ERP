@@ -4701,6 +4701,254 @@ export interface SuccessResponse {
   success: boolean;
 }
 
+export type FiftyPctSessionRevenueSource =
+  (typeof FiftyPctSessionRevenueSource)[keyof typeof FiftyPctSessionRevenueSource];
+
+export const FiftyPctSessionRevenueSource = {
+  sales_records: "sales_records",
+  manual: "manual",
+} as const;
+
+export type FiftyPctSessionLcaSource =
+  (typeof FiftyPctSessionLcaSource)[keyof typeof FiftyPctSessionLcaSource];
+
+export const FiftyPctSessionLcaSource = {
+  manual: "manual",
+  ledger: "ledger",
+} as const;
+
+export type FiftyPctSessionStatus =
+  (typeof FiftyPctSessionStatus)[keyof typeof FiftyPctSessionStatus];
+
+export const FiftyPctSessionStatus = {
+  draft: "draft",
+  confirmed: "confirmed",
+  archived: "archived",
+} as const;
+
+export interface FiftyPctSession {
+  id: string;
+  projectId: string;
+  projectName?: string | null;
+  periodLabel: string;
+  periodStart?: string | null;
+  periodEnd?: string | null;
+  periodYear?: number | null;
+  grossRevenue: number;
+  revenueSource: FiftyPctSessionRevenueSource;
+  linkedSaleIds?: string[];
+  landownerSplit: number;
+  participantPoolSplit: number;
+  operationalCost: number;
+  lcaAmount: number;
+  lcaSource: FiftyPctSessionLcaSource;
+  landownerNet: number;
+  eppTotalAllocated: number;
+  eppRemainder: number;
+  status: FiftyPctSessionStatus;
+  notes?: string | null;
+  calculatedByName?: string | null;
+  confirmedAt?: string | null;
+  confirmedByName?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type EppEntryContributionType =
+  (typeof EppEntryContributionType)[keyof typeof EppEntryContributionType];
+
+export const EppEntryContributionType = {
+  economic_only: "economic_only",
+  landowner_additional: "landowner_additional",
+  external: "external",
+} as const;
+
+export interface EppEntry {
+  id: string;
+  sessionId: string;
+  projectId: string;
+  participantId?: string | null;
+  participantKey: string;
+  participantName: string;
+  participationPct: number;
+  allocatedAmount: number;
+  contributionType: EppEntryContributionType;
+  isLandownerAdditional: boolean;
+  notes?: string | null;
+  createdAt: string;
+}
+
+export type FiftyPctSessionDetail = FiftyPctSession & {
+  eppEntries?: EppEntry[];
+};
+
+export interface FiftyPctSessionPage {
+  sessions: FiftyPctSession[];
+  total: number;
+}
+
+export interface EppEntriesResult {
+  entries: EppEntry[];
+  totalPct: number;
+  totalAllocated: number;
+}
+
+export type CreateFiftyPctSessionBodyRevenueSource =
+  (typeof CreateFiftyPctSessionBodyRevenueSource)[keyof typeof CreateFiftyPctSessionBodyRevenueSource];
+
+export const CreateFiftyPctSessionBodyRevenueSource = {
+  sales_records: "sales_records",
+  manual: "manual",
+} as const;
+
+export type CreateFiftyPctSessionBodyLcaSource =
+  (typeof CreateFiftyPctSessionBodyLcaSource)[keyof typeof CreateFiftyPctSessionBodyLcaSource];
+
+export const CreateFiftyPctSessionBodyLcaSource = {
+  manual: "manual",
+  ledger: "ledger",
+} as const;
+
+export interface CreateFiftyPctSessionBody {
+  projectId: string;
+  periodLabel: string;
+  periodStart?: string;
+  periodEnd?: string;
+  periodYear?: number;
+  grossRevenue: number;
+  revenueSource?: CreateFiftyPctSessionBodyRevenueSource;
+  linkedSaleIds?: string[];
+  operationalCost?: number;
+  lcaAmount?: number;
+  lcaSource?: CreateFiftyPctSessionBodyLcaSource;
+  notes?: string;
+}
+
+export type UpdateFiftyPctSessionBodyRevenueSource =
+  (typeof UpdateFiftyPctSessionBodyRevenueSource)[keyof typeof UpdateFiftyPctSessionBodyRevenueSource];
+
+export const UpdateFiftyPctSessionBodyRevenueSource = {
+  sales_records: "sales_records",
+  manual: "manual",
+} as const;
+
+export type UpdateFiftyPctSessionBodyLcaSource =
+  (typeof UpdateFiftyPctSessionBodyLcaSource)[keyof typeof UpdateFiftyPctSessionBodyLcaSource];
+
+export const UpdateFiftyPctSessionBodyLcaSource = {
+  manual: "manual",
+  ledger: "ledger",
+} as const;
+
+export interface UpdateFiftyPctSessionBody {
+  periodLabel?: string;
+  periodStart?: string;
+  periodEnd?: string;
+  periodYear?: number;
+  grossRevenue?: number;
+  revenueSource?: UpdateFiftyPctSessionBodyRevenueSource;
+  linkedSaleIds?: string[];
+  operationalCost?: number;
+  lcaAmount?: number;
+  lcaSource?: UpdateFiftyPctSessionBodyLcaSource;
+  notes?: string;
+}
+
+export type CreateEppEntryBodyContributionType =
+  (typeof CreateEppEntryBodyContributionType)[keyof typeof CreateEppEntryBodyContributionType];
+
+export const CreateEppEntryBodyContributionType = {
+  economic_only: "economic_only",
+  landowner_additional: "landowner_additional",
+  external: "external",
+} as const;
+
+export interface CreateEppEntryBody {
+  participantId?: string;
+  participantKey: string;
+  participantName: string;
+  participationPct: number;
+  contributionType?: CreateEppEntryBodyContributionType;
+  isLandownerAdditional?: boolean;
+  notes?: string;
+}
+
+export type UpdateEppEntryBodyContributionType =
+  (typeof UpdateEppEntryBodyContributionType)[keyof typeof UpdateEppEntryBodyContributionType];
+
+export const UpdateEppEntryBodyContributionType = {
+  economic_only: "economic_only",
+  landowner_additional: "landowner_additional",
+  external: "external",
+} as const;
+
+export interface UpdateEppEntryBody {
+  participantKey?: string;
+  participantName?: string;
+  participationPct?: number;
+  contributionType?: UpdateEppEntryBodyContributionType;
+  isLandownerAdditional?: boolean;
+  notes?: string;
+}
+
+export interface FiftyPctSummaryLandownerSide {
+  gross: number;
+  operationalCost: number;
+  lcaAmount: number;
+  net: number;
+}
+
+export interface FiftyPctSummaryEpp {
+  gross: number;
+  totalPct: number;
+  totalAllocated: number;
+  remainder: number;
+  entries: EppEntry[];
+}
+
+export interface FiftyPctSummary {
+  grossRevenue: number;
+  landownerSide: FiftyPctSummaryLandownerSide;
+  economicParticipantPool: FiftyPctSummaryEpp;
+  warnings: string[];
+}
+
+export interface FiftyPctSessionSummaryResult {
+  session: FiftyPctSession;
+  eppEntries: EppEntry[];
+  summary: FiftyPctSummary;
+}
+
+export type FiftyPctRevenueLookupResultSalesItem = {
+  id: string;
+  saleNumber: string;
+  saleDate: string;
+  buyerName: string;
+  grossRevenue: number;
+};
+
+export interface FiftyPctRevenueLookupResult {
+  sales: FiftyPctRevenueLookupResultSalesItem[];
+  totalGrossRevenue: number;
+}
+
+export type FiftyPctLcaLookupResultEntriesItem = { [key: string]: unknown };
+
+export interface FiftyPctLcaLookupResult {
+  entries: FiftyPctLcaLookupResultEntriesItem[];
+  totalBalance: number;
+}
+
+export type FiftyPctPartnersLookupResultPartnersItem = {
+  id: string;
+  name: string;
+  phone?: string | null;
+};
+
+export interface FiftyPctPartnersLookupResult {
+  partners: FiftyPctPartnersLookupResultPartnersItem[];
+}
+
 export type GetUserActivityParams = {
   limit?: number;
 };
@@ -5409,6 +5657,62 @@ export type LookupOwnershipForDistributionParams = {
 };
 
 export type ArchiveDistributionPreview200 = {
+  ok?: boolean;
+};
+
+export type ListFiftyPctSessionsParams = {
+  projectId?: string;
+  status?: ListFiftyPctSessionsStatus;
+};
+
+export type ListFiftyPctSessionsStatus =
+  (typeof ListFiftyPctSessionsStatus)[keyof typeof ListFiftyPctSessionsStatus];
+
+export const ListFiftyPctSessionsStatus = {
+  draft: "draft",
+  confirmed: "confirmed",
+  archived: "archived",
+} as const;
+
+export type CreateFiftyPctSession201 = {
+  session?: FiftyPctSession;
+};
+
+export type LookupFiftyPctRevenueParams = {
+  projectId: string;
+  from?: string;
+  to?: string;
+};
+
+export type LookupFiftyPctLcaParams = {
+  projectId: string;
+};
+
+export type LookupFiftyPctPartnersParams = {
+  projectId: string;
+};
+
+export type UpdateFiftyPctSession200 = {
+  session?: FiftyPctSession;
+};
+
+export type ArchiveFiftyPctSession200 = {
+  ok?: boolean;
+};
+
+export type ConfirmFiftyPctSession200 = {
+  session?: FiftyPctSession;
+};
+
+export type CreateEppEntry201 = {
+  entry?: EppEntry;
+};
+
+export type UpdateEppEntry200 = {
+  entry?: EppEntry;
+};
+
+export type DeleteEppEntry200 = {
   ok?: boolean;
 };
 

@@ -329,6 +329,12 @@ const navGroups: NavGroup[] = [
     label: "Settlement",
     items: [
       {
+        name: "50% Revenue Settlement",
+        href: "/fifty-pct-settlement",
+        icon: PieChart,
+        roles: ["admin", "developer"] as UserRole[],
+      },
+      {
         name: "Distribution Workflow",
         href: "/distribution-workflow",
         icon: Layers,

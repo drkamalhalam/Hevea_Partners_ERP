@@ -9277,6 +9277,487 @@ export const ConfirmDistributionPreviewResponse = zod.object({
 });
 
 /**
+ * @summary List 50% revenue model settlement sessions
+ */
+export const ListFiftyPctSessionsQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+  status: zod.enum(["draft", "confirmed", "archived"]).optional(),
+});
+
+export const ListFiftyPctSessionsResponse = zod.object({
+  sessions: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      projectId: zod.string().uuid(),
+      projectName: zod.string().nullish(),
+      periodLabel: zod.string(),
+      periodStart: zod.string().nullish(),
+      periodEnd: zod.string().nullish(),
+      periodYear: zod.number().nullish(),
+      grossRevenue: zod.number(),
+      revenueSource: zod.enum(["sales_records", "manual"]),
+      linkedSaleIds: zod.array(zod.string().uuid()).optional(),
+      landownerSplit: zod.number(),
+      participantPoolSplit: zod.number(),
+      operationalCost: zod.number(),
+      lcaAmount: zod.number(),
+      lcaSource: zod.enum(["manual", "ledger"]),
+      landownerNet: zod.number(),
+      eppTotalAllocated: zod.number(),
+      eppRemainder: zod.number(),
+      status: zod.enum(["draft", "confirmed", "archived"]),
+      notes: zod.string().nullish(),
+      calculatedByName: zod.string().nullish(),
+      confirmedAt: zod.coerce.date().nullish(),
+      confirmedByName: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    }),
+  ),
+  total: zod.number(),
+});
+
+/**
+ * @summary Create a new 50% revenue settlement session
+ */
+export const createFiftyPctSessionBodyOperationalCostDefault = 0;
+export const createFiftyPctSessionBodyLcaAmountDefault = 0;
+export const createFiftyPctSessionBodyLcaSourceDefault = `manual`;
+
+export const CreateFiftyPctSessionBody = zod.object({
+  projectId: zod.string().uuid(),
+  periodLabel: zod.string(),
+  periodStart: zod.string().optional(),
+  periodEnd: zod.string().optional(),
+  periodYear: zod.number().optional(),
+  grossRevenue: zod.number(),
+  revenueSource: zod.enum(["sales_records", "manual"]).optional(),
+  linkedSaleIds: zod.array(zod.string().uuid()).optional(),
+  operationalCost: zod
+    .number()
+    .default(createFiftyPctSessionBodyOperationalCostDefault),
+  lcaAmount: zod.number().default(createFiftyPctSessionBodyLcaAmountDefault),
+  lcaSource: zod
+    .enum(["manual", "ledger"])
+    .default(createFiftyPctSessionBodyLcaSourceDefault),
+  notes: zod.string().optional(),
+});
+
+/**
+ * @summary Fetch confirmed sales records for revenue linking
+ */
+export const LookupFiftyPctRevenueQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid(),
+  from: zod.coerce.string().optional(),
+  to: zod.coerce.string().optional(),
+});
+
+export const LookupFiftyPctRevenueResponse = zod.object({
+  sales: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      saleNumber: zod.string(),
+      saleDate: zod.string(),
+      buyerName: zod.string(),
+      grossRevenue: zod.number(),
+    }),
+  ),
+  totalGrossRevenue: zod.number(),
+});
+
+/**
+ * @summary Fetch LCA outstanding balances for landowner deduction
+ */
+export const LookupFiftyPctLcaQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid(),
+});
+
+export const LookupFiftyPctLcaResponse = zod.object({
+  entries: zod.array(zod.object({}).passthrough()),
+  totalBalance: zod.number(),
+});
+
+/**
+ * @summary Fetch project partners for EPP participant selection
+ */
+export const LookupFiftyPctPartnersQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid(),
+});
+
+export const LookupFiftyPctPartnersResponse = zod.object({
+  partners: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      name: zod.string(),
+      phone: zod.string().nullish(),
+    }),
+  ),
+});
+
+/**
+ * @summary Get a settlement session with its EPP entries
+ */
+export const GetFiftyPctSessionParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const GetFiftyPctSessionResponse = zod
+  .object({
+    id: zod.string().uuid(),
+    projectId: zod.string().uuid(),
+    projectName: zod.string().nullish(),
+    periodLabel: zod.string(),
+    periodStart: zod.string().nullish(),
+    periodEnd: zod.string().nullish(),
+    periodYear: zod.number().nullish(),
+    grossRevenue: zod.number(),
+    revenueSource: zod.enum(["sales_records", "manual"]),
+    linkedSaleIds: zod.array(zod.string().uuid()).optional(),
+    landownerSplit: zod.number(),
+    participantPoolSplit: zod.number(),
+    operationalCost: zod.number(),
+    lcaAmount: zod.number(),
+    lcaSource: zod.enum(["manual", "ledger"]),
+    landownerNet: zod.number(),
+    eppTotalAllocated: zod.number(),
+    eppRemainder: zod.number(),
+    status: zod.enum(["draft", "confirmed", "archived"]),
+    notes: zod.string().nullish(),
+    calculatedByName: zod.string().nullish(),
+    confirmedAt: zod.coerce.date().nullish(),
+    confirmedByName: zod.string().nullish(),
+    createdAt: zod.coerce.date(),
+    updatedAt: zod.coerce.date(),
+  })
+  .and(
+    zod.object({
+      eppEntries: zod
+        .array(
+          zod.object({
+            id: zod.string().uuid(),
+            sessionId: zod.string().uuid(),
+            projectId: zod.string().uuid(),
+            participantId: zod.string().uuid().nullish(),
+            participantKey: zod.string(),
+            participantName: zod.string(),
+            participationPct: zod.number(),
+            allocatedAmount: zod.number(),
+            contributionType: zod.enum([
+              "economic_only",
+              "landowner_additional",
+              "external",
+            ]),
+            isLandownerAdditional: zod.boolean(),
+            notes: zod.string().nullish(),
+            createdAt: zod.coerce.date(),
+          }),
+        )
+        .optional(),
+    }),
+  );
+
+/**
+ * @summary Update a draft settlement session
+ */
+export const UpdateFiftyPctSessionParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const UpdateFiftyPctSessionBody = zod.object({
+  periodLabel: zod.string().optional(),
+  periodStart: zod.string().optional(),
+  periodEnd: zod.string().optional(),
+  periodYear: zod.number().optional(),
+  grossRevenue: zod.number().optional(),
+  revenueSource: zod.enum(["sales_records", "manual"]).optional(),
+  linkedSaleIds: zod.array(zod.string().uuid()).optional(),
+  operationalCost: zod.number().optional(),
+  lcaAmount: zod.number().optional(),
+  lcaSource: zod.enum(["manual", "ledger"]).optional(),
+  notes: zod.string().optional(),
+});
+
+export const UpdateFiftyPctSessionResponse = zod.object({
+  session: zod
+    .object({
+      id: zod.string().uuid(),
+      projectId: zod.string().uuid(),
+      projectName: zod.string().nullish(),
+      periodLabel: zod.string(),
+      periodStart: zod.string().nullish(),
+      periodEnd: zod.string().nullish(),
+      periodYear: zod.number().nullish(),
+      grossRevenue: zod.number(),
+      revenueSource: zod.enum(["sales_records", "manual"]),
+      linkedSaleIds: zod.array(zod.string().uuid()).optional(),
+      landownerSplit: zod.number(),
+      participantPoolSplit: zod.number(),
+      operationalCost: zod.number(),
+      lcaAmount: zod.number(),
+      lcaSource: zod.enum(["manual", "ledger"]),
+      landownerNet: zod.number(),
+      eppTotalAllocated: zod.number(),
+      eppRemainder: zod.number(),
+      status: zod.enum(["draft", "confirmed", "archived"]),
+      notes: zod.string().nullish(),
+      calculatedByName: zod.string().nullish(),
+      confirmedAt: zod.coerce.date().nullish(),
+      confirmedByName: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    })
+    .optional(),
+});
+
+/**
+ * @summary Archive a settlement session (admin only)
+ */
+export const ArchiveFiftyPctSessionParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const ArchiveFiftyPctSessionResponse = zod.object({
+  ok: zod.boolean().optional(),
+});
+
+/**
+ * @summary Confirm and lock a settlement session
+ */
+export const ConfirmFiftyPctSessionParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const ConfirmFiftyPctSessionResponse = zod.object({
+  session: zod
+    .object({
+      id: zod.string().uuid(),
+      projectId: zod.string().uuid(),
+      projectName: zod.string().nullish(),
+      periodLabel: zod.string(),
+      periodStart: zod.string().nullish(),
+      periodEnd: zod.string().nullish(),
+      periodYear: zod.number().nullish(),
+      grossRevenue: zod.number(),
+      revenueSource: zod.enum(["sales_records", "manual"]),
+      linkedSaleIds: zod.array(zod.string().uuid()).optional(),
+      landownerSplit: zod.number(),
+      participantPoolSplit: zod.number(),
+      operationalCost: zod.number(),
+      lcaAmount: zod.number(),
+      lcaSource: zod.enum(["manual", "ledger"]),
+      landownerNet: zod.number(),
+      eppTotalAllocated: zod.number(),
+      eppRemainder: zod.number(),
+      status: zod.enum(["draft", "confirmed", "archived"]),
+      notes: zod.string().nullish(),
+      calculatedByName: zod.string().nullish(),
+      confirmedAt: zod.coerce.date().nullish(),
+      confirmedByName: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    })
+    .optional(),
+});
+
+/**
+ * @summary Get full waterfall summary for a session
+ */
+export const GetFiftyPctSessionSummaryParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const GetFiftyPctSessionSummaryResponse = zod.object({
+  session: zod.object({
+    id: zod.string().uuid(),
+    projectId: zod.string().uuid(),
+    projectName: zod.string().nullish(),
+    periodLabel: zod.string(),
+    periodStart: zod.string().nullish(),
+    periodEnd: zod.string().nullish(),
+    periodYear: zod.number().nullish(),
+    grossRevenue: zod.number(),
+    revenueSource: zod.enum(["sales_records", "manual"]),
+    linkedSaleIds: zod.array(zod.string().uuid()).optional(),
+    landownerSplit: zod.number(),
+    participantPoolSplit: zod.number(),
+    operationalCost: zod.number(),
+    lcaAmount: zod.number(),
+    lcaSource: zod.enum(["manual", "ledger"]),
+    landownerNet: zod.number(),
+    eppTotalAllocated: zod.number(),
+    eppRemainder: zod.number(),
+    status: zod.enum(["draft", "confirmed", "archived"]),
+    notes: zod.string().nullish(),
+    calculatedByName: zod.string().nullish(),
+    confirmedAt: zod.coerce.date().nullish(),
+    confirmedByName: zod.string().nullish(),
+    createdAt: zod.coerce.date(),
+    updatedAt: zod.coerce.date(),
+  }),
+  eppEntries: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      sessionId: zod.string().uuid(),
+      projectId: zod.string().uuid(),
+      participantId: zod.string().uuid().nullish(),
+      participantKey: zod.string(),
+      participantName: zod.string(),
+      participationPct: zod.number(),
+      allocatedAmount: zod.number(),
+      contributionType: zod.enum([
+        "economic_only",
+        "landowner_additional",
+        "external",
+      ]),
+      isLandownerAdditional: zod.boolean(),
+      notes: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  summary: zod.object({
+    grossRevenue: zod.number(),
+    landownerSide: zod.object({
+      gross: zod.number(),
+      operationalCost: zod.number(),
+      lcaAmount: zod.number(),
+      net: zod.number(),
+    }),
+    economicParticipantPool: zod.object({
+      gross: zod.number(),
+      totalPct: zod.number(),
+      totalAllocated: zod.number(),
+      remainder: zod.number(),
+      entries: zod.array(
+        zod.object({
+          id: zod.string().uuid(),
+          sessionId: zod.string().uuid(),
+          projectId: zod.string().uuid(),
+          participantId: zod.string().uuid().nullish(),
+          participantKey: zod.string(),
+          participantName: zod.string(),
+          participationPct: zod.number(),
+          allocatedAmount: zod.number(),
+          contributionType: zod.enum([
+            "economic_only",
+            "landowner_additional",
+            "external",
+          ]),
+          isLandownerAdditional: zod.boolean(),
+          notes: zod.string().nullish(),
+          createdAt: zod.coerce.date(),
+        }),
+      ),
+    }),
+    warnings: zod.array(zod.string()),
+  }),
+});
+
+/**
+ * @summary List EPP participant entries for a session
+ */
+export const ListEppEntriesParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const ListEppEntriesResponse = zod.object({
+  entries: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      sessionId: zod.string().uuid(),
+      projectId: zod.string().uuid(),
+      participantId: zod.string().uuid().nullish(),
+      participantKey: zod.string(),
+      participantName: zod.string(),
+      participationPct: zod.number(),
+      allocatedAmount: zod.number(),
+      contributionType: zod.enum([
+        "economic_only",
+        "landowner_additional",
+        "external",
+      ]),
+      isLandownerAdditional: zod.boolean(),
+      notes: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  totalPct: zod.number(),
+  totalAllocated: zod.number(),
+});
+
+/**
+ * @summary Add an EPP participant to a session
+ */
+export const CreateEppEntryParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const CreateEppEntryBody = zod.object({
+  participantId: zod.string().uuid().optional(),
+  participantKey: zod.string(),
+  participantName: zod.string(),
+  participationPct: zod.number(),
+  contributionType: zod
+    .enum(["economic_only", "landowner_additional", "external"])
+    .optional(),
+  isLandownerAdditional: zod.boolean().optional(),
+  notes: zod.string().optional(),
+});
+
+/**
+ * @summary Update an EPP participant entry
+ */
+export const UpdateEppEntryParams = zod.object({
+  id: zod.coerce.string().uuid(),
+  entryId: zod.coerce.string().uuid(),
+});
+
+export const UpdateEppEntryBody = zod.object({
+  participantKey: zod.string().optional(),
+  participantName: zod.string().optional(),
+  participationPct: zod.number().optional(),
+  contributionType: zod
+    .enum(["economic_only", "landowner_additional", "external"])
+    .optional(),
+  isLandownerAdditional: zod.boolean().optional(),
+  notes: zod.string().optional(),
+});
+
+export const UpdateEppEntryResponse = zod.object({
+  entry: zod
+    .object({
+      id: zod.string().uuid(),
+      sessionId: zod.string().uuid(),
+      projectId: zod.string().uuid(),
+      participantId: zod.string().uuid().nullish(),
+      participantKey: zod.string(),
+      participantName: zod.string(),
+      participationPct: zod.number(),
+      allocatedAmount: zod.number(),
+      contributionType: zod.enum([
+        "economic_only",
+        "landowner_additional",
+        "external",
+      ]),
+      isLandownerAdditional: zod.boolean(),
+      notes: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+    })
+    .optional(),
+});
+
+/**
+ * @summary Remove an EPP participant entry
+ */
+export const DeleteEppEntryParams = zod.object({
+  id: zod.coerce.string().uuid(),
+  entryId: zod.coerce.string().uuid(),
+});
+
+export const DeleteEppEntryResponse = zod.object({
+  ok: zod.boolean().optional(),
+});
+
+/**
  * @summary List operational access audit log entries
  */
 export const listOperationalAccessLogsQueryLimitDefault = 100;
