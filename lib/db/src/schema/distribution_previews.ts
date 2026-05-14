@@ -11,6 +11,8 @@ import {
 import { usersTable } from "./users";
 import { projectsTable } from "./projects";
 import { agreementsTable } from "./agreements";
+import { ownershipSnapshotsTable } from "./ownership_snapshots";
+import type { OwnershipSnapshotEntry } from "./ownership_snapshots";
 
 // ── Per-partner share entry (contribution model) ───────────────────────────
 
@@ -108,6 +110,29 @@ export const distributionPreviewsTable = pgTable("distribution_previews", {
 
   // Whether LCA was fetched from the ledger or entered manually
   lcaSource: text("lca_source").notNull().default("manual"),
+
+  // ── Sales linkage ───────────────────────────────────────────────────────
+
+  // UUIDs of confirmed sales_transactions rows included in this preview
+  linkedSaleIds: jsonb("linked_sale_ids")
+    .$type<string[]>()
+    .notNull()
+    .default([]),
+
+  // "sales_records" | "manual"
+  revenueSource: text("revenue_source").notNull().default("manual"),
+
+  // ── Ownership snapshot linkage ──────────────────────────────────────────
+
+  // FK to the specific snapshot used for per-partner breakdown
+  ownershipSnapshotId: uuid("ownership_snapshot_id")
+    .references(() => ownershipSnapshotsTable.id, { onDelete: "set null" }),
+
+  // Inline copy of snapshot entries at calculation time (immutable record)
+  ownershipSnapshotEntries: jsonb("ownership_snapshot_entries")
+    .$type<OwnershipSnapshotEntry[]>()
+    .notNull()
+    .default([]),
 
   notes: text("notes"),
 

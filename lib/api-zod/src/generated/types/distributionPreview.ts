@@ -6,7 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { DistributionPreviewDistributionResult } from "./distributionPreviewDistributionResult";
+import type { DistributionPreviewRevenueSource } from "./distributionPreviewRevenueSource";
 import type { DistributionPreviewStatus } from "./distributionPreviewStatus";
+import type { OwnershipSnapshotLookupEntry } from "./ownershipSnapshotLookupEntry";
 
 export interface DistributionPreview {
   id: string;
@@ -21,6 +23,10 @@ export interface DistributionPreview {
   operationalCost: number;
   lcaAmount: number;
   lcaSource: string;
+  linkedSaleIds?: string[];
+  revenueSource?: DistributionPreviewRevenueSource;
+  ownershipSnapshotId?: string | null;
+  ownershipSnapshotEntries?: OwnershipSnapshotLookupEntry[];
   notes?: string | null;
   distributionResult: DistributionPreviewDistributionResult;
   status: DistributionPreviewStatus;

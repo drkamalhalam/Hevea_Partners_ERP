@@ -6,6 +6,9 @@
  *
  * This module handles SETTLEMENT GUIDANCE only — no actual payments.
  * All calculations are stored as advisory previews that admins can confirm.
+ *
+ * IMPORTANT: All static sub-paths (lca-lookup, revenue-lookup, ownership-lookup)
+ * MUST be registered BEFORE the /:id wildcard handler.
  */
 
 import { Router } from "express";
@@ -20,6 +23,7 @@ import {
   lcaLedgerTable,
   usersTable,
   projectOwnershipFreezesTable,
+  salesTransactionsTable,
 } from "@workspace/db";
 import type { DistributionResult } from "@workspace/db";
 import {
@@ -29,6 +33,10 @@ import {
   isNull,
   count,
   or,
+  inArray,
+  gte,
+  lte,
+  sql,
 } from "drizzle-orm";
 import { getAuth } from "@clerk/express";
 import { requireRole } from "../middlewares/auth";
@@ -60,6 +68,14 @@ const router = Router();
 
 // ── Input schemas ──────────────────────────────────────────────────────────
 
+const OwnershipOverrideEntry = z.object({
+  partnerKey: z.string(),
+  partnerId: z.string().uuid().nullable(),
+  partnerName: z.string(),
+  role: z.enum(["landowner", "developer", "unknown"]).default("unknown"),
+  percentage: z.number().min(0).max(100),
+});
+
 const CreatePreviewSchema = z.object({
   projectId: z.string().uuid(),
   agreementId: z.string().uuid().optional(),
@@ -72,18 +88,14 @@ const CreatePreviewSchema = z.object({
   lcaAmount: z.number().min(0).default(0),
   lcaSource: z.enum(["manual", "ledger"]).default("manual"),
   notes: z.string().optional(),
+  // Sales linkage
+  linkedSaleIds: z.array(z.string().uuid()).default([]),
+  revenueSource: z.enum(["sales_records", "manual"]).default("manual"),
+  // Ownership snapshot linkage
+  ownershipSnapshotId: z.string().uuid().optional(),
+  ownershipSnapshotEntries: z.array(z.any()).default([]),
   // Optional overrides for ownership shares
-  ownershipOverride: z
-    .array(
-      z.object({
-        partnerKey: z.string(),
-        partnerId: z.string().uuid().nullable(),
-        partnerName: z.string(),
-        role: z.enum(["landowner", "developer", "unknown"]).default("unknown"),
-        percentage: z.number().min(0).max(100),
-      }),
-    )
-    .optional(),
+  ownershipOverride: z.array(OwnershipOverrideEntry).optional(),
 });
 
 const PatchPreviewSchema = z.object({
@@ -96,17 +108,11 @@ const PatchPreviewSchema = z.object({
   lcaAmount: z.number().min(0).optional(),
   lcaSource: z.enum(["manual", "ledger"]).optional(),
   notes: z.string().optional(),
-  ownershipOverride: z
-    .array(
-      z.object({
-        partnerKey: z.string(),
-        partnerId: z.string().uuid().nullable(),
-        partnerName: z.string(),
-        role: z.enum(["landowner", "developer", "unknown"]).default("unknown"),
-        percentage: z.number().min(0).max(100),
-      }),
-    )
-    .optional(),
+  linkedSaleIds: z.array(z.string().uuid()).optional(),
+  revenueSource: z.enum(["sales_records", "manual"]).optional(),
+  ownershipSnapshotId: z.string().uuid().optional(),
+  ownershipSnapshotEntries: z.array(z.any()).optional(),
+  ownershipOverride: z.array(OwnershipOverrideEntry).optional(),
 });
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -120,13 +126,14 @@ async function resolveOwnershipShares(
     ownershipShareLandowner: number | null;
     ownershipShareDeveloper: number | null;
   } | null,
+  snapshotId?: string,
   ownershipOverride?: ContributionModelInputs["ownerShares"],
 ): Promise<{
   ownerShares: ContributionModelInputs["ownerShares"];
   ownershipSource: OwnershipSource;
+  snapshotEntries: OwnershipSnapshotEntry[];
   warnings: string[];
 }> {
-
   const warnings: string[] = [];
 
   // 1. Explicit override wins
@@ -134,11 +141,38 @@ async function resolveOwnershipShares(
     return {
       ownerShares: ownershipOverride,
       ownershipSource: "manual",
+      snapshotEntries: [],
       warnings: ["Ownership shares were provided manually (not from the system)."],
     };
   }
 
-  // 2. Try latest ownership snapshot for the project
+  // 2. Specific snapshot requested
+  if (snapshotId) {
+    const [snap] = await db
+      .select()
+      .from(ownershipSnapshotsTable)
+      .where(and(
+        eq(ownershipSnapshotsTable.id, snapshotId),
+        eq(ownershipSnapshotsTable.projectId, projectId),
+      ))
+      .limit(1);
+
+    if (snap && snap.entries.length > 0) {
+      const entries = snap.entries as OwnershipSnapshotEntry[];
+      const shares = sharesFromSnapshot(entries, agreement?.landOwnerId, agreement?.projectDeveloperId);
+      const isFrozen = await db
+        .select({ id: projectOwnershipFreezesTable.id })
+        .from(projectOwnershipFreezesTable)
+        .where(eq(projectOwnershipFreezesTable.projectId, projectId))
+        .limit(1);
+      if (isFrozen.length === 0) {
+        warnings.push("Ownership is not yet frozen. Using a selected snapshot — percentages may change before final settlement.");
+      }
+      return { ownerShares: shares, ownershipSource: "frozen_snapshot", snapshotEntries: entries, warnings };
+    }
+  }
+
+  // 3. Try latest ownership snapshot for the project
   const snapshots = await db
     .select()
     .from(ownershipSnapshotsTable)
@@ -155,42 +189,25 @@ async function resolveOwnershipShares(
   if (snapshots.length > 0 && snapshots[0].entries.length > 0) {
     const snap = snapshots[0];
     const entries = snap.entries as OwnershipSnapshotEntry[];
-    const shares = sharesFromSnapshot(
-      entries,
-      agreement?.landOwnerId,
-      agreement?.projectDeveloperId,
-    );
-    const source: OwnershipSource = isFrozen.length > 0
-      ? "frozen_snapshot"
-      : "live_calculation";
+    const shares = sharesFromSnapshot(entries, agreement?.landOwnerId, agreement?.projectDeveloperId);
+    const source: OwnershipSource = isFrozen.length > 0 ? "frozen_snapshot" : "live_calculation";
     if (isFrozen.length === 0) {
-      warnings.push(
-        "Ownership is not yet frozen. Using the latest ownership snapshot — percentages may change before final settlement.",
-      );
+      warnings.push("Ownership is not yet frozen. Using the latest ownership snapshot — percentages may change before final settlement.");
     }
-    return { ownerShares: shares, ownershipSource: source, warnings };
+    return { ownerShares: shares, ownershipSource: source, snapshotEntries: entries, warnings };
   }
 
-  // 3. Fall back to agreement ownership shares (two-party)
+  // 4. Fall back to agreement ownership shares (two-party)
   if (
     agreement &&
     agreement.ownershipShareLandowner != null &&
     agreement.ownershipShareDeveloper != null
   ) {
-    // Need partner names — fetch from partners table
-    const partnerIds = [
-      agreement.landOwnerId,
-      agreement.projectDeveloperId,
-    ];
+    const partnerIds = [agreement.landOwnerId, agreement.projectDeveloperId];
     const partners = await db
       .select({ id: partnersTable.id, name: partnersTable.name })
       .from(partnersTable)
-      .where(
-        or(
-          eq(partnersTable.id, partnerIds[0]),
-          eq(partnersTable.id, partnerIds[1]),
-        ),
-      );
+      .where(or(eq(partnersTable.id, partnerIds[0]), eq(partnersTable.id, partnerIds[1])));
     const byId = Object.fromEntries(partners.map((p) => [p.id, p.name]));
 
     warnings.push(
@@ -206,6 +223,7 @@ async function resolveOwnershipShares(
         developerPct: agreement.ownershipShareDeveloper,
       }),
       ownershipSource: "agreement_shares",
+      snapshotEntries: [],
       warnings,
     };
   }
@@ -213,11 +231,7 @@ async function resolveOwnershipShares(
   warnings.push(
     "No ownership data found (no snapshot, no agreement shares). Distribution cannot be computed per-partner. Please add verified contributions or set ownership shares on the agreement.",
   );
-  return {
-    ownerShares: [],
-    ownershipSource: "manual",
-    warnings,
-  };
+  return { ownerShares: [], ownershipSource: "manual", snapshotEntries: [], warnings };
 }
 
 async function buildDistributionResult(
@@ -238,39 +252,45 @@ async function buildDistributionResult(
     grossSplitPctLandowner: number;
     grossSplitPctDeveloper: number;
   } | null,
-): Promise<DistributionResult> {
+): Promise<{ result: DistributionResult; snapshotEntries: OwnershipSnapshotEntry[] }> {
   const model = profile?.accountingModel ?? agreement?.revenueModel ?? "contribution";
 
   if (model === "fifty_percent_revenue") {
     const splitPctLandowner = profile?.grossSplitPctLandowner ?? 50;
     const splitPctDeveloper = profile?.grossSplitPctDeveloper ?? 50;
-    return calculateFiftyPercentDistribution({
-      grossRevenue: inputs.grossRevenue,
-      operationalCost: inputs.operationalCost,
-      splitPctLandowner,
-      splitPctDeveloper,
-    });
+    return {
+      result: calculateFiftyPercentDistribution({
+        grossRevenue: inputs.grossRevenue,
+        operationalCost: inputs.operationalCost,
+        splitPctLandowner,
+        splitPctDeveloper,
+      }),
+      snapshotEntries: [],
+    };
   }
 
-  // Contribution model — resolve ownership
-  const { ownerShares, ownershipSource, warnings } = await resolveOwnershipShares(
+  const { ownerShares, ownershipSource, snapshotEntries, warnings } = await resolveOwnershipShares(
     inputs.projectId,
     inputs.agreementId,
     agreement,
+    inputs.ownershipSnapshotId,
     inputs.ownershipOverride,
   );
 
-  return calculateContributionDistribution({
-    grossRevenue: inputs.grossRevenue,
-    operationalCost: inputs.operationalCost,
-    lcaAmount: inputs.lcaAmount,
-    costsChargedBeforeDistribution: profile?.costsChargedBeforeDistribution ?? true,
-    lcaChargedBeforeDistribution: profile?.lcaChargedBeforeDistribution ?? true,
-    lcaApplicable: profile?.lcaApplicable ?? false,
-    ownerShares,
-    ownershipSource,
-    warnings,
-  });
+  return {
+    result: calculateContributionDistribution({
+      grossRevenue: inputs.grossRevenue,
+      operationalCost: inputs.operationalCost,
+      lcaAmount: inputs.lcaAmount,
+      costsChargedBeforeDistribution: profile?.costsChargedBeforeDistribution ?? true,
+      lcaChargedBeforeDistribution: profile?.lcaChargedBeforeDistribution ?? true,
+      lcaApplicable: profile?.lcaApplicable ?? false,
+      ownerShares,
+      ownershipSource,
+      warnings,
+    }),
+    snapshotEntries,
+  };
 }
 
 function formatPreview(p: typeof distributionPreviewsTable.$inferSelect) {
@@ -287,6 +307,10 @@ function formatPreview(p: typeof distributionPreviewsTable.$inferSelect) {
     operationalCost: p.operationalCost,
     lcaAmount: p.lcaAmount,
     lcaSource: p.lcaSource,
+    linkedSaleIds: (p.linkedSaleIds as string[]) ?? [],
+    revenueSource: p.revenueSource,
+    ownershipSnapshotId: p.ownershipSnapshotId,
+    ownershipSnapshotEntries: (p.ownershipSnapshotEntries as OwnershipSnapshotEntry[]) ?? [],
     notes: p.notes,
     distributionResult: p.distributionResult,
     status: p.status,
@@ -298,6 +322,157 @@ function formatPreview(p: typeof distributionPreviewsTable.$inferSelect) {
     updatedAt: p.updatedAt.toISOString(),
   };
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// STATIC LOOKUP ROUTES — must be registered before /:id wildcard
+// ══════════════════════════════════════════════════════════════════════════════
+
+// ── GET /distribution-previews/lca-lookup ─────────────────────────────────
+
+router.get("/lca-lookup", async (req, res) => {
+  const projectId = req.query.projectId as string | undefined;
+  const year = req.query.year ? parseInt(String(req.query.year), 10) : undefined;
+
+  if (!projectId) return res.status(400).json({ error: "projectId is required" });
+  if (!req.canAccessAllProjects && !req.userProjectIds?.includes(projectId)) {
+    return res.status(403).json({ error: "Access denied" });
+  }
+
+  const conditions = [eq(lcaLedgerTable.projectId, projectId)];
+  if (year) conditions.push(eq(lcaLedgerTable.year, year));
+
+  const entries = await db
+    .select({
+      id: lcaLedgerTable.id,
+      year: lcaLedgerTable.year,
+      grossDue: lcaLedgerTable.grossDue,
+      totalDue: lcaLedgerTable.totalDue,
+      amountPaid: lcaLedgerTable.amountPaid,
+      balance: lcaLedgerTable.balance,
+      status: lcaLedgerTable.status,
+    })
+    .from(lcaLedgerTable)
+    .where(and(...conditions))
+    .orderBy(lcaLedgerTable.year);
+
+  const totalBalance = entries.reduce((s, e) => s + e.balance, 0);
+  return res.json({ projectId, entries, totalBalance: Math.round(totalBalance * 100) / 100 });
+});
+
+// ── GET /distribution-previews/revenue-lookup ─────────────────────────────
+// Fetches confirmed sales transactions for a project/period and returns a
+// revenue summary for use as distribution inputs.
+
+router.get("/revenue-lookup", async (req, res) => {
+  const { projectId, from, to } = req.query as Record<string, string>;
+
+  if (!projectId) return res.status(400).json({ error: "projectId is required" });
+  if (!req.canAccessAllProjects && !req.userProjectIds?.includes(projectId)) {
+    return res.status(403).json({ error: "Access denied" });
+  }
+
+  const conditions = [
+    eq(salesTransactionsTable.projectId, projectId),
+    eq(salesTransactionsTable.isActive, true),
+    eq(salesTransactionsTable.status, "confirmed"),
+  ];
+  if (from) conditions.push(gte(salesTransactionsTable.saleDate, from));
+  if (to) conditions.push(lte(salesTransactionsTable.saleDate, to));
+
+  const sales = await db
+    .select({
+      id: salesTransactionsTable.id,
+      saleNumber: salesTransactionsTable.saleNumber,
+      saleDate: salesTransactionsTable.saleDate,
+      buyerName: salesTransactionsTable.buyerName,
+      totalGrossRevenue: salesTransactionsTable.totalGrossRevenue,
+      totalDeductions: salesTransactionsTable.totalDeductions,
+      totalNetRevenue: salesTransactionsTable.totalNetRevenue,
+      confirmedAt: salesTransactionsTable.confirmedAt,
+    })
+    .from(salesTransactionsTable)
+    .where(and(...conditions))
+    .orderBy(desc(salesTransactionsTable.saleDate));
+
+  const totalGross = sales.reduce((s, r) => s + parseFloat(String(r.totalGrossRevenue ?? 0)), 0);
+  const totalDeductions = sales.reduce((s, r) => s + parseFloat(String(r.totalDeductions ?? 0)), 0);
+  const totalNet = sales.reduce((s, r) => s + parseFloat(String(r.totalNetRevenue ?? 0)), 0);
+
+  return res.json({
+    projectId,
+    from: from ?? null,
+    to: to ?? null,
+    saleCount: sales.length,
+    totalGrossRevenue: Math.round(totalGross * 100) / 100,
+    totalDeductions: Math.round(totalDeductions * 100) / 100,
+    totalNetRevenue: Math.round(totalNet * 100) / 100,
+    sales: sales.map((s) => ({
+      id: s.id,
+      saleNumber: s.saleNumber,
+      saleDate: s.saleDate,
+      buyerName: s.buyerName,
+      grossRevenue: parseFloat(String(s.totalGrossRevenue ?? 0)),
+      deductions: parseFloat(String(s.totalDeductions ?? 0)),
+      netRevenue: parseFloat(String(s.totalNetRevenue ?? 0)),
+      confirmedAt: s.confirmedAt?.toISOString() ?? null,
+    })),
+  });
+});
+
+// ── GET /distribution-previews/ownership-lookup ───────────────────────────
+// Fetches available ownership snapshots for a project and the current
+// live ownership data — for use in selecting a snapshot for distribution.
+
+router.get("/ownership-lookup", async (req, res) => {
+  const { projectId } = req.query as Record<string, string>;
+
+  if (!projectId) return res.status(400).json({ error: "projectId is required" });
+  if (!req.canAccessAllProjects && !req.userProjectIds?.includes(projectId)) {
+    return res.status(403).json({ error: "Access denied" });
+  }
+
+  const snapshots = await db
+    .select({
+      id: ownershipSnapshotsTable.id,
+      snapshotType: ownershipSnapshotsTable.snapshotType,
+      lifecycleStatus: ownershipSnapshotsTable.lifecycleStatus,
+      totalRecognizedAmount: ownershipSnapshotsTable.totalRecognizedAmount,
+      entries: ownershipSnapshotsTable.entries,
+      notes: ownershipSnapshotsTable.notes,
+      triggeredByName: ownershipSnapshotsTable.triggeredByName,
+      snapshotAt: ownershipSnapshotsTable.snapshotAt,
+    })
+    .from(ownershipSnapshotsTable)
+    .where(eq(ownershipSnapshotsTable.projectId, projectId))
+    .orderBy(desc(ownershipSnapshotsTable.snapshotAt))
+    .limit(20);
+
+  const isFrozen = await db
+    .select()
+    .from(projectOwnershipFreezesTable)
+    .where(eq(projectOwnershipFreezesTable.projectId, projectId))
+    .limit(1);
+
+  return res.json({
+    projectId,
+    isFrozen: isFrozen.length > 0,
+    frozenAt: isFrozen[0]?.frozenAt?.toISOString() ?? null,
+    snapshots: snapshots.map((s) => ({
+      id: s.id,
+      snapshotType: s.snapshotType,
+      lifecycleStatus: s.lifecycleStatus,
+      totalRecognizedAmount: s.totalRecognizedAmount,
+      entries: s.entries as OwnershipSnapshotEntry[],
+      notes: s.notes,
+      triggeredByName: s.triggeredByName,
+      snapshotAt: s.snapshotAt.toISOString(),
+    })),
+  });
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CRUD ROUTES
+// ══════════════════════════════════════════════════════════════════════════════
 
 // ── POST /distribution-previews ────────────────────────────────────────────
 
@@ -328,9 +503,7 @@ router.post(
           ),
         )
         .limit(1);
-      if (!agr) {
-        return res.status(404).json({ error: "Agreement not found for this project" });
-      }
+      if (!agr) return res.status(404).json({ error: "Agreement not found for this project" });
       agreement = agr;
       accountingModel = agr.revenueModel;
 
@@ -343,19 +516,48 @@ router.post(
       if (prof) accountingModel = prof.accountingModel;
     }
 
-    // Verify project exists + caller can access
-    if (!req.canAccessAllProjects) {
-      const allowed = req.userProjectIds?.includes(inputs.projectId);
-      if (!allowed) {
-        return res.status(403).json({ error: "Access denied to this project" });
-      }
+    // Project access check
+    if (!req.canAccessAllProjects && !req.userProjectIds?.includes(inputs.projectId)) {
+      return res.status(403).json({ error: "Access denied to this project" });
     }
 
-    const distributionResult = await buildDistributionResult(inputs, agreement, profile);
+    // If linked sales provided, verify gross revenue matches (warn but don't block)
+    let resolvedGrossRevenue = inputs.grossRevenue;
+    if (inputs.revenueSource === "sales_records" && inputs.linkedSaleIds.length > 0) {
+      const linkedSales = await db
+        .select({ totalGrossRevenue: salesTransactionsTable.totalGrossRevenue })
+        .from(salesTransactionsTable)
+        .where(
+          and(
+            inArray(salesTransactionsTable.id, inputs.linkedSaleIds),
+            eq(salesTransactionsTable.projectId, inputs.projectId),
+            eq(salesTransactionsTable.isActive, true),
+          ),
+        );
+      const sumFromSales = linkedSales.reduce(
+        (s, r) => s + parseFloat(String(r.totalGrossRevenue ?? 0)),
+        0,
+      );
+      // Use the computed sum from actual sales records
+      resolvedGrossRevenue = Math.round(sumFromSales * 100) / 100;
+    }
+
+    const mergedInputs = { ...inputs, grossRevenue: resolvedGrossRevenue };
+    const { result: distributionResult, snapshotEntries } = await buildDistributionResult(
+      mergedInputs,
+      agreement,
+      profile,
+    );
 
     const { userId: clerkUserId } = getAuth(req);
     const actor = clerkUserId ? await resolveActor(clerkUserId) : null;
     const callerName = actor?.displayName ?? actor?.clerkUserId ?? "System";
+
+    // Determine which snapshot entries to persist
+    const finalSnapshotEntries =
+      inputs.ownershipSnapshotEntries.length > 0
+        ? (inputs.ownershipSnapshotEntries as OwnershipSnapshotEntry[])
+        : snapshotEntries;
 
     const [inserted] = await db
       .insert(distributionPreviewsTable)
@@ -367,10 +569,14 @@ router.post(
         periodStart: inputs.periodStart ?? null,
         periodEnd: inputs.periodEnd ?? null,
         periodYear: inputs.periodYear ?? null,
-        grossRevenue: inputs.grossRevenue,
+        grossRevenue: resolvedGrossRevenue,
         operationalCost: inputs.operationalCost,
         lcaAmount: inputs.lcaAmount,
         lcaSource: inputs.lcaSource,
+        linkedSaleIds: inputs.linkedSaleIds,
+        revenueSource: inputs.revenueSource,
+        ownershipSnapshotId: inputs.ownershipSnapshotId ?? null,
+        ownershipSnapshotEntries: finalSnapshotEntries,
         notes: inputs.notes ?? null,
         distributionResult,
         status: "draft",
@@ -385,50 +591,42 @@ router.post(
 
 // ── GET /distribution-previews ─────────────────────────────────────────────
 
-router.get(
-  "/",
-  async (req, res) => {
-    const projectId = req.query.projectId as string | undefined;
-    const agreementId = req.query.agreementId as string | undefined;
-    const status = req.query.status as string | undefined;
-    const limit = Math.min(parseInt(String(req.query.limit ?? "50"), 10), 200);
-    const offset = parseInt(String(req.query.offset ?? "0"), 10);
+router.get("/", async (req, res) => {
+  const projectId = req.query.projectId as string | undefined;
+  const agreementId = req.query.agreementId as string | undefined;
+  const status = req.query.status as string | undefined;
+  const limit = Math.min(parseInt(String(req.query.limit ?? "50"), 10), 200);
+  const offset = parseInt(String(req.query.offset ?? "0"), 10);
 
-    const conditions = [eq(distributionPreviewsTable.isActive, true)];
+  const conditions = [eq(distributionPreviewsTable.isActive, true)];
 
-    if (projectId) {
-      // Access check
-      if (!req.canAccessAllProjects && !req.userProjectIds?.includes(projectId)) {
-        return res.status(403).json({ error: "Access denied to this project" });
-      }
-      conditions.push(eq(distributionPreviewsTable.projectId, projectId));
-    } else if (!req.canAccessAllProjects) {
-      return res.status(400).json({ error: "projectId is required for this role" });
+  if (projectId) {
+    if (!req.canAccessAllProjects && !req.userProjectIds?.includes(projectId)) {
+      return res.status(403).json({ error: "Access denied to this project" });
     }
+    conditions.push(eq(distributionPreviewsTable.projectId, projectId));
+  } else if (!req.canAccessAllProjects) {
+    return res.status(400).json({ error: "projectId is required for this role" });
+  }
 
-    if (agreementId) {
-      conditions.push(eq(distributionPreviewsTable.agreementId, agreementId));
-    }
-    if (status) {
-      conditions.push(eq(distributionPreviewsTable.status, status));
-    }
+  if (agreementId) conditions.push(eq(distributionPreviewsTable.agreementId, agreementId));
+  if (status) conditions.push(eq(distributionPreviewsTable.status, status));
 
-    const rows = await db
-      .select()
-      .from(distributionPreviewsTable)
-      .where(and(...conditions))
-      .orderBy(desc(distributionPreviewsTable.createdAt))
-      .limit(limit)
-      .offset(offset);
+  const rows = await db
+    .select()
+    .from(distributionPreviewsTable)
+    .where(and(...conditions))
+    .orderBy(desc(distributionPreviewsTable.createdAt))
+    .limit(limit)
+    .offset(offset);
 
-    const [{ total }] = await db
-      .select({ total: count() })
-      .from(distributionPreviewsTable)
-      .where(and(...conditions));
+  const [{ total }] = await db
+    .select({ total: count() })
+    .from(distributionPreviewsTable)
+    .where(and(...conditions));
 
-    return res.json({ previews: rows.map(formatPreview), total });
-  },
-);
+  return res.json({ previews: rows.map(formatPreview), total });
+});
 
 // ── GET /distribution-previews/:id ────────────────────────────────────────
 
@@ -438,24 +636,14 @@ router.get("/:id", async (req, res) => {
   const [preview] = await db
     .select()
     .from(distributionPreviewsTable)
-    .where(
-      and(
-        eq(distributionPreviewsTable.id, id),
-        eq(distributionPreviewsTable.isActive, true),
-      ),
-    )
+    .where(and(eq(distributionPreviewsTable.id, id), eq(distributionPreviewsTable.isActive, true)))
     .limit(1);
 
   if (!preview) return res.status(404).json({ error: "Preview not found" });
-
-  if (
-    !req.canAccessAllProjects &&
-    !req.userProjectIds?.includes(preview.projectId)
-  ) {
+  if (!req.canAccessAllProjects && !req.userProjectIds?.includes(preview.projectId)) {
     return res.status(403).json({ error: "Access denied" });
   }
 
-  // Fetch linked project + agreement for context
   const [project] = await db
     .select({ name: projectsTable.name, lifecycleStatus: projectsTable.lifecycleStatus })
     .from(projectsTable)
@@ -465,16 +653,32 @@ router.get("/:id", async (req, res) => {
   let agreementContext = null;
   if (preview.agreementId) {
     const [agr] = await db
-      .select({
-        status: agreementsTable.status,
-        revenueModel: agreementsTable.revenueModel,
-        landArea: agreementsTable.landArea,
-        termYears: agreementsTable.termYears,
-      })
+      .select({ status: agreementsTable.status, revenueModel: agreementsTable.revenueModel })
       .from(agreementsTable)
       .where(eq(agreementsTable.id, preview.agreementId))
       .limit(1);
     agreementContext = agr ?? null;
+  }
+
+  // Fetch linked sale summaries
+  let linkedSales: { id: string; saleNumber: string; saleDate: string; grossRevenue: number }[] = [];
+  const saleIds = (preview.linkedSaleIds as string[]) ?? [];
+  if (saleIds.length > 0) {
+    const sales = await db
+      .select({
+        id: salesTransactionsTable.id,
+        saleNumber: salesTransactionsTable.saleNumber,
+        saleDate: salesTransactionsTable.saleDate,
+        totalGrossRevenue: salesTransactionsTable.totalGrossRevenue,
+      })
+      .from(salesTransactionsTable)
+      .where(inArray(salesTransactionsTable.id, saleIds));
+    linkedSales = sales.map((s) => ({
+      id: s.id,
+      saleNumber: s.saleNumber,
+      saleDate: s.saleDate,
+      grossRevenue: parseFloat(String(s.totalGrossRevenue ?? 0)),
+    }));
   }
 
   return res.json({
@@ -483,6 +687,7 @@ router.get("/:id", async (req, res) => {
     lifecycleStatus: project?.lifecycleStatus ?? null,
     agreementStatus: agreementContext?.status ?? null,
     agreementRevenueModel: agreementContext?.revenueModel ?? null,
+    linkedSales,
   });
 });
 
@@ -497,12 +702,7 @@ router.patch(
     const [existing] = await db
       .select()
       .from(distributionPreviewsTable)
-      .where(
-        and(
-          eq(distributionPreviewsTable.id, id),
-          eq(distributionPreviewsTable.isActive, true),
-        ),
-      )
+      .where(and(eq(distributionPreviewsTable.id, id), eq(distributionPreviewsTable.isActive, true)))
       .limit(1);
 
     if (!existing) return res.status(404).json({ error: "Preview not found" });
@@ -519,7 +719,6 @@ router.patch(
     }
     const patch = parsed.data;
 
-    // Merge inputs with existing for recalculation
     const merged: z.infer<typeof CreatePreviewSchema> = {
       projectId: existing.projectId,
       agreementId: existing.agreementId ?? undefined,
@@ -532,6 +731,10 @@ router.patch(
       lcaAmount: patch.lcaAmount ?? existing.lcaAmount,
       lcaSource: (patch.lcaSource ?? existing.lcaSource) as "manual" | "ledger",
       notes: patch.notes ?? existing.notes ?? undefined,
+      linkedSaleIds: patch.linkedSaleIds ?? (existing.linkedSaleIds as string[]) ?? [],
+      revenueSource: (patch.revenueSource ?? existing.revenueSource) as "sales_records" | "manual",
+      ownershipSnapshotId: patch.ownershipSnapshotId ?? existing.ownershipSnapshotId ?? undefined,
+      ownershipSnapshotEntries: patch.ownershipSnapshotEntries ?? (existing.ownershipSnapshotEntries as OwnershipSnapshotEntry[]) ?? [],
       ownershipOverride: patch.ownershipOverride,
     };
 
@@ -556,7 +759,16 @@ router.patch(
       if (prof) accountingModel = prof.accountingModel;
     }
 
-    const distributionResult = await buildDistributionResult(merged, agreement, profile);
+    const { result: distributionResult, snapshotEntries } = await buildDistributionResult(
+      merged,
+      agreement,
+      profile,
+    );
+
+    const finalSnapshotEntries =
+      merged.ownershipSnapshotEntries.length > 0
+        ? (merged.ownershipSnapshotEntries as OwnershipSnapshotEntry[])
+        : snapshotEntries;
 
     const [updated] = await db
       .update(distributionPreviewsTable)
@@ -569,6 +781,10 @@ router.patch(
         operationalCost: merged.operationalCost,
         lcaAmount: merged.lcaAmount,
         lcaSource: merged.lcaSource,
+        linkedSaleIds: merged.linkedSaleIds,
+        revenueSource: merged.revenueSource,
+        ownershipSnapshotId: merged.ownershipSnapshotId ?? null,
+        ownershipSnapshotEntries: finalSnapshotEntries,
         notes: merged.notes ?? null,
         accountingModel,
         distributionResult,
@@ -592,18 +808,11 @@ router.post(
     const [existing] = await db
       .select()
       .from(distributionPreviewsTable)
-      .where(
-        and(
-          eq(distributionPreviewsTable.id, id),
-          eq(distributionPreviewsTable.isActive, true),
-        ),
-      )
+      .where(and(eq(distributionPreviewsTable.id, id), eq(distributionPreviewsTable.isActive, true)))
       .limit(1);
 
     if (!existing) return res.status(404).json({ error: "Preview not found" });
-    if (existing.status === "confirmed") {
-      return res.status(409).json({ error: "Already confirmed" });
-    }
+    if (existing.status === "confirmed") return res.status(409).json({ error: "Already confirmed" });
 
     const { userId: clerkUserId2 } = getAuth(req);
     const actor2 = clerkUserId2 ? await resolveActor(clerkUserId2) : null;
@@ -636,12 +845,7 @@ router.delete(
     const [existing] = await db
       .select({ id: distributionPreviewsTable.id, projectId: distributionPreviewsTable.projectId })
       .from(distributionPreviewsTable)
-      .where(
-        and(
-          eq(distributionPreviewsTable.id, id),
-          eq(distributionPreviewsTable.isActive, true),
-        ),
-      )
+      .where(and(eq(distributionPreviewsTable.id, id), eq(distributionPreviewsTable.isActive, true)))
       .limit(1);
 
     if (!existing) return res.status(404).json({ error: "Preview not found" });
@@ -654,37 +858,5 @@ router.delete(
     return res.json({ ok: true });
   },
 );
-
-// ── GET /distribution-previews/lca-lookup — fetch LCA due for a period ─────
-
-router.get("/lca-lookup", async (req, res) => {
-  const projectId = req.query.projectId as string | undefined;
-  const year = req.query.year ? parseInt(String(req.query.year), 10) : undefined;
-
-  if (!projectId) return res.status(400).json({ error: "projectId is required" });
-  if (!req.canAccessAllProjects && !req.userProjectIds?.includes(projectId)) {
-    return res.status(403).json({ error: "Access denied" });
-  }
-
-  const conditions = [eq(lcaLedgerTable.projectId, projectId)];
-  if (year) conditions.push(eq(lcaLedgerTable.year, year));
-
-  const entries = await db
-    .select({
-      id: lcaLedgerTable.id,
-      year: lcaLedgerTable.year,
-      grossDue: lcaLedgerTable.grossDue,
-      totalDue: lcaLedgerTable.totalDue,
-      amountPaid: lcaLedgerTable.amountPaid,
-      balance: lcaLedgerTable.balance,
-      status: lcaLedgerTable.status,
-    })
-    .from(lcaLedgerTable)
-    .where(and(...conditions))
-    .orderBy(lcaLedgerTable.year);
-
-  const totalBalance = entries.reduce((s, e) => s + e.balance, 0);
-  return res.json({ projectId, entries, totalBalance: Math.round(totalBalance * 100) / 100 });
-});
 
 export default router;

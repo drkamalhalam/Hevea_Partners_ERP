@@ -60,6 +60,7 @@ import OperationalTasks from "./pages/OperationalTasks";
 import OperationalAlerts from "./pages/OperationalAlerts";
 import OperationalAccessLog from "./pages/OperationalAccessLog";
 import DistributionPreview from "./pages/DistributionPreview";
+import DistributionWorkflow from "./pages/DistributionWorkflow";
 import Distribution from "./pages/Distribution";
 
 // Pages — Analytics
@@ -275,6 +276,7 @@ function AppRoutes() {
               <Route path="/operational-alerts"><ProtectedRoute component={OperationalAlerts} /></Route>
               <Route path="/operational-access-log"><ProtectedRoute component={OperationalAccessLog} /></Route>
               <Route path="/distribution-preview"><ProtectedRoute component={DistributionPreview} /></Route>
+              <Route path="/distribution-workflow"><ProtectedRoute component={DistributionWorkflow} /></Route>
               <Route path="/sales"><ProtectedRoute component={Sales} /></Route>
               <Route path="/distribution"><ProtectedRoute component={Distribution} /></Route>
 

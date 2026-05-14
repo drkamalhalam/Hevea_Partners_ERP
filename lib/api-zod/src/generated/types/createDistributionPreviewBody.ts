@@ -6,7 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { CreateDistributionPreviewBodyLcaSource } from "./createDistributionPreviewBodyLcaSource";
+import type { CreateDistributionPreviewBodyRevenueSource } from "./createDistributionPreviewBodyRevenueSource";
 import type { OwnershipOverrideEntry } from "./ownershipOverrideEntry";
+import type { OwnershipSnapshotLookupEntry } from "./ownershipSnapshotLookupEntry";
 
 export interface CreateDistributionPreviewBody {
   projectId: string;
@@ -20,5 +22,9 @@ export interface CreateDistributionPreviewBody {
   lcaAmount?: number;
   lcaSource?: CreateDistributionPreviewBodyLcaSource;
   notes?: string;
+  revenueSource?: CreateDistributionPreviewBodyRevenueSource;
+  linkedSaleIds?: string[];
+  ownershipSnapshotId?: string;
+  ownershipSnapshotEntries?: OwnershipSnapshotLookupEntry[];
   ownershipOverride?: OwnershipOverrideEntry[];
 }

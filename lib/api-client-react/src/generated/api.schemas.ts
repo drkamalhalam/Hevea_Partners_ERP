@@ -4500,6 +4500,14 @@ export interface FiftyPercentDistributionResult {
   warnings: string[];
 }
 
+export type DistributionPreviewRevenueSource =
+  (typeof DistributionPreviewRevenueSource)[keyof typeof DistributionPreviewRevenueSource];
+
+export const DistributionPreviewRevenueSource = {
+  sales_records: "sales_records",
+  manual: "manual",
+} as const;
+
 export type DistributionPreviewDistributionResult = { [key: string]: unknown };
 
 export type DistributionPreviewStatus =
@@ -4509,6 +4517,16 @@ export const DistributionPreviewStatus = {
   draft: "draft",
   confirmed: "confirmed",
 } as const;
+
+export interface OwnershipSnapshotLookupEntry {
+  partnerKey: string;
+  partnerId?: string | null;
+  partnerName: string;
+  landAmount?: number;
+  economicAmount?: number;
+  totalAmount: number;
+  percentage: number;
+}
 
 export interface DistributionPreview {
   id: string;
@@ -4523,6 +4541,10 @@ export interface DistributionPreview {
   operationalCost: number;
   lcaAmount: number;
   lcaSource: string;
+  linkedSaleIds?: string[];
+  revenueSource?: DistributionPreviewRevenueSource;
+  ownershipSnapshotId?: string | null;
+  ownershipSnapshotEntries?: OwnershipSnapshotLookupEntry[];
   notes?: string | null;
   distributionResult: DistributionPreviewDistributionResult;
   status: DistributionPreviewStatus;
@@ -4571,6 +4593,14 @@ export const CreateDistributionPreviewBodyLcaSource = {
   ledger: "ledger",
 } as const;
 
+export type CreateDistributionPreviewBodyRevenueSource =
+  (typeof CreateDistributionPreviewBodyRevenueSource)[keyof typeof CreateDistributionPreviewBodyRevenueSource];
+
+export const CreateDistributionPreviewBodyRevenueSource = {
+  sales_records: "sales_records",
+  manual: "manual",
+} as const;
+
 export interface CreateDistributionPreviewBody {
   projectId: string;
   agreementId?: string;
@@ -4583,6 +4613,10 @@ export interface CreateDistributionPreviewBody {
   lcaAmount?: number;
   lcaSource?: CreateDistributionPreviewBodyLcaSource;
   notes?: string;
+  revenueSource?: CreateDistributionPreviewBodyRevenueSource;
+  linkedSaleIds?: string[];
+  ownershipSnapshotId?: string;
+  ownershipSnapshotEntries?: OwnershipSnapshotLookupEntry[];
   ownershipOverride?: OwnershipOverrideEntry[];
 }
 
@@ -4621,6 +4655,46 @@ export interface LcaLookupResult {
   projectId: string;
   entries: LcaLookupEntry[];
   totalBalance: number;
+}
+
+export interface RevenueLookupSaleRow {
+  id: string;
+  saleNumber: string;
+  saleDate: string;
+  buyerName: string;
+  grossRevenue: number;
+  deductions: number;
+  netRevenue: number;
+  confirmedAt?: string | null;
+}
+
+export interface RevenueLookupResult {
+  projectId: string;
+  from?: string | null;
+  to?: string | null;
+  saleCount: number;
+  totalGrossRevenue: number;
+  totalDeductions: number;
+  totalNetRevenue: number;
+  sales: RevenueLookupSaleRow[];
+}
+
+export interface OwnershipSnapshotLookupRow {
+  id: string;
+  snapshotType: string;
+  lifecycleStatus: string;
+  totalRecognizedAmount: number;
+  entries: OwnershipSnapshotLookupEntry[];
+  notes?: string | null;
+  triggeredByName?: string | null;
+  snapshotAt: string;
+}
+
+export interface OwnershipLookupResult {
+  projectId: string;
+  isFrozen: boolean;
+  frozenAt?: string | null;
+  snapshots: OwnershipSnapshotLookupRow[];
 }
 
 export interface SuccessResponse {
@@ -5316,6 +5390,22 @@ export const ListDistributionPreviewsStatus = {
 export type LookupLcaForDistributionParams = {
   projectId: string;
   year?: number;
+};
+
+export type LookupRevenueForDistributionParams = {
+  projectId: string;
+  /**
+   * ISO date string YYYY-MM-DD
+   */
+  from?: string;
+  /**
+   * ISO date string YYYY-MM-DD
+   */
+  to?: string;
+};
+
+export type LookupOwnershipForDistributionParams = {
+  projectId: string;
 };
 
 export type ArchiveDistributionPreview200 = {

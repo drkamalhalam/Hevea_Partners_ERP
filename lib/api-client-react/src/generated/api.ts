@@ -193,6 +193,8 @@ import type {
   ListTasksParams,
   ListTemplatesParams,
   LookupLcaForDistributionParams,
+  LookupOwnershipForDistributionParams,
+  LookupRevenueForDistributionParams,
   MarkBurdenRecordRecoveredBody,
   MaturityBlockers,
   MaturityDeclaration,
@@ -203,6 +205,7 @@ import type {
   OperationalAlert,
   OperationalTask,
   OwnershipFreeze,
+  OwnershipLookupResult,
   OwnershipSnapshot,
   Partner,
   PartnerClaimant,
@@ -240,6 +243,7 @@ import type {
   RequestUploadUrlBody,
   RequestUploadUrlResponse,
   ResolveContributionDisputeBody,
+  RevenueLookupResult,
   RevenueStats,
   ReverseLandownerLedgerEntry200,
   SaleAuditLog,
@@ -22869,6 +22873,224 @@ export function useLookupLcaForDistribution<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getLookupLcaForDistributionQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Fetch confirmed sales revenue for a project/period (for distribution input)
+ */
+export const getLookupRevenueForDistributionUrl = (
+  params: LookupRevenueForDistributionParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/distribution-previews/revenue-lookup?${stringifiedParams}`
+    : `/api/distribution-previews/revenue-lookup`;
+};
+
+export const lookupRevenueForDistribution = async (
+  params: LookupRevenueForDistributionParams,
+  options?: RequestInit,
+): Promise<RevenueLookupResult> => {
+  return customFetch<RevenueLookupResult>(
+    getLookupRevenueForDistributionUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getLookupRevenueForDistributionQueryKey = (
+  params?: LookupRevenueForDistributionParams,
+) => {
+  return [
+    `/api/distribution-previews/revenue-lookup`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getLookupRevenueForDistributionQueryOptions = <
+  TData = Awaited<ReturnType<typeof lookupRevenueForDistribution>>,
+  TError = ErrorType<unknown>,
+>(
+  params: LookupRevenueForDistributionParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof lookupRevenueForDistribution>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getLookupRevenueForDistributionQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof lookupRevenueForDistribution>>
+  > = ({ signal }) =>
+    lookupRevenueForDistribution(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof lookupRevenueForDistribution>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type LookupRevenueForDistributionQueryResult = NonNullable<
+  Awaited<ReturnType<typeof lookupRevenueForDistribution>>
+>;
+export type LookupRevenueForDistributionQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Fetch confirmed sales revenue for a project/period (for distribution input)
+ */
+
+export function useLookupRevenueForDistribution<
+  TData = Awaited<ReturnType<typeof lookupRevenueForDistribution>>,
+  TError = ErrorType<unknown>,
+>(
+  params: LookupRevenueForDistributionParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof lookupRevenueForDistribution>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getLookupRevenueForDistributionQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Fetch ownership snapshots for a project (for distribution input)
+ */
+export const getLookupOwnershipForDistributionUrl = (
+  params: LookupOwnershipForDistributionParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/distribution-previews/ownership-lookup?${stringifiedParams}`
+    : `/api/distribution-previews/ownership-lookup`;
+};
+
+export const lookupOwnershipForDistribution = async (
+  params: LookupOwnershipForDistributionParams,
+  options?: RequestInit,
+): Promise<OwnershipLookupResult> => {
+  return customFetch<OwnershipLookupResult>(
+    getLookupOwnershipForDistributionUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getLookupOwnershipForDistributionQueryKey = (
+  params?: LookupOwnershipForDistributionParams,
+) => {
+  return [
+    `/api/distribution-previews/ownership-lookup`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getLookupOwnershipForDistributionQueryOptions = <
+  TData = Awaited<ReturnType<typeof lookupOwnershipForDistribution>>,
+  TError = ErrorType<unknown>,
+>(
+  params: LookupOwnershipForDistributionParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof lookupOwnershipForDistribution>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getLookupOwnershipForDistributionQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof lookupOwnershipForDistribution>>
+  > = ({ signal }) =>
+    lookupOwnershipForDistribution(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof lookupOwnershipForDistribution>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type LookupOwnershipForDistributionQueryResult = NonNullable<
+  Awaited<ReturnType<typeof lookupOwnershipForDistribution>>
+>;
+export type LookupOwnershipForDistributionQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Fetch ownership snapshots for a project (for distribution input)
+ */
+
+export function useLookupOwnershipForDistribution<
+  TData = Awaited<ReturnType<typeof lookupOwnershipForDistribution>>,
+  TError = ErrorType<unknown>,
+>(
+  params: LookupOwnershipForDistributionParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof lookupOwnershipForDistribution>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getLookupOwnershipForDistributionQueryOptions(
+    params,
+    options,
+  );
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

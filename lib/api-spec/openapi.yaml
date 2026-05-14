@@ -5944,6 +5944,48 @@ paths:
               schema:
                 $ref: "#/components/schemas/LcaLookupResult"
 
+  /distribution-previews/revenue-lookup:
+    get:
+      operationId: lookupRevenueForDistribution
+      summary: Fetch confirmed sales revenue for a project/period (for distribution input)
+      tags: [distribution-previews]
+      parameters:
+        - in: query
+          name: projectId
+          required: true
+          schema: { type: string, format: uuid }
+        - in: query
+          name: from
+          schema: { type: string, description: "ISO date string YYYY-MM-DD" }
+        - in: query
+          name: to
+          schema: { type: string, description: "ISO date string YYYY-MM-DD" }
+      responses:
+        "200":
+          description: Revenue lookup result from confirmed sales
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RevenueLookupResult"
+
+  /distribution-previews/ownership-lookup:
+    get:
+      operationId: lookupOwnershipForDistribution
+      summary: Fetch ownership snapshots for a project (for distribution input)
+      tags: [distribution-previews]
+      parameters:
+        - in: query
+          name: projectId
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Ownership lookup result with available snapshots
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OwnershipLookupResult"
+
   /distribution-previews/{id}:
     get:
       operationId: getDistributionPreview
@@ -10603,6 +10645,15 @@ components:
         operationalCost: { type: number }
         lcaAmount: { type: number }
         lcaSource: { type: string }
+        linkedSaleIds:
+          type: array
+          items: { type: string, format: uuid }
+        revenueSource: { type: string, enum: [sales_records, manual] }
+        ownershipSnapshotId: { type: string, format: uuid, nullable: true }
+        ownershipSnapshotEntries:
+          type: array
+          items:
+            $ref: "#/components/schemas/OwnershipSnapshotLookupEntry"
         notes: { type: string, nullable: true }
         distributionResult: { type: object }
         status: { type: string, enum: [draft, confirmed] }
@@ -10658,6 +10709,15 @@ components:
         lcaAmount: { type: number, default: 0 }
         lcaSource: { type: string, enum: [manual, ledger], default: manual }
         notes: { type: string }
+        revenueSource: { type: string, enum: [sales_records, manual] }
+        linkedSaleIds:
+          type: array
+          items: { type: string, format: uuid }
+        ownershipSnapshotId: { type: string, format: uuid }
+        ownershipSnapshotEntries:
+          type: array
+          items:
+            $ref: "#/components/schemas/OwnershipSnapshotLookupEntry"
         ownershipOverride:
           type: array
           items:
@@ -10702,6 +10762,75 @@ components:
           items:
             $ref: "#/components/schemas/LcaLookupEntry"
         totalBalance: { type: number }
+
+    RevenueLookupSaleRow:
+      type: object
+      required: [id, saleNumber, saleDate, buyerName, grossRevenue, deductions, netRevenue]
+      properties:
+        id: { type: string, format: uuid }
+        saleNumber: { type: string }
+        saleDate: { type: string }
+        buyerName: { type: string }
+        grossRevenue: { type: number }
+        deductions: { type: number }
+        netRevenue: { type: number }
+        confirmedAt: { type: string, nullable: true }
+
+    RevenueLookupResult:
+      type: object
+      required: [projectId, saleCount, totalGrossRevenue, totalDeductions, totalNetRevenue, sales]
+      properties:
+        projectId: { type: string, format: uuid }
+        from: { type: string, nullable: true }
+        to: { type: string, nullable: true }
+        saleCount: { type: integer }
+        totalGrossRevenue: { type: number }
+        totalDeductions: { type: number }
+        totalNetRevenue: { type: number }
+        sales:
+          type: array
+          items:
+            $ref: "#/components/schemas/RevenueLookupSaleRow"
+
+    OwnershipSnapshotLookupEntry:
+      type: object
+      required: [partnerKey, partnerName, percentage, totalAmount]
+      properties:
+        partnerKey: { type: string }
+        partnerId: { type: string, nullable: true }
+        partnerName: { type: string }
+        landAmount: { type: number }
+        economicAmount: { type: number }
+        totalAmount: { type: number }
+        percentage: { type: number }
+
+    OwnershipSnapshotLookupRow:
+      type: object
+      required: [id, snapshotType, lifecycleStatus, totalRecognizedAmount, entries, snapshotAt]
+      properties:
+        id: { type: string, format: uuid }
+        snapshotType: { type: string }
+        lifecycleStatus: { type: string }
+        totalRecognizedAmount: { type: number }
+        entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/OwnershipSnapshotLookupEntry"
+        notes: { type: string, nullable: true }
+        triggeredByName: { type: string, nullable: true }
+        snapshotAt: { type: string }
+
+    OwnershipLookupResult:
+      type: object
+      required: [projectId, isFrozen, snapshots]
+      properties:
+        projectId: { type: string, format: uuid }
+        isFrozen: { type: boolean }
+        frozenAt: { type: string, nullable: true }
+        snapshots:
+          type: array
+          items:
+            $ref: "#/components/schemas/OwnershipSnapshotLookupRow"
 
     SuccessResponse:
       type: object

@@ -32,6 +32,7 @@ import {
   ArrowLeftRight,
   Coins,
   PieChart,
+  Layers,
 } from "lucide-react";
 import { useRole, ROLE_LABELS, ROLE_COLORS } from "@/contexts/RoleContext";
 import type { UserRole } from "@/contexts/RoleContext";
@@ -327,6 +328,12 @@ const navGroups: NavGroup[] = [
   {
     label: "Settlement",
     items: [
+      {
+        name: "Distribution Workflow",
+        href: "/distribution-workflow",
+        icon: Layers,
+        roles: ["admin", "developer"] as UserRole[],
+      },
       {
         name: "Distribution Preview",
         href: "/distribution-preview",

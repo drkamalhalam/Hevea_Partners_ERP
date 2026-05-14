@@ -8912,6 +8912,22 @@ export const CreateDistributionPreviewBody = zod.object({
     .enum(["manual", "ledger"])
     .default(createDistributionPreviewBodyLcaSourceDefault),
   notes: zod.string().optional(),
+  revenueSource: zod.enum(["sales_records", "manual"]).optional(),
+  linkedSaleIds: zod.array(zod.string().uuid()).optional(),
+  ownershipSnapshotId: zod.string().uuid().optional(),
+  ownershipSnapshotEntries: zod
+    .array(
+      zod.object({
+        partnerKey: zod.string(),
+        partnerId: zod.string().nullish(),
+        partnerName: zod.string(),
+        landAmount: zod.number().optional(),
+        economicAmount: zod.number().optional(),
+        totalAmount: zod.number(),
+        percentage: zod.number(),
+      }),
+    )
+    .optional(),
   ownershipOverride: zod
     .array(
       zod.object({
@@ -8956,6 +8972,22 @@ export const ListDistributionPreviewsResponse = zod.object({
       operationalCost: zod.number(),
       lcaAmount: zod.number(),
       lcaSource: zod.string(),
+      linkedSaleIds: zod.array(zod.string().uuid()).optional(),
+      revenueSource: zod.enum(["sales_records", "manual"]).optional(),
+      ownershipSnapshotId: zod.string().uuid().nullish(),
+      ownershipSnapshotEntries: zod
+        .array(
+          zod.object({
+            partnerKey: zod.string(),
+            partnerId: zod.string().nullish(),
+            partnerName: zod.string(),
+            landAmount: zod.number().optional(),
+            economicAmount: zod.number().optional(),
+            totalAmount: zod.number(),
+            percentage: zod.number(),
+          }),
+        )
+        .optional(),
       notes: zod.string().nullish(),
       distributionResult: zod.object({}).passthrough(),
       status: zod.enum(["draft", "confirmed"]),
@@ -8995,6 +9027,72 @@ export const LookupLcaForDistributionResponse = zod.object({
 });
 
 /**
+ * @summary Fetch confirmed sales revenue for a project/period (for distribution input)
+ */
+export const LookupRevenueForDistributionQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid(),
+  from: zod.coerce.string().optional(),
+  to: zod.coerce.string().optional(),
+});
+
+export const LookupRevenueForDistributionResponse = zod.object({
+  projectId: zod.string().uuid(),
+  from: zod.string().nullish(),
+  to: zod.string().nullish(),
+  saleCount: zod.number(),
+  totalGrossRevenue: zod.number(),
+  totalDeductions: zod.number(),
+  totalNetRevenue: zod.number(),
+  sales: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      saleNumber: zod.string(),
+      saleDate: zod.string(),
+      buyerName: zod.string(),
+      grossRevenue: zod.number(),
+      deductions: zod.number(),
+      netRevenue: zod.number(),
+      confirmedAt: zod.string().nullish(),
+    }),
+  ),
+});
+
+/**
+ * @summary Fetch ownership snapshots for a project (for distribution input)
+ */
+export const LookupOwnershipForDistributionQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid(),
+});
+
+export const LookupOwnershipForDistributionResponse = zod.object({
+  projectId: zod.string().uuid(),
+  isFrozen: zod.boolean(),
+  frozenAt: zod.string().nullish(),
+  snapshots: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      snapshotType: zod.string(),
+      lifecycleStatus: zod.string(),
+      totalRecognizedAmount: zod.number(),
+      entries: zod.array(
+        zod.object({
+          partnerKey: zod.string(),
+          partnerId: zod.string().nullish(),
+          partnerName: zod.string(),
+          landAmount: zod.number().optional(),
+          economicAmount: zod.number().optional(),
+          totalAmount: zod.number(),
+          percentage: zod.number(),
+        }),
+      ),
+      notes: zod.string().nullish(),
+      triggeredByName: zod.string().nullish(),
+      snapshotAt: zod.string(),
+    }),
+  ),
+});
+
+/**
  * @summary Get a single distribution preview with context
  */
 export const GetDistributionPreviewParams = zod.object({
@@ -9015,6 +9113,22 @@ export const GetDistributionPreviewResponse = zod
     operationalCost: zod.number(),
     lcaAmount: zod.number(),
     lcaSource: zod.string(),
+    linkedSaleIds: zod.array(zod.string().uuid()).optional(),
+    revenueSource: zod.enum(["sales_records", "manual"]).optional(),
+    ownershipSnapshotId: zod.string().uuid().nullish(),
+    ownershipSnapshotEntries: zod
+      .array(
+        zod.object({
+          partnerKey: zod.string(),
+          partnerId: zod.string().nullish(),
+          partnerName: zod.string(),
+          landAmount: zod.number().optional(),
+          economicAmount: zod.number().optional(),
+          totalAmount: zod.number(),
+          percentage: zod.number(),
+        }),
+      )
+      .optional(),
     notes: zod.string().nullish(),
     distributionResult: zod.object({}).passthrough(),
     status: zod.enum(["draft", "confirmed"]),
@@ -9077,6 +9191,22 @@ export const UpdateDistributionPreviewResponse = zod.object({
   operationalCost: zod.number(),
   lcaAmount: zod.number(),
   lcaSource: zod.string(),
+  linkedSaleIds: zod.array(zod.string().uuid()).optional(),
+  revenueSource: zod.enum(["sales_records", "manual"]).optional(),
+  ownershipSnapshotId: zod.string().uuid().nullish(),
+  ownershipSnapshotEntries: zod
+    .array(
+      zod.object({
+        partnerKey: zod.string(),
+        partnerId: zod.string().nullish(),
+        partnerName: zod.string(),
+        landAmount: zod.number().optional(),
+        economicAmount: zod.number().optional(),
+        totalAmount: zod.number(),
+        percentage: zod.number(),
+      }),
+    )
+    .optional(),
   notes: zod.string().nullish(),
   distributionResult: zod.object({}).passthrough(),
   status: zod.enum(["draft", "confirmed"]),
@@ -9119,6 +9249,22 @@ export const ConfirmDistributionPreviewResponse = zod.object({
   operationalCost: zod.number(),
   lcaAmount: zod.number(),
   lcaSource: zod.string(),
+  linkedSaleIds: zod.array(zod.string().uuid()).optional(),
+  revenueSource: zod.enum(["sales_records", "manual"]).optional(),
+  ownershipSnapshotId: zod.string().uuid().nullish(),
+  ownershipSnapshotEntries: zod
+    .array(
+      zod.object({
+        partnerKey: zod.string(),
+        partnerId: zod.string().nullish(),
+        partnerName: zod.string(),
+        landAmount: zod.number().optional(),
+        economicAmount: zod.number().optional(),
+        totalAmount: zod.number(),
+        percentage: zod.number(),
+      }),
+    )
+    .optional(),
   notes: zod.string().nullish(),
   distributionResult: zod.object({}).passthrough(),
   status: zod.enum(["draft", "confirmed"]),
