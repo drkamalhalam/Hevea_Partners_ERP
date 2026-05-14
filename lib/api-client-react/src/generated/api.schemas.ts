@@ -6124,6 +6124,202 @@ export interface DiscrepancyReport {
   flagCounts: DiscrepancyReportFlagCounts;
 }
 
+export type ValuationProfitRecordSource =
+  (typeof ValuationProfitRecordSource)[keyof typeof ValuationProfitRecordSource];
+
+export const ValuationProfitRecordSource = {
+  manual: "manual",
+  fifty_pct_session: "fifty_pct_session",
+} as const;
+
+export interface ValuationProfitRecord {
+  id: string;
+  projectId: string;
+  periodYear: number;
+  grossRevenue?: string | null;
+  operationalCost?: string | null;
+  lcaAmount?: string | null;
+  netProfit: string;
+  source: ValuationProfitRecordSource;
+  sourceId?: string | null;
+  isPostMaturity: boolean;
+  notes?: string | null;
+  recordedBy?: string | null;
+  recordedByName?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ValuationProfitRecordPage {
+  records: ValuationProfitRecord[];
+  total: number;
+}
+
+export type CreateValuationProfitRecordBodySource =
+  (typeof CreateValuationProfitRecordBodySource)[keyof typeof CreateValuationProfitRecordBodySource];
+
+export const CreateValuationProfitRecordBodySource = {
+  manual: "manual",
+  fifty_pct_session: "fifty_pct_session",
+} as const;
+
+export interface CreateValuationProfitRecordBody {
+  projectId: string;
+  periodYear: number;
+  grossRevenue?: number;
+  operationalCost?: number;
+  lcaAmount?: number;
+  netProfit: number;
+  source?: CreateValuationProfitRecordBodySource;
+  sourceId?: string;
+  isPostMaturity?: boolean;
+  notes?: string;
+}
+
+export interface UpdateValuationProfitRecordBody {
+  periodYear?: number;
+  grossRevenue?: number;
+  operationalCost?: number;
+  lcaAmount?: number;
+  netProfit?: number;
+  isPostMaturity?: boolean;
+  notes?: string;
+}
+
+export interface ImportValuationProfitRecordsBody {
+  projectId: string;
+  limitYears?: number;
+  autoMarkPostMaturity?: boolean;
+}
+
+export type ValuationRunProfitYearDataItem = { [key: string]: unknown };
+
+export type ValuationRunStatus =
+  (typeof ValuationRunStatus)[keyof typeof ValuationRunStatus];
+
+export const ValuationRunStatus = {
+  draft: "draft",
+  final: "final",
+} as const;
+
+export interface ValuationRun {
+  id: string;
+  projectId: string;
+  transferId?: string | null;
+  maturityDate?: string | null;
+  postMaturityYears: string;
+  profitYearsUsed: number;
+  profitYearData: ValuationRunProfitYearDataItem[];
+  avgAnnualProfit: string;
+  discountRate: string;
+  valuationHorizon: number;
+  remainingLife: string;
+  isHorizonExceeded: boolean;
+  projectGrossValue: string;
+  shareFraction?: string | null;
+  shareValue?: string | null;
+  finalPriceOverride?: string | null;
+  overrideReason?: string | null;
+  status: ValuationRunStatus;
+  notes?: string | null;
+  formulaVersion: string;
+  calculatedBy?: string | null;
+  calculatedByName?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ValuationRunPage {
+  runs: ValuationRun[];
+  total: number;
+}
+
+export type ValuationRunDetailRun = ValuationRun & {
+  projectName?: string | null;
+};
+
+export type ValuationRunDetailFormulaBreakdown = {
+  I?: number;
+  N?: number;
+  discountRate?: number;
+  annuityFactor?: number;
+  projectGrossValue?: number;
+  shareFraction?: number | null;
+  shareValue?: number | null;
+  finalPrice?: number;
+  isOverridden?: boolean;
+};
+
+export interface ValuationRunDetail {
+  run: ValuationRunDetailRun;
+  formulaBreakdown: ValuationRunDetailFormulaBreakdown;
+}
+
+export type CreateValuationRunBodyStatus =
+  (typeof CreateValuationRunBodyStatus)[keyof typeof CreateValuationRunBodyStatus];
+
+export const CreateValuationRunBodyStatus = {
+  draft: "draft",
+  final: "final",
+} as const;
+
+export interface CreateValuationRunBody {
+  projectId: string;
+  transferId?: string;
+  /**
+   * @minimum 0
+   * @maximum 1
+   */
+  shareFraction?: number;
+  /** @minimum 0 */
+  manualAvgAnnualProfit?: number;
+  /** @minimum 0 */
+  manualPostMaturityYears?: number;
+  notes?: string;
+  status?: CreateValuationRunBodyStatus;
+}
+
+export type UpdateValuationRunBodyStatus =
+  (typeof UpdateValuationRunBodyStatus)[keyof typeof UpdateValuationRunBodyStatus];
+
+export const UpdateValuationRunBodyStatus = {
+  draft: "draft",
+  final: "final",
+} as const;
+
+export interface UpdateValuationRunBody {
+  /** @minimum 0 */
+  finalPriceOverride?: number | null;
+  overrideReason?: string | null;
+  /**
+   * @minimum 0
+   * @maximum 1
+   */
+  shareFraction?: number | null;
+  notes?: string | null;
+  status?: UpdateValuationRunBodyStatus;
+}
+
+export type ValuationPreviewProfitYearDataItem = { [key: string]: unknown };
+
+export interface ValuationPreview {
+  projectId: string;
+  maturityDate?: string | null;
+  postMaturityYears: number;
+  profitYearsUsed: number;
+  profitYearData: ValuationPreviewProfitYearDataItem[];
+  avgAnnualProfit: number;
+  discountRate: number;
+  valuationHorizon: number;
+  remainingLife: number;
+  isHorizonExceeded: boolean;
+  projectGrossValue: number;
+  shareFraction?: number | null;
+  shareValue?: number | null;
+  formulaVersion: string;
+  warnings: string[];
+}
+
 export type GetUserActivityParams = {
   limit?: number;
 };
@@ -7386,4 +7582,57 @@ export type GetProjectProfitabilityParams = {
 
 export type GetAllocationBreakdownParams = {
   projectId?: string;
+};
+
+export type ListValuationRunsParams = {
+  projectId?: string;
+  transferId?: string;
+  status?: ListValuationRunsStatus;
+};
+
+export type ListValuationRunsStatus =
+  (typeof ListValuationRunsStatus)[keyof typeof ListValuationRunsStatus];
+
+export const ListValuationRunsStatus = {
+  draft: "draft",
+  final: "final",
+} as const;
+
+export type CreateValuationRun201 = {
+  run?: ValuationRun;
+};
+
+export type GetValuationPreviewParams = {
+  projectId: string;
+  sharePct?: number;
+};
+
+export type ListValuationProfitRecordsParams = {
+  projectId?: string;
+};
+
+export type CreateValuationProfitRecord201 = {
+  record?: ValuationProfitRecord;
+};
+
+export type ImportValuationProfitRecords200 = {
+  imported?: number;
+  skipped?: number;
+  records?: ValuationProfitRecord[];
+};
+
+export type UpdateValuationProfitRecord200 = {
+  record?: ValuationProfitRecord;
+};
+
+export type DeleteValuationProfitRecord200 = {
+  deleted?: boolean;
+};
+
+export type UpdateValuationRun200 = {
+  run?: ValuationRun;
+};
+
+export type DeleteValuationRun200 = {
+  deleted?: boolean;
 };

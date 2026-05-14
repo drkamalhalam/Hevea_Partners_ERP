@@ -82,6 +82,7 @@ import ProjectMaturityDeclaration from "./pages/ProjectMaturityDeclaration";
 import NomineeActivationPage from "./pages/NomineeActivationPage";
 import ProjectClosurePage from "./pages/ProjectClosurePage";
 import OwnershipTransfers from "./pages/OwnershipTransfers";
+import ValuationEngine from "./pages/ValuationEngine";
 // Layout
 import NotFound from "@/pages/not-found";
 import Layout from "./components/layout/Layout";
@@ -292,6 +293,7 @@ function AppRoutes() {
               <Route path="/distribution-records"><ProtectedRoute component={DistributionRecords} /></Route>
               <Route path="/settlement-governance"><ProtectedRoute component={SettlementGovernance} /></Route>
               <Route path="/ownership-transfers"><ProtectedRoute component={OwnershipTransfers} /></Route>
+              <Route path="/valuation-engine"><ProtectedRoute component={ValuationEngine} /></Route>
               <Route path="/sales"><ProtectedRoute component={Sales} /></Route>
               <Route path="/distribution"><ProtectedRoute component={Distribution} /></Route>
 

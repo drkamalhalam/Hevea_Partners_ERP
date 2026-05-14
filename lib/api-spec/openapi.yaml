@@ -8084,6 +8084,197 @@ paths:
               schema:
                 $ref: "#/components/schemas/AllocationBreakdown"
 
+  # ── Valuation Engine ─────────────────────────────────────────────────────
+
+  /valuations:
+    get:
+      operationId: listValuationRuns
+      summary: List valuation runs
+      tags: [Valuations]
+      parameters:
+        - { in: query, name: projectId, schema: { type: string, format: uuid } }
+        - { in: query, name: transferId, schema: { type: string, format: uuid } }
+        - { in: query, name: status, schema: { type: string, enum: [draft, final] } }
+      responses:
+        "200":
+          description: Valuation runs list
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ValuationRunPage" }
+    post:
+      operationId: createValuationRun
+      summary: Create (compute + save) a valuation run
+      tags: [Valuations]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateValuationRunBody" }
+      responses:
+        "201":
+          description: Created run
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  run: { $ref: "#/components/schemas/ValuationRun" }
+
+  /valuations/preview:
+    get:
+      operationId: getValuationPreview
+      summary: Compute valuation without saving (quick preview)
+      tags: [Valuations]
+      parameters:
+        - { in: query, name: projectId, required: true, schema: { type: string, format: uuid } }
+        - { in: query, name: sharePct, schema: { type: number } }
+      responses:
+        "200":
+          description: Valuation preview result
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ValuationPreview" }
+
+  /valuations/profit-records:
+    get:
+      operationId: listValuationProfitRecords
+      summary: List profit records for valuation
+      tags: [Valuations]
+      parameters:
+        - { in: query, name: projectId, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Profit records list
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ValuationProfitRecordPage" }
+    post:
+      operationId: createValuationProfitRecord
+      summary: Create a profit record
+      tags: [Valuations]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateValuationProfitRecordBody" }
+      responses:
+        "201":
+          description: Created record
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  record: { $ref: "#/components/schemas/ValuationProfitRecord" }
+
+  /valuations/profit-records/import:
+    post:
+      operationId: importValuationProfitRecords
+      summary: Auto-import profit records from confirmed 50% settlement sessions
+      tags: [Valuations]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ImportValuationProfitRecordsBody" }
+      responses:
+        "200":
+          description: Import result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  imported: { type: integer }
+                  skipped: { type: integer }
+                  records: { type: array, items: { $ref: "#/components/schemas/ValuationProfitRecord" } }
+
+  /valuations/profit-records/{id}:
+    patch:
+      operationId: updateValuationProfitRecord
+      summary: Update a profit record
+      tags: [Valuations]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateValuationProfitRecordBody" }
+      responses:
+        "200":
+          description: Updated record
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  record: { $ref: "#/components/schemas/ValuationProfitRecord" }
+    delete:
+      operationId: deleteValuationProfitRecord
+      summary: Delete a profit record
+      tags: [Valuations]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted: { type: boolean }
+
+  /valuations/{id}:
+    get:
+      operationId: getValuationRun
+      summary: Get a single valuation run with formula breakdown
+      tags: [Valuations]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Valuation run detail
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ValuationRunDetail" }
+    patch:
+      operationId: updateValuationRun
+      summary: Update valuation run (override / notes / status)
+      tags: [Valuations]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateValuationRunBody" }
+      responses:
+        "200":
+          description: Updated run
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  run: { $ref: "#/components/schemas/ValuationRun" }
+    delete:
+      operationId: deleteValuationRun
+      summary: Delete a valuation run (admin only)
+      tags: [Valuations]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted: { type: boolean }
+
 components:
   schemas:
 
@@ -14003,3 +14194,164 @@ components:
             HIGH: { type: integer }
             MEDIUM: { type: integer }
             OK: { type: integer }
+
+    ValuationProfitRecord:
+      type: object
+      required: [id, projectId, periodYear, netProfit, source, isPostMaturity, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        periodYear: { type: integer }
+        grossRevenue: { type: string, nullable: true }
+        operationalCost: { type: string, nullable: true }
+        lcaAmount: { type: string, nullable: true }
+        netProfit: { type: string }
+        source: { type: string, enum: [manual, fifty_pct_session] }
+        sourceId: { type: string, format: uuid, nullable: true }
+        isPostMaturity: { type: boolean }
+        notes: { type: string, nullable: true }
+        recordedBy: { type: string, format: uuid, nullable: true }
+        recordedByName: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    ValuationProfitRecordPage:
+      type: object
+      required: [records, total]
+      properties:
+        records: { type: array, items: { $ref: "#/components/schemas/ValuationProfitRecord" } }
+        total: { type: integer }
+
+    CreateValuationProfitRecordBody:
+      type: object
+      required: [projectId, periodYear, netProfit]
+      properties:
+        projectId: { type: string, format: uuid }
+        periodYear: { type: integer }
+        grossRevenue: { type: number }
+        operationalCost: { type: number }
+        lcaAmount: { type: number }
+        netProfit: { type: number }
+        source: { type: string, enum: [manual, fifty_pct_session], default: manual }
+        sourceId: { type: string, format: uuid }
+        isPostMaturity: { type: boolean, default: false }
+        notes: { type: string }
+
+    UpdateValuationProfitRecordBody:
+      type: object
+      properties:
+        periodYear: { type: integer }
+        grossRevenue: { type: number }
+        operationalCost: { type: number }
+        lcaAmount: { type: number }
+        netProfit: { type: number }
+        isPostMaturity: { type: boolean }
+        notes: { type: string }
+
+    ImportValuationProfitRecordsBody:
+      type: object
+      required: [projectId]
+      properties:
+        projectId: { type: string, format: uuid }
+        limitYears: { type: integer }
+        autoMarkPostMaturity: { type: boolean, default: true }
+
+    ValuationRun:
+      type: object
+      required: [id, projectId, postMaturityYears, profitYearsUsed, profitYearData, avgAnnualProfit, discountRate, valuationHorizon, remainingLife, isHorizonExceeded, projectGrossValue, status, formulaVersion, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        transferId: { type: string, format: uuid, nullable: true }
+        maturityDate: { type: string, nullable: true }
+        postMaturityYears: { type: string }
+        profitYearsUsed: { type: integer }
+        profitYearData: { type: array, items: { type: object } }
+        avgAnnualProfit: { type: string }
+        discountRate: { type: string }
+        valuationHorizon: { type: integer }
+        remainingLife: { type: string }
+        isHorizonExceeded: { type: boolean }
+        projectGrossValue: { type: string }
+        shareFraction: { type: string, nullable: true }
+        shareValue: { type: string, nullable: true }
+        finalPriceOverride: { type: string, nullable: true }
+        overrideReason: { type: string, nullable: true }
+        status: { type: string, enum: [draft, final] }
+        notes: { type: string, nullable: true }
+        formulaVersion: { type: string }
+        calculatedBy: { type: string, format: uuid, nullable: true }
+        calculatedByName: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    ValuationRunPage:
+      type: object
+      required: [runs, total]
+      properties:
+        runs: { type: array, items: { $ref: "#/components/schemas/ValuationRun" } }
+        total: { type: integer }
+
+    ValuationRunDetail:
+      type: object
+      required: [run, formulaBreakdown]
+      properties:
+        run:
+          allOf:
+            - $ref: "#/components/schemas/ValuationRun"
+            - type: object
+              properties:
+                projectName: { type: string, nullable: true }
+        formulaBreakdown:
+          type: object
+          properties:
+            I: { type: number }
+            N: { type: number }
+            discountRate: { type: number }
+            annuityFactor: { type: number }
+            projectGrossValue: { type: number }
+            shareFraction: { type: number, nullable: true }
+            shareValue: { type: number, nullable: true }
+            finalPrice: { type: number }
+            isOverridden: { type: boolean }
+
+    CreateValuationRunBody:
+      type: object
+      required: [projectId]
+      properties:
+        projectId: { type: string, format: uuid }
+        transferId: { type: string, format: uuid }
+        shareFraction: { type: number, minimum: 0, maximum: 1 }
+        manualAvgAnnualProfit: { type: number, minimum: 0 }
+        manualPostMaturityYears: { type: number, minimum: 0 }
+        notes: { type: string }
+        status: { type: string, enum: [draft, final], default: draft }
+
+    UpdateValuationRunBody:
+      type: object
+      properties:
+        finalPriceOverride: { type: number, minimum: 0, nullable: true }
+        overrideReason: { type: string, nullable: true }
+        shareFraction: { type: number, minimum: 0, maximum: 1, nullable: true }
+        notes: { type: string, nullable: true }
+        status: { type: string, enum: [draft, final] }
+
+    ValuationPreview:
+      type: object
+      required: [projectId, postMaturityYears, profitYearsUsed, profitYearData, avgAnnualProfit, discountRate, valuationHorizon, remainingLife, isHorizonExceeded, projectGrossValue, formulaVersion, warnings]
+      properties:
+        projectId: { type: string, format: uuid }
+        maturityDate: { type: string, nullable: true }
+        postMaturityYears: { type: number }
+        profitYearsUsed: { type: integer }
+        profitYearData: { type: array, items: { type: object } }
+        avgAnnualProfit: { type: number }
+        discountRate: { type: number }
+        valuationHorizon: { type: integer }
+        remainingLife: { type: number }
+        isHorizonExceeded: { type: boolean }
+        projectGrossValue: { type: number }
+        shareFraction: { type: number, nullable: true }
+        shareValue: { type: number, nullable: true }
+        formulaVersion: { type: string }
+        warnings: { type: array, items: { type: string } }

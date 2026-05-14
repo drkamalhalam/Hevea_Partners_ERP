@@ -13017,3 +13017,368 @@ export const GetAllocationBreakdownResponse = zod.object({
     )
     .optional(),
 });
+
+/**
+ * @summary List valuation runs
+ */
+export const ListValuationRunsQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+  transferId: zod.coerce.string().uuid().optional(),
+  status: zod.enum(["draft", "final"]).optional(),
+});
+
+export const ListValuationRunsResponse = zod.object({
+  runs: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      projectId: zod.string().uuid(),
+      transferId: zod.string().uuid().nullish(),
+      maturityDate: zod.string().nullish(),
+      postMaturityYears: zod.string(),
+      profitYearsUsed: zod.number(),
+      profitYearData: zod.array(zod.object({}).passthrough()),
+      avgAnnualProfit: zod.string(),
+      discountRate: zod.string(),
+      valuationHorizon: zod.number(),
+      remainingLife: zod.string(),
+      isHorizonExceeded: zod.boolean(),
+      projectGrossValue: zod.string(),
+      shareFraction: zod.string().nullish(),
+      shareValue: zod.string().nullish(),
+      finalPriceOverride: zod.string().nullish(),
+      overrideReason: zod.string().nullish(),
+      status: zod.enum(["draft", "final"]),
+      notes: zod.string().nullish(),
+      formulaVersion: zod.string(),
+      calculatedBy: zod.string().uuid().nullish(),
+      calculatedByName: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    }),
+  ),
+  total: zod.number(),
+});
+
+/**
+ * @summary Create (compute + save) a valuation run
+ */
+export const createValuationRunBodyShareFractionMin = 0;
+export const createValuationRunBodyShareFractionMax = 1;
+
+export const createValuationRunBodyManualAvgAnnualProfitMin = 0;
+
+export const createValuationRunBodyManualPostMaturityYearsMin = 0;
+
+export const createValuationRunBodyStatusDefault = `draft`;
+
+export const CreateValuationRunBody = zod.object({
+  projectId: zod.string().uuid(),
+  transferId: zod.string().uuid().optional(),
+  shareFraction: zod
+    .number()
+    .min(createValuationRunBodyShareFractionMin)
+    .max(createValuationRunBodyShareFractionMax)
+    .optional(),
+  manualAvgAnnualProfit: zod
+    .number()
+    .min(createValuationRunBodyManualAvgAnnualProfitMin)
+    .optional(),
+  manualPostMaturityYears: zod
+    .number()
+    .min(createValuationRunBodyManualPostMaturityYearsMin)
+    .optional(),
+  notes: zod.string().optional(),
+  status: zod
+    .enum(["draft", "final"])
+    .default(createValuationRunBodyStatusDefault),
+});
+
+/**
+ * @summary Compute valuation without saving (quick preview)
+ */
+export const GetValuationPreviewQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid(),
+  sharePct: zod.coerce.number().optional(),
+});
+
+export const GetValuationPreviewResponse = zod.object({
+  projectId: zod.string().uuid(),
+  maturityDate: zod.string().nullish(),
+  postMaturityYears: zod.number(),
+  profitYearsUsed: zod.number(),
+  profitYearData: zod.array(zod.object({}).passthrough()),
+  avgAnnualProfit: zod.number(),
+  discountRate: zod.number(),
+  valuationHorizon: zod.number(),
+  remainingLife: zod.number(),
+  isHorizonExceeded: zod.boolean(),
+  projectGrossValue: zod.number(),
+  shareFraction: zod.number().nullish(),
+  shareValue: zod.number().nullish(),
+  formulaVersion: zod.string(),
+  warnings: zod.array(zod.string()),
+});
+
+/**
+ * @summary List profit records for valuation
+ */
+export const ListValuationProfitRecordsQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+});
+
+export const ListValuationProfitRecordsResponse = zod.object({
+  records: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      projectId: zod.string().uuid(),
+      periodYear: zod.number(),
+      grossRevenue: zod.string().nullish(),
+      operationalCost: zod.string().nullish(),
+      lcaAmount: zod.string().nullish(),
+      netProfit: zod.string(),
+      source: zod.enum(["manual", "fifty_pct_session"]),
+      sourceId: zod.string().uuid().nullish(),
+      isPostMaturity: zod.boolean(),
+      notes: zod.string().nullish(),
+      recordedBy: zod.string().uuid().nullish(),
+      recordedByName: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    }),
+  ),
+  total: zod.number(),
+});
+
+/**
+ * @summary Create a profit record
+ */
+export const createValuationProfitRecordBodySourceDefault = `manual`;
+export const createValuationProfitRecordBodyIsPostMaturityDefault = false;
+
+export const CreateValuationProfitRecordBody = zod.object({
+  projectId: zod.string().uuid(),
+  periodYear: zod.number(),
+  grossRevenue: zod.number().optional(),
+  operationalCost: zod.number().optional(),
+  lcaAmount: zod.number().optional(),
+  netProfit: zod.number(),
+  source: zod
+    .enum(["manual", "fifty_pct_session"])
+    .default(createValuationProfitRecordBodySourceDefault),
+  sourceId: zod.string().uuid().optional(),
+  isPostMaturity: zod
+    .boolean()
+    .default(createValuationProfitRecordBodyIsPostMaturityDefault),
+  notes: zod.string().optional(),
+});
+
+/**
+ * @summary Auto-import profit records from confirmed 50% settlement sessions
+ */
+export const importValuationProfitRecordsBodyAutoMarkPostMaturityDefault = true;
+
+export const ImportValuationProfitRecordsBody = zod.object({
+  projectId: zod.string().uuid(),
+  limitYears: zod.number().optional(),
+  autoMarkPostMaturity: zod
+    .boolean()
+    .default(importValuationProfitRecordsBodyAutoMarkPostMaturityDefault),
+});
+
+export const ImportValuationProfitRecordsResponse = zod.object({
+  imported: zod.number().optional(),
+  skipped: zod.number().optional(),
+  records: zod
+    .array(
+      zod.object({
+        id: zod.string().uuid(),
+        projectId: zod.string().uuid(),
+        periodYear: zod.number(),
+        grossRevenue: zod.string().nullish(),
+        operationalCost: zod.string().nullish(),
+        lcaAmount: zod.string().nullish(),
+        netProfit: zod.string(),
+        source: zod.enum(["manual", "fifty_pct_session"]),
+        sourceId: zod.string().uuid().nullish(),
+        isPostMaturity: zod.boolean(),
+        notes: zod.string().nullish(),
+        recordedBy: zod.string().uuid().nullish(),
+        recordedByName: zod.string().nullish(),
+        createdAt: zod.coerce.date(),
+        updatedAt: zod.coerce.date(),
+      }),
+    )
+    .optional(),
+});
+
+/**
+ * @summary Update a profit record
+ */
+export const UpdateValuationProfitRecordParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const UpdateValuationProfitRecordBody = zod.object({
+  periodYear: zod.number().optional(),
+  grossRevenue: zod.number().optional(),
+  operationalCost: zod.number().optional(),
+  lcaAmount: zod.number().optional(),
+  netProfit: zod.number().optional(),
+  isPostMaturity: zod.boolean().optional(),
+  notes: zod.string().optional(),
+});
+
+export const UpdateValuationProfitRecordResponse = zod.object({
+  record: zod
+    .object({
+      id: zod.string().uuid(),
+      projectId: zod.string().uuid(),
+      periodYear: zod.number(),
+      grossRevenue: zod.string().nullish(),
+      operationalCost: zod.string().nullish(),
+      lcaAmount: zod.string().nullish(),
+      netProfit: zod.string(),
+      source: zod.enum(["manual", "fifty_pct_session"]),
+      sourceId: zod.string().uuid().nullish(),
+      isPostMaturity: zod.boolean(),
+      notes: zod.string().nullish(),
+      recordedBy: zod.string().uuid().nullish(),
+      recordedByName: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    })
+    .optional(),
+});
+
+/**
+ * @summary Delete a profit record
+ */
+export const DeleteValuationProfitRecordParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const DeleteValuationProfitRecordResponse = zod.object({
+  deleted: zod.boolean().optional(),
+});
+
+/**
+ * @summary Get a single valuation run with formula breakdown
+ */
+export const GetValuationRunParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const GetValuationRunResponse = zod.object({
+  run: zod
+    .object({
+      id: zod.string().uuid(),
+      projectId: zod.string().uuid(),
+      transferId: zod.string().uuid().nullish(),
+      maturityDate: zod.string().nullish(),
+      postMaturityYears: zod.string(),
+      profitYearsUsed: zod.number(),
+      profitYearData: zod.array(zod.object({}).passthrough()),
+      avgAnnualProfit: zod.string(),
+      discountRate: zod.string(),
+      valuationHorizon: zod.number(),
+      remainingLife: zod.string(),
+      isHorizonExceeded: zod.boolean(),
+      projectGrossValue: zod.string(),
+      shareFraction: zod.string().nullish(),
+      shareValue: zod.string().nullish(),
+      finalPriceOverride: zod.string().nullish(),
+      overrideReason: zod.string().nullish(),
+      status: zod.enum(["draft", "final"]),
+      notes: zod.string().nullish(),
+      formulaVersion: zod.string(),
+      calculatedBy: zod.string().uuid().nullish(),
+      calculatedByName: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    })
+    .and(
+      zod.object({
+        projectName: zod.string().nullish(),
+      }),
+    ),
+  formulaBreakdown: zod.object({
+    I: zod.number().optional(),
+    N: zod.number().optional(),
+    discountRate: zod.number().optional(),
+    annuityFactor: zod.number().optional(),
+    projectGrossValue: zod.number().optional(),
+    shareFraction: zod.number().nullish(),
+    shareValue: zod.number().nullish(),
+    finalPrice: zod.number().optional(),
+    isOverridden: zod.boolean().optional(),
+  }),
+});
+
+/**
+ * @summary Update valuation run (override / notes / status)
+ */
+export const UpdateValuationRunParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const updateValuationRunBodyFinalPriceOverrideMin = 0;
+
+export const updateValuationRunBodyShareFractionMin = 0;
+export const updateValuationRunBodyShareFractionMax = 1;
+
+export const UpdateValuationRunBody = zod.object({
+  finalPriceOverride: zod
+    .number()
+    .min(updateValuationRunBodyFinalPriceOverrideMin)
+    .nullish(),
+  overrideReason: zod.string().nullish(),
+  shareFraction: zod
+    .number()
+    .min(updateValuationRunBodyShareFractionMin)
+    .max(updateValuationRunBodyShareFractionMax)
+    .nullish(),
+  notes: zod.string().nullish(),
+  status: zod.enum(["draft", "final"]).optional(),
+});
+
+export const UpdateValuationRunResponse = zod.object({
+  run: zod
+    .object({
+      id: zod.string().uuid(),
+      projectId: zod.string().uuid(),
+      transferId: zod.string().uuid().nullish(),
+      maturityDate: zod.string().nullish(),
+      postMaturityYears: zod.string(),
+      profitYearsUsed: zod.number(),
+      profitYearData: zod.array(zod.object({}).passthrough()),
+      avgAnnualProfit: zod.string(),
+      discountRate: zod.string(),
+      valuationHorizon: zod.number(),
+      remainingLife: zod.string(),
+      isHorizonExceeded: zod.boolean(),
+      projectGrossValue: zod.string(),
+      shareFraction: zod.string().nullish(),
+      shareValue: zod.string().nullish(),
+      finalPriceOverride: zod.string().nullish(),
+      overrideReason: zod.string().nullish(),
+      status: zod.enum(["draft", "final"]),
+      notes: zod.string().nullish(),
+      formulaVersion: zod.string(),
+      calculatedBy: zod.string().uuid().nullish(),
+      calculatedByName: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    })
+    .optional(),
+});
+
+/**
+ * @summary Delete a valuation run (admin only)
+ */
+export const DeleteValuationRunParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const DeleteValuationRunResponse = zod.object({
+  deleted: zod.boolean().optional(),
+});

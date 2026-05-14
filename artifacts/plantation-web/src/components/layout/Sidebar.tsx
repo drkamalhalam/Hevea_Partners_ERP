@@ -150,6 +150,12 @@ const navGroups: NavGroup[] = [
         roles: ["admin", "developer"] as UserRole[],
       },
       {
+        name: "Valuation Engine",
+        href: "/valuation-engine",
+        icon: Scale,
+        roles: ["admin", "developer"] as UserRole[],
+      },
+      {
         name: "Dispute Centre",
         href: "/contributions/disputes",
         icon: ShieldAlert,

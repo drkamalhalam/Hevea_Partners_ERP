@@ -49,6 +49,7 @@ import settlementOverridesRouter from "./settlement_overrides";
 import distributionRecordsRouter from "./distribution_records";
 import settlementGovernanceRouter from "./settlement_governance";
 import financialAnalyticsRouter from "./financial_analytics";
+import valuationsRouter from "./valuations";
 import devRouter from "./dev";
 
 const router: IRouter = Router();
@@ -115,5 +116,6 @@ router.use("/settlement", settlementOverridesRouter);
 router.use("/distribution-records", distributionRecordsRouter);
 router.use("/settlement-governance", settlementGovernanceRouter);
 router.use("/financial-analytics", financialAnalyticsRouter);
+router.use("/valuations", valuationsRouter);
 
 export default router;

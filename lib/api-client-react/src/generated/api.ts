@@ -119,12 +119,18 @@ import type {
   CreateStockMovementBody,
   CreateTaskBody,
   CreateTemplateBody,
+  CreateValuationProfitRecord201,
+  CreateValuationProfitRecordBody,
+  CreateValuationRun201,
+  CreateValuationRunBody,
   DashboardSummary,
   DeleteEppEntry200,
   DeleteLossAbsorptionRecord200,
   DeletePayableAdjustment200,
   DeleteProductionEntry200,
   DeleteStockMovement200,
+  DeleteValuationProfitRecord200,
+  DeleteValuationRun200,
   DiscrepancyReport,
   DisputeSettlement200,
   DisputeSettlementBody,
@@ -205,9 +211,12 @@ import type {
   GetSettlementTasksParams,
   GetTransferRofrDashboardParams,
   GetUserActivityParams,
+  GetValuationPreviewParams,
   GovernanceSummary,
   HealthStatus,
   ImbalanceSummary,
+  ImportValuationProfitRecords200,
+  ImportValuationProfitRecordsBody,
   InitiateAgreementActivation409,
   InitiateAgreementActivationBody,
   InitiateClosureBody,
@@ -285,6 +294,8 @@ import type {
   ListTransferAuditEvents200,
   ListTransferOtpEvents200,
   ListTransferRofrOffers200,
+  ListValuationProfitRecordsParams,
+  ListValuationRunsParams,
   LookupFiftyPctLcaParams,
   LookupFiftyPctPartnersParams,
   LookupFiftyPctRevenueParams,
@@ -426,9 +437,17 @@ import type {
   UpdateSettlementRecordBody,
   UpdateTaskBody,
   UpdateTemplateBody,
+  UpdateValuationProfitRecord200,
+  UpdateValuationProfitRecordBody,
+  UpdateValuationRun200,
+  UpdateValuationRunBody,
   UpsertAccountingProfileBody,
   UpsertUserInput,
   UserProfile,
+  ValuationPreview,
+  ValuationProfitRecordPage,
+  ValuationRunDetail,
+  ValuationRunPage,
   VerifyAgreementActivationOtp400,
   VerifyAgreementActivationOtpBody,
   VerifyContributionBody,
@@ -31731,3 +31750,1011 @@ export function useGetAllocationBreakdown<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary List valuation runs
+ */
+export const getListValuationRunsUrl = (params?: ListValuationRunsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/valuations?${stringifiedParams}`
+    : `/api/valuations`;
+};
+
+export const listValuationRuns = async (
+  params?: ListValuationRunsParams,
+  options?: RequestInit,
+): Promise<ValuationRunPage> => {
+  return customFetch<ValuationRunPage>(getListValuationRunsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListValuationRunsQueryKey = (
+  params?: ListValuationRunsParams,
+) => {
+  return [`/api/valuations`, ...(params ? [params] : [])] as const;
+};
+
+export const getListValuationRunsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listValuationRuns>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListValuationRunsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listValuationRuns>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListValuationRunsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listValuationRuns>>
+  > = ({ signal }) => listValuationRuns(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listValuationRuns>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListValuationRunsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listValuationRuns>>
+>;
+export type ListValuationRunsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List valuation runs
+ */
+
+export function useListValuationRuns<
+  TData = Awaited<ReturnType<typeof listValuationRuns>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListValuationRunsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listValuationRuns>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListValuationRunsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create (compute + save) a valuation run
+ */
+export const getCreateValuationRunUrl = () => {
+  return `/api/valuations`;
+};
+
+export const createValuationRun = async (
+  createValuationRunBody: CreateValuationRunBody,
+  options?: RequestInit,
+): Promise<CreateValuationRun201> => {
+  return customFetch<CreateValuationRun201>(getCreateValuationRunUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createValuationRunBody),
+  });
+};
+
+export const getCreateValuationRunMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createValuationRun>>,
+    TError,
+    { data: BodyType<CreateValuationRunBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createValuationRun>>,
+  TError,
+  { data: BodyType<CreateValuationRunBody> },
+  TContext
+> => {
+  const mutationKey = ["createValuationRun"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createValuationRun>>,
+    { data: BodyType<CreateValuationRunBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createValuationRun(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateValuationRunMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createValuationRun>>
+>;
+export type CreateValuationRunMutationBody = BodyType<CreateValuationRunBody>;
+export type CreateValuationRunMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create (compute + save) a valuation run
+ */
+export const useCreateValuationRun = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createValuationRun>>,
+    TError,
+    { data: BodyType<CreateValuationRunBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createValuationRun>>,
+  TError,
+  { data: BodyType<CreateValuationRunBody> },
+  TContext
+> => {
+  return useMutation(getCreateValuationRunMutationOptions(options));
+};
+
+/**
+ * @summary Compute valuation without saving (quick preview)
+ */
+export const getGetValuationPreviewUrl = (
+  params: GetValuationPreviewParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/valuations/preview?${stringifiedParams}`
+    : `/api/valuations/preview`;
+};
+
+export const getValuationPreview = async (
+  params: GetValuationPreviewParams,
+  options?: RequestInit,
+): Promise<ValuationPreview> => {
+  return customFetch<ValuationPreview>(getGetValuationPreviewUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetValuationPreviewQueryKey = (
+  params?: GetValuationPreviewParams,
+) => {
+  return [`/api/valuations/preview`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetValuationPreviewQueryOptions = <
+  TData = Awaited<ReturnType<typeof getValuationPreview>>,
+  TError = ErrorType<unknown>,
+>(
+  params: GetValuationPreviewParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getValuationPreview>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetValuationPreviewQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getValuationPreview>>
+  > = ({ signal }) =>
+    getValuationPreview(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getValuationPreview>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetValuationPreviewQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getValuationPreview>>
+>;
+export type GetValuationPreviewQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Compute valuation without saving (quick preview)
+ */
+
+export function useGetValuationPreview<
+  TData = Awaited<ReturnType<typeof getValuationPreview>>,
+  TError = ErrorType<unknown>,
+>(
+  params: GetValuationPreviewParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getValuationPreview>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetValuationPreviewQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List profit records for valuation
+ */
+export const getListValuationProfitRecordsUrl = (
+  params?: ListValuationProfitRecordsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/valuations/profit-records?${stringifiedParams}`
+    : `/api/valuations/profit-records`;
+};
+
+export const listValuationProfitRecords = async (
+  params?: ListValuationProfitRecordsParams,
+  options?: RequestInit,
+): Promise<ValuationProfitRecordPage> => {
+  return customFetch<ValuationProfitRecordPage>(
+    getListValuationProfitRecordsUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListValuationProfitRecordsQueryKey = (
+  params?: ListValuationProfitRecordsParams,
+) => {
+  return [
+    `/api/valuations/profit-records`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListValuationProfitRecordsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listValuationProfitRecords>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListValuationProfitRecordsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listValuationProfitRecords>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListValuationProfitRecordsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listValuationProfitRecords>>
+  > = ({ signal }) =>
+    listValuationProfitRecords(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listValuationProfitRecords>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListValuationProfitRecordsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listValuationProfitRecords>>
+>;
+export type ListValuationProfitRecordsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List profit records for valuation
+ */
+
+export function useListValuationProfitRecords<
+  TData = Awaited<ReturnType<typeof listValuationProfitRecords>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListValuationProfitRecordsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listValuationProfitRecords>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListValuationProfitRecordsQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a profit record
+ */
+export const getCreateValuationProfitRecordUrl = () => {
+  return `/api/valuations/profit-records`;
+};
+
+export const createValuationProfitRecord = async (
+  createValuationProfitRecordBody: CreateValuationProfitRecordBody,
+  options?: RequestInit,
+): Promise<CreateValuationProfitRecord201> => {
+  return customFetch<CreateValuationProfitRecord201>(
+    getCreateValuationProfitRecordUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(createValuationProfitRecordBody),
+    },
+  );
+};
+
+export const getCreateValuationProfitRecordMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createValuationProfitRecord>>,
+    TError,
+    { data: BodyType<CreateValuationProfitRecordBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createValuationProfitRecord>>,
+  TError,
+  { data: BodyType<CreateValuationProfitRecordBody> },
+  TContext
+> => {
+  const mutationKey = ["createValuationProfitRecord"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createValuationProfitRecord>>,
+    { data: BodyType<CreateValuationProfitRecordBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createValuationProfitRecord(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateValuationProfitRecordMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createValuationProfitRecord>>
+>;
+export type CreateValuationProfitRecordMutationBody =
+  BodyType<CreateValuationProfitRecordBody>;
+export type CreateValuationProfitRecordMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create a profit record
+ */
+export const useCreateValuationProfitRecord = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createValuationProfitRecord>>,
+    TError,
+    { data: BodyType<CreateValuationProfitRecordBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createValuationProfitRecord>>,
+  TError,
+  { data: BodyType<CreateValuationProfitRecordBody> },
+  TContext
+> => {
+  return useMutation(getCreateValuationProfitRecordMutationOptions(options));
+};
+
+/**
+ * @summary Auto-import profit records from confirmed 50% settlement sessions
+ */
+export const getImportValuationProfitRecordsUrl = () => {
+  return `/api/valuations/profit-records/import`;
+};
+
+export const importValuationProfitRecords = async (
+  importValuationProfitRecordsBody: ImportValuationProfitRecordsBody,
+  options?: RequestInit,
+): Promise<ImportValuationProfitRecords200> => {
+  return customFetch<ImportValuationProfitRecords200>(
+    getImportValuationProfitRecordsUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(importValuationProfitRecordsBody),
+    },
+  );
+};
+
+export const getImportValuationProfitRecordsMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof importValuationProfitRecords>>,
+    TError,
+    { data: BodyType<ImportValuationProfitRecordsBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof importValuationProfitRecords>>,
+  TError,
+  { data: BodyType<ImportValuationProfitRecordsBody> },
+  TContext
+> => {
+  const mutationKey = ["importValuationProfitRecords"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof importValuationProfitRecords>>,
+    { data: BodyType<ImportValuationProfitRecordsBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return importValuationProfitRecords(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ImportValuationProfitRecordsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof importValuationProfitRecords>>
+>;
+export type ImportValuationProfitRecordsMutationBody =
+  BodyType<ImportValuationProfitRecordsBody>;
+export type ImportValuationProfitRecordsMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Auto-import profit records from confirmed 50% settlement sessions
+ */
+export const useImportValuationProfitRecords = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof importValuationProfitRecords>>,
+    TError,
+    { data: BodyType<ImportValuationProfitRecordsBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof importValuationProfitRecords>>,
+  TError,
+  { data: BodyType<ImportValuationProfitRecordsBody> },
+  TContext
+> => {
+  return useMutation(getImportValuationProfitRecordsMutationOptions(options));
+};
+
+/**
+ * @summary Update a profit record
+ */
+export const getUpdateValuationProfitRecordUrl = (id: string) => {
+  return `/api/valuations/profit-records/${id}`;
+};
+
+export const updateValuationProfitRecord = async (
+  id: string,
+  updateValuationProfitRecordBody: UpdateValuationProfitRecordBody,
+  options?: RequestInit,
+): Promise<UpdateValuationProfitRecord200> => {
+  return customFetch<UpdateValuationProfitRecord200>(
+    getUpdateValuationProfitRecordUrl(id),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(updateValuationProfitRecordBody),
+    },
+  );
+};
+
+export const getUpdateValuationProfitRecordMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateValuationProfitRecord>>,
+    TError,
+    { id: string; data: BodyType<UpdateValuationProfitRecordBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateValuationProfitRecord>>,
+  TError,
+  { id: string; data: BodyType<UpdateValuationProfitRecordBody> },
+  TContext
+> => {
+  const mutationKey = ["updateValuationProfitRecord"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateValuationProfitRecord>>,
+    { id: string; data: BodyType<UpdateValuationProfitRecordBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateValuationProfitRecord(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateValuationProfitRecordMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateValuationProfitRecord>>
+>;
+export type UpdateValuationProfitRecordMutationBody =
+  BodyType<UpdateValuationProfitRecordBody>;
+export type UpdateValuationProfitRecordMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update a profit record
+ */
+export const useUpdateValuationProfitRecord = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateValuationProfitRecord>>,
+    TError,
+    { id: string; data: BodyType<UpdateValuationProfitRecordBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateValuationProfitRecord>>,
+  TError,
+  { id: string; data: BodyType<UpdateValuationProfitRecordBody> },
+  TContext
+> => {
+  return useMutation(getUpdateValuationProfitRecordMutationOptions(options));
+};
+
+/**
+ * @summary Delete a profit record
+ */
+export const getDeleteValuationProfitRecordUrl = (id: string) => {
+  return `/api/valuations/profit-records/${id}`;
+};
+
+export const deleteValuationProfitRecord = async (
+  id: string,
+  options?: RequestInit,
+): Promise<DeleteValuationProfitRecord200> => {
+  return customFetch<DeleteValuationProfitRecord200>(
+    getDeleteValuationProfitRecordUrl(id),
+    {
+      ...options,
+      method: "DELETE",
+    },
+  );
+};
+
+export const getDeleteValuationProfitRecordMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteValuationProfitRecord>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteValuationProfitRecord>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["deleteValuationProfitRecord"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteValuationProfitRecord>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteValuationProfitRecord(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteValuationProfitRecordMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteValuationProfitRecord>>
+>;
+
+export type DeleteValuationProfitRecordMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Delete a profit record
+ */
+export const useDeleteValuationProfitRecord = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteValuationProfitRecord>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteValuationProfitRecord>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getDeleteValuationProfitRecordMutationOptions(options));
+};
+
+/**
+ * @summary Get a single valuation run with formula breakdown
+ */
+export const getGetValuationRunUrl = (id: string) => {
+  return `/api/valuations/${id}`;
+};
+
+export const getValuationRun = async (
+  id: string,
+  options?: RequestInit,
+): Promise<ValuationRunDetail> => {
+  return customFetch<ValuationRunDetail>(getGetValuationRunUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetValuationRunQueryKey = (id: string) => {
+  return [`/api/valuations/${id}`] as const;
+};
+
+export const getGetValuationRunQueryOptions = <
+  TData = Awaited<ReturnType<typeof getValuationRun>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getValuationRun>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetValuationRunQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getValuationRun>>> = ({
+    signal,
+  }) => getValuationRun(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getValuationRun>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetValuationRunQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getValuationRun>>
+>;
+export type GetValuationRunQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get a single valuation run with formula breakdown
+ */
+
+export function useGetValuationRun<
+  TData = Awaited<ReturnType<typeof getValuationRun>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getValuationRun>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetValuationRunQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Update valuation run (override / notes / status)
+ */
+export const getUpdateValuationRunUrl = (id: string) => {
+  return `/api/valuations/${id}`;
+};
+
+export const updateValuationRun = async (
+  id: string,
+  updateValuationRunBody: UpdateValuationRunBody,
+  options?: RequestInit,
+): Promise<UpdateValuationRun200> => {
+  return customFetch<UpdateValuationRun200>(getUpdateValuationRunUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateValuationRunBody),
+  });
+};
+
+export const getUpdateValuationRunMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateValuationRun>>,
+    TError,
+    { id: string; data: BodyType<UpdateValuationRunBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateValuationRun>>,
+  TError,
+  { id: string; data: BodyType<UpdateValuationRunBody> },
+  TContext
+> => {
+  const mutationKey = ["updateValuationRun"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateValuationRun>>,
+    { id: string; data: BodyType<UpdateValuationRunBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateValuationRun(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateValuationRunMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateValuationRun>>
+>;
+export type UpdateValuationRunMutationBody = BodyType<UpdateValuationRunBody>;
+export type UpdateValuationRunMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update valuation run (override / notes / status)
+ */
+export const useUpdateValuationRun = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateValuationRun>>,
+    TError,
+    { id: string; data: BodyType<UpdateValuationRunBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateValuationRun>>,
+  TError,
+  { id: string; data: BodyType<UpdateValuationRunBody> },
+  TContext
+> => {
+  return useMutation(getUpdateValuationRunMutationOptions(options));
+};
+
+/**
+ * @summary Delete a valuation run (admin only)
+ */
+export const getDeleteValuationRunUrl = (id: string) => {
+  return `/api/valuations/${id}`;
+};
+
+export const deleteValuationRun = async (
+  id: string,
+  options?: RequestInit,
+): Promise<DeleteValuationRun200> => {
+  return customFetch<DeleteValuationRun200>(getDeleteValuationRunUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteValuationRunMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteValuationRun>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteValuationRun>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["deleteValuationRun"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteValuationRun>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteValuationRun(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteValuationRunMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteValuationRun>>
+>;
+
+export type DeleteValuationRunMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Delete a valuation run (admin only)
+ */
+export const useDeleteValuationRun = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteValuationRun>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteValuationRun>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getDeleteValuationRunMutationOptions(options));
+};
