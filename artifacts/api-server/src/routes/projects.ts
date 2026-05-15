@@ -9,7 +9,7 @@ import {
   projectLifecycleHistoryTable,
   contributionsTable,
 } from "@workspace/db";
-import { eq, and, inArray, desc, isNull } from "drizzle-orm";
+import { eq, and, inArray, desc, isNull, count } from "drizzle-orm";
 import {
   CreateProjectBody,
   UpdateProjectBody,
@@ -102,9 +102,16 @@ router.post("/", requireRole("admin", "developer"), async (req, res) => {
     return;
   }
   try {
+    // Auto-generate a unique project code (HP-001, HP-002, …)
+    const [{ total }] = await db
+      .select({ total: count() })
+      .from(projectsTable);
+    const seq = (Number(total) + 1).toString().padStart(3, "0");
+    const projectCode = `HP-${seq}`;
+
     const [project] = await db
       .insert(projectsTable)
-      .values(parsed.data)
+      .values({ ...parsed.data, projectCode })
       .returning();
     await db.insert(activityTable).values({
       type: "project_created",

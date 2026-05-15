@@ -55,7 +55,6 @@ const STEPS = [
 
 const step1Schema = z.object({
   name: z.string().min(2, "Project name required"),
-  projectCode: z.string().optional(),
   commercialModel: z.enum(["ownership_contribution", "fifty_percent_revenue"]),
   location: z.string().min(2, "Location required"),
   village: z.string().optional(),
@@ -117,13 +116,6 @@ function Step1BasicInfo({ onNext }: { onNext: (projectId: string) => void }) {
             <FormItem className="col-span-2">
               <FormLabel>Project Name *</FormLabel>
               <FormControl><Input placeholder="e.g. HP Rubber Project – Agartala Block A" {...field} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
-          <FormField control={form.control} name="projectCode" render={({ field }) => (
-            <FormItem>
-              <FormLabel>Project Code</FormLabel>
-              <FormControl><Input placeholder="e.g. HP-001" {...field} /></FormControl>
               <FormMessage />
             </FormItem>
           )} />
