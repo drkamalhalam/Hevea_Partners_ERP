@@ -7,6 +7,7 @@ import {
   DeleteProductionRecordParams,
 } from "@workspace/api-zod";
 import { requireRole, canAccessProject } from "../middlewares/auth";
+import { writeAudit } from "../lib/auditLogger";
 
 const router = Router();
 
@@ -171,9 +172,26 @@ router.delete("/:id", requireRole("admin", "developer"), async (req, res) => {
   }
 
   try {
+    const [existing] = await db
+      .select()
+      .from(productionRecordsTable)
+      .where(eq(productionRecordsTable.id, parsed.data.id))
+      .limit(1);
+
     await db
       .delete(productionRecordsTable)
       .where(eq(productionRecordsTable.id, parsed.data.id));
+
+    writeAudit(req, {
+      tableName: "production_records",
+      recordId: parsed.data.id,
+      operation: "DELETE",
+      module: "production",
+      actionType: "production_record_deleted",
+      projectId: existing?.projectId ?? null,
+      oldData: existing ? { id: existing.id, projectId: existing.projectId } : null,
+    });
+
     res.status(204).send();
   } catch (err) {
     req.log.error({ err }, "Failed to delete production record");

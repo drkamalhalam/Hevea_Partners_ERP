@@ -15,6 +15,8 @@ import { getAuth } from "@clerk/express";
 import { db, governanceOverridesTable, projectsTable, usersTable } from "@workspace/db";
 import { eq, and, gte, lte, desc, count, sql } from "drizzle-orm";
 import { requireRole } from "../middlewares/auth";
+import { enforceWriteOnce } from "../lib/integrityMiddleware";
+import { writeAudit } from "../lib/auditLogger";
 import { z } from "zod";
 
 const router = Router();
@@ -307,6 +309,25 @@ router.post("/", requireRole("admin", "developer"), async (req, res) => {
     .where(eq(governanceOverridesTable.id, override.id))
     .limit(1);
 
+  writeAudit(req, {
+    tableName: "governance_overrides",
+    recordId: override.id,
+    operation: "INSERT",
+    module: mod,
+    actionType: overrideType,
+    projectId,
+    newData: {
+      overrideType,
+      title,
+      overrideReason,
+      actorId: actor?.id ?? null,
+      actorRole: actor?.role ?? null,
+    },
+    actor: actor
+      ? { id: actor.id ?? "", name: actor.displayName, role: actor.role }
+      : null,
+  });
+
   res.status(201).json({ override: withProject });
 });
 
@@ -349,5 +370,11 @@ router.get("/:id", requireRole("admin", "developer"), async (req, res) => {
 
   res.json({ override });
 });
+
+// ── Explicit write-once protection ────────────────────────────────────────────
+// governanceOverridesTable is append-only. Reject any DELETE or PATCH attempts.
+// Uses regex paths for Express 5 / path-to-regexp 8 compatibility.
+router.delete(/.*/, enforceWriteOnce("governance overrides"));
+router.patch(/.*/, enforceWriteOnce("governance overrides"));
 
 export default router;

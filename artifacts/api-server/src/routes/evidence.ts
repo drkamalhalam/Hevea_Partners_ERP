@@ -28,6 +28,7 @@ import {
   count,
   desc,
   eq,
+  gte,
   ilike,
   inArray,
   isNull,
@@ -504,12 +505,38 @@ router.get("/:id/download", async (req, res) => {
     return res.status(400).json({ error: "This record has no stored file — it uses an external URL" });
   }
 
+  // ── Access anomaly detection ─────────────────────────────────────────────
+  // Count downloads by this actor in the last 24 h. Log a warning and add a
+  // response header if the threshold is exceeded — does NOT block the request.
+  const anomalyWindowStart = new Date(Date.now() - 86_400_000);
+  const [{ downloadCount }] = await db
+    .select({ downloadCount: count() })
+    .from(evidenceAccessLogTable)
+    .where(
+      and(
+        eq(evidenceAccessLogTable.actorId, user.id),
+        gte(evidenceAccessLogTable.accessedAt, anomalyWindowStart),
+      ),
+    );
+  const isAnomaly = Number(downloadCount) > 5;
+  if (isAnomaly) {
+    req.log.warn(
+      { actorId: user.id, actorRole: user.role, evidenceId: id, downloadCount },
+      "evidence: high-frequency download anomaly detected",
+    );
+  }
+
   try {
     const objectFile = await objectStorageService.getObjectEntityFile(row.fileObjectPath);
     const response = await objectStorageService.downloadObject(objectFile);
 
     if (row.mimeType) res.setHeader("Content-Type", row.mimeType);
     if (row.fileSizeBytes) res.setHeader("Content-Length", row.fileSizeBytes);
+    // Integrity + audit traceability headers
+    if (row.checksum) res.setHeader("X-Evidence-Checksum", row.checksum);
+    res.setHeader("X-Access-Logged", "true");
+    res.setHeader("X-Actor-Role", user.role ?? "unknown");
+    if (isAnomaly) res.setHeader("X-Access-Anomaly", "high-frequency");
     if (row.originalFileName) {
       res.setHeader(
         "Content-Disposition",

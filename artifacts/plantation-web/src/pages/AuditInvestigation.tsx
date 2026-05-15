@@ -662,7 +662,7 @@ function FilterPanel({
 
 export default function AuditInvestigation() {
   const { role } = useRole();
-  const [tab, setTab] = useState<"search" | "investigation" | "analytics" | "export">("search");
+  const [tab, setTab] = useState<"search" | "investigation" | "analytics" | "export" | "security">("search");
   const [filters, setFilters] = useState<SearchFilters>(DEFAULT_FILTERS);
   const [selectedEvent, setSelectedEvent] = useState<AuditEvent | null>(null);
   const [offset, setOffset] = useState(0);
@@ -732,6 +732,30 @@ export default function AuditInvestigation() {
     enabled: tab === "export",
   });
 
+  type AnomalyEntry = { source: string; actorId: string | null; actorName: string | null; actorRole: string | null; eventCount: number; severity: "medium" | "high" | "critical" };
+  type CoverageModule = { module: string; total: number; inserts: number; updates: number; deletes: number };
+  type ProtectedTable = { label: string; dbTable: string; totalRows: number; newestEntry: string | null; oldestEntry: string | null; status: string };
+  type SecurityData = {
+    anomalies: { evidenceAnomalies: AnomalyEntry[]; documentAnomalies: AnomalyEntry[]; windowHours: number; downloadThreshold: number };
+    coverage: { totalAuditEntries: number; entriesLast7Days: number; byModule: CoverageModule[] };
+    tables: { tables: ProtectedTable[]; generatedAt: string };
+  };
+
+  const securityQuery = useQuery({
+    queryKey: ["audit-integrity-security"],
+    queryFn: async (): Promise<SecurityData> => {
+      const [ar, cr, tr] = await Promise.all([
+        fetch(`${BASE_URL}/api/audit-integrity/anomalies`),
+        fetch(`${BASE_URL}/api/audit-integrity/coverage`),
+        fetch(`${BASE_URL}/api/audit-integrity/protected-tables`),
+      ]);
+      const [anomalies, coverage, tables] = await Promise.all([ar.json(), cr.json(), tr.json()]);
+      return { anomalies, coverage, tables };
+    },
+    enabled: tab === "security",
+    staleTime: 60_000,
+  });
+
   // When selecting an event, switch to investigation tab
   const handleSelectEvent = useCallback((e: AuditEvent) => {
     setSelectedEvent(e);
@@ -799,6 +823,7 @@ export default function AuditInvestigation() {
               { value: "investigation", icon: GitCommit, label: "Investigation" },
               { value: "analytics", icon: BarChart2, label: "Governance Analytics" },
               { value: "export", icon: Download, label: "Export" },
+              { value: "security", icon: Shield, label: "Security" },
             ].map(({ value, icon: Icon, label }) => (
               <TabsTrigger
                 key={value}
@@ -1090,6 +1115,179 @@ export default function AuditInvestigation() {
                 All exports are access-controlled. Only admin and developer roles can generate audit packages. Export actions are themselves recorded in the audit log.
               </p>
             </div>
+          </div>
+        </TabsContent>
+        {/* ── SECURITY TAB ───────────────────────────────────────────────────── */}
+        <TabsContent value="security" className="flex-1 min-h-0 mt-0 overflow-y-auto">
+          <div className="p-5 space-y-6">
+            {/* Header */}
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-red-950/40 rounded-lg border border-red-800/30">
+                <ShieldAlert className="h-5 w-5 text-red-400" />
+              </div>
+              <div>
+                <h2 className="text-slate-100 font-semibold text-sm">Integrity &amp; Security Monitor</h2>
+                <p className="text-slate-400 text-xs">Access anomalies, audit coverage, and write-once table health</p>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                className="ml-auto border-slate-700 text-slate-400 hover:text-slate-200 text-xs h-7"
+                onClick={() => securityQuery.refetch()}
+              >
+                <RefreshCw className={`h-3 w-3 mr-1.5 ${securityQuery.isFetching ? "animate-spin" : ""}`} />
+                Refresh
+              </Button>
+            </div>
+
+            {securityQuery.isLoading ? (
+              <div className="space-y-3">{[...Array(5)].map((_, i) => <Skeleton key={i} className="h-24 bg-slate-800/50 rounded-xl" />)}</div>
+            ) : securityQuery.isError ? (
+              <div className="p-4 bg-red-950/20 border border-red-800/30 rounded-lg text-red-300 text-sm">Failed to load security data.</div>
+            ) : (
+              <>
+                {/* ── Access Anomalies ──────────────────────────────────────── */}
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <ShieldAlert className="h-4 w-4 text-orange-400" />
+                    <h3 className="text-slate-200 text-sm font-medium">Access Anomalies</h3>
+                    <span className="text-[10px] text-slate-500 ml-auto">
+                      Last {securityQuery.data?.anomalies.windowHours ?? 24} h · threshold &gt;{securityQuery.data?.anomalies.downloadThreshold ?? 5} events
+                    </span>
+                  </div>
+
+                  {(() => {
+                    const all = [
+                      ...(securityQuery.data?.anomalies.evidenceAnomalies ?? []),
+                      ...(securityQuery.data?.anomalies.documentAnomalies ?? []),
+                    ];
+                    if (all.length === 0) {
+                      return (
+                        <div className="p-4 bg-emerald-950/20 border border-emerald-800/30 rounded-lg flex items-center gap-2">
+                          <Shield className="h-4 w-4 text-emerald-400 shrink-0" />
+                          <p className="text-emerald-300 text-xs">No anomalies detected in the last {securityQuery.data?.anomalies.windowHours ?? 24} hours.</p>
+                        </div>
+                      );
+                    }
+                    return (
+                      <div className="rounded-xl border border-slate-700/50 overflow-hidden">
+                        <table className="w-full text-xs">
+                          <thead>
+                            <tr className="bg-slate-800/60 border-b border-slate-700/50">
+                              <th className="text-left py-2 px-3 text-slate-400 font-medium">Actor</th>
+                              <th className="text-left py-2 px-3 text-slate-400 font-medium">Role</th>
+                              <th className="text-left py-2 px-3 text-slate-400 font-medium">Source</th>
+                              <th className="text-right py-2 px-3 text-slate-400 font-medium">Events</th>
+                              <th className="text-left py-2 px-3 text-slate-400 font-medium">Severity</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {all.map((a, i) => (
+                              <tr key={i} className="border-b border-slate-700/30 last:border-0 hover:bg-slate-800/30">
+                                <td className="py-2 px-3 text-slate-300">{a.actorName ?? a.actorId ?? "—"}</td>
+                                <td className="py-2 px-3 text-slate-400 font-mono">{a.actorRole ?? "—"}</td>
+                                <td className="py-2 px-3 text-slate-400 capitalize">{a.source}</td>
+                                <td className="py-2 px-3 text-right font-semibold text-slate-200">{a.eventCount}</td>
+                                <td className="py-2 px-3">
+                                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium border ${
+                                    a.severity === "critical" ? "text-red-300 bg-red-950/30 border-red-700/40" :
+                                    a.severity === "high" ? "text-orange-300 bg-orange-950/30 border-orange-700/40" :
+                                    "text-yellow-300 bg-yellow-950/30 border-yellow-700/40"
+                                  }`}>
+                                    {a.severity.toUpperCase()}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    );
+                  })()}
+                </div>
+
+                {/* ── Protected Table Health ────────────────────────────────── */}
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <Database className="h-4 w-4 text-blue-400" />
+                    <h3 className="text-slate-200 text-sm font-medium">Write-Once Table Health</h3>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+                    {(securityQuery.data?.tables.tables ?? []).map((t) => (
+                      <div key={t.dbTable} className="p-3 bg-slate-800/40 border border-slate-700/40 rounded-xl">
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-slate-200 text-xs font-medium">{t.label}</p>
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded border font-medium ${
+                            t.status === "healthy" ? "text-emerald-400 bg-emerald-950/30 border-emerald-700/40" : "text-yellow-400 bg-yellow-950/30 border-yellow-700/40"
+                          }`}>
+                            {t.status === "healthy" ? "Healthy" : "Empty"}
+                          </span>
+                        </div>
+                        <p className="text-2xl font-bold text-slate-100 mb-1">{t.totalRows.toLocaleString()}</p>
+                        <p className="text-[10px] text-slate-500 font-mono">{t.dbTable}</p>
+                        {t.newestEntry && (
+                          <p className="text-[10px] text-slate-500 mt-1">
+                            Latest: {new Date(t.newestEntry).toLocaleDateString()}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* ── Audit Coverage ────────────────────────────────────────── */}
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <TrendingUp className="h-4 w-4 text-purple-400" />
+                    <h3 className="text-slate-200 text-sm font-medium">Audit Coverage by Module</h3>
+                  </div>
+                  <div className="flex gap-4 mb-3">
+                    <span className="text-xs text-slate-400">
+                      Total entries: <span className="text-slate-200 font-semibold">{(securityQuery.data?.coverage.totalAuditEntries ?? 0).toLocaleString()}</span>
+                    </span>
+                    <span className="text-xs text-slate-400">
+                      Last 7 days: <span className="text-slate-200 font-semibold">{(securityQuery.data?.coverage.entriesLast7Days ?? 0).toLocaleString()}</span>
+                    </span>
+                  </div>
+                  {(securityQuery.data?.coverage.byModule?.length ?? 0) > 0 ? (
+                    <div className="rounded-xl border border-slate-700/50 overflow-hidden">
+                      <table className="w-full text-xs">
+                        <thead>
+                          <tr className="bg-slate-800/60 border-b border-slate-700/50">
+                            <th className="text-left py-2 px-3 text-slate-400 font-medium">Module</th>
+                            <th className="text-right py-2 px-3 text-slate-400 font-medium">Total</th>
+                            <th className="text-right py-2 px-3 text-slate-400 font-medium">INS</th>
+                            <th className="text-right py-2 px-3 text-slate-400 font-medium">UPD</th>
+                            <th className="text-right py-2 px-3 text-slate-400 font-medium">DEL</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {(securityQuery.data?.coverage.byModule ?? []).slice(0, 20).map((m) => (
+                            <tr key={m.module} className="border-b border-slate-700/30 last:border-0 hover:bg-slate-800/30">
+                              <td className="py-2 px-3 text-slate-300 font-mono">{m.module}</td>
+                              <td className="py-2 px-3 text-right font-semibold text-slate-200">{m.total.toLocaleString()}</td>
+                              <td className="py-2 px-3 text-right text-emerald-400">{m.inserts}</td>
+                              <td className="py-2 px-3 text-right text-blue-400">{m.updates}</td>
+                              <td className="py-2 px-3 text-right text-red-400">{m.deletes}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="p-4 bg-slate-800/30 border border-slate-700/40 rounded-lg text-slate-400 text-xs">No coverage data available yet.</div>
+                  )}
+                </div>
+
+                {/* Footer note */}
+                <div className="p-3 bg-blue-950/20 border border-blue-800/30 rounded-lg flex items-start gap-2">
+                  <Lock className="h-3.5 w-3.5 text-blue-400 mt-0.5 shrink-0" />
+                  <p className="text-xs text-blue-300">
+                    All audit, evidence-access, document-access, governance-override, and session tables are write-once. HTTP DELETE and PATCH are blocked at the route level with a 405 response. Anomaly detection runs on every evidence download and flags actors exceeding 5 accesses per 24-hour window.
+                  </p>
+                </div>
+              </>
+            )}
           </div>
         </TabsContent>
       </Tabs>

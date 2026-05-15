@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { db, usersTable, userProjectAssignmentsTable, activityTable } from "@workspace/db";
 import { eq, and, desc } from "drizzle-orm";
+import { writeAudit } from "../lib/auditLogger";
 import {
   UpdateUserRoleBody,
   AssignUserToProjectBody,
@@ -293,6 +294,17 @@ router.delete(
             eq(userProjectAssignmentsTable.projectId, projectId),
           ),
         );
+
+      writeAudit(req, {
+        tableName: "user_project_assignments",
+        recordId: `${userRow.id}:${projectId}`,
+        operation: "DELETE",
+        module: "admin",
+        actionType: "project_assignment_removed",
+        projectId,
+        oldData: { userId: userRow.id, clerkUserId, projectId },
+      });
+
       res.json({ ok: true });
     } catch (err) {
       req.log.error({ err }, "Failed to remove user from project");

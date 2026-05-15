@@ -15,6 +15,7 @@ import { getAuth } from "@clerk/express";
 import { eq, and, desc, gte, lte, sql, inArray } from "drizzle-orm";
 import { db, auditLogsTable, usersTable } from "@workspace/db";
 import { requireRole } from "../middlewares/auth";
+import { enforceWriteOnce } from "../lib/integrityMiddleware";
 
 const router = Router();
 
@@ -166,5 +167,12 @@ router.get("/me/activity", async (req, res) => {
     total: countResult[0]?.count ?? 0,
   });
 });
+
+// ── Explicit write-once protection ────────────────────────────────────────────
+// auditLogsTable is append-only. Block DELETE, PATCH, and PUT at the route level.
+// Uses regex paths for Express 5 / path-to-regexp 8 compatibility.
+router.delete(/.*/, enforceWriteOnce("audit logs"));
+router.patch(/.*/, enforceWriteOnce("audit logs"));
+router.put(/.*/, enforceWriteOnce("audit logs"));
 
 export default router;
