@@ -17205,3 +17205,983 @@ export const CloseObservationAssignmentResponse = zod.object({
   createdAt: zod.string().optional(),
   updatedAt: zod.string().optional(),
 });
+
+/**
+ * @summary List sales orders
+ */
+export const ListSalesOrdersQueryParams = zod.object({
+  projectId: zod.coerce.string().optional(),
+  orderStatus: zod.coerce.string().optional(),
+  paymentStatus: zod.coerce.string().optional(),
+  limit: zod.coerce.string().optional(),
+  offset: zod.coerce.string().optional(),
+});
+
+export const ListSalesOrdersResponseItem = zod.object({
+  id: zod.string().optional(),
+  salesCode: zod.string().optional(),
+  projectId: zod.string().optional(),
+  projectName: zod.string().optional(),
+  buyerId: zod.string().nullish(),
+  buyerName: zod.string().optional(),
+  sellerUserId: zod.string().nullish(),
+  sellerName: zod.string().optional(),
+  sellerRole: zod.string().optional(),
+  quantityKg: zod.string().optional(),
+  ratePerKg: zod.string().optional(),
+  totalAmount: zod.string().optional(),
+  paymentMode: zod.string().optional(),
+  paymentReceiverAccountId: zod.string().nullish(),
+  paymentReceiverName: zod.string().nullish(),
+  orderStatus: zod.string().optional(),
+  paymentStatus: zod.string().optional(),
+  inventoryStatus: zod.string().optional(),
+  dispatchStatus: zod.string().optional(),
+  quantityDispatchedKg: zod.string().optional(),
+  paymentRequestedAt: zod.string().nullish(),
+  paymentExpiresAt: zod.string().nullish(),
+  paymentConfirmedAt: zod.string().nullish(),
+  paymentConfirmedById: zod.string().nullish(),
+  paymentConfirmedByName: zod.string().nullish(),
+  invoiceId: zod.string().nullish(),
+  remarks: zod.string().nullish(),
+  cancellationReason: zod.string().nullish(),
+  cancelledAt: zod.string().nullish(),
+  createdById: zod.string().nullish(),
+  createdByName: zod.string().optional(),
+  createdAt: zod.string().optional(),
+  updatedAt: zod.string().optional(),
+});
+export const ListSalesOrdersResponse = zod.array(ListSalesOrdersResponseItem);
+
+/**
+ * @summary Create a new sales order (draft)
+ */
+export const CreateSalesOrderBody = zod.object({
+  projectId: zod.string(),
+  buyerId: zod.string().optional(),
+  buyerName: zod.string(),
+  quantityKg: zod.number(),
+  ratePerKg: zod.number(),
+  paymentMode: zod.string().optional(),
+  paymentReceiverAccountId: zod.string().optional(),
+  remarks: zod.string().optional(),
+});
+
+/**
+ * @summary Aggregated stats for sales orders
+ */
+export const GetSalesOrderStatsQueryParams = zod.object({
+  projectId: zod.coerce.string().optional(),
+});
+
+export const GetSalesOrderStatsResponse = zod.object({
+  total: zod.number().optional(),
+  byStatus: zod.record(zod.string(), zod.number()).optional(),
+  totalRevenue: zod.number().optional(),
+  confirmedRevenue: zod.number().optional(),
+});
+
+/**
+ * @summary Expire stale inventory reservations (admin)
+ */
+export const ExpireStaleReservationsResponse = zod.object({
+  expired: zod.number().optional(),
+});
+
+/**
+ * @summary Get a single sales order with detail
+ */
+export const GetSalesOrderParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const GetSalesOrderResponse = zod
+  .object({
+    id: zod.string().optional(),
+    salesCode: zod.string().optional(),
+    projectId: zod.string().optional(),
+    projectName: zod.string().optional(),
+    buyerId: zod.string().nullish(),
+    buyerName: zod.string().optional(),
+    sellerUserId: zod.string().nullish(),
+    sellerName: zod.string().optional(),
+    sellerRole: zod.string().optional(),
+    quantityKg: zod.string().optional(),
+    ratePerKg: zod.string().optional(),
+    totalAmount: zod.string().optional(),
+    paymentMode: zod.string().optional(),
+    paymentReceiverAccountId: zod.string().nullish(),
+    paymentReceiverName: zod.string().nullish(),
+    orderStatus: zod.string().optional(),
+    paymentStatus: zod.string().optional(),
+    inventoryStatus: zod.string().optional(),
+    dispatchStatus: zod.string().optional(),
+    quantityDispatchedKg: zod.string().optional(),
+    paymentRequestedAt: zod.string().nullish(),
+    paymentExpiresAt: zod.string().nullish(),
+    paymentConfirmedAt: zod.string().nullish(),
+    paymentConfirmedById: zod.string().nullish(),
+    paymentConfirmedByName: zod.string().nullish(),
+    invoiceId: zod.string().nullish(),
+    remarks: zod.string().nullish(),
+    cancellationReason: zod.string().nullish(),
+    cancelledAt: zod.string().nullish(),
+    createdById: zod.string().nullish(),
+    createdByName: zod.string().optional(),
+    createdAt: zod.string().optional(),
+    updatedAt: zod.string().optional(),
+  })
+  .and(
+    zod.object({
+      dispatches: zod
+        .array(
+          zod.object({
+            id: zod.string().optional(),
+            salesOrderId: zod.string().optional(),
+            storeId: zod.string().nullish(),
+            storeName: zod.string().nullish(),
+            quantityKg: zod.string().optional(),
+            dispatchedById: zod.string().nullish(),
+            dispatchedByName: zod.string().nullish(),
+            dispatchedAt: zod.string().optional(),
+            notes: zod.string().nullish(),
+            createdAt: zod.string().optional(),
+          }),
+        )
+        .optional(),
+      audit: zod
+        .array(
+          zod.object({
+            id: zod.string().optional(),
+            salesOrderId: zod.string().nullish(),
+            salesCode: zod.string().optional(),
+            projectId: zod.string().nullish(),
+            eventType: zod.string().optional(),
+            description: zod.string().optional(),
+            actorId: zod.string().nullish(),
+            actorName: zod.string().optional(),
+            actorRole: zod.string().optional(),
+            metadata: zod.string().nullish(),
+            createdAt: zod.string().optional(),
+          }),
+        )
+        .optional(),
+      reservations: zod
+        .array(
+          zod.object({
+            id: zod.string().optional(),
+            salesOrderId: zod.string().optional(),
+            salesCode: zod.string().optional(),
+            projectId: zod.string().optional(),
+            storeId: zod.string().nullish(),
+            storeName: zod.string().nullish(),
+            quantityKg: zod.string().optional(),
+            status: zod.string().optional(),
+            expiresAt: zod.string().optional(),
+            releasedAt: zod.string().nullish(),
+            fulfilledAt: zod.string().nullish(),
+            createdAt: zod.string().optional(),
+          }),
+        )
+        .optional(),
+      paymentTransactions: zod
+        .array(
+          zod.object({
+            id: zod.string().optional(),
+            salesOrderId: zod.string().optional(),
+            transactionReference: zod.string().nullish(),
+            amount: zod.string().optional(),
+            paymentProvider: zod.string().optional(),
+            detectedAt: zod.string().optional(),
+            verificationStatus: zod.string().optional(),
+            manuallyConfirmedById: zod.string().nullish(),
+            manuallyConfirmedByName: zod.string().nullish(),
+            manuallyConfirmedAt: zod.string().nullish(),
+            rejectionReason: zod.string().nullish(),
+            notes: zod.string().nullish(),
+            createdAt: zod.string().optional(),
+          }),
+        )
+        .optional(),
+      invoice: zod
+        .object({
+          id: zod.string().optional(),
+          invoiceNumber: zod.string().optional(),
+          salesOrderId: zod.string().optional(),
+          salesCode: zod.string().optional(),
+          projectId: zod.string().optional(),
+          projectName: zod.string().optional(),
+          buyerId: zod.string().nullish(),
+          buyerName: zod.string().optional(),
+          buyerPhone: zod.string().nullish(),
+          buyerAddress: zod.string().nullish(),
+          buyerGstin: zod.string().nullish(),
+          sellerName: zod.string().optional(),
+          sellerRole: zod.string().optional(),
+          paymentReceiverName: zod.string().nullish(),
+          paymentMode: zod.string().optional(),
+          paymentReference: zod.string().nullish(),
+          paymentConfirmedAt: zod.string().nullish(),
+          quantityKg: zod.string().optional(),
+          ratePerKg: zod.string().optional(),
+          totalAmount: zod.string().optional(),
+          dispatchStatus: zod.string().optional(),
+          quantityDispatchedKg: zod.string().optional(),
+          isVoided: zod.boolean().optional(),
+          voidReason: zod.string().nullish(),
+          generatedById: zod.string().nullish(),
+          generatedByName: zod.string().optional(),
+          generatedAt: zod.string().optional(),
+          invoiceDate: zod.string().optional(),
+          createdAt: zod.string().optional(),
+        })
+        .nullish(),
+    }),
+  );
+
+/**
+ * @summary Initiate payment request and reserve inventory
+ */
+export const RequestPaymentParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const RequestPaymentResponse = zod.object({
+  id: zod.string().optional(),
+  salesCode: zod.string().optional(),
+  projectId: zod.string().optional(),
+  projectName: zod.string().optional(),
+  buyerId: zod.string().nullish(),
+  buyerName: zod.string().optional(),
+  sellerUserId: zod.string().nullish(),
+  sellerName: zod.string().optional(),
+  sellerRole: zod.string().optional(),
+  quantityKg: zod.string().optional(),
+  ratePerKg: zod.string().optional(),
+  totalAmount: zod.string().optional(),
+  paymentMode: zod.string().optional(),
+  paymentReceiverAccountId: zod.string().nullish(),
+  paymentReceiverName: zod.string().nullish(),
+  orderStatus: zod.string().optional(),
+  paymentStatus: zod.string().optional(),
+  inventoryStatus: zod.string().optional(),
+  dispatchStatus: zod.string().optional(),
+  quantityDispatchedKg: zod.string().optional(),
+  paymentRequestedAt: zod.string().nullish(),
+  paymentExpiresAt: zod.string().nullish(),
+  paymentConfirmedAt: zod.string().nullish(),
+  paymentConfirmedById: zod.string().nullish(),
+  paymentConfirmedByName: zod.string().nullish(),
+  invoiceId: zod.string().nullish(),
+  remarks: zod.string().nullish(),
+  cancellationReason: zod.string().nullish(),
+  cancelledAt: zod.string().nullish(),
+  createdById: zod.string().nullish(),
+  createdByName: zod.string().optional(),
+  createdAt: zod.string().optional(),
+  updatedAt: zod.string().optional(),
+});
+
+/**
+ * @summary Record detected payment (manual entry or webhook)
+ */
+export const DetectPaymentParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const DetectPaymentBody = zod.object({
+  transactionReference: zod.string().optional(),
+  amount: zod.number(),
+  paymentProvider: zod.string().optional(),
+  notes: zod.string().optional(),
+});
+
+export const DetectPaymentResponse = zod.object({
+  id: zod.string().optional(),
+  salesOrderId: zod.string().optional(),
+  transactionReference: zod.string().nullish(),
+  amount: zod.string().optional(),
+  paymentProvider: zod.string().optional(),
+  detectedAt: zod.string().optional(),
+  verificationStatus: zod.string().optional(),
+  manuallyConfirmedById: zod.string().nullish(),
+  manuallyConfirmedByName: zod.string().nullish(),
+  manuallyConfirmedAt: zod.string().nullish(),
+  rejectionReason: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  createdAt: zod.string().optional(),
+});
+
+/**
+ * @summary Manually confirm payment, generate invoice and custody entry
+ */
+export const ConfirmPaymentParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const ConfirmPaymentBody = zod.object({
+  paymentReference: zod.string().optional(),
+  notes: zod.string().optional(),
+});
+
+export const ConfirmPaymentResponse = zod
+  .object({
+    id: zod.string().optional(),
+    salesCode: zod.string().optional(),
+    projectId: zod.string().optional(),
+    projectName: zod.string().optional(),
+    buyerId: zod.string().nullish(),
+    buyerName: zod.string().optional(),
+    sellerUserId: zod.string().nullish(),
+    sellerName: zod.string().optional(),
+    sellerRole: zod.string().optional(),
+    quantityKg: zod.string().optional(),
+    ratePerKg: zod.string().optional(),
+    totalAmount: zod.string().optional(),
+    paymentMode: zod.string().optional(),
+    paymentReceiverAccountId: zod.string().nullish(),
+    paymentReceiverName: zod.string().nullish(),
+    orderStatus: zod.string().optional(),
+    paymentStatus: zod.string().optional(),
+    inventoryStatus: zod.string().optional(),
+    dispatchStatus: zod.string().optional(),
+    quantityDispatchedKg: zod.string().optional(),
+    paymentRequestedAt: zod.string().nullish(),
+    paymentExpiresAt: zod.string().nullish(),
+    paymentConfirmedAt: zod.string().nullish(),
+    paymentConfirmedById: zod.string().nullish(),
+    paymentConfirmedByName: zod.string().nullish(),
+    invoiceId: zod.string().nullish(),
+    remarks: zod.string().nullish(),
+    cancellationReason: zod.string().nullish(),
+    cancelledAt: zod.string().nullish(),
+    createdById: zod.string().nullish(),
+    createdByName: zod.string().optional(),
+    createdAt: zod.string().optional(),
+    updatedAt: zod.string().optional(),
+  })
+  .and(
+    zod.object({
+      dispatches: zod
+        .array(
+          zod.object({
+            id: zod.string().optional(),
+            salesOrderId: zod.string().optional(),
+            storeId: zod.string().nullish(),
+            storeName: zod.string().nullish(),
+            quantityKg: zod.string().optional(),
+            dispatchedById: zod.string().nullish(),
+            dispatchedByName: zod.string().nullish(),
+            dispatchedAt: zod.string().optional(),
+            notes: zod.string().nullish(),
+            createdAt: zod.string().optional(),
+          }),
+        )
+        .optional(),
+      audit: zod
+        .array(
+          zod.object({
+            id: zod.string().optional(),
+            salesOrderId: zod.string().nullish(),
+            salesCode: zod.string().optional(),
+            projectId: zod.string().nullish(),
+            eventType: zod.string().optional(),
+            description: zod.string().optional(),
+            actorId: zod.string().nullish(),
+            actorName: zod.string().optional(),
+            actorRole: zod.string().optional(),
+            metadata: zod.string().nullish(),
+            createdAt: zod.string().optional(),
+          }),
+        )
+        .optional(),
+      reservations: zod
+        .array(
+          zod.object({
+            id: zod.string().optional(),
+            salesOrderId: zod.string().optional(),
+            salesCode: zod.string().optional(),
+            projectId: zod.string().optional(),
+            storeId: zod.string().nullish(),
+            storeName: zod.string().nullish(),
+            quantityKg: zod.string().optional(),
+            status: zod.string().optional(),
+            expiresAt: zod.string().optional(),
+            releasedAt: zod.string().nullish(),
+            fulfilledAt: zod.string().nullish(),
+            createdAt: zod.string().optional(),
+          }),
+        )
+        .optional(),
+      paymentTransactions: zod
+        .array(
+          zod.object({
+            id: zod.string().optional(),
+            salesOrderId: zod.string().optional(),
+            transactionReference: zod.string().nullish(),
+            amount: zod.string().optional(),
+            paymentProvider: zod.string().optional(),
+            detectedAt: zod.string().optional(),
+            verificationStatus: zod.string().optional(),
+            manuallyConfirmedById: zod.string().nullish(),
+            manuallyConfirmedByName: zod.string().nullish(),
+            manuallyConfirmedAt: zod.string().nullish(),
+            rejectionReason: zod.string().nullish(),
+            notes: zod.string().nullish(),
+            createdAt: zod.string().optional(),
+          }),
+        )
+        .optional(),
+      invoice: zod
+        .object({
+          id: zod.string().optional(),
+          invoiceNumber: zod.string().optional(),
+          salesOrderId: zod.string().optional(),
+          salesCode: zod.string().optional(),
+          projectId: zod.string().optional(),
+          projectName: zod.string().optional(),
+          buyerId: zod.string().nullish(),
+          buyerName: zod.string().optional(),
+          buyerPhone: zod.string().nullish(),
+          buyerAddress: zod.string().nullish(),
+          buyerGstin: zod.string().nullish(),
+          sellerName: zod.string().optional(),
+          sellerRole: zod.string().optional(),
+          paymentReceiverName: zod.string().nullish(),
+          paymentMode: zod.string().optional(),
+          paymentReference: zod.string().nullish(),
+          paymentConfirmedAt: zod.string().nullish(),
+          quantityKg: zod.string().optional(),
+          ratePerKg: zod.string().optional(),
+          totalAmount: zod.string().optional(),
+          dispatchStatus: zod.string().optional(),
+          quantityDispatchedKg: zod.string().optional(),
+          isVoided: zod.boolean().optional(),
+          voidReason: zod.string().nullish(),
+          generatedById: zod.string().nullish(),
+          generatedByName: zod.string().optional(),
+          generatedAt: zod.string().optional(),
+          invoiceDate: zod.string().optional(),
+          createdAt: zod.string().optional(),
+        })
+        .nullish(),
+    }),
+  );
+
+/**
+ * @summary Cancel a sales order and release reservations
+ */
+export const CancelSalesOrderParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const CancelSalesOrderBody = zod.object({
+  reason: zod.string().optional(),
+});
+
+export const CancelSalesOrderResponse = zod.object({
+  id: zod.string().optional(),
+  salesCode: zod.string().optional(),
+  projectId: zod.string().optional(),
+  projectName: zod.string().optional(),
+  buyerId: zod.string().nullish(),
+  buyerName: zod.string().optional(),
+  sellerUserId: zod.string().nullish(),
+  sellerName: zod.string().optional(),
+  sellerRole: zod.string().optional(),
+  quantityKg: zod.string().optional(),
+  ratePerKg: zod.string().optional(),
+  totalAmount: zod.string().optional(),
+  paymentMode: zod.string().optional(),
+  paymentReceiverAccountId: zod.string().nullish(),
+  paymentReceiverName: zod.string().nullish(),
+  orderStatus: zod.string().optional(),
+  paymentStatus: zod.string().optional(),
+  inventoryStatus: zod.string().optional(),
+  dispatchStatus: zod.string().optional(),
+  quantityDispatchedKg: zod.string().optional(),
+  paymentRequestedAt: zod.string().nullish(),
+  paymentExpiresAt: zod.string().nullish(),
+  paymentConfirmedAt: zod.string().nullish(),
+  paymentConfirmedById: zod.string().nullish(),
+  paymentConfirmedByName: zod.string().nullish(),
+  invoiceId: zod.string().nullish(),
+  remarks: zod.string().nullish(),
+  cancellationReason: zod.string().nullish(),
+  cancelledAt: zod.string().nullish(),
+  createdById: zod.string().nullish(),
+  createdByName: zod.string().optional(),
+  createdAt: zod.string().optional(),
+  updatedAt: zod.string().optional(),
+});
+
+/**
+ * @summary Record a dispatch event (full or partial)
+ */
+export const DispatchSalesOrderParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const DispatchSalesOrderBody = zod.object({
+  quantityKg: zod.number(),
+  storeId: zod.string().optional(),
+  storeName: zod.string().optional(),
+  notes: zod.string().optional(),
+});
+
+export const DispatchSalesOrderResponse = zod.object({
+  id: zod.string().optional(),
+  salesCode: zod.string().optional(),
+  projectId: zod.string().optional(),
+  projectName: zod.string().optional(),
+  buyerId: zod.string().nullish(),
+  buyerName: zod.string().optional(),
+  sellerUserId: zod.string().nullish(),
+  sellerName: zod.string().optional(),
+  sellerRole: zod.string().optional(),
+  quantityKg: zod.string().optional(),
+  ratePerKg: zod.string().optional(),
+  totalAmount: zod.string().optional(),
+  paymentMode: zod.string().optional(),
+  paymentReceiverAccountId: zod.string().nullish(),
+  paymentReceiverName: zod.string().nullish(),
+  orderStatus: zod.string().optional(),
+  paymentStatus: zod.string().optional(),
+  inventoryStatus: zod.string().optional(),
+  dispatchStatus: zod.string().optional(),
+  quantityDispatchedKg: zod.string().optional(),
+  paymentRequestedAt: zod.string().nullish(),
+  paymentExpiresAt: zod.string().nullish(),
+  paymentConfirmedAt: zod.string().nullish(),
+  paymentConfirmedById: zod.string().nullish(),
+  paymentConfirmedByName: zod.string().nullish(),
+  invoiceId: zod.string().nullish(),
+  remarks: zod.string().nullish(),
+  cancellationReason: zod.string().nullish(),
+  cancelledAt: zod.string().nullish(),
+  createdById: zod.string().nullish(),
+  createdByName: zod.string().optional(),
+  createdAt: zod.string().optional(),
+  updatedAt: zod.string().optional(),
+});
+
+/**
+ * @summary List approved payment receiver accounts
+ */
+export const ListPaymentReceiversQueryParams = zod.object({
+  projectId: zod.coerce.string().optional(),
+  activeOnly: zod.coerce.string().optional(),
+});
+
+export const ListPaymentReceiversResponseItem = zod.object({
+  id: zod.string().optional(),
+  projectId: zod.string().optional(),
+  projectName: zod.string().optional(),
+  ownerUserId: zod.string().nullish(),
+  ownerName: zod.string().optional(),
+  ownerRole: zod.string().optional(),
+  accountName: zod.string().optional(),
+  paymentType: zod.string().optional(),
+  accountIdentifier: zod.string().nullish(),
+  bankIfsc: zod.string().nullish(),
+  bankName: zod.string().nullish(),
+  allowedPaymentModes: zod.string().optional(),
+  isDefault: zod.boolean().optional(),
+  isActive: zod.boolean().optional(),
+  notes: zod.string().nullish(),
+  createdById: zod.string().nullish(),
+  createdByName: zod.string().optional(),
+  createdAt: zod.string().optional(),
+  updatedAt: zod.string().optional(),
+});
+export const ListPaymentReceiversResponse = zod.array(
+  ListPaymentReceiversResponseItem,
+);
+
+/**
+ * @summary Create a new approved payment receiver account
+ */
+export const CreatePaymentReceiverBody = zod.object({
+  projectId: zod.string(),
+  ownerUserId: zod.string().optional(),
+  ownerName: zod.string(),
+  ownerRole: zod.string().optional(),
+  accountName: zod.string(),
+  paymentType: zod.string().optional(),
+  accountIdentifier: zod.string().optional(),
+  bankIfsc: zod.string().optional(),
+  bankName: zod.string().optional(),
+  allowedPaymentModes: zod.string().optional(),
+  isDefault: zod.boolean().optional(),
+  notes: zod.string().optional(),
+});
+
+/**
+ * @summary Get a payment receiver account
+ */
+export const GetPaymentReceiverParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const GetPaymentReceiverResponse = zod.object({
+  id: zod.string().optional(),
+  projectId: zod.string().optional(),
+  projectName: zod.string().optional(),
+  ownerUserId: zod.string().nullish(),
+  ownerName: zod.string().optional(),
+  ownerRole: zod.string().optional(),
+  accountName: zod.string().optional(),
+  paymentType: zod.string().optional(),
+  accountIdentifier: zod.string().nullish(),
+  bankIfsc: zod.string().nullish(),
+  bankName: zod.string().nullish(),
+  allowedPaymentModes: zod.string().optional(),
+  isDefault: zod.boolean().optional(),
+  isActive: zod.boolean().optional(),
+  notes: zod.string().nullish(),
+  createdById: zod.string().nullish(),
+  createdByName: zod.string().optional(),
+  createdAt: zod.string().optional(),
+  updatedAt: zod.string().optional(),
+});
+
+/**
+ * @summary Update a payment receiver account
+ */
+export const UpdatePaymentReceiverParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const UpdatePaymentReceiverBody = zod.object({
+  accountName: zod.string().optional(),
+  accountIdentifier: zod.string().optional(),
+  isDefault: zod.boolean().optional(),
+  isActive: zod.boolean().optional(),
+  notes: zod.string().optional(),
+});
+
+export const UpdatePaymentReceiverResponse = zod.object({
+  id: zod.string().optional(),
+  projectId: zod.string().optional(),
+  projectName: zod.string().optional(),
+  ownerUserId: zod.string().nullish(),
+  ownerName: zod.string().optional(),
+  ownerRole: zod.string().optional(),
+  accountName: zod.string().optional(),
+  paymentType: zod.string().optional(),
+  accountIdentifier: zod.string().nullish(),
+  bankIfsc: zod.string().nullish(),
+  bankName: zod.string().nullish(),
+  allowedPaymentModes: zod.string().optional(),
+  isDefault: zod.boolean().optional(),
+  isActive: zod.boolean().optional(),
+  notes: zod.string().nullish(),
+  createdById: zod.string().nullish(),
+  createdByName: zod.string().optional(),
+  createdAt: zod.string().optional(),
+  updatedAt: zod.string().optional(),
+});
+
+/**
+ * @summary Deactivate a payment receiver account
+ */
+export const DeactivatePaymentReceiverParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const DeactivatePaymentReceiverResponse = zod.object({
+  success: zod.boolean().optional(),
+});
+
+/**
+ * @summary List project sales permissions
+ */
+export const ListSalesPermissionsQueryParams = zod.object({
+  projectId: zod.coerce.string().optional(),
+  activeOnly: zod.coerce.string().optional(),
+});
+
+export const ListSalesPermissionsResponseItem = zod.object({
+  id: zod.string().optional(),
+  projectId: zod.string().optional(),
+  projectName: zod.string().optional(),
+  userId: zod.string().optional(),
+  userName: zod.string().optional(),
+  roleType: zod.string().optional(),
+  canSell: zod.boolean().optional(),
+  canReceivePayment: zod.boolean().optional(),
+  allowedPaymentModes: zod.string().optional(),
+  isActive: zod.boolean().optional(),
+  notes: zod.string().nullish(),
+  grantedById: zod.string().nullish(),
+  grantedByName: zod.string().optional(),
+  createdAt: zod.string().optional(),
+  updatedAt: zod.string().optional(),
+});
+export const ListSalesPermissionsResponse = zod.array(
+  ListSalesPermissionsResponseItem,
+);
+
+/**
+ * @summary Grant a user sales permission for a project
+ */
+export const CreateSalesPermissionBody = zod.object({
+  projectId: zod.string(),
+  userId: zod.string(),
+  userName: zod.string(),
+  roleType: zod.string(),
+  canSell: zod.boolean().optional(),
+  canReceivePayment: zod.boolean().optional(),
+  allowedPaymentModes: zod.string().optional(),
+  notes: zod.string().optional(),
+});
+
+/**
+ * @summary Revoke a sales permission
+ */
+export const RevokeSalesPermissionParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const RevokeSalesPermissionResponse = zod.object({
+  id: zod.string().optional(),
+  projectId: zod.string().optional(),
+  projectName: zod.string().optional(),
+  userId: zod.string().optional(),
+  userName: zod.string().optional(),
+  roleType: zod.string().optional(),
+  canSell: zod.boolean().optional(),
+  canReceivePayment: zod.boolean().optional(),
+  allowedPaymentModes: zod.string().optional(),
+  isActive: zod.boolean().optional(),
+  notes: zod.string().nullish(),
+  grantedById: zod.string().nullish(),
+  grantedByName: zod.string().optional(),
+  createdAt: zod.string().optional(),
+  updatedAt: zod.string().optional(),
+});
+
+/**
+ * @summary List money custody ledger entries
+ */
+export const ListMoneyCustodyQueryParams = zod.object({
+  projectId: zod.coerce.string().optional(),
+  holderUserId: zod.coerce.string().optional(),
+  isClosed: zod.coerce.string().optional(),
+});
+
+export const ListMoneyCustodyResponseItem = zod.object({
+  id: zod.string().optional(),
+  projectId: zod.string().optional(),
+  projectName: zod.string().optional(),
+  holderUserId: zod.string().nullish(),
+  holderName: zod.string().optional(),
+  holderRole: zod.string().optional(),
+  amount: zod.string().optional(),
+  paymentMode: zod.string().optional(),
+  sourceType: zod.string().optional(),
+  sourceReference: zod.string().nullish(),
+  sourceCode: zod.string().nullish(),
+  receivedDate: zod.string().optional(),
+  depositedAmount: zod.string().optional(),
+  remainingBalance: zod.string().optional(),
+  depositedAt: zod.string().nullish(),
+  depositedById: zod.string().nullish(),
+  depositedByName: zod.string().nullish(),
+  depositReference: zod.string().nullish(),
+  isClosed: zod.boolean().optional(),
+  notes: zod.string().nullish(),
+  createdByName: zod.string().optional(),
+  createdAt: zod.string().optional(),
+  updatedAt: zod.string().optional(),
+  daysHeld: zod.number().optional(),
+  agingStatus: zod.string().optional(),
+});
+export const ListMoneyCustodyResponse = zod.array(ListMoneyCustodyResponseItem);
+
+/**
+ * @summary Summarised custody balances grouped by holder
+ */
+export const GetMoneyCustodySummaryQueryParams = zod.object({
+  projectId: zod.coerce.string().optional(),
+});
+
+export const GetMoneyCustodySummaryResponseItem = zod.object({
+  holderName: zod.string().optional(),
+  holderRole: zod.string().optional(),
+  totalAmount: zod.number().optional(),
+  remainingBalance: zod.number().optional(),
+  cashAmount: zod.number().optional(),
+  onlineAmount: zod.number().optional(),
+  oldestCashDate: zod.string().nullish(),
+  agingStatus: zod.string().optional(),
+});
+export const GetMoneyCustodySummaryResponse = zod.array(
+  GetMoneyCustodySummaryResponseItem,
+);
+
+/**
+ * @summary Record a deposit from a custody entry
+ */
+export const RecordCustodyDepositParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const RecordCustodyDepositBody = zod.object({
+  depositedAmount: zod.number(),
+  depositReference: zod.string().optional(),
+  notes: zod.string().optional(),
+});
+
+export const RecordCustodyDepositResponse = zod.object({
+  id: zod.string().optional(),
+  projectId: zod.string().optional(),
+  projectName: zod.string().optional(),
+  holderUserId: zod.string().nullish(),
+  holderName: zod.string().optional(),
+  holderRole: zod.string().optional(),
+  amount: zod.string().optional(),
+  paymentMode: zod.string().optional(),
+  sourceType: zod.string().optional(),
+  sourceReference: zod.string().nullish(),
+  sourceCode: zod.string().nullish(),
+  receivedDate: zod.string().optional(),
+  depositedAmount: zod.string().optional(),
+  remainingBalance: zod.string().optional(),
+  depositedAt: zod.string().nullish(),
+  depositedById: zod.string().nullish(),
+  depositedByName: zod.string().nullish(),
+  depositReference: zod.string().nullish(),
+  isClosed: zod.boolean().optional(),
+  notes: zod.string().nullish(),
+  createdByName: zod.string().optional(),
+  createdAt: zod.string().optional(),
+  updatedAt: zod.string().optional(),
+  daysHeld: zod.number().optional(),
+  agingStatus: zod.string().optional(),
+});
+
+/**
+ * @summary List sales invoices
+ */
+export const ListSalesInvoicesQueryParams = zod.object({
+  projectId: zod.coerce.string().optional(),
+  buyerId: zod.coerce.string().optional(),
+  dispatchStatus: zod.coerce.string().optional(),
+  limit: zod.coerce.string().optional(),
+  offset: zod.coerce.string().optional(),
+});
+
+export const ListSalesInvoicesResponseItem = zod.object({
+  id: zod.string().optional(),
+  invoiceNumber: zod.string().optional(),
+  salesOrderId: zod.string().optional(),
+  salesCode: zod.string().optional(),
+  projectId: zod.string().optional(),
+  projectName: zod.string().optional(),
+  buyerId: zod.string().nullish(),
+  buyerName: zod.string().optional(),
+  buyerPhone: zod.string().nullish(),
+  buyerAddress: zod.string().nullish(),
+  buyerGstin: zod.string().nullish(),
+  sellerName: zod.string().optional(),
+  sellerRole: zod.string().optional(),
+  paymentReceiverName: zod.string().nullish(),
+  paymentMode: zod.string().optional(),
+  paymentReference: zod.string().nullish(),
+  paymentConfirmedAt: zod.string().nullish(),
+  quantityKg: zod.string().optional(),
+  ratePerKg: zod.string().optional(),
+  totalAmount: zod.string().optional(),
+  dispatchStatus: zod.string().optional(),
+  quantityDispatchedKg: zod.string().optional(),
+  isVoided: zod.boolean().optional(),
+  voidReason: zod.string().nullish(),
+  generatedById: zod.string().nullish(),
+  generatedByName: zod.string().optional(),
+  generatedAt: zod.string().optional(),
+  invoiceDate: zod.string().optional(),
+  createdAt: zod.string().optional(),
+});
+export const ListSalesInvoicesResponse = zod.array(
+  ListSalesInvoicesResponseItem,
+);
+
+/**
+ * @summary Get a sales invoice by ID
+ */
+export const GetSalesInvoiceParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const GetSalesInvoiceResponse = zod.object({
+  id: zod.string().optional(),
+  invoiceNumber: zod.string().optional(),
+  salesOrderId: zod.string().optional(),
+  salesCode: zod.string().optional(),
+  projectId: zod.string().optional(),
+  projectName: zod.string().optional(),
+  buyerId: zod.string().nullish(),
+  buyerName: zod.string().optional(),
+  buyerPhone: zod.string().nullish(),
+  buyerAddress: zod.string().nullish(),
+  buyerGstin: zod.string().nullish(),
+  sellerName: zod.string().optional(),
+  sellerRole: zod.string().optional(),
+  paymentReceiverName: zod.string().nullish(),
+  paymentMode: zod.string().optional(),
+  paymentReference: zod.string().nullish(),
+  paymentConfirmedAt: zod.string().nullish(),
+  quantityKg: zod.string().optional(),
+  ratePerKg: zod.string().optional(),
+  totalAmount: zod.string().optional(),
+  dispatchStatus: zod.string().optional(),
+  quantityDispatchedKg: zod.string().optional(),
+  isVoided: zod.boolean().optional(),
+  voidReason: zod.string().nullish(),
+  generatedById: zod.string().nullish(),
+  generatedByName: zod.string().optional(),
+  generatedAt: zod.string().optional(),
+  invoiceDate: zod.string().optional(),
+  createdAt: zod.string().optional(),
+});
+
+/**
+ * @summary Get a sales invoice by invoice number
+ */
+export const GetSalesInvoiceByNumberParams = zod.object({
+  number: zod.coerce.string(),
+});
+
+export const GetSalesInvoiceByNumberResponse = zod.object({
+  id: zod.string().optional(),
+  invoiceNumber: zod.string().optional(),
+  salesOrderId: zod.string().optional(),
+  salesCode: zod.string().optional(),
+  projectId: zod.string().optional(),
+  projectName: zod.string().optional(),
+  buyerId: zod.string().nullish(),
+  buyerName: zod.string().optional(),
+  buyerPhone: zod.string().nullish(),
+  buyerAddress: zod.string().nullish(),
+  buyerGstin: zod.string().nullish(),
+  sellerName: zod.string().optional(),
+  sellerRole: zod.string().optional(),
+  paymentReceiverName: zod.string().nullish(),
+  paymentMode: zod.string().optional(),
+  paymentReference: zod.string().nullish(),
+  paymentConfirmedAt: zod.string().nullish(),
+  quantityKg: zod.string().optional(),
+  ratePerKg: zod.string().optional(),
+  totalAmount: zod.string().optional(),
+  dispatchStatus: zod.string().optional(),
+  quantityDispatchedKg: zod.string().optional(),
+  isVoided: zod.boolean().optional(),
+  voidReason: zod.string().nullish(),
+  generatedById: zod.string().nullish(),
+  generatedByName: zod.string().optional(),
+  generatedAt: zod.string().optional(),
+  invoiceDate: zod.string().optional(),
+  createdAt: zod.string().optional(),
+});

@@ -1,0 +1,653 @@
+STAGE — RUBBER SALES, PAYMENT & DISPATCH MANAGEMENT SYSTEM
+
+Build a complete Rubber Sales, Payment, Reservation, Invoice & Dispatch Management module for the plantation ERP.
+
+This module must integrate with the already existing:
+
+- authentication system
+- role system
+- project-wise access system
+- lifecycle system
+- inventory/store system
+- multi-store transfer system
+- dashboard architecture
+- audit system
+
+Do NOT rebuild existing modules.
+
+====================================================
+CORE BUSINESS PRINCIPLES
+====================================================
+
+Separate these concepts completely:
+
+1. Sale Performer
+2. Payment Receiver
+3. Inventory Ownership
+4. Physical Inventory Location
+5. Money Custody Holder
+
+These may all be different people.
+
+Example:
+
+Employee Ravi performs sale.
+
+Buyer pays Developer account online.
+
+Inventory belongs to Project A.
+
+Rubber dispatched from Central Store.
+
+System must support this separation cleanly.
+
+====================================================
+AUTHORIZED SELLER SYSTEM
+====================================================
+
+Only approved users can create sales.
+
+Supported roles:
+
+- developer
+- landowner
+- employee
+
+Create ProjectSalesPermission table:
+
+- id
+- project_id
+- user_id
+- role_type
+- can_sell
+- can_receive_payment
+- allowed_payment_modes
+- active_status
+- created_at
+
+Permissions are project-specific.
+
+====================================================
+PAYMENT POLICY CONFIGURATION
+====================================================
+
+Each project can configure:
+
+Allowed payment modes:
+
+- online_only
+- cash_only
+- both
+
+Example:
+
+Project A:
+online_only
+
+====================================================
+APPROVED PAYMENT RECEIVER SYSTEM
+====================================================
+
+Only approved receiving accounts can be used.
+
+Create PaymentReceiverAccount table:
+
+- id
+- project_id
+- owner_user_id
+- owner_role
+- account_name
+- payment_type
+- account_identifier
+- active_status
+- default_status
+- created_at
+
+Examples:
+
+Developer UPI
+Developer Bank
+Employee Ravi UPI
+
+During sale:
+seller can only select approved active accounts.
+
+Prevent free-text payment destination entry.
+
+====================================================
+BUYER ENTITY
+====================================================
+
+Create Buyer table:
+
+- id
+- buyer_name
+- phone
+- address
+- GST_number
+- active_status
+- created_at
+
+====================================================
+SALES ORDER TABLE
+====================================================
+
+Create SalesOrder table:
+
+- id
+- sales_code
+- project_id
+- buyer_id
+- seller_user_id
+- seller_role
+- quantity_kg
+- rate_per_kg
+- total_amount
+- payment_mode
+- payment_receiver_account_id
+- order_status
+- payment_status
+- inventory_status
+- dispatch_status
+- remarks
+- created_at
+- updated_at
+
+====================================================
+IMPORTANT STATUS SYSTEM
+====================================================
+
+Sales order status:
+
+- draft
+- payment_pending
+- payment_detected
+- awaiting_manual_confirmation
+- confirmed
+- partially_dispatched
+- completed
+- cancelled
+- expired
+
+Do NOT finalize sale immediately after QR generation.
+
+====================================================
+PAYMENT WORKFLOW
+====================================================
+
+Workflow:
+
+1. Seller enters:
+- quantity
+- rate
+
+2. System calculates amount automatically.
+
+3. Seller clicks:
+Receive Payment
+
+4. Generate:
+- payment request
+- QR code
+- order reference
+
+5. Buyer pays.
+
+6. Payment callback/webhook may report payment detected.
+
+7. IMPORTANT:
+System should NOT auto-complete transaction.
+
+Instead:
+
+Payment Status:
+awaiting_manual_confirmation
+
+8. Authorized user manually clicks:
+Confirm Payment
+
+Only after confirmation:
+
+- invoice finalized
+- inventory reduced
+- money custody ledger updated
+- dispatch enabled
+- audit log generated
+
+====================================================
+PAYMENT DETECTION LOGIC
+====================================================
+
+Support payment callback integration.
+
+Create PaymentTransaction table:
+
+- id
+- sales_order_id
+- transaction_reference
+- amount
+- payment_provider
+- callback_payload
+- detected_at
+- verification_status
+- manually_confirmed_by
+- manually_confirmed_at
+
+Payment detected does NOT equal payment confirmed.
+
+====================================================
+PAYMENT SAFETY RULES
+====================================================
+
+Prevent:
+
+- duplicate payment requests
+- double payment confirmation
+- inventory deduction before confirmation
+- repeated receive-payment clicks
+- wrong amount confirmation
+
+====================================================
+INVENTORY RESERVATION ENGINE
+====================================================
+
+When payment request created:
+
+Reserve inventory temporarily.
+
+Inventory states:
+
+- available
+- reserved
+- dispatched
+- sold
+
+Formula:
+
+Available =
+Total − Reserved − Sold
+
+====================================================
+PAYMENT EXPIRY LOGIC
+====================================================
+
+Payment requests may expire.
+
+Example:
+
+30 minute expiry.
+
+If unpaid:
+
+- release reserved inventory
+- mark request expired
+
+====================================================
+PARTIAL PAYMENT RULES
+====================================================
+
+Support future handling of:
+
+- underpayment
+- overpayment
+- partial payment
+
+For now:
+
+Require exact amount confirmation.
+
+====================================================
+ONLINE PAYMENT RECEIVE SCREEN
+====================================================
+
+Seller interface:
+
+Buyer:
+[select]
+
+Quantity kg:
+[input]
+
+Rate per kg:
+[input]
+
+System auto-calculates:
+
+Total amount
+
+Show:
+
+Amount payable:
+₹X
+
+Button:
+
+Receive Payment
+
+====================================================
+PAYMENT POPUP
+====================================================
+
+Popup should display:
+
+- QR code
+- exact amount
+- order reference
+- project
+- buyer
+- countdown timer
+- payment status
+
+Status examples:
+
+Waiting for payment...
+Payment detected
+Awaiting confirmation
+Confirmed
+
+====================================================
+MANUAL PAYMENT CONFIRMATION
+====================================================
+
+Authorized user must manually confirm payment.
+
+Button:
+
+Confirm Payment
+
+Only after confirmation:
+
+- sale finalized
+- invoice generated
+- inventory updated
+- money custody updated
+
+====================================================
+MONEY CUSTODY LEDGER
+====================================================
+
+Create MoneyCustodyLedger:
+
+- id
+- project_id
+- holder_user_id
+- holder_role
+- amount
+- source_type
+- source_reference
+- received_date
+- deposited_amount
+- remaining_balance
+- updated_at
+
+Purpose:
+
+Track who currently holds project money.
+
+====================================================
+CASH HANDLING LOGIC
+====================================================
+
+If payment mode is cash:
+
+Money must attach to holder profile.
+
+Example:
+
+Employee Ravi holding:
+₹80850
+
+Track:
+
+- received
+- deposited
+- remaining
+
+====================================================
+CASH AGING WARNING
+====================================================
+
+Track how long money held.
+
+Example:
+
+Ravi holding:
+₹80850
+
+Days:
+14
+
+Create warning:
+
+Cash held too long.
+
+====================================================
+ONLINE PAYMENT LOGIC
+====================================================
+
+Online payment may still belong to:
+
+- developer
+- landowner
+- employee
+
+ERP must still track custody.
+
+====================================================
+INVOICE ENGINE
+====================================================
+
+Generate invoice after payment confirmation.
+
+Invoice contains:
+
+- invoice ID
+- buyer
+- project
+- quantity
+- rate
+- amount
+- seller
+- payment receiver
+- payment reference
+- date
+- dispatch status
+
+Invoice accessible to:
+
+- seller
+- developer
+- admin
+- records
+
+====================================================
+BUYER ORDER & PICKUP SYSTEM
+====================================================
+
+Buyer may:
+
+- view approved stock
+- place order
+- pay online
+- wait approval
+- collect stock
+
+Buyer NEVER chooses pickup store manually.
+
+====================================================
+DISPATCH PLANNING SYSTEM
+====================================================
+
+Developer chooses dispatch source.
+
+Example:
+
+Central Store:
+600kg
+
+Project Store:
+200kg
+
+Developer selects source.
+
+====================================================
+PICKUP MEMO SYSTEM
+====================================================
+
+Generate pickup memo:
+
+- memo code
+- buyer
+- project
+- store
+- zone
+- rack
+- quantity
+- pickup status
+- dispatch history
+
+Buyer only sees assigned pickup location.
+
+====================================================
+PARTIAL DISPATCH SUPPORT
+====================================================
+
+Support multiple pickups.
+
+Example:
+
+Ordered:
+1000kg
+
+First pickup:
+300kg
+
+Remaining:
+700kg
+
+Status:
+partially_dispatched
+
+Track:
+
+- ordered quantity
+- dispatched quantity
+- remaining quantity
+
+Prevent dispatch greater than remaining balance.
+
+====================================================
+STORE KEEPER SCREEN
+====================================================
+
+Store keeper sees:
+
+Memo ID
+Buyer
+Project
+Store
+Quantity
+Already dispatched
+Remaining balance
+
+Can dispatch partial quantity.
+
+====================================================
+TRANSFER + RESERVATION PROTECTION
+====================================================
+
+Reserved inventory protection:
+
+If stock reserved for buyer:
+
+Either:
+- block transfer
+
+OR
+- automatically update dispatch source
+
+Prevent wrong pickup location.
+
+====================================================
+PROJECT LIFECYCLE INTEGRATION
+====================================================
+
+Integrate with lifecycle system.
+
+Certain statuses may restrict:
+
+- sales
+- reservations
+- dispatch
+- payment receive
+- transfers
+
+Example:
+
+Closed project cannot create new sales.
+
+====================================================
+AUDIT REQUIREMENTS
+====================================================
+
+Create SalesAudit table.
+
+Track:
+
+- sale creation
+- payment detection
+- confirmation
+- dispatch
+- cancellation
+- inventory movement
+- transfer
+- manual overrides
+
+No hard deletes.
+
+====================================================
+INCONSISTENCY PREVENTION
+====================================================
+
+Solve these issues carefully:
+
+1. Duplicate payment clicks
+2. Double inventory deduction
+3. Payment detected but not confirmed
+4. Reservation without payment
+5. Dispatch exceeding remaining quantity
+6. Selling already reserved stock
+7. Wrong pickup location after transfer
+8. Negative inventory
+9. Unauthorized payment receiver
+10. Unauthorized seller
+11. Manual status manipulation
+12. Expired unpaid reservations
+13. Cash custody mismatch
+14. Inventory totals not reconciling
+15. Project lifecycle conflicts
+
+====================================================
+UI REQUIREMENTS
+====================================================
+
+Seller screens:
+- fast
+- mobile friendly
+- minimal typing
+
+Store keeper screens:
+- operational
+- large buttons
+- dispatch-focused
+
+Developer dashboards:
+- ERP style
+- analytics
+- financial summaries
+- inventory summaries
+
+Buyer screens:
+- simple
+- guided
+- pickup-focused

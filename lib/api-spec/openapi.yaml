@@ -10595,6 +10595,420 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/ObservationAssignment' }
 
+  # ── Sales Orders v2 ─────────────────────────────────────────────────────────
+
+  /api/sales-orders:
+    get:
+      operationId: listSalesOrders
+      summary: List sales orders
+      tags: [SalesOrders]
+      parameters:
+        - { name: projectId, in: query, schema: { type: string } }
+        - { name: orderStatus, in: query, schema: { type: string } }
+        - { name: paymentStatus, in: query, schema: { type: string } }
+        - { name: limit, in: query, schema: { type: string } }
+        - { name: offset, in: query, schema: { type: string } }
+      responses:
+        '200':
+          description: List of sales orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/SalesOrder' }
+    post:
+      operationId: createSalesOrder
+      summary: Create a new sales order (draft)
+      tags: [SalesOrders]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateSalesOrderBody' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SalesOrder' }
+
+  /api/sales-orders/stats/summary:
+    get:
+      operationId: getSalesOrderStats
+      summary: Aggregated stats for sales orders
+      tags: [SalesOrders]
+      parameters:
+        - { name: projectId, in: query, schema: { type: string } }
+      responses:
+        '200':
+          description: Stats summary
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SalesOrderStats' }
+
+  /api/sales-orders/admin/expire-reservations:
+    post:
+      operationId: expireStaleReservations
+      summary: Expire stale inventory reservations (admin)
+      tags: [SalesOrders]
+      responses:
+        '200':
+          description: Count of expired reservations
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  expired: { type: integer }
+
+  /api/sales-orders/{id}:
+    get:
+      operationId: getSalesOrder
+      summary: Get a single sales order with detail
+      tags: [SalesOrders]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Sales order detail
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SalesOrderDetail' }
+
+  /api/sales-orders/{id}/request-payment:
+    post:
+      operationId: requestPayment
+      summary: Initiate payment request and reserve inventory
+      tags: [SalesOrders]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Updated order
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SalesOrder' }
+
+  /api/sales-orders/{id}/detect-payment:
+    post:
+      operationId: detectPayment
+      summary: Record detected payment (manual entry or webhook)
+      tags: [SalesOrders]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DetectPaymentBody' }
+      responses:
+        '200':
+          description: Payment transaction created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentTransaction' }
+
+  /api/sales-orders/{id}/confirm-payment:
+    post:
+      operationId: confirmPayment
+      summary: Manually confirm payment, generate invoice and custody entry
+      tags: [SalesOrders]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                paymentReference: { type: string }
+                notes: { type: string }
+      responses:
+        '200':
+          description: Confirmed order with invoice
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SalesOrderDetail' }
+
+  /api/sales-orders/{id}/cancel:
+    post:
+      operationId: cancelSalesOrder
+      summary: Cancel a sales order and release reservations
+      tags: [SalesOrders]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: string }
+      responses:
+        '200':
+          description: Cancelled order
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SalesOrder' }
+
+  /api/sales-orders/{id}/dispatch:
+    post:
+      operationId: dispatchSalesOrder
+      summary: Record a dispatch event (full or partial)
+      tags: [SalesOrders]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DispatchSalesOrderBody' }
+      responses:
+        '200':
+          description: Updated order with dispatch record
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SalesOrder' }
+
+  # ── Payment Receiver Accounts ────────────────────────────────────────────────
+
+  /api/payment-receivers:
+    get:
+      operationId: listPaymentReceivers
+      summary: List approved payment receiver accounts
+      tags: [PaymentReceivers]
+      parameters:
+        - { name: projectId, in: query, schema: { type: string } }
+        - { name: activeOnly, in: query, schema: { type: string } }
+      responses:
+        '200':
+          description: List of accounts
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/PaymentReceiverAccount' }
+    post:
+      operationId: createPaymentReceiver
+      summary: Create a new approved payment receiver account
+      tags: [PaymentReceivers]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreatePaymentReceiverBody' }
+      responses:
+        '201':
+          description: Created account
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentReceiverAccount' }
+
+  /api/payment-receivers/{id}:
+    get:
+      operationId: getPaymentReceiver
+      summary: Get a payment receiver account
+      tags: [PaymentReceivers]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Account
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentReceiverAccount' }
+    patch:
+      operationId: updatePaymentReceiver
+      summary: Update a payment receiver account
+      tags: [PaymentReceivers]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                accountName: { type: string }
+                accountIdentifier: { type: string }
+                isDefault: { type: boolean }
+                isActive: { type: boolean }
+                notes: { type: string }
+      responses:
+        '200':
+          description: Updated account
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentReceiverAccount' }
+    delete:
+      operationId: deactivatePaymentReceiver
+      summary: Deactivate a payment receiver account
+      tags: [PaymentReceivers]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Deactivated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+
+  # ── Sales Permissions ────────────────────────────────────────────────────────
+
+  /api/sales-permissions:
+    get:
+      operationId: listSalesPermissions
+      summary: List project sales permissions
+      tags: [SalesPermissions]
+      parameters:
+        - { name: projectId, in: query, schema: { type: string } }
+        - { name: activeOnly, in: query, schema: { type: string } }
+      responses:
+        '200':
+          description: List of permissions
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/SalesPermission' }
+    post:
+      operationId: createSalesPermission
+      summary: Grant a user sales permission for a project
+      tags: [SalesPermissions]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateSalesPermissionBody' }
+      responses:
+        '201':
+          description: Created permission
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SalesPermission' }
+
+  /api/sales-permissions/{id}/revoke:
+    patch:
+      operationId: revokeSalesPermission
+      summary: Revoke a sales permission
+      tags: [SalesPermissions]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Revoked
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SalesPermission' }
+
+  # ── Money Custody Ledger ─────────────────────────────────────────────────────
+
+  /api/money-custody:
+    get:
+      operationId: listMoneyCustody
+      summary: List money custody ledger entries
+      tags: [MoneyCustody]
+      parameters:
+        - { name: projectId, in: query, schema: { type: string } }
+        - { name: holderUserId, in: query, schema: { type: string } }
+        - { name: isClosed, in: query, schema: { type: string } }
+      responses:
+        '200':
+          description: List of entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/MoneyCustodyEntry' }
+
+  /api/money-custody/summary/by-holder:
+    get:
+      operationId: getMoneyCustodySummary
+      summary: Summarised custody balances grouped by holder
+      tags: [MoneyCustody]
+      parameters:
+        - { name: projectId, in: query, schema: { type: string } }
+      responses:
+        '200':
+          description: Summary by holder
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/CustodyHolderSummary' }
+
+  /api/money-custody/{id}/deposit:
+    post:
+      operationId: recordCustodyDeposit
+      summary: Record a deposit from a custody entry
+      tags: [MoneyCustody]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DepositBody' }
+      responses:
+        '200':
+          description: Updated entry
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MoneyCustodyEntry' }
+
+  # ── Sales Invoices ───────────────────────────────────────────────────────────
+
+  /api/sales-invoices:
+    get:
+      operationId: listSalesInvoices
+      summary: List sales invoices
+      tags: [SalesInvoices]
+      parameters:
+        - { name: projectId, in: query, schema: { type: string } }
+        - { name: buyerId, in: query, schema: { type: string } }
+        - { name: dispatchStatus, in: query, schema: { type: string } }
+        - { name: limit, in: query, schema: { type: string } }
+        - { name: offset, in: query, schema: { type: string } }
+      responses:
+        '200':
+          description: List of invoices
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/SalesInvoice' }
+
+  /api/sales-invoices/{id}:
+    get:
+      operationId: getSalesInvoice
+      summary: Get a sales invoice by ID
+      tags: [SalesInvoices]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Invoice
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SalesInvoice' }
+
+  /api/sales-invoices/by-number/{number}:
+    get:
+      operationId: getSalesInvoiceByNumber
+      summary: Get a sales invoice by invoice number
+      tags: [SalesInvoices]
+      parameters:
+        - { name: number, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Invoice
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SalesInvoice' }
+
 
 components:
   schemas:
@@ -18023,3 +18437,328 @@ components:
         startDatetime: { type: string }
         endDatetime: { type: string }
         notes: { type: string }
+
+    # ── Sales Orders v2 ──────────────────────────────────────────────────────
+
+    SalesOrder:
+      type: object
+      properties:
+        id: { type: string }
+        salesCode: { type: string }
+        projectId: { type: string }
+        projectName: { type: string }
+        buyerId: { type: string, nullable: true }
+        buyerName: { type: string }
+        sellerUserId: { type: string, nullable: true }
+        sellerName: { type: string }
+        sellerRole: { type: string }
+        quantityKg: { type: string }
+        ratePerKg: { type: string }
+        totalAmount: { type: string }
+        paymentMode: { type: string }
+        paymentReceiverAccountId: { type: string, nullable: true }
+        paymentReceiverName: { type: string, nullable: true }
+        orderStatus: { type: string }
+        paymentStatus: { type: string }
+        inventoryStatus: { type: string }
+        dispatchStatus: { type: string }
+        quantityDispatchedKg: { type: string }
+        paymentRequestedAt: { type: string, nullable: true }
+        paymentExpiresAt: { type: string, nullable: true }
+        paymentConfirmedAt: { type: string, nullable: true }
+        paymentConfirmedById: { type: string, nullable: true }
+        paymentConfirmedByName: { type: string, nullable: true }
+        invoiceId: { type: string, nullable: true }
+        remarks: { type: string, nullable: true }
+        cancellationReason: { type: string, nullable: true }
+        cancelledAt: { type: string, nullable: true }
+        createdById: { type: string, nullable: true }
+        createdByName: { type: string }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+
+    SalesOrderDetail:
+      allOf:
+        - $ref: '#/components/schemas/SalesOrder'
+        - type: object
+          properties:
+            dispatches:
+              type: array
+              items: { $ref: '#/components/schemas/SalesOrderDispatch' }
+            audit:
+              type: array
+              items: { $ref: '#/components/schemas/SalesOrderAuditEntry' }
+            reservations:
+              type: array
+              items: { $ref: '#/components/schemas/InventoryReservation' }
+            paymentTransactions:
+              type: array
+              items: { $ref: '#/components/schemas/PaymentTransaction' }
+            invoice:
+              $ref: '#/components/schemas/SalesInvoice'
+              nullable: true
+
+    SalesOrderDispatch:
+      type: object
+      properties:
+        id: { type: string }
+        salesOrderId: { type: string }
+        storeId: { type: string, nullable: true }
+        storeName: { type: string, nullable: true }
+        quantityKg: { type: string }
+        dispatchedById: { type: string, nullable: true }
+        dispatchedByName: { type: string, nullable: true }
+        dispatchedAt: { type: string }
+        notes: { type: string, nullable: true }
+        createdAt: { type: string }
+
+    SalesOrderAuditEntry:
+      type: object
+      properties:
+        id: { type: string }
+        salesOrderId: { type: string, nullable: true }
+        salesCode: { type: string }
+        projectId: { type: string, nullable: true }
+        eventType: { type: string }
+        description: { type: string }
+        actorId: { type: string, nullable: true }
+        actorName: { type: string }
+        actorRole: { type: string }
+        metadata: { type: string, nullable: true }
+        createdAt: { type: string }
+
+    InventoryReservation:
+      type: object
+      properties:
+        id: { type: string }
+        salesOrderId: { type: string }
+        salesCode: { type: string }
+        projectId: { type: string }
+        storeId: { type: string, nullable: true }
+        storeName: { type: string, nullable: true }
+        quantityKg: { type: string }
+        status: { type: string }
+        expiresAt: { type: string }
+        releasedAt: { type: string, nullable: true }
+        fulfilledAt: { type: string, nullable: true }
+        createdAt: { type: string }
+
+    SalesOrderStats:
+      type: object
+      properties:
+        total: { type: integer }
+        byStatus:
+          type: object
+          additionalProperties: { type: integer }
+        totalRevenue: { type: number }
+        confirmedRevenue: { type: number }
+
+    CreateSalesOrderBody:
+      type: object
+      required: [projectId, buyerName, quantityKg, ratePerKg]
+      properties:
+        projectId: { type: string }
+        buyerId: { type: string }
+        buyerName: { type: string }
+        quantityKg: { type: number }
+        ratePerKg: { type: number }
+        paymentMode: { type: string }
+        paymentReceiverAccountId: { type: string }
+        remarks: { type: string }
+
+    DetectPaymentBody:
+      type: object
+      required: [amount]
+      properties:
+        transactionReference: { type: string }
+        amount: { type: number }
+        paymentProvider: { type: string }
+        notes: { type: string }
+
+    DispatchSalesOrderBody:
+      type: object
+      required: [quantityKg]
+      properties:
+        quantityKg: { type: number }
+        storeId: { type: string }
+        storeName: { type: string }
+        notes: { type: string }
+
+    PaymentTransaction:
+      type: object
+      properties:
+        id: { type: string }
+        salesOrderId: { type: string }
+        transactionReference: { type: string, nullable: true }
+        amount: { type: string }
+        paymentProvider: { type: string }
+        detectedAt: { type: string }
+        verificationStatus: { type: string }
+        manuallyConfirmedById: { type: string, nullable: true }
+        manuallyConfirmedByName: { type: string, nullable: true }
+        manuallyConfirmedAt: { type: string, nullable: true }
+        rejectionReason: { type: string, nullable: true }
+        notes: { type: string, nullable: true }
+        createdAt: { type: string }
+
+    # ── Payment Receivers ────────────────────────────────────────────────────
+
+    PaymentReceiverAccount:
+      type: object
+      properties:
+        id: { type: string }
+        projectId: { type: string }
+        projectName: { type: string }
+        ownerUserId: { type: string, nullable: true }
+        ownerName: { type: string }
+        ownerRole: { type: string }
+        accountName: { type: string }
+        paymentType: { type: string }
+        accountIdentifier: { type: string, nullable: true }
+        bankIfsc: { type: string, nullable: true }
+        bankName: { type: string, nullable: true }
+        allowedPaymentModes: { type: string }
+        isDefault: { type: boolean }
+        isActive: { type: boolean }
+        notes: { type: string, nullable: true }
+        createdById: { type: string, nullable: true }
+        createdByName: { type: string }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+
+    CreatePaymentReceiverBody:
+      type: object
+      required: [projectId, ownerName, accountName]
+      properties:
+        projectId: { type: string }
+        ownerUserId: { type: string }
+        ownerName: { type: string }
+        ownerRole: { type: string }
+        accountName: { type: string }
+        paymentType: { type: string }
+        accountIdentifier: { type: string }
+        bankIfsc: { type: string }
+        bankName: { type: string }
+        allowedPaymentModes: { type: string }
+        isDefault: { type: boolean }
+        notes: { type: string }
+
+    # ── Sales Permissions ────────────────────────────────────────────────────
+
+    SalesPermission:
+      type: object
+      properties:
+        id: { type: string }
+        projectId: { type: string }
+        projectName: { type: string }
+        userId: { type: string }
+        userName: { type: string }
+        roleType: { type: string }
+        canSell: { type: boolean }
+        canReceivePayment: { type: boolean }
+        allowedPaymentModes: { type: string }
+        isActive: { type: boolean }
+        notes: { type: string, nullable: true }
+        grantedById: { type: string, nullable: true }
+        grantedByName: { type: string }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+
+    CreateSalesPermissionBody:
+      type: object
+      required: [projectId, userId, userName, roleType]
+      properties:
+        projectId: { type: string }
+        userId: { type: string }
+        userName: { type: string }
+        roleType: { type: string }
+        canSell: { type: boolean }
+        canReceivePayment: { type: boolean }
+        allowedPaymentModes: { type: string }
+        notes: { type: string }
+
+    # ── Money Custody ────────────────────────────────────────────────────────
+
+    MoneyCustodyEntry:
+      type: object
+      properties:
+        id: { type: string }
+        projectId: { type: string }
+        projectName: { type: string }
+        holderUserId: { type: string, nullable: true }
+        holderName: { type: string }
+        holderRole: { type: string }
+        amount: { type: string }
+        paymentMode: { type: string }
+        sourceType: { type: string }
+        sourceReference: { type: string, nullable: true }
+        sourceCode: { type: string, nullable: true }
+        receivedDate: { type: string }
+        depositedAmount: { type: string }
+        remainingBalance: { type: string }
+        depositedAt: { type: string, nullable: true }
+        depositedById: { type: string, nullable: true }
+        depositedByName: { type: string, nullable: true }
+        depositReference: { type: string, nullable: true }
+        isClosed: { type: boolean }
+        notes: { type: string, nullable: true }
+        createdByName: { type: string }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+        daysHeld: { type: integer }
+        agingStatus: { type: string }
+
+    CustodyHolderSummary:
+      type: object
+      properties:
+        holderName: { type: string }
+        holderRole: { type: string }
+        totalAmount: { type: number }
+        remainingBalance: { type: number }
+        cashAmount: { type: number }
+        onlineAmount: { type: number }
+        oldestCashDate: { type: string, nullable: true }
+        agingStatus: { type: string }
+
+    DepositBody:
+      type: object
+      required: [depositedAmount]
+      properties:
+        depositedAmount: { type: number }
+        depositReference: { type: string }
+        notes: { type: string }
+
+    # ── Sales Invoices ───────────────────────────────────────────────────────
+
+    SalesInvoice:
+      type: object
+      properties:
+        id: { type: string }
+        invoiceNumber: { type: string }
+        salesOrderId: { type: string }
+        salesCode: { type: string }
+        projectId: { type: string }
+        projectName: { type: string }
+        buyerId: { type: string, nullable: true }
+        buyerName: { type: string }
+        buyerPhone: { type: string, nullable: true }
+        buyerAddress: { type: string, nullable: true }
+        buyerGstin: { type: string, nullable: true }
+        sellerName: { type: string }
+        sellerRole: { type: string }
+        paymentReceiverName: { type: string, nullable: true }
+        paymentMode: { type: string }
+        paymentReference: { type: string, nullable: true }
+        paymentConfirmedAt: { type: string, nullable: true }
+        quantityKg: { type: string }
+        ratePerKg: { type: string }
+        totalAmount: { type: string }
+        dispatchStatus: { type: string }
+        quantityDispatchedKg: { type: string }
+        isVoided: { type: boolean }
+        voidReason: { type: string, nullable: true }
+        generatedById: { type: string, nullable: true }
+        generatedByName: { type: string }
+        generatedAt: { type: string }
+        invoiceDate: { type: string }
+        createdAt: { type: string }

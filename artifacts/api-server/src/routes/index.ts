@@ -65,6 +65,11 @@ import collectionEntriesRouter from "./collection_entries";
 import storeEntriesRouter from "./store_entries";
 import productionAssignmentsRouter from "./production_employee_assignments";
 import observationAssignmentsRouter from "./observation_assignments";
+import salesOrdersV2Router from "./sales_orders_v2";
+import paymentReceiversRouter from "./payment_receivers";
+import salesPermissionsRouter from "./sales_permissions";
+import moneyCustodyRouter from "./money_custody";
+import salesInvoicesRouter from "./sales_invoices_route";
 
 const router: IRouter = Router();
 
@@ -145,5 +150,10 @@ router.use("/collection-entries", collectionEntriesRouter);
 router.use("/store-entries", storeEntriesRouter);
 router.use("/production-assignments", productionAssignmentsRouter);
 router.use("/observation-assignments", observationAssignmentsRouter);
+router.use("/sales-orders", salesOrdersV2Router);
+router.use("/payment-receivers", paymentReceiversRouter);
+router.use("/sales-permissions", salesPermissionsRouter);
+router.use("/money-custody", moneyCustodyRouter);
+router.use("/sales-invoices", salesInvoicesRouter);
 
 export default router;

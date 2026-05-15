@@ -57,6 +57,12 @@ import Inventory from "./pages/Inventory";
 import InventoryAnalytics from "./pages/InventoryAnalytics";
 import Sales from "./pages/Sales";
 import SalesAudit from "./pages/SalesAudit";
+import SalesOrders from "./pages/SalesOrders";
+import SalesOrderDetail from "./pages/SalesOrderDetail";
+import SalesOrderDashboard from "./pages/SalesOrderDashboard";
+import MoneyCustody from "./pages/MoneyCustody";
+import PaymentReceivers from "./pages/PaymentReceivers";
+import SalesPermissions from "./pages/SalesPermissions";
 import OperationalTasks from "./pages/OperationalTasks";
 import OperationalAlerts from "./pages/OperationalAlerts";
 import OperationalAccessLog from "./pages/OperationalAccessLog";
@@ -326,6 +332,13 @@ function AppRoutes() {
               <Route path="/prematurity-succession"><ProtectedRoute component={PrematuritySuccession} /></Route>
               <Route path="/sales"><ProtectedRoute component={Sales} /></Route>
               <Route path="/distribution"><ProtectedRoute component={Distribution} /></Route>
+              {/* Sales Orders v2 — Payment Workflow */}
+              <Route path="/sales-orders"><ProtectedRoute component={SalesOrders} /></Route>
+              <Route path="/sales-orders/:id"><ProtectedRoute component={SalesOrderDetail} /></Route>
+              <Route path="/sales-dashboard"><ProtectedRoute component={SalesOrderDashboard} /></Route>
+              <Route path="/money-custody"><ProtectedRoute component={MoneyCustody} /></Route>
+              <Route path="/payment-receivers"><ProtectedRoute component={PaymentReceivers} /></Route>
+              <Route path="/sales-permissions"><ProtectedRoute component={SalesPermissions} /></Route>
 
               {/* Analytics */}
               <Route path="/financial-analytics"><ProtectedRoute component={FinancialAnalytics} /></Route>

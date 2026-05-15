@@ -7860,6 +7860,285 @@ export interface CreateObservationAssignmentBody {
   notes?: string;
 }
 
+export interface SalesOrder {
+  id?: string;
+  salesCode?: string;
+  projectId?: string;
+  projectName?: string;
+  buyerId?: string | null;
+  buyerName?: string;
+  sellerUserId?: string | null;
+  sellerName?: string;
+  sellerRole?: string;
+  quantityKg?: string;
+  ratePerKg?: string;
+  totalAmount?: string;
+  paymentMode?: string;
+  paymentReceiverAccountId?: string | null;
+  paymentReceiverName?: string | null;
+  orderStatus?: string;
+  paymentStatus?: string;
+  inventoryStatus?: string;
+  dispatchStatus?: string;
+  quantityDispatchedKg?: string;
+  paymentRequestedAt?: string | null;
+  paymentExpiresAt?: string | null;
+  paymentConfirmedAt?: string | null;
+  paymentConfirmedById?: string | null;
+  paymentConfirmedByName?: string | null;
+  invoiceId?: string | null;
+  remarks?: string | null;
+  cancellationReason?: string | null;
+  cancelledAt?: string | null;
+  createdById?: string | null;
+  createdByName?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface SalesOrderDispatch {
+  id?: string;
+  salesOrderId?: string;
+  storeId?: string | null;
+  storeName?: string | null;
+  quantityKg?: string;
+  dispatchedById?: string | null;
+  dispatchedByName?: string | null;
+  dispatchedAt?: string;
+  notes?: string | null;
+  createdAt?: string;
+}
+
+export interface SalesOrderAuditEntry {
+  id?: string;
+  salesOrderId?: string | null;
+  salesCode?: string;
+  projectId?: string | null;
+  eventType?: string;
+  description?: string;
+  actorId?: string | null;
+  actorName?: string;
+  actorRole?: string;
+  metadata?: string | null;
+  createdAt?: string;
+}
+
+export interface InventoryReservation {
+  id?: string;
+  salesOrderId?: string;
+  salesCode?: string;
+  projectId?: string;
+  storeId?: string | null;
+  storeName?: string | null;
+  quantityKg?: string;
+  status?: string;
+  expiresAt?: string;
+  releasedAt?: string | null;
+  fulfilledAt?: string | null;
+  createdAt?: string;
+}
+
+export interface PaymentTransaction {
+  id?: string;
+  salesOrderId?: string;
+  transactionReference?: string | null;
+  amount?: string;
+  paymentProvider?: string;
+  detectedAt?: string;
+  verificationStatus?: string;
+  manuallyConfirmedById?: string | null;
+  manuallyConfirmedByName?: string | null;
+  manuallyConfirmedAt?: string | null;
+  rejectionReason?: string | null;
+  notes?: string | null;
+  createdAt?: string;
+}
+
+export interface SalesInvoice {
+  id?: string;
+  invoiceNumber?: string;
+  salesOrderId?: string;
+  salesCode?: string;
+  projectId?: string;
+  projectName?: string;
+  buyerId?: string | null;
+  buyerName?: string;
+  buyerPhone?: string | null;
+  buyerAddress?: string | null;
+  buyerGstin?: string | null;
+  sellerName?: string;
+  sellerRole?: string;
+  paymentReceiverName?: string | null;
+  paymentMode?: string;
+  paymentReference?: string | null;
+  paymentConfirmedAt?: string | null;
+  quantityKg?: string;
+  ratePerKg?: string;
+  totalAmount?: string;
+  dispatchStatus?: string;
+  quantityDispatchedKg?: string;
+  isVoided?: boolean;
+  voidReason?: string | null;
+  generatedById?: string | null;
+  generatedByName?: string;
+  generatedAt?: string;
+  invoiceDate?: string;
+  createdAt?: string;
+}
+
+export type SalesOrderDetail = SalesOrder & {
+  dispatches?: SalesOrderDispatch[];
+  audit?: SalesOrderAuditEntry[];
+  reservations?: InventoryReservation[];
+  paymentTransactions?: PaymentTransaction[];
+  invoice?: SalesInvoice | null;
+};
+
+export type SalesOrderStatsByStatus = { [key: string]: number };
+
+export interface SalesOrderStats {
+  total?: number;
+  byStatus?: SalesOrderStatsByStatus;
+  totalRevenue?: number;
+  confirmedRevenue?: number;
+}
+
+export interface CreateSalesOrderBody {
+  projectId: string;
+  buyerId?: string;
+  buyerName: string;
+  quantityKg: number;
+  ratePerKg: number;
+  paymentMode?: string;
+  paymentReceiverAccountId?: string;
+  remarks?: string;
+}
+
+export interface DetectPaymentBody {
+  transactionReference?: string;
+  amount: number;
+  paymentProvider?: string;
+  notes?: string;
+}
+
+export interface DispatchSalesOrderBody {
+  quantityKg: number;
+  storeId?: string;
+  storeName?: string;
+  notes?: string;
+}
+
+export interface PaymentReceiverAccount {
+  id?: string;
+  projectId?: string;
+  projectName?: string;
+  ownerUserId?: string | null;
+  ownerName?: string;
+  ownerRole?: string;
+  accountName?: string;
+  paymentType?: string;
+  accountIdentifier?: string | null;
+  bankIfsc?: string | null;
+  bankName?: string | null;
+  allowedPaymentModes?: string;
+  isDefault?: boolean;
+  isActive?: boolean;
+  notes?: string | null;
+  createdById?: string | null;
+  createdByName?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CreatePaymentReceiverBody {
+  projectId: string;
+  ownerUserId?: string;
+  ownerName: string;
+  ownerRole?: string;
+  accountName: string;
+  paymentType?: string;
+  accountIdentifier?: string;
+  bankIfsc?: string;
+  bankName?: string;
+  allowedPaymentModes?: string;
+  isDefault?: boolean;
+  notes?: string;
+}
+
+export interface SalesPermission {
+  id?: string;
+  projectId?: string;
+  projectName?: string;
+  userId?: string;
+  userName?: string;
+  roleType?: string;
+  canSell?: boolean;
+  canReceivePayment?: boolean;
+  allowedPaymentModes?: string;
+  isActive?: boolean;
+  notes?: string | null;
+  grantedById?: string | null;
+  grantedByName?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CreateSalesPermissionBody {
+  projectId: string;
+  userId: string;
+  userName: string;
+  roleType: string;
+  canSell?: boolean;
+  canReceivePayment?: boolean;
+  allowedPaymentModes?: string;
+  notes?: string;
+}
+
+export interface MoneyCustodyEntry {
+  id?: string;
+  projectId?: string;
+  projectName?: string;
+  holderUserId?: string | null;
+  holderName?: string;
+  holderRole?: string;
+  amount?: string;
+  paymentMode?: string;
+  sourceType?: string;
+  sourceReference?: string | null;
+  sourceCode?: string | null;
+  receivedDate?: string;
+  depositedAmount?: string;
+  remainingBalance?: string;
+  depositedAt?: string | null;
+  depositedById?: string | null;
+  depositedByName?: string | null;
+  depositReference?: string | null;
+  isClosed?: boolean;
+  notes?: string | null;
+  createdByName?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  daysHeld?: number;
+  agingStatus?: string;
+}
+
+export interface CustodyHolderSummary {
+  holderName?: string;
+  holderRole?: string;
+  totalAmount?: number;
+  remainingBalance?: number;
+  cashAmount?: number;
+  onlineAmount?: number;
+  oldestCashDate?: string | null;
+  agingStatus?: string;
+}
+
+export interface DepositBody {
+  depositedAmount: number;
+  depositReference?: string;
+  notes?: string;
+}
+
 export type GetUserActivityParams = {
   limit?: number;
 };
@@ -9790,4 +10069,69 @@ export type ListProductionAssignmentsParams = {
 
 export type ListObservationAssignmentsParams = {
   projectId?: string;
+};
+
+export type ListSalesOrdersParams = {
+  projectId?: string;
+  orderStatus?: string;
+  paymentStatus?: string;
+  limit?: string;
+  offset?: string;
+};
+
+export type GetSalesOrderStatsParams = {
+  projectId?: string;
+};
+
+export type ExpireStaleReservations200 = {
+  expired?: number;
+};
+
+export type ConfirmPaymentBody = {
+  paymentReference?: string;
+  notes?: string;
+};
+
+export type CancelSalesOrderBody = {
+  reason?: string;
+};
+
+export type ListPaymentReceiversParams = {
+  projectId?: string;
+  activeOnly?: string;
+};
+
+export type UpdatePaymentReceiverBody = {
+  accountName?: string;
+  accountIdentifier?: string;
+  isDefault?: boolean;
+  isActive?: boolean;
+  notes?: string;
+};
+
+export type DeactivatePaymentReceiver200 = {
+  success?: boolean;
+};
+
+export type ListSalesPermissionsParams = {
+  projectId?: string;
+  activeOnly?: string;
+};
+
+export type ListMoneyCustodyParams = {
+  projectId?: string;
+  holderUserId?: string;
+  isClosed?: string;
+};
+
+export type GetMoneyCustodySummaryParams = {
+  projectId?: string;
+};
+
+export type ListSalesInvoicesParams = {
+  projectId?: string;
+  buyerId?: string;
+  dispatchStatus?: string;
+  limit?: string;
+  offset?: string;
 };
