@@ -102,28 +102,28 @@ export default function Stock() {
     });
   }
 
-  const totalStock = stock?.reduce((s, p) => s + p.currentStock, 0) ?? 0;
-  const totalProduced = stock?.reduce((s, p) => s + p.totalProduced, 0) ?? 0;
-  const totalSold = stock?.reduce((s, p) => s + p.totalSold, 0) ?? 0;
+  const totalStock = stock?.reduce((s, p) => s + (p.currentStock ?? 0), 0) ?? 0;
+  const totalProduced = stock?.reduce((s, p) => s + (p.totalProduced ?? 0), 0) ?? 0;
+  const totalSold = stock?.reduce((s, p) => s + (p.totalSold ?? 0), 0) ?? 0;
 
   // Movement log for selected project (or all)
   const movements = (records ?? [])
     .filter(r => selectedProject === null || r.projectId === selectedProject)
     .map(r => ({
       ...r,
-      stockChange: r.productionKg - r.soldKg,
+      stockChange: (r.productionKg ?? 0) - (r.soldKg ?? 0),
     }))
     .sort((a, b) => new Date(b.recordedAt).getTime() - new Date(a.recordedAt).getTime());
 
   // Running stock over time for the selected project (or first with data)
-  const chartProject = selectedProject ?? (stock?.find(s => s.totalProduced > 0)?.projectId ?? null);
+  const chartProject = selectedProject ?? (stock?.find(s => (s.totalProduced ?? 0) > 0)?.projectId ?? null);
   const chartRecords = (records ?? [])
     .filter(r => r.projectId === chartProject)
     .sort((a, b) => new Date(a.recordedAt).getTime() - new Date(b.recordedAt).getTime());
 
   let runningStock = 0;
   const chartData = chartRecords.map(r => {
-    runningStock += r.productionKg - r.soldKg;
+    runningStock += (r.productionKg ?? 0) - (r.soldKg ?? 0);
     return {
       date: format(new Date(r.recordedAt), "dd MMM"),
       stock: Math.max(runningStock, 0),
@@ -268,7 +268,7 @@ export default function Stock() {
         ) : (
           <div className="grid gap-4 md:grid-cols-3">
             {stock?.map(p => {
-              const stockPct = p.totalProduced > 0 ? (p.currentStock / p.totalProduced) * 100 : 0;
+              const stockPct = (p.totalProduced ?? 0) > 0 ? ((p.currentStock ?? 0) / (p.totalProduced ?? 0)) * 100 : 0;
               const isSelected = selectedProject === p.projectId;
               return (
                 <Card
@@ -285,23 +285,23 @@ export default function Stock() {
                     <div className="flex items-end justify-between">
                       <div>
                         <p className="text-xs text-muted-foreground">Current Stock</p>
-                        <p className={`text-2xl font-bold ${p.currentStock > 0 ? "text-foreground" : "text-muted-foreground"}`}>
-                          {p.currentStock.toLocaleString("en-IN", { maximumFractionDigits: 1 })} kg
+                        <p className={`text-2xl font-bold ${(p.currentStock ?? 0) > 0 ? "text-foreground" : "text-muted-foreground"}`}>
+                          {(p.currentStock ?? 0).toLocaleString("en-IN", { maximumFractionDigits: 1 })} kg
                         </p>
                       </div>
                       <div className="text-right">
                         <p className="text-xs text-muted-foreground">{stockPct.toFixed(0)}% remaining</p>
                       </div>
                     </div>
-                    <StockBar produced={p.totalProduced} sold={p.totalSold} stock={p.currentStock} />
+                    <StockBar produced={p.totalProduced ?? 0} sold={p.totalSold ?? 0} stock={p.currentStock ?? 0} />
                     <div className="grid grid-cols-2 gap-2 text-xs pt-1">
                       <div className="flex items-center gap-1 text-emerald-700">
                         <ArrowUpCircle className="w-3 h-3" />
-                        <span>{p.totalProduced.toLocaleString("en-IN", { maximumFractionDigits: 1 })} kg produced</span>
+                        <span>{(p.totalProduced ?? 0).toLocaleString("en-IN", { maximumFractionDigits: 1 })} kg produced</span>
                       </div>
                       <div className="flex items-center gap-1 text-red-600 justify-end">
                         <ArrowDownCircle className="w-3 h-3" />
-                        <span>{p.totalSold.toLocaleString("en-IN", { maximumFractionDigits: 1 })} kg sold</span>
+                        <span>{(p.totalSold ?? 0).toLocaleString("en-IN", { maximumFractionDigits: 1 })} kg sold</span>
                       </div>
                     </div>
                   </CardContent>
@@ -385,18 +385,18 @@ export default function Stock() {
                         {r.notes && <div className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{r.notes}</div>}
                       </td>
                       <td className="py-3 pr-3 text-right tabular-nums text-emerald-700 font-medium">
-                        +{r.productionKg.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+                        +{(r.productionKg ?? 0).toLocaleString("en-IN", { maximumFractionDigits: 2 })}
                       </td>
                       <td className="py-3 pr-3 text-right tabular-nums text-red-600 font-medium">
-                        −{r.soldKg.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+                        −{(r.soldKg ?? 0).toLocaleString("en-IN", { maximumFractionDigits: 2 })}
                       </td>
                       <td className="py-3 pr-3 text-right tabular-nums">
-                        <span className={`font-semibold ${r.stockChange >= 0 ? "text-emerald-700" : "text-red-600"}`}>
-                          {r.stockChange >= 0 ? "+" : ""}{r.stockChange.toLocaleString("en-IN", { maximumFractionDigits: 2 })} kg
+                        <span className={`font-semibold ${(r.stockChange ?? 0) >= 0 ? "text-emerald-700" : "text-red-600"}`}>
+                          {(r.stockChange ?? 0) >= 0 ? "+" : ""}{(r.stockChange ?? 0).toLocaleString("en-IN", { maximumFractionDigits: 2 })} kg
                         </span>
                       </td>
                       <td className="py-3 pr-3 text-right tabular-nums">
-                        {r.revenue > 0 ? <span className="font-semibold">₹{r.revenue.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</span> : <span className="text-muted-foreground">—</span>}
+                        {(r.revenue ?? 0) > 0 ? <span className="font-semibold">₹{(r.revenue ?? 0).toLocaleString("en-IN", { maximumFractionDigits: 0 })}</span> : <span className="text-muted-foreground">—</span>}
                       </td>
                       <td className="py-3 text-right">
                         <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive h-7 w-7 p-0"
