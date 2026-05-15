@@ -12,6 +12,7 @@ import {
   projectsTable,
 } from "@workspace/db";
 import { requireRole } from "../middlewares/auth";
+import { writeTimeline, TL } from "../lib/timelineLogger";
 import {
   InitiateAgreementActivationBody,
   CancelAgreementActivationBody,
@@ -644,6 +645,26 @@ router.post(
         actor.name,
         { status: "completed", agreementId: id },
       );
+
+      // Fire-and-forget: get projectId then write timeline event
+      db.select({ projectId: agreementsTable.projectId })
+        .from(agreementsTable)
+        .where(eq(agreementsTable.id, id))
+        .limit(1)
+        .then(([ag]) => {
+          if (ag?.projectId) {
+            writeTimeline(req, {
+              projectId: ag.projectId,
+              eventType: TL.AGREEMENT_ACTIVATED,
+              title: "Agreement activated — all parties OTP-verified",
+              severity: "critical",
+              relatedTable: "agreements",
+              relatedRecordId: id,
+              metadata: { activationId, agreementId: id },
+            });
+          }
+        })
+        .catch(() => void 0);
     }
 
     const result = await fetchActivationWithOtps(activationId);

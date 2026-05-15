@@ -12,6 +12,7 @@ import {
 import { requireRole } from "../middlewares/auth";
 import { routeAndCreateVerificationRequest } from "./expenditure_verification";
 import { writeAudit } from "../lib/auditLogger";
+import { writeTimeline, TL } from "../lib/timelineLogger";
 
 const router = Router();
 
@@ -719,6 +720,16 @@ router.post(
       actor: { id: actor.id, name: actor.displayName, role: actor.role },
     });
 
+    writeTimeline(req, {
+      projectId: updated.projectId,
+      eventType: TL.EXPENDITURE_APPROVED,
+      title: `Expenditure approved — ₹${updated.amount.toLocaleString("en-IN")}`,
+      severity: "info",
+      relatedTable: "expenditures",
+      relatedRecordId: updated.id,
+      metadata: { expenditureId: updated.id, amount: updated.amount, category: updated.category },
+    });
+
     return res.json(formatEntry(updated, entry.projectName));
   },
 );
@@ -786,6 +797,16 @@ router.post(
       oldData: { verificationStatus: "pending_review" },
       newData: { verificationStatus: "rejected", verifierNotes: notes },
       actor: { id: actor.id, name: actor.displayName, role: actor.role },
+    });
+
+    writeTimeline(req, {
+      projectId: updated.projectId,
+      eventType: TL.EXPENDITURE_REJECTED,
+      title: `Expenditure rejected — ₹${updated.amount.toLocaleString("en-IN")}`,
+      severity: "important",
+      relatedTable: "expenditures",
+      relatedRecordId: updated.id,
+      metadata: { expenditureId: updated.id, amount: updated.amount, category: updated.category, notes },
     });
 
     return res.json(formatEntry(updated, entry.projectName));

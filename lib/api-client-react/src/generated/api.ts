@@ -24,6 +24,7 @@ import type {
   AcknowledgeClosureBody,
   ActivityItem,
   AddParticipantInput,
+  AddProjectTimelineEventBody,
   AdvanceSummary,
   Agreement,
   AgreementAccountingProfile,
@@ -374,6 +375,8 @@ import type {
   ListGovernanceMeetings200,
   ListGovernanceMeetingsParams,
   ListGovernanceResolutions200,
+  ListGovernanceTimeline200,
+  ListGovernanceTimelineParams,
   ListHeldDistributionsParams,
   ListImbalanceLedger200,
   ListImbalanceLedgerParams,
@@ -413,6 +416,8 @@ import type {
   ListProductionBatchesParams,
   ListProductionEntriesParams,
   ListProductionRecordsParams,
+  ListProjectTimeline200,
+  ListProjectTimelineParams,
   ListSaleDocumentsParams,
   ListSalesInvoicesParams,
   ListSalesOrdersParams,
@@ -501,6 +506,7 @@ import type {
   ProjectOwnershipDetail,
   ProjectParticipant,
   ProjectProfitabilityReport,
+  ProjectTimelineEvent,
   ProjectUpdate,
   RaiseContributionDisputeBody,
   RecordAdvanceRecoveryBody,
@@ -46660,6 +46666,320 @@ export function useGetMyActivity<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetMyActivityQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get the evidentiary chronological timeline for a project
+ */
+export const getListProjectTimelineUrl = (
+  projectId: string,
+  params?: ListProjectTimelineParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/projects/${projectId}/timeline?${stringifiedParams}`
+    : `/api/projects/${projectId}/timeline`;
+};
+
+export const listProjectTimeline = async (
+  projectId: string,
+  params?: ListProjectTimelineParams,
+  options?: RequestInit,
+): Promise<ListProjectTimeline200> => {
+  return customFetch<ListProjectTimeline200>(
+    getListProjectTimelineUrl(projectId, params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListProjectTimelineQueryKey = (
+  projectId: string,
+  params?: ListProjectTimelineParams,
+) => {
+  return [
+    `/api/projects/${projectId}/timeline`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListProjectTimelineQueryOptions = <
+  TData = Awaited<ReturnType<typeof listProjectTimeline>>,
+  TError = ErrorType<unknown>,
+>(
+  projectId: string,
+  params?: ListProjectTimelineParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listProjectTimeline>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListProjectTimelineQueryKey(projectId, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listProjectTimeline>>
+  > = ({ signal }) =>
+    listProjectTimeline(projectId, params, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!projectId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listProjectTimeline>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListProjectTimelineQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listProjectTimeline>>
+>;
+export type ListProjectTimelineQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get the evidentiary chronological timeline for a project
+ */
+
+export function useListProjectTimeline<
+  TData = Awaited<ReturnType<typeof listProjectTimeline>>,
+  TError = ErrorType<unknown>,
+>(
+  projectId: string,
+  params?: ListProjectTimelineParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listProjectTimeline>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListProjectTimelineQueryOptions(
+    projectId,
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Add a manual governance note to the project timeline (admin/developer only)
+ */
+export const getAddProjectTimelineEventUrl = (projectId: string) => {
+  return `/api/projects/${projectId}/timeline`;
+};
+
+export const addProjectTimelineEvent = async (
+  projectId: string,
+  addProjectTimelineEventBody: AddProjectTimelineEventBody,
+  options?: RequestInit,
+): Promise<ProjectTimelineEvent> => {
+  return customFetch<ProjectTimelineEvent>(
+    getAddProjectTimelineEventUrl(projectId),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(addProjectTimelineEventBody),
+    },
+  );
+};
+
+export const getAddProjectTimelineEventMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof addProjectTimelineEvent>>,
+    TError,
+    { projectId: string; data: BodyType<AddProjectTimelineEventBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof addProjectTimelineEvent>>,
+  TError,
+  { projectId: string; data: BodyType<AddProjectTimelineEventBody> },
+  TContext
+> => {
+  const mutationKey = ["addProjectTimelineEvent"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof addProjectTimelineEvent>>,
+    { projectId: string; data: BodyType<AddProjectTimelineEventBody> }
+  > = (props) => {
+    const { projectId, data } = props ?? {};
+
+    return addProjectTimelineEvent(projectId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AddProjectTimelineEventMutationResult = NonNullable<
+  Awaited<ReturnType<typeof addProjectTimelineEvent>>
+>;
+export type AddProjectTimelineEventMutationBody =
+  BodyType<AddProjectTimelineEventBody>;
+export type AddProjectTimelineEventMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Add a manual governance note to the project timeline (admin/developer only)
+ */
+export const useAddProjectTimelineEvent = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof addProjectTimelineEvent>>,
+    TError,
+    { projectId: string; data: BodyType<AddProjectTimelineEventBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof addProjectTimelineEvent>>,
+  TError,
+  { projectId: string; data: BodyType<AddProjectTimelineEventBody> },
+  TContext
+> => {
+  return useMutation(getAddProjectTimelineEventMutationOptions(options));
+};
+
+/**
+ * @summary Cross-project evidentiary governance timeline (admin/developer only)
+ */
+export const getListGovernanceTimelineUrl = (
+  params?: ListGovernanceTimelineParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/governance-timeline?${stringifiedParams}`
+    : `/api/governance-timeline`;
+};
+
+export const listGovernanceTimeline = async (
+  params?: ListGovernanceTimelineParams,
+  options?: RequestInit,
+): Promise<ListGovernanceTimeline200> => {
+  return customFetch<ListGovernanceTimeline200>(
+    getListGovernanceTimelineUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListGovernanceTimelineQueryKey = (
+  params?: ListGovernanceTimelineParams,
+) => {
+  return [`/api/governance-timeline`, ...(params ? [params] : [])] as const;
+};
+
+export const getListGovernanceTimelineQueryOptions = <
+  TData = Awaited<ReturnType<typeof listGovernanceTimeline>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListGovernanceTimelineParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listGovernanceTimeline>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListGovernanceTimelineQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listGovernanceTimeline>>
+  > = ({ signal }) =>
+    listGovernanceTimeline(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listGovernanceTimeline>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListGovernanceTimelineQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listGovernanceTimeline>>
+>;
+export type ListGovernanceTimelineQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Cross-project evidentiary governance timeline (admin/developer only)
+ */
+
+export function useListGovernanceTimeline<
+  TData = Awaited<ReturnType<typeof listGovernanceTimeline>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListGovernanceTimelineParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listGovernanceTimeline>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListGovernanceTimelineQueryOptions(params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

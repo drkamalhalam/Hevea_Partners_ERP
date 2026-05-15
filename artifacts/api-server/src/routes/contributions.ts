@@ -12,6 +12,7 @@ import {
 } from "@workspace/db";
 import { requireRole } from "../middlewares/auth";
 import { writeAudit } from "../lib/auditLogger";
+import { writeTimeline, TL } from "../lib/timelineLogger";
 
 const router = Router();
 
@@ -846,6 +847,16 @@ router.post("/:id/verify", async (req, res) => {
     actor: { id: actor.id, name: actor.name, role: actor.role },
   });
 
+  writeTimeline(req, {
+    projectId: updated.projectId,
+    eventType: TL.CONTRIBUTION_APPROVED,
+    title: wasRejected ? "Contribution re-approved after rejection" : "Contribution verified and approved",
+    severity: "important",
+    relatedTable: "contributions",
+    relatedRecordId: id,
+    metadata: { contributionId: id, previousStatus: curr.verificationStatus },
+  });
+
   const projectRows = await db.select({ name: projectsTable.name }).from(projectsTable).where(eq(projectsTable.id, updated.projectId)).limit(1);
   return res.json(formatContribution({ ...updated, projectName: projectRows[0]?.name }));
 });
@@ -909,6 +920,16 @@ router.post("/:id/reject", async (req, res) => {
     oldData: { verificationStatus: curr.verificationStatus },
     newData: { verificationStatus: "rejected" },
     actor: { id: actor.id, name: actor.name, role: actor.role },
+  });
+
+  writeTimeline(req, {
+    projectId: updated.projectId,
+    eventType: TL.CONTRIBUTION_REJECTED,
+    title: "Contribution rejected by verifier",
+    severity: "important",
+    relatedTable: "contributions",
+    relatedRecordId: id,
+    metadata: { contributionId: id, previousStatus: curr.verificationStatus },
   });
 
   const projectRows = await db.select({ name: projectsTable.name }).from(projectsTable).where(eq(projectsTable.id, updated.projectId)).limit(1);

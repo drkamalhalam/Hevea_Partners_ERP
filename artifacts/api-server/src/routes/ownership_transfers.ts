@@ -32,6 +32,7 @@ import {
   transferAuditEventsTable,
 } from "@workspace/db";
 import { writeAudit as writeCentralAudit } from "../lib/auditLogger";
+import { writeTimeline, TL } from "../lib/timelineLogger";
 import type { RofrResponse } from "@workspace/db";
 import { eq, and, desc, or, inArray, lt, lte, gte, isNull, ne, sql } from "drizzle-orm";
 import { getAuth } from "@clerk/express";
@@ -723,6 +724,21 @@ router.post("/:id/execute", requireRole("admin"), async (req, res) => {
     oldData: { status: "approved" },
     newData: { status: "executed", executionNotes: parsed.data.executionNotes },
     actor: { id: actor.id, name: actor.displayName, role: actor.role },
+  });
+
+  writeTimeline(req, {
+    projectId: existing.projectId,
+    eventType: TL.OWNERSHIP_TRANSFER_EXECUTED,
+    title: "Ownership transfer executed",
+    severity: "critical",
+    relatedTable: "ownership_transfers",
+    relatedRecordId: id,
+    metadata: {
+      transferId: id,
+      transferorPartnerId: existing.transferorPartnerId,
+      buyerPartnerId: existing.buyerPartnerId,
+      executionNotes: parsed.data.executionNotes,
+    },
   });
 
   return res.json(updated);

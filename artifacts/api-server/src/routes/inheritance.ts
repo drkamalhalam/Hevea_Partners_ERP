@@ -35,6 +35,7 @@ import {
 } from "@workspace/db";
 import { requireRole } from "../middlewares/auth";
 import { getAuth } from "@clerk/express";
+import { writeTimeline, TL } from "../lib/timelineLogger";
 
 const router = Router();
 
@@ -394,6 +395,20 @@ router.patch("/:id/status", requireRole("admin", "developer"), async (req, res) 
       .set(updates)
       .where(eq(inheritanceClaimsTable.id, id))
       .returning();
+
+    if (toStatus === "approved" || toStatus === "settled") {
+      writeTimeline(req, {
+        projectId: updated.projectId,
+        eventType: TL.INHERITANCE_CLAIM_APPROVED,
+        title: toStatus === "approved"
+          ? "Inheritance claim approved — documents verified"
+          : "Inheritance claim settled — ownership transfer recorded",
+        severity: "critical",
+        relatedTable: "inheritance_claims",
+        relatedRecordId: id,
+        metadata: { claimId: id, fromStatus: claim.status, toStatus, notes: notes ?? null },
+      });
+    }
 
     res.json({ claim: formatClaim(updated) });
   } catch (err) {

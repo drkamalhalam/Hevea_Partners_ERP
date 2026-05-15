@@ -34,6 +34,7 @@ import {
   TransitionProjectLifecycleBody,
 } from "@workspace/api-zod";
 import { requireRole, canAccessProject } from "../middlewares/auth";
+import { writeTimeline, TL } from "../lib/timelineLogger";
 
 const router = Router();
 
@@ -991,6 +992,16 @@ router.post(
         projectId,
         userId: actingUserId ?? null,
         metadata: { fromStatus: currentStatus, toStatus },
+      });
+
+      writeTimeline(req, {
+        projectId,
+        eventType: TL.LIFECYCLE_CHANGED,
+        title: `Project lifecycle changed: ${currentStatus} → ${toStatus}`,
+        severity: "critical",
+        relatedTable: "project_lifecycle_history",
+        relatedRecordId: entry.id,
+        metadata: { fromStatus: currentStatus, toStatus, remarks: remarks ?? null },
       });
 
       req.log.info(

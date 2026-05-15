@@ -11262,6 +11262,85 @@ paths:
                   total: { type: integer }
 
 
+  /projects/{projectId}/timeline:
+    get:
+      operationId: listProjectTimeline
+      tags: [timeline]
+      summary: Get the evidentiary chronological timeline for a project
+      parameters:
+        - { name: projectId, in: path, required: true, schema: { type: string } }
+        - { name: eventType, in: query, schema: { type: string } }
+        - { name: severity, in: query, schema: { type: string } }
+        - { name: from, in: query, schema: { type: string } }
+        - { name: to, in: query, schema: { type: string } }
+        - { name: limit, in: query, schema: { type: integer } }
+        - { name: offset, in: query, schema: { type: integer } }
+      responses:
+        '200':
+          description: Paginated project timeline events
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  events:
+                    type: array
+                    items: { $ref: '#/components/schemas/ProjectTimelineEvent' }
+                  total: { type: integer }
+    post:
+      operationId: addProjectTimelineEvent
+      tags: [timeline]
+      summary: Add a manual governance note to the project timeline (admin/developer only)
+      parameters:
+        - { name: projectId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, eventType]
+              properties:
+                eventType: { type: string }
+                title: { type: string }
+                description: { type: string }
+                severity: { type: string, enum: [info, important, critical] }
+                relatedTable: { type: string }
+                relatedRecordId: { type: string }
+                metadata: { type: object, additionalProperties: true }
+      responses:
+        '201':
+          description: Timeline event created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProjectTimelineEvent' }
+
+  /governance-timeline:
+    get:
+      operationId: listGovernanceTimeline
+      tags: [timeline]
+      summary: Cross-project evidentiary governance timeline (admin/developer only)
+      parameters:
+        - { name: projectId, in: query, schema: { type: string } }
+        - { name: eventType, in: query, schema: { type: string } }
+        - { name: severity, in: query, schema: { type: string } }
+        - { name: from, in: query, schema: { type: string } }
+        - { name: to, in: query, schema: { type: string } }
+        - { name: limit, in: query, schema: { type: integer } }
+        - { name: offset, in: query, schema: { type: integer } }
+      responses:
+        '200':
+          description: Paginated cross-project timeline events
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  events:
+                    type: array
+                    items: { $ref: '#/components/schemas/ProjectTimelineEvent' }
+                  total: { type: integer }
+
 components:
   schemas:
 
@@ -19146,3 +19225,22 @@ components:
         actionPath: { type: string, nullable: true }
         dueDate: { type: string, nullable: true }
         metadata: { type: object, nullable: true }
+
+    ProjectTimelineEvent:
+      type: object
+      properties:
+        id: { type: string }
+        projectId: { type: string }
+        projectName: { type: string, nullable: true }
+        eventType: { type: string }
+        title: { type: string }
+        description: { type: string, nullable: true }
+        severity: { type: string, enum: [info, important, critical] }
+        actorId: { type: string, nullable: true }
+        actorName: { type: string, nullable: true }
+        actorRole: { type: string, nullable: true }
+        relatedTable: { type: string, nullable: true }
+        relatedRecordId: { type: string, nullable: true }
+        metadata: { type: object, nullable: true, additionalProperties: true }
+        occurredAt: { type: string }
+        createdAt: { type: string }

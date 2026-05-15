@@ -14,6 +14,7 @@ import {
 } from "@workspace/api-zod";
 import { requireRole } from "../middlewares/auth";
 import { getAuth } from "@clerk/express";
+import { writeTimeline, TL } from "../lib/timelineLogger";
 
 const router = Router();
 
@@ -233,6 +234,20 @@ router.post(
           }),
         });
 
+        writeTimeline(req, {
+          projectId: id,
+          eventType: TL.NOMINEE_ACTIVATED,
+          title: `Nominee activated — voluntary handover (OTP verified)`,
+          severity: "critical",
+          relatedTable: "nominee_activation_workflows",
+          relatedRecordId: workflow.id,
+          metadata: {
+            activationType: "voluntary_handover",
+            nomineeId: workflow.nomineeId,
+            nomineeName: workflow.nomineeName,
+          },
+        });
+
         res.json(formatWorkflow(updated));
       } else {
         // death_based — admin document verification
@@ -273,6 +288,21 @@ router.post(
             nomineeId: workflow.nomineeId,
             nomineeName: workflow.nomineeName,
           }),
+        });
+
+        writeTimeline(req, {
+          projectId: id,
+          eventType: TL.NOMINEE_ACTIVATED,
+          title: `Nominee activated — death certificate verified`,
+          severity: "critical",
+          relatedTable: "nominee_activation_workflows",
+          relatedRecordId: workflow.id,
+          metadata: {
+            activationType: "death_based",
+            nomineeId: workflow.nomineeId,
+            nomineeName: workflow.nomineeName,
+            verificationNotes: verificationNotes ?? null,
+          },
         });
 
         res.json(formatWorkflow(updated));

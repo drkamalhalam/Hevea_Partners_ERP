@@ -18606,3 +18606,99 @@ export const GetMyActivityResponse = zod.object({
     .optional(),
   total: zod.number().optional(),
 });
+
+/**
+ * @summary Get the evidentiary chronological timeline for a project
+ */
+export const ListProjectTimelineParams = zod.object({
+  projectId: zod.coerce.string(),
+});
+
+export const ListProjectTimelineQueryParams = zod.object({
+  eventType: zod.coerce.string().optional(),
+  severity: zod.coerce.string().optional(),
+  from: zod.coerce.string().optional(),
+  to: zod.coerce.string().optional(),
+  limit: zod.coerce.number().optional(),
+  offset: zod.coerce.number().optional(),
+});
+
+export const ListProjectTimelineResponse = zod.object({
+  events: zod
+    .array(
+      zod.object({
+        id: zod.string().optional(),
+        projectId: zod.string().optional(),
+        projectName: zod.string().nullish(),
+        eventType: zod.string().optional(),
+        title: zod.string().optional(),
+        description: zod.string().nullish(),
+        severity: zod.enum(["info", "important", "critical"]).optional(),
+        actorId: zod.string().nullish(),
+        actorName: zod.string().nullish(),
+        actorRole: zod.string().nullish(),
+        relatedTable: zod.string().nullish(),
+        relatedRecordId: zod.string().nullish(),
+        metadata: zod.record(zod.string(), zod.unknown()).nullish(),
+        occurredAt: zod.string().optional(),
+        createdAt: zod.string().optional(),
+      }),
+    )
+    .optional(),
+  total: zod.number().optional(),
+});
+
+/**
+ * @summary Add a manual governance note to the project timeline (admin/developer only)
+ */
+export const AddProjectTimelineEventParams = zod.object({
+  projectId: zod.coerce.string(),
+});
+
+export const AddProjectTimelineEventBody = zod.object({
+  eventType: zod.string(),
+  title: zod.string(),
+  description: zod.string().optional(),
+  severity: zod.enum(["info", "important", "critical"]).optional(),
+  relatedTable: zod.string().optional(),
+  relatedRecordId: zod.string().optional(),
+  metadata: zod.record(zod.string(), zod.unknown()).optional(),
+});
+
+/**
+ * @summary Cross-project evidentiary governance timeline (admin/developer only)
+ */
+export const ListGovernanceTimelineQueryParams = zod.object({
+  projectId: zod.coerce.string().optional(),
+  eventType: zod.coerce.string().optional(),
+  severity: zod.coerce.string().optional(),
+  from: zod.coerce.string().optional(),
+  to: zod.coerce.string().optional(),
+  limit: zod.coerce.number().optional(),
+  offset: zod.coerce.number().optional(),
+});
+
+export const ListGovernanceTimelineResponse = zod.object({
+  events: zod
+    .array(
+      zod.object({
+        id: zod.string().optional(),
+        projectId: zod.string().optional(),
+        projectName: zod.string().nullish(),
+        eventType: zod.string().optional(),
+        title: zod.string().optional(),
+        description: zod.string().nullish(),
+        severity: zod.enum(["info", "important", "critical"]).optional(),
+        actorId: zod.string().nullish(),
+        actorName: zod.string().nullish(),
+        actorRole: zod.string().nullish(),
+        relatedTable: zod.string().nullish(),
+        relatedRecordId: zod.string().nullish(),
+        metadata: zod.record(zod.string(), zod.unknown()).nullish(),
+        occurredAt: zod.string().optional(),
+        createdAt: zod.string().optional(),
+      }),
+    )
+    .optional(),
+  total: zod.number().optional(),
+});

@@ -73,6 +73,8 @@ import salesInvoicesRouter from "./sales_invoices_route";
 import paymentSettingsRouter from "./payment_settings";
 import governanceMonitoringRouter from "./governance_monitoring";
 import auditLogsRouter from "./audit_logs";
+import projectTimelineRouter from "./project_timeline";
+import governanceTimelineRouter from "./governance_timeline";
 
 const router: IRouter = Router();
 
@@ -161,5 +163,7 @@ router.use("/sales-invoices", salesInvoicesRouter);
 router.use("/payment-settings", paymentSettingsRouter);
 router.use("/governance-monitoring", governanceMonitoringRouter);
 router.use("/audit-logs", auditLogsRouter);
+router.use("/projects", projectTimelineRouter);
+router.use("/governance-timeline", governanceTimelineRouter);
 
 export default router;

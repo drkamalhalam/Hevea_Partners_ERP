@@ -478,6 +478,12 @@ const navGroups: NavGroup[] = [
     items: [
       { name: "Admin", href: "/admin", icon: ShieldCheck, roles: ["admin"] },
       {
+        name: "Timeline",
+        href: "/governance-timeline",
+        icon: Scroll,
+        roles: ["admin", "developer"] as UserRole[],
+      },
+      {
         name: "Audit Log",
         href: "/audit-log",
         icon: ClipboardList,

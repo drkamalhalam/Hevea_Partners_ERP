@@ -8293,6 +8293,35 @@ export interface GovernanceMonitoringTask {
   metadata?: GovernanceMonitoringTaskMetadata;
 }
 
+export type ProjectTimelineEventSeverity =
+  (typeof ProjectTimelineEventSeverity)[keyof typeof ProjectTimelineEventSeverity];
+
+export const ProjectTimelineEventSeverity = {
+  info: "info",
+  important: "important",
+  critical: "critical",
+} as const;
+
+export type ProjectTimelineEventMetadata = { [key: string]: unknown } | null;
+
+export interface ProjectTimelineEvent {
+  id?: string;
+  projectId?: string;
+  projectName?: string | null;
+  eventType?: string;
+  title?: string;
+  description?: string | null;
+  severity?: ProjectTimelineEventSeverity;
+  actorId?: string | null;
+  actorName?: string | null;
+  actorRole?: string | null;
+  relatedTable?: string | null;
+  relatedRecordId?: string | null;
+  metadata?: ProjectTimelineEventMetadata;
+  occurredAt?: string;
+  createdAt?: string;
+}
+
 export type GetUserActivityParams = {
   limit?: number;
 };
@@ -10339,5 +10368,55 @@ export type GetMyActivityParams = {
 
 export type GetMyActivity200 = {
   entries?: AuditLogEntry[];
+  total?: number;
+};
+
+export type ListProjectTimelineParams = {
+  eventType?: string;
+  severity?: string;
+  from?: string;
+  to?: string;
+  limit?: number;
+  offset?: number;
+};
+
+export type ListProjectTimeline200 = {
+  events?: ProjectTimelineEvent[];
+  total?: number;
+};
+
+export type AddProjectTimelineEventBodySeverity =
+  (typeof AddProjectTimelineEventBodySeverity)[keyof typeof AddProjectTimelineEventBodySeverity];
+
+export const AddProjectTimelineEventBodySeverity = {
+  info: "info",
+  important: "important",
+  critical: "critical",
+} as const;
+
+export type AddProjectTimelineEventBodyMetadata = { [key: string]: unknown };
+
+export type AddProjectTimelineEventBody = {
+  eventType: string;
+  title: string;
+  description?: string;
+  severity?: AddProjectTimelineEventBodySeverity;
+  relatedTable?: string;
+  relatedRecordId?: string;
+  metadata?: AddProjectTimelineEventBodyMetadata;
+};
+
+export type ListGovernanceTimelineParams = {
+  projectId?: string;
+  eventType?: string;
+  severity?: string;
+  from?: string;
+  to?: string;
+  limit?: number;
+  offset?: number;
+};
+
+export type ListGovernanceTimeline200 = {
+  events?: ProjectTimelineEvent[];
   total?: number;
 };
