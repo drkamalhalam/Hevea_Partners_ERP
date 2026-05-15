@@ -23,6 +23,8 @@ import type {
   AcknowledgeAdvanceBody,
   AcknowledgeClosureBody,
   ActivityItem,
+  AddDisputeEvent200,
+  AddDisputeEventBody,
   AddGovernanceOverride201,
   AddGovernanceOverrideBody,
   AddParticipantInput,
@@ -110,6 +112,8 @@ import type {
   CreateContributionBody,
   CreateDispatchMemo201,
   CreateDispatchMemoBody,
+  CreateDispute201,
+  CreateDisputeBody,
   CreateDisputedAccumulationBody,
   CreateDisputedAccumulationEntry201,
   CreateDistributionPreviewBody,
@@ -198,6 +202,7 @@ import type {
   DetectPaymentBody,
   DiscrepancyReport,
   DispatchSalesOrderBody,
+  DisputePendingSummary,
   DisputeSettlement200,
   DisputeSettlementBody,
   DisputedAccumulationPage,
@@ -245,6 +250,8 @@ import type {
   GetBurdenSummaryParams,
   GetContributionSummaryParams,
   GetDispatchMemo200,
+  GetDispute200,
+  GetDisputePendingSummaryParams,
   GetDistributionArchive200,
   GetDistributionArchiveParams,
   GetDistributionPendingPayable200,
@@ -367,6 +374,8 @@ import type {
   ListDispatchMemos200,
   ListDispatchMemosParams,
   ListDisputedAccumulationParams,
+  ListDisputes200,
+  ListDisputesParams,
   ListDistributionPaymentEvents200,
   ListDistributionPreviewsParams,
   ListDistributionRecords200,
@@ -47384,3 +47393,463 @@ export function useGetGovernanceOverride<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary List all disputes (paginated, filterable)
+ */
+export const getListDisputesUrl = (params?: ListDisputesParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/disputes?${stringifiedParams}`
+    : `/api/disputes`;
+};
+
+export const listDisputes = async (
+  params?: ListDisputesParams,
+  options?: RequestInit,
+): Promise<ListDisputes200> => {
+  return customFetch<ListDisputes200>(getListDisputesUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListDisputesQueryKey = (params?: ListDisputesParams) => {
+  return [`/api/disputes`, ...(params ? [params] : [])] as const;
+};
+
+export const getListDisputesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listDisputes>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListDisputesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listDisputes>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListDisputesQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listDisputes>>> = ({
+    signal,
+  }) => listDisputes(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listDisputes>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListDisputesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listDisputes>>
+>;
+export type ListDisputesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List all disputes (paginated, filterable)
+ */
+
+export function useListDisputes<
+  TData = Awaited<ReturnType<typeof listDisputes>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListDisputesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listDisputes>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListDisputesQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a new dispute record
+ */
+export const getCreateDisputeUrl = () => {
+  return `/api/disputes`;
+};
+
+export const createDispute = async (
+  createDisputeBody: CreateDisputeBody,
+  options?: RequestInit,
+): Promise<CreateDispute201> => {
+  return customFetch<CreateDispute201>(getCreateDisputeUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createDisputeBody),
+  });
+};
+
+export const getCreateDisputeMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createDispute>>,
+    TError,
+    { data: BodyType<CreateDisputeBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createDispute>>,
+  TError,
+  { data: BodyType<CreateDisputeBody> },
+  TContext
+> => {
+  const mutationKey = ["createDispute"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createDispute>>,
+    { data: BodyType<CreateDisputeBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createDispute(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateDisputeMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createDispute>>
+>;
+export type CreateDisputeMutationBody = BodyType<CreateDisputeBody>;
+export type CreateDisputeMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create a new dispute record
+ */
+export const useCreateDispute = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createDispute>>,
+    TError,
+    { data: BodyType<CreateDisputeBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createDispute>>,
+  TError,
+  { data: BodyType<CreateDisputeBody> },
+  TContext
+> => {
+  return useMutation(getCreateDisputeMutationOptions(options));
+};
+
+/**
+ * @summary Pending dispute counts and urgent alerts for dashboard
+ */
+export const getGetDisputePendingSummaryUrl = (
+  params?: GetDisputePendingSummaryParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/disputes/pending-summary?${stringifiedParams}`
+    : `/api/disputes/pending-summary`;
+};
+
+export const getDisputePendingSummary = async (
+  params?: GetDisputePendingSummaryParams,
+  options?: RequestInit,
+): Promise<DisputePendingSummary> => {
+  return customFetch<DisputePendingSummary>(
+    getGetDisputePendingSummaryUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetDisputePendingSummaryQueryKey = (
+  params?: GetDisputePendingSummaryParams,
+) => {
+  return [
+    `/api/disputes/pending-summary`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetDisputePendingSummaryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getDisputePendingSummary>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetDisputePendingSummaryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getDisputePendingSummary>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetDisputePendingSummaryQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getDisputePendingSummary>>
+  > = ({ signal }) =>
+    getDisputePendingSummary(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getDisputePendingSummary>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetDisputePendingSummaryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getDisputePendingSummary>>
+>;
+export type GetDisputePendingSummaryQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Pending dispute counts and urgent alerts for dashboard
+ */
+
+export function useGetDisputePendingSummary<
+  TData = Awaited<ReturnType<typeof getDisputePendingSummary>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetDisputePendingSummaryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getDisputePendingSummary>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetDisputePendingSummaryQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Single dispute with full resolution event history
+ */
+export const getGetDisputeUrl = (id: string) => {
+  return `/api/disputes/${id}`;
+};
+
+export const getDispute = async (
+  id: string,
+  options?: RequestInit,
+): Promise<GetDispute200> => {
+  return customFetch<GetDispute200>(getGetDisputeUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetDisputeQueryKey = (id: string) => {
+  return [`/api/disputes/${id}`] as const;
+};
+
+export const getGetDisputeQueryOptions = <
+  TData = Awaited<ReturnType<typeof getDispute>>,
+  TError = ErrorType<void>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getDispute>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetDisputeQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getDispute>>> = ({
+    signal,
+  }) => getDispute(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getDispute>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetDisputeQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getDispute>>
+>;
+export type GetDisputeQueryError = ErrorType<void>;
+
+/**
+ * @summary Single dispute with full resolution event history
+ */
+
+export function useGetDispute<
+  TData = Awaited<ReturnType<typeof getDispute>>,
+  TError = ErrorType<void>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getDispute>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetDisputeQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Add a resolution event to a dispute (also transitions status)
+ */
+export const getAddDisputeEventUrl = (id: string) => {
+  return `/api/disputes/${id}/events`;
+};
+
+export const addDisputeEvent = async (
+  id: string,
+  addDisputeEventBody: AddDisputeEventBody,
+  options?: RequestInit,
+): Promise<AddDisputeEvent200> => {
+  return customFetch<AddDisputeEvent200>(getAddDisputeEventUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(addDisputeEventBody),
+  });
+};
+
+export const getAddDisputeEventMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof addDisputeEvent>>,
+    TError,
+    { id: string; data: BodyType<AddDisputeEventBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof addDisputeEvent>>,
+  TError,
+  { id: string; data: BodyType<AddDisputeEventBody> },
+  TContext
+> => {
+  const mutationKey = ["addDisputeEvent"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof addDisputeEvent>>,
+    { id: string; data: BodyType<AddDisputeEventBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return addDisputeEvent(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AddDisputeEventMutationResult = NonNullable<
+  Awaited<ReturnType<typeof addDisputeEvent>>
+>;
+export type AddDisputeEventMutationBody = BodyType<AddDisputeEventBody>;
+export type AddDisputeEventMutationError = ErrorType<void>;
+
+/**
+ * @summary Add a resolution event to a dispute (also transitions status)
+ */
+export const useAddDisputeEvent = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof addDisputeEvent>>,
+    TError,
+    { id: string; data: BodyType<AddDisputeEventBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof addDisputeEvent>>,
+  TError,
+  { id: string; data: BodyType<AddDisputeEventBody> },
+  TContext
+> => {
+  return useMutation(getAddDisputeEventMutationOptions(options));
+};

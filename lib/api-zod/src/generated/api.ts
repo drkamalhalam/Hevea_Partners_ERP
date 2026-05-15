@@ -18876,3 +18876,245 @@ export const GetGovernanceOverrideResponse = zod.object({
     })
     .optional(),
 });
+
+/**
+ * @summary List all disputes (paginated, filterable)
+ */
+export const ListDisputesQueryParams = zod.object({
+  projectId: zod.coerce.string().optional(),
+  disputeType: zod.coerce.string().optional(),
+  status: zod.coerce.string().optional(),
+  severity: zod.coerce.string().optional(),
+  from: zod.coerce.string().optional(),
+  to: zod.coerce.string().optional(),
+  limit: zod.coerce.number().optional(),
+  offset: zod.coerce.number().optional(),
+});
+
+export const ListDisputesResponse = zod.object({
+  disputes: zod
+    .array(
+      zod.object({
+        id: zod.string().optional(),
+        projectId: zod.string().optional(),
+        projectName: zod.string().nullish(),
+        disputeType: zod.string().optional(),
+        status: zod.string().optional(),
+        severity: zod.string().optional(),
+        title: zod.string().optional(),
+        description: zod.string().nullish(),
+        raisedById: zod.string().nullish(),
+        raisedByName: zod.string().nullish(),
+        raisedByRole: zod.string().nullish(),
+        raisedAt: zod.string().optional(),
+        relatedTable: zod.string().nullish(),
+        relatedRecordId: zod.string().nullish(),
+        supportingDocuments: zod
+          .array(zod.record(zod.string(), zod.unknown()))
+          .nullish(),
+        resolvedAt: zod.string().nullish(),
+        resolvedById: zod.string().nullish(),
+        resolvedByName: zod.string().nullish(),
+        resolvedByRole: zod.string().nullish(),
+        resolutionSummary: zod.string().nullish(),
+        metadata: zod.record(zod.string(), zod.unknown()).nullish(),
+        isActive: zod.boolean().optional(),
+        updatedAt: zod.string().optional(),
+        createdAt: zod.string().optional(),
+      }),
+    )
+    .optional(),
+  total: zod.number().optional(),
+});
+
+/**
+ * @summary Create a new dispute record
+ */
+export const CreateDisputeBody = zod.object({
+  projectId: zod.string(),
+  disputeType: zod.string(),
+  severity: zod.string().optional(),
+  title: zod.string(),
+  description: zod.string().optional(),
+  relatedTable: zod.string().optional(),
+  relatedRecordId: zod.string().optional(),
+  metadata: zod.record(zod.string(), zod.unknown()).optional(),
+});
+
+/**
+ * @summary Pending dispute counts and urgent alerts for dashboard
+ */
+export const GetDisputePendingSummaryQueryParams = zod.object({
+  projectId: zod.coerce.string().optional(),
+});
+
+export const GetDisputePendingSummaryResponse = zod.object({
+  totalOpen: zod.number().optional(),
+  totalUnderReview: zod.number().optional(),
+  totalEscalated: zod.number().optional(),
+  totalResolved: zod.number().optional(),
+  highSeverityOpen: zod.number().optional(),
+  byType: zod
+    .array(
+      zod.object({
+        disputeType: zod.string().optional(),
+        open: zod.number().optional(),
+        underReview: zod.number().optional(),
+        escalated: zod.number().optional(),
+      }),
+    )
+    .optional(),
+  urgent: zod
+    .array(
+      zod.object({
+        id: zod.string().optional(),
+        projectId: zod.string().optional(),
+        projectName: zod.string().nullish(),
+        disputeType: zod.string().optional(),
+        status: zod.string().optional(),
+        severity: zod.string().optional(),
+        title: zod.string().optional(),
+        description: zod.string().nullish(),
+        raisedById: zod.string().nullish(),
+        raisedByName: zod.string().nullish(),
+        raisedByRole: zod.string().nullish(),
+        raisedAt: zod.string().optional(),
+        relatedTable: zod.string().nullish(),
+        relatedRecordId: zod.string().nullish(),
+        supportingDocuments: zod
+          .array(zod.record(zod.string(), zod.unknown()))
+          .nullish(),
+        resolvedAt: zod.string().nullish(),
+        resolvedById: zod.string().nullish(),
+        resolvedByName: zod.string().nullish(),
+        resolvedByRole: zod.string().nullish(),
+        resolutionSummary: zod.string().nullish(),
+        metadata: zod.record(zod.string(), zod.unknown()).nullish(),
+        isActive: zod.boolean().optional(),
+        updatedAt: zod.string().optional(),
+        createdAt: zod.string().optional(),
+      }),
+    )
+    .optional(),
+});
+
+/**
+ * @summary Single dispute with full resolution event history
+ */
+export const GetDisputeParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const GetDisputeResponse = zod.object({
+  dispute: zod
+    .object({
+      id: zod.string().optional(),
+      projectId: zod.string().optional(),
+      projectName: zod.string().nullish(),
+      disputeType: zod.string().optional(),
+      status: zod.string().optional(),
+      severity: zod.string().optional(),
+      title: zod.string().optional(),
+      description: zod.string().nullish(),
+      raisedById: zod.string().nullish(),
+      raisedByName: zod.string().nullish(),
+      raisedByRole: zod.string().nullish(),
+      raisedAt: zod.string().optional(),
+      relatedTable: zod.string().nullish(),
+      relatedRecordId: zod.string().nullish(),
+      supportingDocuments: zod
+        .array(zod.record(zod.string(), zod.unknown()))
+        .nullish(),
+      resolvedAt: zod.string().nullish(),
+      resolvedById: zod.string().nullish(),
+      resolvedByName: zod.string().nullish(),
+      resolvedByRole: zod.string().nullish(),
+      resolutionSummary: zod.string().nullish(),
+      metadata: zod.record(zod.string(), zod.unknown()).nullish(),
+      isActive: zod.boolean().optional(),
+      updatedAt: zod.string().optional(),
+      createdAt: zod.string().optional(),
+    })
+    .optional(),
+  events: zod
+    .array(
+      zod.object({
+        id: zod.string().optional(),
+        disputeId: zod.string().optional(),
+        projectId: zod.string().nullish(),
+        eventType: zod.string().optional(),
+        previousStatus: zod.string().nullish(),
+        newStatus: zod.string().nullish(),
+        description: zod.string().nullish(),
+        actorId: zod.string().nullish(),
+        actorName: zod.string().nullish(),
+        actorRole: zod.string().nullish(),
+        metadata: zod.record(zod.string(), zod.unknown()).nullish(),
+        performedAt: zod.string().optional(),
+      }),
+    )
+    .optional(),
+});
+
+/**
+ * @summary Add a resolution event to a dispute (also transitions status)
+ */
+export const AddDisputeEventParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const AddDisputeEventBody = zod.object({
+  eventType: zod.string(),
+  description: zod.string(),
+  resolutionSummary: zod.string().optional(),
+  metadata: zod.record(zod.string(), zod.unknown()).optional(),
+});
+
+export const AddDisputeEventResponse = zod.object({
+  dispute: zod
+    .object({
+      id: zod.string().optional(),
+      projectId: zod.string().optional(),
+      projectName: zod.string().nullish(),
+      disputeType: zod.string().optional(),
+      status: zod.string().optional(),
+      severity: zod.string().optional(),
+      title: zod.string().optional(),
+      description: zod.string().nullish(),
+      raisedById: zod.string().nullish(),
+      raisedByName: zod.string().nullish(),
+      raisedByRole: zod.string().nullish(),
+      raisedAt: zod.string().optional(),
+      relatedTable: zod.string().nullish(),
+      relatedRecordId: zod.string().nullish(),
+      supportingDocuments: zod
+        .array(zod.record(zod.string(), zod.unknown()))
+        .nullish(),
+      resolvedAt: zod.string().nullish(),
+      resolvedById: zod.string().nullish(),
+      resolvedByName: zod.string().nullish(),
+      resolvedByRole: zod.string().nullish(),
+      resolutionSummary: zod.string().nullish(),
+      metadata: zod.record(zod.string(), zod.unknown()).nullish(),
+      isActive: zod.boolean().optional(),
+      updatedAt: zod.string().optional(),
+      createdAt: zod.string().optional(),
+    })
+    .optional(),
+  event: zod
+    .object({
+      id: zod.string().optional(),
+      disputeId: zod.string().optional(),
+      projectId: zod.string().nullish(),
+      eventType: zod.string().optional(),
+      previousStatus: zod.string().nullish(),
+      newStatus: zod.string().nullish(),
+      description: zod.string().nullish(),
+      actorId: zod.string().nullish(),
+      actorName: zod.string().nullish(),
+      actorRole: zod.string().nullish(),
+      metadata: zod.record(zod.string(), zod.unknown()).nullish(),
+      performedAt: zod.string().optional(),
+    })
+    .optional(),
+});

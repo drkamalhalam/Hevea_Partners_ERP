@@ -67,6 +67,71 @@ export interface GovernanceOverrideAnalytics {
   recentActivity?: GovernanceOverride[];
 }
 
+export type DisputeSupportingDocumentsItem = { [key: string]: unknown };
+
+export type DisputeMetadata = { [key: string]: unknown } | null;
+
+export interface Dispute {
+  id?: string;
+  projectId?: string;
+  projectName?: string | null;
+  disputeType?: string;
+  status?: string;
+  severity?: string;
+  title?: string;
+  description?: string | null;
+  raisedById?: string | null;
+  raisedByName?: string | null;
+  raisedByRole?: string | null;
+  raisedAt?: string;
+  relatedTable?: string | null;
+  relatedRecordId?: string | null;
+  supportingDocuments?: DisputeSupportingDocumentsItem[] | null;
+  resolvedAt?: string | null;
+  resolvedById?: string | null;
+  resolvedByName?: string | null;
+  resolvedByRole?: string | null;
+  resolutionSummary?: string | null;
+  metadata?: DisputeMetadata;
+  isActive?: boolean;
+  updatedAt?: string;
+  createdAt?: string;
+}
+
+export type DisputeResolutionEventMetadata = { [key: string]: unknown } | null;
+
+export interface DisputeResolutionEvent {
+  id?: string;
+  disputeId?: string;
+  projectId?: string | null;
+  eventType?: string;
+  previousStatus?: string | null;
+  newStatus?: string | null;
+  description?: string | null;
+  actorId?: string | null;
+  actorName?: string | null;
+  actorRole?: string | null;
+  metadata?: DisputeResolutionEventMetadata;
+  performedAt?: string;
+}
+
+export type DisputePendingSummaryByTypeItem = {
+  disputeType?: string;
+  open?: number;
+  underReview?: number;
+  escalated?: number;
+};
+
+export interface DisputePendingSummary {
+  totalOpen?: number;
+  totalUnderReview?: number;
+  totalEscalated?: number;
+  totalResolved?: number;
+  highSeverityOpen?: number;
+  byType?: DisputePendingSummaryByTypeItem[];
+  urgent?: Dispute[];
+}
+
 export type AuditLogEntryOperation =
   (typeof AuditLogEntryOperation)[keyof typeof AuditLogEntryOperation];
 
@@ -10543,4 +10608,60 @@ export type GetGovernanceOverrideAnalyticsParams = {
 
 export type GetGovernanceOverride200 = {
   override?: GovernanceOverride;
+};
+
+export type ListDisputesParams = {
+  projectId?: string;
+  disputeType?: string;
+  status?: string;
+  severity?: string;
+  from?: string;
+  to?: string;
+  limit?: number;
+  offset?: number;
+};
+
+export type ListDisputes200 = {
+  disputes?: Dispute[];
+  total?: number;
+};
+
+export type CreateDisputeBodyMetadata = { [key: string]: unknown };
+
+export type CreateDisputeBody = {
+  projectId: string;
+  disputeType: string;
+  severity?: string;
+  title: string;
+  description?: string;
+  relatedTable?: string;
+  relatedRecordId?: string;
+  metadata?: CreateDisputeBodyMetadata;
+};
+
+export type CreateDispute201 = {
+  dispute?: Dispute;
+};
+
+export type GetDisputePendingSummaryParams = {
+  projectId?: string;
+};
+
+export type GetDispute200 = {
+  dispute?: Dispute;
+  events?: DisputeResolutionEvent[];
+};
+
+export type AddDisputeEventBodyMetadata = { [key: string]: unknown };
+
+export type AddDisputeEventBody = {
+  eventType: string;
+  description: string;
+  resolutionSummary?: string;
+  metadata?: AddDisputeEventBodyMetadata;
+};
+
+export type AddDisputeEvent200 = {
+  dispute?: Dispute;
+  event?: DisputeResolutionEvent;
 };

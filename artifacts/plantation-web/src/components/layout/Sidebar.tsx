@@ -36,6 +36,7 @@ import {
   Calculator,
   TrendingDown,
   GitCompare,
+  AlertTriangle,
   Database,
   Gavel,
   UserCheck,
@@ -487,6 +488,12 @@ const navGroups: NavGroup[] = [
         name: "Override History",
         href: "/governance-overrides",
         icon: GitCompare,
+        roles: ["admin", "developer"] as UserRole[],
+      },
+      {
+        name: "Disputes & Conflicts",
+        href: "/disputes",
+        icon: AlertTriangle,
         roles: ["admin", "developer"] as UserRole[],
       },
       {

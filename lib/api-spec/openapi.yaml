@@ -11437,6 +11437,130 @@ paths:
         '404':
           description: Not found
 
+  /disputes:
+    get:
+      operationId: listDisputes
+      tags: [governance]
+      summary: List all disputes (paginated, filterable)
+      parameters:
+        - { name: projectId, in: query, schema: { type: string } }
+        - { name: disputeType, in: query, schema: { type: string } }
+        - { name: status, in: query, schema: { type: string } }
+        - { name: severity, in: query, schema: { type: string } }
+        - { name: from, in: query, schema: { type: string } }
+        - { name: to, in: query, schema: { type: string } }
+        - { name: limit, in: query, schema: { type: integer } }
+        - { name: offset, in: query, schema: { type: integer } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  disputes:
+                    type: array
+                    items: { $ref: '#/components/schemas/Dispute' }
+                  total: { type: integer }
+    post:
+      operationId: createDispute
+      tags: [governance]
+      summary: Create a new dispute record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [projectId, disputeType, title]
+              properties:
+                projectId: { type: string }
+                disputeType: { type: string }
+                severity: { type: string }
+                title: { type: string }
+                description: { type: string }
+                relatedTable: { type: string }
+                relatedRecordId: { type: string }
+                metadata: { type: object, additionalProperties: true }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dispute: { $ref: '#/components/schemas/Dispute' }
+
+  /disputes/pending-summary:
+    get:
+      operationId: getDisputePendingSummary
+      tags: [governance]
+      summary: Pending dispute counts and urgent alerts for dashboard
+      parameters:
+        - { name: projectId, in: query, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DisputePendingSummary' }
+
+  /disputes/{id}:
+    get:
+      operationId: getDispute
+      tags: [governance]
+      summary: Single dispute with full resolution event history
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dispute: { $ref: '#/components/schemas/Dispute' }
+                  events:
+                    type: array
+                    items: { $ref: '#/components/schemas/DisputeResolutionEvent' }
+        '404':
+          description: Not found
+
+  /disputes/{id}/events:
+    post:
+      operationId: addDisputeEvent
+      tags: [governance]
+      summary: Add a resolution event to a dispute (also transitions status)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [eventType, description]
+              properties:
+                eventType: { type: string }
+                description: { type: string }
+                resolutionSummary: { type: string }
+                metadata: { type: object, additionalProperties: true }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dispute: { $ref: '#/components/schemas/Dispute' }
+                  event: { $ref: '#/components/schemas/DisputeResolutionEvent' }
+        '404':
+          description: Not found
+
 components:
   schemas:
 
@@ -11499,6 +11623,71 @@ components:
         recentActivity:
           type: array
           items: { $ref: '#/components/schemas/GovernanceOverride' }
+
+    Dispute:
+      type: object
+      properties:
+        id: { type: string }
+        projectId: { type: string }
+        projectName: { type: string, nullable: true }
+        disputeType: { type: string }
+        status: { type: string }
+        severity: { type: string }
+        title: { type: string }
+        description: { type: string, nullable: true }
+        raisedById: { type: string, nullable: true }
+        raisedByName: { type: string, nullable: true }
+        raisedByRole: { type: string, nullable: true }
+        raisedAt: { type: string }
+        relatedTable: { type: string, nullable: true }
+        relatedRecordId: { type: string, nullable: true }
+        supportingDocuments: { type: array, nullable: true, items: { type: object, additionalProperties: true } }
+        resolvedAt: { type: string, nullable: true }
+        resolvedById: { type: string, nullable: true }
+        resolvedByName: { type: string, nullable: true }
+        resolvedByRole: { type: string, nullable: true }
+        resolutionSummary: { type: string, nullable: true }
+        metadata: { type: object, nullable: true, additionalProperties: true }
+        isActive: { type: boolean }
+        updatedAt: { type: string }
+        createdAt: { type: string }
+
+    DisputeResolutionEvent:
+      type: object
+      properties:
+        id: { type: string }
+        disputeId: { type: string }
+        projectId: { type: string, nullable: true }
+        eventType: { type: string }
+        previousStatus: { type: string, nullable: true }
+        newStatus: { type: string, nullable: true }
+        description: { type: string, nullable: true }
+        actorId: { type: string, nullable: true }
+        actorName: { type: string, nullable: true }
+        actorRole: { type: string, nullable: true }
+        metadata: { type: object, nullable: true, additionalProperties: true }
+        performedAt: { type: string }
+
+    DisputePendingSummary:
+      type: object
+      properties:
+        totalOpen: { type: integer }
+        totalUnderReview: { type: integer }
+        totalEscalated: { type: integer }
+        totalResolved: { type: integer }
+        highSeverityOpen: { type: integer }
+        byType:
+          type: array
+          items:
+            type: object
+            properties:
+              disputeType: { type: string }
+              open: { type: integer }
+              underReview: { type: integer }
+              escalated: { type: integer }
+        urgent:
+          type: array
+          items: { $ref: '#/components/schemas/Dispute' }
 
     AuditLogEntry:
       type: object

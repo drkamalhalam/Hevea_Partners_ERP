@@ -23,6 +23,7 @@ import {
   usersTable,
 } from "@workspace/db";
 import { requireRole } from "../middlewares/auth";
+import { logDispute, DT } from "../lib/disputeLogger";
 
 const router = Router();
 
@@ -30,7 +31,7 @@ const router = Router();
 
 async function resolveActor(clerkUserId: string) {
   const rows = await db
-    .select({ id: usersTable.id, displayName: usersTable.displayName })
+    .select({ id: usersTable.id, displayName: usersTable.displayName, role: usersTable.role })
     .from(usersTable)
     .where(eq(usersTable.clerkUserId, clerkUserId))
     .limit(1);
@@ -281,6 +282,23 @@ router.post(
         })
         .where(eq(partnerOwnershipStatesTable.id, existing.id))
         .returning();
+
+      void logDispute(req, {
+        projectId,
+        disputeType: DT.OWNERSHIP,
+        severity: "high",
+        title: `Ownership percentage disputed — ${b.disputedPercentage}%`,
+        description: b.disputeReason,
+        relatedTable: "partner_ownership_states",
+        relatedRecordId: existing.id,
+        metadata: {
+          partnerId,
+          disputedPercentage: b.disputedPercentage,
+          disputeReference: b.disputeReference ?? null,
+          previousTransferable: existing.transferablePercentage,
+        },
+        actor: actor ? { id: actor.id, name: actor.displayName ?? null, role: actor.role } : null,
+      });
 
       req.log.info({ projectId, partnerId, disputedPercentage: b.disputedPercentage }, "Ownership marked as disputed");
       res.json(fmt(updated));

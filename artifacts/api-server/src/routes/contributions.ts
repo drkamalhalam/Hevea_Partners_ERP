@@ -14,6 +14,7 @@ import { requireRole } from "../middlewares/auth";
 import { writeAudit } from "../lib/auditLogger";
 import { writeTimeline, TL } from "../lib/timelineLogger";
 import { writeOverride, OV } from "../lib/overrideLogger";
+import { logDispute, DT } from "../lib/disputeLogger";
 
 const router = Router();
 
@@ -1171,6 +1172,22 @@ router.post(
       actorId: actor.id,
       actorName: actor.name,
       notes: b.disputeNotes.trim(),
+    });
+
+    void logDispute(req, {
+      projectId: updated.projectId,
+      disputeType: DT.CONTRIBUTION,
+      severity: "high",
+      title: `Contribution dispute raised — ${existing[0].contributionType}`,
+      description: b.disputeNotes.trim(),
+      relatedTable: "contributions",
+      relatedRecordId: id,
+      metadata: {
+        amount: existing[0].amount,
+        contributionType: existing[0].contributionType,
+        partnerId: existing[0].partnerId,
+      },
+      actor: { id: actor.id, name: actor.name, role: actor.role },
     });
 
     writeAudit(req, {

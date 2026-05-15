@@ -25,6 +25,7 @@ import {
 import { eq, and, desc, isNull, or, inArray } from "drizzle-orm";
 import { requireRole } from "../middlewares/auth";
 import { writeOverride, OV } from "../lib/overrideLogger";
+import { logDispute, DT } from "../lib/disputeLogger";
 import {
   requireSettlementAccess,
   getProjectScopeFilter,
@@ -606,6 +607,18 @@ router.post(
       performedByName: user.displayName ?? null,
       performedByRole: user.role,
       remarks,
+    });
+
+    void logDispute(req, {
+      projectId: existing.projectId,
+      disputeType: DT.SETTLEMENT,
+      severity: "high",
+      title: `Settlement distribution disputed`,
+      description: remarks,
+      relatedTable: "settlement_records",
+      relatedRecordId: id,
+      metadata: { previousStatus: existing.status, partnerId: existing.partnerId },
+      actor: { id: user.id, name: user.displayName ?? null, role: user.role },
     });
 
     return res.json({ record: updated });

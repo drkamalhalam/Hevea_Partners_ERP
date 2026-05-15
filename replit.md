@@ -97,6 +97,8 @@ Six roles in `usersTable.role`:
 | Governance | Succession Workflow | /prematurity-succession | Live |
 | Governance | Settlement Governance | /settlement-governance | Live |
 | System | Admin | /admin | Live (admin only) |
+| System | Override History | /governance-overrides | Live (admin/dev) |
+| System | Disputes & Conflicts | /disputes | Live (admin/dev) |
 | System | Activation Tasks | /activation | Live (admin/dev) |
 
 ---

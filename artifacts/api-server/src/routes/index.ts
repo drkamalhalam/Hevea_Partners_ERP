@@ -76,6 +76,7 @@ import auditLogsRouter from "./audit_logs";
 import projectTimelineRouter from "./project_timeline";
 import governanceTimelineRouter from "./governance_timeline";
 import governanceOverridesRouter from "./governance_overrides";
+import disputesRouter from "./disputes";
 
 const router: IRouter = Router();
 
@@ -167,5 +168,6 @@ router.use("/audit-logs", auditLogsRouter);
 router.use("/projects", projectTimelineRouter);
 router.use("/governance-timeline", governanceTimelineRouter);
 router.use("/governance-overrides", governanceOverridesRouter);
+router.use("/disputes", disputesRouter);
 
 export default router;
