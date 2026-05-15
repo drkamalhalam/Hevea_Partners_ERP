@@ -1,0 +1,133 @@
+Perform a controlled stabilization and refactoring phase for the existing plantation partnership management system.
+
+Important:
+Do NOT rebuild the entire application.
+
+Goal:
+Refactor and stabilize only inconsistent or non-functional modules while preserving all stable working modules.
+
+Critical Instructions:
+- Preserve existing stable UI and database structure wherever possible
+- Do not remove working features
+- Do not reset or recreate the database unnecessarily
+- Maintain compatibility with existing modules
+- Maintain role-based and project-based access control
+- Preserve audit logs and historical records
+
+Tasks:
+
+1. SYSTEM ARCHITECTURE REVIEW
+Analyze:
+- routing structure
+- module relationships
+- database schema consistency
+- API structure
+- role permissions
+- project-based filtering
+- lifecycle integration
+- agreement-model integration
+
+Identify:
+- broken workflows
+- duplicate logic
+- inconsistent modules
+- permission leakage
+- incorrect financial relationships
+- unstable database relationships
+
+2. PROJECT CREATION WORKFLOW REFACTOR
+Refactor project creation to align with:
+- lifecycle engine
+- governance validation
+- agreement model selection
+- role-based permissions
+- nominee requirements
+- project-specific accounting behavior
+
+Requirements:
+- support Draft status
+- governance completeness checks
+- model-aware project setup
+- project initialization workflow
+
+3. PERMISSION & ACCESS CONTROL STABILIZATION
+Verify and fix:
+- project-wise visibility
+- employee restricted access
+- role-based sidebar rendering
+- backend API permission enforcement
+- secure financial visibility
+
+Important:
+Users must only access permitted project data and modules.
+
+4. LIFECYCLE & AGREEMENT CONSISTENCY REVIEW
+Verify consistency between:
+- project lifecycle states
+- agreement activation
+- ownership freeze rules
+- maturity restrictions
+- project closure restrictions
+
+Important:
+Project closure must remain blocked if inventory exists.
+
+5. FINANCIAL ARCHITECTURE VALIDATION
+Verify separation between:
+- ownership contribution
+- operational expenditure
+- recoverable advances
+- LCA
+- economic participant pool
+- landowner-side accounting
+
+Important:
+Do not mix ownership contribution logic with operational burden logic.
+
+6. DATABASE RELATIONSHIP CLEANUP
+Review and refactor:
+- foreign keys
+- project relationships
+- ownership relationships
+- audit linkage
+- document linkage
+- lifecycle linkage
+
+Important:
+Avoid destructive migrations where possible.
+
+7. UI & DASHBOARD STABILIZATION
+Verify:
+- sidebar consistency
+- dashboard routing
+- role-specific dashboards
+- project filtering
+- pending task rendering
+- governance alerts
+
+Fix broken navigation and inconsistent layouts.
+
+8. ERROR HANDLING & VALIDATION
+Add proper:
+- validation checks
+- workflow restrictions
+- graceful error handling
+- governance warnings
+- duplicate prevention
+
+Examples:
+- prevent maturity with unresolved disputes
+- prevent invalid ownership actions
+- prevent closure with remaining inventory
+
+9. FINAL STABILIZATION REPORT
+Generate:
+- list of fixed issues
+- unresolved architectural concerns
+- database migration summary
+- module compatibility summary
+- permission/security summary
+
+Important:
+Focus on stabilization and architectural consistency.
+Do not redesign the entire system unnecessarily.

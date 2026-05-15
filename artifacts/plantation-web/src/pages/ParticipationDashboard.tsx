@@ -832,10 +832,8 @@ export default function ParticipationDashboard() {
                 <CardDescription className="text-xs">Contributions awaiting your review or action</CardDescription>
               </div>
               {isAdminOrDev && (
-                <Link href="/contributions/economic">
-                  <a className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1">
-                    Review all <ArrowRight className="w-3 h-3" />
-                  </a>
+                <Link href="/contributions/economic" className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1">
+                  Review all <ArrowRight className="w-3 h-3" />
                 </Link>
               )}
             </div>

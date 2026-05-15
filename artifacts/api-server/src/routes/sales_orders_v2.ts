@@ -17,6 +17,7 @@ import {
 import { eq, and, desc, sql, gte, lte, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { format, addMinutes } from "date-fns";
+import { canAccessProject } from "../middlewares/auth";
 
 const router = Router();
 
@@ -63,7 +64,23 @@ router.get("/", async (req, res) => {
     const { projectId, orderStatus, paymentStatus, limit = "50", offset = "0" } = req.query as Record<string, string>;
 
     const conditions = [];
-    if (projectId) conditions.push(eq(salesOrdersTable.projectId, projectId));
+
+    if (!req.canAccessAllProjects) {
+      const allowedIds = req.userProjectIds ?? [];
+      if (projectId) {
+        if (!allowedIds.includes(projectId)) {
+          res.status(403).json({ error: "Forbidden" });
+          return;
+        }
+        conditions.push(eq(salesOrdersTable.projectId, projectId));
+      } else {
+        if (allowedIds.length === 0) { res.json([]); return; }
+        conditions.push(inArray(salesOrdersTable.projectId, allowedIds));
+      }
+    } else {
+      if (projectId) conditions.push(eq(salesOrdersTable.projectId, projectId));
+    }
+
     if (orderStatus) conditions.push(eq(salesOrdersTable.orderStatus, orderStatus));
     if (paymentStatus) conditions.push(eq(salesOrdersTable.paymentStatus, paymentStatus));
 
@@ -91,6 +108,7 @@ router.get("/:id", async (req, res): Promise<void> => {
       .from(salesOrdersTable)
       .where(eq(salesOrdersTable.id, req.params.id));
     if (!order) { res.status(404).json({ error: "Order not found" }); return; }
+    if (!canAccessProject(req, order.projectId)) { res.status(403).json({ error: "Forbidden" }); return; }
 
     const dispatches = await db
       .select()

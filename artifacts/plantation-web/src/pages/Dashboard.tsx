@@ -95,18 +95,6 @@ const MOCK_PROJECT_PERF = [
   { project: "Ambassa", production: 2480, sales: 2250, target: 2400 },
 ];
 
-const MOCK_APPROVALS = [
-  { id: 1, title: "Agreement renewal", detail: "Manu Valley Plantation", due: "Overdue", priority: "high" as const },
-  { id: 2, title: "Land survey document", detail: "Gandacherra Block B", due: "Due today", priority: "medium" as const },
-  { id: 3, title: "Q1 2026 report sign-off", detail: "All projects", due: "In 3 days", priority: "low" as const },
-  { id: 4, title: "New partner agreement", detail: "Ambassa Northern Plot", due: "In 5 days", priority: "low" as const },
-];
-
-const MOCK_TASKS = [
-  { id: 1, title: "Update production logs for May", module: "Production", priority: "high" as const },
-  { id: 2, title: "Review expenditure report", module: "Finance", priority: "medium" as const },
-  { id: 3, title: "Upload boundary survey — Manu Valley", module: "Documents", priority: "high" as const },
-];
 
 const PRIORITY_COLORS = {
   high: "bg-red-100 text-red-700 border-red-200",
@@ -1025,7 +1013,7 @@ function GovernanceTaskCenter() {
                       {c.daysElapsed}/45 days
                     </p>
                   </div>
-                  <Link href={`/projects/${c.projectId}/missing-developer`}>
+                  <Link href={`/nominee-succession`}>
                     <Button
                       size="sm"
                       variant="outline"
@@ -1043,6 +1031,78 @@ function GovernanceTaskCenter() {
         )}
       </CardContent>
     </Card>
+  );
+}
+
+// ── Governance Action Items Panel ─────────────────────────────────────────
+
+function GovernanceActionItems({ governance }: { governance?: GovernanceSummary }) {
+  const attentionItems = (governance?.projectAlerts ?? [])
+    .filter((a) => a.status === "attention_required" || a.status === "incomplete")
+    .slice(0, 4)
+    .map((a) => ({
+      key: a.projectId,
+      title: a.projectName ?? "Unknown project",
+      detail: `${a.issues.length} governance issue${a.issues.length !== 1 ? "s" : ""}`,
+      severity: a.status === "attention_required" ? "high" : "medium",
+    }));
+
+  const partnerItems = (governance?.partnerAlerts ?? [])
+    .filter((a) => a.status === "attention_required" || a.status === "incomplete")
+    .slice(0, Math.max(0, 4 - attentionItems.length))
+    .map((a) => ({
+      key: a.partnerId,
+      title: a.partnerName ?? "Unknown partner",
+      detail: `${a.issues.length} profile issue${a.issues.length !== 1 ? "s" : ""}`,
+      severity: a.status === "attention_required" ? "high" : "medium",
+    }));
+
+  const items = [...attentionItems, ...partnerItems];
+
+  const severityColors: Record<string, string> = {
+    high: "bg-red-100 text-red-700 border-red-200",
+    medium: "bg-amber-100 text-amber-700 border-amber-200",
+  };
+
+  return (
+    <InfoPanel
+      title="Governance Action Items"
+      subtitle={items.length > 0 ? `${items.length} requiring attention` : "All checks passed"}
+      icon={AlertCircle}
+      iconColor={items.length > 0 ? "bg-amber-50 text-amber-500" : "bg-emerald-50 text-emerald-600"}
+      action={
+        <Link href="/governance">
+          <Button variant="outline" size="sm" className="h-6 text-xs gap-1">
+            View All <ArrowUpRight className="w-3 h-3" />
+          </Button>
+        </Link>
+      }
+    >
+      {!governance ? (
+        <div className="space-y-2">
+          {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-9 w-full rounded" />)}
+        </div>
+      ) : items.length === 0 ? (
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-emerald-50 text-emerald-700">
+          <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+          <p className="text-xs font-medium">No governance issues — all projects are compliant.</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {items.map((item) => (
+            <div key={item.key} className="flex items-center gap-3 p-2 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium truncate">{item.title}</p>
+                <p className="text-[10px] text-muted-foreground truncate">{item.detail}</p>
+              </div>
+              <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border flex-shrink-0 ${severityColors[item.severity]}`}>
+                {item.severity === "high" ? "Attention" : "Incomplete"}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </InfoPanel>
   );
 }
 
@@ -1218,33 +1278,7 @@ function AdminDashboard() {
           </ChartCard>
         </div>
         <div className="lg:col-span-5 space-y-4">
-          <InfoPanel title="Pending Approvals" subtitle={`${MOCK_APPROVALS.filter(a => a.due === "Overdue").length} overdue`} icon={AlertCircle} iconColor="bg-amber-50 text-amber-500">
-            <div className="space-y-2">
-              {MOCK_APPROVALS.map((item) => (
-                <div key={item.id} className="flex items-center gap-3 p-2 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium truncate">{item.title}</p>
-                    <p className="text-[10px] text-muted-foreground truncate">{item.detail}</p>
-                  </div>
-                  <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border flex-shrink-0 ${PRIORITY_COLORS[item.priority]}`}>{item.due}</span>
-                </div>
-              ))}
-            </div>
-          </InfoPanel>
-          <InfoPanel title="Pending Tasks" icon={Clock} iconColor="bg-violet-50 text-violet-500">
-            <div className="space-y-2">
-              {MOCK_TASKS.map((task) => (
-                <div key={task.id} className="flex items-center gap-3 p-2 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
-                  <div className="w-1.5 h-1.5 rounded-full bg-violet-400 flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium leading-snug">{task.title}</p>
-                    <p className="text-[10px] text-muted-foreground">{task.module}</p>
-                  </div>
-                  <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border flex-shrink-0 ${PRIORITY_COLORS[task.priority]}`}>{task.priority}</span>
-                </div>
-              ))}
-            </div>
-          </InfoPanel>
+          <GovernanceActionItems governance={governance} />
         </div>
       </section>
 
@@ -1345,24 +1379,7 @@ function DeveloperDashboard() {
           />
         </div>
         <div className="lg:col-span-5 space-y-4">
-          <InfoPanel
-            title="Pending Approvals"
-            subtitle={`${MOCK_APPROVALS.filter(a => a.due === "Overdue").length} overdue`}
-            icon={AlertCircle}
-            iconColor="bg-amber-50 text-amber-500"
-          >
-            <div className="space-y-2">
-              {MOCK_APPROVALS.slice(0, 3).map((item) => (
-                <div key={item.id} className="flex items-center gap-3 p-2 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium truncate">{item.title}</p>
-                    <p className="text-[10px] text-muted-foreground truncate">{item.detail}</p>
-                  </div>
-                  <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border flex-shrink-0 ${PRIORITY_COLORS[item.priority]}`}>{item.due}</span>
-                </div>
-              ))}
-            </div>
-          </InfoPanel>
+          <GovernanceActionItems governance={governance} />
           <ChartCard title="Project Performance" subtitle="Production vs sales — current season" badge="Placeholder" minHeight={170}>
             <ResponsiveContainer width="100%" height={150}>
               <BarChart data={MOCK_PROJECT_PERF} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
