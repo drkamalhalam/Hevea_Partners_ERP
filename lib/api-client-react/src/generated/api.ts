@@ -43,6 +43,7 @@ import type {
   ApproveExpenditureVerification200,
   ApproveExpenditureVerificationBody,
   ApproveOwnershipTransferBody,
+  ApproveStockTransfer200,
   ArchiveDistributionPreview200,
   ArchiveDistributionRecord200,
   ArchiveDistributionRecordBody,
@@ -64,12 +65,16 @@ import type {
   BurdenSummary,
   Buyer,
   CancelAgreementActivationBody,
+  CancelDispatchMemo200,
   CancelMaturityBody,
   CancelOwnershipTransferBody,
+  CancelStockTransfer200,
+  CancelStockTransferBody,
   CarryForwardDistributionRecord200,
   CarryForwardDistributionRecordBody,
   ClaimantContributionPage,
   ClaimantParticipationPage,
+  CompleteStockTransfer200,
   ComputePayableParams,
   ConfirmExpenditureVerificationOtp200,
   ConfirmExpenditureVerificationOtpBody,
@@ -91,6 +96,8 @@ import type {
   CreateClaimantParticipation201,
   CreateClaimantParticipationBody,
   CreateContributionBody,
+  CreateDispatchMemo201,
+  CreateDispatchMemoBody,
   CreateDisputedAccumulationBody,
   CreateDisputedAccumulationEntry201,
   CreateDistributionPreviewBody,
@@ -115,6 +122,8 @@ import type {
   CreateInheritanceDocumentBody,
   CreateInheritanceShare201,
   CreateInheritanceShareBody,
+  CreateInventoryLocation201,
+  CreateInventoryLocationBody,
   CreateLandownerLedgerEntryBody,
   CreateLcaConfigBody,
   CreateLcaLedgerEntryBody,
@@ -138,6 +147,10 @@ import type {
   CreateSettlementRecord201,
   CreateSettlementRecordBody,
   CreateStockMovementBody,
+  CreateStockTransfer201,
+  CreateStockTransferBody,
+  CreateStore201,
+  CreateStoreBody,
   CreateTaskBody,
   CreateTemplateBody,
   CreateValuationProfitRecord201,
@@ -203,6 +216,7 @@ import type {
   GetBurdenRecoverySummaryParams,
   GetBurdenSummaryParams,
   GetContributionSummaryParams,
+  GetDispatchMemo200,
   GetDistributionArchive200,
   GetDistributionArchiveParams,
   GetDistributionPendingPayable200,
@@ -253,6 +267,8 @@ import type {
   GetSettlementPriorityParams,
   GetSettlementRecord200,
   GetSettlementTasksParams,
+  GetStockTransfer200,
+  GetStore200,
   GetTransferRofrDashboardParams,
   GetUnreadNotificationCount200,
   GetUserActivityParams,
@@ -300,6 +316,8 @@ import type {
   ListContributionVerificationHistory200,
   ListContributions200,
   ListContributionsParams,
+  ListDispatchMemos200,
+  ListDispatchMemosParams,
   ListDisputedAccumulationParams,
   ListDistributionPaymentEvents200,
   ListDistributionPreviewsParams,
@@ -319,6 +337,8 @@ import type {
   ListInheritanceClaimsParams,
   ListInheritanceDocuments200,
   ListInheritanceOwnershipHistory200,
+  ListInventoryLocations200,
+  ListInventoryLocationsParams,
   ListLandownerLedgerEntriesParams,
   ListLcaConfigsParams,
   ListLcaLedgerParams,
@@ -352,7 +372,13 @@ import type {
   ListSettlementGovernanceAlertsParams,
   ListSettlementRecords200,
   ListSettlementRecordsParams,
+  ListStockMovementAudit200,
+  ListStockMovementAuditParams,
   ListStockMovementsParams,
+  ListStockTransfers200,
+  ListStockTransfersParams,
+  ListStores200,
+  ListStoresParams,
   ListTasksParams,
   ListTemplatesParams,
   ListTransferAuditEvents200,
@@ -376,6 +402,7 @@ import type {
   MaturityOtpVerification,
   MissingDeveloperCase,
   MissingDeveloperCaseItem,
+  MultiStoreDashboard,
   NomineeActivationWorkflow,
   NomineeAuthorityTransfer,
   NomineeSuccessionDashboard,
@@ -417,6 +444,8 @@ import type {
   ProjectUpdate,
   RaiseContributionDisputeBody,
   RecordAdvanceRecoveryBody,
+  RecordDispatch200,
+  RecordDispatchBody,
   RecordDistributionPayment200,
   RecordDistributionPaymentBody,
   RecordInheritanceOwnershipHistory201,
@@ -470,6 +499,7 @@ import type {
   SubmitOwnershipTransferBody,
   SuccessResponse,
   TaskSummary,
+  ToggleStoreActive200,
   TransferOtpEvent,
   TransferRofrDashboard,
   TransferRofrOffer,
@@ -513,6 +543,8 @@ import type {
   UpdateInheritanceDocumentBody,
   UpdateInheritanceShare200,
   UpdateInheritanceShareBody,
+  UpdateInventoryLocation200,
+  UpdateInventoryLocationBody,
   UpdateLandownerLedgerEntryBody,
   UpdateLcaConfigBody,
   UpdateLcaLedgerEntryBody,
@@ -534,6 +566,8 @@ import type {
   UpdateSaleLineItemBody,
   UpdateSettlementRecord200,
   UpdateSettlementRecordBody,
+  UpdateStore200,
+  UpdateStoreBody,
   UpdateTaskBody,
   UpdateTemplateBody,
   UpdateValuationProfitRecord200,
@@ -38564,6 +38598,1767 @@ export function useGetBackupStorageStats<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetBackupStorageStatsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+export const getListStoresUrl = (params?: ListStoresParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/multi-store/stores?${stringifiedParams}`
+    : `/api/multi-store/stores`;
+};
+
+export const listStores = async (
+  params?: ListStoresParams,
+  options?: RequestInit,
+): Promise<ListStores200> => {
+  return customFetch<ListStores200>(getListStoresUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListStoresQueryKey = (params?: ListStoresParams) => {
+  return [`/api/multi-store/stores`, ...(params ? [params] : [])] as const;
+};
+
+export const getListStoresQueryOptions = <
+  TData = Awaited<ReturnType<typeof listStores>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListStoresParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listStores>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListStoresQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listStores>>> = ({
+    signal,
+  }) => listStores(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listStores>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListStoresQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listStores>>
+>;
+export type ListStoresQueryError = ErrorType<unknown>;
+
+export function useListStores<
+  TData = Awaited<ReturnType<typeof listStores>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListStoresParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listStores>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListStoresQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+export const getCreateStoreUrl = () => {
+  return `/api/multi-store/stores`;
+};
+
+export const createStore = async (
+  createStoreBody: CreateStoreBody,
+  options?: RequestInit,
+): Promise<CreateStore201> => {
+  return customFetch<CreateStore201>(getCreateStoreUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createStoreBody),
+  });
+};
+
+export const getCreateStoreMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createStore>>,
+    TError,
+    { data: BodyType<CreateStoreBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createStore>>,
+  TError,
+  { data: BodyType<CreateStoreBody> },
+  TContext
+> => {
+  const mutationKey = ["createStore"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createStore>>,
+    { data: BodyType<CreateStoreBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createStore(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateStoreMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createStore>>
+>;
+export type CreateStoreMutationBody = BodyType<CreateStoreBody>;
+export type CreateStoreMutationError = ErrorType<unknown>;
+
+export const useCreateStore = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createStore>>,
+    TError,
+    { data: BodyType<CreateStoreBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createStore>>,
+  TError,
+  { data: BodyType<CreateStoreBody> },
+  TContext
+> => {
+  return useMutation(getCreateStoreMutationOptions(options));
+};
+
+export const getGetStoreUrl = (id: string) => {
+  return `/api/multi-store/stores/${id}`;
+};
+
+export const getStore = async (
+  id: string,
+  options?: RequestInit,
+): Promise<GetStore200> => {
+  return customFetch<GetStore200>(getGetStoreUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetStoreQueryKey = (id: string) => {
+  return [`/api/multi-store/stores/${id}`] as const;
+};
+
+export const getGetStoreQueryOptions = <
+  TData = Awaited<ReturnType<typeof getStore>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getStore>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetStoreQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getStore>>> = ({
+    signal,
+  }) => getStore(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<Awaited<ReturnType<typeof getStore>>, TError, TData> & {
+    queryKey: QueryKey;
+  };
+};
+
+export type GetStoreQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getStore>>
+>;
+export type GetStoreQueryError = ErrorType<unknown>;
+
+export function useGetStore<
+  TData = Awaited<ReturnType<typeof getStore>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getStore>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetStoreQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+export const getUpdateStoreUrl = (id: string) => {
+  return `/api/multi-store/stores/${id}`;
+};
+
+export const updateStore = async (
+  id: string,
+  updateStoreBody: UpdateStoreBody,
+  options?: RequestInit,
+): Promise<UpdateStore200> => {
+  return customFetch<UpdateStore200>(getUpdateStoreUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateStoreBody),
+  });
+};
+
+export const getUpdateStoreMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateStore>>,
+    TError,
+    { id: string; data: BodyType<UpdateStoreBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateStore>>,
+  TError,
+  { id: string; data: BodyType<UpdateStoreBody> },
+  TContext
+> => {
+  const mutationKey = ["updateStore"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateStore>>,
+    { id: string; data: BodyType<UpdateStoreBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateStore(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateStoreMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateStore>>
+>;
+export type UpdateStoreMutationBody = BodyType<UpdateStoreBody>;
+export type UpdateStoreMutationError = ErrorType<unknown>;
+
+export const useUpdateStore = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateStore>>,
+    TError,
+    { id: string; data: BodyType<UpdateStoreBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateStore>>,
+  TError,
+  { id: string; data: BodyType<UpdateStoreBody> },
+  TContext
+> => {
+  return useMutation(getUpdateStoreMutationOptions(options));
+};
+
+export const getToggleStoreActiveUrl = (id: string) => {
+  return `/api/multi-store/stores/${id}/toggle-active`;
+};
+
+export const toggleStoreActive = async (
+  id: string,
+  options?: RequestInit,
+): Promise<ToggleStoreActive200> => {
+  return customFetch<ToggleStoreActive200>(getToggleStoreActiveUrl(id), {
+    ...options,
+    method: "PATCH",
+  });
+};
+
+export const getToggleStoreActiveMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof toggleStoreActive>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof toggleStoreActive>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["toggleStoreActive"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof toggleStoreActive>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return toggleStoreActive(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ToggleStoreActiveMutationResult = NonNullable<
+  Awaited<ReturnType<typeof toggleStoreActive>>
+>;
+
+export type ToggleStoreActiveMutationError = ErrorType<unknown>;
+
+export const useToggleStoreActive = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof toggleStoreActive>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof toggleStoreActive>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getToggleStoreActiveMutationOptions(options));
+};
+
+export const getListInventoryLocationsUrl = (
+  params?: ListInventoryLocationsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/multi-store/inventory-locations?${stringifiedParams}`
+    : `/api/multi-store/inventory-locations`;
+};
+
+export const listInventoryLocations = async (
+  params?: ListInventoryLocationsParams,
+  options?: RequestInit,
+): Promise<ListInventoryLocations200> => {
+  return customFetch<ListInventoryLocations200>(
+    getListInventoryLocationsUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListInventoryLocationsQueryKey = (
+  params?: ListInventoryLocationsParams,
+) => {
+  return [
+    `/api/multi-store/inventory-locations`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListInventoryLocationsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listInventoryLocations>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListInventoryLocationsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listInventoryLocations>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListInventoryLocationsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listInventoryLocations>>
+  > = ({ signal }) =>
+    listInventoryLocations(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listInventoryLocations>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListInventoryLocationsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listInventoryLocations>>
+>;
+export type ListInventoryLocationsQueryError = ErrorType<unknown>;
+
+export function useListInventoryLocations<
+  TData = Awaited<ReturnType<typeof listInventoryLocations>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListInventoryLocationsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listInventoryLocations>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListInventoryLocationsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+export const getCreateInventoryLocationUrl = () => {
+  return `/api/multi-store/inventory-locations`;
+};
+
+export const createInventoryLocation = async (
+  createInventoryLocationBody: CreateInventoryLocationBody,
+  options?: RequestInit,
+): Promise<CreateInventoryLocation201> => {
+  return customFetch<CreateInventoryLocation201>(
+    getCreateInventoryLocationUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(createInventoryLocationBody),
+    },
+  );
+};
+
+export const getCreateInventoryLocationMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createInventoryLocation>>,
+    TError,
+    { data: BodyType<CreateInventoryLocationBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createInventoryLocation>>,
+  TError,
+  { data: BodyType<CreateInventoryLocationBody> },
+  TContext
+> => {
+  const mutationKey = ["createInventoryLocation"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createInventoryLocation>>,
+    { data: BodyType<CreateInventoryLocationBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createInventoryLocation(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateInventoryLocationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createInventoryLocation>>
+>;
+export type CreateInventoryLocationMutationBody =
+  BodyType<CreateInventoryLocationBody>;
+export type CreateInventoryLocationMutationError = ErrorType<unknown>;
+
+export const useCreateInventoryLocation = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createInventoryLocation>>,
+    TError,
+    { data: BodyType<CreateInventoryLocationBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createInventoryLocation>>,
+  TError,
+  { data: BodyType<CreateInventoryLocationBody> },
+  TContext
+> => {
+  return useMutation(getCreateInventoryLocationMutationOptions(options));
+};
+
+export const getUpdateInventoryLocationUrl = (id: string) => {
+  return `/api/multi-store/inventory-locations/${id}`;
+};
+
+export const updateInventoryLocation = async (
+  id: string,
+  updateInventoryLocationBody: UpdateInventoryLocationBody,
+  options?: RequestInit,
+): Promise<UpdateInventoryLocation200> => {
+  return customFetch<UpdateInventoryLocation200>(
+    getUpdateInventoryLocationUrl(id),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(updateInventoryLocationBody),
+    },
+  );
+};
+
+export const getUpdateInventoryLocationMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateInventoryLocation>>,
+    TError,
+    { id: string; data: BodyType<UpdateInventoryLocationBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateInventoryLocation>>,
+  TError,
+  { id: string; data: BodyType<UpdateInventoryLocationBody> },
+  TContext
+> => {
+  const mutationKey = ["updateInventoryLocation"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateInventoryLocation>>,
+    { id: string; data: BodyType<UpdateInventoryLocationBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateInventoryLocation(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateInventoryLocationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateInventoryLocation>>
+>;
+export type UpdateInventoryLocationMutationBody =
+  BodyType<UpdateInventoryLocationBody>;
+export type UpdateInventoryLocationMutationError = ErrorType<unknown>;
+
+export const useUpdateInventoryLocation = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateInventoryLocation>>,
+    TError,
+    { id: string; data: BodyType<UpdateInventoryLocationBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateInventoryLocation>>,
+  TError,
+  { id: string; data: BodyType<UpdateInventoryLocationBody> },
+  TContext
+> => {
+  return useMutation(getUpdateInventoryLocationMutationOptions(options));
+};
+
+export const getListStockTransfersUrl = (params?: ListStockTransfersParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/multi-store/stock-transfers?${stringifiedParams}`
+    : `/api/multi-store/stock-transfers`;
+};
+
+export const listStockTransfers = async (
+  params?: ListStockTransfersParams,
+  options?: RequestInit,
+): Promise<ListStockTransfers200> => {
+  return customFetch<ListStockTransfers200>(getListStockTransfersUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListStockTransfersQueryKey = (
+  params?: ListStockTransfersParams,
+) => {
+  return [
+    `/api/multi-store/stock-transfers`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListStockTransfersQueryOptions = <
+  TData = Awaited<ReturnType<typeof listStockTransfers>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListStockTransfersParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listStockTransfers>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListStockTransfersQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listStockTransfers>>
+  > = ({ signal }) => listStockTransfers(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listStockTransfers>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListStockTransfersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listStockTransfers>>
+>;
+export type ListStockTransfersQueryError = ErrorType<unknown>;
+
+export function useListStockTransfers<
+  TData = Awaited<ReturnType<typeof listStockTransfers>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListStockTransfersParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listStockTransfers>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListStockTransfersQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+export const getCreateStockTransferUrl = () => {
+  return `/api/multi-store/stock-transfers`;
+};
+
+export const createStockTransfer = async (
+  createStockTransferBody: CreateStockTransferBody,
+  options?: RequestInit,
+): Promise<CreateStockTransfer201> => {
+  return customFetch<CreateStockTransfer201>(getCreateStockTransferUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createStockTransferBody),
+  });
+};
+
+export const getCreateStockTransferMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createStockTransfer>>,
+    TError,
+    { data: BodyType<CreateStockTransferBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createStockTransfer>>,
+  TError,
+  { data: BodyType<CreateStockTransferBody> },
+  TContext
+> => {
+  const mutationKey = ["createStockTransfer"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createStockTransfer>>,
+    { data: BodyType<CreateStockTransferBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createStockTransfer(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateStockTransferMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createStockTransfer>>
+>;
+export type CreateStockTransferMutationBody = BodyType<CreateStockTransferBody>;
+export type CreateStockTransferMutationError = ErrorType<unknown>;
+
+export const useCreateStockTransfer = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createStockTransfer>>,
+    TError,
+    { data: BodyType<CreateStockTransferBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createStockTransfer>>,
+  TError,
+  { data: BodyType<CreateStockTransferBody> },
+  TContext
+> => {
+  return useMutation(getCreateStockTransferMutationOptions(options));
+};
+
+export const getGetStockTransferUrl = (id: string) => {
+  return `/api/multi-store/stock-transfers/${id}`;
+};
+
+export const getStockTransfer = async (
+  id: string,
+  options?: RequestInit,
+): Promise<GetStockTransfer200> => {
+  return customFetch<GetStockTransfer200>(getGetStockTransferUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetStockTransferQueryKey = (id: string) => {
+  return [`/api/multi-store/stock-transfers/${id}`] as const;
+};
+
+export const getGetStockTransferQueryOptions = <
+  TData = Awaited<ReturnType<typeof getStockTransfer>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getStockTransfer>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetStockTransferQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getStockTransfer>>
+  > = ({ signal }) => getStockTransfer(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getStockTransfer>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetStockTransferQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getStockTransfer>>
+>;
+export type GetStockTransferQueryError = ErrorType<unknown>;
+
+export function useGetStockTransfer<
+  TData = Awaited<ReturnType<typeof getStockTransfer>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getStockTransfer>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetStockTransferQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+export const getApproveStockTransferUrl = (id: string) => {
+  return `/api/multi-store/stock-transfers/${id}/approve`;
+};
+
+export const approveStockTransfer = async (
+  id: string,
+  options?: RequestInit,
+): Promise<ApproveStockTransfer200> => {
+  return customFetch<ApproveStockTransfer200>(getApproveStockTransferUrl(id), {
+    ...options,
+    method: "PATCH",
+  });
+};
+
+export const getApproveStockTransferMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof approveStockTransfer>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof approveStockTransfer>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["approveStockTransfer"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof approveStockTransfer>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return approveStockTransfer(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ApproveStockTransferMutationResult = NonNullable<
+  Awaited<ReturnType<typeof approveStockTransfer>>
+>;
+
+export type ApproveStockTransferMutationError = ErrorType<unknown>;
+
+export const useApproveStockTransfer = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof approveStockTransfer>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof approveStockTransfer>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getApproveStockTransferMutationOptions(options));
+};
+
+export const getCompleteStockTransferUrl = (id: string) => {
+  return `/api/multi-store/stock-transfers/${id}/complete`;
+};
+
+export const completeStockTransfer = async (
+  id: string,
+  options?: RequestInit,
+): Promise<CompleteStockTransfer200> => {
+  return customFetch<CompleteStockTransfer200>(
+    getCompleteStockTransferUrl(id),
+    {
+      ...options,
+      method: "PATCH",
+    },
+  );
+};
+
+export const getCompleteStockTransferMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof completeStockTransfer>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof completeStockTransfer>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["completeStockTransfer"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof completeStockTransfer>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return completeStockTransfer(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CompleteStockTransferMutationResult = NonNullable<
+  Awaited<ReturnType<typeof completeStockTransfer>>
+>;
+
+export type CompleteStockTransferMutationError = ErrorType<unknown>;
+
+export const useCompleteStockTransfer = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof completeStockTransfer>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof completeStockTransfer>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getCompleteStockTransferMutationOptions(options));
+};
+
+export const getCancelStockTransferUrl = (id: string) => {
+  return `/api/multi-store/stock-transfers/${id}/cancel`;
+};
+
+export const cancelStockTransfer = async (
+  id: string,
+  cancelStockTransferBody?: CancelStockTransferBody,
+  options?: RequestInit,
+): Promise<CancelStockTransfer200> => {
+  return customFetch<CancelStockTransfer200>(getCancelStockTransferUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(cancelStockTransferBody),
+  });
+};
+
+export const getCancelStockTransferMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof cancelStockTransfer>>,
+    TError,
+    { id: string; data: BodyType<CancelStockTransferBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof cancelStockTransfer>>,
+  TError,
+  { id: string; data: BodyType<CancelStockTransferBody> },
+  TContext
+> => {
+  const mutationKey = ["cancelStockTransfer"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof cancelStockTransfer>>,
+    { id: string; data: BodyType<CancelStockTransferBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return cancelStockTransfer(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CancelStockTransferMutationResult = NonNullable<
+  Awaited<ReturnType<typeof cancelStockTransfer>>
+>;
+export type CancelStockTransferMutationBody = BodyType<CancelStockTransferBody>;
+export type CancelStockTransferMutationError = ErrorType<unknown>;
+
+export const useCancelStockTransfer = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof cancelStockTransfer>>,
+    TError,
+    { id: string; data: BodyType<CancelStockTransferBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof cancelStockTransfer>>,
+  TError,
+  { id: string; data: BodyType<CancelStockTransferBody> },
+  TContext
+> => {
+  return useMutation(getCancelStockTransferMutationOptions(options));
+};
+
+export const getListDispatchMemosUrl = (params?: ListDispatchMemosParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/multi-store/dispatch-memos?${stringifiedParams}`
+    : `/api/multi-store/dispatch-memos`;
+};
+
+export const listDispatchMemos = async (
+  params?: ListDispatchMemosParams,
+  options?: RequestInit,
+): Promise<ListDispatchMemos200> => {
+  return customFetch<ListDispatchMemos200>(getListDispatchMemosUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListDispatchMemosQueryKey = (
+  params?: ListDispatchMemosParams,
+) => {
+  return [
+    `/api/multi-store/dispatch-memos`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListDispatchMemosQueryOptions = <
+  TData = Awaited<ReturnType<typeof listDispatchMemos>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListDispatchMemosParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listDispatchMemos>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListDispatchMemosQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listDispatchMemos>>
+  > = ({ signal }) => listDispatchMemos(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listDispatchMemos>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListDispatchMemosQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listDispatchMemos>>
+>;
+export type ListDispatchMemosQueryError = ErrorType<unknown>;
+
+export function useListDispatchMemos<
+  TData = Awaited<ReturnType<typeof listDispatchMemos>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListDispatchMemosParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listDispatchMemos>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListDispatchMemosQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+export const getCreateDispatchMemoUrl = () => {
+  return `/api/multi-store/dispatch-memos`;
+};
+
+export const createDispatchMemo = async (
+  createDispatchMemoBody: CreateDispatchMemoBody,
+  options?: RequestInit,
+): Promise<CreateDispatchMemo201> => {
+  return customFetch<CreateDispatchMemo201>(getCreateDispatchMemoUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createDispatchMemoBody),
+  });
+};
+
+export const getCreateDispatchMemoMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createDispatchMemo>>,
+    TError,
+    { data: BodyType<CreateDispatchMemoBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createDispatchMemo>>,
+  TError,
+  { data: BodyType<CreateDispatchMemoBody> },
+  TContext
+> => {
+  const mutationKey = ["createDispatchMemo"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createDispatchMemo>>,
+    { data: BodyType<CreateDispatchMemoBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createDispatchMemo(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateDispatchMemoMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createDispatchMemo>>
+>;
+export type CreateDispatchMemoMutationBody = BodyType<CreateDispatchMemoBody>;
+export type CreateDispatchMemoMutationError = ErrorType<unknown>;
+
+export const useCreateDispatchMemo = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createDispatchMemo>>,
+    TError,
+    { data: BodyType<CreateDispatchMemoBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createDispatchMemo>>,
+  TError,
+  { data: BodyType<CreateDispatchMemoBody> },
+  TContext
+> => {
+  return useMutation(getCreateDispatchMemoMutationOptions(options));
+};
+
+export const getGetDispatchMemoUrl = (id: string) => {
+  return `/api/multi-store/dispatch-memos/${id}`;
+};
+
+export const getDispatchMemo = async (
+  id: string,
+  options?: RequestInit,
+): Promise<GetDispatchMemo200> => {
+  return customFetch<GetDispatchMemo200>(getGetDispatchMemoUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetDispatchMemoQueryKey = (id: string) => {
+  return [`/api/multi-store/dispatch-memos/${id}`] as const;
+};
+
+export const getGetDispatchMemoQueryOptions = <
+  TData = Awaited<ReturnType<typeof getDispatchMemo>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getDispatchMemo>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetDispatchMemoQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getDispatchMemo>>> = ({
+    signal,
+  }) => getDispatchMemo(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getDispatchMemo>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetDispatchMemoQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getDispatchMemo>>
+>;
+export type GetDispatchMemoQueryError = ErrorType<unknown>;
+
+export function useGetDispatchMemo<
+  TData = Awaited<ReturnType<typeof getDispatchMemo>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getDispatchMemo>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetDispatchMemoQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+export const getRecordDispatchUrl = (id: string) => {
+  return `/api/multi-store/dispatch-memos/${id}/dispatch`;
+};
+
+export const recordDispatch = async (
+  id: string,
+  recordDispatchBody: RecordDispatchBody,
+  options?: RequestInit,
+): Promise<RecordDispatch200> => {
+  return customFetch<RecordDispatch200>(getRecordDispatchUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(recordDispatchBody),
+  });
+};
+
+export const getRecordDispatchMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof recordDispatch>>,
+    TError,
+    { id: string; data: BodyType<RecordDispatchBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof recordDispatch>>,
+  TError,
+  { id: string; data: BodyType<RecordDispatchBody> },
+  TContext
+> => {
+  const mutationKey = ["recordDispatch"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof recordDispatch>>,
+    { id: string; data: BodyType<RecordDispatchBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return recordDispatch(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RecordDispatchMutationResult = NonNullable<
+  Awaited<ReturnType<typeof recordDispatch>>
+>;
+export type RecordDispatchMutationBody = BodyType<RecordDispatchBody>;
+export type RecordDispatchMutationError = ErrorType<unknown>;
+
+export const useRecordDispatch = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof recordDispatch>>,
+    TError,
+    { id: string; data: BodyType<RecordDispatchBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof recordDispatch>>,
+  TError,
+  { id: string; data: BodyType<RecordDispatchBody> },
+  TContext
+> => {
+  return useMutation(getRecordDispatchMutationOptions(options));
+};
+
+export const getCancelDispatchMemoUrl = (id: string) => {
+  return `/api/multi-store/dispatch-memos/${id}/cancel`;
+};
+
+export const cancelDispatchMemo = async (
+  id: string,
+  options?: RequestInit,
+): Promise<CancelDispatchMemo200> => {
+  return customFetch<CancelDispatchMemo200>(getCancelDispatchMemoUrl(id), {
+    ...options,
+    method: "PATCH",
+  });
+};
+
+export const getCancelDispatchMemoMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof cancelDispatchMemo>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof cancelDispatchMemo>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["cancelDispatchMemo"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof cancelDispatchMemo>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return cancelDispatchMemo(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CancelDispatchMemoMutationResult = NonNullable<
+  Awaited<ReturnType<typeof cancelDispatchMemo>>
+>;
+
+export type CancelDispatchMemoMutationError = ErrorType<unknown>;
+
+export const useCancelDispatchMemo = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof cancelDispatchMemo>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof cancelDispatchMemo>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getCancelDispatchMemoMutationOptions(options));
+};
+
+export const getGetMultiStoreDashboardUrl = (projectId: string) => {
+  return `/api/multi-store/dashboard/${projectId}`;
+};
+
+export const getMultiStoreDashboard = async (
+  projectId: string,
+  options?: RequestInit,
+): Promise<MultiStoreDashboard> => {
+  return customFetch<MultiStoreDashboard>(
+    getGetMultiStoreDashboardUrl(projectId),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetMultiStoreDashboardQueryKey = (projectId: string) => {
+  return [`/api/multi-store/dashboard/${projectId}`] as const;
+};
+
+export const getGetMultiStoreDashboardQueryOptions = <
+  TData = Awaited<ReturnType<typeof getMultiStoreDashboard>>,
+  TError = ErrorType<unknown>,
+>(
+  projectId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getMultiStoreDashboard>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetMultiStoreDashboardQueryKey(projectId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getMultiStoreDashboard>>
+  > = ({ signal }) =>
+    getMultiStoreDashboard(projectId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!projectId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getMultiStoreDashboard>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetMultiStoreDashboardQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getMultiStoreDashboard>>
+>;
+export type GetMultiStoreDashboardQueryError = ErrorType<unknown>;
+
+export function useGetMultiStoreDashboard<
+  TData = Awaited<ReturnType<typeof getMultiStoreDashboard>>,
+  TError = ErrorType<unknown>,
+>(
+  projectId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getMultiStoreDashboard>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetMultiStoreDashboardQueryOptions(
+    projectId,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+export const getListStockMovementAuditUrl = (
+  params?: ListStockMovementAuditParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/multi-store/audit?${stringifiedParams}`
+    : `/api/multi-store/audit`;
+};
+
+export const listStockMovementAudit = async (
+  params?: ListStockMovementAuditParams,
+  options?: RequestInit,
+): Promise<ListStockMovementAudit200> => {
+  return customFetch<ListStockMovementAudit200>(
+    getListStockMovementAuditUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListStockMovementAuditQueryKey = (
+  params?: ListStockMovementAuditParams,
+) => {
+  return [`/api/multi-store/audit`, ...(params ? [params] : [])] as const;
+};
+
+export const getListStockMovementAuditQueryOptions = <
+  TData = Awaited<ReturnType<typeof listStockMovementAudit>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListStockMovementAuditParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listStockMovementAudit>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListStockMovementAuditQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listStockMovementAudit>>
+  > = ({ signal }) =>
+    listStockMovementAudit(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listStockMovementAudit>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListStockMovementAuditQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listStockMovementAudit>>
+>;
+export type ListStockMovementAuditQueryError = ErrorType<unknown>;
+
+export function useListStockMovementAudit<
+  TData = Awaited<ReturnType<typeof listStockMovementAudit>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListStockMovementAuditParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listStockMovementAudit>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListStockMovementAuditQueryOptions(params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

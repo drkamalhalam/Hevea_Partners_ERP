@@ -40,6 +40,8 @@ import {
   Gavel,
   UserCheck,
   HardDriveDownload,
+  LayoutGrid,
+  FileCheck2,
 } from "lucide-react";
 import { useRole, ROLE_LABELS, ROLE_COLORS } from "@/contexts/RoleContext";
 import type { UserRole } from "@/contexts/RoleContext";
@@ -306,6 +308,30 @@ const navGroups: NavGroup[] = [
         href: "/distribution",
         icon: Truck,
         roles: ["admin", "developer", "landowner", "operational_staff"],
+      },
+      {
+        name: "Stores",
+        href: "/stores",
+        icon: Building2,
+        roles: ["admin", "developer", "employee", "operational_staff"] as UserRole[],
+      },
+      {
+        name: "Stock Transfer",
+        href: "/stock-transfer",
+        icon: ArrowLeftRight,
+        roles: ["admin", "developer", "employee", "operational_staff"] as UserRole[],
+      },
+      {
+        name: "Multi-Store Inv.",
+        href: "/multi-store-inventory",
+        icon: LayoutGrid,
+        roles: ["admin", "developer", "employee", "operational_staff", "landowner", "investor"] as UserRole[],
+      },
+      {
+        name: "Dispatch Memos",
+        href: "/dispatch-memos",
+        icon: FileCheck2,
+        roles: ["admin", "developer", "employee", "operational_staff"] as UserRole[],
       },
     ],
   },

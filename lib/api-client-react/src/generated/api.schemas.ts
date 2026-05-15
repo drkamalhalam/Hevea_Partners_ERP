@@ -7330,6 +7330,161 @@ export interface BackupStorageStats {
   checkedAt: string;
 }
 
+export interface Store {
+  id: string;
+  storeName: string;
+  storeCode: string;
+  storeType: string;
+  projectId?: string | null;
+  address?: string | null;
+  capacityKg: string;
+  currentOccupancyKg: string;
+  managerUserId?: string | null;
+  managerName?: string | null;
+  isActive: boolean;
+  notes?: string | null;
+  createdById?: string | null;
+  createdByName: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateStoreBody {
+  storeName: string;
+  storeCode: string;
+  storeType: string;
+  projectId?: string;
+  address?: string;
+  capacityKg?: string;
+  managerUserId?: string;
+  managerName?: string;
+  notes?: string;
+}
+
+export interface UpdateStoreBody {
+  storeName?: string;
+  address?: string;
+  capacityKg?: string;
+  managerUserId?: string;
+  managerName?: string;
+  notes?: string;
+  projectId?: string;
+}
+
+export interface InventoryLocation {
+  id: string;
+  projectId: string;
+  storeId: string;
+  stockType: string;
+  quantityKg: string;
+  zone?: string | null;
+  rack?: string | null;
+  remarks?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface StockTransfer {
+  id: string;
+  transferCode: string;
+  projectId: string;
+  fromStoreId: string;
+  toStoreId: string;
+  stockType: string;
+  quantityKg: string;
+  transferReason: string;
+  reasonNotes?: string | null;
+  fromZone?: string | null;
+  fromRack?: string | null;
+  toZone?: string | null;
+  toRack?: string | null;
+  initiatedById?: string | null;
+  initiatedByName: string;
+  approvedById?: string | null;
+  approvedByName?: string | null;
+  approvedAt?: string | null;
+  transferStatus: string;
+  completedAt?: string | null;
+  cancelledAt?: string | null;
+  cancelledReason?: string | null;
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DispatchMemo {
+  id: string;
+  memoCode: string;
+  projectId: string;
+  buyerId?: string | null;
+  buyerName: string;
+  salesTransactionId?: string | null;
+  sourceStoreId: string;
+  sourceStoreName: string;
+  stockType: string;
+  zone?: string | null;
+  rack?: string | null;
+  totalOrderedKg: string;
+  totalDispatchedKg: string;
+  remainingKg: string;
+  dispatchStatus: string;
+  issuedById?: string | null;
+  issuedByName: string;
+  issuedAt: string;
+  completedAt?: string | null;
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface StockMovementAudit {
+  id: string;
+  projectId: string;
+  actionType: string;
+  sourceStoreId?: string | null;
+  sourceStoreName?: string | null;
+  destinationStoreId?: string | null;
+  destinationStoreName?: string | null;
+  stockType: string;
+  quantityKg: string;
+  referenceId?: string | null;
+  referenceType?: string | null;
+  performedById?: string | null;
+  performedByName: string;
+  remarks?: string | null;
+  createdAt: string;
+}
+
+export type MultiStoreDashboardProject = {
+  id?: string;
+  name?: string;
+  lifecycleStatus?: string;
+};
+
+export type MultiStoreDashboardOwnershipItem = {
+  stockType?: string;
+  totalIn?: number;
+  totalOut?: number;
+  net?: number;
+};
+
+export type MultiStoreDashboardReconciliationItem = {
+  stockType?: string;
+  ownedKg?: number;
+  physicalKg?: number;
+  discrepancyKg?: number;
+  reconciled?: boolean;
+};
+
+export interface MultiStoreDashboard {
+  project: MultiStoreDashboardProject;
+  ownership: MultiStoreDashboardOwnershipItem[];
+  physicalDistribution: InventoryLocation[];
+  pendingTransfers: StockTransfer[];
+  activeMemos: DispatchMemo[];
+  reconciliation: MultiStoreDashboardReconciliationItem[];
+}
+
 export type GetUserActivityParams = {
   limit?: number;
 };
@@ -8999,3 +9154,162 @@ export type ExportErpDataBody = {
 export type ExportErpData200 = { [key: string]: unknown };
 
 export type ExportDocumentManifest200 = { [key: string]: unknown };
+
+export type ListStoresParams = {
+  storeType?: string;
+  isActive?: boolean;
+};
+
+export type ListStores200 = {
+  stores?: Store[];
+};
+
+export type CreateStore201 = {
+  store?: Store;
+};
+
+export type GetStore200 = {
+  store?: Store;
+  locations?: InventoryLocation[];
+};
+
+export type UpdateStore200 = {
+  store?: Store;
+};
+
+export type ToggleStoreActive200 = {
+  store?: Store;
+};
+
+export type ListInventoryLocationsParams = {
+  projectId?: string;
+  storeId?: string;
+};
+
+export type ListInventoryLocations200 = {
+  locations?: InventoryLocation[];
+};
+
+export type CreateInventoryLocationBody = {
+  projectId: string;
+  storeId: string;
+  stockType: string;
+  quantityKg: string;
+  zone?: string;
+  rack?: string;
+  remarks?: string;
+};
+
+export type CreateInventoryLocation201 = {
+  location?: InventoryLocation;
+};
+
+export type UpdateInventoryLocationBody = {
+  zone?: string;
+  rack?: string;
+  remarks?: string;
+};
+
+export type UpdateInventoryLocation200 = {
+  location?: InventoryLocation;
+};
+
+export type ListStockTransfersParams = {
+  projectId?: string;
+  status?: string;
+};
+
+export type ListStockTransfers200 = {
+  transfers?: StockTransfer[];
+};
+
+export type CreateStockTransferBody = {
+  projectId: string;
+  fromStoreId: string;
+  toStoreId: string;
+  stockType: string;
+  quantityKg: string;
+  transferReason: string;
+  reasonNotes?: string;
+  fromZone?: string;
+  fromRack?: string;
+  toZone?: string;
+  toRack?: string;
+  notes?: string;
+};
+
+export type CreateStockTransfer201 = {
+  transfer?: StockTransfer;
+};
+
+export type GetStockTransfer200 = {
+  transfer?: StockTransfer;
+};
+
+export type ApproveStockTransfer200 = {
+  transfer?: StockTransfer;
+};
+
+export type CompleteStockTransfer200 = {
+  transfer?: StockTransfer;
+};
+
+export type CancelStockTransferBody = {
+  cancelledReason?: string;
+};
+
+export type CancelStockTransfer200 = {
+  transfer?: StockTransfer;
+};
+
+export type ListDispatchMemosParams = {
+  projectId?: string;
+  status?: string;
+};
+
+export type ListDispatchMemos200 = {
+  memos?: DispatchMemo[];
+};
+
+export type CreateDispatchMemoBody = {
+  projectId: string;
+  buyerName: string;
+  buyerId?: string;
+  salesTransactionId?: string;
+  sourceStoreId: string;
+  stockType: string;
+  totalOrderedKg: string;
+  zone?: string;
+  rack?: string;
+  notes?: string;
+};
+
+export type CreateDispatchMemo201 = {
+  memo?: DispatchMemo;
+};
+
+export type GetDispatchMemo200 = {
+  memo?: DispatchMemo;
+};
+
+export type RecordDispatchBody = {
+  dispatchedKg: string;
+  remarks?: string;
+};
+
+export type RecordDispatch200 = {
+  memo?: DispatchMemo;
+};
+
+export type CancelDispatchMemo200 = {
+  memo?: DispatchMemo;
+};
+
+export type ListStockMovementAuditParams = {
+  projectId?: string;
+  actionType?: string;
+};
+
+export type ListStockMovementAudit200 = {
+  audit?: StockMovementAudit[];
+};

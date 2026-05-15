@@ -9542,6 +9542,421 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BackupStorageStats'
+
+  # ── Multi-Store Inventory & Stock Transfer ────────────────────────────────
+
+  /multi-store/stores:
+    get:
+      operationId: listStores
+      tags: [MultiStore]
+      parameters:
+        - { name: storeType, in: query, schema: { type: string } }
+        - { name: isActive, in: query, schema: { type: boolean } }
+      responses:
+        '200':
+          description: List of stores
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  stores: { type: array, items: { $ref: '#/components/schemas/Store' } }
+    post:
+      operationId: createStore
+      tags: [MultiStore]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateStoreBody' }
+      responses:
+        '201':
+          description: Store created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  store: { $ref: '#/components/schemas/Store' }
+
+  /multi-store/stores/{id}:
+    get:
+      operationId: getStore
+      tags: [MultiStore]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Store details with inventory breakdown
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  store: { $ref: '#/components/schemas/Store' }
+                  locations: { type: array, items: { $ref: '#/components/schemas/InventoryLocation' } }
+    patch:
+      operationId: updateStore
+      tags: [MultiStore]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateStoreBody' }
+      responses:
+        '200':
+          description: Store updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  store: { $ref: '#/components/schemas/Store' }
+
+  /multi-store/stores/{id}/toggle-active:
+    patch:
+      operationId: toggleStoreActive
+      tags: [MultiStore]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Store active status toggled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  store: { $ref: '#/components/schemas/Store' }
+
+  /multi-store/inventory-locations:
+    get:
+      operationId: listInventoryLocations
+      tags: [MultiStore]
+      parameters:
+        - { name: projectId, in: query, schema: { type: string } }
+        - { name: storeId, in: query, schema: { type: string } }
+      responses:
+        '200':
+          description: List of inventory locations
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  locations: { type: array, items: { $ref: '#/components/schemas/InventoryLocation' } }
+    post:
+      operationId: createInventoryLocation
+      tags: [MultiStore]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [projectId, storeId, stockType, quantityKg]
+              properties:
+                projectId: { type: string }
+                storeId: { type: string }
+                stockType: { type: string }
+                quantityKg: { type: string }
+                zone: { type: string }
+                rack: { type: string }
+                remarks: { type: string }
+      responses:
+        '201':
+          description: Inventory location created or updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  location: { $ref: '#/components/schemas/InventoryLocation' }
+
+  /multi-store/inventory-locations/{id}:
+    patch:
+      operationId: updateInventoryLocation
+      tags: [MultiStore]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                zone: { type: string }
+                rack: { type: string }
+                remarks: { type: string }
+      responses:
+        '200':
+          description: Location updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  location: { $ref: '#/components/schemas/InventoryLocation' }
+
+  /multi-store/stock-transfers:
+    get:
+      operationId: listStockTransfers
+      tags: [MultiStore]
+      parameters:
+        - { name: projectId, in: query, schema: { type: string } }
+        - { name: status, in: query, schema: { type: string } }
+      responses:
+        '200':
+          description: List of stock transfers
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  transfers: { type: array, items: { $ref: '#/components/schemas/StockTransfer' } }
+    post:
+      operationId: createStockTransfer
+      tags: [MultiStore]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [projectId, fromStoreId, toStoreId, stockType, quantityKg, transferReason]
+              properties:
+                projectId: { type: string }
+                fromStoreId: { type: string }
+                toStoreId: { type: string }
+                stockType: { type: string }
+                quantityKg: { type: string }
+                transferReason: { type: string }
+                reasonNotes: { type: string }
+                fromZone: { type: string }
+                fromRack: { type: string }
+                toZone: { type: string }
+                toRack: { type: string }
+                notes: { type: string }
+      responses:
+        '201':
+          description: Transfer initiated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  transfer: { $ref: '#/components/schemas/StockTransfer' }
+
+  /multi-store/stock-transfers/{id}:
+    get:
+      operationId: getStockTransfer
+      tags: [MultiStore]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Transfer details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  transfer: { $ref: '#/components/schemas/StockTransfer' }
+
+  /multi-store/stock-transfers/{id}/approve:
+    patch:
+      operationId: approveStockTransfer
+      tags: [MultiStore]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Transfer approved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  transfer: { $ref: '#/components/schemas/StockTransfer' }
+
+  /multi-store/stock-transfers/{id}/complete:
+    patch:
+      operationId: completeStockTransfer
+      tags: [MultiStore]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Transfer completed — physical stock moved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  transfer: { $ref: '#/components/schemas/StockTransfer' }
+
+  /multi-store/stock-transfers/{id}/cancel:
+    patch:
+      operationId: cancelStockTransfer
+      tags: [MultiStore]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                cancelledReason: { type: string }
+      responses:
+        '200':
+          description: Transfer cancelled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  transfer: { $ref: '#/components/schemas/StockTransfer' }
+
+  /multi-store/dispatch-memos:
+    get:
+      operationId: listDispatchMemos
+      tags: [MultiStore]
+      parameters:
+        - { name: projectId, in: query, schema: { type: string } }
+        - { name: status, in: query, schema: { type: string } }
+      responses:
+        '200':
+          description: List of dispatch memos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  memos: { type: array, items: { $ref: '#/components/schemas/DispatchMemo' } }
+    post:
+      operationId: createDispatchMemo
+      tags: [MultiStore]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [projectId, buyerName, sourceStoreId, stockType, totalOrderedKg]
+              properties:
+                projectId: { type: string }
+                buyerName: { type: string }
+                buyerId: { type: string }
+                salesTransactionId: { type: string }
+                sourceStoreId: { type: string }
+                stockType: { type: string }
+                totalOrderedKg: { type: string }
+                zone: { type: string }
+                rack: { type: string }
+                notes: { type: string }
+      responses:
+        '201':
+          description: Dispatch memo created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  memo: { $ref: '#/components/schemas/DispatchMemo' }
+
+  /multi-store/dispatch-memos/{id}:
+    get:
+      operationId: getDispatchMemo
+      tags: [MultiStore]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Dispatch memo details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  memo: { $ref: '#/components/schemas/DispatchMemo' }
+
+  /multi-store/dispatch-memos/{id}/dispatch:
+    patch:
+      operationId: recordDispatch
+      tags: [MultiStore]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [dispatchedKg]
+              properties:
+                dispatchedKg: { type: string }
+                remarks: { type: string }
+      responses:
+        '200':
+          description: Dispatch recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  memo: { $ref: '#/components/schemas/DispatchMemo' }
+
+  /multi-store/dispatch-memos/{id}/cancel:
+    patch:
+      operationId: cancelDispatchMemo
+      tags: [MultiStore]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Dispatch memo cancelled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  memo: { $ref: '#/components/schemas/DispatchMemo' }
+
+  /multi-store/dashboard/{projectId}:
+    get:
+      operationId: getMultiStoreDashboard
+      tags: [MultiStore]
+      parameters:
+        - { name: projectId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Full project inventory dashboard
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MultiStoreDashboard' }
+
+  /multi-store/audit:
+    get:
+      operationId: listStockMovementAudit
+      tags: [MultiStore]
+      parameters:
+        - { name: projectId, in: query, schema: { type: string } }
+        - { name: actionType, in: query, schema: { type: string } }
+      responses:
+        '200':
+          description: Stock movement audit trail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  audit: { type: array, items: { $ref: '#/components/schemas/StockMovementAudit' } }
+
 components:
   schemas:
 
@@ -16486,3 +16901,180 @@ components:
         checkedAt:
           type: string
           format: date-time
+
+    Store:
+      type: object
+      required: [id, storeName, storeCode, storeType, capacityKg, currentOccupancyKg, isActive, createdByName, createdAt, updatedAt]
+      properties:
+        id: { type: string }
+        storeName: { type: string }
+        storeCode: { type: string }
+        storeType: { type: string }
+        projectId: { type: string, nullable: true }
+        address: { type: string, nullable: true }
+        capacityKg: { type: string }
+        currentOccupancyKg: { type: string }
+        managerUserId: { type: string, nullable: true }
+        managerName: { type: string, nullable: true }
+        isActive: { type: boolean }
+        notes: { type: string, nullable: true }
+        createdById: { type: string, nullable: true }
+        createdByName: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    CreateStoreBody:
+      type: object
+      required: [storeName, storeCode, storeType]
+      properties:
+        storeName: { type: string }
+        storeCode: { type: string }
+        storeType: { type: string }
+        projectId: { type: string }
+        address: { type: string }
+        capacityKg: { type: string }
+        managerUserId: { type: string }
+        managerName: { type: string }
+        notes: { type: string }
+
+    UpdateStoreBody:
+      type: object
+      properties:
+        storeName: { type: string }
+        address: { type: string }
+        capacityKg: { type: string }
+        managerUserId: { type: string }
+        managerName: { type: string }
+        notes: { type: string }
+        projectId: { type: string }
+
+    InventoryLocation:
+      type: object
+      required: [id, projectId, storeId, stockType, quantityKg, createdAt, updatedAt]
+      properties:
+        id: { type: string }
+        projectId: { type: string }
+        storeId: { type: string }
+        stockType: { type: string }
+        quantityKg: { type: string }
+        zone: { type: string, nullable: true }
+        rack: { type: string, nullable: true }
+        remarks: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    StockTransfer:
+      type: object
+      required: [id, transferCode, projectId, fromStoreId, toStoreId, stockType, quantityKg, transferReason, initiatedByName, transferStatus, createdAt, updatedAt]
+      properties:
+        id: { type: string }
+        transferCode: { type: string }
+        projectId: { type: string }
+        fromStoreId: { type: string }
+        toStoreId: { type: string }
+        stockType: { type: string }
+        quantityKg: { type: string }
+        transferReason: { type: string }
+        reasonNotes: { type: string, nullable: true }
+        fromZone: { type: string, nullable: true }
+        fromRack: { type: string, nullable: true }
+        toZone: { type: string, nullable: true }
+        toRack: { type: string, nullable: true }
+        initiatedById: { type: string, nullable: true }
+        initiatedByName: { type: string }
+        approvedById: { type: string, nullable: true }
+        approvedByName: { type: string, nullable: true }
+        approvedAt: { type: string, format: date-time, nullable: true }
+        transferStatus: { type: string }
+        completedAt: { type: string, format: date-time, nullable: true }
+        cancelledAt: { type: string, format: date-time, nullable: true }
+        cancelledReason: { type: string, nullable: true }
+        notes: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    DispatchMemo:
+      type: object
+      required: [id, memoCode, projectId, buyerName, sourceStoreId, sourceStoreName, stockType, totalOrderedKg, totalDispatchedKg, remainingKg, dispatchStatus, issuedByName, issuedAt, createdAt, updatedAt]
+      properties:
+        id: { type: string }
+        memoCode: { type: string }
+        projectId: { type: string }
+        buyerId: { type: string, nullable: true }
+        buyerName: { type: string }
+        salesTransactionId: { type: string, nullable: true }
+        sourceStoreId: { type: string }
+        sourceStoreName: { type: string }
+        stockType: { type: string }
+        zone: { type: string, nullable: true }
+        rack: { type: string, nullable: true }
+        totalOrderedKg: { type: string }
+        totalDispatchedKg: { type: string }
+        remainingKg: { type: string }
+        dispatchStatus: { type: string }
+        issuedById: { type: string, nullable: true }
+        issuedByName: { type: string }
+        issuedAt: { type: string, format: date-time }
+        completedAt: { type: string, format: date-time, nullable: true }
+        notes: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    StockMovementAudit:
+      type: object
+      required: [id, projectId, actionType, stockType, quantityKg, performedByName, createdAt]
+      properties:
+        id: { type: string }
+        projectId: { type: string }
+        actionType: { type: string }
+        sourceStoreId: { type: string, nullable: true }
+        sourceStoreName: { type: string, nullable: true }
+        destinationStoreId: { type: string, nullable: true }
+        destinationStoreName: { type: string, nullable: true }
+        stockType: { type: string }
+        quantityKg: { type: string }
+        referenceId: { type: string, nullable: true }
+        referenceType: { type: string, nullable: true }
+        performedById: { type: string, nullable: true }
+        performedByName: { type: string }
+        remarks: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+
+    MultiStoreDashboard:
+      type: object
+      required: [project, ownership, physicalDistribution, pendingTransfers, activeMemos, reconciliation]
+      properties:
+        project:
+          type: object
+          properties:
+            id: { type: string }
+            name: { type: string }
+            lifecycleStatus: { type: string }
+        ownership:
+          type: array
+          items:
+            type: object
+            properties:
+              stockType: { type: string }
+              totalIn: { type: number }
+              totalOut: { type: number }
+              net: { type: number }
+        physicalDistribution:
+          type: array
+          items: { $ref: '#/components/schemas/InventoryLocation' }
+        pendingTransfers:
+          type: array
+          items: { $ref: '#/components/schemas/StockTransfer' }
+        activeMemos:
+          type: array
+          items: { $ref: '#/components/schemas/DispatchMemo' }
+        reconciliation:
+          type: array
+          items:
+            type: object
+            properties:
+              stockType: { type: string }
+              ownedKg: { type: number }
+              physicalKg: { type: number }
+              discrepancyKg: { type: number }
+              reconciled: { type: boolean }

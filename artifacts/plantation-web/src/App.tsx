@@ -87,6 +87,13 @@ import InheritanceClaims from "./pages/InheritanceClaims";
 import NomineeSuccessionDashboard from "./pages/NomineeSuccessionDashboard";
 import PrematuritySuccession from "./pages/PrematuritySuccession";
 import BackupExport from "./pages/BackupExport";
+
+// Pages — Multi-Store
+import Stores from "./pages/Stores";
+import StockTransfer from "./pages/StockTransfer";
+import MultiStoreInventory from "./pages/MultiStoreInventory";
+import DispatchMemo from "./pages/DispatchMemo";
+
 // Layout
 import NotFound from "@/pages/not-found";
 import Layout from "./components/layout/Layout";
@@ -318,6 +325,12 @@ function AppRoutes() {
               <Route path="/admin"><AdminRoute component={Admin} /></Route>
               <Route path="/financial-audit-log"><ProtectedRoute component={FinancialAuditLog} /></Route>
               <Route path="/backup-export"><AdminRoute component={BackupExport} /></Route>
+
+              {/* Multi-Store Inventory */}
+              <Route path="/stores"><ProtectedRoute component={Stores} /></Route>
+              <Route path="/stock-transfer"><ProtectedRoute component={StockTransfer} /></Route>
+              <Route path="/multi-store-inventory"><ProtectedRoute component={MultiStoreInventory} /></Route>
+              <Route path="/dispatch-memos"><ProtectedRoute component={DispatchMemo} /></Route>
 
               <Route component={NotFound} />
             </Switch>

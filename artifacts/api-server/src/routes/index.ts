@@ -57,6 +57,7 @@ import notificationsRouter from "./notifications_route";
 import reportsRouter from "./reports";
 import governanceMeetingsRouter from "./governance_meetings";
 import backupRouter from "./backup";
+import multiStoreRouter from "./multi_store";
 import devRouter from "./dev";
 
 const router: IRouter = Router();
@@ -131,5 +132,6 @@ router.use("/notifications", notificationsRouter);
 router.use("/reports", reportsRouter);
 router.use("/governance-meetings", governanceMeetingsRouter);
 router.use("/backup", backupRouter);
+router.use("/multi-store", multiStoreRouter);
 
 export default router;

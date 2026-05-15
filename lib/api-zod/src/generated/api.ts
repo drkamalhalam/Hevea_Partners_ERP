@@ -15500,3 +15500,695 @@ export const GetBackupStorageStatsResponse = zod.object({
   ),
   checkedAt: zod.coerce.date(),
 });
+
+export const ListStoresQueryParams = zod.object({
+  storeType: zod.coerce.string().optional(),
+  isActive: zod.coerce.boolean().optional(),
+});
+
+export const ListStoresResponse = zod.object({
+  stores: zod
+    .array(
+      zod.object({
+        id: zod.string(),
+        storeName: zod.string(),
+        storeCode: zod.string(),
+        storeType: zod.string(),
+        projectId: zod.string().nullish(),
+        address: zod.string().nullish(),
+        capacityKg: zod.string(),
+        currentOccupancyKg: zod.string(),
+        managerUserId: zod.string().nullish(),
+        managerName: zod.string().nullish(),
+        isActive: zod.boolean(),
+        notes: zod.string().nullish(),
+        createdById: zod.string().nullish(),
+        createdByName: zod.string(),
+        createdAt: zod.coerce.date(),
+        updatedAt: zod.coerce.date(),
+      }),
+    )
+    .optional(),
+});
+
+export const CreateStoreBody = zod.object({
+  storeName: zod.string(),
+  storeCode: zod.string(),
+  storeType: zod.string(),
+  projectId: zod.string().optional(),
+  address: zod.string().optional(),
+  capacityKg: zod.string().optional(),
+  managerUserId: zod.string().optional(),
+  managerName: zod.string().optional(),
+  notes: zod.string().optional(),
+});
+
+export const GetStoreParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const GetStoreResponse = zod.object({
+  store: zod
+    .object({
+      id: zod.string(),
+      storeName: zod.string(),
+      storeCode: zod.string(),
+      storeType: zod.string(),
+      projectId: zod.string().nullish(),
+      address: zod.string().nullish(),
+      capacityKg: zod.string(),
+      currentOccupancyKg: zod.string(),
+      managerUserId: zod.string().nullish(),
+      managerName: zod.string().nullish(),
+      isActive: zod.boolean(),
+      notes: zod.string().nullish(),
+      createdById: zod.string().nullish(),
+      createdByName: zod.string(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    })
+    .optional(),
+  locations: zod
+    .array(
+      zod.object({
+        id: zod.string(),
+        projectId: zod.string(),
+        storeId: zod.string(),
+        stockType: zod.string(),
+        quantityKg: zod.string(),
+        zone: zod.string().nullish(),
+        rack: zod.string().nullish(),
+        remarks: zod.string().nullish(),
+        createdAt: zod.coerce.date(),
+        updatedAt: zod.coerce.date(),
+      }),
+    )
+    .optional(),
+});
+
+export const UpdateStoreParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const UpdateStoreBody = zod.object({
+  storeName: zod.string().optional(),
+  address: zod.string().optional(),
+  capacityKg: zod.string().optional(),
+  managerUserId: zod.string().optional(),
+  managerName: zod.string().optional(),
+  notes: zod.string().optional(),
+  projectId: zod.string().optional(),
+});
+
+export const UpdateStoreResponse = zod.object({
+  store: zod
+    .object({
+      id: zod.string(),
+      storeName: zod.string(),
+      storeCode: zod.string(),
+      storeType: zod.string(),
+      projectId: zod.string().nullish(),
+      address: zod.string().nullish(),
+      capacityKg: zod.string(),
+      currentOccupancyKg: zod.string(),
+      managerUserId: zod.string().nullish(),
+      managerName: zod.string().nullish(),
+      isActive: zod.boolean(),
+      notes: zod.string().nullish(),
+      createdById: zod.string().nullish(),
+      createdByName: zod.string(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    })
+    .optional(),
+});
+
+export const ToggleStoreActiveParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const ToggleStoreActiveResponse = zod.object({
+  store: zod
+    .object({
+      id: zod.string(),
+      storeName: zod.string(),
+      storeCode: zod.string(),
+      storeType: zod.string(),
+      projectId: zod.string().nullish(),
+      address: zod.string().nullish(),
+      capacityKg: zod.string(),
+      currentOccupancyKg: zod.string(),
+      managerUserId: zod.string().nullish(),
+      managerName: zod.string().nullish(),
+      isActive: zod.boolean(),
+      notes: zod.string().nullish(),
+      createdById: zod.string().nullish(),
+      createdByName: zod.string(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    })
+    .optional(),
+});
+
+export const ListInventoryLocationsQueryParams = zod.object({
+  projectId: zod.coerce.string().optional(),
+  storeId: zod.coerce.string().optional(),
+});
+
+export const ListInventoryLocationsResponse = zod.object({
+  locations: zod
+    .array(
+      zod.object({
+        id: zod.string(),
+        projectId: zod.string(),
+        storeId: zod.string(),
+        stockType: zod.string(),
+        quantityKg: zod.string(),
+        zone: zod.string().nullish(),
+        rack: zod.string().nullish(),
+        remarks: zod.string().nullish(),
+        createdAt: zod.coerce.date(),
+        updatedAt: zod.coerce.date(),
+      }),
+    )
+    .optional(),
+});
+
+export const CreateInventoryLocationBody = zod.object({
+  projectId: zod.string(),
+  storeId: zod.string(),
+  stockType: zod.string(),
+  quantityKg: zod.string(),
+  zone: zod.string().optional(),
+  rack: zod.string().optional(),
+  remarks: zod.string().optional(),
+});
+
+export const UpdateInventoryLocationParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const UpdateInventoryLocationBody = zod.object({
+  zone: zod.string().optional(),
+  rack: zod.string().optional(),
+  remarks: zod.string().optional(),
+});
+
+export const UpdateInventoryLocationResponse = zod.object({
+  location: zod
+    .object({
+      id: zod.string(),
+      projectId: zod.string(),
+      storeId: zod.string(),
+      stockType: zod.string(),
+      quantityKg: zod.string(),
+      zone: zod.string().nullish(),
+      rack: zod.string().nullish(),
+      remarks: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    })
+    .optional(),
+});
+
+export const ListStockTransfersQueryParams = zod.object({
+  projectId: zod.coerce.string().optional(),
+  status: zod.coerce.string().optional(),
+});
+
+export const ListStockTransfersResponse = zod.object({
+  transfers: zod
+    .array(
+      zod.object({
+        id: zod.string(),
+        transferCode: zod.string(),
+        projectId: zod.string(),
+        fromStoreId: zod.string(),
+        toStoreId: zod.string(),
+        stockType: zod.string(),
+        quantityKg: zod.string(),
+        transferReason: zod.string(),
+        reasonNotes: zod.string().nullish(),
+        fromZone: zod.string().nullish(),
+        fromRack: zod.string().nullish(),
+        toZone: zod.string().nullish(),
+        toRack: zod.string().nullish(),
+        initiatedById: zod.string().nullish(),
+        initiatedByName: zod.string(),
+        approvedById: zod.string().nullish(),
+        approvedByName: zod.string().nullish(),
+        approvedAt: zod.coerce.date().nullish(),
+        transferStatus: zod.string(),
+        completedAt: zod.coerce.date().nullish(),
+        cancelledAt: zod.coerce.date().nullish(),
+        cancelledReason: zod.string().nullish(),
+        notes: zod.string().nullish(),
+        createdAt: zod.coerce.date(),
+        updatedAt: zod.coerce.date(),
+      }),
+    )
+    .optional(),
+});
+
+export const CreateStockTransferBody = zod.object({
+  projectId: zod.string(),
+  fromStoreId: zod.string(),
+  toStoreId: zod.string(),
+  stockType: zod.string(),
+  quantityKg: zod.string(),
+  transferReason: zod.string(),
+  reasonNotes: zod.string().optional(),
+  fromZone: zod.string().optional(),
+  fromRack: zod.string().optional(),
+  toZone: zod.string().optional(),
+  toRack: zod.string().optional(),
+  notes: zod.string().optional(),
+});
+
+export const GetStockTransferParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const GetStockTransferResponse = zod.object({
+  transfer: zod
+    .object({
+      id: zod.string(),
+      transferCode: zod.string(),
+      projectId: zod.string(),
+      fromStoreId: zod.string(),
+      toStoreId: zod.string(),
+      stockType: zod.string(),
+      quantityKg: zod.string(),
+      transferReason: zod.string(),
+      reasonNotes: zod.string().nullish(),
+      fromZone: zod.string().nullish(),
+      fromRack: zod.string().nullish(),
+      toZone: zod.string().nullish(),
+      toRack: zod.string().nullish(),
+      initiatedById: zod.string().nullish(),
+      initiatedByName: zod.string(),
+      approvedById: zod.string().nullish(),
+      approvedByName: zod.string().nullish(),
+      approvedAt: zod.coerce.date().nullish(),
+      transferStatus: zod.string(),
+      completedAt: zod.coerce.date().nullish(),
+      cancelledAt: zod.coerce.date().nullish(),
+      cancelledReason: zod.string().nullish(),
+      notes: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    })
+    .optional(),
+});
+
+export const ApproveStockTransferParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const ApproveStockTransferResponse = zod.object({
+  transfer: zod
+    .object({
+      id: zod.string(),
+      transferCode: zod.string(),
+      projectId: zod.string(),
+      fromStoreId: zod.string(),
+      toStoreId: zod.string(),
+      stockType: zod.string(),
+      quantityKg: zod.string(),
+      transferReason: zod.string(),
+      reasonNotes: zod.string().nullish(),
+      fromZone: zod.string().nullish(),
+      fromRack: zod.string().nullish(),
+      toZone: zod.string().nullish(),
+      toRack: zod.string().nullish(),
+      initiatedById: zod.string().nullish(),
+      initiatedByName: zod.string(),
+      approvedById: zod.string().nullish(),
+      approvedByName: zod.string().nullish(),
+      approvedAt: zod.coerce.date().nullish(),
+      transferStatus: zod.string(),
+      completedAt: zod.coerce.date().nullish(),
+      cancelledAt: zod.coerce.date().nullish(),
+      cancelledReason: zod.string().nullish(),
+      notes: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    })
+    .optional(),
+});
+
+export const CompleteStockTransferParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const CompleteStockTransferResponse = zod.object({
+  transfer: zod
+    .object({
+      id: zod.string(),
+      transferCode: zod.string(),
+      projectId: zod.string(),
+      fromStoreId: zod.string(),
+      toStoreId: zod.string(),
+      stockType: zod.string(),
+      quantityKg: zod.string(),
+      transferReason: zod.string(),
+      reasonNotes: zod.string().nullish(),
+      fromZone: zod.string().nullish(),
+      fromRack: zod.string().nullish(),
+      toZone: zod.string().nullish(),
+      toRack: zod.string().nullish(),
+      initiatedById: zod.string().nullish(),
+      initiatedByName: zod.string(),
+      approvedById: zod.string().nullish(),
+      approvedByName: zod.string().nullish(),
+      approvedAt: zod.coerce.date().nullish(),
+      transferStatus: zod.string(),
+      completedAt: zod.coerce.date().nullish(),
+      cancelledAt: zod.coerce.date().nullish(),
+      cancelledReason: zod.string().nullish(),
+      notes: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    })
+    .optional(),
+});
+
+export const CancelStockTransferParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const CancelStockTransferBody = zod.object({
+  cancelledReason: zod.string().optional(),
+});
+
+export const CancelStockTransferResponse = zod.object({
+  transfer: zod
+    .object({
+      id: zod.string(),
+      transferCode: zod.string(),
+      projectId: zod.string(),
+      fromStoreId: zod.string(),
+      toStoreId: zod.string(),
+      stockType: zod.string(),
+      quantityKg: zod.string(),
+      transferReason: zod.string(),
+      reasonNotes: zod.string().nullish(),
+      fromZone: zod.string().nullish(),
+      fromRack: zod.string().nullish(),
+      toZone: zod.string().nullish(),
+      toRack: zod.string().nullish(),
+      initiatedById: zod.string().nullish(),
+      initiatedByName: zod.string(),
+      approvedById: zod.string().nullish(),
+      approvedByName: zod.string().nullish(),
+      approvedAt: zod.coerce.date().nullish(),
+      transferStatus: zod.string(),
+      completedAt: zod.coerce.date().nullish(),
+      cancelledAt: zod.coerce.date().nullish(),
+      cancelledReason: zod.string().nullish(),
+      notes: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    })
+    .optional(),
+});
+
+export const ListDispatchMemosQueryParams = zod.object({
+  projectId: zod.coerce.string().optional(),
+  status: zod.coerce.string().optional(),
+});
+
+export const ListDispatchMemosResponse = zod.object({
+  memos: zod
+    .array(
+      zod.object({
+        id: zod.string(),
+        memoCode: zod.string(),
+        projectId: zod.string(),
+        buyerId: zod.string().nullish(),
+        buyerName: zod.string(),
+        salesTransactionId: zod.string().nullish(),
+        sourceStoreId: zod.string(),
+        sourceStoreName: zod.string(),
+        stockType: zod.string(),
+        zone: zod.string().nullish(),
+        rack: zod.string().nullish(),
+        totalOrderedKg: zod.string(),
+        totalDispatchedKg: zod.string(),
+        remainingKg: zod.string(),
+        dispatchStatus: zod.string(),
+        issuedById: zod.string().nullish(),
+        issuedByName: zod.string(),
+        issuedAt: zod.coerce.date(),
+        completedAt: zod.coerce.date().nullish(),
+        notes: zod.string().nullish(),
+        createdAt: zod.coerce.date(),
+        updatedAt: zod.coerce.date(),
+      }),
+    )
+    .optional(),
+});
+
+export const CreateDispatchMemoBody = zod.object({
+  projectId: zod.string(),
+  buyerName: zod.string(),
+  buyerId: zod.string().optional(),
+  salesTransactionId: zod.string().optional(),
+  sourceStoreId: zod.string(),
+  stockType: zod.string(),
+  totalOrderedKg: zod.string(),
+  zone: zod.string().optional(),
+  rack: zod.string().optional(),
+  notes: zod.string().optional(),
+});
+
+export const GetDispatchMemoParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const GetDispatchMemoResponse = zod.object({
+  memo: zod
+    .object({
+      id: zod.string(),
+      memoCode: zod.string(),
+      projectId: zod.string(),
+      buyerId: zod.string().nullish(),
+      buyerName: zod.string(),
+      salesTransactionId: zod.string().nullish(),
+      sourceStoreId: zod.string(),
+      sourceStoreName: zod.string(),
+      stockType: zod.string(),
+      zone: zod.string().nullish(),
+      rack: zod.string().nullish(),
+      totalOrderedKg: zod.string(),
+      totalDispatchedKg: zod.string(),
+      remainingKg: zod.string(),
+      dispatchStatus: zod.string(),
+      issuedById: zod.string().nullish(),
+      issuedByName: zod.string(),
+      issuedAt: zod.coerce.date(),
+      completedAt: zod.coerce.date().nullish(),
+      notes: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    })
+    .optional(),
+});
+
+export const RecordDispatchParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const RecordDispatchBody = zod.object({
+  dispatchedKg: zod.string(),
+  remarks: zod.string().optional(),
+});
+
+export const RecordDispatchResponse = zod.object({
+  memo: zod
+    .object({
+      id: zod.string(),
+      memoCode: zod.string(),
+      projectId: zod.string(),
+      buyerId: zod.string().nullish(),
+      buyerName: zod.string(),
+      salesTransactionId: zod.string().nullish(),
+      sourceStoreId: zod.string(),
+      sourceStoreName: zod.string(),
+      stockType: zod.string(),
+      zone: zod.string().nullish(),
+      rack: zod.string().nullish(),
+      totalOrderedKg: zod.string(),
+      totalDispatchedKg: zod.string(),
+      remainingKg: zod.string(),
+      dispatchStatus: zod.string(),
+      issuedById: zod.string().nullish(),
+      issuedByName: zod.string(),
+      issuedAt: zod.coerce.date(),
+      completedAt: zod.coerce.date().nullish(),
+      notes: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    })
+    .optional(),
+});
+
+export const CancelDispatchMemoParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const CancelDispatchMemoResponse = zod.object({
+  memo: zod
+    .object({
+      id: zod.string(),
+      memoCode: zod.string(),
+      projectId: zod.string(),
+      buyerId: zod.string().nullish(),
+      buyerName: zod.string(),
+      salesTransactionId: zod.string().nullish(),
+      sourceStoreId: zod.string(),
+      sourceStoreName: zod.string(),
+      stockType: zod.string(),
+      zone: zod.string().nullish(),
+      rack: zod.string().nullish(),
+      totalOrderedKg: zod.string(),
+      totalDispatchedKg: zod.string(),
+      remainingKg: zod.string(),
+      dispatchStatus: zod.string(),
+      issuedById: zod.string().nullish(),
+      issuedByName: zod.string(),
+      issuedAt: zod.coerce.date(),
+      completedAt: zod.coerce.date().nullish(),
+      notes: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    })
+    .optional(),
+});
+
+export const GetMultiStoreDashboardParams = zod.object({
+  projectId: zod.coerce.string(),
+});
+
+export const GetMultiStoreDashboardResponse = zod.object({
+  project: zod.object({
+    id: zod.string().optional(),
+    name: zod.string().optional(),
+    lifecycleStatus: zod.string().optional(),
+  }),
+  ownership: zod.array(
+    zod.object({
+      stockType: zod.string().optional(),
+      totalIn: zod.number().optional(),
+      totalOut: zod.number().optional(),
+      net: zod.number().optional(),
+    }),
+  ),
+  physicalDistribution: zod.array(
+    zod.object({
+      id: zod.string(),
+      projectId: zod.string(),
+      storeId: zod.string(),
+      stockType: zod.string(),
+      quantityKg: zod.string(),
+      zone: zod.string().nullish(),
+      rack: zod.string().nullish(),
+      remarks: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    }),
+  ),
+  pendingTransfers: zod.array(
+    zod.object({
+      id: zod.string(),
+      transferCode: zod.string(),
+      projectId: zod.string(),
+      fromStoreId: zod.string(),
+      toStoreId: zod.string(),
+      stockType: zod.string(),
+      quantityKg: zod.string(),
+      transferReason: zod.string(),
+      reasonNotes: zod.string().nullish(),
+      fromZone: zod.string().nullish(),
+      fromRack: zod.string().nullish(),
+      toZone: zod.string().nullish(),
+      toRack: zod.string().nullish(),
+      initiatedById: zod.string().nullish(),
+      initiatedByName: zod.string(),
+      approvedById: zod.string().nullish(),
+      approvedByName: zod.string().nullish(),
+      approvedAt: zod.coerce.date().nullish(),
+      transferStatus: zod.string(),
+      completedAt: zod.coerce.date().nullish(),
+      cancelledAt: zod.coerce.date().nullish(),
+      cancelledReason: zod.string().nullish(),
+      notes: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    }),
+  ),
+  activeMemos: zod.array(
+    zod.object({
+      id: zod.string(),
+      memoCode: zod.string(),
+      projectId: zod.string(),
+      buyerId: zod.string().nullish(),
+      buyerName: zod.string(),
+      salesTransactionId: zod.string().nullish(),
+      sourceStoreId: zod.string(),
+      sourceStoreName: zod.string(),
+      stockType: zod.string(),
+      zone: zod.string().nullish(),
+      rack: zod.string().nullish(),
+      totalOrderedKg: zod.string(),
+      totalDispatchedKg: zod.string(),
+      remainingKg: zod.string(),
+      dispatchStatus: zod.string(),
+      issuedById: zod.string().nullish(),
+      issuedByName: zod.string(),
+      issuedAt: zod.coerce.date(),
+      completedAt: zod.coerce.date().nullish(),
+      notes: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    }),
+  ),
+  reconciliation: zod.array(
+    zod.object({
+      stockType: zod.string().optional(),
+      ownedKg: zod.number().optional(),
+      physicalKg: zod.number().optional(),
+      discrepancyKg: zod.number().optional(),
+      reconciled: zod.boolean().optional(),
+    }),
+  ),
+});
+
+export const ListStockMovementAuditQueryParams = zod.object({
+  projectId: zod.coerce.string().optional(),
+  actionType: zod.coerce.string().optional(),
+});
+
+export const ListStockMovementAuditResponse = zod.object({
+  audit: zod
+    .array(
+      zod.object({
+        id: zod.string(),
+        projectId: zod.string(),
+        actionType: zod.string(),
+        sourceStoreId: zod.string().nullish(),
+        sourceStoreName: zod.string().nullish(),
+        destinationStoreId: zod.string().nullish(),
+        destinationStoreName: zod.string().nullish(),
+        stockType: zod.string(),
+        quantityKg: zod.string(),
+        referenceId: zod.string().nullish(),
+        referenceType: zod.string().nullish(),
+        performedById: zod.string().nullish(),
+        performedByName: zod.string(),
+        remarks: zod.string().nullish(),
+        createdAt: zod.coerce.date(),
+      }),
+    )
+    .optional(),
+});
