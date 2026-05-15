@@ -562,7 +562,7 @@ function FilterPanel({
                 </SelectTrigger>
                 <SelectContent className="bg-slate-800 border-slate-700">
                   <SelectItem value="_all" className="text-slate-300 text-xs">All Modules</SelectItem>
-                  {(options?.modules ?? []).map((m) => (
+                  {(options?.modules ?? []).filter(Boolean).map((m) => (
                     <SelectItem key={m} value={m} className="text-slate-300 text-xs">{cap(m)}</SelectItem>
                   ))}
                 </SelectContent>
@@ -577,7 +577,7 @@ function FilterPanel({
                 </SelectTrigger>
                 <SelectContent className="bg-slate-800 border-slate-700">
                   <SelectItem value="_all" className="text-slate-300 text-xs">Any Action</SelectItem>
-                  {(options?.actionTypes ?? []).map((a) => (
+                  {(options?.actionTypes ?? []).filter(Boolean).map((a) => (
                     <SelectItem key={a} value={a} className="text-slate-300 text-xs">{cap(a)}</SelectItem>
                   ))}
                 </SelectContent>
@@ -595,7 +595,7 @@ function FilterPanel({
                 </SelectTrigger>
                 <SelectContent className="bg-slate-800 border-slate-700">
                   <SelectItem value="_all" className="text-slate-300 text-xs">Any Type</SelectItem>
-                  {(options?.disputeTypes ?? []).map((t) => (
+                  {(options?.disputeTypes ?? []).filter(Boolean).map((t) => (
                     <SelectItem key={t} value={t} className="text-slate-300 text-xs">{cap(t)}</SelectItem>
                   ))}
                 </SelectContent>
@@ -610,7 +610,7 @@ function FilterPanel({
                 </SelectTrigger>
                 <SelectContent className="bg-slate-800 border-slate-700">
                   <SelectItem value="_all" className="text-slate-300 text-xs">Any Status</SelectItem>
-                  {(options?.disputeStatuses ?? []).map((s) => (
+                  {(options?.disputeStatuses ?? []).filter(Boolean).map((s) => (
                     <SelectItem key={s} value={s} className="text-slate-300 text-xs">{cap(s)}</SelectItem>
                   ))}
                 </SelectContent>
