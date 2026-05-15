@@ -3061,6 +3061,365 @@ paths:
         "403": { description: Forbidden }
         "404": { description: Not found }
 
+  /valuations/value-to-percentage:
+    post:
+      operationId: computeTransferValueToPercentage
+      summary: Compute equivalent ownership percentage from a transfer value (INR)
+      tags: [Valuations]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [projectId, transferValue]
+              properties:
+                projectId: { type: string, format: uuid }
+                transferValue: { type: number }
+                valuationRunId: { type: string, format: uuid, nullable: true }
+      responses:
+        "200":
+          description: Derived percentage
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [projectId, valuationRunId, projectGrossValue, transferValue, derivedPercentage, derivedPercentageFormatted]
+                properties:
+                  projectId: { type: string, format: uuid }
+                  valuationRunId: { type: string, format: uuid }
+                  projectGrossValue: { type: string }
+                  transferValue: { type: number }
+                  derivedPercentage: { type: number }
+                  derivedPercentageFormatted: { type: string }
+                  warning: { type: string, nullable: true }
+        "400": { description: Validation error }
+        "404": { description: Valuation run not found }
+        "422": { description: No final valuation run found }
+
+  /projects/{projectId}/partner-ownership-states:
+    get:
+      operationId: listPartnerOwnershipStates
+      summary: List ownership state records for all partners in a project
+      tags: [PartnerOwnershipState]
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Partner ownership states
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/PartnerOwnershipState" }
+        "401": { description: Unauthorized }
+
+  /projects/{projectId}/partner-ownership-states/upsert:
+    post:
+      operationId: upsertPartnerOwnershipState
+      summary: Create or update a partner ownership state record
+      tags: [PartnerOwnershipState]
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpsertPartnerOwnershipStateBody" }
+      responses:
+        "200":
+          description: Updated state
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PartnerOwnershipState" }
+        "201":
+          description: Created state
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PartnerOwnershipState" }
+        "400": { description: Validation error }
+        "422": { description: Business rule violation }
+
+  /projects/{projectId}/partner-ownership-states/{partnerId}:
+    get:
+      operationId: getPartnerOwnershipState
+      summary: Get a single partner's ownership state record
+      tags: [PartnerOwnershipState]
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema: { type: string, format: uuid }
+        - in: path
+          name: partnerId
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Partner ownership state
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PartnerOwnershipState" }
+        "404": { description: Not found }
+
+  /projects/{projectId}/partner-ownership-states/{partnerId}/dispute:
+    post:
+      operationId: markOwnershipDisputed
+      summary: Mark a portion of a partner's ownership as disputed
+      tags: [PartnerOwnershipState]
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema: { type: string, format: uuid }
+        - in: path
+          name: partnerId
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [disputedPercentage, disputeReason]
+              properties:
+                disputedPercentage: { type: number }
+                disputeReason: { type: string }
+                disputeReference: { type: string, nullable: true }
+      responses:
+        "200":
+          description: Updated state
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PartnerOwnershipState" }
+        "404": { description: Not found }
+        "422": { description: Insufficient transferable percentage }
+
+  /projects/{projectId}/partner-ownership-states/{partnerId}/resolve-dispute:
+    post:
+      operationId: resolveOwnershipDispute
+      summary: Resolve an active ownership dispute and return % to transferable
+      tags: [PartnerOwnershipState]
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema: { type: string, format: uuid }
+        - in: path
+          name: partnerId
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [releasedPercentage, resolution]
+              properties:
+                releasedPercentage: { type: number }
+                resolution: { type: string }
+      responses:
+        "200":
+          description: Updated state
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PartnerOwnershipState" }
+        "404": { description: Not found }
+        "422": { description: Cannot release more than disputed }
+
+  /projects/{projectId}/partner-ownership-states/{partnerId}/lock:
+    post:
+      operationId: lockOwnershipPercentage
+      summary: Lock a portion of a partner's ownership (admin only)
+      tags: [PartnerOwnershipState]
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema: { type: string, format: uuid }
+        - in: path
+          name: partnerId
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [lockPercentage, lockReason]
+              properties:
+                lockPercentage: { type: number }
+                lockReason: { type: string }
+      responses:
+        "200":
+          description: Updated state
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PartnerOwnershipState" }
+        "404": { description: Not found }
+        "422": { description: Insufficient transferable percentage }
+
+  /projects/{projectId}/partner-ownership-states/{partnerId}/unlock:
+    post:
+      operationId: unlockOwnershipPercentage
+      summary: Unlock a portion of a partner's locked ownership (admin only)
+      tags: [PartnerOwnershipState]
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema: { type: string, format: uuid }
+        - in: path
+          name: partnerId
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [unlockPercentage, reason]
+              properties:
+                unlockPercentage: { type: number }
+                reason: { type: string }
+      responses:
+        "200":
+          description: Updated state
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PartnerOwnershipState" }
+        "404": { description: Not found }
+        "422": { description: Cannot unlock more than locked }
+
+  /held-distributions:
+    get:
+      operationId: listHeldDistributions
+      summary: List held distribution entries
+      tags: [HeldDistributions]
+      parameters:
+        - in: query
+          name: projectId
+          schema: { type: string, format: uuid }
+        - in: query
+          name: partnerId
+          schema: { type: string, format: uuid }
+        - in: query
+          name: status
+          schema: { type: string, enum: [held, released, forfeited] }
+      responses:
+        "200":
+          description: Held distribution entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/HeldDistributionEntry" }
+    post:
+      operationId: createHeldDistribution
+      summary: Create a held distribution entry
+      tags: [HeldDistributions]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateHeldDistributionBody" }
+      responses:
+        "201":
+          description: Created entry
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HeldDistributionEntry" }
+        "400": { description: Validation error }
+        "404": { description: Project or partner not found }
+
+  /held-distributions/summary:
+    get:
+      operationId: getHeldDistributionSummary
+      summary: Get aggregate held distribution totals by project and partner
+      tags: [HeldDistributions]
+      parameters:
+        - in: query
+          name: projectId
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Summary rows
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required: [projectId, partnerId, partnerName, totalHeld, entryCount]
+                  properties:
+                    projectId: { type: string, format: uuid }
+                    partnerId: { type: string, format: uuid }
+                    partnerName: { type: string }
+                    totalHeld: { type: number }
+                    entryCount: { type: integer }
+
+  /held-distributions/{id}:
+    get:
+      operationId: getHeldDistribution
+      summary: Get a single held distribution entry
+      tags: [HeldDistributions]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Entry
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HeldDistributionEntry" }
+        "404": { description: Not found }
+
+  /held-distributions/{id}/release:
+    post:
+      operationId: releaseHeldDistribution
+      summary: Release a held distribution amount
+      tags: [HeldDistributions]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [releasedAmount, releasedTo, releaseNotes]
+              properties:
+                releasedAmount: { type: number }
+                releasedTo:
+                  type: string
+                  enum: [original_partner, dispute_settlement, alternative_party, forfeited]
+                releaseNotes: { type: string }
+                forfeited: { type: boolean }
+      responses:
+        "200":
+          description: Released entry
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HeldDistributionEntry" }
+        "404": { description: Not found }
+        "409": { description: Already released or forfeited }
+        "422": { description: Released amount exceeds held amount }
+
   /ownership-transfers:
     get:
       operationId: listOwnershipTransfers
@@ -12539,6 +12898,19 @@ components:
         isActive: { type: boolean }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
+        # ── Transfer mode & financial concepts ──────────────────────────────
+        transferMode: { type: string, enum: [by_percentage, by_value], nullable: true }
+        transferValue: { type: string, nullable: true }
+        payableAmount: { type: string, nullable: true }
+        paidAmount: { type: string, nullable: true }
+        effectiveDate: { type: string, format: date, nullable: true }
+        linkedValuationRunId: { type: string, format: uuid, nullable: true }
+        # ── Stock entitlement ────────────────────────────────────────────────
+        stockEntitlementHandling: { type: string, enum: [retain_with_seller, transfer_to_buyer], nullable: true }
+        stockEntitlementKg: { type: string, nullable: true }
+        stockEntitlementRetainedKg: { type: string, nullable: true }
+        stockEntitlementTransferredKg: { type: string, nullable: true }
+        stockEntitlementNotes: { type: string, nullable: true }
 
     CreateOwnershipTransferBody:
       type: object
@@ -12554,6 +12926,16 @@ components:
         buyerContact: { type: string, nullable: true }
         reason: { type: string, nullable: true }
         linkedSnapshotId: { type: string, format: uuid, nullable: true }
+        transferMode: { type: string, enum: [by_percentage, by_value], nullable: true }
+        transferValue: { type: number, nullable: true }
+        payableAmount: { type: number, nullable: true }
+        effectiveDate: { type: string, format: date, nullable: true }
+        linkedValuationRunId: { type: string, format: uuid, nullable: true }
+        stockEntitlementHandling: { type: string, enum: [retain_with_seller, transfer_to_buyer], nullable: true }
+        stockEntitlementKg: { type: number, nullable: true }
+        stockEntitlementRetainedKg: { type: number, nullable: true }
+        stockEntitlementTransferredKg: { type: number, nullable: true }
+        stockEntitlementNotes: { type: string, nullable: true }
 
     UpdateOwnershipTransferBody:
       type: object
@@ -12566,6 +12948,103 @@ components:
         reason: { type: string, nullable: true }
         linkedSnapshotId: { type: string, format: uuid, nullable: true }
         adminNotes: { type: string, nullable: true }
+        transferMode: { type: string, enum: [by_percentage, by_value], nullable: true }
+        transferValue: { type: number, nullable: true }
+        payableAmount: { type: number, nullable: true }
+        paidAmount: { type: number, nullable: true }
+        effectiveDate: { type: string, format: date, nullable: true }
+        linkedValuationRunId: { type: string, format: uuid, nullable: true }
+        stockEntitlementHandling: { type: string, enum: [retain_with_seller, transfer_to_buyer], nullable: true }
+        stockEntitlementKg: { type: number, nullable: true }
+        stockEntitlementRetainedKg: { type: number, nullable: true }
+        stockEntitlementTransferredKg: { type: number, nullable: true }
+        stockEntitlementNotes: { type: string, nullable: true }
+
+    PartnerOwnershipState:
+      type: object
+      required: [id, projectId, partnerId, partnerName, totalPercentage, transferablePercentage, lockedPercentage, disputedPercentage, reservedPercentage, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        partnerId: { type: string, format: uuid }
+        partnerName: { type: string }
+        totalPercentage: { type: string }
+        transferablePercentage: { type: string }
+        lockedPercentage: { type: string }
+        disputedPercentage: { type: string }
+        reservedPercentage: { type: string }
+        disputeReason: { type: string, nullable: true }
+        disputedSince: { type: string, format: date-time, nullable: true }
+        disputeReference: { type: string, nullable: true }
+        lockReason: { type: string, nullable: true }
+        lockedSince: { type: string, format: date-time, nullable: true }
+        notes: { type: string, nullable: true }
+        updatedByName: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    UpsertPartnerOwnershipStateBody:
+      type: object
+      required: [partnerId, totalPercentage, transferablePercentage]
+      properties:
+        partnerId: { type: string, format: uuid }
+        totalPercentage: { type: number }
+        transferablePercentage: { type: number }
+        lockedPercentage: { type: number }
+        disputedPercentage: { type: number }
+        reservedPercentage: { type: number }
+        notes: { type: string, nullable: true }
+
+    HeldDistributionEntry:
+      type: object
+      required: [id, projectId, partnerId, partnerName, holdType, sourceDescription, heldAmount, holdReason, status, releaseNotes, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        partnerId: { type: string, format: uuid }
+        partnerName: { type: string }
+        holdType:
+          type: string
+          enum: [profit_distribution, sale_proceeds, lca_credit, revenue_entitlement, other]
+        sourceId: { type: string, format: uuid, nullable: true }
+        sourceType: { type: string, nullable: true }
+        sourceDescription: { type: string }
+        periodYear: { type: integer, nullable: true }
+        heldAmount: { type: string }
+        ownershipPctAtTime: { type: string, nullable: true }
+        holdReason:
+          type: string
+          enum: [ownership_dispute, payment_dispute, governance_lock, inheritance_pending, admin_hold]
+        holdNotes: { type: string, nullable: true }
+        status: { type: string, enum: [held, released, forfeited] }
+        releasedAt: { type: string, format: date-time, nullable: true }
+        releasedAmount: { type: string, nullable: true }
+        releasedTo: { type: string, nullable: true }
+        releaseNotes: { type: string }
+        releasedByName: { type: string, nullable: true }
+        createdByName: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    CreateHeldDistributionBody:
+      type: object
+      required: [projectId, partnerId, holdType, sourceDescription, heldAmount, holdReason]
+      properties:
+        projectId: { type: string, format: uuid }
+        partnerId: { type: string, format: uuid }
+        holdType:
+          type: string
+          enum: [profit_distribution, sale_proceeds, lca_credit, revenue_entitlement, other]
+        sourceId: { type: string, format: uuid, nullable: true }
+        sourceType: { type: string, nullable: true }
+        sourceDescription: { type: string }
+        periodYear: { type: integer, nullable: true }
+        heldAmount: { type: number }
+        ownershipPctAtTime: { type: number, nullable: true }
+        holdReason:
+          type: string
+          enum: [ownership_dispute, payment_dispute, governance_lock, inheritance_pending, admin_hold]
+        holdNotes: { type: string, nullable: true }
 
     TransferRofrOffer:
       type: object

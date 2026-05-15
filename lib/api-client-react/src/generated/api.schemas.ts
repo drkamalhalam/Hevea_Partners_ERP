@@ -2314,6 +2314,24 @@ export const OwnershipTransferStatus = {
   expired: "expired",
 } as const;
 
+export type OwnershipTransferTransferMode =
+  | (typeof OwnershipTransferTransferMode)[keyof typeof OwnershipTransferTransferMode]
+  | null;
+
+export const OwnershipTransferTransferMode = {
+  by_percentage: "by_percentage",
+  by_value: "by_value",
+} as const;
+
+export type OwnershipTransferStockEntitlementHandling =
+  | (typeof OwnershipTransferStockEntitlementHandling)[keyof typeof OwnershipTransferStockEntitlementHandling]
+  | null;
+
+export const OwnershipTransferStockEntitlementHandling = {
+  retain_with_seller: "retain_with_seller",
+  transfer_to_buyer: "transfer_to_buyer",
+} as const;
+
 export interface OwnershipTransfer {
   id: string;
   projectId: string;
@@ -2350,6 +2368,17 @@ export interface OwnershipTransfer {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  transferMode?: OwnershipTransferTransferMode;
+  transferValue?: string | null;
+  payableAmount?: string | null;
+  paidAmount?: string | null;
+  effectiveDate?: string | null;
+  linkedValuationRunId?: string | null;
+  stockEntitlementHandling?: OwnershipTransferStockEntitlementHandling;
+  stockEntitlementKg?: string | null;
+  stockEntitlementRetainedKg?: string | null;
+  stockEntitlementTransferredKg?: string | null;
+  stockEntitlementNotes?: string | null;
 }
 
 export type CreateOwnershipTransferBodyTransferType =
@@ -2358,6 +2387,24 @@ export type CreateOwnershipTransferBodyTransferType =
 export const CreateOwnershipTransferBodyTransferType = {
   internal: "internal",
   third_party: "third_party",
+} as const;
+
+export type CreateOwnershipTransferBodyTransferMode =
+  | (typeof CreateOwnershipTransferBodyTransferMode)[keyof typeof CreateOwnershipTransferBodyTransferMode]
+  | null;
+
+export const CreateOwnershipTransferBodyTransferMode = {
+  by_percentage: "by_percentage",
+  by_value: "by_value",
+} as const;
+
+export type CreateOwnershipTransferBodyStockEntitlementHandling =
+  | (typeof CreateOwnershipTransferBodyStockEntitlementHandling)[keyof typeof CreateOwnershipTransferBodyStockEntitlementHandling]
+  | null;
+
+export const CreateOwnershipTransferBodyStockEntitlementHandling = {
+  retain_with_seller: "retain_with_seller",
+  transfer_to_buyer: "transfer_to_buyer",
 } as const;
 
 export interface CreateOwnershipTransferBody {
@@ -2371,7 +2418,35 @@ export interface CreateOwnershipTransferBody {
   buyerContact?: string | null;
   reason?: string | null;
   linkedSnapshotId?: string | null;
+  transferMode?: CreateOwnershipTransferBodyTransferMode;
+  transferValue?: number | null;
+  payableAmount?: number | null;
+  effectiveDate?: string | null;
+  linkedValuationRunId?: string | null;
+  stockEntitlementHandling?: CreateOwnershipTransferBodyStockEntitlementHandling;
+  stockEntitlementKg?: number | null;
+  stockEntitlementRetainedKg?: number | null;
+  stockEntitlementTransferredKg?: number | null;
+  stockEntitlementNotes?: string | null;
 }
+
+export type UpdateOwnershipTransferBodyTransferMode =
+  | (typeof UpdateOwnershipTransferBodyTransferMode)[keyof typeof UpdateOwnershipTransferBodyTransferMode]
+  | null;
+
+export const UpdateOwnershipTransferBodyTransferMode = {
+  by_percentage: "by_percentage",
+  by_value: "by_value",
+} as const;
+
+export type UpdateOwnershipTransferBodyStockEntitlementHandling =
+  | (typeof UpdateOwnershipTransferBodyStockEntitlementHandling)[keyof typeof UpdateOwnershipTransferBodyStockEntitlementHandling]
+  | null;
+
+export const UpdateOwnershipTransferBodyStockEntitlementHandling = {
+  retain_with_seller: "retain_with_seller",
+  transfer_to_buyer: "transfer_to_buyer",
+} as const;
 
 export interface UpdateOwnershipTransferBody {
   offeredPercentage?: number | null;
@@ -2382,6 +2457,140 @@ export interface UpdateOwnershipTransferBody {
   reason?: string | null;
   linkedSnapshotId?: string | null;
   adminNotes?: string | null;
+  transferMode?: UpdateOwnershipTransferBodyTransferMode;
+  transferValue?: number | null;
+  payableAmount?: number | null;
+  paidAmount?: number | null;
+  effectiveDate?: string | null;
+  linkedValuationRunId?: string | null;
+  stockEntitlementHandling?: UpdateOwnershipTransferBodyStockEntitlementHandling;
+  stockEntitlementKg?: number | null;
+  stockEntitlementRetainedKg?: number | null;
+  stockEntitlementTransferredKg?: number | null;
+  stockEntitlementNotes?: string | null;
+}
+
+export interface PartnerOwnershipState {
+  id: string;
+  projectId: string;
+  partnerId: string;
+  partnerName: string;
+  totalPercentage: string;
+  transferablePercentage: string;
+  lockedPercentage: string;
+  disputedPercentage: string;
+  reservedPercentage: string;
+  disputeReason?: string | null;
+  disputedSince?: string | null;
+  disputeReference?: string | null;
+  lockReason?: string | null;
+  lockedSince?: string | null;
+  notes?: string | null;
+  updatedByName?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UpsertPartnerOwnershipStateBody {
+  partnerId: string;
+  totalPercentage: number;
+  transferablePercentage: number;
+  lockedPercentage?: number;
+  disputedPercentage?: number;
+  reservedPercentage?: number;
+  notes?: string | null;
+}
+
+export type HeldDistributionEntryHoldType =
+  (typeof HeldDistributionEntryHoldType)[keyof typeof HeldDistributionEntryHoldType];
+
+export const HeldDistributionEntryHoldType = {
+  profit_distribution: "profit_distribution",
+  sale_proceeds: "sale_proceeds",
+  lca_credit: "lca_credit",
+  revenue_entitlement: "revenue_entitlement",
+  other: "other",
+} as const;
+
+export type HeldDistributionEntryHoldReason =
+  (typeof HeldDistributionEntryHoldReason)[keyof typeof HeldDistributionEntryHoldReason];
+
+export const HeldDistributionEntryHoldReason = {
+  ownership_dispute: "ownership_dispute",
+  payment_dispute: "payment_dispute",
+  governance_lock: "governance_lock",
+  inheritance_pending: "inheritance_pending",
+  admin_hold: "admin_hold",
+} as const;
+
+export type HeldDistributionEntryStatus =
+  (typeof HeldDistributionEntryStatus)[keyof typeof HeldDistributionEntryStatus];
+
+export const HeldDistributionEntryStatus = {
+  held: "held",
+  released: "released",
+  forfeited: "forfeited",
+} as const;
+
+export interface HeldDistributionEntry {
+  id: string;
+  projectId: string;
+  partnerId: string;
+  partnerName: string;
+  holdType: HeldDistributionEntryHoldType;
+  sourceId?: string | null;
+  sourceType?: string | null;
+  sourceDescription: string;
+  periodYear?: number | null;
+  heldAmount: string;
+  ownershipPctAtTime?: string | null;
+  holdReason: HeldDistributionEntryHoldReason;
+  holdNotes?: string | null;
+  status: HeldDistributionEntryStatus;
+  releasedAt?: string | null;
+  releasedAmount?: string | null;
+  releasedTo?: string | null;
+  releaseNotes: string;
+  releasedByName?: string | null;
+  createdByName?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CreateHeldDistributionBodyHoldType =
+  (typeof CreateHeldDistributionBodyHoldType)[keyof typeof CreateHeldDistributionBodyHoldType];
+
+export const CreateHeldDistributionBodyHoldType = {
+  profit_distribution: "profit_distribution",
+  sale_proceeds: "sale_proceeds",
+  lca_credit: "lca_credit",
+  revenue_entitlement: "revenue_entitlement",
+  other: "other",
+} as const;
+
+export type CreateHeldDistributionBodyHoldReason =
+  (typeof CreateHeldDistributionBodyHoldReason)[keyof typeof CreateHeldDistributionBodyHoldReason];
+
+export const CreateHeldDistributionBodyHoldReason = {
+  ownership_dispute: "ownership_dispute",
+  payment_dispute: "payment_dispute",
+  governance_lock: "governance_lock",
+  inheritance_pending: "inheritance_pending",
+  admin_hold: "admin_hold",
+} as const;
+
+export interface CreateHeldDistributionBody {
+  projectId: string;
+  partnerId: string;
+  holdType: CreateHeldDistributionBodyHoldType;
+  sourceId?: string | null;
+  sourceType?: string | null;
+  sourceDescription: string;
+  periodYear?: number | null;
+  heldAmount: number;
+  ownershipPctAtTime?: number | null;
+  holdReason: CreateHeldDistributionBodyHoldReason;
+  holdNotes?: string | null;
 }
 
 export type TransferRofrOfferStatus =
@@ -7715,6 +7924,87 @@ export type ListOwnershipSnapshots200 = {
 
 export type CreateOwnershipSnapshotBody = {
   notes?: string;
+};
+
+export type ComputeTransferValueToPercentageBody = {
+  projectId: string;
+  transferValue: number;
+  valuationRunId?: string | null;
+};
+
+export type ComputeTransferValueToPercentage200 = {
+  projectId: string;
+  valuationRunId: string;
+  projectGrossValue: string;
+  transferValue: number;
+  derivedPercentage: number;
+  derivedPercentageFormatted: string;
+  warning?: string | null;
+};
+
+export type MarkOwnershipDisputedBody = {
+  disputedPercentage: number;
+  disputeReason: string;
+  disputeReference?: string | null;
+};
+
+export type ResolveOwnershipDisputeBody = {
+  releasedPercentage: number;
+  resolution: string;
+};
+
+export type LockOwnershipPercentageBody = {
+  lockPercentage: number;
+  lockReason: string;
+};
+
+export type UnlockOwnershipPercentageBody = {
+  unlockPercentage: number;
+  reason: string;
+};
+
+export type ListHeldDistributionsParams = {
+  projectId?: string;
+  partnerId?: string;
+  status?: ListHeldDistributionsStatus;
+};
+
+export type ListHeldDistributionsStatus =
+  (typeof ListHeldDistributionsStatus)[keyof typeof ListHeldDistributionsStatus];
+
+export const ListHeldDistributionsStatus = {
+  held: "held",
+  released: "released",
+  forfeited: "forfeited",
+} as const;
+
+export type GetHeldDistributionSummaryParams = {
+  projectId?: string;
+};
+
+export type GetHeldDistributionSummary200Item = {
+  projectId: string;
+  partnerId: string;
+  partnerName: string;
+  totalHeld: number;
+  entryCount: number;
+};
+
+export type ReleaseHeldDistributionBodyReleasedTo =
+  (typeof ReleaseHeldDistributionBodyReleasedTo)[keyof typeof ReleaseHeldDistributionBodyReleasedTo];
+
+export const ReleaseHeldDistributionBodyReleasedTo = {
+  original_partner: "original_partner",
+  dispute_settlement: "dispute_settlement",
+  alternative_party: "alternative_party",
+  forfeited: "forfeited",
+} as const;
+
+export type ReleaseHeldDistributionBody = {
+  releasedAmount: number;
+  releasedTo: ReleaseHeldDistributionBodyReleasedTo;
+  releaseNotes: string;
+  forfeited?: boolean;
 };
 
 export type ListOwnershipTransfersParams = {

@@ -5,6 +5,8 @@
  * Rubber Plantation Partnership API
  * OpenAPI spec version: 0.1.0
  */
+import type { UpdateOwnershipTransferBodyStockEntitlementHandling } from "./updateOwnershipTransferBodyStockEntitlementHandling";
+import type { UpdateOwnershipTransferBodyTransferMode } from "./updateOwnershipTransferBodyTransferMode";
 
 export interface UpdateOwnershipTransferBody {
   offeredPercentage?: number | null;
@@ -15,4 +17,15 @@ export interface UpdateOwnershipTransferBody {
   reason?: string | null;
   linkedSnapshotId?: string | null;
   adminNotes?: string | null;
+  transferMode?: UpdateOwnershipTransferBodyTransferMode;
+  transferValue?: number | null;
+  payableAmount?: number | null;
+  paidAmount?: number | null;
+  effectiveDate?: Date | null;
+  linkedValuationRunId?: string | null;
+  stockEntitlementHandling?: UpdateOwnershipTransferBodyStockEntitlementHandling;
+  stockEntitlementKg?: number | null;
+  stockEntitlementRetainedKg?: number | null;
+  stockEntitlementTransferredKg?: number | null;
+  stockEntitlementNotes?: string | null;
 }

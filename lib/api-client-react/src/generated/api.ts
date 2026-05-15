@@ -77,6 +77,8 @@ import type {
   ClosureReadiness,
   CompleteStockTransfer200,
   ComputePayableParams,
+  ComputeTransferValueToPercentage200,
+  ComputeTransferValueToPercentageBody,
   ConfirmExpenditureVerificationOtp200,
   ConfirmExpenditureVerificationOtpBody,
   ConfirmFiftyPctSession200,
@@ -115,6 +117,7 @@ import type {
   CreateGovernanceMeetingBody,
   CreateGovernanceResolution201,
   CreateGovernanceResolutionBody,
+  CreateHeldDistributionBody,
   CreateImbalanceEntry201,
   CreateImbalanceEntryBody,
   CreateInheritanceClaim201,
@@ -227,6 +230,8 @@ import type {
   GetExpenditureSummaryParams,
   GetFinancialSummaryParams,
   GetGovernanceMeeting200,
+  GetHeldDistributionSummary200Item,
+  GetHeldDistributionSummaryParams,
   GetImbalancePartnerSummary200,
   GetImbalanceSummaryParams,
   GetInheritanceAnalytics200,
@@ -277,6 +282,7 @@ import type {
   GovernanceHealthReport,
   GovernanceSummary,
   HealthStatus,
+  HeldDistributionEntry,
   ImbalanceSummary,
   ImportValuationProfitRecords200,
   ImportValuationProfitRecordsBody,
@@ -333,6 +339,7 @@ import type {
   ListGovernanceMeetings200,
   ListGovernanceMeetingsParams,
   ListGovernanceResolutions200,
+  ListHeldDistributionsParams,
   ListImbalanceLedger200,
   ListImbalanceLedgerParams,
   ListInheritanceClaimsParams,
@@ -387,6 +394,7 @@ import type {
   ListTransferRofrOffers200,
   ListValuationProfitRecordsParams,
   ListValuationRunsParams,
+  LockOwnershipPercentageBody,
   LookupFiftyPctLcaParams,
   LookupFiftyPctPartnersParams,
   LookupFiftyPctRevenueParams,
@@ -398,6 +406,7 @@ import type {
   MarkBurdenRecordRecoveredBody,
   MarkNotificationRead200,
   MarkNotificationReadBody,
+  MarkOwnershipDisputedBody,
   MaturityBlockers,
   MaturityDeclaration,
   MaturityOtpVerification,
@@ -420,6 +429,7 @@ import type {
   PartnerClaimant,
   PartnerDistributionHistory,
   PartnerInput,
+  PartnerOwnershipState,
   PartnerPortfolio,
   PartnerStatementReport,
   PartnerUpdate,
@@ -462,6 +472,7 @@ import type {
   RejectExpenditureVerificationBody,
   ReleaseAccumulationBody,
   ReleaseAccumulationEntry200,
+  ReleaseHeldDistributionBody,
   ReopenSettlement200,
   ReopenSettlementBody,
   ReportSummary,
@@ -471,6 +482,7 @@ import type {
   RequestUploadUrlBody,
   RequestUploadUrlResponse,
   ResolveContributionDisputeBody,
+  ResolveOwnershipDisputeBody,
   RespondToRofrOfferBody,
   RevenueLookupResult,
   RevenueStats,
@@ -507,6 +519,7 @@ import type {
   TransitionInheritanceClaimStatus200,
   TransitionInheritanceClaimStatusBody,
   TransitionLifecycleBody,
+  UnlockOwnershipPercentageBody,
   UpdateAdvanceBody,
   UpdateAgreementVariablesBody,
   UpdateAlertBody,
@@ -576,6 +589,7 @@ import type {
   UpdateValuationRun200,
   UpdateValuationRunBody,
   UpsertAccountingProfileBody,
+  UpsertPartnerOwnershipStateBody,
   UpsertUserInput,
   UserProfile,
   ValuationPreview,
@@ -11910,6 +11924,1334 @@ export const useCreateOwnershipSnapshot = <
   TContext
 > => {
   return useMutation(getCreateOwnershipSnapshotMutationOptions(options));
+};
+
+/**
+ * @summary Compute equivalent ownership percentage from a transfer value (INR)
+ */
+export const getComputeTransferValueToPercentageUrl = () => {
+  return `/api/valuations/value-to-percentage`;
+};
+
+export const computeTransferValueToPercentage = async (
+  computeTransferValueToPercentageBody: ComputeTransferValueToPercentageBody,
+  options?: RequestInit,
+): Promise<ComputeTransferValueToPercentage200> => {
+  return customFetch<ComputeTransferValueToPercentage200>(
+    getComputeTransferValueToPercentageUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(computeTransferValueToPercentageBody),
+    },
+  );
+};
+
+export const getComputeTransferValueToPercentageMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof computeTransferValueToPercentage>>,
+    TError,
+    { data: BodyType<ComputeTransferValueToPercentageBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof computeTransferValueToPercentage>>,
+  TError,
+  { data: BodyType<ComputeTransferValueToPercentageBody> },
+  TContext
+> => {
+  const mutationKey = ["computeTransferValueToPercentage"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof computeTransferValueToPercentage>>,
+    { data: BodyType<ComputeTransferValueToPercentageBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return computeTransferValueToPercentage(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ComputeTransferValueToPercentageMutationResult = NonNullable<
+  Awaited<ReturnType<typeof computeTransferValueToPercentage>>
+>;
+export type ComputeTransferValueToPercentageMutationBody =
+  BodyType<ComputeTransferValueToPercentageBody>;
+export type ComputeTransferValueToPercentageMutationError = ErrorType<void>;
+
+/**
+ * @summary Compute equivalent ownership percentage from a transfer value (INR)
+ */
+export const useComputeTransferValueToPercentage = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof computeTransferValueToPercentage>>,
+    TError,
+    { data: BodyType<ComputeTransferValueToPercentageBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof computeTransferValueToPercentage>>,
+  TError,
+  { data: BodyType<ComputeTransferValueToPercentageBody> },
+  TContext
+> => {
+  return useMutation(
+    getComputeTransferValueToPercentageMutationOptions(options),
+  );
+};
+
+/**
+ * @summary List ownership state records for all partners in a project
+ */
+export const getListPartnerOwnershipStatesUrl = (projectId: string) => {
+  return `/api/projects/${projectId}/partner-ownership-states`;
+};
+
+export const listPartnerOwnershipStates = async (
+  projectId: string,
+  options?: RequestInit,
+): Promise<PartnerOwnershipState[]> => {
+  return customFetch<PartnerOwnershipState[]>(
+    getListPartnerOwnershipStatesUrl(projectId),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListPartnerOwnershipStatesQueryKey = (projectId: string) => {
+  return [`/api/projects/${projectId}/partner-ownership-states`] as const;
+};
+
+export const getListPartnerOwnershipStatesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listPartnerOwnershipStates>>,
+  TError = ErrorType<void>,
+>(
+  projectId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listPartnerOwnershipStates>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListPartnerOwnershipStatesQueryKey(projectId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listPartnerOwnershipStates>>
+  > = ({ signal }) =>
+    listPartnerOwnershipStates(projectId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!projectId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listPartnerOwnershipStates>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListPartnerOwnershipStatesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listPartnerOwnershipStates>>
+>;
+export type ListPartnerOwnershipStatesQueryError = ErrorType<void>;
+
+/**
+ * @summary List ownership state records for all partners in a project
+ */
+
+export function useListPartnerOwnershipStates<
+  TData = Awaited<ReturnType<typeof listPartnerOwnershipStates>>,
+  TError = ErrorType<void>,
+>(
+  projectId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listPartnerOwnershipStates>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListPartnerOwnershipStatesQueryOptions(
+    projectId,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create or update a partner ownership state record
+ */
+export const getUpsertPartnerOwnershipStateUrl = (projectId: string) => {
+  return `/api/projects/${projectId}/partner-ownership-states/upsert`;
+};
+
+export const upsertPartnerOwnershipState = async (
+  projectId: string,
+  upsertPartnerOwnershipStateBody: UpsertPartnerOwnershipStateBody,
+  options?: RequestInit,
+): Promise<PartnerOwnershipState> => {
+  return customFetch<PartnerOwnershipState>(
+    getUpsertPartnerOwnershipStateUrl(projectId),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(upsertPartnerOwnershipStateBody),
+    },
+  );
+};
+
+export const getUpsertPartnerOwnershipStateMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof upsertPartnerOwnershipState>>,
+    TError,
+    { projectId: string; data: BodyType<UpsertPartnerOwnershipStateBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof upsertPartnerOwnershipState>>,
+  TError,
+  { projectId: string; data: BodyType<UpsertPartnerOwnershipStateBody> },
+  TContext
+> => {
+  const mutationKey = ["upsertPartnerOwnershipState"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof upsertPartnerOwnershipState>>,
+    { projectId: string; data: BodyType<UpsertPartnerOwnershipStateBody> }
+  > = (props) => {
+    const { projectId, data } = props ?? {};
+
+    return upsertPartnerOwnershipState(projectId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpsertPartnerOwnershipStateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof upsertPartnerOwnershipState>>
+>;
+export type UpsertPartnerOwnershipStateMutationBody =
+  BodyType<UpsertPartnerOwnershipStateBody>;
+export type UpsertPartnerOwnershipStateMutationError = ErrorType<void>;
+
+/**
+ * @summary Create or update a partner ownership state record
+ */
+export const useUpsertPartnerOwnershipState = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof upsertPartnerOwnershipState>>,
+    TError,
+    { projectId: string; data: BodyType<UpsertPartnerOwnershipStateBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof upsertPartnerOwnershipState>>,
+  TError,
+  { projectId: string; data: BodyType<UpsertPartnerOwnershipStateBody> },
+  TContext
+> => {
+  return useMutation(getUpsertPartnerOwnershipStateMutationOptions(options));
+};
+
+/**
+ * @summary Get a single partner's ownership state record
+ */
+export const getGetPartnerOwnershipStateUrl = (
+  projectId: string,
+  partnerId: string,
+) => {
+  return `/api/projects/${projectId}/partner-ownership-states/${partnerId}`;
+};
+
+export const getPartnerOwnershipState = async (
+  projectId: string,
+  partnerId: string,
+  options?: RequestInit,
+): Promise<PartnerOwnershipState> => {
+  return customFetch<PartnerOwnershipState>(
+    getGetPartnerOwnershipStateUrl(projectId, partnerId),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetPartnerOwnershipStateQueryKey = (
+  projectId: string,
+  partnerId: string,
+) => {
+  return [
+    `/api/projects/${projectId}/partner-ownership-states/${partnerId}`,
+  ] as const;
+};
+
+export const getGetPartnerOwnershipStateQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPartnerOwnershipState>>,
+  TError = ErrorType<void>,
+>(
+  projectId: string,
+  partnerId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPartnerOwnershipState>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getGetPartnerOwnershipStateQueryKey(projectId, partnerId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getPartnerOwnershipState>>
+  > = ({ signal }) =>
+    getPartnerOwnershipState(projectId, partnerId, {
+      signal,
+      ...requestOptions,
+    });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!(projectId && partnerId),
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPartnerOwnershipState>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPartnerOwnershipStateQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPartnerOwnershipState>>
+>;
+export type GetPartnerOwnershipStateQueryError = ErrorType<void>;
+
+/**
+ * @summary Get a single partner's ownership state record
+ */
+
+export function useGetPartnerOwnershipState<
+  TData = Awaited<ReturnType<typeof getPartnerOwnershipState>>,
+  TError = ErrorType<void>,
+>(
+  projectId: string,
+  partnerId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPartnerOwnershipState>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPartnerOwnershipStateQueryOptions(
+    projectId,
+    partnerId,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Mark a portion of a partner's ownership as disputed
+ */
+export const getMarkOwnershipDisputedUrl = (
+  projectId: string,
+  partnerId: string,
+) => {
+  return `/api/projects/${projectId}/partner-ownership-states/${partnerId}/dispute`;
+};
+
+export const markOwnershipDisputed = async (
+  projectId: string,
+  partnerId: string,
+  markOwnershipDisputedBody: MarkOwnershipDisputedBody,
+  options?: RequestInit,
+): Promise<PartnerOwnershipState> => {
+  return customFetch<PartnerOwnershipState>(
+    getMarkOwnershipDisputedUrl(projectId, partnerId),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(markOwnershipDisputedBody),
+    },
+  );
+};
+
+export const getMarkOwnershipDisputedMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof markOwnershipDisputed>>,
+    TError,
+    {
+      projectId: string;
+      partnerId: string;
+      data: BodyType<MarkOwnershipDisputedBody>;
+    },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof markOwnershipDisputed>>,
+  TError,
+  {
+    projectId: string;
+    partnerId: string;
+    data: BodyType<MarkOwnershipDisputedBody>;
+  },
+  TContext
+> => {
+  const mutationKey = ["markOwnershipDisputed"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof markOwnershipDisputed>>,
+    {
+      projectId: string;
+      partnerId: string;
+      data: BodyType<MarkOwnershipDisputedBody>;
+    }
+  > = (props) => {
+    const { projectId, partnerId, data } = props ?? {};
+
+    return markOwnershipDisputed(projectId, partnerId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type MarkOwnershipDisputedMutationResult = NonNullable<
+  Awaited<ReturnType<typeof markOwnershipDisputed>>
+>;
+export type MarkOwnershipDisputedMutationBody =
+  BodyType<MarkOwnershipDisputedBody>;
+export type MarkOwnershipDisputedMutationError = ErrorType<void>;
+
+/**
+ * @summary Mark a portion of a partner's ownership as disputed
+ */
+export const useMarkOwnershipDisputed = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof markOwnershipDisputed>>,
+    TError,
+    {
+      projectId: string;
+      partnerId: string;
+      data: BodyType<MarkOwnershipDisputedBody>;
+    },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof markOwnershipDisputed>>,
+  TError,
+  {
+    projectId: string;
+    partnerId: string;
+    data: BodyType<MarkOwnershipDisputedBody>;
+  },
+  TContext
+> => {
+  return useMutation(getMarkOwnershipDisputedMutationOptions(options));
+};
+
+/**
+ * @summary Resolve an active ownership dispute and return % to transferable
+ */
+export const getResolveOwnershipDisputeUrl = (
+  projectId: string,
+  partnerId: string,
+) => {
+  return `/api/projects/${projectId}/partner-ownership-states/${partnerId}/resolve-dispute`;
+};
+
+export const resolveOwnershipDispute = async (
+  projectId: string,
+  partnerId: string,
+  resolveOwnershipDisputeBody: ResolveOwnershipDisputeBody,
+  options?: RequestInit,
+): Promise<PartnerOwnershipState> => {
+  return customFetch<PartnerOwnershipState>(
+    getResolveOwnershipDisputeUrl(projectId, partnerId),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(resolveOwnershipDisputeBody),
+    },
+  );
+};
+
+export const getResolveOwnershipDisputeMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof resolveOwnershipDispute>>,
+    TError,
+    {
+      projectId: string;
+      partnerId: string;
+      data: BodyType<ResolveOwnershipDisputeBody>;
+    },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof resolveOwnershipDispute>>,
+  TError,
+  {
+    projectId: string;
+    partnerId: string;
+    data: BodyType<ResolveOwnershipDisputeBody>;
+  },
+  TContext
+> => {
+  const mutationKey = ["resolveOwnershipDispute"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof resolveOwnershipDispute>>,
+    {
+      projectId: string;
+      partnerId: string;
+      data: BodyType<ResolveOwnershipDisputeBody>;
+    }
+  > = (props) => {
+    const { projectId, partnerId, data } = props ?? {};
+
+    return resolveOwnershipDispute(projectId, partnerId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ResolveOwnershipDisputeMutationResult = NonNullable<
+  Awaited<ReturnType<typeof resolveOwnershipDispute>>
+>;
+export type ResolveOwnershipDisputeMutationBody =
+  BodyType<ResolveOwnershipDisputeBody>;
+export type ResolveOwnershipDisputeMutationError = ErrorType<void>;
+
+/**
+ * @summary Resolve an active ownership dispute and return % to transferable
+ */
+export const useResolveOwnershipDispute = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof resolveOwnershipDispute>>,
+    TError,
+    {
+      projectId: string;
+      partnerId: string;
+      data: BodyType<ResolveOwnershipDisputeBody>;
+    },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof resolveOwnershipDispute>>,
+  TError,
+  {
+    projectId: string;
+    partnerId: string;
+    data: BodyType<ResolveOwnershipDisputeBody>;
+  },
+  TContext
+> => {
+  return useMutation(getResolveOwnershipDisputeMutationOptions(options));
+};
+
+/**
+ * @summary Lock a portion of a partner's ownership (admin only)
+ */
+export const getLockOwnershipPercentageUrl = (
+  projectId: string,
+  partnerId: string,
+) => {
+  return `/api/projects/${projectId}/partner-ownership-states/${partnerId}/lock`;
+};
+
+export const lockOwnershipPercentage = async (
+  projectId: string,
+  partnerId: string,
+  lockOwnershipPercentageBody: LockOwnershipPercentageBody,
+  options?: RequestInit,
+): Promise<PartnerOwnershipState> => {
+  return customFetch<PartnerOwnershipState>(
+    getLockOwnershipPercentageUrl(projectId, partnerId),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(lockOwnershipPercentageBody),
+    },
+  );
+};
+
+export const getLockOwnershipPercentageMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof lockOwnershipPercentage>>,
+    TError,
+    {
+      projectId: string;
+      partnerId: string;
+      data: BodyType<LockOwnershipPercentageBody>;
+    },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof lockOwnershipPercentage>>,
+  TError,
+  {
+    projectId: string;
+    partnerId: string;
+    data: BodyType<LockOwnershipPercentageBody>;
+  },
+  TContext
+> => {
+  const mutationKey = ["lockOwnershipPercentage"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof lockOwnershipPercentage>>,
+    {
+      projectId: string;
+      partnerId: string;
+      data: BodyType<LockOwnershipPercentageBody>;
+    }
+  > = (props) => {
+    const { projectId, partnerId, data } = props ?? {};
+
+    return lockOwnershipPercentage(projectId, partnerId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type LockOwnershipPercentageMutationResult = NonNullable<
+  Awaited<ReturnType<typeof lockOwnershipPercentage>>
+>;
+export type LockOwnershipPercentageMutationBody =
+  BodyType<LockOwnershipPercentageBody>;
+export type LockOwnershipPercentageMutationError = ErrorType<void>;
+
+/**
+ * @summary Lock a portion of a partner's ownership (admin only)
+ */
+export const useLockOwnershipPercentage = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof lockOwnershipPercentage>>,
+    TError,
+    {
+      projectId: string;
+      partnerId: string;
+      data: BodyType<LockOwnershipPercentageBody>;
+    },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof lockOwnershipPercentage>>,
+  TError,
+  {
+    projectId: string;
+    partnerId: string;
+    data: BodyType<LockOwnershipPercentageBody>;
+  },
+  TContext
+> => {
+  return useMutation(getLockOwnershipPercentageMutationOptions(options));
+};
+
+/**
+ * @summary Unlock a portion of a partner's locked ownership (admin only)
+ */
+export const getUnlockOwnershipPercentageUrl = (
+  projectId: string,
+  partnerId: string,
+) => {
+  return `/api/projects/${projectId}/partner-ownership-states/${partnerId}/unlock`;
+};
+
+export const unlockOwnershipPercentage = async (
+  projectId: string,
+  partnerId: string,
+  unlockOwnershipPercentageBody: UnlockOwnershipPercentageBody,
+  options?: RequestInit,
+): Promise<PartnerOwnershipState> => {
+  return customFetch<PartnerOwnershipState>(
+    getUnlockOwnershipPercentageUrl(projectId, partnerId),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(unlockOwnershipPercentageBody),
+    },
+  );
+};
+
+export const getUnlockOwnershipPercentageMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof unlockOwnershipPercentage>>,
+    TError,
+    {
+      projectId: string;
+      partnerId: string;
+      data: BodyType<UnlockOwnershipPercentageBody>;
+    },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof unlockOwnershipPercentage>>,
+  TError,
+  {
+    projectId: string;
+    partnerId: string;
+    data: BodyType<UnlockOwnershipPercentageBody>;
+  },
+  TContext
+> => {
+  const mutationKey = ["unlockOwnershipPercentage"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof unlockOwnershipPercentage>>,
+    {
+      projectId: string;
+      partnerId: string;
+      data: BodyType<UnlockOwnershipPercentageBody>;
+    }
+  > = (props) => {
+    const { projectId, partnerId, data } = props ?? {};
+
+    return unlockOwnershipPercentage(
+      projectId,
+      partnerId,
+      data,
+      requestOptions,
+    );
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UnlockOwnershipPercentageMutationResult = NonNullable<
+  Awaited<ReturnType<typeof unlockOwnershipPercentage>>
+>;
+export type UnlockOwnershipPercentageMutationBody =
+  BodyType<UnlockOwnershipPercentageBody>;
+export type UnlockOwnershipPercentageMutationError = ErrorType<void>;
+
+/**
+ * @summary Unlock a portion of a partner's locked ownership (admin only)
+ */
+export const useUnlockOwnershipPercentage = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof unlockOwnershipPercentage>>,
+    TError,
+    {
+      projectId: string;
+      partnerId: string;
+      data: BodyType<UnlockOwnershipPercentageBody>;
+    },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof unlockOwnershipPercentage>>,
+  TError,
+  {
+    projectId: string;
+    partnerId: string;
+    data: BodyType<UnlockOwnershipPercentageBody>;
+  },
+  TContext
+> => {
+  return useMutation(getUnlockOwnershipPercentageMutationOptions(options));
+};
+
+/**
+ * @summary List held distribution entries
+ */
+export const getListHeldDistributionsUrl = (
+  params?: ListHeldDistributionsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/held-distributions?${stringifiedParams}`
+    : `/api/held-distributions`;
+};
+
+export const listHeldDistributions = async (
+  params?: ListHeldDistributionsParams,
+  options?: RequestInit,
+): Promise<HeldDistributionEntry[]> => {
+  return customFetch<HeldDistributionEntry[]>(
+    getListHeldDistributionsUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListHeldDistributionsQueryKey = (
+  params?: ListHeldDistributionsParams,
+) => {
+  return [`/api/held-distributions`, ...(params ? [params] : [])] as const;
+};
+
+export const getListHeldDistributionsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listHeldDistributions>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListHeldDistributionsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listHeldDistributions>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListHeldDistributionsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listHeldDistributions>>
+  > = ({ signal }) =>
+    listHeldDistributions(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listHeldDistributions>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListHeldDistributionsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listHeldDistributions>>
+>;
+export type ListHeldDistributionsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List held distribution entries
+ */
+
+export function useListHeldDistributions<
+  TData = Awaited<ReturnType<typeof listHeldDistributions>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListHeldDistributionsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listHeldDistributions>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListHeldDistributionsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a held distribution entry
+ */
+export const getCreateHeldDistributionUrl = () => {
+  return `/api/held-distributions`;
+};
+
+export const createHeldDistribution = async (
+  createHeldDistributionBody: CreateHeldDistributionBody,
+  options?: RequestInit,
+): Promise<HeldDistributionEntry> => {
+  return customFetch<HeldDistributionEntry>(getCreateHeldDistributionUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createHeldDistributionBody),
+  });
+};
+
+export const getCreateHeldDistributionMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createHeldDistribution>>,
+    TError,
+    { data: BodyType<CreateHeldDistributionBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createHeldDistribution>>,
+  TError,
+  { data: BodyType<CreateHeldDistributionBody> },
+  TContext
+> => {
+  const mutationKey = ["createHeldDistribution"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createHeldDistribution>>,
+    { data: BodyType<CreateHeldDistributionBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createHeldDistribution(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateHeldDistributionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createHeldDistribution>>
+>;
+export type CreateHeldDistributionMutationBody =
+  BodyType<CreateHeldDistributionBody>;
+export type CreateHeldDistributionMutationError = ErrorType<void>;
+
+/**
+ * @summary Create a held distribution entry
+ */
+export const useCreateHeldDistribution = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createHeldDistribution>>,
+    TError,
+    { data: BodyType<CreateHeldDistributionBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createHeldDistribution>>,
+  TError,
+  { data: BodyType<CreateHeldDistributionBody> },
+  TContext
+> => {
+  return useMutation(getCreateHeldDistributionMutationOptions(options));
+};
+
+/**
+ * @summary Get aggregate held distribution totals by project and partner
+ */
+export const getGetHeldDistributionSummaryUrl = (
+  params?: GetHeldDistributionSummaryParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/held-distributions/summary?${stringifiedParams}`
+    : `/api/held-distributions/summary`;
+};
+
+export const getHeldDistributionSummary = async (
+  params?: GetHeldDistributionSummaryParams,
+  options?: RequestInit,
+): Promise<GetHeldDistributionSummary200Item[]> => {
+  return customFetch<GetHeldDistributionSummary200Item[]>(
+    getGetHeldDistributionSummaryUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetHeldDistributionSummaryQueryKey = (
+  params?: GetHeldDistributionSummaryParams,
+) => {
+  return [
+    `/api/held-distributions/summary`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetHeldDistributionSummaryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getHeldDistributionSummary>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetHeldDistributionSummaryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getHeldDistributionSummary>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetHeldDistributionSummaryQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getHeldDistributionSummary>>
+  > = ({ signal }) =>
+    getHeldDistributionSummary(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getHeldDistributionSummary>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetHeldDistributionSummaryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getHeldDistributionSummary>>
+>;
+export type GetHeldDistributionSummaryQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get aggregate held distribution totals by project and partner
+ */
+
+export function useGetHeldDistributionSummary<
+  TData = Awaited<ReturnType<typeof getHeldDistributionSummary>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetHeldDistributionSummaryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getHeldDistributionSummary>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetHeldDistributionSummaryQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get a single held distribution entry
+ */
+export const getGetHeldDistributionUrl = (id: string) => {
+  return `/api/held-distributions/${id}`;
+};
+
+export const getHeldDistribution = async (
+  id: string,
+  options?: RequestInit,
+): Promise<HeldDistributionEntry> => {
+  return customFetch<HeldDistributionEntry>(getGetHeldDistributionUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetHeldDistributionQueryKey = (id: string) => {
+  return [`/api/held-distributions/${id}`] as const;
+};
+
+export const getGetHeldDistributionQueryOptions = <
+  TData = Awaited<ReturnType<typeof getHeldDistribution>>,
+  TError = ErrorType<void>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getHeldDistribution>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetHeldDistributionQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getHeldDistribution>>
+  > = ({ signal }) => getHeldDistribution(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getHeldDistribution>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetHeldDistributionQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getHeldDistribution>>
+>;
+export type GetHeldDistributionQueryError = ErrorType<void>;
+
+/**
+ * @summary Get a single held distribution entry
+ */
+
+export function useGetHeldDistribution<
+  TData = Awaited<ReturnType<typeof getHeldDistribution>>,
+  TError = ErrorType<void>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getHeldDistribution>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetHeldDistributionQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Release a held distribution amount
+ */
+export const getReleaseHeldDistributionUrl = (id: string) => {
+  return `/api/held-distributions/${id}/release`;
+};
+
+export const releaseHeldDistribution = async (
+  id: string,
+  releaseHeldDistributionBody: ReleaseHeldDistributionBody,
+  options?: RequestInit,
+): Promise<HeldDistributionEntry> => {
+  return customFetch<HeldDistributionEntry>(getReleaseHeldDistributionUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(releaseHeldDistributionBody),
+  });
+};
+
+export const getReleaseHeldDistributionMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof releaseHeldDistribution>>,
+    TError,
+    { id: string; data: BodyType<ReleaseHeldDistributionBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof releaseHeldDistribution>>,
+  TError,
+  { id: string; data: BodyType<ReleaseHeldDistributionBody> },
+  TContext
+> => {
+  const mutationKey = ["releaseHeldDistribution"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof releaseHeldDistribution>>,
+    { id: string; data: BodyType<ReleaseHeldDistributionBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return releaseHeldDistribution(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ReleaseHeldDistributionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof releaseHeldDistribution>>
+>;
+export type ReleaseHeldDistributionMutationBody =
+  BodyType<ReleaseHeldDistributionBody>;
+export type ReleaseHeldDistributionMutationError = ErrorType<void>;
+
+/**
+ * @summary Release a held distribution amount
+ */
+export const useReleaseHeldDistribution = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof releaseHeldDistribution>>,
+    TError,
+    { id: string; data: BodyType<ReleaseHeldDistributionBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof releaseHeldDistribution>>,
+  TError,
+  { id: string; data: BodyType<ReleaseHeldDistributionBody> },
+  TContext
+> => {
+  return useMutation(getReleaseHeldDistributionMutationOptions(options));
 };
 
 /**

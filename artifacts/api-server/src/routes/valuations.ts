@@ -450,6 +450,78 @@ router.delete(
   },
 );
 
+// ── POST /valuations/value-to-percentage ─────────────────────────────────
+// Given a transfer value (INR), compute the equivalent ownership percentage
+// using the specified or latest-final valuation run for the project.
+// Formula: percentage = (transferValue / projectGrossValue) × 100
+
+router.post("/value-to-percentage", requireSettlementAccess, async (req, res) => {
+  const schema = z.object({
+    projectId: z.string().uuid(),
+    transferValue: z.number().positive(),
+    valuationRunId: z.string().uuid().optional().nullable(),
+  });
+  const parsed = schema.safeParse(req.body);
+  if (!parsed.success)
+    return res.status(400).json({ error: "Validation failed", issues: parsed.error.issues });
+
+  const { projectId, transferValue, valuationRunId } = parsed.data;
+
+  let run: typeof valuationRunsTable.$inferSelect | undefined;
+
+  if (valuationRunId) {
+    const rows = await db
+      .select()
+      .from(valuationRunsTable)
+      .where(
+        and(
+          eq(valuationRunsTable.id, valuationRunId),
+          eq(valuationRunsTable.projectId, projectId),
+        ),
+      )
+      .limit(1);
+    run = rows[0];
+    if (!run) return res.status(404).json({ error: "Valuation run not found for this project" });
+  } else {
+    // Use the most recent final run for this project
+    const rows = await db
+      .select()
+      .from(valuationRunsTable)
+      .where(
+        and(
+          eq(valuationRunsTable.projectId, projectId),
+          eq(valuationRunsTable.status, "final"),
+        ),
+      )
+      .orderBy(desc(valuationRunsTable.createdAt))
+      .limit(1);
+    run = rows[0];
+    if (!run)
+      return res.status(422).json({
+        error: "No final valuation run found for this project. Create and finalise a valuation run first.",
+      });
+  }
+
+  const projectGrossValue = parseFloat(run.projectGrossValue);
+  if (!projectGrossValue || projectGrossValue <= 0)
+    return res.status(422).json({ error: "Valuation run has an invalid projectGrossValue — cannot compute percentage" });
+
+  const percentage = (transferValue / projectGrossValue) * 100;
+
+  return res.json({
+    projectId,
+    valuationRunId: run.id,
+    projectGrossValue: run.projectGrossValue,
+    transferValue,
+    derivedPercentage: percentage,
+    derivedPercentageFormatted: percentage.toFixed(8),
+    warning:
+      percentage > 100
+        ? "Derived percentage exceeds 100% — the transfer value is greater than the total project gross value"
+        : null,
+  });
+});
+
 // ── POST /valuations ──────────────────────────────────────────────────────
 
 router.post("/", requireRole("admin", "developer"), async (req, res) => {

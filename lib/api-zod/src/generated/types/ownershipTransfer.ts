@@ -6,6 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { OwnershipTransferStatus } from "./ownershipTransferStatus";
+import type { OwnershipTransferStockEntitlementHandling } from "./ownershipTransferStockEntitlementHandling";
+import type { OwnershipTransferTransferMode } from "./ownershipTransferTransferMode";
 import type { OwnershipTransferTransferType } from "./ownershipTransferTransferType";
 import type { RofrResponse } from "./rofrResponse";
 
@@ -45,4 +47,15 @@ export interface OwnershipTransfer {
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
+  transferMode?: OwnershipTransferTransferMode;
+  transferValue?: string | null;
+  payableAmount?: string | null;
+  paidAmount?: string | null;
+  effectiveDate?: Date | null;
+  linkedValuationRunId?: string | null;
+  stockEntitlementHandling?: OwnershipTransferStockEntitlementHandling;
+  stockEntitlementKg?: string | null;
+  stockEntitlementRetainedKg?: string | null;
+  stockEntitlementTransferredKg?: string | null;
+  stockEntitlementNotes?: string | null;
 }

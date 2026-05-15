@@ -222,6 +222,12 @@ export default function OwnershipTransfers() {
   const [wBuyerContact, setWBuyerContact] = useState("");
   const [wReason, setWReason] = useState("");
   const [wSnapshotId, setWSnapshotId] = useState("");
+  // New extended fields
+  const [wTransferMode, setWTransferMode] = useState<"by_percentage" | "by_value">("by_percentage");
+  const [wTransferValue, setWTransferValue] = useState("");
+  const [wPayableAmount, setWPayableAmount] = useState("");
+  const [wEffectiveDate, setWEffectiveDate] = useState("");
+  const [wStockHandling, setWStockHandling] = useState<"" | "retain_with_seller" | "transfer_to_buyer">("");
 
   // Action dialogs
   const [showSubmit, setShowSubmit] = useState(false);
@@ -302,6 +308,8 @@ export default function OwnershipTransfers() {
     setWProjectId(""); setWTransferorId(""); setWPct(""); setWValue("");
     setWType("internal"); setWBuyerPartnerId(""); setWBuyerName("");
     setWBuyerContact(""); setWReason(""); setWSnapshotId("");
+    setWTransferMode("by_percentage"); setWTransferValue(""); setWPayableAmount("");
+    setWEffectiveDate(""); setWStockHandling("");
     setActionError("");
   }
 
@@ -331,6 +339,11 @@ export default function OwnershipTransfers() {
           buyerContact: wBuyerContact || undefined,
           reason: wReason || undefined,
           linkedSnapshotId: wSnapshotId || undefined,
+          transferMode: wTransferMode,
+          transferValue: wTransferValue ? parseFloat(wTransferValue) : undefined,
+          payableAmount: wPayableAmount ? parseFloat(wPayableAmount) : undefined,
+          effectiveDate: wEffectiveDate || undefined,
+          stockEntitlementHandling: (wStockHandling as any) || undefined,
         },
       });
       invalidate();
@@ -727,6 +740,70 @@ export default function OwnershipTransfers() {
                 placeholder="State your reason for the transfer..."
                 className="bg-slate-900/60 border-slate-700 text-slate-100 placeholder:text-slate-600 resize-none" />
             </div>
+            {/* ── Extended fields ─────────────────────────────────────────── */}
+            <div className="border-t border-slate-800 pt-4 space-y-4">
+              <p className="text-slate-500 text-xs font-medium uppercase tracking-wide">Financial Structure (optional)</p>
+              <div>
+                <Label className="text-slate-300 mb-1 block">Transfer Mode</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { value: "by_percentage", label: "By Percentage", desc: "You specify the % directly above." },
+                    { value: "by_value", label: "By Value", desc: "Enter a transfer value — admin will derive the %." },
+                  ].map(opt => (
+                    <button key={opt.value} type="button"
+                      onClick={() => setWTransferMode(opt.value as any)}
+                      className={`text-left p-3 rounded-xl border-2 transition-all ${wTransferMode === opt.value ? "border-blue-500 bg-blue-950/40" : "border-slate-700 bg-slate-900/40 hover:border-slate-600"}`}>
+                      <p className={`text-sm font-medium ${wTransferMode === opt.value ? "text-blue-300" : "text-slate-200"}`}>{opt.label}</p>
+                      <p className="text-slate-500 text-xs mt-0.5">{opt.desc}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-slate-300 mb-1 block">Transfer Value (₹)
+                    <span className="text-slate-500 text-xs ml-1">(valuation basis)</span>
+                  </Label>
+                  <div className="relative">
+                    <Input value={wTransferValue} onChange={e => setWTransferValue(e.target.value)} type="number" step="1"
+                      placeholder="Fair value basis"
+                      className="bg-slate-900/60 border-slate-700 text-slate-100 pl-8" />
+                    <IndianRupee className="absolute left-2.5 top-2.5 w-4 h-4 text-slate-500" />
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-slate-300 mb-1 block">Payable Amount (₹)
+                    <span className="text-slate-500 text-xs ml-1">(negotiated)</span>
+                  </Label>
+                  <div className="relative">
+                    <Input value={wPayableAmount} onChange={e => setWPayableAmount(e.target.value)} type="number" step="1"
+                      placeholder="Settlement amount"
+                      className="bg-slate-900/60 border-slate-700 text-slate-100 pl-8" />
+                    <IndianRupee className="absolute left-2.5 top-2.5 w-4 h-4 text-slate-500" />
+                  </div>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-slate-300 mb-1 block">Effective Date
+                    <span className="text-slate-500 text-xs ml-1">(when rights transfer)</span>
+                  </Label>
+                  <Input value={wEffectiveDate} onChange={e => setWEffectiveDate(e.target.value)} type="date"
+                    className="bg-slate-900/60 border-slate-700 text-slate-100" />
+                </div>
+                <div>
+                  <Label className="text-slate-300 mb-1 block">Stock Entitlement
+                    <span className="text-slate-500 text-xs ml-1">(pre-transfer stock)</span>
+                  </Label>
+                  <select value={wStockHandling} onChange={e => setWStockHandling(e.target.value as any)}
+                    className="w-full h-10 rounded-md border border-slate-700 bg-slate-900/60 text-slate-200 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">Not configured</option>
+                    <option value="retain_with_seller">Retain with seller</option>
+                    <option value="transfer_to_buyer">Transfer to buyer</option>
+                  </select>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
@@ -785,7 +862,12 @@ export default function OwnershipTransfers() {
               ["Transferor", projectPartners.find((p: any) => p.id === wTransferorId)?.name ?? wTransferorId],
               ["Transfer Type", wType === "third_party" ? "Third Party" : "Internal"],
               ["Offered %", fmt(wPct)],
+              ["Transfer Mode", wTransferMode === "by_value" ? "By Value" : "By Percentage"],
               ["Offered Value", wValue ? fmtInr(wValue) : "Not specified"],
+              ["Transfer Value", wTransferValue ? fmtInr(wTransferValue) : "—"],
+              ["Payable Amount", wPayableAmount ? fmtInr(wPayableAmount) : "—"],
+              ["Effective Date", wEffectiveDate || "On execution"],
+              ["Stock Entitlement", wStockHandling ? wStockHandling.replace(/_/g, " ") : "Not configured"],
               ["Buyer", wBuyerName],
               ["Buyer Contact", wBuyerContact || "—"],
               ["Reason", wReason || "—"],
@@ -892,8 +974,14 @@ export default function OwnershipTransfers() {
               ["Buyer", detail.buyerName],
               ["Buyer Contact", detail.buyerContact ?? "—"],
               ["Type", detail.transferType === "third_party" ? "Third Party" : "Internal"],
+              ["Transfer Mode", (detail as any).transferMode === "by_value" ? "By Value" : "By Percentage"],
               ["Offered %", fmt(detail.offeredPercentage)],
-              ["Offered Value", detail.offeredValue ? fmtInr(detail.offeredValue) : "Not specified"],
+              ["Offered Value", detail.offeredValue ? fmtInr(detail.offeredValue) : "—"],
+              ["Transfer Value", (detail as any).transferValue ? fmtInr((detail as any).transferValue) : "—"],
+              ["Payable Amount", (detail as any).payableAmount ? fmtInr((detail as any).payableAmount) : "—"],
+              ["Paid Amount", (detail as any).paidAmount ? fmtInr((detail as any).paidAmount) : "—"],
+              ["Effective Date", (detail as any).effectiveDate ? fmtDate((detail as any).effectiveDate) : "On execution"],
+              ["Stock Entitlement", (detail as any).stockEntitlementHandling ? ((detail as any).stockEntitlementHandling as string).replace(/_/g, " ") : "—"],
               ["Reason", detail.reason ?? "—"],
             ].map(([k, v]) => (
               <div key={k as string} className="flex justify-between gap-2 text-sm">

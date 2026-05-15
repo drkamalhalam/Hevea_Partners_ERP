@@ -64,3 +64,5 @@ export * from "./prematurity_succession";
 export * from "./governance_meetings";
 export * from "./backup";
 export * from "./multi_store";
+export * from "./partner_ownership_state";
+export * from "./held_distribution_ledger";

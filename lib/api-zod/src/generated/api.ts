@@ -4700,6 +4700,456 @@ export const CreateOwnershipSnapshotBody = zod.object({
 });
 
 /**
+ * @summary Compute equivalent ownership percentage from a transfer value (INR)
+ */
+export const ComputeTransferValueToPercentageBody = zod.object({
+  projectId: zod.string().uuid(),
+  transferValue: zod.number(),
+  valuationRunId: zod.string().uuid().nullish(),
+});
+
+export const ComputeTransferValueToPercentageResponse = zod.object({
+  projectId: zod.string().uuid(),
+  valuationRunId: zod.string().uuid(),
+  projectGrossValue: zod.string(),
+  transferValue: zod.number(),
+  derivedPercentage: zod.number(),
+  derivedPercentageFormatted: zod.string(),
+  warning: zod.string().nullish(),
+});
+
+/**
+ * @summary List ownership state records for all partners in a project
+ */
+export const ListPartnerOwnershipStatesParams = zod.object({
+  projectId: zod.coerce.string().uuid(),
+});
+
+export const ListPartnerOwnershipStatesResponseItem = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  partnerId: zod.string().uuid(),
+  partnerName: zod.string(),
+  totalPercentage: zod.string(),
+  transferablePercentage: zod.string(),
+  lockedPercentage: zod.string(),
+  disputedPercentage: zod.string(),
+  reservedPercentage: zod.string(),
+  disputeReason: zod.string().nullish(),
+  disputedSince: zod.coerce.date().nullish(),
+  disputeReference: zod.string().nullish(),
+  lockReason: zod.string().nullish(),
+  lockedSince: zod.coerce.date().nullish(),
+  notes: zod.string().nullish(),
+  updatedByName: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const ListPartnerOwnershipStatesResponse = zod.array(
+  ListPartnerOwnershipStatesResponseItem,
+);
+
+/**
+ * @summary Create or update a partner ownership state record
+ */
+export const UpsertPartnerOwnershipStateParams = zod.object({
+  projectId: zod.coerce.string().uuid(),
+});
+
+export const UpsertPartnerOwnershipStateBody = zod.object({
+  partnerId: zod.string().uuid(),
+  totalPercentage: zod.number(),
+  transferablePercentage: zod.number(),
+  lockedPercentage: zod.number().optional(),
+  disputedPercentage: zod.number().optional(),
+  reservedPercentage: zod.number().optional(),
+  notes: zod.string().nullish(),
+});
+
+export const UpsertPartnerOwnershipStateResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  partnerId: zod.string().uuid(),
+  partnerName: zod.string(),
+  totalPercentage: zod.string(),
+  transferablePercentage: zod.string(),
+  lockedPercentage: zod.string(),
+  disputedPercentage: zod.string(),
+  reservedPercentage: zod.string(),
+  disputeReason: zod.string().nullish(),
+  disputedSince: zod.coerce.date().nullish(),
+  disputeReference: zod.string().nullish(),
+  lockReason: zod.string().nullish(),
+  lockedSince: zod.coerce.date().nullish(),
+  notes: zod.string().nullish(),
+  updatedByName: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Get a single partner's ownership state record
+ */
+export const GetPartnerOwnershipStateParams = zod.object({
+  projectId: zod.coerce.string().uuid(),
+  partnerId: zod.coerce.string().uuid(),
+});
+
+export const GetPartnerOwnershipStateResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  partnerId: zod.string().uuid(),
+  partnerName: zod.string(),
+  totalPercentage: zod.string(),
+  transferablePercentage: zod.string(),
+  lockedPercentage: zod.string(),
+  disputedPercentage: zod.string(),
+  reservedPercentage: zod.string(),
+  disputeReason: zod.string().nullish(),
+  disputedSince: zod.coerce.date().nullish(),
+  disputeReference: zod.string().nullish(),
+  lockReason: zod.string().nullish(),
+  lockedSince: zod.coerce.date().nullish(),
+  notes: zod.string().nullish(),
+  updatedByName: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Mark a portion of a partner's ownership as disputed
+ */
+export const MarkOwnershipDisputedParams = zod.object({
+  projectId: zod.coerce.string().uuid(),
+  partnerId: zod.coerce.string().uuid(),
+});
+
+export const MarkOwnershipDisputedBody = zod.object({
+  disputedPercentage: zod.number(),
+  disputeReason: zod.string(),
+  disputeReference: zod.string().nullish(),
+});
+
+export const MarkOwnershipDisputedResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  partnerId: zod.string().uuid(),
+  partnerName: zod.string(),
+  totalPercentage: zod.string(),
+  transferablePercentage: zod.string(),
+  lockedPercentage: zod.string(),
+  disputedPercentage: zod.string(),
+  reservedPercentage: zod.string(),
+  disputeReason: zod.string().nullish(),
+  disputedSince: zod.coerce.date().nullish(),
+  disputeReference: zod.string().nullish(),
+  lockReason: zod.string().nullish(),
+  lockedSince: zod.coerce.date().nullish(),
+  notes: zod.string().nullish(),
+  updatedByName: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Resolve an active ownership dispute and return % to transferable
+ */
+export const ResolveOwnershipDisputeParams = zod.object({
+  projectId: zod.coerce.string().uuid(),
+  partnerId: zod.coerce.string().uuid(),
+});
+
+export const ResolveOwnershipDisputeBody = zod.object({
+  releasedPercentage: zod.number(),
+  resolution: zod.string(),
+});
+
+export const ResolveOwnershipDisputeResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  partnerId: zod.string().uuid(),
+  partnerName: zod.string(),
+  totalPercentage: zod.string(),
+  transferablePercentage: zod.string(),
+  lockedPercentage: zod.string(),
+  disputedPercentage: zod.string(),
+  reservedPercentage: zod.string(),
+  disputeReason: zod.string().nullish(),
+  disputedSince: zod.coerce.date().nullish(),
+  disputeReference: zod.string().nullish(),
+  lockReason: zod.string().nullish(),
+  lockedSince: zod.coerce.date().nullish(),
+  notes: zod.string().nullish(),
+  updatedByName: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Lock a portion of a partner's ownership (admin only)
+ */
+export const LockOwnershipPercentageParams = zod.object({
+  projectId: zod.coerce.string().uuid(),
+  partnerId: zod.coerce.string().uuid(),
+});
+
+export const LockOwnershipPercentageBody = zod.object({
+  lockPercentage: zod.number(),
+  lockReason: zod.string(),
+});
+
+export const LockOwnershipPercentageResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  partnerId: zod.string().uuid(),
+  partnerName: zod.string(),
+  totalPercentage: zod.string(),
+  transferablePercentage: zod.string(),
+  lockedPercentage: zod.string(),
+  disputedPercentage: zod.string(),
+  reservedPercentage: zod.string(),
+  disputeReason: zod.string().nullish(),
+  disputedSince: zod.coerce.date().nullish(),
+  disputeReference: zod.string().nullish(),
+  lockReason: zod.string().nullish(),
+  lockedSince: zod.coerce.date().nullish(),
+  notes: zod.string().nullish(),
+  updatedByName: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Unlock a portion of a partner's locked ownership (admin only)
+ */
+export const UnlockOwnershipPercentageParams = zod.object({
+  projectId: zod.coerce.string().uuid(),
+  partnerId: zod.coerce.string().uuid(),
+});
+
+export const UnlockOwnershipPercentageBody = zod.object({
+  unlockPercentage: zod.number(),
+  reason: zod.string(),
+});
+
+export const UnlockOwnershipPercentageResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  partnerId: zod.string().uuid(),
+  partnerName: zod.string(),
+  totalPercentage: zod.string(),
+  transferablePercentage: zod.string(),
+  lockedPercentage: zod.string(),
+  disputedPercentage: zod.string(),
+  reservedPercentage: zod.string(),
+  disputeReason: zod.string().nullish(),
+  disputedSince: zod.coerce.date().nullish(),
+  disputeReference: zod.string().nullish(),
+  lockReason: zod.string().nullish(),
+  lockedSince: zod.coerce.date().nullish(),
+  notes: zod.string().nullish(),
+  updatedByName: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary List held distribution entries
+ */
+export const ListHeldDistributionsQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+  partnerId: zod.coerce.string().uuid().optional(),
+  status: zod.enum(["held", "released", "forfeited"]).optional(),
+});
+
+export const ListHeldDistributionsResponseItem = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  partnerId: zod.string().uuid(),
+  partnerName: zod.string(),
+  holdType: zod.enum([
+    "profit_distribution",
+    "sale_proceeds",
+    "lca_credit",
+    "revenue_entitlement",
+    "other",
+  ]),
+  sourceId: zod.string().uuid().nullish(),
+  sourceType: zod.string().nullish(),
+  sourceDescription: zod.string(),
+  periodYear: zod.number().nullish(),
+  heldAmount: zod.string(),
+  ownershipPctAtTime: zod.string().nullish(),
+  holdReason: zod.enum([
+    "ownership_dispute",
+    "payment_dispute",
+    "governance_lock",
+    "inheritance_pending",
+    "admin_hold",
+  ]),
+  holdNotes: zod.string().nullish(),
+  status: zod.enum(["held", "released", "forfeited"]),
+  releasedAt: zod.coerce.date().nullish(),
+  releasedAmount: zod.string().nullish(),
+  releasedTo: zod.string().nullish(),
+  releaseNotes: zod.string(),
+  releasedByName: zod.string().nullish(),
+  createdByName: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const ListHeldDistributionsResponse = zod.array(
+  ListHeldDistributionsResponseItem,
+);
+
+/**
+ * @summary Create a held distribution entry
+ */
+export const CreateHeldDistributionBody = zod.object({
+  projectId: zod.string().uuid(),
+  partnerId: zod.string().uuid(),
+  holdType: zod.enum([
+    "profit_distribution",
+    "sale_proceeds",
+    "lca_credit",
+    "revenue_entitlement",
+    "other",
+  ]),
+  sourceId: zod.string().uuid().nullish(),
+  sourceType: zod.string().nullish(),
+  sourceDescription: zod.string(),
+  periodYear: zod.number().nullish(),
+  heldAmount: zod.number(),
+  ownershipPctAtTime: zod.number().nullish(),
+  holdReason: zod.enum([
+    "ownership_dispute",
+    "payment_dispute",
+    "governance_lock",
+    "inheritance_pending",
+    "admin_hold",
+  ]),
+  holdNotes: zod.string().nullish(),
+});
+
+/**
+ * @summary Get aggregate held distribution totals by project and partner
+ */
+export const GetHeldDistributionSummaryQueryParams = zod.object({
+  projectId: zod.coerce.string().uuid().optional(),
+});
+
+export const GetHeldDistributionSummaryResponseItem = zod.object({
+  projectId: zod.string().uuid(),
+  partnerId: zod.string().uuid(),
+  partnerName: zod.string(),
+  totalHeld: zod.number(),
+  entryCount: zod.number(),
+});
+export const GetHeldDistributionSummaryResponse = zod.array(
+  GetHeldDistributionSummaryResponseItem,
+);
+
+/**
+ * @summary Get a single held distribution entry
+ */
+export const GetHeldDistributionParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const GetHeldDistributionResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  partnerId: zod.string().uuid(),
+  partnerName: zod.string(),
+  holdType: zod.enum([
+    "profit_distribution",
+    "sale_proceeds",
+    "lca_credit",
+    "revenue_entitlement",
+    "other",
+  ]),
+  sourceId: zod.string().uuid().nullish(),
+  sourceType: zod.string().nullish(),
+  sourceDescription: zod.string(),
+  periodYear: zod.number().nullish(),
+  heldAmount: zod.string(),
+  ownershipPctAtTime: zod.string().nullish(),
+  holdReason: zod.enum([
+    "ownership_dispute",
+    "payment_dispute",
+    "governance_lock",
+    "inheritance_pending",
+    "admin_hold",
+  ]),
+  holdNotes: zod.string().nullish(),
+  status: zod.enum(["held", "released", "forfeited"]),
+  releasedAt: zod.coerce.date().nullish(),
+  releasedAmount: zod.string().nullish(),
+  releasedTo: zod.string().nullish(),
+  releaseNotes: zod.string(),
+  releasedByName: zod.string().nullish(),
+  createdByName: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Release a held distribution amount
+ */
+export const ReleaseHeldDistributionParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const ReleaseHeldDistributionBody = zod.object({
+  releasedAmount: zod.number(),
+  releasedTo: zod.enum([
+    "original_partner",
+    "dispute_settlement",
+    "alternative_party",
+    "forfeited",
+  ]),
+  releaseNotes: zod.string(),
+  forfeited: zod.boolean().optional(),
+});
+
+export const ReleaseHeldDistributionResponse = zod.object({
+  id: zod.string().uuid(),
+  projectId: zod.string().uuid(),
+  partnerId: zod.string().uuid(),
+  partnerName: zod.string(),
+  holdType: zod.enum([
+    "profit_distribution",
+    "sale_proceeds",
+    "lca_credit",
+    "revenue_entitlement",
+    "other",
+  ]),
+  sourceId: zod.string().uuid().nullish(),
+  sourceType: zod.string().nullish(),
+  sourceDescription: zod.string(),
+  periodYear: zod.number().nullish(),
+  heldAmount: zod.string(),
+  ownershipPctAtTime: zod.string().nullish(),
+  holdReason: zod.enum([
+    "ownership_dispute",
+    "payment_dispute",
+    "governance_lock",
+    "inheritance_pending",
+    "admin_hold",
+  ]),
+  holdNotes: zod.string().nullish(),
+  status: zod.enum(["held", "released", "forfeited"]),
+  releasedAt: zod.coerce.date().nullish(),
+  releasedAmount: zod.string().nullish(),
+  releasedTo: zod.string().nullish(),
+  releaseNotes: zod.string(),
+  releasedByName: zod.string().nullish(),
+  createdByName: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
  * @summary List ownership transfer requests
  */
 export const ListOwnershipTransfersQueryParams = zod.object({
@@ -4764,6 +5214,19 @@ export const ListOwnershipTransfersResponse = zod.object({
       isActive: zod.boolean(),
       createdAt: zod.coerce.date(),
       updatedAt: zod.coerce.date(),
+      transferMode: zod.enum(["by_percentage", "by_value"]).nullish(),
+      transferValue: zod.string().nullish(),
+      payableAmount: zod.string().nullish(),
+      paidAmount: zod.string().nullish(),
+      effectiveDate: zod.coerce.date().nullish(),
+      linkedValuationRunId: zod.string().uuid().nullish(),
+      stockEntitlementHandling: zod
+        .enum(["retain_with_seller", "transfer_to_buyer"])
+        .nullish(),
+      stockEntitlementKg: zod.string().nullish(),
+      stockEntitlementRetainedKg: zod.string().nullish(),
+      stockEntitlementTransferredKg: zod.string().nullish(),
+      stockEntitlementNotes: zod.string().nullish(),
     }),
   ),
   total: zod.number(),
@@ -4783,6 +5246,18 @@ export const CreateOwnershipTransferBody = zod.object({
   buyerContact: zod.string().nullish(),
   reason: zod.string().nullish(),
   linkedSnapshotId: zod.string().uuid().nullish(),
+  transferMode: zod.enum(["by_percentage", "by_value"]).nullish(),
+  transferValue: zod.number().nullish(),
+  payableAmount: zod.number().nullish(),
+  effectiveDate: zod.coerce.date().nullish(),
+  linkedValuationRunId: zod.string().uuid().nullish(),
+  stockEntitlementHandling: zod
+    .enum(["retain_with_seller", "transfer_to_buyer"])
+    .nullish(),
+  stockEntitlementKg: zod.number().nullish(),
+  stockEntitlementRetainedKg: zod.number().nullish(),
+  stockEntitlementTransferredKg: zod.number().nullish(),
+  stockEntitlementNotes: zod.string().nullish(),
 });
 
 /**
@@ -4844,6 +5319,19 @@ export const GetOwnershipTransferDashboardResponse = zod.object({
       isActive: zod.boolean(),
       createdAt: zod.coerce.date(),
       updatedAt: zod.coerce.date(),
+      transferMode: zod.enum(["by_percentage", "by_value"]).nullish(),
+      transferValue: zod.string().nullish(),
+      payableAmount: zod.string().nullish(),
+      paidAmount: zod.string().nullish(),
+      effectiveDate: zod.coerce.date().nullish(),
+      linkedValuationRunId: zod.string().uuid().nullish(),
+      stockEntitlementHandling: zod
+        .enum(["retain_with_seller", "transfer_to_buyer"])
+        .nullish(),
+      stockEntitlementKg: zod.string().nullish(),
+      stockEntitlementRetainedKg: zod.string().nullish(),
+      stockEntitlementTransferredKg: zod.string().nullish(),
+      stockEntitlementNotes: zod.string().nullish(),
     }),
   ),
   totalPending: zod.number(),
@@ -4911,6 +5399,19 @@ export const GetOwnershipTransferResponse = zod.object({
   isActive: zod.boolean(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
+  transferMode: zod.enum(["by_percentage", "by_value"]).nullish(),
+  transferValue: zod.string().nullish(),
+  payableAmount: zod.string().nullish(),
+  paidAmount: zod.string().nullish(),
+  effectiveDate: zod.coerce.date().nullish(),
+  linkedValuationRunId: zod.string().uuid().nullish(),
+  stockEntitlementHandling: zod
+    .enum(["retain_with_seller", "transfer_to_buyer"])
+    .nullish(),
+  stockEntitlementKg: zod.string().nullish(),
+  stockEntitlementRetainedKg: zod.string().nullish(),
+  stockEntitlementTransferredKg: zod.string().nullish(),
+  stockEntitlementNotes: zod.string().nullish(),
 });
 
 /**
@@ -4929,6 +5430,19 @@ export const UpdateOwnershipTransferBody = zod.object({
   reason: zod.string().nullish(),
   linkedSnapshotId: zod.string().uuid().nullish(),
   adminNotes: zod.string().nullish(),
+  transferMode: zod.enum(["by_percentage", "by_value"]).nullish(),
+  transferValue: zod.number().nullish(),
+  payableAmount: zod.number().nullish(),
+  paidAmount: zod.number().nullish(),
+  effectiveDate: zod.coerce.date().nullish(),
+  linkedValuationRunId: zod.string().uuid().nullish(),
+  stockEntitlementHandling: zod
+    .enum(["retain_with_seller", "transfer_to_buyer"])
+    .nullish(),
+  stockEntitlementKg: zod.number().nullish(),
+  stockEntitlementRetainedKg: zod.number().nullish(),
+  stockEntitlementTransferredKg: zod.number().nullish(),
+  stockEntitlementNotes: zod.string().nullish(),
 });
 
 export const UpdateOwnershipTransferResponse = zod.object({
@@ -4985,6 +5499,19 @@ export const UpdateOwnershipTransferResponse = zod.object({
   isActive: zod.boolean(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
+  transferMode: zod.enum(["by_percentage", "by_value"]).nullish(),
+  transferValue: zod.string().nullish(),
+  payableAmount: zod.string().nullish(),
+  paidAmount: zod.string().nullish(),
+  effectiveDate: zod.coerce.date().nullish(),
+  linkedValuationRunId: zod.string().uuid().nullish(),
+  stockEntitlementHandling: zod
+    .enum(["retain_with_seller", "transfer_to_buyer"])
+    .nullish(),
+  stockEntitlementKg: zod.string().nullish(),
+  stockEntitlementRetainedKg: zod.string().nullish(),
+  stockEntitlementTransferredKg: zod.string().nullish(),
+  stockEntitlementNotes: zod.string().nullish(),
 });
 
 /**
@@ -5054,6 +5581,19 @@ export const SubmitOwnershipTransferResponse = zod.object({
   isActive: zod.boolean(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
+  transferMode: zod.enum(["by_percentage", "by_value"]).nullish(),
+  transferValue: zod.string().nullish(),
+  payableAmount: zod.string().nullish(),
+  paidAmount: zod.string().nullish(),
+  effectiveDate: zod.coerce.date().nullish(),
+  linkedValuationRunId: zod.string().uuid().nullish(),
+  stockEntitlementHandling: zod
+    .enum(["retain_with_seller", "transfer_to_buyer"])
+    .nullish(),
+  stockEntitlementKg: zod.string().nullish(),
+  stockEntitlementRetainedKg: zod.string().nullish(),
+  stockEntitlementTransferredKg: zod.string().nullish(),
+  stockEntitlementNotes: zod.string().nullish(),
 });
 
 /**
@@ -5124,6 +5664,19 @@ export const RecordRofrResponseResponse = zod.object({
   isActive: zod.boolean(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
+  transferMode: zod.enum(["by_percentage", "by_value"]).nullish(),
+  transferValue: zod.string().nullish(),
+  payableAmount: zod.string().nullish(),
+  paidAmount: zod.string().nullish(),
+  effectiveDate: zod.coerce.date().nullish(),
+  linkedValuationRunId: zod.string().uuid().nullish(),
+  stockEntitlementHandling: zod
+    .enum(["retain_with_seller", "transfer_to_buyer"])
+    .nullish(),
+  stockEntitlementKg: zod.string().nullish(),
+  stockEntitlementRetainedKg: zod.string().nullish(),
+  stockEntitlementTransferredKg: zod.string().nullish(),
+  stockEntitlementNotes: zod.string().nullish(),
 });
 
 /**
@@ -5192,6 +5745,19 @@ export const FinalizeRofrResponse = zod.object({
   isActive: zod.boolean(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
+  transferMode: zod.enum(["by_percentage", "by_value"]).nullish(),
+  transferValue: zod.string().nullish(),
+  payableAmount: zod.string().nullish(),
+  paidAmount: zod.string().nullish(),
+  effectiveDate: zod.coerce.date().nullish(),
+  linkedValuationRunId: zod.string().uuid().nullish(),
+  stockEntitlementHandling: zod
+    .enum(["retain_with_seller", "transfer_to_buyer"])
+    .nullish(),
+  stockEntitlementKg: zod.string().nullish(),
+  stockEntitlementRetainedKg: zod.string().nullish(),
+  stockEntitlementTransferredKg: zod.string().nullish(),
+  stockEntitlementNotes: zod.string().nullish(),
 });
 
 /**
@@ -5259,6 +5825,19 @@ export const ApproveOwnershipTransferResponse = zod.object({
   isActive: zod.boolean(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
+  transferMode: zod.enum(["by_percentage", "by_value"]).nullish(),
+  transferValue: zod.string().nullish(),
+  payableAmount: zod.string().nullish(),
+  paidAmount: zod.string().nullish(),
+  effectiveDate: zod.coerce.date().nullish(),
+  linkedValuationRunId: zod.string().uuid().nullish(),
+  stockEntitlementHandling: zod
+    .enum(["retain_with_seller", "transfer_to_buyer"])
+    .nullish(),
+  stockEntitlementKg: zod.string().nullish(),
+  stockEntitlementRetainedKg: zod.string().nullish(),
+  stockEntitlementTransferredKg: zod.string().nullish(),
+  stockEntitlementNotes: zod.string().nullish(),
 });
 
 /**
@@ -5326,6 +5905,19 @@ export const ExecuteOwnershipTransferResponse = zod.object({
   isActive: zod.boolean(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
+  transferMode: zod.enum(["by_percentage", "by_value"]).nullish(),
+  transferValue: zod.string().nullish(),
+  payableAmount: zod.string().nullish(),
+  paidAmount: zod.string().nullish(),
+  effectiveDate: zod.coerce.date().nullish(),
+  linkedValuationRunId: zod.string().uuid().nullish(),
+  stockEntitlementHandling: zod
+    .enum(["retain_with_seller", "transfer_to_buyer"])
+    .nullish(),
+  stockEntitlementKg: zod.string().nullish(),
+  stockEntitlementRetainedKg: zod.string().nullish(),
+  stockEntitlementTransferredKg: zod.string().nullish(),
+  stockEntitlementNotes: zod.string().nullish(),
 });
 
 /**
@@ -5393,6 +5985,19 @@ export const CancelOwnershipTransferResponse = zod.object({
   isActive: zod.boolean(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
+  transferMode: zod.enum(["by_percentage", "by_value"]).nullish(),
+  transferValue: zod.string().nullish(),
+  payableAmount: zod.string().nullish(),
+  paidAmount: zod.string().nullish(),
+  effectiveDate: zod.coerce.date().nullish(),
+  linkedValuationRunId: zod.string().uuid().nullish(),
+  stockEntitlementHandling: zod
+    .enum(["retain_with_seller", "transfer_to_buyer"])
+    .nullish(),
+  stockEntitlementKg: zod.string().nullish(),
+  stockEntitlementRetainedKg: zod.string().nullish(),
+  stockEntitlementTransferredKg: zod.string().nullish(),
+  stockEntitlementNotes: zod.string().nullish(),
 });
 
 /**
@@ -5476,6 +6081,19 @@ export const GetTransferRofrDashboardResponse = zod.object({
         isActive: zod.boolean(),
         createdAt: zod.coerce.date(),
         updatedAt: zod.coerce.date(),
+        transferMode: zod.enum(["by_percentage", "by_value"]).nullish(),
+        transferValue: zod.string().nullish(),
+        payableAmount: zod.string().nullish(),
+        paidAmount: zod.string().nullish(),
+        effectiveDate: zod.coerce.date().nullish(),
+        linkedValuationRunId: zod.string().uuid().nullish(),
+        stockEntitlementHandling: zod
+          .enum(["retain_with_seller", "transfer_to_buyer"])
+          .nullish(),
+        stockEntitlementKg: zod.string().nullish(),
+        stockEntitlementRetainedKg: zod.string().nullish(),
+        stockEntitlementTransferredKg: zod.string().nullish(),
+        stockEntitlementNotes: zod.string().nullish(),
       }),
     }),
   ),

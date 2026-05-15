@@ -1,0 +1,370 @@
+PRODUCTION & COLLECTION MODULE FOUNDATION
+
+Build a complete Production & Collection Management module for the rubber plantation ERP.
+
+This module must integrate with the already existing:
+
+- authentication system
+- role system
+- project-wise access
+- dashboard architecture
+- user profile system
+- governance system
+- lifecycle system
+
+Do NOT rebuild existing systems.
+
+Use existing authentication and project access architecture.
+
+====================================================
+CORE WORKFLOW
+====================================================
+
+This module has 2 completely separate workflows:
+
+1. Collection Entry
+2. Store Entry
+
+Do NOT combine them.
+
+Collection Entry:
+- represents fresh sheets collected before drying
+
+Store Entry:
+- represents sheets moved into store after drying outside for 3–5 days
+
+====================================================
+IMPORTANT BUSINESS LOGIC
+====================================================
+
+Sheets do NOT have individual IDs.
+
+This is a continuous rolling production process.
+
+Daily:
+- new sheets are collected
+- old sheets continue drying outside
+- some sheets later move into store
+
+Therefore:
+
+DO NOT implement:
+- per-sheet tracking
+- batch tracking for sheets
+- aging flags for exact sheet age
+
+Instead maintain only:
+
+Pending outside store total:
+
+Pending sheets =
+Total collected sheets − Total stored sheets
+
+====================================================
+DATABASE STRUCTURE
+====================================================
+
+Create tables:
+
+ProductionEmployeeAssignment
+- id
+- employee_id
+- project_id
+- role
+- assigned_by
+- assigned_date
+- active_status
+- created_at
+- updated_at
+
+CollectionEntry
+- id
+- project_id
+- employee_id
+- sheet_count
+- entry_date
+- entry_time
+- remarks
+- created_at
+- updated_at
+- deleted_at (soft delete only)
+
+StoreEntry
+- id
+- project_id
+- employee_id
+- sheet_count
+- weight_kg
+- scrap_weight_kg
+- entry_date
+- entry_time
+- remarks
+- created_at
+- updated_at
+- deleted_at
+
+ProductionAuditLog
+- id
+- module_name
+- action_type
+- project_id
+- user_id
+- old_values
+- new_values
+- created_at
+
+====================================================
+EMPLOYEE ASSIGNMENT LOGIC
+====================================================
+
+Each project can have assigned collection employees.
+
+Today:
+- may use only one employee per project
+
+But architecture MUST support:
+- multiple employees per project in future
+
+When employee logs in:
+
+Automatically determine:
+- assigned project
+- employee identity
+
+Employee must NEVER manually choose project.
+
+Auto-fill internally:
+- project
+- employee
+- date
+- time
+
+====================================================
+ROLE ACCESS
+====================================================
+
+Employee role:
+- can create collection entry
+- can create store entry
+- can view only own entries
+- cannot view financial data
+- cannot access other projects
+- cannot access other workers
+
+Developer/Admin:
+- can view project-wide production
+- can view all assigned workers
+- can view analytics
+
+====================================================
+COLLECTION ENTRY SCREEN
+====================================================
+
+Mobile-first design.
+
+Screen title:
+
+Collection Entry
+
+Only show:
+
+Number of sheets
+
+Save button
+
+Use:
+- large buttons
+- numeric keypad input
+- simple interface for less technical workers
+
+No extra fields.
+
+After save:
+
+Show success message:
+
+Collected: X sheets
+
+====================================================
+WORKER HISTORY VIEW
+====================================================
+
+Workers should see:
+
+Last 7 Days — My Entries
+
+Display:
+
+Date
+Time
+Sheet count
+
+Show today's total.
+
+Workers should ONLY see:
+- their own entries
+- assigned project entries
+
+Purpose:
+- help workers remember previous entries
+- reduce duplicate entry mistakes
+
+====================================================
+STORE ENTRY SCREEN
+====================================================
+
+Separate screen.
+
+Title:
+
+Store Entry
+
+At top show:
+
+Pending outside store: X sheets
+
+Inputs:
+
+Sheet count
+Weight kg
+Scrap weight kg
+
+Save button
+
+Auto-fill:
+- project
+- employee
+- date
+- time
+
+Prevent:
+stored sheet count exceeding pending quantity.
+
+====================================================
+PENDING OUTSIDE STORE ENGINE
+====================================================
+
+Build automatic calculations.
+
+Pending outside store:
+
+Total collected sheets − Total stored sheets
+
+Example:
+
+Collected total:
+5100 sheets
+
+Stored total:
+4700 sheets
+
+Pending:
+400 sheets
+
+Do NOT attempt exact sheet aging logic.
+
+Do NOT create fake age flags.
+
+====================================================
+PROJECT PRODUCTION DASHBOARD
+====================================================
+
+Developer dashboard should show:
+
+Project A
+
+Today collected
+Today stored
+Pending outside store
+Stored weight
+Scrap weight
+
+Collector summary:
+
+Collector | Entries | Total Sheets
+
+Example:
+
+Person A | 3 | 420
+Person B | 2 | 390
+
+Allow drill-down into worker history.
+
+====================================================
+FUTURE-READY STRUCTURE
+====================================================
+
+Even if only one collector per project exists today:
+
+Every production entry MUST permanently link:
+
+Entry → Employee → Project
+
+Prepare structure for future:
+- performance-based payment
+- productivity analytics
+- attendance logic
+
+Do NOT implement payment calculations now.
+
+====================================================
+OBSERVATION / TRUSTED PERSON LAYER
+====================================================
+
+Create ObservationAssignment table:
+
+- id
+- project_id
+- observer_user_id
+- start_datetime
+- end_datetime
+- notes
+- created_by
+
+System automatically tags collection entries:
+
+Observer active:
+YES / NO
+
+No extra work for employees.
+
+Developer dashboard should support future analytics:
+
+Average production:
+- with observer
+- without observer
+
+Do NOT create accusation system.
+
+Only create variance reporting structure.
+
+====================================================
+AUDIT & SAFETY
+====================================================
+
+No hard deletes anywhere.
+
+Track:
+- who created
+- who edited
+- timestamps
+- change history
+
+All production actions must generate audit logs.
+
+====================================================
+UI REQUIREMENTS
+====================================================
+
+Design mobile-first.
+
+Field workers are less technical.
+
+Use:
+- large touch controls
+- simple screens
+- minimal text
+- clear totals
+- high readability
+
+Avoid cluttered ERP screens for workers.

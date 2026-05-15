@@ -42,6 +42,7 @@ import {
   HardDriveDownload,
   LayoutGrid,
   FileCheck2,
+  Wallet,
 } from "lucide-react";
 import { useRole, ROLE_LABELS, ROLE_COLORS } from "@/contexts/RoleContext";
 import type { UserRole } from "@/contexts/RoleContext";
@@ -152,6 +153,18 @@ const navGroups: NavGroup[] = [
         name: "Share Transfers",
         href: "/ownership-transfers",
         icon: ArrowLeftRight,
+        roles: ["admin", "developer"] as UserRole[],
+      },
+      {
+        name: "Ownership States",
+        href: "/ownership-state-manager",
+        icon: ShieldAlert,
+        roles: ["admin", "developer"] as UserRole[],
+      },
+      {
+        name: "Held Distributions",
+        href: "/held-distributions",
+        icon: Wallet,
         roles: ["admin", "developer"] as UserRole[],
       },
       {

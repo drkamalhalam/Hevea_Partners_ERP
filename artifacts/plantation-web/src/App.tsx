@@ -83,6 +83,8 @@ import NomineeActivationPage from "./pages/NomineeActivationPage";
 import ProjectClosurePage from "./pages/ProjectClosurePage";
 import OwnershipTransfers from "./pages/OwnershipTransfers";
 import ValuationEngine from "./pages/ValuationEngine";
+import OwnershipStateManager from "./pages/OwnershipStateManager";
+import HeldDistributions from "./pages/HeldDistributions";
 import InheritanceClaims from "./pages/InheritanceClaims";
 import NomineeSuccessionDashboard from "./pages/NomineeSuccessionDashboard";
 import PrematuritySuccession from "./pages/PrematuritySuccession";
@@ -304,6 +306,8 @@ function AppRoutes() {
               <Route path="/distribution-records"><ProtectedRoute component={DistributionRecords} /></Route>
               <Route path="/settlement-governance"><ProtectedRoute component={SettlementGovernance} /></Route>
               <Route path="/ownership-transfers"><ProtectedRoute component={OwnershipTransfers} /></Route>
+              <Route path="/ownership-state-manager"><ProtectedRoute component={OwnershipStateManager} /></Route>
+              <Route path="/held-distributions"><ProtectedRoute component={HeldDistributions} /></Route>
               <Route path="/valuation-engine"><ProtectedRoute component={ValuationEngine} /></Route>
               <Route path="/inheritance-claims"><ProtectedRoute component={InheritanceClaims} /></Route>
               <Route path="/nominee-succession"><ProtectedRoute component={NomineeSuccessionDashboard} /></Route>

@@ -190,6 +190,18 @@ const createTransferSchema = z.object({
   buyerContact: z.string().optional(),
   reason: z.string().optional(),
   linkedSnapshotId: z.string().optional(),
+  // ── New financial + scheduling fields ─────────────────────────────────────
+  transferMode: z.enum(["by_percentage", "by_value"]).optional().default("by_percentage"),
+  transferValue: z.number().positive().optional().nullable(),
+  payableAmount: z.number().positive().optional().nullable(),
+  effectiveDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD").optional().nullable(),
+  linkedValuationRunId: z.string().uuid().optional().nullable(),
+  // ── Stock entitlement ─────────────────────────────────────────────────────
+  stockEntitlementHandling: z.enum(["retain_with_seller", "transfer_to_buyer"]).optional().nullable(),
+  stockEntitlementKg: z.number().nonnegative().optional().nullable(),
+  stockEntitlementRetainedKg: z.number().nonnegative().optional().nullable(),
+  stockEntitlementTransferredKg: z.number().nonnegative().optional().nullable(),
+  stockEntitlementNotes: z.string().optional().nullable(),
 });
 
 router.post("/", requireRole("admin", "developer", "landowner", "investor"), async (req, res) => {
@@ -295,6 +307,17 @@ router.post("/", requireRole("admin", "developer", "landowner", "investor"), asy
       status: "draft",
       createdBy: actor.id,
       createdByName: actor.displayName,
+      // ── New fields ────────────────────────────────────────────────────────
+      transferMode: b.transferMode ?? "by_percentage",
+      transferValue: b.transferValue != null ? String(b.transferValue) : null,
+      payableAmount: b.payableAmount != null ? String(b.payableAmount) : null,
+      effectiveDate: b.effectiveDate ?? null,
+      linkedValuationRunId: b.linkedValuationRunId ?? null,
+      stockEntitlementHandling: b.stockEntitlementHandling ?? null,
+      stockEntitlementKg: b.stockEntitlementKg != null ? String(b.stockEntitlementKg) : null,
+      stockEntitlementRetainedKg: b.stockEntitlementRetainedKg != null ? String(b.stockEntitlementRetainedKg) : null,
+      stockEntitlementTransferredKg: b.stockEntitlementTransferredKg != null ? String(b.stockEntitlementTransferredKg) : null,
+      stockEntitlementNotes: b.stockEntitlementNotes ?? null,
     })
     .returning();
 
@@ -312,6 +335,19 @@ const patchTransferSchema = z.object({
   reason: z.string().optional().nullable(),
   linkedSnapshotId: z.string().optional().nullable(),
   adminNotes: z.string().optional().nullable(),
+  // ── New financial + scheduling fields (admin/developer editable at any stage) ─
+  transferMode: z.enum(["by_percentage", "by_value"]).optional(),
+  transferValue: z.number().positive().optional().nullable(),
+  payableAmount: z.number().positive().optional().nullable(),
+  paidAmount: z.number().nonnegative().optional(),
+  effectiveDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+  linkedValuationRunId: z.string().uuid().optional().nullable(),
+  // ── Stock entitlement ─────────────────────────────────────────────────────
+  stockEntitlementHandling: z.enum(["retain_with_seller", "transfer_to_buyer"]).optional().nullable(),
+  stockEntitlementKg: z.number().nonnegative().optional().nullable(),
+  stockEntitlementRetainedKg: z.number().nonnegative().optional().nullable(),
+  stockEntitlementTransferredKg: z.number().nonnegative().optional().nullable(),
+  stockEntitlementNotes: z.string().optional().nullable(),
 });
 
 router.patch("/:id", async (req, res) => {
@@ -334,8 +370,11 @@ router.patch("/:id", async (req, res) => {
   if (existing.status !== "draft" && !isAdminDev) {
     return res.status(422).json({ error: "Only draft transfer requests can be edited" });
   }
-  if (existing.status !== "draft" && isAdminDev && !("adminNotes" in req.body)) {
-    return res.status(422).json({ error: "Only admin notes can be updated on a submitted transfer" });
+  const ADMIN_ONLY_FIELDS = new Set(["adminNotes", "paidAmount", "payableAmount", "effectiveDate", "stockEntitlementHandling", "stockEntitlementKg", "stockEntitlementRetainedKg", "stockEntitlementTransferredKg", "stockEntitlementNotes"]);
+  const requestedFields = new Set(Object.keys(req.body));
+  const hasOnlyAdminFields = [...requestedFields].every(k => ADMIN_ONLY_FIELDS.has(k));
+  if (existing.status !== "draft" && isAdminDev && !hasOnlyAdminFields) {
+    return res.status(422).json({ error: "Only admin-managed fields (admin notes, payment tracking, stock entitlement, effective date) can be updated on a submitted transfer" });
   }
 
   const b = parsed.data;
@@ -349,8 +388,29 @@ router.patch("/:id", async (req, res) => {
     if ("buyerContact" in b) updateFields.buyerContact = b.buyerContact;
     if ("reason" in b) updateFields.reason = b.reason;
     if ("linkedSnapshotId" in b) updateFields.linkedSnapshotId = b.linkedSnapshotId;
+    if (b.transferMode !== undefined) updateFields.transferMode = b.transferMode;
+    if ("transferValue" in b) updateFields.transferValue = b.transferValue != null ? String(b.transferValue) : null;
+    if ("payableAmount" in b) updateFields.payableAmount = b.payableAmount != null ? String(b.payableAmount) : null;
+    if ("effectiveDate" in b) updateFields.effectiveDate = b.effectiveDate ?? null;
+    if ("linkedValuationRunId" in b) updateFields.linkedValuationRunId = b.linkedValuationRunId ?? null;
+    if ("stockEntitlementHandling" in b) updateFields.stockEntitlementHandling = b.stockEntitlementHandling ?? null;
+    if ("stockEntitlementKg" in b) updateFields.stockEntitlementKg = b.stockEntitlementKg != null ? String(b.stockEntitlementKg) : null;
+    if ("stockEntitlementRetainedKg" in b) updateFields.stockEntitlementRetainedKg = b.stockEntitlementRetainedKg != null ? String(b.stockEntitlementRetainedKg) : null;
+    if ("stockEntitlementTransferredKg" in b) updateFields.stockEntitlementTransferredKg = b.stockEntitlementTransferredKg != null ? String(b.stockEntitlementTransferredKg) : null;
+    if ("stockEntitlementNotes" in b) updateFields.stockEntitlementNotes = b.stockEntitlementNotes ?? null;
   }
   if (isAdminDev && "adminNotes" in b) updateFields.adminNotes = b.adminNotes;
+  // Admin/developer can update payment tracking and scheduling at any stage
+  if (isAdminDev) {
+    if (b.paidAmount !== undefined) updateFields.paidAmount = String(b.paidAmount);
+    if ("payableAmount" in b && existing.status !== "draft") updateFields.payableAmount = b.payableAmount != null ? String(b.payableAmount) : null;
+    if ("effectiveDate" in b && existing.status !== "draft") updateFields.effectiveDate = b.effectiveDate ?? null;
+    if ("stockEntitlementHandling" in b && existing.status !== "draft") updateFields.stockEntitlementHandling = b.stockEntitlementHandling ?? null;
+    if ("stockEntitlementKg" in b && existing.status !== "draft") updateFields.stockEntitlementKg = b.stockEntitlementKg != null ? String(b.stockEntitlementKg) : null;
+    if ("stockEntitlementRetainedKg" in b && existing.status !== "draft") updateFields.stockEntitlementRetainedKg = b.stockEntitlementRetainedKg != null ? String(b.stockEntitlementRetainedKg) : null;
+    if ("stockEntitlementTransferredKg" in b && existing.status !== "draft") updateFields.stockEntitlementTransferredKg = b.stockEntitlementTransferredKg != null ? String(b.stockEntitlementTransferredKg) : null;
+    if ("stockEntitlementNotes" in b && existing.status !== "draft") updateFields.stockEntitlementNotes = b.stockEntitlementNotes ?? null;
+  }
 
   const [updated] = await db
     .update(ownershipTransfersTable)

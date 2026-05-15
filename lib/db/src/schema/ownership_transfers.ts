@@ -28,6 +28,7 @@ import {
   boolean,
   timestamp,
   jsonb,
+  date,
 } from "drizzle-orm/pg-core";
 import { projectsTable } from "./projects";
 import { partnersTable } from "./partners";
@@ -121,6 +122,64 @@ export const ownershipTransfersTable = pgTable("ownership_transfers", {
   }),
   executedByName: text("executed_by_name"),
   executionNotes: text("execution_notes"),
+
+  // ── Transfer mode & financial concepts ───────────────────────────────────
+  // 'by_percentage' (default) — user specifies offeredPercentage directly
+  // 'by_value'               — user specifies transferValue; % derived from valuation
+  transferMode: text("transfer_mode").notNull().default("by_percentage"),
+
+  // Transfer Value: the ownership valuation basis used to derive/validate the percentage.
+  // This is NOT the negotiated payment — it is the fair-value reference amount.
+  // For by_percentage transfers it may be set from a linked valuation run.
+  // For by_value transfers it is the entry point; offeredPercentage is derived from it.
+  transferValue: numeric("transfer_value", { precision: 15, scale: 2 }),
+
+  // Payable Amount: the negotiated settlement the buyer agrees to pay.
+  // May differ from transferValue (discounts, premiums, family arrangements).
+  // Ownership % always depends on transferValue, NOT payableAmount.
+  payableAmount: numeric("payable_amount", { precision: 15, scale: 2 }),
+
+  // Paid Amount: cumulative amount actually received so far.
+  // Can be updated as installments arrive. Does NOT affect ownership %.
+  paidAmount: numeric("paid_amount", { precision: 15, scale: 2 })
+    .notNull()
+    .default("0"),
+
+  // ── Effective date ────────────────────────────────────────────────────────
+  // When ownership rights actually transfer. May be set to a future date.
+  // Economic rights (production, profit, stock entitlement) split on this date.
+  // If null, defaults to the executedAt timestamp at execution time.
+  effectiveDate: date("effective_date"),
+
+  // ── Linked valuation run ──────────────────────────────────────────────────
+  // The immutable valuation snapshot used to derive/validate transferValue.
+  // Stored as a plain UUID (logical link only — no FK to break the circular
+  // schema dependency between ownership_transfers ↔ valuations).
+  linkedValuationRunId: uuid("linked_valuation_run_id"),
+
+  // ── Stock entitlement handling ────────────────────────────────────────────
+  // Configures how stored rubber produced before effectiveDate is attributed.
+  // null              = not configured / not applicable
+  // retain_with_seller = old owner retains economic entitlement for pre-transfer stock
+  // transfer_to_buyer  = new owner receives entitlement for pre-transfer stock
+  stockEntitlementHandling: text("stock_entitlement_handling"),
+
+  // Total kg of stored stock that existed at transfer effective date
+  stockEntitlementKg: numeric("stock_entitlement_kg", {
+    precision: 12,
+    scale: 3,
+  }),
+
+  // Breakdown of the entitlement handling decision (must sum to stockEntitlementKg)
+  stockEntitlementRetainedKg: numeric("stock_entitlement_retained_kg", {
+    precision: 12,
+    scale: 3,
+  }),
+  stockEntitlementTransferredKg: numeric("stock_entitlement_transferred_kg", {
+    precision: 12,
+    scale: 3,
+  }),
+  stockEntitlementNotes: text("stock_entitlement_notes"),
 
   // ── Cancellation ──────────────────────────────────────────────────────────
   cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
