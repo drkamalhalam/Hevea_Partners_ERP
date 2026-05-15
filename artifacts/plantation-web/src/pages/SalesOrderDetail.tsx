@@ -34,7 +34,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useRole } from "@/contexts/RoleContext";
 import {
   ArrowLeft, CheckCircle, XCircle, Clock, Package,
-  CreditCard, Truck, QrCode, AlertTriangle, FileText
+  CreditCard, Truck, QrCode, AlertTriangle, FileText,
+  Smartphone, Copy, Share2, IndianRupee
 } from "lucide-react";
 
 const STATUS_COLORS: Record<string, string> = {
@@ -51,15 +52,25 @@ const STATUS_COLORS: Record<string, string> = {
 
 const STATUS_LABEL: Record<string, string> = {
   draft: "Draft",
-  payment_pending: "Awaiting Payment",
-  payment_detected: "Payment Detected",
-  awaiting_manual_confirmation: "Pending Confirmation",
-  confirmed: "Confirmed",
+  payment_pending: "Waiting for Payment",
+  payment_detected: "Payment Received",
+  awaiting_manual_confirmation: "Waiting for Verification",
+  confirmed: "Payment Confirmed",
   partially_dispatched: "Partially Dispatched",
   completed: "Completed",
   cancelled: "Cancelled",
   expired: "Expired",
 };
+
+const UPI_APPS = [
+  { label: "GPay", value: "upi_gpay", emoji: "🟢" },
+  { label: "PhonePe", value: "upi_phonepe", emoji: "🟣" },
+  { label: "Paytm", value: "upi_paytm", emoji: "🔵" },
+  { label: "BHIM", value: "upi_bhim", emoji: "🟠" },
+  { label: "Any UPI", value: "upi", emoji: "📱" },
+  { label: "Net Banking", value: "neft", emoji: "🏦" },
+  { label: "Cash", value: "cash", emoji: "💵" },
+];
 
 function fmtINR(v: string | number | null | undefined) {
   const n = typeof v === "string" ? parseFloat(v) : (v ?? 0);
@@ -85,34 +96,121 @@ function CountdownTimer({ expiresAt }: { expiresAt: string }) {
   const s = remaining % 60;
   const isUrgent = remaining < 120;
   return (
-    <span className={`font-mono font-bold text-lg ${isUrgent ? "text-red-400 animate-pulse" : "text-amber-300"}`}>
+    <span className={`font-mono font-bold text-xl ${isUrgent ? "text-red-400 animate-pulse" : "text-amber-300"}`}>
       {m.toString().padStart(2, "0")}:{s.toString().padStart(2, "0")}
     </span>
   );
 }
 
-function PaymentQRPanel({ order }: { order: any }) {
-  const paymentString = [
-    order.paymentReceiverName ? `Pay to: ${order.paymentReceiverName}` : null,
-    `Amount: ₹${parseFloat(order.totalAmount).toFixed(2)}`,
-    `Ref: ${order.salesCode}`,
-    `Buyer: ${order.buyerName}`,
-    `Project: ${order.projectName}`,
-  ].filter(Boolean).join(" | ");
+function buildUpiUrl(upiId: string, payeeName: string, amount: string, orderRef: string) {
+  const params = new URLSearchParams({
+    pa: upiId,
+    pn: payeeName,
+    am: parseFloat(amount).toFixed(2),
+    tn: `Payment for ${orderRef}`,
+    cu: "INR",
+  });
+  return `upi://pay?${params.toString()}`;
+}
+
+function UpiQRPanel({ order, receivers }: { order: any; receivers: any[] }) {
+  const { toast } = useToast();
+  const receiver = receivers.find((r: any) => r.id === order.paymentReceiverAccountId);
+  const upiId = receiver?.paymentType === "upi" ? (receiver?.accountIdentifier ?? "") : "";
+  const payeeName = receiver?.accountName ?? order.paymentReceiverName ?? "Hevea Partners";
+  const amount = parseFloat(order.totalAmount ?? "0").toFixed(2);
+  const orderRef = order.salesCode ?? "";
+
+  const upiUrl = upiId
+    ? buildUpiUrl(upiId, payeeName, amount, orderRef)
+    : `Order: ${orderRef} | Amount: ₹${amount} | Pay to: ${payeeName}`;
+
+  const qrData = upiId ? upiUrl : `${orderRef}|${amount}|${payeeName}`;
+  const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&ecc=M&margin=1&data=${encodeURIComponent(qrData)}`;
+
+  const copyUpiId = () => {
+    navigator.clipboard.writeText(upiId).then(() =>
+      toast({ title: "UPI ID copied!" })
+    );
+  };
 
   return (
-    <div className="bg-white rounded-xl p-6 text-center space-y-3 max-w-xs mx-auto">
-      <div className="w-48 h-48 mx-auto border-4 border-gray-900 rounded-lg flex items-center justify-center bg-gray-50">
-        <div className="space-y-2 text-center px-2">
-          <QrCode className="w-12 h-12 text-gray-400 mx-auto" />
-          <p className="text-xs text-gray-500 font-mono break-all">{order.salesCode}</p>
-          <p className="text-sm font-bold text-gray-900">{fmtINR(order.totalAmount)}</p>
+    <div className="space-y-5">
+      {/* QR Code */}
+      <div className="flex flex-col items-center gap-4">
+        <div className="bg-white rounded-2xl p-4 shadow-lg">
+          <img
+            src={qrImageUrl}
+            alt="UPI Payment QR"
+            className="w-56 h-56 block"
+            onError={(e) => {
+              (e.target as HTMLImageElement).style.display = "none";
+            }}
+          />
+        </div>
+        <div className="text-center">
+          <div className="text-4xl font-extrabold text-white mb-1">{fmtINR(order.totalAmount)}</div>
+          <div className="text-gray-400 text-sm">Order: <span className="font-mono text-gray-300">{orderRef}</span></div>
         </div>
       </div>
-      <div className="text-left bg-gray-100 rounded-lg p-3 text-xs font-mono text-gray-700 break-all">
-        {paymentString}
-      </div>
-      <p className="text-xs text-gray-500">Share this payment request with the buyer</p>
+
+      {/* UPI ID + Open in App */}
+      {upiId ? (
+        <div className="bg-gray-900 rounded-xl p-4 space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs text-gray-500 uppercase tracking-wide mb-0.5">Pay to UPI ID</p>
+              <p className="text-white font-mono text-base font-semibold">{upiId}</p>
+              <p className="text-xs text-gray-400">{payeeName}</p>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-gray-600 text-gray-300 hover:text-white flex-shrink-0"
+              onClick={copyUpiId}
+            >
+              <Copy className="w-3.5 h-3.5 mr-1" /> Copy
+            </Button>
+          </div>
+          <a href={upiUrl} className="block">
+            <Button className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-base font-semibold">
+              <Smartphone className="w-5 h-5 mr-2" />
+              Open in UPI App
+            </Button>
+          </a>
+        </div>
+      ) : (
+        <div className="bg-gray-900 rounded-xl p-4 text-center">
+          <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Pay to</p>
+          <p className="text-white font-semibold text-lg">{payeeName}</p>
+          {order.paymentMode === "cash" && (
+            <p className="text-amber-400 text-sm mt-1">💵 Cash Payment</p>
+          )}
+        </div>
+      )}
+
+      {/* UPI App shortcuts */}
+      {upiId && (
+        <div>
+          <p className="text-xs text-gray-500 text-center mb-2">Scan with any UPI app</p>
+          <div className="grid grid-cols-4 gap-2">
+            {[
+              { label: "GPay", emoji: "🟢" },
+              { label: "PhonePe", emoji: "🟣" },
+              { label: "Paytm", emoji: "🔵" },
+              { label: "BHIM", emoji: "🟠" },
+            ].map((app) => (
+              <div
+                key={app.label}
+                className="flex flex-col items-center gap-1 p-2 bg-gray-800 rounded-xl text-center"
+              >
+                <span className="text-xl">{app.emoji}</span>
+                <span className="text-xs text-gray-400">{app.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -129,7 +227,7 @@ export default function SalesOrderDetail() {
       queryKey: getGetSalesOrderQueryKey(id!),
       refetchInterval: (data: any) => {
         const s = data?.state?.data?.orderStatus;
-        return ["payment_pending", "awaiting_manual_confirmation"].includes(s) ? 10000 : false;
+        return ["payment_pending", "awaiting_manual_confirmation"].includes(s) ? 8000 : false;
       },
     },
   });
@@ -138,181 +236,313 @@ export default function SalesOrderDetail() {
 
   const invalidate = () => qc.invalidateQueries({ queryKey: getGetSalesOrderQueryKey(id!) });
 
-  const requestPaymentMut = useRequestPayment({ mutation: { onSuccess: invalidate, onError: (e: any) => toast({ variant: "destructive", title: e?.response?.data?.error ?? "Error" }) } });
-  const detectPaymentMut = useDetectPayment({ mutation: { onSuccess: invalidate, onError: (e: any) => toast({ variant: "destructive", title: e?.response?.data?.error ?? "Error" }) } });
-  const confirmPaymentMut = useConfirmPayment({ mutation: { onSuccess: invalidate, onError: (e: any) => toast({ variant: "destructive", title: e?.response?.data?.error ?? "Error" }) } });
-  const cancelMut = useCancelSalesOrder({ mutation: { onSuccess: invalidate, onError: (e: any) => toast({ variant: "destructive", title: e?.response?.data?.error ?? "Error" }) } });
-  const dispatchMut = useDispatchSalesOrder({ mutation: { onSuccess: () => { invalidate(); setShowDispatch(false); toast({ title: "Dispatch recorded" }); }, onError: (e: any) => toast({ variant: "destructive", title: e?.response?.data?.error ?? "Error" }) } });
+  const requestPaymentMut = useRequestPayment({
+    mutation: {
+      onSuccess: invalidate,
+      onError: (e: any) => toast({ variant: "destructive", title: e?.response?.data?.error ?? "Error" }),
+    },
+  });
+  const detectPaymentMut = useDetectPayment({
+    mutation: {
+      onSuccess: () => { invalidate(); setShowPaid(false); toast({ title: "Payment recorded! Waiting for verification." }); },
+      onError: (e: any) => toast({ variant: "destructive", title: e?.response?.data?.error ?? "Duplicate or invalid payment" }),
+    },
+  });
+  const confirmPaymentMut = useConfirmPayment({
+    mutation: {
+      onSuccess: () => { invalidate(); setShowConfirm(false); toast({ title: "Payment confirmed! Dispatch enabled." }); },
+      onError: (e: any) => toast({ variant: "destructive", title: e?.response?.data?.error ?? "Error" }),
+    },
+  });
+  const cancelMut = useCancelSalesOrder({
+    mutation: {
+      onSuccess: () => { invalidate(); setShowCancel(false); },
+      onError: (e: any) => toast({ variant: "destructive", title: e?.response?.data?.error ?? "Error" }),
+    },
+  });
+  const dispatchMut = useDispatchSalesOrder({
+    mutation: {
+      onSuccess: () => { invalidate(); setShowDispatch(false); toast({ title: "Dispatch recorded" }); },
+      onError: (e: any) => toast({ variant: "destructive", title: e?.response?.data?.error ?? "Error" }),
+    },
+  });
 
   const [showCancel, setShowCancel] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
-  const [showDetect, setShowDetect] = useState(false);
-  const [detectForm, setDetectForm] = useState({ amount: "", transactionReference: "", paymentProvider: "manual" });
+
+  const [showPaid, setShowPaid] = useState(false);
+  const [paidForm, setPaidForm] = useState({
+    amount: "",
+    utr: "",
+    app: "upi_gpay",
+  });
+
   const [showDispatch, setShowDispatch] = useState(false);
   const [dispatchForm, setDispatchForm] = useState({ quantityKg: "", storeName: "", notes: "" });
   const [showConfirm, setShowConfirm] = useState(false);
   const [confirmRef, setConfirmRef] = useState("");
 
   if (isLoading) return (
-    <div className="space-y-4">
-      {[1,2,3].map(i => <div key={i} className="h-32 bg-gray-800 rounded-xl animate-pulse" />)}
+    <div className="space-y-4 max-w-lg mx-auto">
+      {[1, 2, 3].map(i => <div key={i} className="h-32 bg-gray-800 rounded-xl animate-pulse" />)}
     </div>
   );
   if (!order) return (
     <div className="text-center py-16 text-gray-400">
       <p>Order not found</p>
-      <Button variant="link" className="text-gray-400 mt-2" onClick={() => navigate("/sales-orders")}>← Back to Orders</Button>
+      <Button variant="link" className="text-gray-400 mt-2" onClick={() => navigate("/sales-orders")}>
+        ← Back to Orders
+      </Button>
     </div>
   );
 
   const canAdmin = ["admin", "developer"].includes(role ?? "");
   const canSell = ["admin", "developer", "employee", "landowner"].includes(role ?? "");
   const status = order.orderStatus;
-  const remaining = order.quantityKg && order.quantityDispatchedKg
-    ? parseFloat(order.quantityKg) - parseFloat(order.quantityDispatchedKg ?? "0")
-    : parseFloat(order.quantityKg ?? "0");
+  const remaining = parseFloat(order.quantityKg ?? "0") - parseFloat(order.quantityDispatchedKg ?? "0");
+
+  const handleSubmitPayment = () => {
+    const utr = paidForm.utr.trim();
+    const app = UPI_APPS.find(a => a.value === paidForm.app);
+    detectPaymentMut.mutate({
+      id: id!,
+      data: {
+        amount: parseFloat(paidForm.amount || order.totalAmount || "0"),
+        transactionReference: utr || undefined,
+        paymentProvider: paidForm.app,
+        notes: app ? `Paid via ${app.label}` : undefined,
+      },
+    });
+  };
 
   return (
-    <div className="space-y-5 max-w-4xl">
-      <div className="flex items-center gap-3">
-        <Button variant="ghost" className="text-gray-400 hover:text-white gap-2 p-0" onClick={() => navigate("/sales-orders")}>
-          <ArrowLeft className="w-4 h-4" /> Back
-        </Button>
-      </div>
+    <div className="space-y-5 max-w-lg mx-auto">
+      {/* Back */}
+      <Button
+        variant="ghost"
+        className="text-gray-400 hover:text-white gap-2 p-0"
+        onClick={() => navigate("/sales-orders")}
+      >
+        <ArrowLeft className="w-4 h-4" /> Back to Orders
+      </Button>
 
-      {/* Header */}
-      <div className="flex items-start justify-between flex-wrap gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-white font-mono">{order.salesCode}</h1>
-          <div className="flex items-center gap-3 mt-2 flex-wrap">
-            <Badge className={`border ${STATUS_COLORS[status ?? ""] ?? ""}`}>{STATUS_LABEL[status ?? ""] ?? status}</Badge>
-            <span className="text-gray-400 text-sm">{fmt(order.createdAt)}</span>
+      {/* Header — order summary */}
+      <div className="bg-gray-800 rounded-2xl p-5 space-y-3 border border-gray-700">
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div>
+            <p className="text-xs text-gray-500 uppercase tracking-wide">Order ID</p>
+            <p className="font-mono text-lg font-bold text-white">{order.salesCode}</p>
+          </div>
+          <Badge className={`border ${STATUS_COLORS[status ?? ""] ?? ""}`}>
+            {STATUS_LABEL[status ?? ""] ?? status}
+          </Badge>
+        </div>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs text-gray-500">Buyer</p>
+            <p className="text-white font-semibold">{order.buyerName}</p>
+          </div>
+          <div className="text-right">
+            <p className="text-xs text-gray-500">Amount</p>
+            <p className="text-2xl font-extrabold text-white">{fmtINR(order.totalAmount)}</p>
           </div>
         </div>
-        <div className="text-right">
-          <div className="text-3xl font-bold text-white">{fmtINR(order.totalAmount)}</div>
-          <div className="text-sm text-gray-400">{parseFloat(order.quantityKg ?? "0").toFixed(1)} kg @ ₹{parseFloat(order.ratePerKg ?? "0").toFixed(2)}/kg</div>
+        <div className="flex gap-4 text-sm text-gray-400 pt-1 border-t border-gray-700">
+          <span>{parseFloat(order.quantityKg ?? "0").toFixed(1)} kg</span>
+          <span>@</span>
+          <span>₹{parseFloat(order.ratePerKg ?? "0").toFixed(2)}/kg</span>
+          <span className="ml-auto">{fmt(order.createdAt)}</span>
         </div>
       </div>
 
-      {/* Payment workflow panel */}
+      {/* ── DRAFT: Start Payment ─────────────────────────────────── */}
       {status === "draft" && canSell && (
         <Card className="bg-gray-800 border-emerald-500/30">
-          <CardContent className="p-6 text-center space-y-4">
-            <CreditCard className="w-10 h-10 text-emerald-400 mx-auto" />
-            <div>
-              <p className="text-white font-semibold text-lg">Ready to Receive Payment</p>
-              <p className="text-gray-400 text-sm mt-1">Click below to generate a payment request and reserve inventory</p>
+          <CardContent className="p-6 space-y-5">
+            <div className="text-center space-y-2">
+              <IndianRupee className="w-12 h-12 text-emerald-400 mx-auto" />
+              <p className="text-white font-bold text-xl">Ready to Receive Payment</p>
+              <p className="text-gray-400 text-sm">
+                This will generate a UPI QR and reserve {parseFloat(order.quantityKg ?? "0").toFixed(1)} kg from inventory
+              </p>
             </div>
-            <div className="bg-gray-900 rounded-lg p-4 space-y-2 text-left">
-              <div className="flex justify-between text-sm"><span className="text-gray-400">Buyer</span><span className="text-white">{order.buyerName}</span></div>
-              <div className="flex justify-between text-sm"><span className="text-gray-400">Quantity</span><span className="text-white">{parseFloat(order.quantityKg ?? "0").toFixed(1)} kg</span></div>
-              <div className="flex justify-between text-sm"><span className="text-gray-400">Rate</span><span className="text-white">₹{parseFloat(order.ratePerKg ?? "0").toFixed(2)}/kg</span></div>
-              <div className="flex justify-between font-bold"><span className="text-gray-300">Total</span><span className="text-emerald-400 text-lg">{fmtINR(order.totalAmount)}</span></div>
+            <div className="bg-gray-900 rounded-xl p-4 space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-400">Buyer</span>
+                <span className="text-white font-medium">{order.buyerName}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-400">Quantity</span>
+                <span className="text-white">{parseFloat(order.quantityKg ?? "0").toFixed(1)} kg</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-400">Rate</span>
+                <span className="text-white">₹{parseFloat(order.ratePerKg ?? "0").toFixed(2)}/kg</span>
+              </div>
+              <div className="flex justify-between font-bold border-t border-gray-700 pt-2 mt-2">
+                <span className="text-gray-300">Total</span>
+                <span className="text-emerald-400 text-xl">{fmtINR(order.totalAmount)}</span>
+              </div>
             </div>
             <Button
-              className="w-full bg-emerald-600 hover:bg-emerald-700 h-12 text-base"
+              className="w-full h-14 bg-emerald-600 hover:bg-emerald-700 text-base font-semibold rounded-xl"
               onClick={() => requestPaymentMut.mutate({ id: id! })}
               disabled={requestPaymentMut.isPending}
             >
-              {requestPaymentMut.isPending ? "Generating..." : "Receive Payment"}
+              {requestPaymentMut.isPending ? "Generating QR..." : "Generate Payment QR"}
             </Button>
           </CardContent>
         </Card>
       )}
 
-      {/* QR payment panel */}
+      {/* ── PAYMENT PENDING: UPI QR + Pay button ─────────────────── */}
       {status === "payment_pending" && (
         <Card className="bg-gray-800 border-amber-500/30">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <QrCode className="w-5 h-5 text-amber-400" /> Payment Request
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex justify-between items-center p-3 bg-amber-900/20 rounded-lg border border-amber-500/20">
+          <CardContent className="p-5 space-y-5">
+            {/* Countdown */}
+            <div className="flex items-center justify-between bg-amber-950/40 border border-amber-500/20 rounded-xl px-4 py-3">
               <div className="flex items-center gap-2 text-amber-300">
                 <Clock className="w-4 h-4" />
-                <span className="text-sm">Expires in</span>
+                <span className="text-sm font-medium">Time remaining</span>
               </div>
-              {order.paymentExpiresAt && <CountdownTimer expiresAt={order.paymentExpiresAt} />}
+              {order.paymentExpiresAt
+                ? <CountdownTimer expiresAt={order.paymentExpiresAt} />
+                : <span className="text-amber-300 font-mono">—</span>
+              }
             </div>
-            <PaymentQRPanel order={order} />
-            <div className="grid grid-cols-3 gap-3 text-center text-sm pt-2">
-              <div><span className="text-gray-400 block">Status</span><span className="text-amber-300 font-medium">Waiting for payment...</span></div>
-              <div><span className="text-gray-400 block">Project</span><span className="text-white">{order.projectName}</span></div>
-              <div><span className="text-gray-400 block">Receiver</span><span className="text-white">{order.paymentReceiverName ?? "—"}</span></div>
-            </div>
-            <div className="flex gap-3 pt-2">
-              {canSell && (
-                <Button className="flex-1 bg-blue-600 hover:bg-blue-700" onClick={() => setShowDetect(true)}>
-                  Mark Payment Detected
-                </Button>
-              )}
-              <Button variant="outline" className="border-red-500/50 text-red-400 hover:bg-red-500/10" onClick={() => setShowCancel(true)}>
-                Cancel
+
+            {/* UPI QR Panel */}
+            <UpiQRPanel order={order} receivers={receivers as any[]} />
+
+            {/* Primary CTA: I Have Paid */}
+            {canSell && (
+              <Button
+                className="w-full h-14 bg-emerald-600 hover:bg-emerald-700 text-base font-bold rounded-xl"
+                onClick={() => { setPaidForm({ amount: order.totalAmount ?? "", utr: "", app: "upi_gpay" }); setShowPaid(true); }}
+              >
+                <CheckCircle className="w-5 h-5 mr-2" />
+                I Have Paid
               </Button>
-            </div>
+            )}
+
+            <Button
+              variant="ghost"
+              className="w-full text-red-400 hover:text-red-300 hover:bg-red-500/10 text-sm"
+              onClick={() => setShowCancel(true)}
+            >
+              Cancel Order
+            </Button>
           </CardContent>
         </Card>
       )}
 
-      {/* Awaiting confirmation panel */}
+      {/* ── AWAITING VERIFICATION ────────────────────────────────── */}
       {["awaiting_manual_confirmation", "payment_detected"].includes(status ?? "") && (
-        <Card className="bg-gray-800 border-purple-500/30">
+        <Card className="bg-gray-800 border-blue-500/30">
           <CardContent className="p-6 space-y-4">
-            <div className="flex items-center gap-3">
-              <AlertTriangle className="w-6 h-6 text-purple-400" />
-              <div>
-                <p className="text-white font-semibold">Payment Detected — Awaiting Manual Confirmation</p>
-                <p className="text-gray-400 text-sm">An authorized user must verify and confirm this payment before the sale is finalized</p>
+            <div className="text-center space-y-2">
+              <div className="w-16 h-16 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto">
+                <AlertTriangle className="w-8 h-8 text-blue-400" />
               </div>
+              <p className="text-white font-bold text-lg">Payment Received</p>
+              <p className="text-gray-400 text-sm">
+                Waiting for admin to verify and confirm. Dispatch will be enabled after confirmation.
+              </p>
             </div>
+
             {(order as any).paymentTransactions?.length > 0 && (
-              <div className="bg-gray-900 rounded-lg p-3 text-sm space-y-1">
+              <div className="bg-gray-900 rounded-xl p-4 space-y-3">
+                <p className="text-xs text-gray-500 uppercase tracking-wide">Payment Details</p>
                 {(order as any).paymentTransactions.map((t: any) => (
-                  <div key={t.id} className="flex justify-between">
-                    <span className="text-gray-400">{t.paymentProvider} · {t.transactionReference ?? "No Ref"}</span>
-                    <span className="text-white font-medium">{fmtINR(t.amount)}</span>
+                  <div key={t.id} className="space-y-1">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-300 font-semibold">{fmtINR(t.amount)}</span>
+                      <Badge className={
+                        t.verificationStatus === "matched"
+                          ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30 border text-xs"
+                          : "bg-amber-500/20 text-amber-300 border-amber-500/30 border text-xs"
+                      }>
+                        {t.verificationStatus === "matched" ? "Amount Matched" : "Being Verified"}
+                      </Badge>
+                    </div>
+                    {t.transactionReference && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-500">UTR:</span>
+                        <span className="font-mono text-xs text-gray-300">{t.transactionReference}</span>
+                      </div>
+                    )}
+                    {t.paymentProvider && (
+                      <span className="text-xs text-gray-500 capitalize">
+                        {UPI_APPS.find(a => a.value === t.paymentProvider)?.label ?? t.paymentProvider}
+                      </span>
+                    )}
                   </div>
                 ))}
               </div>
             )}
+
             {canAdmin && (
-              <div className="flex gap-3">
+              <div className="flex gap-3 pt-2">
                 <Button
-                  className="flex-1 bg-purple-600 hover:bg-purple-700 h-11"
+                  className="flex-1 h-12 bg-emerald-600 hover:bg-emerald-700 font-semibold"
                   onClick={() => setShowConfirm(true)}
                 >
                   <CheckCircle className="w-4 h-4 mr-2" /> Confirm Payment
                 </Button>
-                <Button variant="outline" className="border-red-500/50 text-red-400 hover:bg-red-500/10" onClick={() => setShowCancel(true)}>
+                <Button
+                  variant="outline"
+                  className="border-red-500/50 text-red-400 hover:bg-red-500/10"
+                  onClick={() => setShowCancel(true)}
+                >
                   Reject
                 </Button>
               </div>
+            )}
+            {!canAdmin && (
+              <p className="text-center text-xs text-gray-500">
+                An admin will verify your payment shortly
+              </p>
             )}
           </CardContent>
         </Card>
       )}
 
-      {/* Confirmed / dispatch panel */}
+      {/* ── CONFIRMED / DISPATCH ─────────────────────────────────── */}
       {["confirmed", "partially_dispatched"].includes(status ?? "") && (
         <Card className="bg-gray-800 border-emerald-500/30">
           <CardContent className="p-6 space-y-4">
             <div className="flex items-center gap-3">
-              <CheckCircle className="w-6 h-6 text-emerald-400" />
+              <div className="w-12 h-12 bg-emerald-500/10 rounded-full flex items-center justify-center flex-shrink-0">
+                <CheckCircle className="w-6 h-6 text-emerald-400" />
+              </div>
               <div>
-                <p className="text-white font-semibold">Payment Confirmed</p>
-                <p className="text-gray-400 text-sm">Confirmed by {order.paymentConfirmedByName} · {fmt(order.paymentConfirmedAt)}</p>
+                <p className="text-white font-bold text-lg">Payment Confirmed</p>
+                <p className="text-gray-400 text-xs">
+                  Confirmed by {order.paymentConfirmedByName} · {fmt(order.paymentConfirmedAt)}
+                </p>
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-3 text-center text-sm bg-gray-900 rounded-lg p-4">
-              <div><span className="text-gray-400 block">Ordered</span><span className="text-white font-bold">{parseFloat(order.quantityKg ?? "0").toFixed(1)} kg</span></div>
-              <div><span className="text-gray-400 block">Dispatched</span><span className="text-cyan-400 font-bold">{parseFloat(order.quantityDispatchedKg ?? "0").toFixed(1)} kg</span></div>
-              <div><span className="text-gray-400 block">Remaining</span><span className={`font-bold ${remaining > 0 ? "text-amber-300" : "text-emerald-400"}`}>{remaining.toFixed(1)} kg</span></div>
+            <div className="grid grid-cols-3 gap-3 text-center bg-gray-900 rounded-xl p-4">
+              <div>
+                <span className="text-gray-500 text-xs block">Ordered</span>
+                <span className="text-white font-bold">{parseFloat(order.quantityKg ?? "0").toFixed(1)} kg</span>
+              </div>
+              <div>
+                <span className="text-gray-500 text-xs block">Dispatched</span>
+                <span className="text-cyan-400 font-bold">{parseFloat(order.quantityDispatchedKg ?? "0").toFixed(1)} kg</span>
+              </div>
+              <div>
+                <span className="text-gray-500 text-xs block">Remaining</span>
+                <span className={`font-bold ${remaining > 0 ? "text-amber-300" : "text-emerald-400"}`}>
+                  {remaining.toFixed(1)} kg
+                </span>
+              </div>
             </div>
             {remaining > 0 && (
-              <Button className="w-full bg-cyan-600 hover:bg-cyan-700" onClick={() => setShowDispatch(true)}>
+              <Button
+                className="w-full h-12 bg-cyan-600 hover:bg-cyan-700 font-semibold"
+                onClick={() => setShowDispatch(true)}
+              >
                 <Truck className="w-4 h-4 mr-2" /> Record Dispatch
               </Button>
             )}
@@ -320,80 +550,105 @@ export default function SalesOrderDetail() {
         </Card>
       )}
 
-      {/* Completed */}
+      {/* ── COMPLETED ─────────────────────────────────────────────── */}
       {status === "completed" && (
         <Card className="bg-gray-800 border-green-500/30">
-          <CardContent className="p-6 text-center">
-            <CheckCircle className="w-10 h-10 text-green-400 mx-auto mb-3" />
-            <p className="text-white font-semibold text-lg">Order Completed</p>
-            <p className="text-gray-400 text-sm">All {parseFloat(order.quantityKg ?? "0").toFixed(1)} kg dispatched</p>
+          <CardContent className="p-8 text-center space-y-3">
+            <CheckCircle className="w-14 h-14 text-green-400 mx-auto" />
+            <p className="text-white font-bold text-xl">Order Completed</p>
+            <p className="text-gray-400 text-sm">
+              All {parseFloat(order.quantityKg ?? "0").toFixed(1)} kg dispatched successfully
+            </p>
           </CardContent>
         </Card>
       )}
 
-      {/* Cancelled/expired */}
+      {/* ── CANCELLED / EXPIRED ───────────────────────────────────── */}
       {["cancelled", "expired"].includes(status ?? "") && (
         <Card className="bg-gray-800 border-red-500/30">
-          <CardContent className="p-6 text-center">
-            <XCircle className="w-10 h-10 text-red-400 mx-auto mb-3" />
-            <p className="text-white font-semibold text-lg">{status === "cancelled" ? "Order Cancelled" : "Payment Expired"}</p>
-            {order.cancellationReason && <p className="text-gray-400 text-sm mt-1">{order.cancellationReason}</p>}
+          <CardContent className="p-8 text-center space-y-3">
+            <XCircle className="w-14 h-14 text-red-400 mx-auto" />
+            <p className="text-white font-bold text-xl">
+              {status === "cancelled" ? "Order Cancelled" : "Payment Expired"}
+            </p>
+            {order.cancellationReason && (
+              <p className="text-gray-400 text-sm">{order.cancellationReason}</p>
+            )}
           </CardContent>
         </Card>
       )}
 
-      {/* Invoice */}
+      {/* ── INVOICE ───────────────────────────────────────────────── */}
       {(order as any).invoice && (
         <Card className="bg-gray-800 border-gray-700">
           <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <FileText className="w-5 h-5 text-blue-400" /> Invoice
+            <CardTitle className="text-white flex items-center gap-2 text-base">
+              <FileText className="w-4 h-4 text-blue-400" /> Invoice
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-4 text-sm">
-              <div><span className="text-gray-400">Invoice No.</span><div className="text-white font-mono">{(order as any).invoice.invoiceNumber}</div></div>
-              <div><span className="text-gray-400">Date</span><div className="text-white">{(order as any).invoice.invoiceDate}</div></div>
-              <div><span className="text-gray-400">Dispatch Status</span><div className="text-white capitalize">{(order as any).invoice.dispatchStatus.replace(/_/g, " ")}</div></div>
-              <div><span className="text-gray-400">Payment Ref</span><div className="text-white">{(order as any).invoice.paymentReference ?? "—"}</div></div>
+              <div>
+                <span className="text-gray-400">Invoice No.</span>
+                <div className="text-white font-mono">{(order as any).invoice.invoiceNumber}</div>
+              </div>
+              <div>
+                <span className="text-gray-400">Date</span>
+                <div className="text-white">{(order as any).invoice.invoiceDate}</div>
+              </div>
+              <div>
+                <span className="text-gray-400">Dispatch Status</span>
+                <div className="text-white capitalize">
+                  {(order as any).invoice.dispatchStatus.replace(/_/g, " ")}
+                </div>
+              </div>
+              <div>
+                <span className="text-gray-400">Payment Ref</span>
+                <div className="text-white">{(order as any).invoice.paymentReference ?? "—"}</div>
+              </div>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Order details */}
+      {/* ── ORDER DETAILS ─────────────────────────────────────────── */}
       <Card className="bg-gray-800 border-gray-700">
-        <CardHeader><CardTitle className="text-white">Order Details</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-white text-base">Order Details</CardTitle></CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 gap-4 text-sm">
             {[
               ["Project", order.projectName],
               ["Buyer", order.buyerName],
               ["Seller", order.sellerName],
-              ["Role", order.sellerRole],
               ["Payment Mode", (order.paymentMode ?? "").replace(/_/g, " ")],
               ["Receiver", order.paymentReceiverName ?? "—"],
             ].map(([label, value]) => (
-              <div key={label}><span className="text-gray-400">{label}</span><div className="text-white mt-0.5">{value}</div></div>
+              <div key={label}>
+                <span className="text-gray-400">{label}</span>
+                <div className="text-white mt-0.5 font-medium">{value}</div>
+              </div>
             ))}
           </div>
-          {order.remarks && <div className="mt-4 pt-4 border-t border-gray-700 text-sm text-gray-300">{order.remarks}</div>}
+          {order.remarks && (
+            <div className="mt-4 pt-4 border-t border-gray-700 text-sm text-gray-300">{order.remarks}</div>
+          )}
         </CardContent>
       </Card>
 
-      {/* Dispatch history */}
+      {/* ── DISPATCH HISTORY ──────────────────────────────────────── */}
       {(order as any).dispatches?.length > 0 && (
         <Card className="bg-gray-800 border-gray-700">
-          <CardHeader><CardTitle className="text-white">Dispatch History</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-white text-base">Dispatch History</CardTitle></CardHeader>
           <CardContent>
             <div className="space-y-2">
               {(order as any).dispatches.map((d: any) => (
-                <div key={d.id} className="flex justify-between items-center p-3 bg-gray-900 rounded-lg text-sm">
+                <div key={d.id} className="flex justify-between items-center p-3 bg-gray-900 rounded-xl text-sm">
                   <div>
-                    <span className="text-white font-medium">{parseFloat(d.quantityKg).toFixed(1)} kg</span>
+                    <span className="text-white font-semibold">{parseFloat(d.quantityKg).toFixed(1)} kg</span>
                     {d.storeName && <span className="text-gray-400 ml-2">from {d.storeName}</span>}
                     <div className="text-gray-500 text-xs mt-0.5">{fmt(d.dispatchedAt)} · {d.dispatchedByName}</div>
                   </div>
+                  <Package className="w-4 h-4 text-cyan-500" />
                 </div>
               ))}
             </div>
@@ -401,10 +656,10 @@ export default function SalesOrderDetail() {
         </Card>
       )}
 
-      {/* Audit log */}
+      {/* ── AUDIT LOG ─────────────────────────────────────────────── */}
       {(order as any).audit?.length > 0 && (
         <Card className="bg-gray-800 border-gray-700">
-          <CardHeader><CardTitle className="text-white">Audit Log</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-white text-base">Activity</CardTitle></CardHeader>
           <CardContent>
             <div className="space-y-2">
               {(order as any).audit.map((a: any) => (
@@ -421,6 +676,148 @@ export default function SalesOrderDetail() {
         </Card>
       )}
 
+      {/* ═══ DIALOGS ═══════════════════════════════════════════════ */}
+
+      {/* "I Have Paid" dialog — UPI-first */}
+      <Dialog open={showPaid} onOpenChange={setShowPaid}>
+        <DialogContent className="bg-gray-900 border-gray-700 text-white max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-lg">Payment Proof</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-5 pt-1">
+            {/* Amount summary */}
+            <div className="bg-emerald-900/20 border border-emerald-500/20 rounded-xl p-4 text-center">
+              <p className="text-xs text-gray-400 mb-1">Amount to pay</p>
+              <p className="text-3xl font-extrabold text-emerald-400">{fmtINR(order.totalAmount)}</p>
+              <p className="text-xs text-gray-500 font-mono mt-1">{order.salesCode}</p>
+            </div>
+
+            {/* App used */}
+            <div>
+              <Label className="text-gray-300 text-sm mb-2 block">How did you pay?</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {UPI_APPS.map((app) => (
+                  <button
+                    key={app.value}
+                    onClick={() => setPaidForm(f => ({ ...f, app: app.value }))}
+                    className={`flex flex-col items-center gap-1 p-3 rounded-xl border text-xs font-medium transition-all ${
+                      paidForm.app === app.value
+                        ? "border-emerald-500 bg-emerald-500/10 text-emerald-300"
+                        : "border-gray-700 bg-gray-800 text-gray-400 hover:border-gray-500"
+                    }`}
+                  >
+                    <span className="text-base">{app.emoji}</span>
+                    {app.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* UTR (primary for UPI) */}
+            {paidForm.app !== "cash" && (
+              <div>
+                <Label className="text-gray-300 text-sm">
+                  UTR / Transaction ID
+                  {paidForm.app.startsWith("upi") && (
+                    <span className="text-amber-400 ml-1 text-xs">(required for UPI)</span>
+                  )}
+                </Label>
+                <Input
+                  className="bg-gray-800 border-gray-700 text-white mt-1.5 h-11 font-mono"
+                  placeholder="e.g. 123456789012"
+                  value={paidForm.utr}
+                  onChange={e => setPaidForm(f => ({ ...f, utr: e.target.value }))}
+                />
+              </div>
+            )}
+
+            {/* Amount (editable — in case of partial payment) */}
+            <div>
+              <Label className="text-gray-300 text-sm">Amount Paid (₹)</Label>
+              <Input
+                className="bg-gray-800 border-gray-700 text-white mt-1.5 h-11"
+                type="number"
+                step="0.01"
+                placeholder={order.totalAmount}
+                value={paidForm.amount}
+                onChange={e => setPaidForm(f => ({ ...f, amount: e.target.value }))}
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Leave blank if you paid the full amount: {fmtINR(order.totalAmount)}
+              </p>
+            </div>
+
+            <div className="flex gap-3 pt-1">
+              <Button
+                variant="outline"
+                className="flex-1 border-gray-600 text-gray-300"
+                onClick={() => setShowPaid(false)}
+              >
+                Back
+              </Button>
+              <Button
+                className="flex-1 h-11 bg-emerald-600 hover:bg-emerald-700 font-semibold"
+                onClick={handleSubmitPayment}
+                disabled={detectPaymentMut.isPending}
+              >
+                {detectPaymentMut.isPending ? "Submitting..." : "Submit Payment"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirm payment dialog (admin) */}
+      <Dialog open={showConfirm} onOpenChange={setShowConfirm}>
+        <DialogContent className="bg-gray-900 border-gray-700 text-white max-w-sm">
+          <DialogHeader><DialogTitle>Confirm Payment</DialogTitle></DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="bg-emerald-900/20 border border-emerald-500/30 rounded-xl p-4 space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-400">Order</span>
+                <span className="text-white font-mono">{order.salesCode}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">Buyer</span>
+                <span className="text-white">{order.buyerName}</span>
+              </div>
+              <div className="flex justify-between font-bold border-t border-emerald-500/20 pt-2 mt-1">
+                <span className="text-gray-300">Amount</span>
+                <span className="text-emerald-400 text-lg">{fmtINR(order.totalAmount)}</span>
+              </div>
+            </div>
+            <div>
+              <Label className="text-gray-300">Payment Reference (optional)</Label>
+              <Input
+                className="bg-gray-800 border-gray-700 text-white mt-1.5"
+                placeholder="UTR / receipt number"
+                value={confirmRef}
+                onChange={e => setConfirmRef(e.target.value)}
+              />
+            </div>
+            <p className="text-xs text-gray-400">
+              Confirming will generate an invoice, update inventory, and enable dispatch.
+            </p>
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                className="flex-1 border-gray-600"
+                onClick={() => setShowConfirm(false)}
+              >
+                Back
+              </Button>
+              <Button
+                className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+                onClick={() => confirmPaymentMut.mutate({ id: id!, data: { paymentReference: confirmRef } })}
+                disabled={confirmPaymentMut.isPending}
+              >
+                <CheckCircle className="w-4 h-4 mr-2" /> Confirm Payment
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Cancel dialog */}
       <Dialog open={showCancel} onOpenChange={setShowCancel}>
         <DialogContent className="bg-gray-900 border-gray-700 text-white max-w-sm">
@@ -433,70 +830,19 @@ export default function SalesOrderDetail() {
               onChange={e => setCancelReason(e.target.value)}
             />
             <div className="flex gap-3">
-              <Button variant="outline" className="flex-1 border-gray-600" onClick={() => setShowCancel(false)}>Back</Button>
-              <Button className="flex-1 bg-red-600 hover:bg-red-700" onClick={() => { cancelMut.mutate({ id: id!, data: { reason: cancelReason } }); setShowCancel(false); }} disabled={cancelMut.isPending}>
-                Confirm Cancel
+              <Button
+                variant="outline"
+                className="flex-1 border-gray-600"
+                onClick={() => setShowCancel(false)}
+              >
+                Back
               </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Detect payment dialog */}
-      <Dialog open={showDetect} onOpenChange={setShowDetect}>
-        <DialogContent className="bg-gray-900 border-gray-700 text-white max-w-sm">
-          <DialogHeader><DialogTitle>Record Payment Detection</DialogTitle></DialogHeader>
-          <div className="space-y-4 pt-2">
-            <div>
-              <Label className="text-gray-300">Amount Received (₹)</Label>
-              <Input className="bg-gray-800 border-gray-700 text-white mt-1" type="number" placeholder={order.totalAmount} value={detectForm.amount} onChange={e => setDetectForm(f => ({ ...f, amount: e.target.value }))} />
-            </div>
-            <div>
-              <Label className="text-gray-300">Transaction Reference</Label>
-              <Input className="bg-gray-800 border-gray-700 text-white mt-1" placeholder="UTR / txn ID" value={detectForm.transactionReference} onChange={e => setDetectForm(f => ({ ...f, transactionReference: e.target.value }))} />
-            </div>
-            <div>
-              <Label className="text-gray-300">Payment Provider</Label>
-              <Select value={detectForm.paymentProvider} onValueChange={v => setDetectForm(f => ({ ...f, paymentProvider: v }))}>
-                <SelectTrigger className="bg-gray-800 border-gray-700 text-white mt-1"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="manual">Manual Entry</SelectItem>
-                  <SelectItem value="upi">UPI</SelectItem>
-                  <SelectItem value="neft">NEFT</SelectItem>
-                  <SelectItem value="rtgs">RTGS</SelectItem>
-                  <SelectItem value="cash">Cash</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex gap-3">
-              <Button variant="outline" className="flex-1 border-gray-600" onClick={() => setShowDetect(false)}>Cancel</Button>
-              <Button className="flex-1 bg-blue-600 hover:bg-blue-700" onClick={() => { detectPaymentMut.mutate({ id: id!, data: { amount: parseFloat(detectForm.amount || order.totalAmount || "0"), transactionReference: detectForm.transactionReference, paymentProvider: detectForm.paymentProvider } }); setShowDetect(false); }} disabled={detectPaymentMut.isPending}>
-                Record Detection
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Confirm payment dialog */}
-      <Dialog open={showConfirm} onOpenChange={setShowConfirm}>
-        <DialogContent className="bg-gray-900 border-gray-700 text-white max-w-sm">
-          <DialogHeader><DialogTitle>Confirm Payment</DialogTitle></DialogHeader>
-          <div className="space-y-4 pt-2">
-            <div className="bg-purple-900/20 border border-purple-500/30 rounded-lg p-4 space-y-2 text-sm">
-              <div className="flex justify-between"><span className="text-gray-400">Order</span><span className="text-white">{order.salesCode}</span></div>
-              <div className="flex justify-between"><span className="text-gray-400">Buyer</span><span className="text-white">{order.buyerName}</span></div>
-              <div className="flex justify-between font-bold"><span className="text-gray-300">Amount</span><span className="text-emerald-400">{fmtINR(order.totalAmount)}</span></div>
-            </div>
-            <div>
-              <Label className="text-gray-300">Payment Reference (optional)</Label>
-              <Input className="bg-gray-800 border-gray-700 text-white mt-1" placeholder="UTR / receipt number" value={confirmRef} onChange={e => setConfirmRef(e.target.value)} />
-            </div>
-            <p className="text-xs text-gray-400">This will: generate invoice, update inventory, create money custody record, and enable dispatch.</p>
-            <div className="flex gap-3">
-              <Button variant="outline" className="flex-1 border-gray-600" onClick={() => setShowConfirm(false)}>Cancel</Button>
-              <Button className="flex-1 bg-emerald-600 hover:bg-emerald-700" onClick={() => { confirmPaymentMut.mutate({ id: id!, data: { paymentReference: confirmRef } }); setShowConfirm(false); }} disabled={confirmPaymentMut.isPending}>
-                <CheckCircle className="w-4 h-4 mr-2" /> Confirm Payment
+              <Button
+                className="flex-1 bg-red-600 hover:bg-red-700"
+                onClick={() => cancelMut.mutate({ id: id!, data: { reason: cancelReason } })}
+                disabled={cancelMut.isPending}
+              >
+                Cancel Order
               </Button>
             </div>
           </div>
@@ -508,24 +854,58 @@ export default function SalesOrderDetail() {
         <DialogContent className="bg-gray-900 border-gray-700 text-white max-w-sm">
           <DialogHeader><DialogTitle>Record Dispatch</DialogTitle></DialogHeader>
           <div className="space-y-4 pt-2">
-            <div className="text-sm text-gray-400 bg-gray-800 rounded-lg p-3">
+            <div className="text-sm text-gray-400 bg-gray-800 rounded-xl p-3">
               Remaining: <span className="text-white font-bold">{remaining.toFixed(1)} kg</span>
             </div>
             <div>
               <Label className="text-gray-300">Quantity to Dispatch (kg)</Label>
-              <Input className="bg-gray-800 border-gray-700 text-white mt-1" type="number" max={remaining} placeholder={remaining.toFixed(1)} value={dispatchForm.quantityKg} onChange={e => setDispatchForm(f => ({ ...f, quantityKg: e.target.value }))} />
+              <Input
+                className="bg-gray-800 border-gray-700 text-white mt-1.5"
+                type="number"
+                max={remaining}
+                placeholder={remaining.toFixed(1)}
+                value={dispatchForm.quantityKg}
+                onChange={e => setDispatchForm(f => ({ ...f, quantityKg: e.target.value }))}
+              />
             </div>
             <div>
               <Label className="text-gray-300">Source Store</Label>
-              <Input className="bg-gray-800 border-gray-700 text-white mt-1" placeholder="Store name" value={dispatchForm.storeName} onChange={e => setDispatchForm(f => ({ ...f, storeName: e.target.value }))} />
+              <Input
+                className="bg-gray-800 border-gray-700 text-white mt-1.5"
+                placeholder="Store name"
+                value={dispatchForm.storeName}
+                onChange={e => setDispatchForm(f => ({ ...f, storeName: e.target.value }))}
+              />
             </div>
             <div>
-              <Label className="text-gray-300">Notes</Label>
-              <Input className="bg-gray-800 border-gray-700 text-white mt-1" placeholder="Optional" value={dispatchForm.notes} onChange={e => setDispatchForm(f => ({ ...f, notes: e.target.value }))} />
+              <Label className="text-gray-300">Notes (optional)</Label>
+              <Input
+                className="bg-gray-800 border-gray-700 text-white mt-1.5"
+                placeholder="Optional notes"
+                value={dispatchForm.notes}
+                onChange={e => setDispatchForm(f => ({ ...f, notes: e.target.value }))}
+              />
             </div>
             <div className="flex gap-3">
-              <Button variant="outline" className="flex-1 border-gray-600" onClick={() => setShowDispatch(false)}>Cancel</Button>
-              <Button className="flex-1 bg-cyan-600 hover:bg-cyan-700" onClick={() => dispatchMut.mutate({ id: id!, data: { quantityKg: parseFloat(dispatchForm.quantityKg || remaining.toString()), storeName: dispatchForm.storeName || undefined, notes: dispatchForm.notes || undefined } })} disabled={dispatchMut.isPending}>
+              <Button
+                variant="outline"
+                className="flex-1 border-gray-600"
+                onClick={() => setShowDispatch(false)}
+              >
+                Back
+              </Button>
+              <Button
+                className="flex-1 bg-cyan-600 hover:bg-cyan-700"
+                onClick={() => dispatchMut.mutate({
+                  id: id!,
+                  data: {
+                    quantityKg: parseFloat(dispatchForm.quantityKg || remaining.toString()),
+                    storeName: dispatchForm.storeName || undefined,
+                    notes: dispatchForm.notes || undefined,
+                  },
+                })}
+                disabled={dispatchMut.isPending}
+              >
                 <Truck className="w-4 h-4 mr-2" /> Record Dispatch
               </Button>
             </div>

@@ -1,0 +1,132 @@
+ADD A CENTRAL PAYMENT ACCOUNT CONFIGURATION MODULE.
+
+====================================================
+PURPOSE
+====================================================
+
+The ERP must allow authorized admins to configure and manage the central payment receiving account used for all incoming buyer payments.
+
+The system must NOT hardcode payment account details.
+
+Admins must be able to update payment receiving details from the dashboard/settings panel.
+
+====================================================
+CENTRAL PAYMENT ACCOUNT SETTINGS
+====================================================
+
+Create a secure admin settings page where authorized admins can enter and manage:
+
+- business name
+- account holder name
+- bank name
+- branch name
+- account number
+- IFSC code
+- UPI ID
+- merchant name
+- Razorpay key ID
+- Razorpay secret key
+- payment callback URL
+- payment support phone number
+- payment support email
+
+====================================================
+QR CODE GENERATION
+====================================================
+
+System must automatically generate payment QR codes using the configured:
+- UPI ID
+- merchant name
+- payable amount
+- payment reference/order reference
+
+QR codes must dynamically update if admin changes UPI settings.
+
+====================================================
+MULTIPLE ACCOUNT SUPPORT
+====================================================
+
+Architecture should support future expansion for:
+- multiple bank accounts
+- multiple UPI IDs
+- project-wise receiving accounts
+
+But initially use one active central account.
+
+====================================================
+ACTIVE / INACTIVE ACCOUNT CONTROL
+====================================================
+
+Admins should be able to:
+- activate account
+- deactivate account
+- switch active receiving account
+
+Only one account should be active at a time initially.
+
+====================================================
+SECURITY REQUIREMENTS
+====================================================
+
+Very Important:
+
+- Razorpay secret keys must be encrypted in database
+- secret keys must never be visible after saving
+- only super admin can edit payment credentials
+- every settings change must create audit logs
+
+====================================================
+AUDIT TRAIL
+====================================================
+
+Track:
+- who changed payment settings
+- old values
+- new values
+- timestamp
+- IP/device if available
+
+Audit logs must not be deletable.
+
+====================================================
+UI REQUIREMENTS
+====================================================
+
+Settings page should be:
+- simple
+- mobile friendly
+- easy to edit
+- clearly labeled
+
+Provide:
+- Save Settings button
+- Test Payment button
+- Generate Test QR button
+
+====================================================
+VALIDATION REQUIREMENTS
+====================================================
+
+Validate:
+- IFSC format
+- UPI ID format
+- account number confirmation
+- Razorpay credential format
+
+====================================================
+FUTURE READINESS
+====================================================
+
+Prepare architecture for future:
+- automated settlement
+- multiple gateways
+- project-wise collection accounts
+- international payment support
+
+But do NOT implement these yet.
+
+====================================================
+IMPORTANT RULE
+====================================================
+
+All incoming buyer payments must always use the currently active configured central receiving account.

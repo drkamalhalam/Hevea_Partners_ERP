@@ -1,0 +1,198 @@
+MODIFY THE PAYMENT SYSTEM TO BE OPTIMIZED PRIMARILY FOR INDIAN BUYERS AND INDIAN BUSINESS OPERATIONS.
+
+====================================================
+INDIA-FIRST PAYMENT DESIGN
+====================================================
+
+The entire payment experience should prioritize:
+- UPI payments
+- QR code payments
+- mobile users
+- low-friction payment flow
+- fast payment confirmation
+- simple language
+
+Most buyers are expected to use:
+- Google Pay
+- PhonePe
+- Paytm
+- BHIM
+- bank UPI apps
+
+Design the UX primarily around Indian payment habits.
+
+====================================================
+PRIMARY PAYMENT METHODS
+====================================================
+
+Highest Priority:
+1. UPI QR
+2. UPI Intent
+3. Razorpay UPI
+
+Secondary:
+4. Net Banking
+5. Debit Card
+6. Credit Card
+
+Optional:
+7. Wallets
+
+Cash payment support must remain available.
+
+====================================================
+UPI-FIRST UX
+====================================================
+
+Buyer should ideally complete payment in:
+- scan QR
+- approve payment
+- done
+
+Avoid requiring:
+- typing account numbers
+- complicated checkout forms
+- unnecessary registration
+
+====================================================
+QR PAYMENT REQUIREMENTS
+====================================================
+
+System should:
+- generate dynamic UPI QR
+- auto-fill payable amount
+- include payment reference/order reference
+- support all major Indian UPI apps
+
+Display:
+- QR code
+- payable amount
+- UPI ID
+- order reference
+
+Provide:
+- "Open in UPI App" button for mobile devices
+
+====================================================
+RAZORPAY CONFIGURATION
+====================================================
+
+Use Razorpay primarily for:
+- UPI
+- QR
+- payment links
+- callback/webhook support
+
+Prefer UPI checkout as default payment option.
+
+====================================================
+PAYMENT VERIFICATION LOGIC
+====================================================
+
+Even if UPI payment succeeds:
+- manual verification is still required
+- dispatch must remain blocked until approval
+
+This is critical for:
+- dispute prevention
+- wrong payment handling
+- stock protection
+
+====================================================
+INDIAN BUSINESS PRACTICALITY
+====================================================
+
+Design system assuming:
+- unstable internet may happen
+- users may not understand technical terms
+- users prefer WhatsApp communication
+- screenshots/payment proof uploads are common
+- many users operate fully from mobile
+
+====================================================
+PAYMENT PROOF SUPPORT
+====================================================
+
+Allow buyer to upload:
+- payment screenshot
+- UTR number
+- bank reference
+
+Store proof securely for audit.
+
+====================================================
+MOBILE-FIRST DESIGN
+====================================================
+
+Payment screens must be:
+- large buttons
+- readable on small screens
+- fast loading
+- simple language
+- minimal steps
+
+====================================================
+LANGUAGE STYLE
+====================================================
+
+Avoid complex banking terminology.
+
+Use simple labels:
+- Pay Now
+- Payment Received
+- Payment Confirmed
+- Waiting for Verification
+- Upload Payment Screenshot
+
+====================================================
+WHATSAPP SUPPORT
+====================================================
+
+Prepare architecture for future WhatsApp integration:
+- payment link sharing
+- QR sharing
+- order notifications
+- payment confirmation notifications
+
+====================================================
+IMPORTANT INDIAN PAYMENT EDGE CASES
+====================================================
+
+Handle:
+- delayed UPI confirmations
+- duplicate UPI payments
+- partial payment mistakes
+- wrong reference numbers
+- offline screenshot claims
+- payment success but callback failure
+
+====================================================
+SECURITY
+====================================================
+
+Implement:
+- duplicate UTR detection
+- duplicate transaction detection
+- webhook signature verification
+- manual approval controls
+- refund approval workflow
+
+====================================================
+UI PRIORITY
+====================================================
+
+The payment system should feel:
+- familiar to Indian users
+- similar to common Indian payment apps
+- easy even for non-technical rural users
+
+UPI QR should always be the most visible payment option.
+
+====================================================
+FINAL IMPORTANT RULE
+====================================================
+
+Design the entire payment experience around:
+"Indian mobile-first UPI payment behavior"
+
+The system must work smoothly for real-world Indian rubber plantation business operations.

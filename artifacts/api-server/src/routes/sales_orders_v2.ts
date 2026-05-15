@@ -286,6 +286,21 @@ router.post("/:id/detect-payment", async (req, res) => {
     }
 
     const data = parse.data;
+
+    // ── Duplicate UTR guard ───────────────────────────────────────
+    if (data.transactionReference) {
+      const [duplicate] = await db
+        .select({ id: paymentTransactionsTable.id })
+        .from(paymentTransactionsTable)
+        .where(eq(paymentTransactionsTable.transactionReference, data.transactionReference))
+        .limit(1);
+      if (duplicate) {
+        return res.status(409).json({
+          error: `Duplicate transaction: UTR ${data.transactionReference} has already been recorded. If this is a mistake, contact admin.`,
+        });
+      }
+    }
+
     const expectedAmount = parseFloat(order.totalAmount);
     const detectedAmount = data.amount;
     const matched = Math.abs(expectedAmount - detectedAmount) < 0.01;
