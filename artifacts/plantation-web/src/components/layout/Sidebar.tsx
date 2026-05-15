@@ -43,6 +43,10 @@ import {
   LayoutGrid,
   FileCheck2,
   Wallet,
+  Leaf,
+  Package,
+  CalendarDays,
+  UserCog,
 } from "lucide-react";
 import { useRole, ROLE_LABELS, ROLE_COLORS } from "@/contexts/RoleContext";
 import type { UserRole } from "@/contexts/RoleContext";
@@ -262,6 +266,36 @@ const navGroups: NavGroup[] = [
   {
     label: "Operations",
     items: [
+      {
+        name: "Collection Entry",
+        href: "/collection-entry",
+        icon: Leaf,
+        roles: ["admin", "developer", "employee", "operational_staff"] as UserRole[],
+      },
+      {
+        name: "Store Entry",
+        href: "/store-entry",
+        icon: Package,
+        roles: ["admin", "developer", "employee", "operational_staff"] as UserRole[],
+      },
+      {
+        name: "Worker History",
+        href: "/worker-history",
+        icon: CalendarDays,
+        roles: ["admin", "developer", "employee", "operational_staff"] as UserRole[],
+      },
+      {
+        name: "Production Dashboard",
+        href: "/production-dashboard",
+        icon: BarChart3,
+        roles: ["admin", "developer"] as UserRole[],
+      },
+      {
+        name: "Employee Assignments",
+        href: "/employee-assignments",
+        icon: UserCog,
+        roles: ["admin", "developer"] as UserRole[],
+      },
       {
         name: "Production Log",
         href: "/production-log",

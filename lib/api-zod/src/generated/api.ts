@@ -16858,3 +16858,350 @@ export const ListStockMovementAuditResponse = zod.object({
     )
     .optional(),
 });
+
+/**
+ * @summary List collection entries (admin sees all; employees see own)
+ */
+export const ListCollectionEntriesQueryParams = zod.object({
+  projectId: zod.coerce.string().optional(),
+  dateFrom: zod.coerce.string().optional(),
+  dateTo: zod.coerce.string().optional(),
+  employeeId: zod.coerce.string().optional(),
+});
+
+export const ListCollectionEntriesResponseItem = zod.object({
+  id: zod.string().optional(),
+  projectId: zod.string().optional(),
+  projectName: zod.string().nullish(),
+  employeeId: zod.string().optional(),
+  employeeName: zod.string().nullish(),
+  sheetCount: zod.number().optional(),
+  entryDate: zod.string().optional(),
+  entryTime: zod.string().optional(),
+  remarks: zod.string().nullish(),
+  observerActive: zod.string().nullish(),
+  createdAt: zod.string().optional(),
+  updatedAt: zod.string().optional(),
+  deletedAt: zod.string().nullish(),
+});
+export const ListCollectionEntriesResponse = zod.array(
+  ListCollectionEntriesResponseItem,
+);
+
+/**
+ * @summary Create a collection entry
+ */
+export const CreateCollectionEntryBody = zod.object({
+  projectId: zod.string().optional(),
+  employeeId: zod.string().optional(),
+  sheetCount: zod.number(),
+  remarks: zod.string().optional(),
+});
+
+/**
+ * @summary Admin edit of a collection entry
+ */
+export const EditCollectionEntryParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const EditCollectionEntryBody = zod.object({
+  sheetCount: zod.number().optional(),
+  remarks: zod.string().optional(),
+});
+
+export const EditCollectionEntryResponse = zod.object({
+  id: zod.string().optional(),
+  projectId: zod.string().optional(),
+  projectName: zod.string().nullish(),
+  employeeId: zod.string().optional(),
+  employeeName: zod.string().nullish(),
+  sheetCount: zod.number().optional(),
+  entryDate: zod.string().optional(),
+  entryTime: zod.string().optional(),
+  remarks: zod.string().nullish(),
+  observerActive: zod.string().nullish(),
+  createdAt: zod.string().optional(),
+  updatedAt: zod.string().optional(),
+  deletedAt: zod.string().nullish(),
+});
+
+/**
+ * @summary Soft-delete a collection entry
+ */
+export const SoftDeleteCollectionEntryParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const SoftDeleteCollectionEntryResponse = zod.object({
+  id: zod.string().optional(),
+  projectId: zod.string().optional(),
+  projectName: zod.string().nullish(),
+  employeeId: zod.string().optional(),
+  employeeName: zod.string().nullish(),
+  sheetCount: zod.number().optional(),
+  entryDate: zod.string().optional(),
+  entryTime: zod.string().optional(),
+  remarks: zod.string().nullish(),
+  observerActive: zod.string().nullish(),
+  createdAt: zod.string().optional(),
+  updatedAt: zod.string().optional(),
+  deletedAt: zod.string().nullish(),
+});
+
+/**
+ * @summary Pending-outside-store totals and today summary
+ */
+export const GetCollectionSummaryParams = zod.object({
+  projectId: zod.coerce.string(),
+});
+
+export const GetCollectionSummaryResponse = zod.object({
+  projectId: zod.string().optional(),
+  totalCollected: zod.number().optional(),
+  totalStored: zod.number().optional(),
+  pendingOutsideStore: zod.number().optional(),
+  todayCollected: zod.number().optional(),
+  todayStored: zod.number().optional(),
+  totalStoredWeightKg: zod.number().optional(),
+  totalScrapWeightKg: zod.number().optional(),
+});
+
+/**
+ * @summary List store entries
+ */
+export const ListStoreEntriesQueryParams = zod.object({
+  projectId: zod.coerce.string().optional(),
+  dateFrom: zod.coerce.string().optional(),
+  dateTo: zod.coerce.string().optional(),
+});
+
+export const ListStoreEntriesResponseItem = zod.object({
+  id: zod.string().optional(),
+  projectId: zod.string().optional(),
+  projectName: zod.string().nullish(),
+  employeeId: zod.string().optional(),
+  employeeName: zod.string().nullish(),
+  sheetCount: zod.number().optional(),
+  weightKg: zod.number().nullish(),
+  scrapWeightKg: zod.number().nullish(),
+  entryDate: zod.string().optional(),
+  entryTime: zod.string().optional(),
+  remarks: zod.string().nullish(),
+  pendingOutsideStore: zod.number().nullish(),
+  createdAt: zod.string().optional(),
+  updatedAt: zod.string().optional(),
+  deletedAt: zod.string().nullish(),
+});
+export const ListStoreEntriesResponse = zod.array(ListStoreEntriesResponseItem);
+
+/**
+ * @summary Create a store entry
+ */
+export const CreateStoreEntryBody = zod.object({
+  projectId: zod.string().optional(),
+  employeeId: zod.string().optional(),
+  sheetCount: zod.number(),
+  weightKg: zod.number().optional(),
+  scrapWeightKg: zod.number().optional(),
+  remarks: zod.string().optional(),
+});
+
+/**
+ * @summary Admin edit of a store entry
+ */
+export const EditStoreEntryParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const EditStoreEntryBody = zod.object({
+  sheetCount: zod.number().optional(),
+  weightKg: zod.number().optional(),
+  scrapWeightKg: zod.number().optional(),
+  remarks: zod.string().optional(),
+});
+
+export const EditStoreEntryResponse = zod.object({
+  id: zod.string().optional(),
+  projectId: zod.string().optional(),
+  projectName: zod.string().nullish(),
+  employeeId: zod.string().optional(),
+  employeeName: zod.string().nullish(),
+  sheetCount: zod.number().optional(),
+  weightKg: zod.number().nullish(),
+  scrapWeightKg: zod.number().nullish(),
+  entryDate: zod.string().optional(),
+  entryTime: zod.string().optional(),
+  remarks: zod.string().nullish(),
+  pendingOutsideStore: zod.number().nullish(),
+  createdAt: zod.string().optional(),
+  updatedAt: zod.string().optional(),
+  deletedAt: zod.string().nullish(),
+});
+
+/**
+ * @summary Soft-delete a store entry
+ */
+export const SoftDeleteStoreEntryParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const SoftDeleteStoreEntryResponse = zod.object({
+  id: zod.string().optional(),
+  projectId: zod.string().optional(),
+  projectName: zod.string().nullish(),
+  employeeId: zod.string().optional(),
+  employeeName: zod.string().nullish(),
+  sheetCount: zod.number().optional(),
+  weightKg: zod.number().nullish(),
+  scrapWeightKg: zod.number().nullish(),
+  entryDate: zod.string().optional(),
+  entryTime: zod.string().optional(),
+  remarks: zod.string().nullish(),
+  pendingOutsideStore: zod.number().nullish(),
+  createdAt: zod.string().optional(),
+  updatedAt: zod.string().optional(),
+  deletedAt: zod.string().nullish(),
+});
+
+/**
+ * @summary List production employee assignments
+ */
+export const ListProductionAssignmentsQueryParams = zod.object({
+  projectId: zod.coerce.string().optional(),
+  activeOnly: zod.coerce.string().optional(),
+});
+
+export const ListProductionAssignmentsResponseItem = zod.object({
+  id: zod.string().optional(),
+  employeeId: zod.string().optional(),
+  employeeName: zod.string().nullish(),
+  projectId: zod.string().optional(),
+  projectName: zod.string().nullish(),
+  role: zod.string().optional(),
+  assignedById: zod.string().nullish(),
+  assignedByName: zod.string().nullish(),
+  assignedDate: zod.string().optional(),
+  isActive: zod.boolean().optional(),
+  notes: zod.string().nullish(),
+  createdAt: zod.string().optional(),
+  updatedAt: zod.string().optional(),
+});
+export const ListProductionAssignmentsResponse = zod.array(
+  ListProductionAssignmentsResponseItem,
+);
+
+/**
+ * @summary Assign an employee to a project
+ */
+export const CreateProductionAssignmentBody = zod.object({
+  employeeId: zod.string(),
+  projectId: zod.string(),
+  role: zod.string().optional(),
+  notes: zod.string().optional(),
+});
+
+/**
+ * @summary Get own production assignment (employee auto-fill)
+ */
+export const GetMyProductionAssignmentResponseItem = zod.object({
+  id: zod.string().optional(),
+  employeeId: zod.string().optional(),
+  employeeName: zod.string().nullish(),
+  projectId: zod.string().optional(),
+  projectName: zod.string().nullish(),
+  role: zod.string().optional(),
+  assignedById: zod.string().nullish(),
+  assignedByName: zod.string().nullish(),
+  assignedDate: zod.string().optional(),
+  isActive: zod.boolean().optional(),
+  notes: zod.string().nullish(),
+  createdAt: zod.string().optional(),
+  updatedAt: zod.string().optional(),
+});
+export const GetMyProductionAssignmentResponse = zod.array(
+  GetMyProductionAssignmentResponseItem,
+);
+
+/**
+ * @summary Deactivate a production employee assignment
+ */
+export const DeactivateProductionAssignmentParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const DeactivateProductionAssignmentResponse = zod.object({
+  id: zod.string().optional(),
+  employeeId: zod.string().optional(),
+  employeeName: zod.string().nullish(),
+  projectId: zod.string().optional(),
+  projectName: zod.string().nullish(),
+  role: zod.string().optional(),
+  assignedById: zod.string().nullish(),
+  assignedByName: zod.string().nullish(),
+  assignedDate: zod.string().optional(),
+  isActive: zod.boolean().optional(),
+  notes: zod.string().nullish(),
+  createdAt: zod.string().optional(),
+  updatedAt: zod.string().optional(),
+});
+
+/**
+ * @summary List observer assignments
+ */
+export const ListObservationAssignmentsQueryParams = zod.object({
+  projectId: zod.coerce.string().optional(),
+});
+
+export const ListObservationAssignmentsResponseItem = zod.object({
+  id: zod.string().optional(),
+  projectId: zod.string().optional(),
+  projectName: zod.string().nullish(),
+  observerUserId: zod.string().optional(),
+  observerName: zod.string().nullish(),
+  observerDisplayName: zod.string().nullish(),
+  startDatetime: zod.string().optional(),
+  endDatetime: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  createdById: zod.string().nullish(),
+  createdByName: zod.string().nullish(),
+  createdAt: zod.string().optional(),
+  updatedAt: zod.string().optional(),
+});
+export const ListObservationAssignmentsResponse = zod.array(
+  ListObservationAssignmentsResponseItem,
+);
+
+/**
+ * @summary Assign an observer to a project window
+ */
+export const CreateObservationAssignmentBody = zod.object({
+  projectId: zod.string(),
+  observerUserId: zod.string(),
+  startDatetime: zod.string(),
+  endDatetime: zod.string().optional(),
+  notes: zod.string().optional(),
+});
+
+/**
+ * @summary Close an observation assignment
+ */
+export const CloseObservationAssignmentParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const CloseObservationAssignmentResponse = zod.object({
+  id: zod.string().optional(),
+  projectId: zod.string().optional(),
+  projectName: zod.string().nullish(),
+  observerUserId: zod.string().optional(),
+  observerName: zod.string().nullish(),
+  observerDisplayName: zod.string().nullish(),
+  startDatetime: zod.string().optional(),
+  endDatetime: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  createdById: zod.string().nullish(),
+  createdByName: zod.string().nullish(),
+  createdAt: zod.string().optional(),
+  updatedAt: zod.string().optional(),
+});

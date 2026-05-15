@@ -29,6 +29,9 @@ tags:
   - name: analytics
     description: Profitability and sustainability analytics
 
+  - name: collection
+    description: Rubber sheet collection and store entry operations
+
 paths:
   /me:
     get:
@@ -10342,6 +10345,257 @@ paths:
                 properties:
                   audit: { type: array, items: { $ref: '#/components/schemas/StockMovementAudit' } }
 
+  # ─── Production & Collection Module ───────────────────────────────────────
+
+  /collection-entries:
+    get:
+      operationId: listCollectionEntries
+      tags: [collection]
+      summary: List collection entries (admin sees all; employees see own)
+      parameters:
+        - { name: projectId, in: query, schema: { type: string } }
+        - { name: dateFrom, in: query, schema: { type: string } }
+        - { name: dateTo, in: query, schema: { type: string } }
+        - { name: employeeId, in: query, schema: { type: string } }
+      responses:
+        '200':
+          description: Collection entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/CollectionEntry' }
+    post:
+      operationId: createCollectionEntry
+      tags: [collection]
+      summary: Create a collection entry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateCollectionEntryBody' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CollectionEntry' }
+
+  /collection-entries/{id}:
+    patch:
+      operationId: editCollectionEntry
+      tags: [collection]
+      summary: Admin edit of a collection entry
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EditCollectionEntryBody' }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CollectionEntry' }
+    delete:
+      operationId: softDeleteCollectionEntry
+      tags: [collection]
+      summary: Soft-delete a collection entry
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Deleted
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CollectionEntry' }
+
+  /collection-entries/summary/{projectId}:
+    get:
+      operationId: getCollectionSummary
+      tags: [collection]
+      summary: Pending-outside-store totals and today summary
+      parameters:
+        - { name: projectId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Summary
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CollectionSummary' }
+
+  /store-entries:
+    get:
+      operationId: listStoreEntries
+      tags: [collection]
+      summary: List store entries
+      parameters:
+        - { name: projectId, in: query, schema: { type: string } }
+        - { name: dateFrom, in: query, schema: { type: string } }
+        - { name: dateTo, in: query, schema: { type: string } }
+      responses:
+        '200':
+          description: Store entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/StoreEntry' }
+    post:
+      operationId: createStoreEntry
+      tags: [collection]
+      summary: Create a store entry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateStoreEntryBody' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/StoreEntry' }
+
+  /store-entries/{id}:
+    patch:
+      operationId: editStoreEntry
+      tags: [collection]
+      summary: Admin edit of a store entry
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EditStoreEntryBody' }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/StoreEntry' }
+    delete:
+      operationId: softDeleteStoreEntry
+      tags: [collection]
+      summary: Soft-delete a store entry
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Deleted
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/StoreEntry' }
+
+  /production-assignments:
+    get:
+      operationId: listProductionAssignments
+      tags: [collection]
+      summary: List production employee assignments
+      parameters:
+        - { name: projectId, in: query, schema: { type: string } }
+        - { name: activeOnly, in: query, schema: { type: string } }
+      responses:
+        '200':
+          description: Assignments
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ProductionAssignment' }
+    post:
+      operationId: createProductionAssignment
+      tags: [collection]
+      summary: Assign an employee to a project
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateProductionAssignmentBody' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProductionAssignment' }
+
+  /production-assignments/my:
+    get:
+      operationId: getMyProductionAssignment
+      tags: [collection]
+      summary: Get own production assignment (employee auto-fill)
+      responses:
+        '200':
+          description: Own assignments
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ProductionAssignment' }
+
+  /production-assignments/{id}/deactivate:
+    patch:
+      operationId: deactivateProductionAssignment
+      tags: [collection]
+      summary: Deactivate a production employee assignment
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Deactivated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProductionAssignment' }
+
+  /observation-assignments:
+    get:
+      operationId: listObservationAssignments
+      tags: [collection]
+      summary: List observer assignments
+      parameters:
+        - { name: projectId, in: query, schema: { type: string } }
+      responses:
+        '200':
+          description: Observation assignments
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ObservationAssignment' }
+    post:
+      operationId: createObservationAssignment
+      tags: [collection]
+      summary: Assign an observer to a project window
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateObservationAssignmentBody' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ObservationAssignment' }
+
+  /observation-assignments/{id}/close:
+    patch:
+      operationId: closeObservationAssignment
+      tags: [collection]
+      summary: Close an observation assignment
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Closed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ObservationAssignment' }
+
+
 components:
   schemas:
 
@@ -17634,3 +17888,138 @@ components:
               physicalKg: { type: number }
               discrepancyKg: { type: number }
               reconciled: { type: boolean }
+
+    CollectionEntry:
+      type: object
+      properties:
+        id: { type: string }
+        projectId: { type: string }
+        projectName: { type: string, nullable: true }
+        employeeId: { type: string }
+        employeeName: { type: string, nullable: true }
+        sheetCount: { type: integer }
+        entryDate: { type: string }
+        entryTime: { type: string }
+        remarks: { type: string, nullable: true }
+        observerActive: { type: string, nullable: true }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+        deletedAt: { type: string, nullable: true }
+
+    CreateCollectionEntryBody:
+      type: object
+      required: [sheetCount]
+      properties:
+        projectId: { type: string }
+        employeeId: { type: string }
+        sheetCount: { type: integer }
+        remarks: { type: string }
+
+    EditCollectionEntryBody:
+      type: object
+      properties:
+        sheetCount: { type: integer }
+        remarks: { type: string }
+
+    StoreEntry:
+      type: object
+      properties:
+        id: { type: string }
+        projectId: { type: string }
+        projectName: { type: string, nullable: true }
+        employeeId: { type: string }
+        employeeName: { type: string, nullable: true }
+        sheetCount: { type: integer }
+        weightKg: { type: number, nullable: true }
+        scrapWeightKg: { type: number, nullable: true }
+        entryDate: { type: string }
+        entryTime: { type: string }
+        remarks: { type: string, nullable: true }
+        pendingOutsideStore: { type: integer, nullable: true }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+        deletedAt: { type: string, nullable: true }
+
+    CreateStoreEntryBody:
+      type: object
+      required: [sheetCount]
+      properties:
+        projectId: { type: string }
+        employeeId: { type: string }
+        sheetCount: { type: integer }
+        weightKg: { type: number }
+        scrapWeightKg: { type: number }
+        remarks: { type: string }
+
+    EditStoreEntryBody:
+      type: object
+      properties:
+        sheetCount: { type: integer }
+        weightKg: { type: number }
+        scrapWeightKg: { type: number }
+        remarks: { type: string }
+
+    CollectionSummary:
+      type: object
+      properties:
+        projectId: { type: string }
+        totalCollected: { type: integer }
+        totalStored: { type: integer }
+        pendingOutsideStore: { type: integer }
+        todayCollected: { type: integer }
+        todayStored: { type: integer }
+        totalStoredWeightKg: { type: number }
+        totalScrapWeightKg: { type: number }
+
+    ProductionAssignment:
+      type: object
+      properties:
+        id: { type: string }
+        employeeId: { type: string }
+        employeeName: { type: string, nullable: true }
+        projectId: { type: string }
+        projectName: { type: string, nullable: true }
+        role: { type: string }
+        assignedById: { type: string, nullable: true }
+        assignedByName: { type: string, nullable: true }
+        assignedDate: { type: string }
+        isActive: { type: boolean }
+        notes: { type: string, nullable: true }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+
+    CreateProductionAssignmentBody:
+      type: object
+      required: [employeeId, projectId]
+      properties:
+        employeeId: { type: string }
+        projectId: { type: string }
+        role: { type: string }
+        notes: { type: string }
+
+    ObservationAssignment:
+      type: object
+      properties:
+        id: { type: string }
+        projectId: { type: string }
+        projectName: { type: string, nullable: true }
+        observerUserId: { type: string }
+        observerName: { type: string, nullable: true }
+        observerDisplayName: { type: string, nullable: true }
+        startDatetime: { type: string }
+        endDatetime: { type: string, nullable: true }
+        notes: { type: string, nullable: true }
+        createdById: { type: string, nullable: true }
+        createdByName: { type: string, nullable: true }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+
+    CreateObservationAssignmentBody:
+      type: object
+      required: [projectId, observerUserId, startDatetime]
+      properties:
+        projectId: { type: string }
+        observerUserId: { type: string }
+        startDatetime: { type: string }
+        endDatetime: { type: string }
+        notes: { type: string }

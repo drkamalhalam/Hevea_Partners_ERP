@@ -102,6 +102,9 @@ importers:
       cors:
         specifier: ^2
         version: 2.8.6
+      date-fns:
+        specifier: ^3.6.0
+        version: 3.6.0
       docxtemplater:
         specifier: ^3.68.7
         version: 3.68.7

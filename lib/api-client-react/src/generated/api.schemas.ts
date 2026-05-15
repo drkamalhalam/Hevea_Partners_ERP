@@ -7740,6 +7740,126 @@ export interface MultiStoreDashboard {
   reconciliation: MultiStoreDashboardReconciliationItem[];
 }
 
+export interface CollectionEntry {
+  id?: string;
+  projectId?: string;
+  projectName?: string | null;
+  employeeId?: string;
+  employeeName?: string | null;
+  sheetCount?: number;
+  entryDate?: string;
+  entryTime?: string;
+  remarks?: string | null;
+  observerActive?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+  deletedAt?: string | null;
+}
+
+export interface CreateCollectionEntryBody {
+  projectId?: string;
+  employeeId?: string;
+  sheetCount: number;
+  remarks?: string;
+}
+
+export interface EditCollectionEntryBody {
+  sheetCount?: number;
+  remarks?: string;
+}
+
+export interface StoreEntry {
+  id?: string;
+  projectId?: string;
+  projectName?: string | null;
+  employeeId?: string;
+  employeeName?: string | null;
+  sheetCount?: number;
+  weightKg?: number | null;
+  scrapWeightKg?: number | null;
+  entryDate?: string;
+  entryTime?: string;
+  remarks?: string | null;
+  pendingOutsideStore?: number | null;
+  createdAt?: string;
+  updatedAt?: string;
+  deletedAt?: string | null;
+}
+
+export interface CreateStoreEntryBody {
+  projectId?: string;
+  employeeId?: string;
+  sheetCount: number;
+  weightKg?: number;
+  scrapWeightKg?: number;
+  remarks?: string;
+}
+
+export interface EditStoreEntryBody {
+  sheetCount?: number;
+  weightKg?: number;
+  scrapWeightKg?: number;
+  remarks?: string;
+}
+
+export interface CollectionSummary {
+  projectId?: string;
+  totalCollected?: number;
+  totalStored?: number;
+  pendingOutsideStore?: number;
+  todayCollected?: number;
+  todayStored?: number;
+  totalStoredWeightKg?: number;
+  totalScrapWeightKg?: number;
+}
+
+export interface ProductionAssignment {
+  id?: string;
+  employeeId?: string;
+  employeeName?: string | null;
+  projectId?: string;
+  projectName?: string | null;
+  role?: string;
+  assignedById?: string | null;
+  assignedByName?: string | null;
+  assignedDate?: string;
+  isActive?: boolean;
+  notes?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CreateProductionAssignmentBody {
+  employeeId: string;
+  projectId: string;
+  role?: string;
+  notes?: string;
+}
+
+export interface ObservationAssignment {
+  id?: string;
+  projectId?: string;
+  projectName?: string | null;
+  observerUserId?: string;
+  observerName?: string | null;
+  observerDisplayName?: string | null;
+  startDatetime?: string;
+  endDatetime?: string | null;
+  notes?: string | null;
+  createdById?: string | null;
+  createdByName?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CreateObservationAssignmentBody {
+  projectId: string;
+  observerUserId: string;
+  startDatetime: string;
+  endDatetime?: string;
+  notes?: string;
+}
+
 export type GetUserActivityParams = {
   limit?: number;
 };
@@ -9648,4 +9768,26 @@ export type ListStockMovementAuditParams = {
 
 export type ListStockMovementAudit200 = {
   audit?: StockMovementAudit[];
+};
+
+export type ListCollectionEntriesParams = {
+  projectId?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  employeeId?: string;
+};
+
+export type ListStoreEntriesParams = {
+  projectId?: string;
+  dateFrom?: string;
+  dateTo?: string;
+};
+
+export type ListProductionAssignmentsParams = {
+  projectId?: string;
+  activeOnly?: string;
+};
+
+export type ListObservationAssignmentsParams = {
+  projectId?: string;
 };

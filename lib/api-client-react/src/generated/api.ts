@@ -75,6 +75,8 @@ import type {
   ClaimantContributionPage,
   ClaimantParticipationPage,
   ClosureReadiness,
+  CollectionEntry,
+  CollectionSummary,
   CompleteStockTransfer200,
   ComputePayableParams,
   ComputeTransferValueToPercentage200,
@@ -98,6 +100,7 @@ import type {
   CreateClaimantInput,
   CreateClaimantParticipation201,
   CreateClaimantParticipationBody,
+  CreateCollectionEntryBody,
   CreateContributionBody,
   CreateDispatchMemo201,
   CreateDispatchMemoBody,
@@ -136,12 +139,14 @@ import type {
   CreateNegativeBalanceEntry201,
   CreateNegativeBalanceEntryBody,
   CreateNomineeInput,
+  CreateObservationAssignmentBody,
   CreateOwnershipSnapshotBody,
   CreateOwnershipTransferBody,
   CreatePayableAdjustment201,
   CreatePayableAdjustmentBody,
   CreatePayableSnapshot201,
   CreatePayableSnapshotBody,
+  CreateProductionAssignmentBody,
   CreateProductionBatchBody,
   CreateProductionEntryBody,
   CreateSaleBody,
@@ -155,6 +160,7 @@ import type {
   CreateStockTransferBody,
   CreateStore201,
   CreateStoreBody,
+  CreateStoreEntryBody,
   CreateTaskBody,
   CreateTemplateBody,
   CreateValuationProfitRecord201,
@@ -186,6 +192,8 @@ import type {
   DistributionSummary,
   Document,
   DocumentAccessLogEntry,
+  EditCollectionEntryBody,
+  EditStoreEntryBody,
   EppEntriesResult,
   ErrorResponse,
   ExecuteOwnershipTransferBody,
@@ -320,6 +328,7 @@ import type {
   ListBuyersParams,
   ListClaimantContributionsParams,
   ListClaimantParticipationsParams,
+  ListCollectionEntriesParams,
   ListContributionVerificationHistory200,
   ListContributions200,
   ListContributionsParams,
@@ -357,6 +366,7 @@ import type {
   ListNegativeBalanceEntriesParams,
   ListNotifications200,
   ListNotificationsParams,
+  ListObservationAssignmentsParams,
   ListOperationalAccessLogsParams,
   ListOperationalAlertsParams,
   ListOwnershipSnapshots200,
@@ -371,6 +381,7 @@ import type {
   ListPendingVerificationContributions200,
   ListPendingVerificationContributionsParams,
   ListPendingVerifications200,
+  ListProductionAssignmentsParams,
   ListProductionBatchesParams,
   ListProductionEntriesParams,
   ListProductionRecordsParams,
@@ -385,6 +396,7 @@ import type {
   ListStockMovementsParams,
   ListStockTransfers200,
   ListStockTransfersParams,
+  ListStoreEntriesParams,
   ListStores200,
   ListStoresParams,
   ListTasksParams,
@@ -416,6 +428,7 @@ import type {
   NomineeActivationWorkflow,
   NomineeAuthorityTransfer,
   NomineeSuccessionDashboard,
+  ObservationAssignment,
   OkResponse,
   OperationalAlert,
   OperationalTask,
@@ -436,6 +449,7 @@ import type {
   PatchBurdenRecoveryAdjustment,
   PayableComputation,
   PrematuritySuccessionDashboard,
+  ProductionAssignment,
   ProductionBatch,
   ProductionBatchDetail,
   ProductionEntry,
@@ -509,6 +523,7 @@ import type {
   StockBalance,
   StockMovement,
   StockSummary,
+  StoreEntry,
   SubmitOwnershipTransferBody,
   SuccessResponse,
   TaskSummary,
@@ -41798,3 +41813,1446 @@ export function useListStockMovementAudit<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary List collection entries (admin sees all; employees see own)
+ */
+export const getListCollectionEntriesUrl = (
+  params?: ListCollectionEntriesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/collection-entries?${stringifiedParams}`
+    : `/api/collection-entries`;
+};
+
+export const listCollectionEntries = async (
+  params?: ListCollectionEntriesParams,
+  options?: RequestInit,
+): Promise<CollectionEntry[]> => {
+  return customFetch<CollectionEntry[]>(getListCollectionEntriesUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListCollectionEntriesQueryKey = (
+  params?: ListCollectionEntriesParams,
+) => {
+  return [`/api/collection-entries`, ...(params ? [params] : [])] as const;
+};
+
+export const getListCollectionEntriesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listCollectionEntries>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListCollectionEntriesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listCollectionEntries>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListCollectionEntriesQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listCollectionEntries>>
+  > = ({ signal }) =>
+    listCollectionEntries(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listCollectionEntries>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListCollectionEntriesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listCollectionEntries>>
+>;
+export type ListCollectionEntriesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List collection entries (admin sees all; employees see own)
+ */
+
+export function useListCollectionEntries<
+  TData = Awaited<ReturnType<typeof listCollectionEntries>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListCollectionEntriesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listCollectionEntries>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListCollectionEntriesQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a collection entry
+ */
+export const getCreateCollectionEntryUrl = () => {
+  return `/api/collection-entries`;
+};
+
+export const createCollectionEntry = async (
+  createCollectionEntryBody: CreateCollectionEntryBody,
+  options?: RequestInit,
+): Promise<CollectionEntry> => {
+  return customFetch<CollectionEntry>(getCreateCollectionEntryUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createCollectionEntryBody),
+  });
+};
+
+export const getCreateCollectionEntryMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createCollectionEntry>>,
+    TError,
+    { data: BodyType<CreateCollectionEntryBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createCollectionEntry>>,
+  TError,
+  { data: BodyType<CreateCollectionEntryBody> },
+  TContext
+> => {
+  const mutationKey = ["createCollectionEntry"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createCollectionEntry>>,
+    { data: BodyType<CreateCollectionEntryBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createCollectionEntry(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateCollectionEntryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createCollectionEntry>>
+>;
+export type CreateCollectionEntryMutationBody =
+  BodyType<CreateCollectionEntryBody>;
+export type CreateCollectionEntryMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create a collection entry
+ */
+export const useCreateCollectionEntry = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createCollectionEntry>>,
+    TError,
+    { data: BodyType<CreateCollectionEntryBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createCollectionEntry>>,
+  TError,
+  { data: BodyType<CreateCollectionEntryBody> },
+  TContext
+> => {
+  return useMutation(getCreateCollectionEntryMutationOptions(options));
+};
+
+/**
+ * @summary Admin edit of a collection entry
+ */
+export const getEditCollectionEntryUrl = (id: string) => {
+  return `/api/collection-entries/${id}`;
+};
+
+export const editCollectionEntry = async (
+  id: string,
+  editCollectionEntryBody: EditCollectionEntryBody,
+  options?: RequestInit,
+): Promise<CollectionEntry> => {
+  return customFetch<CollectionEntry>(getEditCollectionEntryUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(editCollectionEntryBody),
+  });
+};
+
+export const getEditCollectionEntryMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof editCollectionEntry>>,
+    TError,
+    { id: string; data: BodyType<EditCollectionEntryBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof editCollectionEntry>>,
+  TError,
+  { id: string; data: BodyType<EditCollectionEntryBody> },
+  TContext
+> => {
+  const mutationKey = ["editCollectionEntry"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof editCollectionEntry>>,
+    { id: string; data: BodyType<EditCollectionEntryBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return editCollectionEntry(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type EditCollectionEntryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof editCollectionEntry>>
+>;
+export type EditCollectionEntryMutationBody = BodyType<EditCollectionEntryBody>;
+export type EditCollectionEntryMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Admin edit of a collection entry
+ */
+export const useEditCollectionEntry = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof editCollectionEntry>>,
+    TError,
+    { id: string; data: BodyType<EditCollectionEntryBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof editCollectionEntry>>,
+  TError,
+  { id: string; data: BodyType<EditCollectionEntryBody> },
+  TContext
+> => {
+  return useMutation(getEditCollectionEntryMutationOptions(options));
+};
+
+/**
+ * @summary Soft-delete a collection entry
+ */
+export const getSoftDeleteCollectionEntryUrl = (id: string) => {
+  return `/api/collection-entries/${id}`;
+};
+
+export const softDeleteCollectionEntry = async (
+  id: string,
+  options?: RequestInit,
+): Promise<CollectionEntry> => {
+  return customFetch<CollectionEntry>(getSoftDeleteCollectionEntryUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getSoftDeleteCollectionEntryMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof softDeleteCollectionEntry>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof softDeleteCollectionEntry>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["softDeleteCollectionEntry"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof softDeleteCollectionEntry>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return softDeleteCollectionEntry(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SoftDeleteCollectionEntryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof softDeleteCollectionEntry>>
+>;
+
+export type SoftDeleteCollectionEntryMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Soft-delete a collection entry
+ */
+export const useSoftDeleteCollectionEntry = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof softDeleteCollectionEntry>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof softDeleteCollectionEntry>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getSoftDeleteCollectionEntryMutationOptions(options));
+};
+
+/**
+ * @summary Pending-outside-store totals and today summary
+ */
+export const getGetCollectionSummaryUrl = (projectId: string) => {
+  return `/api/collection-entries/summary/${projectId}`;
+};
+
+export const getCollectionSummary = async (
+  projectId: string,
+  options?: RequestInit,
+): Promise<CollectionSummary> => {
+  return customFetch<CollectionSummary>(getGetCollectionSummaryUrl(projectId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetCollectionSummaryQueryKey = (projectId: string) => {
+  return [`/api/collection-entries/summary/${projectId}`] as const;
+};
+
+export const getGetCollectionSummaryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getCollectionSummary>>,
+  TError = ErrorType<unknown>,
+>(
+  projectId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getCollectionSummary>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetCollectionSummaryQueryKey(projectId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getCollectionSummary>>
+  > = ({ signal }) =>
+    getCollectionSummary(projectId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!projectId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getCollectionSummary>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetCollectionSummaryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getCollectionSummary>>
+>;
+export type GetCollectionSummaryQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Pending-outside-store totals and today summary
+ */
+
+export function useGetCollectionSummary<
+  TData = Awaited<ReturnType<typeof getCollectionSummary>>,
+  TError = ErrorType<unknown>,
+>(
+  projectId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getCollectionSummary>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetCollectionSummaryQueryOptions(projectId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List store entries
+ */
+export const getListStoreEntriesUrl = (params?: ListStoreEntriesParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/store-entries?${stringifiedParams}`
+    : `/api/store-entries`;
+};
+
+export const listStoreEntries = async (
+  params?: ListStoreEntriesParams,
+  options?: RequestInit,
+): Promise<StoreEntry[]> => {
+  return customFetch<StoreEntry[]>(getListStoreEntriesUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListStoreEntriesQueryKey = (
+  params?: ListStoreEntriesParams,
+) => {
+  return [`/api/store-entries`, ...(params ? [params] : [])] as const;
+};
+
+export const getListStoreEntriesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listStoreEntries>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListStoreEntriesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listStoreEntries>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListStoreEntriesQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listStoreEntries>>
+  > = ({ signal }) => listStoreEntries(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listStoreEntries>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListStoreEntriesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listStoreEntries>>
+>;
+export type ListStoreEntriesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List store entries
+ */
+
+export function useListStoreEntries<
+  TData = Awaited<ReturnType<typeof listStoreEntries>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListStoreEntriesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listStoreEntries>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListStoreEntriesQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a store entry
+ */
+export const getCreateStoreEntryUrl = () => {
+  return `/api/store-entries`;
+};
+
+export const createStoreEntry = async (
+  createStoreEntryBody: CreateStoreEntryBody,
+  options?: RequestInit,
+): Promise<StoreEntry> => {
+  return customFetch<StoreEntry>(getCreateStoreEntryUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createStoreEntryBody),
+  });
+};
+
+export const getCreateStoreEntryMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createStoreEntry>>,
+    TError,
+    { data: BodyType<CreateStoreEntryBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createStoreEntry>>,
+  TError,
+  { data: BodyType<CreateStoreEntryBody> },
+  TContext
+> => {
+  const mutationKey = ["createStoreEntry"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createStoreEntry>>,
+    { data: BodyType<CreateStoreEntryBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createStoreEntry(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateStoreEntryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createStoreEntry>>
+>;
+export type CreateStoreEntryMutationBody = BodyType<CreateStoreEntryBody>;
+export type CreateStoreEntryMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create a store entry
+ */
+export const useCreateStoreEntry = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createStoreEntry>>,
+    TError,
+    { data: BodyType<CreateStoreEntryBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createStoreEntry>>,
+  TError,
+  { data: BodyType<CreateStoreEntryBody> },
+  TContext
+> => {
+  return useMutation(getCreateStoreEntryMutationOptions(options));
+};
+
+/**
+ * @summary Admin edit of a store entry
+ */
+export const getEditStoreEntryUrl = (id: string) => {
+  return `/api/store-entries/${id}`;
+};
+
+export const editStoreEntry = async (
+  id: string,
+  editStoreEntryBody: EditStoreEntryBody,
+  options?: RequestInit,
+): Promise<StoreEntry> => {
+  return customFetch<StoreEntry>(getEditStoreEntryUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(editStoreEntryBody),
+  });
+};
+
+export const getEditStoreEntryMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof editStoreEntry>>,
+    TError,
+    { id: string; data: BodyType<EditStoreEntryBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof editStoreEntry>>,
+  TError,
+  { id: string; data: BodyType<EditStoreEntryBody> },
+  TContext
+> => {
+  const mutationKey = ["editStoreEntry"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof editStoreEntry>>,
+    { id: string; data: BodyType<EditStoreEntryBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return editStoreEntry(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type EditStoreEntryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof editStoreEntry>>
+>;
+export type EditStoreEntryMutationBody = BodyType<EditStoreEntryBody>;
+export type EditStoreEntryMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Admin edit of a store entry
+ */
+export const useEditStoreEntry = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof editStoreEntry>>,
+    TError,
+    { id: string; data: BodyType<EditStoreEntryBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof editStoreEntry>>,
+  TError,
+  { id: string; data: BodyType<EditStoreEntryBody> },
+  TContext
+> => {
+  return useMutation(getEditStoreEntryMutationOptions(options));
+};
+
+/**
+ * @summary Soft-delete a store entry
+ */
+export const getSoftDeleteStoreEntryUrl = (id: string) => {
+  return `/api/store-entries/${id}`;
+};
+
+export const softDeleteStoreEntry = async (
+  id: string,
+  options?: RequestInit,
+): Promise<StoreEntry> => {
+  return customFetch<StoreEntry>(getSoftDeleteStoreEntryUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getSoftDeleteStoreEntryMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof softDeleteStoreEntry>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof softDeleteStoreEntry>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["softDeleteStoreEntry"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof softDeleteStoreEntry>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return softDeleteStoreEntry(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SoftDeleteStoreEntryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof softDeleteStoreEntry>>
+>;
+
+export type SoftDeleteStoreEntryMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Soft-delete a store entry
+ */
+export const useSoftDeleteStoreEntry = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof softDeleteStoreEntry>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof softDeleteStoreEntry>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getSoftDeleteStoreEntryMutationOptions(options));
+};
+
+/**
+ * @summary List production employee assignments
+ */
+export const getListProductionAssignmentsUrl = (
+  params?: ListProductionAssignmentsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/production-assignments?${stringifiedParams}`
+    : `/api/production-assignments`;
+};
+
+export const listProductionAssignments = async (
+  params?: ListProductionAssignmentsParams,
+  options?: RequestInit,
+): Promise<ProductionAssignment[]> => {
+  return customFetch<ProductionAssignment[]>(
+    getListProductionAssignmentsUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListProductionAssignmentsQueryKey = (
+  params?: ListProductionAssignmentsParams,
+) => {
+  return [`/api/production-assignments`, ...(params ? [params] : [])] as const;
+};
+
+export const getListProductionAssignmentsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listProductionAssignments>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListProductionAssignmentsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listProductionAssignments>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListProductionAssignmentsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listProductionAssignments>>
+  > = ({ signal }) =>
+    listProductionAssignments(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listProductionAssignments>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListProductionAssignmentsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listProductionAssignments>>
+>;
+export type ListProductionAssignmentsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List production employee assignments
+ */
+
+export function useListProductionAssignments<
+  TData = Awaited<ReturnType<typeof listProductionAssignments>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListProductionAssignmentsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listProductionAssignments>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListProductionAssignmentsQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Assign an employee to a project
+ */
+export const getCreateProductionAssignmentUrl = () => {
+  return `/api/production-assignments`;
+};
+
+export const createProductionAssignment = async (
+  createProductionAssignmentBody: CreateProductionAssignmentBody,
+  options?: RequestInit,
+): Promise<ProductionAssignment> => {
+  return customFetch<ProductionAssignment>(getCreateProductionAssignmentUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createProductionAssignmentBody),
+  });
+};
+
+export const getCreateProductionAssignmentMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createProductionAssignment>>,
+    TError,
+    { data: BodyType<CreateProductionAssignmentBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createProductionAssignment>>,
+  TError,
+  { data: BodyType<CreateProductionAssignmentBody> },
+  TContext
+> => {
+  const mutationKey = ["createProductionAssignment"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createProductionAssignment>>,
+    { data: BodyType<CreateProductionAssignmentBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createProductionAssignment(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateProductionAssignmentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createProductionAssignment>>
+>;
+export type CreateProductionAssignmentMutationBody =
+  BodyType<CreateProductionAssignmentBody>;
+export type CreateProductionAssignmentMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Assign an employee to a project
+ */
+export const useCreateProductionAssignment = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createProductionAssignment>>,
+    TError,
+    { data: BodyType<CreateProductionAssignmentBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createProductionAssignment>>,
+  TError,
+  { data: BodyType<CreateProductionAssignmentBody> },
+  TContext
+> => {
+  return useMutation(getCreateProductionAssignmentMutationOptions(options));
+};
+
+/**
+ * @summary Get own production assignment (employee auto-fill)
+ */
+export const getGetMyProductionAssignmentUrl = () => {
+  return `/api/production-assignments/my`;
+};
+
+export const getMyProductionAssignment = async (
+  options?: RequestInit,
+): Promise<ProductionAssignment[]> => {
+  return customFetch<ProductionAssignment[]>(
+    getGetMyProductionAssignmentUrl(),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetMyProductionAssignmentQueryKey = () => {
+  return [`/api/production-assignments/my`] as const;
+};
+
+export const getGetMyProductionAssignmentQueryOptions = <
+  TData = Awaited<ReturnType<typeof getMyProductionAssignment>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getMyProductionAssignment>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetMyProductionAssignmentQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getMyProductionAssignment>>
+  > = ({ signal }) => getMyProductionAssignment({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getMyProductionAssignment>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetMyProductionAssignmentQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getMyProductionAssignment>>
+>;
+export type GetMyProductionAssignmentQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get own production assignment (employee auto-fill)
+ */
+
+export function useGetMyProductionAssignment<
+  TData = Awaited<ReturnType<typeof getMyProductionAssignment>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getMyProductionAssignment>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetMyProductionAssignmentQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Deactivate a production employee assignment
+ */
+export const getDeactivateProductionAssignmentUrl = (id: string) => {
+  return `/api/production-assignments/${id}/deactivate`;
+};
+
+export const deactivateProductionAssignment = async (
+  id: string,
+  options?: RequestInit,
+): Promise<ProductionAssignment> => {
+  return customFetch<ProductionAssignment>(
+    getDeactivateProductionAssignmentUrl(id),
+    {
+      ...options,
+      method: "PATCH",
+    },
+  );
+};
+
+export const getDeactivateProductionAssignmentMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deactivateProductionAssignment>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deactivateProductionAssignment>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["deactivateProductionAssignment"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deactivateProductionAssignment>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deactivateProductionAssignment(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeactivateProductionAssignmentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deactivateProductionAssignment>>
+>;
+
+export type DeactivateProductionAssignmentMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Deactivate a production employee assignment
+ */
+export const useDeactivateProductionAssignment = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deactivateProductionAssignment>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deactivateProductionAssignment>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getDeactivateProductionAssignmentMutationOptions(options));
+};
+
+/**
+ * @summary List observer assignments
+ */
+export const getListObservationAssignmentsUrl = (
+  params?: ListObservationAssignmentsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/observation-assignments?${stringifiedParams}`
+    : `/api/observation-assignments`;
+};
+
+export const listObservationAssignments = async (
+  params?: ListObservationAssignmentsParams,
+  options?: RequestInit,
+): Promise<ObservationAssignment[]> => {
+  return customFetch<ObservationAssignment[]>(
+    getListObservationAssignmentsUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListObservationAssignmentsQueryKey = (
+  params?: ListObservationAssignmentsParams,
+) => {
+  return [`/api/observation-assignments`, ...(params ? [params] : [])] as const;
+};
+
+export const getListObservationAssignmentsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listObservationAssignments>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListObservationAssignmentsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listObservationAssignments>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListObservationAssignmentsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listObservationAssignments>>
+  > = ({ signal }) =>
+    listObservationAssignments(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listObservationAssignments>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListObservationAssignmentsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listObservationAssignments>>
+>;
+export type ListObservationAssignmentsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List observer assignments
+ */
+
+export function useListObservationAssignments<
+  TData = Awaited<ReturnType<typeof listObservationAssignments>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListObservationAssignmentsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listObservationAssignments>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListObservationAssignmentsQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Assign an observer to a project window
+ */
+export const getCreateObservationAssignmentUrl = () => {
+  return `/api/observation-assignments`;
+};
+
+export const createObservationAssignment = async (
+  createObservationAssignmentBody: CreateObservationAssignmentBody,
+  options?: RequestInit,
+): Promise<ObservationAssignment> => {
+  return customFetch<ObservationAssignment>(
+    getCreateObservationAssignmentUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(createObservationAssignmentBody),
+    },
+  );
+};
+
+export const getCreateObservationAssignmentMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createObservationAssignment>>,
+    TError,
+    { data: BodyType<CreateObservationAssignmentBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createObservationAssignment>>,
+  TError,
+  { data: BodyType<CreateObservationAssignmentBody> },
+  TContext
+> => {
+  const mutationKey = ["createObservationAssignment"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createObservationAssignment>>,
+    { data: BodyType<CreateObservationAssignmentBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createObservationAssignment(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateObservationAssignmentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createObservationAssignment>>
+>;
+export type CreateObservationAssignmentMutationBody =
+  BodyType<CreateObservationAssignmentBody>;
+export type CreateObservationAssignmentMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Assign an observer to a project window
+ */
+export const useCreateObservationAssignment = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createObservationAssignment>>,
+    TError,
+    { data: BodyType<CreateObservationAssignmentBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createObservationAssignment>>,
+  TError,
+  { data: BodyType<CreateObservationAssignmentBody> },
+  TContext
+> => {
+  return useMutation(getCreateObservationAssignmentMutationOptions(options));
+};
+
+/**
+ * @summary Close an observation assignment
+ */
+export const getCloseObservationAssignmentUrl = (id: string) => {
+  return `/api/observation-assignments/${id}/close`;
+};
+
+export const closeObservationAssignment = async (
+  id: string,
+  options?: RequestInit,
+): Promise<ObservationAssignment> => {
+  return customFetch<ObservationAssignment>(
+    getCloseObservationAssignmentUrl(id),
+    {
+      ...options,
+      method: "PATCH",
+    },
+  );
+};
+
+export const getCloseObservationAssignmentMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof closeObservationAssignment>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof closeObservationAssignment>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["closeObservationAssignment"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof closeObservationAssignment>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return closeObservationAssignment(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CloseObservationAssignmentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof closeObservationAssignment>>
+>;
+
+export type CloseObservationAssignmentMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Close an observation assignment
+ */
+export const useCloseObservationAssignment = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof closeObservationAssignment>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof closeObservationAssignment>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getCloseObservationAssignmentMutationOptions(options));
+};

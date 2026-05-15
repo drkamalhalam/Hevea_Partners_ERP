@@ -17,6 +17,7 @@
     "@workspace/db": "workspace:*",
     "cookie-parser": "^1.4.7",
     "cors": "^2",
+    "date-fns": "^3.6.0",
     "docxtemplater": "^3.68.7",
     "drizzle-orm": "catalog:",
     "express": "^5",

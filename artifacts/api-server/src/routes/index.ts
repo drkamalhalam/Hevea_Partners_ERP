@@ -61,6 +61,10 @@ import governanceMeetingsRouter from "./governance_meetings";
 import backupRouter from "./backup";
 import multiStoreRouter from "./multi_store";
 import devRouter from "./dev";
+import collectionEntriesRouter from "./collection_entries";
+import storeEntriesRouter from "./store_entries";
+import productionAssignmentsRouter from "./production_employee_assignments";
+import observationAssignmentsRouter from "./observation_assignments";
 
 const router: IRouter = Router();
 
@@ -137,5 +141,9 @@ router.use("/reports", reportsRouter);
 router.use("/governance-meetings", governanceMeetingsRouter);
 router.use("/backup", backupRouter);
 router.use("/multi-store", multiStoreRouter);
+router.use("/collection-entries", collectionEntriesRouter);
+router.use("/store-entries", storeEntriesRouter);
+router.use("/production-assignments", productionAssignmentsRouter);
+router.use("/observation-assignments", observationAssignmentsRouter);
 
 export default router;

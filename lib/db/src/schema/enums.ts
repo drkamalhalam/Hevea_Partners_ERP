@@ -585,6 +585,20 @@ export const taskPriorityEnum = pgEnum("task_priority", [
   "urgent",
 ]);
 
+// ── Production & collection enums ────────────────────────────────────────
+
+/**
+ * Role an employee plays within a project's production workflow.
+ *   collector    — responsible for daily fresh-sheet collection entries
+ *   store_keeper — responsible for store entries (dried sheets)
+ *   supervisor   — oversight role; can view all production data for the project
+ */
+export const productionEmployeeRoleEnum = pgEnum("production_employee_role", [
+  "collector",
+  "store_keeper",
+  "supervisor",
+]);
+
 // ── Ownership transfer enums ──────────────────────────────────────────────
 
 /**
