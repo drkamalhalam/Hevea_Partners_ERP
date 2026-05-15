@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useAuth } from "@clerk/react";
 import { useLocation, useParams } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -999,6 +1000,9 @@ function Step7Witnesses({
 
 // ── Step 8: Documents ─────────────────────────────────────────────────────────
 
+type UploadField = "aadhaarObjectPath" | "supportingIdObjectPath";
+type UploadKey = `${"developer" | "landowner"}-${UploadField}`;
+
 function Step8Documents({
   projectId,
   onNext,
@@ -1008,50 +1012,179 @@ function Step8Documents({
   onNext: () => void;
   onBack: () => void;
 }) {
-  const { data: participantData } = useListOnboardingParticipants(projectId);
+  const { getToken } = useAuth();
+  const { data: participantData, refetch } = useListOnboardingParticipants(projectId);
+  const upsertParticipant = useUpsertOnboardingParticipant();
+  const { toast } = useToast();
+
   const participants = participantData?.participants ?? [];
   const developer = participants.find((p) => p.role === "developer");
   const landowner = participants.find((p) => p.role === "landowner");
+
+  const [uploading, setUploading] = useState<Partial<Record<UploadKey, boolean>>>({});
+
+  // Hidden file input refs — one per slot
+  const inputRefs = useRef<Partial<Record<UploadKey, HTMLInputElement | null>>>({});
+
+  const triggerPick = (key: UploadKey) => {
+    inputRefs.current[key]?.click();
+  };
+
+  const handleFileChange = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    role: "developer" | "landowner",
+    field: UploadField,
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    // Reset so the same file can be re-selected after a failure
+    e.target.value = "";
+
+    const participant = role === "developer" ? developer : landowner;
+    if (!participant) {
+      toast({ title: `Complete ${role} KYC step first`, variant: "destructive" });
+      return;
+    }
+
+    const key: UploadKey = `${role}-${field}`;
+    setUploading((prev) => ({ ...prev, [key]: true }));
+    try {
+      // Step 1 — request presigned URL
+      const token = await getToken();
+      const urlResp = await fetch("/api/storage/uploads/request-url", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ name: file.name, size: file.size, contentType: file.type }),
+      });
+      if (!urlResp.ok) throw new Error("Failed to get upload URL");
+      const { uploadURL, objectPath } = await urlResp.json() as { uploadURL: string; objectPath: string };
+
+      // Step 2 — PUT file directly to storage
+      const putResp = await fetch(uploadURL, {
+        method: "PUT",
+        headers: { "Content-Type": file.type },
+        body: file,
+      });
+      if (!putResp.ok) throw new Error("File upload to storage failed");
+
+      // Step 3 — patch participant record with new object path
+      await upsertParticipant.mutateAsync({
+        projectId,
+        role,
+        data: {
+          fullName: participant.fullName,
+          sOnCOn: participant.sOnCOn ?? undefined,
+          fatherGuardianName: (participant as any).fatherGuardianName ?? undefined,
+          aadhaarNumber: participant.aadhaarNumber ?? undefined,
+          mobile: participant.mobile ?? undefined,
+          address: participant.address ?? undefined,
+          email: participant.email ?? undefined,
+          aadhaarObjectPath:
+            field === "aadhaarObjectPath"
+              ? objectPath
+              : (participant.aadhaarObjectPath ?? undefined),
+          supportingIdObjectPath:
+            field === "supportingIdObjectPath"
+              ? objectPath
+              : (participant.supportingIdObjectPath ?? undefined),
+        },
+      });
+
+      await refetch();
+      toast({ title: "Document uploaded successfully" });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Upload failed";
+      toast({ title: msg, variant: "destructive" });
+    } finally {
+      setUploading((prev) => ({ ...prev, [key]: false }));
+    }
+  };
+
+  const rows: Array<{ label: string; role: "developer" | "landowner"; participant: typeof developer }> = [
+    { label: "Developer", role: "developer", participant: developer },
+    { label: "Landowner", role: "landowner", participant: landowner },
+  ];
 
   return (
     <div className="space-y-5">
       <p className="text-sm text-muted-foreground">
         Upload KYC documents for both parties. Aadhaar copies are required; supporting ID is optional.
-        Documents can also be uploaded later from the project details page.
+        You may also upload later from the project details page.
       </p>
 
       <div className="space-y-4">
-        {[
-          { label: "Developer", participant: developer },
-          { label: "Landowner", participant: landowner },
-        ].map(({ label, participant }) => (
-          <div key={label} className="border rounded-md p-4 space-y-3">
-            <p className="font-medium text-sm">{label}: {participant?.fullName ?? "—"}</p>
+        {rows.map(({ label, role, participant }) => (
+          <div key={role} className="border rounded-md p-4 space-y-3">
+            <p className="font-medium text-sm">
+              {label}: <span className="text-muted-foreground font-normal">{participant?.fullName ?? "—"}</span>
+            </p>
+
+            {!participant && (
+              <p className="text-xs text-amber-600">
+                KYC not yet saved — complete Step 2 / Step 3 first.
+              </p>
+            )}
+
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <Label className="text-xs">Aadhaar Copy (PDF/Image)</Label>
-                <div className="flex items-center gap-2">
-                  <Input type="file" accept=".pdf,.jpg,.jpeg,.png" disabled className="text-xs" />
-                  {participant?.aadhaarObjectPath ? (
-                    <Badge variant="secondary" className="text-xs whitespace-nowrap">
-                      <CheckCircle2 className="h-3 w-3 mr-1 text-green-600" /> Uploaded
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline" className="text-xs whitespace-nowrap text-amber-600">Pending</Badge>
-                  )}
-                </div>
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">Supporting ID (Optional)</Label>
-                <Input type="file" accept=".pdf,.jpg,.jpeg,.png" disabled className="text-xs" />
-              </div>
+              {(["aadhaarObjectPath", "supportingIdObjectPath"] as UploadField[]).map((field) => {
+                const key: UploadKey = `${role}-${field}`;
+                const isAadhaar = field === "aadhaarObjectPath";
+                const uploaded = !!((participant as any)?.[field]);
+                const busy = uploading[key] ?? false;
+
+                return (
+                  <div key={field} className="space-y-1.5">
+                    <Label className="text-xs">
+                      {isAadhaar ? "Aadhaar Copy (PDF/Image)" : "Supporting ID (Optional)"}
+                    </Label>
+
+                    {/* hidden real input */}
+                    <input
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      className="sr-only"
+                      ref={(el) => { inputRefs.current[key] = el; }}
+                      onChange={(e) => handleFileChange(e, role, field)}
+                      disabled={!participant || busy}
+                    />
+
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="text-xs h-8 px-3 flex-1"
+                        disabled={!participant || busy}
+                        onClick={() => triggerPick(key)}
+                      >
+                        {busy ? (
+                          <><Loader2 className="h-3 w-3 mr-1.5 animate-spin" /> Uploading…</>
+                        ) : uploaded ? (
+                          <><CheckCircle2 className="h-3 w-3 mr-1.5 text-green-600" /> Replace</>
+                        ) : (
+                          "Choose file"
+                        )}
+                      </Button>
+                      {uploaded && !busy && (
+                        <Badge variant="secondary" className="text-xs whitespace-nowrap shrink-0">
+                          <CheckCircle2 className="h-3 w-3 mr-1 text-green-600" /> Uploaded
+                        </Badge>
+                      )}
+                      {!uploaded && !busy && isAadhaar && (
+                        <Badge variant="outline" className="text-xs whitespace-nowrap shrink-0 text-amber-600 border-amber-300">
+                          Pending
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         ))}
-      </div>
-
-      <div className="bg-blue-50 border border-blue-200 rounded-md p-3 text-xs text-blue-700">
-        Document upload is available via the project's Documents tab after creation. You may skip this step and upload later.
       </div>
 
       <div className="flex justify-between pt-2">
