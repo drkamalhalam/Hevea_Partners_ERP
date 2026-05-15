@@ -72,6 +72,7 @@ import moneyCustodyRouter from "./money_custody";
 import salesInvoicesRouter from "./sales_invoices_route";
 import paymentSettingsRouter from "./payment_settings";
 import governanceMonitoringRouter from "./governance_monitoring";
+import auditLogsRouter from "./audit_logs";
 
 const router: IRouter = Router();
 
@@ -159,5 +160,6 @@ router.use("/money-custody", moneyCustodyRouter);
 router.use("/sales-invoices", salesInvoicesRouter);
 router.use("/payment-settings", paymentSettingsRouter);
 router.use("/governance-monitoring", governanceMonitoringRouter);
+router.use("/audit-logs", auditLogsRouter);
 
 export default router;

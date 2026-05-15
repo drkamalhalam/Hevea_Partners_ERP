@@ -5,6 +5,40 @@
  * Rubber Plantation Partnership API
  * OpenAPI spec version: 0.1.0
  */
+export type AuditLogEntryOperation =
+  (typeof AuditLogEntryOperation)[keyof typeof AuditLogEntryOperation];
+
+export const AuditLogEntryOperation = {
+  INSERT: "INSERT",
+  UPDATE: "UPDATE",
+  DELETE: "DELETE",
+} as const;
+
+export type AuditLogEntryOldData = { [key: string]: unknown } | null;
+
+export type AuditLogEntryNewData = { [key: string]: unknown } | null;
+
+export type AuditLogEntryMetadata = { [key: string]: unknown } | null;
+
+export interface AuditLogEntry {
+  id?: string;
+  userId?: string | null;
+  userName?: string | null;
+  userRole?: string | null;
+  tableName?: string;
+  recordId?: string;
+  operation?: AuditLogEntryOperation;
+  module?: string | null;
+  actionType?: string | null;
+  projectId?: string | null;
+  oldData?: AuditLogEntryOldData;
+  newData?: AuditLogEntryNewData;
+  metadata?: AuditLogEntryMetadata;
+  ipAddress?: string | null;
+  userAgent?: string | null;
+  createdAt?: string;
+}
+
 export type FinancialSummarySessions = {
   confirmed?: number;
   draft?: number;
@@ -10272,4 +10306,38 @@ export type GetGovernanceTimelineParams = {
 export type GetGovernanceTasksParams = {
   projectId?: string;
   priority?: string;
+};
+
+export type ListAuditLogsParams = {
+  module?: string;
+  actionType?: string;
+  projectId?: string;
+  userId?: string;
+  tableName?: string;
+  operation?: string;
+  from?: string;
+  to?: string;
+  limit?: number;
+  offset?: number;
+};
+
+export type ListAuditLogs200 = {
+  entries?: AuditLogEntry[];
+  total?: number;
+  limit?: number;
+  offset?: number;
+};
+
+export type GetRecordAuditTimeline200 = {
+  entries?: AuditLogEntry[];
+};
+
+export type GetMyActivityParams = {
+  limit?: number;
+  offset?: number;
+};
+
+export type GetMyActivity200 = {
+  entries?: AuditLogEntry[];
+  total?: number;
 };

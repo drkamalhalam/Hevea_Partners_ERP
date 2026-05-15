@@ -11,6 +11,7 @@ import {
 } from "@workspace/db";
 import { requireRole } from "../middlewares/auth";
 import { routeAndCreateVerificationRequest } from "./expenditure_verification";
+import { writeAudit } from "../lib/auditLogger";
 
 const router = Router();
 
@@ -294,6 +295,17 @@ router.post("/", async (req, res) => {
       recordedByName: actor.displayName ?? null,
     })
     .returning();
+
+  writeAudit(req, {
+    tableName: "expenditures",
+    recordId: inserted.id,
+    operation: "INSERT",
+    module: "expenditures",
+    actionType: "expenditure_created",
+    projectId: inserted.projectId,
+    newData: { category: inserted.category, amount: inserted.amount, description: inserted.description },
+    actor: { id: actor.id, name: actor.displayName, role: actor.role },
+  });
 
   return res.status(201).json(formatEntry(inserted, project.name));
 });
@@ -630,6 +642,18 @@ router.post("/:id/submit", async (req, res) => {
     req.log.warn({ err }, "Failed to create verification request — expenditure submitted without routing");
   }
 
+  writeAudit(req, {
+    tableName: "expenditures",
+    recordId: updated.id,
+    operation: "UPDATE",
+    module: "expenditures",
+    actionType: isResubmission ? "expenditure_resubmitted" : "expenditure_submitted",
+    projectId: updated.projectId,
+    oldData: { verificationStatus: "draft" },
+    newData: { verificationStatus: "pending_review" },
+    actor: { id: actor.id, name: actor.displayName, role: actor.role },
+  });
+
   return res.json(formatEntry(updated, entry.projectName));
 });
 
@@ -682,6 +706,18 @@ router.post(
       .catch((err: Error) =>
         req.log.warn({ err }, "Failed to write approval audit event"),
       );
+
+    writeAudit(req, {
+      tableName: "expenditures",
+      recordId: updated.id,
+      operation: "UPDATE",
+      module: "expenditures",
+      actionType: "expenditure_approved",
+      projectId: updated.projectId,
+      oldData: { verificationStatus: "pending_review" },
+      newData: { verificationStatus: "approved" },
+      actor: { id: actor.id, name: actor.displayName, role: actor.role },
+    });
 
     return res.json(formatEntry(updated, entry.projectName));
   },
@@ -739,6 +775,18 @@ router.post(
       .catch((err: Error) =>
         req.log.warn({ err }, "Failed to write rejection audit event"),
       );
+
+    writeAudit(req, {
+      tableName: "expenditures",
+      recordId: updated.id,
+      operation: "UPDATE",
+      module: "expenditures",
+      actionType: "expenditure_rejected",
+      projectId: updated.projectId,
+      oldData: { verificationStatus: "pending_review" },
+      newData: { verificationStatus: "rejected", verifierNotes: notes },
+      actor: { id: actor.id, name: actor.displayName, role: actor.role },
+    });
 
     return res.json(formatEntry(updated, entry.projectName));
   },

@@ -31,6 +31,8 @@ tags:
 
   - name: collection
     description: Rubber sheet collection and store entry operations
+  - name: audit
+    description: Immutable audit log query endpoints
 
 paths:
   /me:
@@ -11187,9 +11189,101 @@ paths:
                 type: array
                 items: { $ref: '#/components/schemas/GovernanceMonitoringTask' }
 
+  /audit-logs:
+    get:
+      operationId: listAuditLogs
+      tags: [audit]
+      summary: List audit log entries with filters (admin/developer only)
+      parameters:
+        - { name: module, in: query, schema: { type: string } }
+        - { name: actionType, in: query, schema: { type: string } }
+        - { name: projectId, in: query, schema: { type: string } }
+        - { name: userId, in: query, schema: { type: string } }
+        - { name: tableName, in: query, schema: { type: string } }
+        - { name: operation, in: query, schema: { type: string } }
+        - { name: from, in: query, schema: { type: string } }
+        - { name: to, in: query, schema: { type: string } }
+        - { name: limit, in: query, schema: { type: integer } }
+        - { name: offset, in: query, schema: { type: integer } }
+      responses:
+        '200':
+          description: Paginated audit log entries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entries:
+                    type: array
+                    items: { $ref: '#/components/schemas/AuditLogEntry' }
+                  total: { type: integer }
+                  limit: { type: integer }
+                  offset: { type: integer }
+
+  /audit-logs/record/{tableName}/{recordId}:
+    get:
+      operationId: getRecordAuditTimeline
+      tags: [audit]
+      summary: Get the full audit timeline for a specific record
+      parameters:
+        - { name: tableName, in: path, required: true, schema: { type: string } }
+        - { name: recordId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Audit timeline for the record
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entries:
+                    type: array
+                    items: { $ref: '#/components/schemas/AuditLogEntry' }
+
+  /audit-logs/me/activity:
+    get:
+      operationId: getMyActivity
+      tags: [audit]
+      summary: Get the current user's recent activity log
+      parameters:
+        - { name: limit, in: query, schema: { type: integer } }
+        - { name: offset, in: query, schema: { type: integer } }
+      responses:
+        '200':
+          description: Current user's activity
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entries:
+                    type: array
+                    items: { $ref: '#/components/schemas/AuditLogEntry' }
+                  total: { type: integer }
+
 
 components:
   schemas:
+
+    AuditLogEntry:
+      type: object
+      properties:
+        id: { type: string }
+        userId: { type: string, nullable: true }
+        userName: { type: string, nullable: true }
+        userRole: { type: string, nullable: true }
+        tableName: { type: string }
+        recordId: { type: string }
+        operation: { type: string, enum: [INSERT, UPDATE, DELETE] }
+        module: { type: string, nullable: true }
+        actionType: { type: string, nullable: true }
+        projectId: { type: string, nullable: true }
+        oldData: { type: object, nullable: true, additionalProperties: true }
+        newData: { type: object, nullable: true, additionalProperties: true }
+        metadata: { type: object, nullable: true, additionalProperties: true }
+        ipAddress: { type: string, nullable: true }
+        userAgent: { type: string, nullable: true }
+        createdAt: { type: string }
 
     FinancialSummary:
       type: object

@@ -31,6 +31,7 @@ import {
   transferOtpEventsTable,
   transferAuditEventsTable,
 } from "@workspace/db";
+import { writeAudit as writeCentralAudit } from "../lib/auditLogger";
 import type { RofrResponse } from "@workspace/db";
 import { eq, and, desc, or, inArray, lt, lte, gte, isNull, ne, sql } from "drizzle-orm";
 import { getAuth } from "@clerk/express";
@@ -320,6 +321,17 @@ router.post("/", requireRole("admin", "developer", "landowner", "investor"), asy
       stockEntitlementNotes: b.stockEntitlementNotes ?? null,
     })
     .returning();
+
+  writeCentralAudit(req, {
+    tableName: "ownership_transfers",
+    recordId: created.id,
+    operation: "INSERT",
+    module: "ownership_transfers",
+    actionType: "transfer_created",
+    projectId: created.projectId,
+    newData: { transferType: created.transferType, transferorName: created.transferorName, offeredPercentage: created.offeredPercentage, status: "draft" },
+    actor: { id: actor.id, name: actor.displayName, role: actor.role },
+  });
 
   return res.status(201).json(created);
 });
@@ -644,6 +656,18 @@ router.post("/:id/approve", requireRole("admin", "developer"), async (req, res) 
     .where(eq(ownershipTransfersTable.id, id))
     .returning();
 
+  writeCentralAudit(req, {
+    tableName: "ownership_transfers",
+    recordId: id,
+    operation: "UPDATE",
+    module: "ownership_transfers",
+    actionType: "transfer_approved",
+    projectId: existing.projectId,
+    oldData: { status: existing.status },
+    newData: { status: "approved" },
+    actor: { id: actor.id, name: actor.displayName, role: actor.role },
+  });
+
   return res.json(updated);
 });
 
@@ -688,6 +712,18 @@ router.post("/:id/execute", requireRole("admin"), async (req, res) => {
     })
     .where(eq(ownershipTransfersTable.id, id))
     .returning();
+
+  writeCentralAudit(req, {
+    tableName: "ownership_transfers",
+    recordId: id,
+    operation: "UPDATE",
+    module: "ownership_transfers",
+    actionType: "transfer_executed",
+    projectId: existing.projectId,
+    oldData: { status: "approved" },
+    newData: { status: "executed", executionNotes: parsed.data.executionNotes },
+    actor: { id: actor.id, name: actor.displayName, role: actor.role },
+  });
 
   return res.json(updated);
 });
@@ -736,6 +772,18 @@ router.post("/:id/cancel", async (req, res) => {
     })
     .where(eq(ownershipTransfersTable.id, id))
     .returning();
+
+  writeCentralAudit(req, {
+    tableName: "ownership_transfers",
+    recordId: id,
+    operation: "UPDATE",
+    module: "ownership_transfers",
+    actionType: "transfer_cancelled",
+    projectId: existing.projectId,
+    oldData: { status: existing.status },
+    newData: { status: "cancelled", cancellationReason: parsed.data.cancellationReason },
+    actor: { id: actor.id, name: actor.displayName, role: actor.role },
+  });
 
   return res.json(updated);
 });

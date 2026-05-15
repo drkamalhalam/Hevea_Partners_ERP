@@ -46,6 +46,7 @@ import BurdenRecovery from "./pages/BurdenRecovery";
 import LandownerProfitability from "./pages/LandownerProfitability";
 import LCAGovernance from "./pages/LCAGovernance";
 import FinancialAuditLog from "./pages/FinancialAuditLog";
+import AuditLog from "./pages/AuditLog";
 import FinancialAnalytics from "./pages/FinancialAnalytics";
 import TemplateLibrary from "./pages/TemplateLibrary";
 
@@ -369,6 +370,7 @@ function AppRoutes() {
 
               {/* System */}
               <Route path="/admin"><AdminRoute component={Admin} /></Route>
+              <Route path="/audit-log"><ProtectedRoute component={AuditLog} /></Route>
               <Route path="/financial-audit-log"><ProtectedRoute component={FinancialAuditLog} /></Route>
               <Route path="/backup-export"><AdminRoute component={BackupExport} /></Route>
 

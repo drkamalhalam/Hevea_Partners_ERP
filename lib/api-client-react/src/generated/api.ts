@@ -278,6 +278,8 @@ import type {
   GetLcaSummaryParams,
   GetLossAbsorptionSummaryParams,
   GetMoneyCustodySummaryParams,
+  GetMyActivity200,
+  GetMyActivityParams,
   GetOperationalAccessLogSummaryParams,
   GetOwnershipSummary200,
   GetOwnershipSummaryParams,
@@ -289,6 +291,7 @@ import type {
   GetProductionLogSummaryParams,
   GetProductionReportParams,
   GetProjectProfitabilityParams,
+  GetRecordAuditTimeline200,
   GetRevenueTrendParams,
   GetSaleGovernanceAlertsParams,
   GetSalesOrderStatsParams,
@@ -339,6 +342,8 @@ import type {
   LcaPaymentEvent,
   LcaSummary,
   ListAdvancesParams,
+  ListAuditLogs200,
+  ListAuditLogsParams,
   ListBackupHistory200,
   ListBackupHistoryParams,
   ListBurdenRecords200,
@@ -46361,6 +46366,300 @@ export function useGetGovernanceTasks<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetGovernanceTasksQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List audit log entries with filters (admin/developer only)
+ */
+export const getListAuditLogsUrl = (params?: ListAuditLogsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/audit-logs?${stringifiedParams}`
+    : `/api/audit-logs`;
+};
+
+export const listAuditLogs = async (
+  params?: ListAuditLogsParams,
+  options?: RequestInit,
+): Promise<ListAuditLogs200> => {
+  return customFetch<ListAuditLogs200>(getListAuditLogsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListAuditLogsQueryKey = (params?: ListAuditLogsParams) => {
+  return [`/api/audit-logs`, ...(params ? [params] : [])] as const;
+};
+
+export const getListAuditLogsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listAuditLogs>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListAuditLogsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listAuditLogs>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListAuditLogsQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listAuditLogs>>> = ({
+    signal,
+  }) => listAuditLogs(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listAuditLogs>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListAuditLogsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listAuditLogs>>
+>;
+export type ListAuditLogsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List audit log entries with filters (admin/developer only)
+ */
+
+export function useListAuditLogs<
+  TData = Awaited<ReturnType<typeof listAuditLogs>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListAuditLogsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listAuditLogs>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListAuditLogsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get the full audit timeline for a specific record
+ */
+export const getGetRecordAuditTimelineUrl = (
+  tableName: string,
+  recordId: string,
+) => {
+  return `/api/audit-logs/record/${tableName}/${recordId}`;
+};
+
+export const getRecordAuditTimeline = async (
+  tableName: string,
+  recordId: string,
+  options?: RequestInit,
+): Promise<GetRecordAuditTimeline200> => {
+  return customFetch<GetRecordAuditTimeline200>(
+    getGetRecordAuditTimelineUrl(tableName, recordId),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetRecordAuditTimelineQueryKey = (
+  tableName: string,
+  recordId: string,
+) => {
+  return [`/api/audit-logs/record/${tableName}/${recordId}`] as const;
+};
+
+export const getGetRecordAuditTimelineQueryOptions = <
+  TData = Awaited<ReturnType<typeof getRecordAuditTimeline>>,
+  TError = ErrorType<unknown>,
+>(
+  tableName: string,
+  recordId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getRecordAuditTimeline>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getGetRecordAuditTimelineQueryKey(tableName, recordId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getRecordAuditTimeline>>
+  > = ({ signal }) =>
+    getRecordAuditTimeline(tableName, recordId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!(tableName && recordId),
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getRecordAuditTimeline>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetRecordAuditTimelineQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getRecordAuditTimeline>>
+>;
+export type GetRecordAuditTimelineQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get the full audit timeline for a specific record
+ */
+
+export function useGetRecordAuditTimeline<
+  TData = Awaited<ReturnType<typeof getRecordAuditTimeline>>,
+  TError = ErrorType<unknown>,
+>(
+  tableName: string,
+  recordId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getRecordAuditTimeline>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetRecordAuditTimelineQueryOptions(
+    tableName,
+    recordId,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get the current user's recent activity log
+ */
+export const getGetMyActivityUrl = (params?: GetMyActivityParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/audit-logs/me/activity?${stringifiedParams}`
+    : `/api/audit-logs/me/activity`;
+};
+
+export const getMyActivity = async (
+  params?: GetMyActivityParams,
+  options?: RequestInit,
+): Promise<GetMyActivity200> => {
+  return customFetch<GetMyActivity200>(getGetMyActivityUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetMyActivityQueryKey = (params?: GetMyActivityParams) => {
+  return [`/api/audit-logs/me/activity`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetMyActivityQueryOptions = <
+  TData = Awaited<ReturnType<typeof getMyActivity>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetMyActivityParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getMyActivity>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetMyActivityQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getMyActivity>>> = ({
+    signal,
+  }) => getMyActivity(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getMyActivity>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetMyActivityQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getMyActivity>>
+>;
+export type GetMyActivityQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get the current user's recent activity log
+ */
+
+export function useGetMyActivity<
+  TData = Awaited<ReturnType<typeof getMyActivity>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetMyActivityParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getMyActivity>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetMyActivityQueryOptions(params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

@@ -11,6 +11,7 @@ import {
   userProjectAssignmentsTable,
 } from "@workspace/db";
 import { requireRole } from "../middlewares/auth";
+import { writeAudit } from "../lib/auditLogger";
 
 const router = Router();
 
@@ -472,6 +473,17 @@ router.post(
       });
     }
 
+    writeAudit(req, {
+      tableName: "contributions",
+      recordId: inserted.id,
+      operation: "INSERT",
+      module: "contributions",
+      actionType: "contribution_created",
+      projectId: inserted.projectId,
+      newData: { contributionType: inserted.contributionType, amount: inserted.amount, partnerName: inserted.partnerName },
+      actor: { id: actor.id, name: actor.name, role: actor.role },
+    });
+
     return res.status(201).json(formatContribution({ ...inserted, projectName: projectRows[0].name }));
   },
 );
@@ -822,6 +834,18 @@ router.post("/:id/verify", async (req, res) => {
     notes: typeof b.notes === "string" ? b.notes : null,
   });
 
+  writeAudit(req, {
+    tableName: "contributions",
+    recordId: id,
+    operation: "UPDATE",
+    module: "contributions",
+    actionType: wasRejected ? "contribution_re_approved" : "contribution_verified",
+    projectId: updated.projectId,
+    oldData: { verificationStatus: curr.verificationStatus },
+    newData: { verificationStatus: "verified" },
+    actor: { id: actor.id, name: actor.name, role: actor.role },
+  });
+
   const projectRows = await db.select({ name: projectsTable.name }).from(projectsTable).where(eq(projectsTable.id, updated.projectId)).limit(1);
   return res.json(formatContribution({ ...updated, projectName: projectRows[0]?.name }));
 });
@@ -873,6 +897,18 @@ router.post("/:id/reject", async (req, res) => {
     actorId: actor.id,
     actorName: actor.name,
     notes: typeof b.notes === "string" ? b.notes : null,
+  });
+
+  writeAudit(req, {
+    tableName: "contributions",
+    recordId: id,
+    operation: "UPDATE",
+    module: "contributions",
+    actionType: "contribution_rejected",
+    projectId: updated.projectId,
+    oldData: { verificationStatus: curr.verificationStatus },
+    newData: { verificationStatus: "rejected" },
+    actor: { id: actor.id, name: actor.name, role: actor.role },
   });
 
   const projectRows = await db.select({ name: projectsTable.name }).from(projectsTable).where(eq(projectsTable.id, updated.projectId)).limit(1);
@@ -1115,6 +1151,18 @@ router.post(
       notes: b.disputeNotes.trim(),
     });
 
+    writeAudit(req, {
+      tableName: "contributions",
+      recordId: id,
+      operation: "UPDATE",
+      module: "contributions",
+      actionType: "contribution_disputed",
+      projectId: updated.projectId,
+      oldData: { verificationStatus: "verified" },
+      newData: { verificationStatus: "disputed", disputeNotes: b.disputeNotes.trim() },
+      actor: { id: actor.id, name: actor.name, role: actor.role },
+    });
+
     const projectRows = await db.select({ name: projectsTable.name }).from(projectsTable).where(eq(projectsTable.id, updated.projectId)).limit(1);
     return res.json(formatContribution({ ...updated, projectName: projectRows[0]?.name }));
   },
@@ -1176,6 +1224,18 @@ router.post(
       actorId: actor.id,
       actorName: actor.name,
       notes: typeof b.notes === "string" ? b.notes : null,
+    });
+
+    writeAudit(req, {
+      tableName: "contributions",
+      recordId: id,
+      operation: "UPDATE",
+      module: "contributions",
+      actionType: "contribution_dispute_resolved",
+      projectId: updated.projectId,
+      oldData: { verificationStatus: "disputed" },
+      newData: { verificationStatus: newStatus, action: b.action },
+      actor: { id: actor.id, name: actor.name, role: actor.role },
     });
 
     const projectRows = await db.select({ name: projectsTable.name }).from(projectsTable).where(eq(projectsTable.id, updated.projectId)).limit(1);

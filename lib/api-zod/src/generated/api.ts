@@ -18495,3 +18495,114 @@ export const GetGovernanceTasksResponseItem = zod.object({
 export const GetGovernanceTasksResponse = zod.array(
   GetGovernanceTasksResponseItem,
 );
+
+/**
+ * @summary List audit log entries with filters (admin/developer only)
+ */
+export const ListAuditLogsQueryParams = zod.object({
+  module: zod.coerce.string().optional(),
+  actionType: zod.coerce.string().optional(),
+  projectId: zod.coerce.string().optional(),
+  userId: zod.coerce.string().optional(),
+  tableName: zod.coerce.string().optional(),
+  operation: zod.coerce.string().optional(),
+  from: zod.coerce.string().optional(),
+  to: zod.coerce.string().optional(),
+  limit: zod.coerce.number().optional(),
+  offset: zod.coerce.number().optional(),
+});
+
+export const ListAuditLogsResponse = zod.object({
+  entries: zod
+    .array(
+      zod.object({
+        id: zod.string().optional(),
+        userId: zod.string().nullish(),
+        userName: zod.string().nullish(),
+        userRole: zod.string().nullish(),
+        tableName: zod.string().optional(),
+        recordId: zod.string().optional(),
+        operation: zod.enum(["INSERT", "UPDATE", "DELETE"]).optional(),
+        module: zod.string().nullish(),
+        actionType: zod.string().nullish(),
+        projectId: zod.string().nullish(),
+        oldData: zod.record(zod.string(), zod.unknown()).nullish(),
+        newData: zod.record(zod.string(), zod.unknown()).nullish(),
+        metadata: zod.record(zod.string(), zod.unknown()).nullish(),
+        ipAddress: zod.string().nullish(),
+        userAgent: zod.string().nullish(),
+        createdAt: zod.string().optional(),
+      }),
+    )
+    .optional(),
+  total: zod.number().optional(),
+  limit: zod.number().optional(),
+  offset: zod.number().optional(),
+});
+
+/**
+ * @summary Get the full audit timeline for a specific record
+ */
+export const GetRecordAuditTimelineParams = zod.object({
+  tableName: zod.coerce.string(),
+  recordId: zod.coerce.string(),
+});
+
+export const GetRecordAuditTimelineResponse = zod.object({
+  entries: zod
+    .array(
+      zod.object({
+        id: zod.string().optional(),
+        userId: zod.string().nullish(),
+        userName: zod.string().nullish(),
+        userRole: zod.string().nullish(),
+        tableName: zod.string().optional(),
+        recordId: zod.string().optional(),
+        operation: zod.enum(["INSERT", "UPDATE", "DELETE"]).optional(),
+        module: zod.string().nullish(),
+        actionType: zod.string().nullish(),
+        projectId: zod.string().nullish(),
+        oldData: zod.record(zod.string(), zod.unknown()).nullish(),
+        newData: zod.record(zod.string(), zod.unknown()).nullish(),
+        metadata: zod.record(zod.string(), zod.unknown()).nullish(),
+        ipAddress: zod.string().nullish(),
+        userAgent: zod.string().nullish(),
+        createdAt: zod.string().optional(),
+      }),
+    )
+    .optional(),
+});
+
+/**
+ * @summary Get the current user's recent activity log
+ */
+export const GetMyActivityQueryParams = zod.object({
+  limit: zod.coerce.number().optional(),
+  offset: zod.coerce.number().optional(),
+});
+
+export const GetMyActivityResponse = zod.object({
+  entries: zod
+    .array(
+      zod.object({
+        id: zod.string().optional(),
+        userId: zod.string().nullish(),
+        userName: zod.string().nullish(),
+        userRole: zod.string().nullish(),
+        tableName: zod.string().optional(),
+        recordId: zod.string().optional(),
+        operation: zod.enum(["INSERT", "UPDATE", "DELETE"]).optional(),
+        module: zod.string().nullish(),
+        actionType: zod.string().nullish(),
+        projectId: zod.string().nullish(),
+        oldData: zod.record(zod.string(), zod.unknown()).nullish(),
+        newData: zod.record(zod.string(), zod.unknown()).nullish(),
+        metadata: zod.record(zod.string(), zod.unknown()).nullish(),
+        ipAddress: zod.string().nullish(),
+        userAgent: zod.string().nullish(),
+        createdAt: zod.string().optional(),
+      }),
+    )
+    .optional(),
+  total: zod.number().optional(),
+});
