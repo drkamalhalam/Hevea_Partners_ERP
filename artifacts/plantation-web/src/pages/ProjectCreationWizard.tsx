@@ -1124,7 +1124,7 @@ function Step8Documents({
 
             {!participant && (
               <p className="text-xs text-amber-600">
-                KYC not yet saved — complete Step 2 / Step 3 first.
+                KYC not yet saved — upload will be linked once KYC is complete.
               </p>
             )}
 
@@ -1148,7 +1148,7 @@ function Step8Documents({
                       className="sr-only"
                       ref={(el) => { inputRefs.current[key] = el; }}
                       onChange={(e) => handleFileChange(e, role, field)}
-                      disabled={!participant || busy}
+                      disabled={busy}
                     />
 
                     <div className="flex items-center gap-2">
@@ -1157,7 +1157,7 @@ function Step8Documents({
                         variant="outline"
                         size="sm"
                         className="text-xs h-8 px-3 flex-1"
-                        disabled={!participant || busy}
+                        disabled={busy}
                         onClick={() => triggerPick(key)}
                       >
                         {busy ? (
