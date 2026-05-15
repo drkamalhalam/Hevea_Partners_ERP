@@ -1,7 +1,36 @@
 import { Request, Response, NextFunction } from "express";
 import { getAuth } from "@clerk/express";
-import { db, usersTable, userProjectAssignmentsTable } from "@workspace/db";
+import { db, usersTable, userProjectAssignmentsTable, userSessionsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
+
+// ── Session deduplication ──────────────────────────────────────────────────────
+// In-memory map: dbUserId → timestamp of last recorded session.
+// Prevents inserting a row on every request — records at most once per hour.
+const _sessionRecordedAt = new Map<string, number>();
+
+function _recordSession(
+  req: Request,
+  dbUserId: string,
+  clerkUserId: string,
+  displayName: string | null,
+  role: string,
+): void {
+  const now = Date.now();
+  const last = _sessionRecordedAt.get(dbUserId);
+  if (last && now - last < 3_600_000) return; // already recorded within 1 h
+  _sessionRecordedAt.set(dbUserId, now);
+
+  db.insert(userSessionsTable)
+    .values({
+      userId: dbUserId,
+      clerkUserId,
+      displayName,
+      userRole: role,
+      ipAddress: req.ip ?? null,
+      userAgent: req.get("user-agent") ?? null,
+    })
+    .catch(() => {}); // fire-and-forget — never blocks the request
+}
 
 export type UserRoleEnum =
   | "admin"
@@ -76,6 +105,9 @@ export async function requireAuth(
       req.userProjectIds = assignments
         .filter((a) => !a.revokedAt)
         .map((a) => a.projectId);
+
+      // Record login session (fire-and-forget, de-duped per hour)
+      _recordSession(req, userRow.id, userId, userRow.displayName ?? null, userRow.role ?? "employee");
     } else {
       req.userRole = "employee";
       req.userProjectIds = [];

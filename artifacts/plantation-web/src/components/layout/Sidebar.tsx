@@ -50,6 +50,7 @@ import {
   UserCog,
   CreditCard,
   Settings,
+  Activity,
 } from "lucide-react";
 import { useRole, ROLE_LABELS, ROLE_COLORS } from "@/contexts/RoleContext";
 import type { UserRole } from "@/contexts/RoleContext";
@@ -393,6 +394,12 @@ const navGroups: NavGroup[] = [
         name: "Gov. Monitoring",
         href: "/governance-monitoring",
         icon: ShieldCheck,
+        roles: ["admin", "developer"],
+      },
+      {
+        name: "User Activity",
+        href: "/user-activity",
+        icon: Activity,
         roles: ["admin", "developer"],
       },
       {
