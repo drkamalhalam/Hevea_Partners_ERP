@@ -3,7 +3,7 @@ import { useGetProject, useListAgreements, getGetProjectQueryKey } from "@worksp
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, MapPin, ChevronRight, Lock, Archive } from "lucide-react";
+import { ArrowLeft, MapPin, ChevronRight, Lock, Archive, Layers, Hash, ShieldCheck, AlertTriangle } from "lucide-react";
 import ProjectParticipants from "./ProjectParticipants";
 import ProjectNomineeSection from "./ProjectNominee";
 import ProjectLifecycleSection from "./ProjectLifecycleSection";
@@ -19,6 +19,35 @@ const statusColors: Record<string, string> = {
   missing_developer: "bg-orange-100 text-orange-800",
 };
 
+const modelConfig: Record<string, { label: string; desc: string; color: string; bg: string; border: string }> = {
+  ownership_contribution: {
+    label: "Ownership Contribution Model",
+    desc: "Revenue distributed by verified equity stakes. LCA eligible after maturity. Inheritance and share transfers supported.",
+    color: "text-violet-800",
+    bg: "bg-violet-50",
+    border: "border-violet-200",
+  },
+  fifty_percent_revenue: {
+    label: "50% Revenue Model",
+    desc: "Fixed contractual revenue split. No ownership equity formation. LCA, land notional value, and contribution equity are disabled.",
+    color: "text-sky-800",
+    bg: "bg-sky-50",
+    border: "border-sky-200",
+  },
+};
+
+const activationConfig: Record<string, { label: string; color: string; bg: string }> = {
+  active: { label: "Active", color: "text-emerald-800", bg: "bg-emerald-100" },
+  draft: { label: "Draft", color: "text-slate-600", bg: "bg-slate-100" },
+  pending_verification: { label: "Pending Verification", color: "text-amber-800", bg: "bg-amber-100" },
+  pending_agreement: { label: "Pending Agreement", color: "text-amber-800", bg: "bg-amber-100" },
+  pending_participant_confirmation: { label: "Pending Confirmation", color: "text-amber-800", bg: "bg-amber-100" },
+  pending_land_verification: { label: "Pending Land Verification", color: "text-amber-800", bg: "bg-amber-100" },
+  ready_for_activation: { label: "Ready for Activation", color: "text-lime-800", bg: "bg-lime-100" },
+  suspended: { label: "Suspended", color: "text-red-800", bg: "bg-red-100" },
+  closed: { label: "Closed", color: "text-gray-700", bg: "bg-gray-100" },
+};
+
 export default function ProjectDetails() {
   const [, params] = useRoute("/projects/:id");
   const id = params?.id ?? "";
@@ -26,8 +55,10 @@ export default function ProjectDetails() {
   const { data: agreements } = useListAgreements();
 
   const projectAgreements = agreements?.filter(a => a.projectId === id) ?? [];
-
   const isFrozen = !!project?.ownershipFrozenAt;
+  const model = project ? (modelConfig[project.commercialModel] ?? modelConfig.ownership_contribution) : null;
+  const activation = project ? (activationConfig[project.activationStatus] ?? activationConfig.active) : null;
+  const isFiftyPercent = project?.commercialModel === "fifty_percent_revenue";
 
   if (isLoading) {
     return (
@@ -70,12 +101,47 @@ export default function ProjectDetails() {
             <MapPin className="w-4 h-4" />
             <span>{project.location}{project.village ? `, ${project.village}` : ""}, {project.district}, {project.state}</span>
           </div>
+          {project.projectCode && (
+            <div className="flex items-center gap-1.5 mt-1 text-sm text-muted-foreground">
+              <Hash className="w-3.5 h-3.5" />
+              <span className="font-mono">{project.projectCode}</span>
+            </div>
+          )}
         </div>
         <span className={`text-sm px-3 py-1 rounded-full font-medium capitalize flex-shrink-0 ${statusColors[project.status] ?? ""}`}>
           {project.status}
         </span>
       </div>
 
+      {/* ── Governance Foundation Banner ── */}
+      {model && activation && (
+        <Card className={`border ${model.border} ${model.bg}`}>
+          <CardContent className="pt-4 pb-4">
+            <div className="flex flex-col sm:flex-row sm:items-start gap-4">
+              <div className="flex items-start gap-3 flex-1">
+                <ShieldCheck className={`w-5 h-5 mt-0.5 flex-shrink-0 ${model.color}`} />
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`text-sm font-semibold ${model.color}`}>{model.label}</span>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${activation.bg} ${activation.color}`}>
+                      {activation.label}
+                    </span>
+                  </div>
+                  <p className={`text-xs mt-1 ${model.color} opacity-80`}>{model.desc}</p>
+                </div>
+              </div>
+              {isFiftyPercent && (
+                <div className="flex items-start gap-1.5 text-xs text-sky-700 bg-white/60 rounded px-3 py-2 border border-sky-200 sm:max-w-xs">
+                  <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+                  <span>LCA, land notional value and ownership equity modules are <strong>disabled</strong> for this project.</span>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ── Stats strip ── */}
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Land Area</CardTitle></CardHeader>
@@ -85,10 +151,18 @@ export default function ProjectDetails() {
           <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Agreement Term</CardTitle></CardHeader>
           <CardContent><p className="text-2xl font-bold">{project.termYears} <span className="text-base font-normal text-muted-foreground">years</span></p></CardContent>
         </Card>
-        <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Land Notional Value</CardTitle></CardHeader>
-          <CardContent><p className="text-2xl font-bold">{project.landNotionalValue ? `₹${project.landNotionalValue.toLocaleString("en-IN")}` : "—"}</p></CardContent>
-        </Card>
+        {!isFiftyPercent && (
+          <Card>
+            <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Land Notional Value</CardTitle></CardHeader>
+            <CardContent><p className="text-2xl font-bold">{project.landNotionalValue ? `₹${project.landNotionalValue.toLocaleString("en-IN")}` : "—"}</p></CardContent>
+          </Card>
+        )}
+        {isFiftyPercent && (
+          <Card className="border-sky-100 bg-sky-50/30">
+            <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Revenue Structure</CardTitle></CardHeader>
+            <CardContent><p className="text-sm font-semibold text-sky-800">Fixed 50 / 50 contractual split</p></CardContent>
+          </Card>
+        )}
       </div>
 
       <Card>
@@ -97,10 +171,22 @@ export default function ProjectDetails() {
           <dl className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
             <div><dt className="text-muted-foreground mb-1">Start Date</dt><dd className="font-medium">{project.startDate}</dd></div>
             {project.expectedMaturityDate && <div><dt className="text-muted-foreground mb-1">Expected Maturity</dt><dd className="font-medium">{project.expectedMaturityDate}</dd></div>}
-            {project.landValuePerUnit && <div><dt className="text-muted-foreground mb-1">Value Per {project.landAreaUnit}</dt><dd className="font-medium">₹{project.landValuePerUnit.toLocaleString("en-IN")}</dd></div>}
+            {!isFiftyPercent && project.landValuePerUnit && (
+              <div><dt className="text-muted-foreground mb-1">Value Per {project.landAreaUnit}</dt><dd className="font-medium">₹{project.landValuePerUnit.toLocaleString("en-IN")}</dd></div>
+            )}
             <div><dt className="text-muted-foreground mb-1">District</dt><dd className="font-medium">{project.district}</dd></div>
             <div><dt className="text-muted-foreground mb-1">State</dt><dd className="font-medium">{project.state}</dd></div>
             {project.village && <div><dt className="text-muted-foreground mb-1">Village</dt><dd className="font-medium">{project.village}</dd></div>}
+            <div>
+              <dt className="text-muted-foreground mb-1 flex items-center gap-1"><Layers className="w-3 h-3" /> Commercial Model</dt>
+              <dd className="font-medium">{model?.label ?? project.commercialModel}</dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground mb-1">Activation Status</dt>
+              <dd className={`text-xs px-2 py-0.5 rounded-full font-medium inline-block ${activation?.bg ?? ""} ${activation?.color ?? ""}`}>
+                {activation?.label ?? project.activationStatus}
+              </dd>
+            </div>
           </dl>
           {project.notes && (
             <div className="mt-4 pt-4 border-t">
@@ -141,7 +227,7 @@ export default function ProjectDetails() {
       <ProjectLifecycleSection projectId={id} />
 
       {/* Ownership Freeze — shown for mature/closed projects where freeze exists */}
-      {(project.lifecycleStatus === "mature_production" || project.lifecycleStatus === "closed") && (
+      {!isFiftyPercent && (project.lifecycleStatus === "mature_production" || project.lifecycleStatus === "closed") && (
         <OwnershipFreezePanel projectId={id} />
       )}
 

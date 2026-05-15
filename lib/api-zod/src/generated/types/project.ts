@@ -5,12 +5,16 @@
  * Rubber Plantation Partnership API
  * OpenAPI spec version: 0.1.0
  */
+import type { ProjectActivationStatus } from "./projectActivationStatus";
+import type { ProjectCommercialModel } from "./projectCommercialModel";
 import type { ProjectLifecycleStatus } from "./projectLifecycleStatus";
 import type { ProjectStatus } from "./projectStatus";
 
 export interface Project {
   id: string;
   name: string;
+  /** @nullable */
+  projectCode?: string | null;
   /** @nullable */
   description?: string | null;
   location: string;
@@ -24,6 +28,8 @@ export interface Project {
   landNotionalValue?: number | null;
   /** @nullable */
   landValuePerUnit?: number | null;
+  commercialModel: ProjectCommercialModel;
+  activationStatus: ProjectActivationStatus;
   status: ProjectStatus;
   lifecycleStatus: ProjectLifecycleStatus;
   startDate: string;

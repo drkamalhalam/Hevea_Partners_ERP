@@ -104,6 +104,26 @@ Six roles in `usersTable.role`:
 
 ---
 
+## Project Governance Foundation
+
+Every project now carries three master governance fields that control all downstream module behavior:
+
+| Field | Values | Notes |
+|---|---|---|
+| `commercialModel` | `ownership_contribution` \| `fifty_percent_revenue` | Master behavioral controller — immutable on active projects |
+| `projectCode` | text (unique, nullable) | Short reference code — immutable once set |
+| `activationStatus` | `draft` → `ready_for_activation` → `active` \| `suspended` \| `closed` | Only `active` projects may run operations |
+
+**Model-specific behavior:**
+- `ownership_contribution`: LCA eligible, ownership equity, land notional value, contribution tracking, inheritance — all enabled
+- `fifty_percent_revenue`: No LCA, no ownership equity, no land notional value — contractual split only; guarded in both API (LCA routes) and UI
+
+**Immutability rules (enforced in `PATCH /projects/:id`):**
+- `commercialModel` cannot be changed on an `active` project without a governance override
+- `projectCode` cannot be changed once set
+
+---
+
 ## Architecture Decisions
 
 - **Contract-first API:** OpenAPI spec → Orval codegen → React Query hooks + Zod schemas in both client and server

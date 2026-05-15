@@ -577,6 +577,7 @@ export const HealthCheckResponse = zod.object({
 export const ListProjectsResponseItem = zod.object({
   id: zod.string().uuid(),
   name: zod.string(),
+  projectCode: zod.string().nullish(),
   description: zod.string().nullish(),
   location: zod.string(),
   village: zod.string().nullish(),
@@ -586,6 +587,21 @@ export const ListProjectsResponseItem = zod.object({
   landAreaUnit: zod.string(),
   landNotionalValue: zod.number().nullish(),
   landValuePerUnit: zod.number().nullish(),
+  commercialModel: zod.enum([
+    "ownership_contribution",
+    "fifty_percent_revenue",
+  ]),
+  activationStatus: zod.enum([
+    "draft",
+    "pending_verification",
+    "pending_agreement",
+    "pending_participant_confirmation",
+    "pending_land_verification",
+    "ready_for_activation",
+    "active",
+    "suspended",
+    "closed",
+  ]),
   status: zod.enum([
     "planning",
     "developing",
@@ -612,6 +628,7 @@ export const ListProjectsResponse = zod.array(ListProjectsResponseItem);
  */
 export const CreateProjectBody = zod.object({
   name: zod.string(),
+  projectCode: zod.string().optional(),
   description: zod.string().optional(),
   location: zod.string(),
   village: zod.string().optional(),
@@ -621,6 +638,23 @@ export const CreateProjectBody = zod.object({
   landAreaUnit: zod.string(),
   landNotionalValue: zod.number().optional(),
   landValuePerUnit: zod.number().optional(),
+  commercialModel: zod.enum([
+    "ownership_contribution",
+    "fifty_percent_revenue",
+  ]),
+  activationStatus: zod
+    .enum([
+      "draft",
+      "pending_verification",
+      "pending_agreement",
+      "pending_participant_confirmation",
+      "pending_land_verification",
+      "ready_for_activation",
+      "active",
+      "suspended",
+      "closed",
+    ])
+    .optional(),
   status: zod.enum([
     "planning",
     "developing",
@@ -646,6 +680,7 @@ export const GetProjectParams = zod.object({
 export const GetProjectResponse = zod.object({
   id: zod.string().uuid(),
   name: zod.string(),
+  projectCode: zod.string().nullish(),
   description: zod.string().nullish(),
   location: zod.string(),
   village: zod.string().nullish(),
@@ -655,6 +690,21 @@ export const GetProjectResponse = zod.object({
   landAreaUnit: zod.string(),
   landNotionalValue: zod.number().nullish(),
   landValuePerUnit: zod.number().nullish(),
+  commercialModel: zod.enum([
+    "ownership_contribution",
+    "fifty_percent_revenue",
+  ]),
+  activationStatus: zod.enum([
+    "draft",
+    "pending_verification",
+    "pending_agreement",
+    "pending_participant_confirmation",
+    "pending_land_verification",
+    "ready_for_activation",
+    "active",
+    "suspended",
+    "closed",
+  ]),
   status: zod.enum([
     "planning",
     "developing",
@@ -684,6 +734,7 @@ export const UpdateProjectParams = zod.object({
 
 export const UpdateProjectBody = zod.object({
   name: zod.string().optional(),
+  projectCode: zod.string().optional(),
   description: zod.string().optional(),
   location: zod.string().optional(),
   village: zod.string().optional(),
@@ -693,6 +744,22 @@ export const UpdateProjectBody = zod.object({
   landAreaUnit: zod.string().optional(),
   landNotionalValue: zod.number().optional(),
   landValuePerUnit: zod.number().optional(),
+  commercialModel: zod
+    .enum(["ownership_contribution", "fifty_percent_revenue"])
+    .optional(),
+  activationStatus: zod
+    .enum([
+      "draft",
+      "pending_verification",
+      "pending_agreement",
+      "pending_participant_confirmation",
+      "pending_land_verification",
+      "ready_for_activation",
+      "active",
+      "suspended",
+      "closed",
+    ])
+    .optional(),
   status: zod
     .enum([
       "planning",
@@ -713,6 +780,7 @@ export const UpdateProjectBody = zod.object({
 export const UpdateProjectResponse = zod.object({
   id: zod.string().uuid(),
   name: zod.string(),
+  projectCode: zod.string().nullish(),
   description: zod.string().nullish(),
   location: zod.string(),
   village: zod.string().nullish(),
@@ -722,6 +790,21 @@ export const UpdateProjectResponse = zod.object({
   landAreaUnit: zod.string(),
   landNotionalValue: zod.number().nullish(),
   landValuePerUnit: zod.number().nullish(),
+  commercialModel: zod.enum([
+    "ownership_contribution",
+    "fifty_percent_revenue",
+  ]),
+  activationStatus: zod.enum([
+    "draft",
+    "pending_verification",
+    "pending_agreement",
+    "pending_participant_confirmation",
+    "pending_land_verification",
+    "ready_for_activation",
+    "active",
+    "suspended",
+    "closed",
+  ]),
   status: zod.enum([
     "planning",
     "developing",
@@ -2985,6 +3068,7 @@ export const GetMyPortfolioResponse = zod.object({
     zod.object({
       id: zod.string().uuid(),
       name: zod.string(),
+      projectCode: zod.string().nullish(),
       description: zod.string().nullish(),
       location: zod.string(),
       village: zod.string().nullish(),
@@ -2994,6 +3078,21 @@ export const GetMyPortfolioResponse = zod.object({
       landAreaUnit: zod.string(),
       landNotionalValue: zod.number().nullish(),
       landValuePerUnit: zod.number().nullish(),
+      commercialModel: zod.enum([
+        "ownership_contribution",
+        "fifty_percent_revenue",
+      ]),
+      activationStatus: zod.enum([
+        "draft",
+        "pending_verification",
+        "pending_agreement",
+        "pending_participant_confirmation",
+        "pending_land_verification",
+        "ready_for_activation",
+        "active",
+        "suspended",
+        "closed",
+      ]),
       status: zod.enum([
         "planning",
         "developing",

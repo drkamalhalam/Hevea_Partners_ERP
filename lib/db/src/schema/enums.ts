@@ -23,6 +23,50 @@ export const projectStatusEnum = pgEnum("project_status", [
   "missing_developer",
 ]);
 
+/**
+ * Commercial / revenue model governing an entire plantation project.
+ * This is the master behavioral controller — downstream modules (LCA,
+ * ownership engine, land notional value, contribution equity) all derive
+ * their permitted operations from this field.
+ *
+ *   ownership_contribution  — revenue split by verified contribution-based
+ *                             ownership percentages; LCA eligible after maturity.
+ *   fifty_percent_revenue   — contractual fixed-split model (typically 50 / 50);
+ *                             no ownership equity, no LCA, no land notional value.
+ */
+export const projectCommercialModelEnum = pgEnum("project_commercial_model", [
+  "ownership_contribution",
+  "fifty_percent_revenue",
+]);
+
+/**
+ * Activation lifecycle of a plantation project.
+ * Projects begin as drafts and progress through verification steps before
+ * being activated. Only ACTIVE projects may collect production, process
+ * sales, or generate accounting entries.
+ *
+ *   draft                         — initial state; setup in progress
+ *   pending_verification          — submitted for admin review
+ *   pending_agreement             — awaiting agreement upload / activation
+ *   pending_participant_confirmation — awaiting participant confirmations
+ *   pending_land_verification     — land records under verification
+ *   ready_for_activation          — all pre-checks passed; pending final activation
+ *   active                        — fully operational
+ *   suspended                     — temporarily halted
+ *   closed                        — terminal state; all operations locked
+ */
+export const projectActivationStatusEnum = pgEnum("project_activation_status", [
+  "draft",
+  "pending_verification",
+  "pending_agreement",
+  "pending_participant_confirmation",
+  "pending_land_verification",
+  "ready_for_activation",
+  "active",
+  "suspended",
+  "closed",
+]);
+
 // ── Notification enums ────────────────────────────────────────────────────
 
 export const notificationTypeEnum = pgEnum("notification_type", [

@@ -163,6 +163,44 @@ router.patch("/:id", requireRole("admin", "developer"), async (req, res) => {
     return;
   }
   try {
+    // Fetch existing project to enforce immutability rules
+    const [existing] = await db
+      .select()
+      .from(projectsTable)
+      .where(eq(projectsTable.id, paramsParsed.data.id))
+      .limit(1);
+    if (!existing) {
+      res.status(404).json({ error: "Not found" });
+      return;
+    }
+
+    // commercialModel is immutable on ACTIVE projects — requires governance override
+    if (
+      bodyParsed.data.commercialModel !== undefined &&
+      bodyParsed.data.commercialModel !== existing.commercialModel &&
+      existing.activationStatus === "active"
+    ) {
+      res.status(409).json({
+        error:
+          "Commercial model cannot be changed on an active project. " +
+          "Raise a governance override request to change it.",
+      });
+      return;
+    }
+
+    // projectCode is immutable once set (even on inactive projects)
+    if (
+      bodyParsed.data.projectCode !== undefined &&
+      existing.projectCode !== null &&
+      existing.projectCode !== "" &&
+      bodyParsed.data.projectCode !== existing.projectCode
+    ) {
+      res.status(409).json({
+        error: "Project code is immutable once assigned.",
+      });
+      return;
+    }
+
     const [project] = await db
       .update(projectsTable)
       .set(bodyParsed.data)

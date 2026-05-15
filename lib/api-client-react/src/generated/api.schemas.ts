@@ -381,6 +381,29 @@ export interface HealthStatus {
   status: string;
 }
 
+export type ProjectCommercialModel =
+  (typeof ProjectCommercialModel)[keyof typeof ProjectCommercialModel];
+
+export const ProjectCommercialModel = {
+  ownership_contribution: "ownership_contribution",
+  fifty_percent_revenue: "fifty_percent_revenue",
+} as const;
+
+export type ProjectActivationStatus =
+  (typeof ProjectActivationStatus)[keyof typeof ProjectActivationStatus];
+
+export const ProjectActivationStatus = {
+  draft: "draft",
+  pending_verification: "pending_verification",
+  pending_agreement: "pending_agreement",
+  pending_participant_confirmation: "pending_participant_confirmation",
+  pending_land_verification: "pending_land_verification",
+  ready_for_activation: "ready_for_activation",
+  active: "active",
+  suspended: "suspended",
+  closed: "closed",
+} as const;
+
 export type ProjectStatus = (typeof ProjectStatus)[keyof typeof ProjectStatus];
 
 export const ProjectStatus = {
@@ -406,6 +429,8 @@ export interface Project {
   id: string;
   name: string;
   /** @nullable */
+  projectCode?: string | null;
+  /** @nullable */
   description?: string | null;
   location: string;
   /** @nullable */
@@ -418,6 +443,8 @@ export interface Project {
   landNotionalValue?: number | null;
   /** @nullable */
   landValuePerUnit?: number | null;
+  commercialModel: ProjectCommercialModel;
+  activationStatus: ProjectActivationStatus;
   status: ProjectStatus;
   lifecycleStatus: ProjectLifecycleStatus;
   startDate: string;
@@ -434,6 +461,29 @@ export interface Project {
   ownershipFrozenAt?: string | null;
 }
 
+export type ProjectInputCommercialModel =
+  (typeof ProjectInputCommercialModel)[keyof typeof ProjectInputCommercialModel];
+
+export const ProjectInputCommercialModel = {
+  ownership_contribution: "ownership_contribution",
+  fifty_percent_revenue: "fifty_percent_revenue",
+} as const;
+
+export type ProjectInputActivationStatus =
+  (typeof ProjectInputActivationStatus)[keyof typeof ProjectInputActivationStatus];
+
+export const ProjectInputActivationStatus = {
+  draft: "draft",
+  pending_verification: "pending_verification",
+  pending_agreement: "pending_agreement",
+  pending_participant_confirmation: "pending_participant_confirmation",
+  pending_land_verification: "pending_land_verification",
+  ready_for_activation: "ready_for_activation",
+  active: "active",
+  suspended: "suspended",
+  closed: "closed",
+} as const;
+
 export type ProjectInputStatus =
   (typeof ProjectInputStatus)[keyof typeof ProjectInputStatus];
 
@@ -449,6 +499,7 @@ export const ProjectInputStatus = {
 
 export interface ProjectInput {
   name: string;
+  projectCode?: string;
   description?: string;
   location: string;
   village?: string;
@@ -458,12 +509,37 @@ export interface ProjectInput {
   landAreaUnit: string;
   landNotionalValue?: number;
   landValuePerUnit?: number;
+  commercialModel: ProjectInputCommercialModel;
+  activationStatus?: ProjectInputActivationStatus;
   status: ProjectInputStatus;
   startDate: string;
   expectedMaturityDate?: string;
   termYears: number;
   notes?: string;
 }
+
+export type ProjectUpdateCommercialModel =
+  (typeof ProjectUpdateCommercialModel)[keyof typeof ProjectUpdateCommercialModel];
+
+export const ProjectUpdateCommercialModel = {
+  ownership_contribution: "ownership_contribution",
+  fifty_percent_revenue: "fifty_percent_revenue",
+} as const;
+
+export type ProjectUpdateActivationStatus =
+  (typeof ProjectUpdateActivationStatus)[keyof typeof ProjectUpdateActivationStatus];
+
+export const ProjectUpdateActivationStatus = {
+  draft: "draft",
+  pending_verification: "pending_verification",
+  pending_agreement: "pending_agreement",
+  pending_participant_confirmation: "pending_participant_confirmation",
+  pending_land_verification: "pending_land_verification",
+  ready_for_activation: "ready_for_activation",
+  active: "active",
+  suspended: "suspended",
+  closed: "closed",
+} as const;
 
 export type ProjectUpdateStatus =
   (typeof ProjectUpdateStatus)[keyof typeof ProjectUpdateStatus];
@@ -480,6 +556,7 @@ export const ProjectUpdateStatus = {
 
 export interface ProjectUpdate {
   name?: string;
+  projectCode?: string;
   description?: string;
   location?: string;
   village?: string;
@@ -489,6 +566,8 @@ export interface ProjectUpdate {
   landAreaUnit?: string;
   landNotionalValue?: number;
   landValuePerUnit?: number;
+  commercialModel?: ProjectUpdateCommercialModel;
+  activationStatus?: ProjectUpdateActivationStatus;
   status?: ProjectUpdateStatus;
   startDate?: string;
   expectedMaturityDate?: string;

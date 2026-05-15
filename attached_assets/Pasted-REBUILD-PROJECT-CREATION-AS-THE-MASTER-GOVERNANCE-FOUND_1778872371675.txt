@@ -1,0 +1,358 @@
+REBUILD PROJECT CREATION AS THE MASTER GOVERNANCE FOUNDATION OF THE ENTIRE ERP.
+
+The project itself must become the root governing entity that controls:
+- commercial behavior,
+- accounting logic,
+- ownership rules,
+- participant structure,
+- activation workflow,
+- operational permissions,
+- downstream module behavior.
+
+The system must stop treating projects as simple containers.
+
+Every downstream module must inherit rules from project configuration.
+
+==================================================
+CORE PROJECT FOUNDATION
+==================================================
+
+Every project must contain these mandatory foundation fields:
+
+1. Project Name
+
+2. Project Code
+- Unique
+- Immutable after creation
+
+3. Commercial Model (MANDATORY)
+Allowed values:
+- OWNERSHIP_CONTRIBUTION_MODEL
+- FIFTY_PERCENT_REVENUE_MODEL
+
+This becomes the core behavioral controller of the project.
+
+4. Lifecycle Phase
+Default:
+- PRE_DEVELOPMENT
+or
+- IMMATURE
+
+Lifecycle examples:
+- PRE_DEVELOPMENT
+- IMMATURE
+- PRE_MATURE
+- MATURE_PRODUCTION
+- SUSPENDED
+- CLOSED
+
+5. Agreement Structure
+- Agreement type/template linkage
+- Agreement version
+- Agreement upload support
+- Agreement status
+- Agreement effective date
+
+6. Land Structure
+- Land records
+- Survey/plot linkage
+- Area
+- Ownership mapping
+- Landowner mapping
+
+7. Participant Structure
+Participants may include:
+- Landowners
+- Investors
+- Developers
+- Economic participants
+- Managers
+- Employees
+- Operational workers
+
+8. Activation Status
+Statuses:
+- DRAFT
+- PENDING_VERIFICATION
+- PENDING_AGREEMENT
+- PENDING_PARTICIPANT_CONFIRMATION
+- PENDING_LAND_VERIFICATION
+- READY_FOR_ACTIVATION
+- ACTIVE
+- SUSPENDED
+- CLOSED
+
+==================================================
+MODEL-SPECIFIC BEHAVIOR
+==================================================
+
+--------------------------------------------------
+MODEL:
+OWNERSHIP_CONTRIBUTION_MODEL
+--------------------------------------------------
+
+ENABLE:
+- Ownership percentage system
+- Contribution tracking
+- Share tracking
+- Ownership crystallization
+- Share transfer system
+- Land notional value
+- LCA eligibility after maturity
+- Inheritance logic
+- Contribution-based reporting
+
+Participants may hold:
+- ownership shares,
+- contribution records,
+- transferable interests.
+
+ALLOW:
+- dynamic ownership calculations
+- ownership reports
+- contribution balancing
+- share valuation
+
+--------------------------------------------------
+MODEL:
+FIFTY_PERCENT_REVENUE_MODEL
+--------------------------------------------------
+
+DISABLE:
+- ownership percentage engine
+- contribution equity formation
+- ownership crystallization
+- land notional value
+- LCA
+- ownership transfer system
+- ownership inheritance engine
+
+ENABLE:
+- contractual revenue sharing only
+
+Participants under this model hold:
+- contractual participation rights
+NOT ownership equity.
+
+STRICT RULE:
+Costs or contributions must NEVER create ownership under this model.
+
+==================================================
+LAND NOTIONAL VALUE RULES
+==================================================
+
+Land notional value is ONLY applicable for:
+OWNERSHIP_CONTRIBUTION_MODEL
+
+Under:
+FIFTY_PERCENT_REVENUE_MODEL
+the system must:
+- hide land notional value sections
+- block land value accounting
+- prevent accidental ownership creation
+
+==================================================
+LCA RULES
+==================================================
+
+LCA means:
+LAND CONTRIBUTION ADJUSTMENT
+
+LCA is ONLY applicable when:
+- Commercial Model = OWNERSHIP_CONTRIBUTION_MODEL
+AND
+- Lifecycle Phase = MATURE_PRODUCTION
+
+Under:
+FIFTY_PERCENT_REVENUE_MODEL
+LCA must NEVER:
+- appear,
+- activate,
+- calculate,
+- generate dues,
+- generate schedules.
+
+==================================================
+PROJECT ACTIVATION WORKFLOW
+==================================================
+
+Project creation must be separate from activation.
+
+Only ACTIVE projects may:
+- collect production,
+- create stock,
+- process sales,
+- distribute revenue,
+- create accounting entries,
+- generate operational workflows.
+
+Before activation, the system must verify required setup tasks.
+
+==================================================
+PROJECT ACTIVATION TASK ENGINE
+==================================================
+
+Before project activation, required tasks may include:
+
+- agreement upload
+- participant verification
+- land verification
+- share validation
+- contribution setup
+- commercial model confirmation
+- operational assignment
+- collection team assignment
+- store assignment
+- buyer permissions
+- financial setup
+
+Tasks must support:
+- assignment
+- due dates
+- completion tracking
+- approval workflow
+- audit logs
+
+==================================================
+COLLECTION SYSTEM GOVERNANCE
+==================================================
+
+Collection modules must inherit project behavior.
+
+Under:
+OWNERSHIP_CONTRIBUTION_MODEL
+allow:
+- contribution-linked tracking
+
+Under:
+FIFTY_PERCENT_REVENUE_MODEL
+prevent:
+- ownership-linked accounting
+- ownership equity creation
+
+Collection workers must only access:
+- assigned projects
+- assigned collection tasks/zones
+
+==================================================
+AGREEMENT GOVERNANCE
+==================================================
+
+Agreement configuration must control:
+- participant rights
+- transfer rights
+- inheritance rules
+- revenue logic
+- ownership behavior
+- LCA applicability
+- land valuation behavior
+
+Agreements must support:
+- versioning
+- audit logs
+- file uploads
+- effective dates
+- status tracking
+
+==================================================
+PROJECT DASHBOARD REQUIREMENTS
+==================================================
+
+Every project dashboard must visibly display:
+
+- Commercial Model
+- Lifecycle Phase
+- Agreement Type
+- Activation Status
+- Land Area
+- Participant Summary
+- Operational Status
+- Ownership/Revenue Structure
+- LCA Applicability
+
+==================================================
+PERMISSION INHERITANCE
+==================================================
+
+Project configuration must control:
+- dashboard visibility
+- accounting permissions
+- operational permissions
+- module visibility
+- transfer permissions
+- reporting visibility
+
+==================================================
+STRICT IMMUTABILITY RULES
+==================================================
+
+After project activation:
+
+Changing:
+- commercial model
+- agreement type
+- ownership structure
+
+must require:
+- super-admin approval
+- audit reason
+- migration validation
+- conflict checks
+
+==================================================
+AUDIT REQUIREMENTS
+==================================================
+
+Log:
+- project creation
+- field changes
+- participant changes
+- commercial model changes
+- lifecycle changes
+- activation approvals
+- agreement changes
+- land mapping changes
+- operational assignment changes
+
+==================================================
+IMPORTANT SYSTEM ARCHITECTURE RULE
+==================================================
+
+All downstream modules MUST inherit behavior from project governance.
+
+INCLUDING:
+- accounting
+- collection
+- store management
+- stock transfer
+- sales
+- buyer module
+- ownership engine
+- revenue distribution
+- LCA
+- dashboards
+- notifications
+- reports
+- permissions
+- task engine
+
+No module may independently decide business rules outside project governance.
+
+==================================================
+DO NOT BREAK EXISTING MODULES
+==================================================
+
+Integrate this safely with existing:
+- collection entry system
+- store entry system
+- stock transfer system
+- sales module
+- buyer module
+- observer monitoring system
+- accounting modules
+- dashboards
+- audit logs
+- notifications
+- existing project records
+
+without removing current functionality.

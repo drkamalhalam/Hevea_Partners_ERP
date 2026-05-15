@@ -12122,13 +12122,15 @@ components:
 
     Project:
       type: object
-      required: [id, name, location, district, state, landArea, landAreaUnit, status, lifecycleStatus, startDate, termYears, isActive, createdAt]
+      required: [id, name, location, district, state, landArea, landAreaUnit, status, lifecycleStatus, commercialModel, activationStatus, startDate, termYears, isActive, createdAt]
       properties:
         id:
           type: string
           format: uuid
         name:
           type: string
+        projectCode:
+          type: ["string", "null"]
         description:
           type: ["string", "null"]
         location:
@@ -12147,6 +12149,12 @@ components:
           type: ["number", "null"]
         landValuePerUnit:
           type: ["number", "null"]
+        commercialModel:
+          type: string
+          enum: [ownership_contribution, fifty_percent_revenue]
+        activationStatus:
+          type: string
+          enum: [draft, pending_verification, pending_agreement, pending_participant_confirmation, pending_land_verification, ready_for_activation, active, suspended, closed]
         status:
           type: string
           enum: [planning, developing, maturing, tapping, completed, suspended, missing_developer]
@@ -12172,9 +12180,11 @@ components:
 
     ProjectInput:
       type: object
-      required: [name, location, district, state, landArea, landAreaUnit, status, startDate, termYears]
+      required: [name, location, district, state, landArea, landAreaUnit, status, startDate, termYears, commercialModel]
       properties:
         name:
+          type: string
+        projectCode:
           type: string
         description:
           type: string
@@ -12194,6 +12204,12 @@ components:
           type: number
         landValuePerUnit:
           type: number
+        commercialModel:
+          type: string
+          enum: [ownership_contribution, fifty_percent_revenue]
+        activationStatus:
+          type: string
+          enum: [draft, pending_verification, pending_agreement, pending_participant_confirmation, pending_land_verification, ready_for_activation, active, suspended, closed]
         status:
           type: string
           enum: [planning, developing, maturing, tapping, completed, suspended, missing_developer]
@@ -12211,6 +12227,8 @@ components:
       properties:
         name:
           type: string
+        projectCode:
+          type: string
         description:
           type: string
         location:
@@ -12229,6 +12247,12 @@ components:
           type: number
         landValuePerUnit:
           type: number
+        commercialModel:
+          type: string
+          enum: [ownership_contribution, fifty_percent_revenue]
+        activationStatus:
+          type: string
+          enum: [draft, pending_verification, pending_agreement, pending_participant_confirmation, pending_land_verification, ready_for_activation, active, suspended, closed]
         status:
           type: string
           enum: [planning, developing, maturing, tapping, completed, suspended, missing_developer]
