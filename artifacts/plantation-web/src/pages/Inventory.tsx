@@ -768,13 +768,13 @@ export default function Inventory() {
                 <Label className="text-sm text-slate-300">Link to Production Batch</Label>
                 <Select
                   value={movForm.batchId}
-                  onValueChange={(v) => setMovForm((f) => ({ ...f, batchId: v }))}
+                  onValueChange={(v) => setMovForm((f) => ({ ...f, batchId: v === "__none__" ? "" : v }))}
                 >
                   <SelectTrigger className="bg-slate-800 border-slate-600">
                     <SelectValue placeholder="Optional — select batch" />
                   </SelectTrigger>
                   <SelectContent className="bg-slate-800 border-slate-700">
-                    <SelectItem value="">No batch link</SelectItem>
+                    <SelectItem value="__none__">No batch link</SelectItem>
                     {(productionBatches ?? [])
                       .filter((b) => !movForm.projectId || b.projectId === movForm.projectId)
                       .map((b) => (
@@ -802,13 +802,13 @@ export default function Inventory() {
                 <Label className="text-sm text-slate-300">Ref. Type</Label>
                 <Select
                   value={movForm.referenceType}
-                  onValueChange={(v) => setMovForm((f) => ({ ...f, referenceType: v }))}
+                  onValueChange={(v) => setMovForm((f) => ({ ...f, referenceType: v === "__none__" ? "" : v }))}
                 >
                   <SelectTrigger className="h-9 bg-slate-800 border-slate-600 text-sm">
                     <SelectValue placeholder="Select…" />
                   </SelectTrigger>
                   <SelectContent className="bg-slate-800 border-slate-700">
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="__none__">None</SelectItem>
                     <SelectItem value="production">Production</SelectItem>
                     <SelectItem value="sale">Sale</SelectItem>
                     <SelectItem value="purchase">Purchase</SelectItem>

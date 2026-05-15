@@ -378,11 +378,11 @@ function ParticipationTab({
 }) {
   const qc = useQueryClient();
   const [addOpen, setAddOpen] = useState(false);
-  const [statusFilter, setStatusFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("__all__");
   const [editRecord, setEditRecord] = useState<ClaimantParticipationRecord | null>(null);
 
   const { data: participationsData, isLoading } = useListClaimantParticipations(
-    { ...(projectId ? { projectId } : {}), ...(statusFilter ? { status: statusFilter } : {}) },
+    { ...(projectId ? { projectId } : {}), ...(statusFilter !== "__all__" ? { status: statusFilter } : {}) },
   );
   const { data: claimsData } = useListInheritanceClaims({});
   const { data: projectsData } = useListProjects();
@@ -459,7 +459,7 @@ function ParticipationTab({
               <SelectValue placeholder="All statuses" />
             </SelectTrigger>
             <SelectContent className="bg-gray-800 border-gray-700">
-              <SelectItem value="">All</SelectItem>
+              <SelectItem value="__all__">All</SelectItem>
               {["active", "disputed", "suspended", "resolved", "withdrawn"].map((s) => (
                 <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>
               ))}
@@ -721,7 +721,7 @@ function OtpQueueTab({
   const [verifyDialogContrib, setVerifyDialogContrib] = useState<ClaimantContribution | null>(null);
   const [otpInput, setOtpInput] = useState("");
   const [generatedOtp, setGeneratedOtp] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("__all__");
 
   const { data: participationsData } = useListClaimantParticipations(
     projectId ? { projectId } : {},
@@ -730,7 +730,7 @@ function OtpQueueTab({
 
   const { data: contribData, isLoading } = useListClaimantContributions({
     ...(projectId ? { projectId } : {}),
-    ...(statusFilter ? { status: statusFilter } : {}),
+    ...(statusFilter !== "__all__" ? { status: statusFilter } : {}),
   });
 
   const createMut = useCreateClaimantContribution();
@@ -805,7 +805,7 @@ function OtpQueueTab({
             <SelectValue placeholder="All statuses" />
           </SelectTrigger>
           <SelectContent className="bg-gray-800 border-gray-700">
-            <SelectItem value="">All</SelectItem>
+            <SelectItem value="__all__">All</SelectItem>
             {["pending_otp", "otp_sent", "confirmed", "rejected"].map((s) => (
               <SelectItem key={s} value={s}>{s.replace(/_/g, " ")}</SelectItem>
             ))}
@@ -1090,11 +1090,11 @@ function AccumulationTab({
   const qc = useQueryClient();
   const [addOpen, setAddOpen] = useState(false);
   const [releaseEntry, setReleaseEntry] = useState<DisputedAccumulationEntry | null>(null);
-  const [statusFilter, setStatusFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("__all__");
 
   const { data: accumData, isLoading } = useListDisputedAccumulation({
     ...(projectId ? { projectId } : {}),
-    ...(statusFilter ? { status: statusFilter } : {}),
+    ...(statusFilter !== "__all__" ? { status: statusFilter } : {}),
   });
 
   const { data: participationsData } = useListClaimantParticipations(
@@ -1197,7 +1197,7 @@ function AccumulationTab({
             <SelectValue placeholder="All statuses" />
           </SelectTrigger>
           <SelectContent className="bg-gray-800 border-gray-700">
-            <SelectItem value="">All</SelectItem>
+            <SelectItem value="__all__">All</SelectItem>
             {["accumulating", "released", "forfeited"].map((s) => (
               <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>
             ))}

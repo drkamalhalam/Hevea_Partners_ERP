@@ -83,8 +83,8 @@ export default function HeldDistributions() {
   const qc = useQueryClient();
   const { toast } = useToast();
 
-  const [filterProject, setFilterProject] = useState("");
-  const [filterPartner, setFilterPartner] = useState("");
+  const [filterProject, setFilterProject] = useState("__all__");
+  const [filterPartner, setFilterPartner] = useState("__all__");
   const [filterStatus, setFilterStatus] = useState("held");
   const [showCreate, setShowCreate] = useState(false);
   const [showRelease, setShowRelease] = useState(false);
@@ -116,8 +116,8 @@ export default function HeldDistributions() {
 
   const listQuery = useListHeldDistributions(
     {
-      projectId: filterProject || undefined,
-      partnerId: filterPartner || undefined,
+      projectId: filterProject === "__all__" ? undefined : filterProject,
+      partnerId: filterPartner === "__all__" ? undefined : filterPartner,
       status: (filterStatus || undefined) as any,
     },
     { query: { queryKey: ["listHeldDistributions", filterProject, filterPartner, filterStatus] } },
@@ -125,7 +125,7 @@ export default function HeldDistributions() {
   const entries: HeldDistributionEntry[] = (listQuery.data as any) ?? [];
 
   const summaryQuery = useGetHeldDistributionSummary(
-    { projectId: filterProject || undefined },
+    { projectId: filterProject === "__all__" ? undefined : filterProject },
     { query: { queryKey: ["getHeldDistributionSummary", filterProject] } },
   );
   const summary: any[] = (summaryQuery.data as any) ?? [];
@@ -245,7 +245,7 @@ export default function HeldDistributions() {
           <Select value={filterProject} onValueChange={setFilterProject}>
             <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="All projects" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All projects</SelectItem>
+              <SelectItem value="__all__">All projects</SelectItem>
               {projects.map((p: any) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
             </SelectContent>
           </Select>
@@ -255,7 +255,7 @@ export default function HeldDistributions() {
           <Select value={filterPartner} onValueChange={setFilterPartner}>
             <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="All partners" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All partners</SelectItem>
+              <SelectItem value="__all__">All partners</SelectItem>
               {partners.map((p: any) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
             </SelectContent>
           </Select>
@@ -265,7 +265,7 @@ export default function HeldDistributions() {
           <Select value={filterStatus} onValueChange={setFilterStatus}>
             <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All</SelectItem>
+              <SelectItem value="__all__">All</SelectItem>
               <SelectItem value="held">Held</SelectItem>
               <SelectItem value="released">Released</SelectItem>
               <SelectItem value="forfeited">Forfeited</SelectItem>

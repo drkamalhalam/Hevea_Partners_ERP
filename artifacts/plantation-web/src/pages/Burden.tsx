@@ -1497,8 +1497,8 @@ function ImbalancesTab({
 }) {
   const qc = useQueryClient();
   const [view, setView] = useState<"overview" | "partners" | "ledger">("overview");
-  const [ledgerRole, setLedgerRole] = useState<string>("");
-  const [ledgerProject, setLedgerProject] = useState<string>(projectId ?? "");
+  const [ledgerRole, setLedgerRole] = useState<string>("__all__");
+  const [ledgerProject, setLedgerProject] = useState<string>(projectId ?? "__all__");
 
   // Manual entry dialog state
   const [showManualDialog, setShowManualDialog] = useState(false);
@@ -1516,8 +1516,8 @@ function ImbalancesTab({
   );
   const { data: partnerData, isLoading: partnerLoading } = useGetImbalancePartnerSummary();
   const { data: ledgerData, isLoading: ledgerLoading } = useListImbalanceLedger({
-    projectId: ledgerProject || undefined,
-    partyRole: (ledgerRole || undefined) as "developer" | "landowner" | undefined,
+    projectId: ledgerProject === "__all__" ? undefined : (ledgerProject || undefined),
+    partyRole: (ledgerRole === "__all__" ? undefined : ledgerRole) as "developer" | "landowner" | undefined,
   });
 
   const seedMutation = useSeedImbalanceLedger({
@@ -1814,7 +1814,7 @@ function ImbalancesTab({
                 <SelectValue placeholder="All projects" />
               </SelectTrigger>
               <SelectContent className="bg-slate-800 border-slate-700">
-                <SelectItem value="" className="text-slate-300">All projects</SelectItem>
+                <SelectItem value="__all__" className="text-slate-300">All projects</SelectItem>
                 {projects.map((p) => (
                   <SelectItem key={p.id} value={p.id} className="text-slate-300">
                     {p.name}
@@ -1827,7 +1827,7 @@ function ImbalancesTab({
                 <SelectValue placeholder="All parties" />
               </SelectTrigger>
               <SelectContent className="bg-slate-800 border-slate-700">
-                <SelectItem value="" className="text-slate-300">All parties</SelectItem>
+                <SelectItem value="__all__" className="text-slate-300">All parties</SelectItem>
                 <SelectItem value="developer" className="text-slate-300">Developer</SelectItem>
                 <SelectItem value="landowner" className="text-slate-300">Landowner</SelectItem>
               </SelectContent>

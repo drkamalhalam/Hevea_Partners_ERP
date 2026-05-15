@@ -1761,7 +1761,7 @@ export default function InheritanceClaims() {
                                   </SelectItem>
                                 ))
                               : (
-                                <SelectItem value="" disabled>
+                                <SelectItem value="__placeholder__" disabled>
                                   Open claim in Claims tab first to load claimants
                                 </SelectItem>
                               )}
@@ -2016,12 +2016,12 @@ export default function InheritanceClaims() {
 
                     <div className="grid grid-cols-2 gap-4">
                       <Field label="Linked Claimant (optional)">
-                        <Select value={docClaimantId} onValueChange={setDocClaimantId}>
+                        <Select value={docClaimantId} onValueChange={(v) => setDocClaimantId(v === "__none__" ? "" : v)}>
                           <SelectTrigger className="bg-slate-900 border-slate-700 text-slate-200">
                             <SelectValue placeholder="No specific claimant" />
                           </SelectTrigger>
                           <SelectContent className="bg-slate-900 border-slate-700 text-slate-200">
-                            <SelectItem value="">No specific claimant</SelectItem>
+                            <SelectItem value="__none__">No specific claimant</SelectItem>
                             {selectedClaimId === activeDocClaimId
                               ? claimantList.map((c: any) => (
                                   <SelectItem key={c.id} value={c.id}>{c.claimantName}</SelectItem>

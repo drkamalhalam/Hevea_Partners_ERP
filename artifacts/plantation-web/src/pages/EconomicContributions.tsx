@@ -556,10 +556,10 @@ function RecordContributionDialog({
               <UserCheck className="w-3.5 h-3.5 text-blue-600" />
               Assign Verifier <span className="text-xs text-muted-foreground">(optional — can be set later)</span>
             </Label>
-            <Select value={designatedVerifierId} onValueChange={setDesignatedVerifierId}>
+            <Select value={designatedVerifierId} onValueChange={(v) => setDesignatedVerifierId(v === "__none__" ? "" : v)}>
               <SelectTrigger><SelectValue placeholder="No verifier assigned yet…" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="">— No verifier —</SelectItem>
+                <SelectItem value="__none__">— No verifier —</SelectItem>
                 {users.filter((u) => !!u.id).map((u) => (
                   <SelectItem key={u.id!} value={u.id!}>
                     {u.displayName ?? u.clerkUserId} ({u.role})

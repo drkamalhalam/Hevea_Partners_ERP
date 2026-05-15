@@ -32,7 +32,7 @@ import {
 
 export default function EmployeeAssignments() {
   const qc = useQueryClient();
-  const [filterProject, setFilterProject] = useState("");
+  const [filterProject, setFilterProject] = useState("__all__");
   const [showAssignDialog, setShowAssignDialog] = useState(false);
   const [showObsDialog, setShowObsDialog] = useState(false);
   const [activeTab, setActiveTab] = useState<"assignments" | "observers">("assignments");
@@ -55,7 +55,7 @@ export default function EmployeeAssignments() {
   const projects: any[] = (projectsQuery.data as any) ?? [];
 
   const assignmentsQuery = useListProductionAssignments(
-    { projectId: filterProject || undefined, activeOnly: "false" },
+    { projectId: filterProject === "__all__" ? undefined : filterProject, activeOnly: "false" },
     {
       query: { queryKey: ["productionAssignments", filterProject, "all"] },
     },
@@ -63,7 +63,7 @@ export default function EmployeeAssignments() {
   const assignments: any[] = (assignmentsQuery.data as any) ?? [];
 
   const obsQuery = useListObservationAssignments(
-    { projectId: filterProject || undefined },
+    { projectId: filterProject === "__all__" ? undefined : filterProject },
     {
       query: { queryKey: ["observationAssignments", filterProject] },
     },
@@ -164,7 +164,7 @@ export default function EmployeeAssignments() {
             <SelectValue placeholder="All Projects" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Projects</SelectItem>
+            <SelectItem value="__all__">All Projects</SelectItem>
             {projects.map((p: any) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
           </SelectContent>
         </Select>

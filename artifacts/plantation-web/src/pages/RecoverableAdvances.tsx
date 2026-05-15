@@ -386,13 +386,13 @@ function NewAdvanceDialog({
             <Label className="text-slate-300 text-xs">Link to Partner (optional)</Label>
             <Select
               value={form.advancedByPartnerId}
-              onValueChange={(v) => setForm((f) => ({ ...f, advancedByPartnerId: v }))}
+              onValueChange={(v) => setForm((f) => ({ ...f, advancedByPartnerId: v === "__none__" ? "" : v }))}
             >
               <SelectTrigger className="bg-slate-800 border-slate-600 text-slate-100 mt-1">
                 <SelectValue placeholder="Select partner (optional)" />
               </SelectTrigger>
               <SelectContent className="bg-slate-800 border-slate-600">
-                <SelectItem value="" className="text-slate-400">None</SelectItem>
+                <SelectItem value="__none__" className="text-slate-400">None</SelectItem>
                 {activePartners.map((p: { id: string; name: string }) => (
                   <SelectItem key={p.id} value={p.id} className="text-slate-100">
                     {p.name}
@@ -450,13 +450,13 @@ function NewAdvanceDialog({
             <Label className="text-slate-300 text-xs">Recovery Method</Label>
             <Select
               value={form.recoveryMethod}
-              onValueChange={(v) => setForm((f) => ({ ...f, recoveryMethod: v }))}
+              onValueChange={(v) => setForm((f) => ({ ...f, recoveryMethod: v === "__none__" ? "" : v }))}
             >
               <SelectTrigger className="bg-slate-800 border-slate-600 text-slate-100 mt-1">
                 <SelectValue placeholder="Not specified" />
               </SelectTrigger>
               <SelectContent className="bg-slate-800 border-slate-600">
-                <SelectItem value="" className="text-slate-400">Not specified</SelectItem>
+                <SelectItem value="__none__" className="text-slate-400">Not specified</SelectItem>
                 <SelectItem value="direct_payment" className="text-slate-100">Direct Payment</SelectItem>
                 <SelectItem value="share_deduction" className="text-slate-100">Share Deduction</SelectItem>
                 <SelectItem value="settlement" className="text-slate-100">Settlement</SelectItem>
