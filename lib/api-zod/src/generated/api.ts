@@ -620,6 +620,28 @@ export const ListProjectsResponseItem = zod.object({
   createdAt: zod.string(),
   updatedAt: zod.string().nullish(),
   ownershipFrozenAt: zod.string().nullish(),
+  landType: zod.string().nullish(),
+  khatianNumber: zod.string().nullish(),
+  plotNumber: zod.string().nullish(),
+  mouja: zod.string().nullish(),
+  tahsil: zod.string().nullish(),
+  revenueCircle: zod.string().nullish(),
+  subDivision: zod.string().nullish(),
+  landAreaName: zod.string().nullish(),
+  postOffice: zod.string().nullish(),
+  policeStation: zod.string().nullish(),
+  landBoundaryDescription: zod.string().nullish(),
+  gpsCoordinates: zod.string().nullish(),
+  rubberCapacity: zod.number().nullish(),
+  rubberCapacityUnit: zod.string().nullish(),
+  lcaBaseAmount: zod.string().nullish(),
+  lcaEscalationPct: zod.string().nullish(),
+  agreementType: zod.string().nullish(),
+  agreementEffectiveDate: zod.string().nullish(),
+  agreementDurationYears: zod.number().nullish(),
+  agreementSpecialTerms: zod.string().nullish(),
+  onboardingStep: zod.number().nullish(),
+  onboardingCompletedAt: zod.string().nullish(),
 });
 export const ListProjectsResponse = zod.array(ListProjectsResponseItem);
 
@@ -723,6 +745,28 @@ export const GetProjectResponse = zod.object({
   createdAt: zod.string(),
   updatedAt: zod.string().nullish(),
   ownershipFrozenAt: zod.string().nullish(),
+  landType: zod.string().nullish(),
+  khatianNumber: zod.string().nullish(),
+  plotNumber: zod.string().nullish(),
+  mouja: zod.string().nullish(),
+  tahsil: zod.string().nullish(),
+  revenueCircle: zod.string().nullish(),
+  subDivision: zod.string().nullish(),
+  landAreaName: zod.string().nullish(),
+  postOffice: zod.string().nullish(),
+  policeStation: zod.string().nullish(),
+  landBoundaryDescription: zod.string().nullish(),
+  gpsCoordinates: zod.string().nullish(),
+  rubberCapacity: zod.number().nullish(),
+  rubberCapacityUnit: zod.string().nullish(),
+  lcaBaseAmount: zod.string().nullish(),
+  lcaEscalationPct: zod.string().nullish(),
+  agreementType: zod.string().nullish(),
+  agreementEffectiveDate: zod.string().nullish(),
+  agreementDurationYears: zod.number().nullish(),
+  agreementSpecialTerms: zod.string().nullish(),
+  onboardingStep: zod.number().nullish(),
+  onboardingCompletedAt: zod.string().nullish(),
 });
 
 /**
@@ -775,6 +819,27 @@ export const UpdateProjectBody = zod.object({
   expectedMaturityDate: zod.string().optional(),
   termYears: zod.number().optional(),
   notes: zod.string().optional(),
+  landType: zod.string().optional(),
+  khatianNumber: zod.string().optional(),
+  plotNumber: zod.string().optional(),
+  mouja: zod.string().optional(),
+  tahsil: zod.string().optional(),
+  revenueCircle: zod.string().optional(),
+  subDivision: zod.string().optional(),
+  landAreaName: zod.string().optional(),
+  postOffice: zod.string().optional(),
+  policeStation: zod.string().optional(),
+  landBoundaryDescription: zod.string().optional(),
+  gpsCoordinates: zod.string().optional(),
+  rubberCapacity: zod.number().optional(),
+  rubberCapacityUnit: zod.string().optional(),
+  lcaBaseAmount: zod.string().optional(),
+  lcaEscalationPct: zod.string().optional(),
+  agreementType: zod.string().optional(),
+  agreementEffectiveDate: zod.string().optional(),
+  agreementDurationYears: zod.number().optional(),
+  agreementSpecialTerms: zod.string().optional(),
+  onboardingStep: zod.number().optional(),
 });
 
 export const UpdateProjectResponse = zod.object({
@@ -823,6 +888,28 @@ export const UpdateProjectResponse = zod.object({
   createdAt: zod.string(),
   updatedAt: zod.string().nullish(),
   ownershipFrozenAt: zod.string().nullish(),
+  landType: zod.string().nullish(),
+  khatianNumber: zod.string().nullish(),
+  plotNumber: zod.string().nullish(),
+  mouja: zod.string().nullish(),
+  tahsil: zod.string().nullish(),
+  revenueCircle: zod.string().nullish(),
+  subDivision: zod.string().nullish(),
+  landAreaName: zod.string().nullish(),
+  postOffice: zod.string().nullish(),
+  policeStation: zod.string().nullish(),
+  landBoundaryDescription: zod.string().nullish(),
+  gpsCoordinates: zod.string().nullish(),
+  rubberCapacity: zod.number().nullish(),
+  rubberCapacityUnit: zod.string().nullish(),
+  lcaBaseAmount: zod.string().nullish(),
+  lcaEscalationPct: zod.string().nullish(),
+  agreementType: zod.string().nullish(),
+  agreementEffectiveDate: zod.string().nullish(),
+  agreementDurationYears: zod.number().nullish(),
+  agreementSpecialTerms: zod.string().nullish(),
+  onboardingStep: zod.number().nullish(),
+  onboardingCompletedAt: zod.string().nullish(),
 });
 
 /**
@@ -3111,6 +3198,28 @@ export const GetMyPortfolioResponse = zod.object({
       createdAt: zod.string(),
       updatedAt: zod.string().nullish(),
       ownershipFrozenAt: zod.string().nullish(),
+      landType: zod.string().nullish(),
+      khatianNumber: zod.string().nullish(),
+      plotNumber: zod.string().nullish(),
+      mouja: zod.string().nullish(),
+      tahsil: zod.string().nullish(),
+      revenueCircle: zod.string().nullish(),
+      subDivision: zod.string().nullish(),
+      landAreaName: zod.string().nullish(),
+      postOffice: zod.string().nullish(),
+      policeStation: zod.string().nullish(),
+      landBoundaryDescription: zod.string().nullish(),
+      gpsCoordinates: zod.string().nullish(),
+      rubberCapacity: zod.number().nullish(),
+      rubberCapacityUnit: zod.string().nullish(),
+      lcaBaseAmount: zod.string().nullish(),
+      lcaEscalationPct: zod.string().nullish(),
+      agreementType: zod.string().nullish(),
+      agreementEffectiveDate: zod.string().nullish(),
+      agreementDurationYears: zod.number().nullish(),
+      agreementSpecialTerms: zod.string().nullish(),
+      onboardingStep: zod.number().nullish(),
+      onboardingCompletedAt: zod.string().nullish(),
     }),
   ),
 });
@@ -19860,4 +19969,449 @@ export const RejectPostMaturityPaymentResponse = zod.object({
     createdAt: zod.string(),
     updatedAt: zod.string().nullish(),
   }),
+});
+
+/**
+ * @summary List KYC participants for a project
+ */
+export const ListOnboardingParticipantsParams = zod.object({
+  projectId: zod.coerce.string().uuid(),
+});
+
+export const ListOnboardingParticipantsResponse = zod.object({
+  participants: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      projectId: zod.string().uuid(),
+      role: zod.enum(["developer", "landowner"]),
+      fullName: zod.string(),
+      sOnCOn: zod.string().nullish(),
+      fatherGuardianName: zod.string().nullish(),
+      aadhaarNumber: zod.string().nullish(),
+      mobile: zod.string().nullish(),
+      address: zod.string().nullish(),
+      email: zod.string().nullish(),
+      aadhaarObjectPath: zod.string().nullish(),
+      supportingIdObjectPath: zod.string().nullish(),
+      createdAt: zod.string(),
+      updatedAt: zod.string().nullish(),
+    }),
+  ),
+});
+
+/**
+ * @summary Upsert KYC data for a participant role (developer or landowner)
+ */
+export const UpsertOnboardingParticipantParams = zod.object({
+  projectId: zod.coerce.string().uuid(),
+  role: zod.enum(["developer", "landowner"]),
+});
+
+export const UpsertOnboardingParticipantBody = zod.object({
+  fullName: zod.string(),
+  sOnCOn: zod.string().optional(),
+  fatherGuardianName: zod.string().optional(),
+  aadhaarNumber: zod.string().optional(),
+  mobile: zod.string().optional(),
+  address: zod.string().optional(),
+  email: zod.string().optional(),
+  aadhaarObjectPath: zod.string().optional(),
+  supportingIdObjectPath: zod.string().optional(),
+});
+
+export const UpsertOnboardingParticipantResponse = zod.object({
+  participant: zod.object({
+    id: zod.string().uuid(),
+    projectId: zod.string().uuid(),
+    role: zod.enum(["developer", "landowner"]),
+    fullName: zod.string(),
+    sOnCOn: zod.string().nullish(),
+    fatherGuardianName: zod.string().nullish(),
+    aadhaarNumber: zod.string().nullish(),
+    mobile: zod.string().nullish(),
+    address: zod.string().nullish(),
+    email: zod.string().nullish(),
+    aadhaarObjectPath: zod.string().nullish(),
+    supportingIdObjectPath: zod.string().nullish(),
+    createdAt: zod.string(),
+    updatedAt: zod.string().nullish(),
+  }),
+});
+
+/**
+ * @summary Delete a participant KYC record
+ */
+export const DeleteOnboardingParticipantParams = zod.object({
+  projectId: zod.coerce.string().uuid(),
+  role: zod.enum(["developer", "landowner"]),
+});
+
+export const DeleteOnboardingParticipantResponse = zod.object({
+  ok: zod.boolean().optional(),
+});
+
+/**
+ * @summary List witnesses for a project
+ */
+export const ListOnboardingWitnessesParams = zod.object({
+  projectId: zod.coerce.string().uuid(),
+});
+
+export const ListOnboardingWitnessesResponse = zod.object({
+  witnesses: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      projectId: zod.string().uuid(),
+      position: zod.number(),
+      fullName: zod.string(),
+      sOnCOn: zod.string().nullish(),
+      mobile: zod.string().nullish(),
+      address: zod.string().nullish(),
+      aadhaarNumber: zod.string().nullish(),
+      createdAt: zod.string(),
+      updatedAt: zod.string().nullish(),
+    }),
+  ),
+});
+
+/**
+ * @summary Add a witness to a project
+ */
+export const AddOnboardingWitnessParams = zod.object({
+  projectId: zod.coerce.string().uuid(),
+});
+
+export const AddOnboardingWitnessBody = zod.object({
+  fullName: zod.string(),
+  sOnCOn: zod.string().optional(),
+  mobile: zod.string().optional(),
+  address: zod.string().optional(),
+  aadhaarNumber: zod.string().optional(),
+});
+
+/**
+ * @summary Update a witness by position
+ */
+export const UpdateOnboardingWitnessParams = zod.object({
+  projectId: zod.coerce.string().uuid(),
+  position: zod.coerce.number(),
+});
+
+export const UpdateOnboardingWitnessBody = zod.object({
+  fullName: zod.string(),
+  sOnCOn: zod.string().optional(),
+  mobile: zod.string().optional(),
+  address: zod.string().optional(),
+  aadhaarNumber: zod.string().optional(),
+});
+
+export const UpdateOnboardingWitnessResponse = zod.object({
+  witness: zod.object({
+    id: zod.string().uuid(),
+    projectId: zod.string().uuid(),
+    position: zod.number(),
+    fullName: zod.string(),
+    sOnCOn: zod.string().nullish(),
+    mobile: zod.string().nullish(),
+    address: zod.string().nullish(),
+    aadhaarNumber: zod.string().nullish(),
+    createdAt: zod.string(),
+    updatedAt: zod.string().nullish(),
+  }),
+});
+
+/**
+ * @summary Delete a witness by position
+ */
+export const DeleteOnboardingWitnessParams = zod.object({
+  projectId: zod.coerce.string().uuid(),
+  position: zod.coerce.number(),
+});
+
+export const DeleteOnboardingWitnessResponse = zod.object({
+  ok: zod.boolean().optional(),
+});
+
+/**
+ * @summary Get full onboarding state for a project
+ */
+export const GetProjectOnboardingStateParams = zod.object({
+  projectId: zod.coerce.string().uuid(),
+});
+
+export const GetProjectOnboardingStateResponse = zod.object({
+  project: zod
+    .object({
+      id: zod.string().uuid(),
+      name: zod.string(),
+      projectCode: zod.string().nullish(),
+      description: zod.string().nullish(),
+      location: zod.string(),
+      village: zod.string().nullish(),
+      district: zod.string(),
+      state: zod.string(),
+      landArea: zod.number(),
+      landAreaUnit: zod.string(),
+      landNotionalValue: zod.number().nullish(),
+      landValuePerUnit: zod.number().nullish(),
+      commercialModel: zod.enum([
+        "ownership_contribution",
+        "fifty_percent_revenue",
+      ]),
+      activationStatus: zod.enum([
+        "draft",
+        "pending_verification",
+        "pending_agreement",
+        "pending_participant_confirmation",
+        "pending_land_verification",
+        "ready_for_activation",
+        "active",
+        "suspended",
+        "closed",
+      ]),
+      status: zod.enum([
+        "planning",
+        "developing",
+        "maturing",
+        "tapping",
+        "completed",
+        "suspended",
+        "missing_developer",
+      ]),
+      lifecycleStatus: zod.enum(["prematurity", "mature_production", "closed"]),
+      startDate: zod.string(),
+      expectedMaturityDate: zod.string().nullish(),
+      termYears: zod.number(),
+      notes: zod.string().nullish(),
+      isActive: zod.boolean(),
+      createdAt: zod.string(),
+      updatedAt: zod.string().nullish(),
+      ownershipFrozenAt: zod.string().nullish(),
+      landType: zod.string().nullish(),
+      khatianNumber: zod.string().nullish(),
+      plotNumber: zod.string().nullish(),
+      mouja: zod.string().nullish(),
+      tahsil: zod.string().nullish(),
+      revenueCircle: zod.string().nullish(),
+      subDivision: zod.string().nullish(),
+      landAreaName: zod.string().nullish(),
+      postOffice: zod.string().nullish(),
+      policeStation: zod.string().nullish(),
+      landBoundaryDescription: zod.string().nullish(),
+      gpsCoordinates: zod.string().nullish(),
+      rubberCapacity: zod.number().nullish(),
+      rubberCapacityUnit: zod.string().nullish(),
+      lcaBaseAmount: zod.string().nullish(),
+      lcaEscalationPct: zod.string().nullish(),
+      agreementType: zod.string().nullish(),
+      agreementEffectiveDate: zod.string().nullish(),
+      agreementDurationYears: zod.number().nullish(),
+      agreementSpecialTerms: zod.string().nullish(),
+      onboardingStep: zod.number().nullish(),
+      onboardingCompletedAt: zod.string().nullish(),
+    })
+    .optional(),
+  participants: zod
+    .array(
+      zod.object({
+        id: zod.string().uuid(),
+        projectId: zod.string().uuid(),
+        role: zod.enum(["developer", "landowner"]),
+        fullName: zod.string(),
+        sOnCOn: zod.string().nullish(),
+        fatherGuardianName: zod.string().nullish(),
+        aadhaarNumber: zod.string().nullish(),
+        mobile: zod.string().nullish(),
+        address: zod.string().nullish(),
+        email: zod.string().nullish(),
+        aadhaarObjectPath: zod.string().nullish(),
+        supportingIdObjectPath: zod.string().nullish(),
+        createdAt: zod.string(),
+        updatedAt: zod.string().nullish(),
+      }),
+    )
+    .optional(),
+  witnesses: zod
+    .array(
+      zod.object({
+        id: zod.string().uuid(),
+        projectId: zod.string().uuid(),
+        position: zod.number(),
+        fullName: zod.string(),
+        sOnCOn: zod.string().nullish(),
+        mobile: zod.string().nullish(),
+        address: zod.string().nullish(),
+        aadhaarNumber: zod.string().nullish(),
+        createdAt: zod.string(),
+        updatedAt: zod.string().nullish(),
+      }),
+    )
+    .optional(),
+  otpStatus: zod
+    .object({
+      developer: zod
+        .object({
+          sent: zod.boolean().optional(),
+          verified: zod.boolean().optional(),
+          phone: zod.string().nullish(),
+        })
+        .optional(),
+      landowner: zod
+        .object({
+          sent: zod.boolean().optional(),
+          verified: zod.boolean().optional(),
+          phone: zod.string().nullish(),
+        })
+        .optional(),
+    })
+    .optional(),
+  completionChecks: zod
+    .object({
+      basicInfo: zod.boolean().optional(),
+      developerInfo: zod.boolean().optional(),
+      landownerInfo: zod.boolean().optional(),
+      landDetails: zod.boolean().optional(),
+      financialConfig: zod.boolean().optional(),
+      agreementDetails: zod.boolean().optional(),
+      witnessDetails: zod.boolean().optional(),
+      documentsUploaded: zod.boolean().optional(),
+      developerOtpVerified: zod.boolean().optional(),
+      landownerOtpVerified: zod.boolean().optional(),
+    })
+    .optional(),
+});
+
+/**
+ * @summary Send OTP to developer or landowner for project activation
+ */
+export const SendProjectOnboardingOtpParams = zod.object({
+  projectId: zod.coerce.string().uuid(),
+});
+
+export const SendProjectOnboardingOtpBody = zod.object({
+  role: zod.enum(["developer", "landowner"]),
+  phone: zod.string(),
+});
+
+export const SendProjectOnboardingOtpResponse = zod.object({
+  ok: zod.boolean().optional(),
+  otpId: zod.string().optional(),
+  expiresAt: zod.string().optional(),
+  devOtp: zod.string().nullish(),
+});
+
+/**
+ * @summary Verify OTP for developer or landowner
+ */
+export const VerifyProjectOnboardingOtpParams = zod.object({
+  projectId: zod.coerce.string().uuid(),
+});
+
+export const VerifyProjectOnboardingOtpBody = zod.object({
+  role: zod.enum(["developer", "landowner"]),
+  otpCode: zod.string(),
+});
+
+export const VerifyProjectOnboardingOtpResponse = zod.object({
+  ok: zod.boolean().optional(),
+  role: zod.string().optional(),
+  verifiedAt: zod.string().optional(),
+  alreadyVerified: zod.boolean().optional(),
+});
+
+/**
+ * @summary Activate project after dual OTP verification
+ */
+export const ActivateProjectViaOnboardingParams = zod.object({
+  projectId: zod.coerce.string().uuid(),
+});
+
+export const ActivateProjectViaOnboardingResponse = zod.object({
+  project: zod.object({
+    id: zod.string().uuid(),
+    name: zod.string(),
+    projectCode: zod.string().nullish(),
+    description: zod.string().nullish(),
+    location: zod.string(),
+    village: zod.string().nullish(),
+    district: zod.string(),
+    state: zod.string(),
+    landArea: zod.number(),
+    landAreaUnit: zod.string(),
+    landNotionalValue: zod.number().nullish(),
+    landValuePerUnit: zod.number().nullish(),
+    commercialModel: zod.enum([
+      "ownership_contribution",
+      "fifty_percent_revenue",
+    ]),
+    activationStatus: zod.enum([
+      "draft",
+      "pending_verification",
+      "pending_agreement",
+      "pending_participant_confirmation",
+      "pending_land_verification",
+      "ready_for_activation",
+      "active",
+      "suspended",
+      "closed",
+    ]),
+    status: zod.enum([
+      "planning",
+      "developing",
+      "maturing",
+      "tapping",
+      "completed",
+      "suspended",
+      "missing_developer",
+    ]),
+    lifecycleStatus: zod.enum(["prematurity", "mature_production", "closed"]),
+    startDate: zod.string(),
+    expectedMaturityDate: zod.string().nullish(),
+    termYears: zod.number(),
+    notes: zod.string().nullish(),
+    isActive: zod.boolean(),
+    createdAt: zod.string(),
+    updatedAt: zod.string().nullish(),
+    ownershipFrozenAt: zod.string().nullish(),
+    landType: zod.string().nullish(),
+    khatianNumber: zod.string().nullish(),
+    plotNumber: zod.string().nullish(),
+    mouja: zod.string().nullish(),
+    tahsil: zod.string().nullish(),
+    revenueCircle: zod.string().nullish(),
+    subDivision: zod.string().nullish(),
+    landAreaName: zod.string().nullish(),
+    postOffice: zod.string().nullish(),
+    policeStation: zod.string().nullish(),
+    landBoundaryDescription: zod.string().nullish(),
+    gpsCoordinates: zod.string().nullish(),
+    rubberCapacity: zod.number().nullish(),
+    rubberCapacityUnit: zod.string().nullish(),
+    lcaBaseAmount: zod.string().nullish(),
+    lcaEscalationPct: zod.string().nullish(),
+    agreementType: zod.string().nullish(),
+    agreementEffectiveDate: zod.string().nullish(),
+    agreementDurationYears: zod.number().nullish(),
+    agreementSpecialTerms: zod.string().nullish(),
+    onboardingStep: zod.number().nullish(),
+    onboardingCompletedAt: zod.string().nullish(),
+  }),
+});
+
+/**
+ * @summary Save current wizard step progress
+ */
+export const SaveProjectOnboardingStepParams = zod.object({
+  projectId: zod.coerce.string().uuid(),
+});
+
+export const saveProjectOnboardingStepBodyStepMax = 10;
+
+export const SaveProjectOnboardingStepBody = zod.object({
+  step: zod.number().min(1).max(saveProjectOnboardingStepBodyStepMax),
+});
+
+export const SaveProjectOnboardingStepResponse = zod.object({
+  ok: zod.boolean().optional(),
+  onboardingStep: zod.number().optional(),
 });

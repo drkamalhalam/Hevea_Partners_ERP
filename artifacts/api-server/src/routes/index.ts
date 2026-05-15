@@ -83,6 +83,9 @@ import snapshotsRouter from "./snapshots";
 import auditInvestigationRouter from "./audit_investigation";
 import auditIntegrityRouter from "./audit_integrity";
 import postMaturityPaymentsRouter from "./post_maturity_payments";
+import projectParticipantsRouter from "./project_participants";
+import projectWitnessesRouter from "./project_witnesses";
+import projectOnboardingRouter from "./project_onboarding";
 
 const router: IRouter = Router();
 
@@ -181,5 +184,8 @@ router.use("/snapshots", snapshotsRouter);
 router.use("/audit-investigation", auditInvestigationRouter);
 router.use("/audit-integrity", auditIntegrityRouter);
 router.use("/post-maturity-payments", postMaturityPaymentsRouter);
+router.use("/projects", projectParticipantsRouter);
+router.use("/projects", projectWitnessesRouter);
+router.use("/projects", projectOnboardingRouter);
 
 export default router;

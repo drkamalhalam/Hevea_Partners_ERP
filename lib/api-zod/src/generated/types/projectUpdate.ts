@@ -28,4 +28,25 @@ export interface ProjectUpdate {
   expectedMaturityDate?: string;
   termYears?: number;
   notes?: string;
+  landType?: string;
+  khatianNumber?: string;
+  plotNumber?: string;
+  mouja?: string;
+  tahsil?: string;
+  revenueCircle?: string;
+  subDivision?: string;
+  landAreaName?: string;
+  postOffice?: string;
+  policeStation?: string;
+  landBoundaryDescription?: string;
+  gpsCoordinates?: string;
+  rubberCapacity?: number;
+  rubberCapacityUnit?: string;
+  lcaBaseAmount?: string;
+  lcaEscalationPct?: string;
+  agreementType?: string;
+  agreementEffectiveDate?: string;
+  agreementDurationYears?: number;
+  agreementSpecialTerms?: string;
+  onboardingStep?: number;
 }

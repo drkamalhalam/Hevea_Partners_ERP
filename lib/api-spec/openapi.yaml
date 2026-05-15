@@ -11910,6 +11910,304 @@ paths:
         '409':
           description: Payment already settled
 
+  /projects/{projectId}/participants:
+    get:
+      operationId: listOnboardingParticipants
+      tags: [projects]
+      summary: List KYC participants for a project
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Participants list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [participants]
+                properties:
+                  participants:
+                    type: array
+                    items: { $ref: '#/components/schemas/OnboardingParticipant' }
+
+  /projects/{projectId}/participants/{role}:
+    put:
+      operationId: upsertOnboardingParticipant
+      tags: [projects]
+      summary: Upsert KYC data for a participant role (developer or landowner)
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: role
+          in: path
+          required: true
+          schema: { type: string, enum: [developer, landowner] }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OnboardingParticipantInput' }
+      responses:
+        "200":
+          description: Upserted participant
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [participant]
+                properties:
+                  participant: { $ref: '#/components/schemas/OnboardingParticipant' }
+    delete:
+      operationId: deleteOnboardingParticipant
+      tags: [projects]
+      summary: Delete a participant KYC record
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: role
+          in: path
+          required: true
+          schema: { type: string, enum: [developer, landowner] }
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+
+  /projects/{projectId}/witnesses:
+    get:
+      operationId: listOnboardingWitnesses
+      tags: [projects]
+      summary: List witnesses for a project
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Witnesses list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [witnesses]
+                properties:
+                  witnesses:
+                    type: array
+                    items: { $ref: '#/components/schemas/OnboardingWitness' }
+    post:
+      operationId: addOnboardingWitness
+      tags: [projects]
+      summary: Add a witness to a project
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OnboardingWitnessInput' }
+      responses:
+        "201":
+          description: Created witness
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [witness]
+                properties:
+                  witness: { $ref: '#/components/schemas/OnboardingWitness' }
+
+  /projects/{projectId}/witnesses/{position}:
+    put:
+      operationId: updateOnboardingWitness
+      tags: [projects]
+      summary: Update a witness by position
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: position
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OnboardingWitnessInput' }
+      responses:
+        "200":
+          description: Updated witness
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [witness]
+                properties:
+                  witness: { $ref: '#/components/schemas/OnboardingWitness' }
+    delete:
+      operationId: deleteOnboardingWitness
+      tags: [projects]
+      summary: Delete a witness by position
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: position
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+
+  /projects/{projectId}/onboarding/state:
+    get:
+      operationId: getProjectOnboardingState
+      tags: [projects]
+      summary: Get full onboarding state for a project
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Onboarding state
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProjectOnboardingState' }
+
+  /projects/{projectId}/onboarding/send-otp:
+    post:
+      operationId: sendProjectOnboardingOtp
+      tags: [projects]
+      summary: Send OTP to developer or landowner for project activation
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SendOnboardingOtpRequest' }
+      responses:
+        "200":
+          description: OTP sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  otpId: { type: string }
+                  expiresAt: { type: string }
+                  devOtp: { type: string, nullable: true }
+
+  /projects/{projectId}/onboarding/verify-otp:
+    post:
+      operationId: verifyProjectOnboardingOtp
+      tags: [projects]
+      summary: Verify OTP for developer or landowner
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/VerifyOnboardingOtpRequest' }
+      responses:
+        "200":
+          description: OTP verified
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  role: { type: string }
+                  verifiedAt: { type: string }
+                  alreadyVerified: { type: boolean }
+
+  /projects/{projectId}/onboarding/activate:
+    post:
+      operationId: activateProjectViaOnboarding
+      tags: [projects]
+      summary: Activate project after dual OTP verification
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Project activated
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [project]
+                properties:
+                  project: { $ref: '#/components/schemas/Project' }
+
+  /projects/{projectId}/onboarding/step:
+    patch:
+      operationId: saveProjectOnboardingStep
+      tags: [projects]
+      summary: Save current wizard step progress
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [step]
+              properties:
+                step: { type: integer, minimum: 1, maximum: 10 }
+      responses:
+        "200":
+          description: Step saved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  onboardingStep: { type: integer }
+
 components:
   schemas:
 
@@ -12342,6 +12640,50 @@ components:
           type: ["string", "null"]
         ownershipFrozenAt:
           type: ["string", "null"]
+        landType:
+          type: ["string", "null"]
+        khatianNumber:
+          type: ["string", "null"]
+        plotNumber:
+          type: ["string", "null"]
+        mouja:
+          type: ["string", "null"]
+        tahsil:
+          type: ["string", "null"]
+        revenueCircle:
+          type: ["string", "null"]
+        subDivision:
+          type: ["string", "null"]
+        landAreaName:
+          type: ["string", "null"]
+        postOffice:
+          type: ["string", "null"]
+        policeStation:
+          type: ["string", "null"]
+        landBoundaryDescription:
+          type: ["string", "null"]
+        gpsCoordinates:
+          type: ["string", "null"]
+        rubberCapacity:
+          type: ["integer", "null"]
+        rubberCapacityUnit:
+          type: ["string", "null"]
+        lcaBaseAmount:
+          type: ["string", "null"]
+        lcaEscalationPct:
+          type: ["string", "null"]
+        agreementType:
+          type: ["string", "null"]
+        agreementEffectiveDate:
+          type: ["string", "null"]
+        agreementDurationYears:
+          type: ["integer", "null"]
+        agreementSpecialTerms:
+          type: ["string", "null"]
+        onboardingStep:
+          type: ["integer", "null"]
+        onboardingCompletedAt:
+          type: ["string", "null"]
 
     ProjectInput:
       type: object
@@ -12429,6 +12771,48 @@ components:
           type: integer
         notes:
           type: string
+        landType:
+          type: string
+        khatianNumber:
+          type: string
+        plotNumber:
+          type: string
+        mouja:
+          type: string
+        tahsil:
+          type: string
+        revenueCircle:
+          type: string
+        subDivision:
+          type: string
+        landAreaName:
+          type: string
+        postOffice:
+          type: string
+        policeStation:
+          type: string
+        landBoundaryDescription:
+          type: string
+        gpsCoordinates:
+          type: string
+        rubberCapacity:
+          type: integer
+        rubberCapacityUnit:
+          type: string
+        lcaBaseAmount:
+          type: string
+        lcaEscalationPct:
+          type: string
+        agreementType:
+          type: string
+        agreementEffectiveDate:
+          type: string
+        agreementDurationYears:
+          type: integer
+        agreementSpecialTerms:
+          type: string
+        onboardingStep:
+          type: integer
 
     Partner:
       type: object
@@ -20120,3 +20504,111 @@ components:
         settled: { type: number }
         rejected: { type: number }
         total: { type: number }
+
+    OnboardingParticipant:
+      type: object
+      required: [id, projectId, role, fullName, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        role: { type: string, enum: [developer, landowner] }
+        fullName: { type: string }
+        sOnCOn: { type: ["string", "null"] }
+        fatherGuardianName: { type: ["string", "null"] }
+        aadhaarNumber: { type: ["string", "null"] }
+        mobile: { type: ["string", "null"] }
+        address: { type: ["string", "null"] }
+        email: { type: ["string", "null"] }
+        aadhaarObjectPath: { type: ["string", "null"] }
+        supportingIdObjectPath: { type: ["string", "null"] }
+        createdAt: { type: string }
+        updatedAt: { type: ["string", "null"] }
+
+    OnboardingParticipantInput:
+      type: object
+      required: [fullName]
+      properties:
+        fullName: { type: string }
+        sOnCOn: { type: string }
+        fatherGuardianName: { type: string }
+        aadhaarNumber: { type: string }
+        mobile: { type: string }
+        address: { type: string }
+        email: { type: string }
+        aadhaarObjectPath: { type: string }
+        supportingIdObjectPath: { type: string }
+
+    OnboardingWitness:
+      type: object
+      required: [id, projectId, position, fullName, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        position: { type: integer }
+        fullName: { type: string }
+        sOnCOn: { type: ["string", "null"] }
+        mobile: { type: ["string", "null"] }
+        address: { type: ["string", "null"] }
+        aadhaarNumber: { type: ["string", "null"] }
+        createdAt: { type: string }
+        updatedAt: { type: ["string", "null"] }
+
+    OnboardingWitnessInput:
+      type: object
+      required: [fullName]
+      properties:
+        fullName: { type: string }
+        sOnCOn: { type: string }
+        mobile: { type: string }
+        address: { type: string }
+        aadhaarNumber: { type: string }
+
+    OtpRoleStatus:
+      type: object
+      properties:
+        sent: { type: boolean }
+        verified: { type: boolean }
+        phone: { type: ["string", "null"] }
+
+    ProjectOnboardingState:
+      type: object
+      properties:
+        project: { $ref: '#/components/schemas/Project' }
+        participants:
+          type: array
+          items: { $ref: '#/components/schemas/OnboardingParticipant' }
+        witnesses:
+          type: array
+          items: { $ref: '#/components/schemas/OnboardingWitness' }
+        otpStatus:
+          type: object
+          properties:
+            developer: { $ref: '#/components/schemas/OtpRoleStatus' }
+            landowner: { $ref: '#/components/schemas/OtpRoleStatus' }
+        completionChecks:
+          type: object
+          properties:
+            basicInfo: { type: boolean }
+            developerInfo: { type: boolean }
+            landownerInfo: { type: boolean }
+            landDetails: { type: boolean }
+            financialConfig: { type: boolean }
+            agreementDetails: { type: boolean }
+            witnessDetails: { type: boolean }
+            documentsUploaded: { type: boolean }
+            developerOtpVerified: { type: boolean }
+            landownerOtpVerified: { type: boolean }
+
+    SendOnboardingOtpRequest:
+      type: object
+      required: [role, phone]
+      properties:
+        role: { type: string, enum: [developer, landowner] }
+        phone: { type: string }
+
+    VerifyOnboardingOtpRequest:
+      type: object
+      required: [role, otpCode]
+      properties:
+        role: { type: string, enum: [developer, landowner] }
+        otpCode: { type: string }

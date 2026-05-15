@@ -6,6 +6,7 @@ import {
   integer,
   boolean,
   timestamp,
+  decimal,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
@@ -70,6 +71,53 @@ export const projectsTable = pgTable("projects", {
   startDate: text("start_date").notNull(),
   expectedMaturityDate: text("expected_maturity_date"),
   termYears: integer("term_years").notNull().default(35),
+
+  // ── Land type & survey details ───────────────────────────────────────
+  /** recorded | non_recorded */
+  landType: text("land_type"),
+
+  // Recorded land fields
+  khatianNumber: text("khatian_number"),
+  plotNumber: text("plot_number"),
+  mouja: text("mouja"),
+  tahsil: text("tahsil"),
+  revenueCircle: text("revenue_circle"),
+  subDivision: text("sub_division"),
+
+  // Non-recorded land fields
+  landAreaName: text("land_area_name"),
+  postOffice: text("post_office"),
+  policeStation: text("police_station"),
+
+  // Common land fields
+  landBoundaryDescription: text("land_boundary_description"),
+  gpsCoordinates: text("gps_coordinates"),
+
+  // ── Capacity ──────────────────────────────────────────────────────────
+  rubberCapacity: integer("rubber_capacity"),
+  /** trees | hectares | acres */
+  rubberCapacityUnit: text("rubber_capacity_unit").default("trees"),
+
+  // ── LCA onboarding record ─────────────────────────────────────────────
+  /**
+   * Always recorded during onboarding regardless of commercial model.
+   * Under fifty_percent_revenue: stored only, never activates.
+   * If model migrates to ownership_contribution later, these become the
+   * seed values for the LCA config.
+   */
+  lcaBaseAmount: decimal("lca_base_amount", { precision: 15, scale: 2 }),
+  lcaEscalationPct: decimal("lca_escalation_pct", { precision: 5, scale: 2 }),
+
+  // ── Agreement onboarding record ───────────────────────────────────────
+  agreementType: text("agreement_type"),
+  agreementEffectiveDate: text("agreement_effective_date"),
+  agreementDurationYears: integer("agreement_duration_years"),
+  agreementSpecialTerms: text("agreement_special_terms"),
+
+  // ── Onboarding wizard progress ───────────────────────────────────────
+  /** Current wizard step (1–10). Null means wizard not yet started. */
+  onboardingStep: integer("onboarding_step").default(1),
+  onboardingCompletedAt: timestamp("onboarding_completed_at", { withTimezone: true }),
 
   // ── Misc ─────────────────────────────────────────────────────────────
   notes: text("notes"),

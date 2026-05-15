@@ -13,6 +13,7 @@ import { RoleProvider, useRole } from "@/contexts/RoleContext";
 import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
 import Projects from "./pages/Projects";
+import ProjectCreationWizard from "./pages/ProjectCreationWizard";
 import ProjectDetails from "./pages/ProjectDetails";
 import Partners from "./pages/Partners";
 import PartnerDetails from "./pages/PartnerDetails";
@@ -286,6 +287,8 @@ function AppRoutes() {
               {/* Core */}
               <Route path="/dashboard"><ProtectedRoute component={Dashboard} /></Route>
               <Route path="/projects"><ProtectedRoute component={Projects} /></Route>
+              <Route path="/projects/create"><ProtectedRoute component={ProjectCreationWizard} /></Route>
+              <Route path="/projects/create/:id"><ProtectedRoute component={ProjectCreationWizard} /></Route>
               <Route path="/projects/:id"><ProtectedRoute component={ProjectDetails} /></Route>
               <Route path="/projects/:id/maturity"><ProtectedRoute component={ProjectMaturityDeclaration} /></Route>
               <Route path="/projects/:id/nominee/activation"><ProtectedRoute component={NomineeActivationPage} /></Route>

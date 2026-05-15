@@ -1,0 +1,412 @@
+REBUILD THE PROJECT CREATION SYSTEM INTO A FULL LEGAL + COMMERCIAL + GOVERNANCE ONBOARDING WORKFLOW.
+
+The project creation process must become the master onboarding workflow for plantation partnerships.
+
+The system must support BOTH:
+- OWNERSHIP_CONTRIBUTION_MODEL
+- FIFTY_PERCENT_REVENUE_MODEL
+
+Even if some fields are not immediately active under a model, important future-use data must still be captured during project creation.
+
+Examples:
+- Land Notional Value
+- LCA
+- LCA Escalation
+
+These must always be recorded and preserved for:
+- future model migration,
+- legal documentation,
+- audit safety,
+- governance continuity.
+
+However:
+- inactive fields must not affect accounting or calculations until enabled by the applicable model.
+
+==================================================
+PROJECT CREATION FLOW
+==================================================
+
+The workflow must be multi-step.
+
+Suggested stages:
+
+1. Basic Project Information
+2. Developer Information
+3. Landowner Information
+4. Land Information
+5. Financial & Commercial Configuration
+6. Agreement & Witness Details
+7. Document Upload
+8. Deed Generation
+9. Digital Approval & OTP Verification
+10. Final Activation Review
+
+==================================================
+STEP 1 — BASIC PROJECT INFORMATION
+==================================================
+
+Required fields:
+
+1. Project Model
+Mandatory selection:
+- OWNERSHIP_CONTRIBUTION_MODEL
+- FIFTY_PERCENT_REVENUE_MODEL
+
+2. Project Name
+
+3. Project Code
+- unique
+- immutable after activation
+
+4. Project Status
+Default:
+- DRAFT
+
+==================================================
+STEP 2 — DEVELOPER INFORMATION
+==================================================
+
+Capture full developer details.
+
+Required fields:
+
+- Developer Full Name
+- S/O or C/O
+- Father/Guardian Name
+- Aadhaar Number
+- Mobile Number
+- Address
+- Email (optional)
+
+Upload:
+- Aadhaar Copy
+- Supporting ID (optional)
+
+Developer must support:
+- OTP verification
+- document approval workflow
+
+==================================================
+STEP 3 — LANDOWNER INFORMATION
+==================================================
+
+Capture full landowner details.
+
+Required fields:
+
+- Landowner Full Name
+- S/O or C/O
+- Father/Guardian Name
+- Aadhaar Number
+- Mobile Number
+- Address
+- Email (optional)
+
+Upload:
+- Aadhaar Copy
+- Supporting ID (optional)
+
+Landowner must support:
+- OTP verification
+- document approval workflow
+
+==================================================
+STEP 4 — LAND TYPE SELECTION
+==================================================
+
+Mandatory field:
+
+LAND TYPE:
+- RECORDED
+- NON_RECORDED
+
+Based on selection, dynamically open the correct land information page.
+
+==================================================
+STEP 5A — RECORDED LAND DETAILS
+==================================================
+
+If:
+LAND TYPE = RECORDED
+
+Capture:
+
+- Khatian Number
+- Plot Number
+- Mouja/Moja
+- Tahsil/Tehsil
+- Revenue Circle
+- District
+- Sub-Division
+- State
+- Land Boundary Description
+
+Optional:
+- GPS Coordinates
+- Geo-map attachment
+
+==================================================
+STEP 5B — NON-RECORDED LAND DETAILS
+==================================================
+
+If:
+LAND TYPE = NON_RECORDED
+
+Capture:
+
+- Land Area Name
+- Village
+- Post Office
+- Police Station
+- Sub-Division
+- District
+- State
+- Land Boundary Description
+
+Mandatory:
+- GPS Coordinates
+
+Optional:
+- Geo-map upload
+- sketch upload
+
+==================================================
+STEP 6 — LAND CAPACITY & FINANCIAL CONFIGURATION
+==================================================
+
+Capture:
+
+1. Land Area
+Support:
+- kani
+- acre
+- hectare
+- local units
+
+2. Approximate Rubber Capacity
+Examples:
+- approximate rubber tree capacity
+- estimated plantation capacity
+
+3. Land Notional Value
+
+Support:
+- per kani
+OR
+- per rubber tree area
+OR
+- custom valuation basis
+
+IMPORTANT:
+Land Notional Value must ALWAYS be recorded and preserved,
+even under:
+FIFTY_PERCENT_REVENUE_MODEL
+
+However:
+under 50% model it must remain inactive unless model migration occurs.
+
+==================================================
+LCA CONFIGURATION
+==================================================
+
+Capture:
+
+1. LCA Amount / Formula
+2. LCA Escalation Per Year
+
+IMPORTANT:
+LCA configuration must ALWAYS be recorded and preserved.
+
+BUT:
+
+Under:
+FIFTY_PERCENT_REVENUE_MODEL
+
+the system must:
+- store configuration only,
+- NOT activate LCA,
+- NOT generate dues,
+- NOT calculate payment,
+- NOT create schedules.
+
+==================================================
+STEP 7 — AGREEMENT CONFIGURATION
+==================================================
+
+Capture:
+
+- Agreement Type
+- Agreement Effective Date
+- Agreement Duration
+- Special Terms
+- Revenue/Ownership Structure Notes
+
+==================================================
+STEP 8 — WITNESS DETAILS
+==================================================
+
+Capture minimum:
+2 witnesses
+
+For each witness:
+
+- Full Name
+- S/O or C/O
+- Mobile Number
+- Address
+- Aadhaar Number (optional configurable)
+
+==================================================
+STEP 9 — DOCUMENT UPLOADS
+==================================================
+
+Mandatory uploads:
+
+- Developer Aadhaar Copy
+- Landowner Aadhaar Copy
+- Land Documents
+- Agreement Draft
+- Additional Attachments (optional)
+
+Support:
+- PDF
+- image
+- scanned copy
+
+==================================================
+STEP 10 — AUTO DEED GENERATION
+==================================================
+
+The system must automatically generate a legal deed draft using:
+
+- project details
+- commercial model
+- participant details
+- land details
+- agreement terms
+- witness details
+- financial configuration
+
+Generate:
+- printable deed
+- downloadable PDF
+- version-controlled document
+
+==================================================
+STEP 11 — SIGNED DEED UPLOAD
+==================================================
+
+After physical/digital signing:
+
+Allow upload of:
+- signed deed copy
+
+Track:
+- upload timestamp
+- uploader identity
+- version history
+
+==================================================
+STEP 12 — DUAL OTP APPROVAL
+==================================================
+
+Before project activation:
+
+Require:
+1. Landowner OTP approval
+2. Developer OTP approval
+
+OTP approval confirms:
+- agreement acceptance
+- project confirmation
+- legal consent
+
+The project must NOT activate unless both approvals succeed.
+
+==================================================
+ACTIVATION RULES
+==================================================
+
+Only after:
+- required uploads complete,
+- deed generated,
+- signed deed uploaded,
+- dual OTP completed,
+- required validations passed,
+
+may project status become:
+ACTIVE
+
+==================================================
+MODEL MIGRATION SAFETY
+==================================================
+
+Because model change is allowed:
+
+The system must preserve:
+- Land Notional Value
+- LCA configuration
+- escalation rules
+
+even when inactive.
+
+If model changes later:
+the system may activate preserved configurations.
+
+==================================================
+IMPORTANT MODEL BEHAVIOR
+==================================================
+
+Under:
+OWNERSHIP_CONTRIBUTION_MODEL
+
+ENABLE:
+- ownership contribution logic
+- LCA after maturity
+- land notional value participation
+- ownership calculation
+
+Under:
+FIFTY_PERCENT_REVENUE_MODEL
+
+DISABLE:
+- ownership formation
+- active LCA
+- ownership crystallization
+
+BUT preserve recorded configuration data for future migration.
+
+==================================================
+AUDIT REQUIREMENTS
+==================================================
+
+Track:
+- field edits
+- document uploads
+- deed generation
+- OTP approvals
+- model changes
+- witness changes
+- land detail edits
+- agreement edits
+- activation approvals
+
+with permanent audit history.
+
+==================================================
+DO NOT BREAK EXISTING MODULES
+==================================================
+
+Integrate safely with:
+- collection system
+- store system
+- stock transfer
+- accounting
+- dashboards
+- notifications
+- permissions
+- buyer module
+- reporting
+- future ownership engine
+- future reimbursement engine
+- future LCA engine.

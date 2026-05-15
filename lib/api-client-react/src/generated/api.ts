@@ -22,6 +22,7 @@ import type {
   AccountingProfileValidationResult,
   AcknowledgeAdvanceBody,
   AcknowledgeClosureBody,
+  ActivateProjectViaOnboarding200,
   ActivityItem,
   AddDisputeEvent200,
   AddDisputeEventBody,
@@ -29,6 +30,7 @@ import type {
   AddEvidenceVersionBody,
   AddGovernanceOverride201,
   AddGovernanceOverrideBody,
+  AddOnboardingWitness201,
   AddParticipantInput,
   AddProjectTimelineEventBody,
   AdvanceSummary,
@@ -200,6 +202,8 @@ import type {
   DeleteInheritanceShare200,
   DeleteLossAbsorptionRecord200,
   DeleteNotification200,
+  DeleteOnboardingParticipant200,
+  DeleteOnboardingWitness200,
   DeletePayableAdjustment200,
   DeleteProductionEntry200,
   DeleteStockMovement200,
@@ -428,6 +432,8 @@ import type {
   ListNotifications200,
   ListNotificationsParams,
   ListObservationAssignmentsParams,
+  ListOnboardingParticipants200,
+  ListOnboardingWitnesses200,
   ListOperationalAccessLogsParams,
   ListOperationalAlertsParams,
   ListOwnershipSnapshots200,
@@ -500,6 +506,8 @@ import type {
   NomineeSuccessionDashboard,
   ObservationAssignment,
   OkResponse,
+  OnboardingParticipantInput,
+  OnboardingWitnessInput,
   OperationalAlert,
   OperationalTask,
   OverrideSettlement200,
@@ -537,6 +545,7 @@ import type {
   ProjectLifecycle,
   ProjectLifecycleHistoryEntry,
   ProjectNominee,
+  ProjectOnboardingState,
   ProjectOwnershipDetail,
   ProjectParticipant,
   ProjectProfitabilityReport,
@@ -592,7 +601,11 @@ import type {
   SalesPermission,
   SalesSummary,
   SalesTransaction,
+  SaveProjectOnboardingStep200,
+  SaveProjectOnboardingStepBody,
   SeedImbalanceLedger200,
+  SendOnboardingOtpRequest,
+  SendProjectOnboardingOtp200,
   SendRofrOfferBody,
   SetSettlementRecommendation200,
   SetSettlementRecommendationBody,
@@ -670,6 +683,7 @@ import type {
   UpdateNegativeBalanceEntryBody,
   UpdateNomineeActivationBody,
   UpdateNomineeInput,
+  UpdateOnboardingWitness200,
   UpdateOwnershipTransferBody,
   UpdateParticipantInput,
   UpdatePayableAdjustment200,
@@ -691,6 +705,7 @@ import type {
   UpdateValuationRun200,
   UpdateValuationRunBody,
   UpsertAccountingProfileBody,
+  UpsertOnboardingParticipant200,
   UpsertPartnerOwnershipStateBody,
   UpsertUserInput,
   UserProfile,
@@ -704,7 +719,9 @@ import type {
   VerifyContributionOtp200,
   VerifyContributionOtpBody,
   VerifyNomineeActivationBody,
+  VerifyOnboardingOtpRequest,
   VerifyOtpBody,
+  VerifyProjectOnboardingOtp200,
   VerifyTransferOtp200,
   VerifyTransferOtpBody,
   WaiveBurdenRecordBody,
@@ -49168,4 +49185,1151 @@ export const useRejectPostMaturityPayment = <
   TContext
 > => {
   return useMutation(getRejectPostMaturityPaymentMutationOptions(options));
+};
+
+/**
+ * @summary List KYC participants for a project
+ */
+export const getListOnboardingParticipantsUrl = (projectId: string) => {
+  return `/api/projects/${projectId}/participants`;
+};
+
+export const listOnboardingParticipants = async (
+  projectId: string,
+  options?: RequestInit,
+): Promise<ListOnboardingParticipants200> => {
+  return customFetch<ListOnboardingParticipants200>(
+    getListOnboardingParticipantsUrl(projectId),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListOnboardingParticipantsQueryKey = (projectId: string) => {
+  return [`/api/projects/${projectId}/participants`] as const;
+};
+
+export const getListOnboardingParticipantsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listOnboardingParticipants>>,
+  TError = ErrorType<unknown>,
+>(
+  projectId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listOnboardingParticipants>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListOnboardingParticipantsQueryKey(projectId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listOnboardingParticipants>>
+  > = ({ signal }) =>
+    listOnboardingParticipants(projectId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!projectId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listOnboardingParticipants>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListOnboardingParticipantsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listOnboardingParticipants>>
+>;
+export type ListOnboardingParticipantsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List KYC participants for a project
+ */
+
+export function useListOnboardingParticipants<
+  TData = Awaited<ReturnType<typeof listOnboardingParticipants>>,
+  TError = ErrorType<unknown>,
+>(
+  projectId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listOnboardingParticipants>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListOnboardingParticipantsQueryOptions(
+    projectId,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Upsert KYC data for a participant role (developer or landowner)
+ */
+export const getUpsertOnboardingParticipantUrl = (
+  projectId: string,
+  role: "developer" | "landowner",
+) => {
+  return `/api/projects/${projectId}/participants/${role}`;
+};
+
+export const upsertOnboardingParticipant = async (
+  projectId: string,
+  role: "developer" | "landowner",
+  onboardingParticipantInput: OnboardingParticipantInput,
+  options?: RequestInit,
+): Promise<UpsertOnboardingParticipant200> => {
+  return customFetch<UpsertOnboardingParticipant200>(
+    getUpsertOnboardingParticipantUrl(projectId, role),
+    {
+      ...options,
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(onboardingParticipantInput),
+    },
+  );
+};
+
+export const getUpsertOnboardingParticipantMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof upsertOnboardingParticipant>>,
+    TError,
+    {
+      projectId: string;
+      role: "developer" | "landowner";
+      data: BodyType<OnboardingParticipantInput>;
+    },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof upsertOnboardingParticipant>>,
+  TError,
+  {
+    projectId: string;
+    role: "developer" | "landowner";
+    data: BodyType<OnboardingParticipantInput>;
+  },
+  TContext
+> => {
+  const mutationKey = ["upsertOnboardingParticipant"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof upsertOnboardingParticipant>>,
+    {
+      projectId: string;
+      role: "developer" | "landowner";
+      data: BodyType<OnboardingParticipantInput>;
+    }
+  > = (props) => {
+    const { projectId, role, data } = props ?? {};
+
+    return upsertOnboardingParticipant(projectId, role, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpsertOnboardingParticipantMutationResult = NonNullable<
+  Awaited<ReturnType<typeof upsertOnboardingParticipant>>
+>;
+export type UpsertOnboardingParticipantMutationBody =
+  BodyType<OnboardingParticipantInput>;
+export type UpsertOnboardingParticipantMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Upsert KYC data for a participant role (developer or landowner)
+ */
+export const useUpsertOnboardingParticipant = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof upsertOnboardingParticipant>>,
+    TError,
+    {
+      projectId: string;
+      role: "developer" | "landowner";
+      data: BodyType<OnboardingParticipantInput>;
+    },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof upsertOnboardingParticipant>>,
+  TError,
+  {
+    projectId: string;
+    role: "developer" | "landowner";
+    data: BodyType<OnboardingParticipantInput>;
+  },
+  TContext
+> => {
+  return useMutation(getUpsertOnboardingParticipantMutationOptions(options));
+};
+
+/**
+ * @summary Delete a participant KYC record
+ */
+export const getDeleteOnboardingParticipantUrl = (
+  projectId: string,
+  role: "developer" | "landowner",
+) => {
+  return `/api/projects/${projectId}/participants/${role}`;
+};
+
+export const deleteOnboardingParticipant = async (
+  projectId: string,
+  role: "developer" | "landowner",
+  options?: RequestInit,
+): Promise<DeleteOnboardingParticipant200> => {
+  return customFetch<DeleteOnboardingParticipant200>(
+    getDeleteOnboardingParticipantUrl(projectId, role),
+    {
+      ...options,
+      method: "DELETE",
+    },
+  );
+};
+
+export const getDeleteOnboardingParticipantMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteOnboardingParticipant>>,
+    TError,
+    { projectId: string; role: "developer" | "landowner" },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteOnboardingParticipant>>,
+  TError,
+  { projectId: string; role: "developer" | "landowner" },
+  TContext
+> => {
+  const mutationKey = ["deleteOnboardingParticipant"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteOnboardingParticipant>>,
+    { projectId: string; role: "developer" | "landowner" }
+  > = (props) => {
+    const { projectId, role } = props ?? {};
+
+    return deleteOnboardingParticipant(projectId, role, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteOnboardingParticipantMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteOnboardingParticipant>>
+>;
+
+export type DeleteOnboardingParticipantMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Delete a participant KYC record
+ */
+export const useDeleteOnboardingParticipant = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteOnboardingParticipant>>,
+    TError,
+    { projectId: string; role: "developer" | "landowner" },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteOnboardingParticipant>>,
+  TError,
+  { projectId: string; role: "developer" | "landowner" },
+  TContext
+> => {
+  return useMutation(getDeleteOnboardingParticipantMutationOptions(options));
+};
+
+/**
+ * @summary List witnesses for a project
+ */
+export const getListOnboardingWitnessesUrl = (projectId: string) => {
+  return `/api/projects/${projectId}/witnesses`;
+};
+
+export const listOnboardingWitnesses = async (
+  projectId: string,
+  options?: RequestInit,
+): Promise<ListOnboardingWitnesses200> => {
+  return customFetch<ListOnboardingWitnesses200>(
+    getListOnboardingWitnessesUrl(projectId),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListOnboardingWitnessesQueryKey = (projectId: string) => {
+  return [`/api/projects/${projectId}/witnesses`] as const;
+};
+
+export const getListOnboardingWitnessesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listOnboardingWitnesses>>,
+  TError = ErrorType<unknown>,
+>(
+  projectId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listOnboardingWitnesses>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListOnboardingWitnessesQueryKey(projectId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listOnboardingWitnesses>>
+  > = ({ signal }) =>
+    listOnboardingWitnesses(projectId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!projectId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listOnboardingWitnesses>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListOnboardingWitnessesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listOnboardingWitnesses>>
+>;
+export type ListOnboardingWitnessesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List witnesses for a project
+ */
+
+export function useListOnboardingWitnesses<
+  TData = Awaited<ReturnType<typeof listOnboardingWitnesses>>,
+  TError = ErrorType<unknown>,
+>(
+  projectId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listOnboardingWitnesses>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListOnboardingWitnessesQueryOptions(
+    projectId,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Add a witness to a project
+ */
+export const getAddOnboardingWitnessUrl = (projectId: string) => {
+  return `/api/projects/${projectId}/witnesses`;
+};
+
+export const addOnboardingWitness = async (
+  projectId: string,
+  onboardingWitnessInput: OnboardingWitnessInput,
+  options?: RequestInit,
+): Promise<AddOnboardingWitness201> => {
+  return customFetch<AddOnboardingWitness201>(
+    getAddOnboardingWitnessUrl(projectId),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(onboardingWitnessInput),
+    },
+  );
+};
+
+export const getAddOnboardingWitnessMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof addOnboardingWitness>>,
+    TError,
+    { projectId: string; data: BodyType<OnboardingWitnessInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof addOnboardingWitness>>,
+  TError,
+  { projectId: string; data: BodyType<OnboardingWitnessInput> },
+  TContext
+> => {
+  const mutationKey = ["addOnboardingWitness"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof addOnboardingWitness>>,
+    { projectId: string; data: BodyType<OnboardingWitnessInput> }
+  > = (props) => {
+    const { projectId, data } = props ?? {};
+
+    return addOnboardingWitness(projectId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AddOnboardingWitnessMutationResult = NonNullable<
+  Awaited<ReturnType<typeof addOnboardingWitness>>
+>;
+export type AddOnboardingWitnessMutationBody = BodyType<OnboardingWitnessInput>;
+export type AddOnboardingWitnessMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Add a witness to a project
+ */
+export const useAddOnboardingWitness = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof addOnboardingWitness>>,
+    TError,
+    { projectId: string; data: BodyType<OnboardingWitnessInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof addOnboardingWitness>>,
+  TError,
+  { projectId: string; data: BodyType<OnboardingWitnessInput> },
+  TContext
+> => {
+  return useMutation(getAddOnboardingWitnessMutationOptions(options));
+};
+
+/**
+ * @summary Update a witness by position
+ */
+export const getUpdateOnboardingWitnessUrl = (
+  projectId: string,
+  position: number,
+) => {
+  return `/api/projects/${projectId}/witnesses/${position}`;
+};
+
+export const updateOnboardingWitness = async (
+  projectId: string,
+  position: number,
+  onboardingWitnessInput: OnboardingWitnessInput,
+  options?: RequestInit,
+): Promise<UpdateOnboardingWitness200> => {
+  return customFetch<UpdateOnboardingWitness200>(
+    getUpdateOnboardingWitnessUrl(projectId, position),
+    {
+      ...options,
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(onboardingWitnessInput),
+    },
+  );
+};
+
+export const getUpdateOnboardingWitnessMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateOnboardingWitness>>,
+    TError,
+    {
+      projectId: string;
+      position: number;
+      data: BodyType<OnboardingWitnessInput>;
+    },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateOnboardingWitness>>,
+  TError,
+  {
+    projectId: string;
+    position: number;
+    data: BodyType<OnboardingWitnessInput>;
+  },
+  TContext
+> => {
+  const mutationKey = ["updateOnboardingWitness"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateOnboardingWitness>>,
+    {
+      projectId: string;
+      position: number;
+      data: BodyType<OnboardingWitnessInput>;
+    }
+  > = (props) => {
+    const { projectId, position, data } = props ?? {};
+
+    return updateOnboardingWitness(projectId, position, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateOnboardingWitnessMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateOnboardingWitness>>
+>;
+export type UpdateOnboardingWitnessMutationBody =
+  BodyType<OnboardingWitnessInput>;
+export type UpdateOnboardingWitnessMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update a witness by position
+ */
+export const useUpdateOnboardingWitness = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateOnboardingWitness>>,
+    TError,
+    {
+      projectId: string;
+      position: number;
+      data: BodyType<OnboardingWitnessInput>;
+    },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateOnboardingWitness>>,
+  TError,
+  {
+    projectId: string;
+    position: number;
+    data: BodyType<OnboardingWitnessInput>;
+  },
+  TContext
+> => {
+  return useMutation(getUpdateOnboardingWitnessMutationOptions(options));
+};
+
+/**
+ * @summary Delete a witness by position
+ */
+export const getDeleteOnboardingWitnessUrl = (
+  projectId: string,
+  position: number,
+) => {
+  return `/api/projects/${projectId}/witnesses/${position}`;
+};
+
+export const deleteOnboardingWitness = async (
+  projectId: string,
+  position: number,
+  options?: RequestInit,
+): Promise<DeleteOnboardingWitness200> => {
+  return customFetch<DeleteOnboardingWitness200>(
+    getDeleteOnboardingWitnessUrl(projectId, position),
+    {
+      ...options,
+      method: "DELETE",
+    },
+  );
+};
+
+export const getDeleteOnboardingWitnessMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteOnboardingWitness>>,
+    TError,
+    { projectId: string; position: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteOnboardingWitness>>,
+  TError,
+  { projectId: string; position: number },
+  TContext
+> => {
+  const mutationKey = ["deleteOnboardingWitness"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteOnboardingWitness>>,
+    { projectId: string; position: number }
+  > = (props) => {
+    const { projectId, position } = props ?? {};
+
+    return deleteOnboardingWitness(projectId, position, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteOnboardingWitnessMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteOnboardingWitness>>
+>;
+
+export type DeleteOnboardingWitnessMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Delete a witness by position
+ */
+export const useDeleteOnboardingWitness = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteOnboardingWitness>>,
+    TError,
+    { projectId: string; position: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteOnboardingWitness>>,
+  TError,
+  { projectId: string; position: number },
+  TContext
+> => {
+  return useMutation(getDeleteOnboardingWitnessMutationOptions(options));
+};
+
+/**
+ * @summary Get full onboarding state for a project
+ */
+export const getGetProjectOnboardingStateUrl = (projectId: string) => {
+  return `/api/projects/${projectId}/onboarding/state`;
+};
+
+export const getProjectOnboardingState = async (
+  projectId: string,
+  options?: RequestInit,
+): Promise<ProjectOnboardingState> => {
+  return customFetch<ProjectOnboardingState>(
+    getGetProjectOnboardingStateUrl(projectId),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetProjectOnboardingStateQueryKey = (projectId: string) => {
+  return [`/api/projects/${projectId}/onboarding/state`] as const;
+};
+
+export const getGetProjectOnboardingStateQueryOptions = <
+  TData = Awaited<ReturnType<typeof getProjectOnboardingState>>,
+  TError = ErrorType<unknown>,
+>(
+  projectId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getProjectOnboardingState>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetProjectOnboardingStateQueryKey(projectId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getProjectOnboardingState>>
+  > = ({ signal }) =>
+    getProjectOnboardingState(projectId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!projectId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getProjectOnboardingState>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetProjectOnboardingStateQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getProjectOnboardingState>>
+>;
+export type GetProjectOnboardingStateQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get full onboarding state for a project
+ */
+
+export function useGetProjectOnboardingState<
+  TData = Awaited<ReturnType<typeof getProjectOnboardingState>>,
+  TError = ErrorType<unknown>,
+>(
+  projectId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getProjectOnboardingState>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetProjectOnboardingStateQueryOptions(
+    projectId,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Send OTP to developer or landowner for project activation
+ */
+export const getSendProjectOnboardingOtpUrl = (projectId: string) => {
+  return `/api/projects/${projectId}/onboarding/send-otp`;
+};
+
+export const sendProjectOnboardingOtp = async (
+  projectId: string,
+  sendOnboardingOtpRequest: SendOnboardingOtpRequest,
+  options?: RequestInit,
+): Promise<SendProjectOnboardingOtp200> => {
+  return customFetch<SendProjectOnboardingOtp200>(
+    getSendProjectOnboardingOtpUrl(projectId),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(sendOnboardingOtpRequest),
+    },
+  );
+};
+
+export const getSendProjectOnboardingOtpMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof sendProjectOnboardingOtp>>,
+    TError,
+    { projectId: string; data: BodyType<SendOnboardingOtpRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof sendProjectOnboardingOtp>>,
+  TError,
+  { projectId: string; data: BodyType<SendOnboardingOtpRequest> },
+  TContext
+> => {
+  const mutationKey = ["sendProjectOnboardingOtp"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof sendProjectOnboardingOtp>>,
+    { projectId: string; data: BodyType<SendOnboardingOtpRequest> }
+  > = (props) => {
+    const { projectId, data } = props ?? {};
+
+    return sendProjectOnboardingOtp(projectId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SendProjectOnboardingOtpMutationResult = NonNullable<
+  Awaited<ReturnType<typeof sendProjectOnboardingOtp>>
+>;
+export type SendProjectOnboardingOtpMutationBody =
+  BodyType<SendOnboardingOtpRequest>;
+export type SendProjectOnboardingOtpMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Send OTP to developer or landowner for project activation
+ */
+export const useSendProjectOnboardingOtp = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof sendProjectOnboardingOtp>>,
+    TError,
+    { projectId: string; data: BodyType<SendOnboardingOtpRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof sendProjectOnboardingOtp>>,
+  TError,
+  { projectId: string; data: BodyType<SendOnboardingOtpRequest> },
+  TContext
+> => {
+  return useMutation(getSendProjectOnboardingOtpMutationOptions(options));
+};
+
+/**
+ * @summary Verify OTP for developer or landowner
+ */
+export const getVerifyProjectOnboardingOtpUrl = (projectId: string) => {
+  return `/api/projects/${projectId}/onboarding/verify-otp`;
+};
+
+export const verifyProjectOnboardingOtp = async (
+  projectId: string,
+  verifyOnboardingOtpRequest: VerifyOnboardingOtpRequest,
+  options?: RequestInit,
+): Promise<VerifyProjectOnboardingOtp200> => {
+  return customFetch<VerifyProjectOnboardingOtp200>(
+    getVerifyProjectOnboardingOtpUrl(projectId),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(verifyOnboardingOtpRequest),
+    },
+  );
+};
+
+export const getVerifyProjectOnboardingOtpMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof verifyProjectOnboardingOtp>>,
+    TError,
+    { projectId: string; data: BodyType<VerifyOnboardingOtpRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof verifyProjectOnboardingOtp>>,
+  TError,
+  { projectId: string; data: BodyType<VerifyOnboardingOtpRequest> },
+  TContext
+> => {
+  const mutationKey = ["verifyProjectOnboardingOtp"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof verifyProjectOnboardingOtp>>,
+    { projectId: string; data: BodyType<VerifyOnboardingOtpRequest> }
+  > = (props) => {
+    const { projectId, data } = props ?? {};
+
+    return verifyProjectOnboardingOtp(projectId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type VerifyProjectOnboardingOtpMutationResult = NonNullable<
+  Awaited<ReturnType<typeof verifyProjectOnboardingOtp>>
+>;
+export type VerifyProjectOnboardingOtpMutationBody =
+  BodyType<VerifyOnboardingOtpRequest>;
+export type VerifyProjectOnboardingOtpMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Verify OTP for developer or landowner
+ */
+export const useVerifyProjectOnboardingOtp = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof verifyProjectOnboardingOtp>>,
+    TError,
+    { projectId: string; data: BodyType<VerifyOnboardingOtpRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof verifyProjectOnboardingOtp>>,
+  TError,
+  { projectId: string; data: BodyType<VerifyOnboardingOtpRequest> },
+  TContext
+> => {
+  return useMutation(getVerifyProjectOnboardingOtpMutationOptions(options));
+};
+
+/**
+ * @summary Activate project after dual OTP verification
+ */
+export const getActivateProjectViaOnboardingUrl = (projectId: string) => {
+  return `/api/projects/${projectId}/onboarding/activate`;
+};
+
+export const activateProjectViaOnboarding = async (
+  projectId: string,
+  options?: RequestInit,
+): Promise<ActivateProjectViaOnboarding200> => {
+  return customFetch<ActivateProjectViaOnboarding200>(
+    getActivateProjectViaOnboardingUrl(projectId),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getActivateProjectViaOnboardingMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof activateProjectViaOnboarding>>,
+    TError,
+    { projectId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof activateProjectViaOnboarding>>,
+  TError,
+  { projectId: string },
+  TContext
+> => {
+  const mutationKey = ["activateProjectViaOnboarding"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof activateProjectViaOnboarding>>,
+    { projectId: string }
+  > = (props) => {
+    const { projectId } = props ?? {};
+
+    return activateProjectViaOnboarding(projectId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ActivateProjectViaOnboardingMutationResult = NonNullable<
+  Awaited<ReturnType<typeof activateProjectViaOnboarding>>
+>;
+
+export type ActivateProjectViaOnboardingMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Activate project after dual OTP verification
+ */
+export const useActivateProjectViaOnboarding = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof activateProjectViaOnboarding>>,
+    TError,
+    { projectId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof activateProjectViaOnboarding>>,
+  TError,
+  { projectId: string },
+  TContext
+> => {
+  return useMutation(getActivateProjectViaOnboardingMutationOptions(options));
+};
+
+/**
+ * @summary Save current wizard step progress
+ */
+export const getSaveProjectOnboardingStepUrl = (projectId: string) => {
+  return `/api/projects/${projectId}/onboarding/step`;
+};
+
+export const saveProjectOnboardingStep = async (
+  projectId: string,
+  saveProjectOnboardingStepBody: SaveProjectOnboardingStepBody,
+  options?: RequestInit,
+): Promise<SaveProjectOnboardingStep200> => {
+  return customFetch<SaveProjectOnboardingStep200>(
+    getSaveProjectOnboardingStepUrl(projectId),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(saveProjectOnboardingStepBody),
+    },
+  );
+};
+
+export const getSaveProjectOnboardingStepMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof saveProjectOnboardingStep>>,
+    TError,
+    { projectId: string; data: BodyType<SaveProjectOnboardingStepBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof saveProjectOnboardingStep>>,
+  TError,
+  { projectId: string; data: BodyType<SaveProjectOnboardingStepBody> },
+  TContext
+> => {
+  const mutationKey = ["saveProjectOnboardingStep"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof saveProjectOnboardingStep>>,
+    { projectId: string; data: BodyType<SaveProjectOnboardingStepBody> }
+  > = (props) => {
+    const { projectId, data } = props ?? {};
+
+    return saveProjectOnboardingStep(projectId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SaveProjectOnboardingStepMutationResult = NonNullable<
+  Awaited<ReturnType<typeof saveProjectOnboardingStep>>
+>;
+export type SaveProjectOnboardingStepMutationBody =
+  BodyType<SaveProjectOnboardingStepBody>;
+export type SaveProjectOnboardingStepMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Save current wizard step progress
+ */
+export const useSaveProjectOnboardingStep = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof saveProjectOnboardingStep>>,
+    TError,
+    { projectId: string; data: BodyType<SaveProjectOnboardingStepBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof saveProjectOnboardingStep>>,
+  TError,
+  { projectId: string; data: BodyType<SaveProjectOnboardingStepBody> },
+  TContext
+> => {
+  return useMutation(getSaveProjectOnboardingStepMutationOptions(options));
 };

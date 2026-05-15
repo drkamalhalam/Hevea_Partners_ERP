@@ -44,4 +44,48 @@ export interface Project {
   updatedAt?: string | null;
   /** @nullable */
   ownershipFrozenAt?: string | null;
+  /** @nullable */
+  landType?: string | null;
+  /** @nullable */
+  khatianNumber?: string | null;
+  /** @nullable */
+  plotNumber?: string | null;
+  /** @nullable */
+  mouja?: string | null;
+  /** @nullable */
+  tahsil?: string | null;
+  /** @nullable */
+  revenueCircle?: string | null;
+  /** @nullable */
+  subDivision?: string | null;
+  /** @nullable */
+  landAreaName?: string | null;
+  /** @nullable */
+  postOffice?: string | null;
+  /** @nullable */
+  policeStation?: string | null;
+  /** @nullable */
+  landBoundaryDescription?: string | null;
+  /** @nullable */
+  gpsCoordinates?: string | null;
+  /** @nullable */
+  rubberCapacity?: number | null;
+  /** @nullable */
+  rubberCapacityUnit?: string | null;
+  /** @nullable */
+  lcaBaseAmount?: string | null;
+  /** @nullable */
+  lcaEscalationPct?: string | null;
+  /** @nullable */
+  agreementType?: string | null;
+  /** @nullable */
+  agreementEffectiveDate?: string | null;
+  /** @nullable */
+  agreementDurationYears?: number | null;
+  /** @nullable */
+  agreementSpecialTerms?: string | null;
+  /** @nullable */
+  onboardingStep?: number | null;
+  /** @nullable */
+  onboardingCompletedAt?: string | null;
 }

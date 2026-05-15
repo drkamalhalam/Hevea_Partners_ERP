@@ -459,6 +459,50 @@ export interface Project {
   updatedAt?: string | null;
   /** @nullable */
   ownershipFrozenAt?: string | null;
+  /** @nullable */
+  landType?: string | null;
+  /** @nullable */
+  khatianNumber?: string | null;
+  /** @nullable */
+  plotNumber?: string | null;
+  /** @nullable */
+  mouja?: string | null;
+  /** @nullable */
+  tahsil?: string | null;
+  /** @nullable */
+  revenueCircle?: string | null;
+  /** @nullable */
+  subDivision?: string | null;
+  /** @nullable */
+  landAreaName?: string | null;
+  /** @nullable */
+  postOffice?: string | null;
+  /** @nullable */
+  policeStation?: string | null;
+  /** @nullable */
+  landBoundaryDescription?: string | null;
+  /** @nullable */
+  gpsCoordinates?: string | null;
+  /** @nullable */
+  rubberCapacity?: number | null;
+  /** @nullable */
+  rubberCapacityUnit?: string | null;
+  /** @nullable */
+  lcaBaseAmount?: string | null;
+  /** @nullable */
+  lcaEscalationPct?: string | null;
+  /** @nullable */
+  agreementType?: string | null;
+  /** @nullable */
+  agreementEffectiveDate?: string | null;
+  /** @nullable */
+  agreementDurationYears?: number | null;
+  /** @nullable */
+  agreementSpecialTerms?: string | null;
+  /** @nullable */
+  onboardingStep?: number | null;
+  /** @nullable */
+  onboardingCompletedAt?: string | null;
 }
 
 export type ProjectInputCommercialModel =
@@ -573,6 +617,27 @@ export interface ProjectUpdate {
   expectedMaturityDate?: string;
   termYears?: number;
   notes?: string;
+  landType?: string;
+  khatianNumber?: string;
+  plotNumber?: string;
+  mouja?: string;
+  tahsil?: string;
+  revenueCircle?: string;
+  subDivision?: string;
+  landAreaName?: string;
+  postOffice?: string;
+  policeStation?: string;
+  landBoundaryDescription?: string;
+  gpsCoordinates?: string;
+  rubberCapacity?: number;
+  rubberCapacityUnit?: string;
+  lcaBaseAmount?: string;
+  lcaEscalationPct?: string;
+  agreementType?: string;
+  agreementEffectiveDate?: string;
+  agreementDurationYears?: number;
+  agreementSpecialTerms?: string;
+  onboardingStep?: number;
 }
 
 export type PartnerRole = (typeof PartnerRole)[keyof typeof PartnerRole];
@@ -8698,6 +8763,137 @@ export interface PostMaturityBalanceTotals {
   total: number;
 }
 
+export type OnboardingParticipantRole =
+  (typeof OnboardingParticipantRole)[keyof typeof OnboardingParticipantRole];
+
+export const OnboardingParticipantRole = {
+  developer: "developer",
+  landowner: "landowner",
+} as const;
+
+export interface OnboardingParticipant {
+  id: string;
+  projectId: string;
+  role: OnboardingParticipantRole;
+  fullName: string;
+  /** @nullable */
+  sOnCOn?: string | null;
+  /** @nullable */
+  fatherGuardianName?: string | null;
+  /** @nullable */
+  aadhaarNumber?: string | null;
+  /** @nullable */
+  mobile?: string | null;
+  /** @nullable */
+  address?: string | null;
+  /** @nullable */
+  email?: string | null;
+  /** @nullable */
+  aadhaarObjectPath?: string | null;
+  /** @nullable */
+  supportingIdObjectPath?: string | null;
+  createdAt: string;
+  /** @nullable */
+  updatedAt?: string | null;
+}
+
+export interface OnboardingParticipantInput {
+  fullName: string;
+  sOnCOn?: string;
+  fatherGuardianName?: string;
+  aadhaarNumber?: string;
+  mobile?: string;
+  address?: string;
+  email?: string;
+  aadhaarObjectPath?: string;
+  supportingIdObjectPath?: string;
+}
+
+export interface OnboardingWitness {
+  id: string;
+  projectId: string;
+  position: number;
+  fullName: string;
+  /** @nullable */
+  sOnCOn?: string | null;
+  /** @nullable */
+  mobile?: string | null;
+  /** @nullable */
+  address?: string | null;
+  /** @nullable */
+  aadhaarNumber?: string | null;
+  createdAt: string;
+  /** @nullable */
+  updatedAt?: string | null;
+}
+
+export interface OnboardingWitnessInput {
+  fullName: string;
+  sOnCOn?: string;
+  mobile?: string;
+  address?: string;
+  aadhaarNumber?: string;
+}
+
+export interface OtpRoleStatus {
+  sent?: boolean;
+  verified?: boolean;
+  /** @nullable */
+  phone?: string | null;
+}
+
+export type ProjectOnboardingStateOtpStatus = {
+  developer?: OtpRoleStatus;
+  landowner?: OtpRoleStatus;
+};
+
+export type ProjectOnboardingStateCompletionChecks = {
+  basicInfo?: boolean;
+  developerInfo?: boolean;
+  landownerInfo?: boolean;
+  landDetails?: boolean;
+  financialConfig?: boolean;
+  agreementDetails?: boolean;
+  witnessDetails?: boolean;
+  documentsUploaded?: boolean;
+  developerOtpVerified?: boolean;
+  landownerOtpVerified?: boolean;
+};
+
+export interface ProjectOnboardingState {
+  project?: Project;
+  participants?: OnboardingParticipant[];
+  witnesses?: OnboardingWitness[];
+  otpStatus?: ProjectOnboardingStateOtpStatus;
+  completionChecks?: ProjectOnboardingStateCompletionChecks;
+}
+
+export type SendOnboardingOtpRequestRole =
+  (typeof SendOnboardingOtpRequestRole)[keyof typeof SendOnboardingOtpRequestRole];
+
+export const SendOnboardingOtpRequestRole = {
+  developer: "developer",
+  landowner: "landowner",
+} as const;
+
+export interface SendOnboardingOtpRequest {
+  role: SendOnboardingOtpRequestRole;
+  phone: string;
+}
+
+export type VerifyOnboardingOtpRequestRole =
+  (typeof VerifyOnboardingOtpRequestRole)[keyof typeof VerifyOnboardingOtpRequestRole];
+
+export const VerifyOnboardingOtpRequestRole = {
+  developer: "developer",
+  landowner: "landowner",
+} as const;
+
+export interface VerifyOnboardingOtpRequest {
+  role: VerifyOnboardingOtpRequestRole;
+  otpCode: string;
+}
+
 export type GetUserActivityParams = {
   limit?: number;
 };
@@ -11047,4 +11243,63 @@ export type RejectPostMaturityPaymentBody = {
 
 export type RejectPostMaturityPayment200 = {
   payment: PostMaturityCostPayment;
+};
+
+export type ListOnboardingParticipants200 = {
+  participants: OnboardingParticipant[];
+};
+
+export type UpsertOnboardingParticipant200 = {
+  participant: OnboardingParticipant;
+};
+
+export type DeleteOnboardingParticipant200 = {
+  ok?: boolean;
+};
+
+export type ListOnboardingWitnesses200 = {
+  witnesses: OnboardingWitness[];
+};
+
+export type AddOnboardingWitness201 = {
+  witness: OnboardingWitness;
+};
+
+export type UpdateOnboardingWitness200 = {
+  witness: OnboardingWitness;
+};
+
+export type DeleteOnboardingWitness200 = {
+  ok?: boolean;
+};
+
+export type SendProjectOnboardingOtp200 = {
+  ok?: boolean;
+  otpId?: string;
+  expiresAt?: string;
+  devOtp?: string | null;
+};
+
+export type VerifyProjectOnboardingOtp200 = {
+  ok?: boolean;
+  role?: string;
+  verifiedAt?: string;
+  alreadyVerified?: boolean;
+};
+
+export type ActivateProjectViaOnboarding200 = {
+  project: Project;
+};
+
+export type SaveProjectOnboardingStepBody = {
+  /**
+   * @minimum 1
+   * @maximum 10
+   */
+  step: number;
+};
+
+export type SaveProjectOnboardingStep200 = {
+  ok?: boolean;
+  onboardingStep?: number;
 };

@@ -1,20 +1,12 @@
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
 import { Link } from "wouter";
-import { useListProjects, useCreateProject, useDeleteProject, getListProjectsQueryKey, useGetGovernanceSummary } from "@workspace/api-client-react";
+import { useListProjects, useDeleteProject, getListProjectsQueryKey, useGetGovernanceSummary } from "@workspace/api-client-react";
 import { useRole } from "@/contexts/RoleContext";
 import { GovernanceStatusBadge } from "@/components/governance";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { Plus, MapPin, Trees, Trash2, ExternalLink, Lock, Layers, Hash } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -62,30 +54,8 @@ const activationLabels: Record<string, string> = {
   closed: "Closed",
 };
 
-const formSchema = z.object({
-  name: z.string().min(2, "Name required"),
-  projectCode: z.string().optional(),
-  location: z.string().min(2, "Location required"),
-  village: z.string().optional(),
-  district: z.string().min(2, "District required"),
-  state: z.string().min(2, "State required"),
-  commercialModel: z.enum(["ownership_contribution", "fifty_percent_revenue"]),
-  landArea: z.coerce.number().positive("Must be positive"),
-  landAreaUnit: z.string().min(1),
-  landNotionalValue: z.coerce.number().optional(),
-  landValuePerUnit: z.coerce.number().optional(),
-  status: z.enum(["planning", "developing", "maturing", "tapping", "completed", "suspended"]),
-  startDate: z.string().min(1, "Start date required"),
-  expectedMaturityDate: z.string().optional(),
-  termYears: z.coerce.number().int().positive(),
-  notes: z.string().optional(),
-});
-
-type FormValues = z.infer<typeof formSchema>;
-
 export default function Projects() {
   const { data: projects, isLoading } = useListProjects();
-  const createProject = useCreateProject();
   const deleteProject = useDeleteProject();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -95,41 +65,6 @@ export default function Projects() {
     () => new Map(governance?.projectAlerts.map((a) => [a.projectId, a.status]) ?? []),
     [governance]
   );
-  const [open, setOpen] = useState(false);
-
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: "", projectCode: "", location: "", village: "", district: "", state: "Tripura",
-      commercialModel: "ownership_contribution",
-      landArea: 0, landAreaUnit: "kani",
-      landNotionalValue: undefined,
-      landValuePerUnit: undefined,
-      status: "planning" as const,
-      startDate: "", expectedMaturityDate: "",
-      termYears: 35, notes: "",
-    },
-  });
-
-  const watchedModel = form.watch("commercialModel");
-
-  function onSubmit(values: FormValues) {
-    const payload: Record<string, unknown> = { ...values };
-    if (!payload.projectCode) delete payload.projectCode;
-    if (watchedModel === "fifty_percent_revenue") {
-      delete payload.landNotionalValue;
-      delete payload.landValuePerUnit;
-    }
-    createProject.mutate({ data: payload as any }, {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: getListProjectsQueryKey() });
-        toast({ title: "Project created successfully" });
-        setOpen(false);
-        form.reset();
-      },
-      onError: () => toast({ title: "Failed to create project", variant: "destructive" }),
-    });
-  }
 
   function handleDelete(id: string, name: string) {
     if (!confirm(`Delete project "${name}"?`)) return;
@@ -148,202 +83,11 @@ export default function Projects() {
           <h1 className="text-3xl font-serif font-bold text-foreground">Plantation Projects</h1>
           <p className="text-muted-foreground mt-1">All active rubber plantation ventures</p>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button data-testid="button-create-project" className="gap-2">
-              <Plus className="w-4 h-4" /> New Project
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="font-serif">Create Plantation Project</DialogTitle>
-              <DialogDescription className="sr-only">Fill in the details to register a new plantation project.</DialogDescription>
-            </DialogHeader>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-
-                {/* ── Commercial Model (master behavioral controller) ── */}
-                <div className="rounded-lg border border-violet-200 bg-violet-50/50 p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Layers className="w-4 h-4 text-violet-600" />
-                    <span className="text-sm font-semibold text-violet-900">Commercial Model</span>
-                    <span className="text-xs text-violet-600 ml-1">— governs all downstream modules</span>
-                  </div>
-                  <FormField control={form.control} name="commercialModel" render={({ field }) => (
-                    <FormItem>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger data-testid="select-commercial-model" className="bg-white">
-                            <SelectValue placeholder="Select commercial model" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="ownership_contribution">
-                            <div className="flex flex-col">
-                              <span className="font-medium">Ownership Contribution Model</span>
-                              <span className="text-xs text-muted-foreground">Equity via contributions · LCA eligible · Inheritance supported</span>
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="fifty_percent_revenue">
-                            <div className="flex flex-col">
-                              <span className="font-medium">50% Revenue Model</span>
-                              <span className="text-xs text-muted-foreground">Fixed contractual split · No ownership equity · No LCA</span>
-                            </div>
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                  {watchedModel === "fifty_percent_revenue" && (
-                    <p className="text-xs text-sky-700 mt-2 bg-sky-50 border border-sky-200 rounded px-3 py-2">
-                      Land notional value, LCA, ownership engine and contribution equity are disabled for this model.
-                    </p>
-                  )}
-                </div>
-
-                {/* ── Identity ── */}
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField control={form.control} name="name" render={({ field }) => (
-                    <FormItem className="col-span-2">
-                      <FormLabel>Project Name</FormLabel>
-                      <FormControl><Input data-testid="input-project-name" {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                  <FormField control={form.control} name="projectCode" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="flex items-center gap-1">
-                        <Hash className="w-3 h-3" /> Project Code
-                        <span className="text-muted-foreground font-normal text-xs ml-1">(unique · immutable)</span>
-                      </FormLabel>
-                      <FormControl><Input data-testid="input-project-code" placeholder="e.g. HP-001" {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-
-                  {/* ── Location ── */}
-                  <FormField control={form.control} name="location" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Location</FormLabel>
-                      <FormControl><Input data-testid="input-location" {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                  <FormField control={form.control} name="village" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Village / Mouja</FormLabel>
-                      <FormControl><Input data-testid="input-village" {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                  <FormField control={form.control} name="district" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>District</FormLabel>
-                      <FormControl><Input data-testid="input-district" {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                  <FormField control={form.control} name="state" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>State</FormLabel>
-                      <FormControl><Input data-testid="input-state" {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-
-                  {/* ── Land ── */}
-                  <FormField control={form.control} name="landArea" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Land Area</FormLabel>
-                      <FormControl><Input data-testid="input-land-area" type="number" step="0.1" {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                  <FormField control={form.control} name="landAreaUnit" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Unit</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl><SelectTrigger data-testid="select-land-unit"><SelectValue /></SelectTrigger></FormControl>
-                        <SelectContent>
-                          <SelectItem value="kani">Kani</SelectItem>
-                          <SelectItem value="acre">Acre</SelectItem>
-                          <SelectItem value="hectare">Hectare</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-
-                  {/* Land valuation — only for ownership_contribution model */}
-                  {watchedModel === "ownership_contribution" && (
-                    <FormField control={form.control} name="landValuePerUnit" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Land Value Per Unit (INR)</FormLabel>
-                        <FormControl><Input data-testid="input-land-value" type="number" {...field} /></FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
-                  )}
-
-                  {/* ── Status / Timeline ── */}
-                  <FormField control={form.control} name="status" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Status</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl><SelectTrigger data-testid="select-status"><SelectValue /></SelectTrigger></FormControl>
-                        <SelectContent>
-                          <SelectItem value="planning">Planning</SelectItem>
-                          <SelectItem value="developing">Developing</SelectItem>
-                          <SelectItem value="maturing">Maturing</SelectItem>
-                          <SelectItem value="tapping">Tapping</SelectItem>
-                          <SelectItem value="completed">Completed</SelectItem>
-                          <SelectItem value="suspended">Suspended</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                  <FormField control={form.control} name="startDate" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Start Date</FormLabel>
-                      <FormControl><Input data-testid="input-start-date" type="date" {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                  <FormField control={form.control} name="expectedMaturityDate" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Expected Maturity Date</FormLabel>
-                      <FormControl><Input data-testid="input-maturity-date" type="date" {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                  <FormField control={form.control} name="termYears" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Term (Years)</FormLabel>
-                      <FormControl><Input data-testid="input-term-years" type="number" {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-
-                  <FormField control={form.control} name="notes" render={({ field }) => (
-                    <FormItem className="col-span-2">
-                      <FormLabel>Notes</FormLabel>
-                      <FormControl><Textarea data-testid="input-notes" {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                </div>
-                <div className="flex justify-end gap-2 pt-2">
-                  <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-                  <Button type="submit" data-testid="button-submit-project" disabled={createProject.isPending}>
-                    {createProject.isPending ? "Creating..." : "Create Project"}
-                  </Button>
-                </div>
-              </form>
-            </Form>
-          </DialogContent>
-        </Dialog>
+        <Link href="/projects/create">
+          <Button data-testid="button-create-project" className="gap-2">
+            <Plus className="w-4 h-4" /> New Project
+          </Button>
+        </Link>
       </div>
 
       {isLoading ? (
