@@ -8603,6 +8603,101 @@ export interface ProjectTimelineEvent {
   createdAt?: string;
 }
 
+export type PostMaturityCostPaymentCategory =
+  (typeof PostMaturityCostPaymentCategory)[keyof typeof PostMaturityCostPaymentCategory];
+
+export const PostMaturityCostPaymentCategory = {
+  operational_funding: "operational_funding",
+  maintenance_support: "maintenance_support",
+  emergency_expense: "emergency_expense",
+  project_settlement: "project_settlement",
+  other: "other",
+} as const;
+
+export type PostMaturityCostPaymentReimbursementStatus =
+  (typeof PostMaturityCostPaymentReimbursementStatus)[keyof typeof PostMaturityCostPaymentReimbursementStatus];
+
+export const PostMaturityCostPaymentReimbursementStatus = {
+  pending: "pending",
+  approved: "approved",
+  settled: "settled",
+  rejected: "rejected",
+} as const;
+
+export interface PostMaturityCostPayment {
+  id: string;
+  projectId: string;
+  projectName?: string | null;
+  partnerId?: string | null;
+  partnerName: string;
+  amount: number;
+  currency: string;
+  paymentDate: string;
+  description: string;
+  category: PostMaturityCostPaymentCategory;
+  referenceNumber?: string | null;
+  remarks?: string | null;
+  linkedExpenditureId?: string | null;
+  reimbursementStatus: PostMaturityCostPaymentReimbursementStatus;
+  approvedBy?: string | null;
+  approvedByName?: string | null;
+  approvedAt?: string | null;
+  approvalNotes?: string | null;
+  settledAt?: string | null;
+  settledByName?: string | null;
+  settlementNote?: string | null;
+  rejectedAt?: string | null;
+  rejectedByName?: string | null;
+  rejectionReason?: string | null;
+  recordedBy?: string | null;
+  recordedByName?: string | null;
+  createdAt: string;
+  updatedAt?: string | null;
+}
+
+export type PostMaturityPaymentInputCategory =
+  (typeof PostMaturityPaymentInputCategory)[keyof typeof PostMaturityPaymentInputCategory];
+
+export const PostMaturityPaymentInputCategory = {
+  operational_funding: "operational_funding",
+  maintenance_support: "maintenance_support",
+  emergency_expense: "emergency_expense",
+  project_settlement: "project_settlement",
+  other: "other",
+} as const;
+
+export interface PostMaturityPaymentInput {
+  projectId: string;
+  partnerId?: string;
+  partnerName: string;
+  amount: number;
+  currency?: string;
+  paymentDate: string;
+  description: string;
+  category: PostMaturityPaymentInputCategory;
+  referenceNumber?: string;
+  remarks?: string;
+  linkedExpenditureId?: string;
+}
+
+export interface PostMaturityProjectBalance {
+  projectId: string;
+  projectName?: string | null;
+  pending: number;
+  approved: number;
+  settled: number;
+  rejected: number;
+  total: number;
+}
+
+export interface PostMaturityBalanceTotals {
+  pending: number;
+  approved: number;
+  settled: number;
+  rejected: number;
+  total: number;
+}
+
 export type GetUserActivityParams = {
   limit?: number;
 };
@@ -10901,4 +10996,55 @@ export type UpdateEvidenceStatusBody = {
 
 export type UpdateEvidenceStatus200 = {
   evidence?: EvidenceArchive;
+};
+
+export type ListPostMaturityPaymentsParams = {
+  projectId?: string;
+  reimbursementStatus?: string;
+  category?: string;
+};
+
+export type ListPostMaturityPayments200 = {
+  payments: PostMaturityCostPayment[];
+};
+
+export type CreatePostMaturityPayment201 = {
+  payment: PostMaturityCostPayment;
+};
+
+export type GetPostMaturityPaymentBalanceParams = {
+  projectId?: string;
+};
+
+export type GetPostMaturityPaymentBalance200 = {
+  balances: PostMaturityProjectBalance[];
+  totals: PostMaturityBalanceTotals;
+};
+
+export type GetPostMaturityPayment200 = {
+  payment: PostMaturityCostPayment;
+};
+
+export type ApprovePostMaturityPaymentBody = {
+  approvalNotes?: string;
+};
+
+export type ApprovePostMaturityPayment200 = {
+  payment: PostMaturityCostPayment;
+};
+
+export type SettlePostMaturityPaymentBody = {
+  settlementNote?: string;
+};
+
+export type SettlePostMaturityPayment200 = {
+  payment: PostMaturityCostPayment;
+};
+
+export type RejectPostMaturityPaymentBody = {
+  rejectionReason?: string;
+};
+
+export type RejectPostMaturityPayment200 = {
+  payment: PostMaturityCostPayment;
 };

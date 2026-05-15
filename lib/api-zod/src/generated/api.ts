@@ -19539,3 +19539,325 @@ export const UpdateEvidenceStatusResponse = zod.object({
     })
     .optional(),
 });
+
+/**
+ * @summary List post-maturity cost payments
+ */
+export const ListPostMaturityPaymentsQueryParams = zod.object({
+  projectId: zod.coerce.string().optional(),
+  reimbursementStatus: zod.coerce.string().optional(),
+  category: zod.coerce.string().optional(),
+});
+
+export const ListPostMaturityPaymentsResponse = zod.object({
+  payments: zod.array(
+    zod.object({
+      id: zod.string(),
+      projectId: zod.string(),
+      projectName: zod.string().nullish(),
+      partnerId: zod.string().nullish(),
+      partnerName: zod.string(),
+      amount: zod.number(),
+      currency: zod.string(),
+      paymentDate: zod.string(),
+      description: zod.string(),
+      category: zod.enum([
+        "operational_funding",
+        "maintenance_support",
+        "emergency_expense",
+        "project_settlement",
+        "other",
+      ]),
+      referenceNumber: zod.string().nullish(),
+      remarks: zod.string().nullish(),
+      linkedExpenditureId: zod.string().nullish(),
+      reimbursementStatus: zod.enum([
+        "pending",
+        "approved",
+        "settled",
+        "rejected",
+      ]),
+      approvedBy: zod.string().nullish(),
+      approvedByName: zod.string().nullish(),
+      approvedAt: zod.string().nullish(),
+      approvalNotes: zod.string().nullish(),
+      settledAt: zod.string().nullish(),
+      settledByName: zod.string().nullish(),
+      settlementNote: zod.string().nullish(),
+      rejectedAt: zod.string().nullish(),
+      rejectedByName: zod.string().nullish(),
+      rejectionReason: zod.string().nullish(),
+      recordedBy: zod.string().nullish(),
+      recordedByName: zod.string().nullish(),
+      createdAt: zod.string(),
+      updatedAt: zod.string().nullish(),
+    }),
+  ),
+});
+
+/**
+ * @summary Record a new post-maturity cost payment
+ */
+export const CreatePostMaturityPaymentBody = zod.object({
+  projectId: zod.string(),
+  partnerId: zod.string().optional(),
+  partnerName: zod.string(),
+  amount: zod.number(),
+  currency: zod.string().optional(),
+  paymentDate: zod.string(),
+  description: zod.string(),
+  category: zod.enum([
+    "operational_funding",
+    "maintenance_support",
+    "emergency_expense",
+    "project_settlement",
+    "other",
+  ]),
+  referenceNumber: zod.string().optional(),
+  remarks: zod.string().optional(),
+  linkedExpenditureId: zod.string().optional(),
+});
+
+/**
+ * @summary Get payable balance summary per project
+ */
+export const GetPostMaturityPaymentBalanceQueryParams = zod.object({
+  projectId: zod.coerce.string().optional(),
+});
+
+export const GetPostMaturityPaymentBalanceResponse = zod.object({
+  balances: zod.array(
+    zod.object({
+      projectId: zod.string(),
+      projectName: zod.string().nullish(),
+      pending: zod.number(),
+      approved: zod.number(),
+      settled: zod.number(),
+      rejected: zod.number(),
+      total: zod.number(),
+    }),
+  ),
+  totals: zod.object({
+    pending: zod.number(),
+    approved: zod.number(),
+    settled: zod.number(),
+    rejected: zod.number(),
+    total: zod.number(),
+  }),
+});
+
+/**
+ * @summary Get a single post-maturity cost payment
+ */
+export const GetPostMaturityPaymentParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const GetPostMaturityPaymentResponse = zod.object({
+  payment: zod.object({
+    id: zod.string(),
+    projectId: zod.string(),
+    projectName: zod.string().nullish(),
+    partnerId: zod.string().nullish(),
+    partnerName: zod.string(),
+    amount: zod.number(),
+    currency: zod.string(),
+    paymentDate: zod.string(),
+    description: zod.string(),
+    category: zod.enum([
+      "operational_funding",
+      "maintenance_support",
+      "emergency_expense",
+      "project_settlement",
+      "other",
+    ]),
+    referenceNumber: zod.string().nullish(),
+    remarks: zod.string().nullish(),
+    linkedExpenditureId: zod.string().nullish(),
+    reimbursementStatus: zod.enum([
+      "pending",
+      "approved",
+      "settled",
+      "rejected",
+    ]),
+    approvedBy: zod.string().nullish(),
+    approvedByName: zod.string().nullish(),
+    approvedAt: zod.string().nullish(),
+    approvalNotes: zod.string().nullish(),
+    settledAt: zod.string().nullish(),
+    settledByName: zod.string().nullish(),
+    settlementNote: zod.string().nullish(),
+    rejectedAt: zod.string().nullish(),
+    rejectedByName: zod.string().nullish(),
+    rejectionReason: zod.string().nullish(),
+    recordedBy: zod.string().nullish(),
+    recordedByName: zod.string().nullish(),
+    createdAt: zod.string(),
+    updatedAt: zod.string().nullish(),
+  }),
+});
+
+/**
+ * @summary Approve a pending post-maturity payment for reimbursement
+ */
+export const ApprovePostMaturityPaymentParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const ApprovePostMaturityPaymentBody = zod.object({
+  approvalNotes: zod.string().optional(),
+});
+
+export const ApprovePostMaturityPaymentResponse = zod.object({
+  payment: zod.object({
+    id: zod.string(),
+    projectId: zod.string(),
+    projectName: zod.string().nullish(),
+    partnerId: zod.string().nullish(),
+    partnerName: zod.string(),
+    amount: zod.number(),
+    currency: zod.string(),
+    paymentDate: zod.string(),
+    description: zod.string(),
+    category: zod.enum([
+      "operational_funding",
+      "maintenance_support",
+      "emergency_expense",
+      "project_settlement",
+      "other",
+    ]),
+    referenceNumber: zod.string().nullish(),
+    remarks: zod.string().nullish(),
+    linkedExpenditureId: zod.string().nullish(),
+    reimbursementStatus: zod.enum([
+      "pending",
+      "approved",
+      "settled",
+      "rejected",
+    ]),
+    approvedBy: zod.string().nullish(),
+    approvedByName: zod.string().nullish(),
+    approvedAt: zod.string().nullish(),
+    approvalNotes: zod.string().nullish(),
+    settledAt: zod.string().nullish(),
+    settledByName: zod.string().nullish(),
+    settlementNote: zod.string().nullish(),
+    rejectedAt: zod.string().nullish(),
+    rejectedByName: zod.string().nullish(),
+    rejectionReason: zod.string().nullish(),
+    recordedBy: zod.string().nullish(),
+    recordedByName: zod.string().nullish(),
+    createdAt: zod.string(),
+    updatedAt: zod.string().nullish(),
+  }),
+});
+
+/**
+ * @summary Mark an approved post-maturity payment as settled (fully reimbursed)
+ */
+export const SettlePostMaturityPaymentParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const SettlePostMaturityPaymentBody = zod.object({
+  settlementNote: zod.string().optional(),
+});
+
+export const SettlePostMaturityPaymentResponse = zod.object({
+  payment: zod.object({
+    id: zod.string(),
+    projectId: zod.string(),
+    projectName: zod.string().nullish(),
+    partnerId: zod.string().nullish(),
+    partnerName: zod.string(),
+    amount: zod.number(),
+    currency: zod.string(),
+    paymentDate: zod.string(),
+    description: zod.string(),
+    category: zod.enum([
+      "operational_funding",
+      "maintenance_support",
+      "emergency_expense",
+      "project_settlement",
+      "other",
+    ]),
+    referenceNumber: zod.string().nullish(),
+    remarks: zod.string().nullish(),
+    linkedExpenditureId: zod.string().nullish(),
+    reimbursementStatus: zod.enum([
+      "pending",
+      "approved",
+      "settled",
+      "rejected",
+    ]),
+    approvedBy: zod.string().nullish(),
+    approvedByName: zod.string().nullish(),
+    approvedAt: zod.string().nullish(),
+    approvalNotes: zod.string().nullish(),
+    settledAt: zod.string().nullish(),
+    settledByName: zod.string().nullish(),
+    settlementNote: zod.string().nullish(),
+    rejectedAt: zod.string().nullish(),
+    rejectedByName: zod.string().nullish(),
+    rejectionReason: zod.string().nullish(),
+    recordedBy: zod.string().nullish(),
+    recordedByName: zod.string().nullish(),
+    createdAt: zod.string(),
+    updatedAt: zod.string().nullish(),
+  }),
+});
+
+/**
+ * @summary Reject a post-maturity payment reimbursement claim
+ */
+export const RejectPostMaturityPaymentParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const RejectPostMaturityPaymentBody = zod.object({
+  rejectionReason: zod.string().optional(),
+});
+
+export const RejectPostMaturityPaymentResponse = zod.object({
+  payment: zod.object({
+    id: zod.string(),
+    projectId: zod.string(),
+    projectName: zod.string().nullish(),
+    partnerId: zod.string().nullish(),
+    partnerName: zod.string(),
+    amount: zod.number(),
+    currency: zod.string(),
+    paymentDate: zod.string(),
+    description: zod.string(),
+    category: zod.enum([
+      "operational_funding",
+      "maintenance_support",
+      "emergency_expense",
+      "project_settlement",
+      "other",
+    ]),
+    referenceNumber: zod.string().nullish(),
+    remarks: zod.string().nullish(),
+    linkedExpenditureId: zod.string().nullish(),
+    reimbursementStatus: zod.enum([
+      "pending",
+      "approved",
+      "settled",
+      "rejected",
+    ]),
+    approvedBy: zod.string().nullish(),
+    approvedByName: zod.string().nullish(),
+    approvedAt: zod.string().nullish(),
+    approvalNotes: zod.string().nullish(),
+    settledAt: zod.string().nullish(),
+    settledByName: zod.string().nullish(),
+    settlementNote: zod.string().nullish(),
+    rejectedAt: zod.string().nullish(),
+    rejectedByName: zod.string().nullish(),
+    rejectionReason: zod.string().nullish(),
+    recordedBy: zod.string().nullish(),
+    recordedByName: zod.string().nullish(),
+    createdAt: zod.string(),
+    updatedAt: zod.string().nullish(),
+  }),
+});

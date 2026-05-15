@@ -378,13 +378,50 @@ router.post(
       affectsOwnership = b.affectsOwnership;
     }
 
-    // Fetch current project lifecycle phase for the snapshot
+    // Fetch current project lifecycle phase + commercial model for guards
     const projectRows = await db
-      .select({ lifecycleStatus: projectsTable.lifecycleStatus, name: projectsTable.name })
+      .select({
+        lifecycleStatus: projectsTable.lifecycleStatus,
+        commercialModel: projectsTable.commercialModel,
+        name: projectsTable.name,
+      })
       .from(projectsTable)
       .where(eq(projectsTable.id, String(b.projectId)))
       .limit(1);
     if (!projectRows[0]) return res.status(400).json({ error: "Project not found" });
+
+    // ── Commercial model guard (fifty_percent_revenue) ────────────────────────
+    // Under the 50% Revenue Model: no ownership equity is ever created.
+    // Land notional contributions are blocked outright, and any other
+    // contribution must not affect ownership calculations.
+    if (projectRows[0].commercialModel === "fifty_percent_revenue") {
+      if (cType === "land_notional") {
+        return res.status(422).json({
+          error:
+            "Land notional contributions are not permitted for 50% Revenue Model projects. This model does not create ownership equity.",
+          code: "MODEL_GUARD_LAND_NOTIONAL",
+        });
+      }
+      // Force affectsOwnership to false — the 50% model never creates ownership equity
+      affectsOwnership = false;
+    }
+
+    // ── Post-maturity ownership guard ─────────────────────────────────────────
+    // Only operational_cost and manual_adjustment (with affectsOwnership=false)
+    // are permitted after maturity. Ownership-forming types (economic_investment,
+    // recoverable_advance) must use the Post-Maturity Cost Payments system.
+    const currentLifecycle = projectRows[0].lifecycleStatus ?? "prematurity";
+    if (
+      currentLifecycle !== "prematurity" &&
+      (cType === "economic_investment" || cType === "recoverable_advance")
+    ) {
+      return res.status(422).json({
+        error:
+          "Ownership-forming contributions (economic investment and recoverable advance) cannot be recorded after maturity declaration. Post-maturity financial support must be tracked via the Post-Maturity Cost Payments system where it is treated as a reimbursable project cost advance.",
+        code: "POST_MATURITY_OWNERSHIP_BLOCKED",
+        lifecycleStatus: currentLifecycle,
+      });
+    }
 
     // ── Land notional rules ───────────────────────────────────────────────────
     // 1. Must be recorded during prematurity phase only

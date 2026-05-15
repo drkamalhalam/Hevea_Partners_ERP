@@ -82,6 +82,7 @@ import userActivityRouter from "./user_activity";
 import snapshotsRouter from "./snapshots";
 import auditInvestigationRouter from "./audit_investigation";
 import auditIntegrityRouter from "./audit_integrity";
+import postMaturityPaymentsRouter from "./post_maturity_payments";
 
 const router: IRouter = Router();
 
@@ -179,5 +180,6 @@ router.use("/user-activity", userActivityRouter);
 router.use("/snapshots", snapshotsRouter);
 router.use("/audit-investigation", auditInvestigationRouter);
 router.use("/audit-integrity", auditIntegrityRouter);
+router.use("/post-maturity-payments", postMaturityPaymentsRouter);
 
 export default router;

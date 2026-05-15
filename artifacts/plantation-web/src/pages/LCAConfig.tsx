@@ -381,6 +381,32 @@ export default function LCAConfig() {
         </span>
       </div>
 
+      {/* 50% revenue model guard */}
+      {(() => {
+        const selProject = selectedProjectId
+          ? projects.find((p) => p.id === selectedProjectId)
+          : null;
+        if (!selProject || selProject.commercialModel !== "fifty_percent_revenue") return null;
+        return (
+          <div className="flex items-start gap-3 rounded-lg border border-red-500/40 bg-red-500/10 p-4 text-sm text-red-300">
+            <AlertCircle className="w-5 h-5 mt-0.5 shrink-0 text-red-400" />
+            <div>
+              <p className="font-semibold text-red-300 mb-1">LCA Does Not Apply to This Project</p>
+              <p>
+                <strong>{selProject.name}</strong> operates under the{" "}
+                <strong>50% Revenue Share</strong> model. This model has no land notional value,
+                no ownership equity, and no LCA obligation. All LCA configurations and ledger
+                entries shown here belong to contribution-model projects only.
+              </p>
+              <p className="mt-1 text-red-400/80 text-xs">
+                To record post-maturity costs for this project, use the{" "}
+                <strong>Post-Maturity Payments</strong> ledger instead.
+              </p>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Summary KPIs */}
       {summary && (
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">

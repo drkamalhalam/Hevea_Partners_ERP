@@ -53,6 +53,7 @@ import {
   Activity,
   History as HistoryIcon,
   Zap,
+  Banknote,
 } from "lucide-react";
 import { useRole, ROLE_LABELS, ROLE_COLORS } from "@/contexts/RoleContext";
 import type { UserRole } from "@/contexts/RoleContext";
@@ -218,6 +219,12 @@ const navGroups: NavGroup[] = [
         href: "/expenditure",
         icon: Receipt,
         roles: ["admin", "developer", "landowner"],
+      },
+      {
+        name: "Post-Maturity Payments",
+        href: "/post-maturity-payments",
+        icon: Banknote,
+        roles: ["admin", "developer"],
       },
       {
         name: "Burden Accounting",

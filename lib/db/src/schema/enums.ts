@@ -543,6 +543,42 @@ export const recoverableAdvanceStatusEnum = pgEnum("recoverable_advance_status",
   "written_off",
 ]);
 
+// ── Post-maturity cost payment enums ─────────────────────────────────────
+
+/**
+ * Category of a post-maturity project cost payment.
+ * These payments are reimbursable advances — they never affect ownership.
+ *   operational_funding   — ongoing operational funding after maturity
+ *   maintenance_support   — plantation maintenance, repair, upkeep
+ *   emergency_expense     — unplanned urgent cost covered by a party
+ *   project_settlement    — final settlement expense at closure stage
+ *   other                 — miscellaneous approved cost
+ */
+export const postMaturityPaymentCategoryEnum = pgEnum(
+  "post_maturity_payment_category",
+  [
+    "operational_funding",
+    "maintenance_support",
+    "emergency_expense",
+    "project_settlement",
+    "other",
+  ],
+);
+
+/**
+ * Reimbursement lifecycle of a post-maturity cost payment.
+ *   pending  — payment recorded; reimbursement not yet initiated
+ *   approved — admin confirmed the reimbursement obligation
+ *   settled  — fully reimbursed to the paying party
+ *   rejected — admin rejected the reimbursement claim
+ */
+export const reimbursementStatusEnum = pgEnum("reimbursement_status", [
+  "pending",
+  "approved",
+  "settled",
+  "rejected",
+]);
+
 // ── Operational alert enums ───────────────────────────────────────────────
 
 /**

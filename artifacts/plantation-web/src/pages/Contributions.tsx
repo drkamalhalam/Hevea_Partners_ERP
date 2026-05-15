@@ -685,6 +685,34 @@ export default function Contributions() {
         </span>
       </div>
 
+      {/* 50% revenue model guard — shown when a 50% project is selected */}
+      {(() => {
+        if (selectedProjectId === "all") return null;
+        const selProject = projects.find((p) => p.id === selectedProjectId);
+        if (!selProject || selProject.commercialModel !== "fifty_percent_revenue") return null;
+        return (
+          <div className="flex items-start gap-3 p-4 rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-700 text-sm text-amber-800 dark:text-amber-300">
+            <AlertTriangle className="w-5 h-5 mt-0.5 shrink-0 text-amber-600" />
+            <div>
+              <p className="font-semibold text-amber-800 dark:text-amber-300 mb-1">
+                50% Revenue Share Model — No Ownership Equity
+              </p>
+              <p>
+                <strong>{selProject.name}</strong> operates under the{" "}
+                <strong>50% Revenue Share</strong> model. This model has no land notional value
+                and no ownership equity. Contributions recorded here are for operational cost
+                tracking only — they will never affect ownership percentages or participant
+                shares, regardless of how they are flagged.
+              </p>
+              <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
+                Ownership-affecting contribution types (Land Notional, Economic Investment,
+                Recoverable Advance) are blocked at the API level for this project.
+              </p>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* KPI row */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {kpis.map((kpi) => {

@@ -11745,6 +11745,171 @@ paths:
         '404':
           description: Not found
 
+  /post-maturity-payments:
+    get:
+      operationId: listPostMaturityPayments
+      tags: [post-maturity-payments]
+      summary: List post-maturity cost payments
+      parameters:
+        - { name: projectId, in: query, schema: { type: string } }
+        - { name: reimbursementStatus, in: query, schema: { type: string } }
+        - { name: category, in: query, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [payments]
+                properties:
+                  payments:
+                    type: array
+                    items: { $ref: '#/components/schemas/PostMaturityCostPayment' }
+    post:
+      operationId: createPostMaturityPayment
+      tags: [post-maturity-payments]
+      summary: Record a new post-maturity cost payment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PostMaturityPaymentInput' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [payment]
+                properties:
+                  payment: { $ref: '#/components/schemas/PostMaturityCostPayment' }
+        '422':
+          description: Project not in mature_production phase
+
+  /post-maturity-payments/balance:
+    get:
+      operationId: getPostMaturityPaymentBalance
+      tags: [post-maturity-payments]
+      summary: Get payable balance summary per project
+      parameters:
+        - { name: projectId, in: query, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [balances, totals]
+                properties:
+                  balances:
+                    type: array
+                    items: { $ref: '#/components/schemas/PostMaturityProjectBalance' }
+                  totals: { $ref: '#/components/schemas/PostMaturityBalanceTotals' }
+
+  /post-maturity-payments/{id}:
+    get:
+      operationId: getPostMaturityPayment
+      tags: [post-maturity-payments]
+      summary: Get a single post-maturity cost payment
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [payment]
+                properties:
+                  payment: { $ref: '#/components/schemas/PostMaturityCostPayment' }
+        '404':
+          description: Not found
+
+  /post-maturity-payments/{id}/approve:
+    patch:
+      operationId: approvePostMaturityPayment
+      tags: [post-maturity-payments]
+      summary: Approve a pending post-maturity payment for reimbursement
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                approvalNotes: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [payment]
+                properties:
+                  payment: { $ref: '#/components/schemas/PostMaturityCostPayment' }
+        '409':
+          description: Payment not in pending status
+
+  /post-maturity-payments/{id}/settle:
+    patch:
+      operationId: settlePostMaturityPayment
+      tags: [post-maturity-payments]
+      summary: Mark an approved post-maturity payment as settled (fully reimbursed)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                settlementNote: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [payment]
+                properties:
+                  payment: { $ref: '#/components/schemas/PostMaturityCostPayment' }
+        '409':
+          description: Payment not in approved status
+
+  /post-maturity-payments/{id}/reject:
+    patch:
+      operationId: rejectPostMaturityPayment
+      tags: [post-maturity-payments]
+      summary: Reject a post-maturity payment reimbursement claim
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                rejectionReason: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [payment]
+                properties:
+                  payment: { $ref: '#/components/schemas/PostMaturityCostPayment' }
+        '409':
+          description: Payment already settled
+
 components:
   schemas:
 
@@ -19878,3 +20043,80 @@ components:
         metadata: { type: object, nullable: true, additionalProperties: true }
         occurredAt: { type: string }
         createdAt: { type: string }
+
+    PostMaturityCostPayment:
+      type: object
+      required: [id, projectId, partnerName, amount, currency, paymentDate, description, category, reimbursementStatus, createdAt]
+      properties:
+        id: { type: string }
+        projectId: { type: string }
+        projectName: { type: string, nullable: true }
+        partnerId: { type: string, nullable: true }
+        partnerName: { type: string }
+        amount: { type: number }
+        currency: { type: string }
+        paymentDate: { type: string }
+        description: { type: string }
+        category:
+          type: string
+          enum: [operational_funding, maintenance_support, emergency_expense, project_settlement, other]
+        referenceNumber: { type: string, nullable: true }
+        remarks: { type: string, nullable: true }
+        linkedExpenditureId: { type: string, nullable: true }
+        reimbursementStatus:
+          type: string
+          enum: [pending, approved, settled, rejected]
+        approvedBy: { type: string, nullable: true }
+        approvedByName: { type: string, nullable: true }
+        approvedAt: { type: string, nullable: true }
+        approvalNotes: { type: string, nullable: true }
+        settledAt: { type: string, nullable: true }
+        settledByName: { type: string, nullable: true }
+        settlementNote: { type: string, nullable: true }
+        rejectedAt: { type: string, nullable: true }
+        rejectedByName: { type: string, nullable: true }
+        rejectionReason: { type: string, nullable: true }
+        recordedBy: { type: string, nullable: true }
+        recordedByName: { type: string, nullable: true }
+        createdAt: { type: string }
+        updatedAt: { type: string, nullable: true }
+
+    PostMaturityPaymentInput:
+      type: object
+      required: [projectId, partnerName, amount, paymentDate, description, category]
+      properties:
+        projectId: { type: string }
+        partnerId: { type: string }
+        partnerName: { type: string }
+        amount: { type: number }
+        currency: { type: string }
+        paymentDate: { type: string }
+        description: { type: string }
+        category:
+          type: string
+          enum: [operational_funding, maintenance_support, emergency_expense, project_settlement, other]
+        referenceNumber: { type: string }
+        remarks: { type: string }
+        linkedExpenditureId: { type: string }
+
+    PostMaturityProjectBalance:
+      type: object
+      required: [projectId, pending, approved, settled, rejected, total]
+      properties:
+        projectId: { type: string }
+        projectName: { type: string, nullable: true }
+        pending: { type: number }
+        approved: { type: number }
+        settled: { type: number }
+        rejected: { type: number }
+        total: { type: number }
+
+    PostMaturityBalanceTotals:
+      type: object
+      required: [pending, approved, settled, rejected, total]
+      properties:
+        pending: { type: number }
+        approved: { type: number }
+        settled: { type: number }
+        rejected: { type: number }
+        total: { type: number }

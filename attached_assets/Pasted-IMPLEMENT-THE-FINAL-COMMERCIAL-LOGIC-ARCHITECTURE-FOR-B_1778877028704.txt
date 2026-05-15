@@ -1,0 +1,359 @@
+IMPLEMENT THE FINAL COMMERCIAL LOGIC ARCHITECTURE FOR BOTH PROJECT MODELS.
+
+The ERP must support two fundamentally different commercial structures with strict behavioral separation.
+
+==================================================
+MODEL 1:
+OWNERSHIP_CONTRIBUTION_MODEL
+==================================================
+
+--------------------------------------------------
+CORE PRINCIPLE
+--------------------------------------------------
+
+This model creates actual proportional ownership participation based on validated contributions made BEFORE project maturity declaration.
+
+Ownership share is calculated from total recognized contribution value.
+
+--------------------------------------------------
+VALID CONTRIBUTIONS
+--------------------------------------------------
+
+Recognized contribution types may include:
+
+- Land Notional Value
+- Cash contribution
+- Labor contribution
+- Material contribution
+- Machinery contribution
+- Service contribution
+- Verified operational contribution
+- Other approved contributions
+
+--------------------------------------------------
+LANDOWNER CONTRIBUTION
+--------------------------------------------------
+
+Landowner contribution includes:
+
+1. Land Notional Value
+PLUS
+2. Any additional verified contribution
+
+Examples:
+- cash
+- labor
+- equipment
+- operational support
+- additional investment
+
+Landowner ownership share must be calculated proportionally against total recognized contributions.
+
+--------------------------------------------------
+OWNERSHIP CALCULATION
+--------------------------------------------------
+
+Ownership percentage must be calculated using:
+
+Participant Total Recognized Contribution
+DIVIDED BY
+Total Project Recognized Contributions
+
+Only contributions made BEFORE maturity declaration are ownership-forming contributions.
+
+--------------------------------------------------
+MATURITY DECLARATION RULE
+--------------------------------------------------
+
+The system must support a formal:
+
+PROJECT MATURITY DECLARATION
+
+Once maturity is declared:
+
+- ownership percentages become frozen/crystallized,
+- contribution ownership formation stops,
+- no new ownership contribution allowed,
+- ownership recalculation stops.
+
+--------------------------------------------------
+POST-MATURITY PAYMENTS
+--------------------------------------------------
+
+Any payment, contribution, or financial support AFTER maturity declaration must NOT:
+
+- create ownership,
+- alter ownership percentage,
+- alter crystallized shares.
+
+Instead, post-maturity payments become:
+
+PROJECT COST PAYMENTS
+
+These must be:
+- tracked separately,
+- reimbursable by project,
+- auditable.
+
+--------------------------------------------------
+POST-MATURITY REIMBURSEMENT RULE
+--------------------------------------------------
+
+Post-maturity payments must behave as:
+
+recoverable project cost advances.
+
+Examples:
+- operational funding
+- maintenance support
+- emergency expense payments
+- project expense settlement
+
+The system must support:
+- reimbursement tracking,
+- payable balance,
+- settlement history,
+- reimbursement approval.
+
+--------------------------------------------------
+LCA RULES
+--------------------------------------------------
+
+LCA means:
+LAND CONTRIBUTION ADJUSTMENT
+
+Under this model:
+
+- LCA is ENABLED
+- LCA applies ONLY after maturity
+- LCA is payable to eligible landowners
+- LCA is paid BEFORE profit distribution
+
+--------------------------------------------------
+PROFIT DISTRIBUTION ORDER
+--------------------------------------------------
+
+Under OWNERSHIP_CONTRIBUTION_MODEL:
+
+Distribution order:
+
+1. Gross Revenue
+2. Operational Cost Settlement
+3. Reimbursable Cost Payment Settlement
+4. LCA Payment
+5. Remaining Net Profit
+6. Profit Distribution by Ownership Percentage
+
+--------------------------------------------------
+IMPORTANT RULE
+--------------------------------------------------
+
+LCA must remain:
+- separate from ownership percentage,
+- separate from operational cost,
+- separate from reimbursement.
+
+==================================================
+MODEL 2:
+FIFTY_PERCENT_REVENUE_MODEL
+==================================================
+
+--------------------------------------------------
+CORE PRINCIPLE
+--------------------------------------------------
+
+This model does NOT create ownership equity.
+
+Instead:
+
+- landowner receives fixed 50% gross revenue share
+in exchange for land participation.
+
+The remaining 50% forms an:
+
+ECONOMIC PARTICIPANT POOL
+
+--------------------------------------------------
+LANDOWNER RIGHTS
+--------------------------------------------------
+
+Landowner receives:
+
+1. Fixed 50% gross revenue share
+for land participation / land notional value recognition.
+
+2. May ALSO participate inside the economic participant pool.
+
+Meaning:
+A landowner may simultaneously:
+- receive landowner 50% share,
+AND
+- hold contractual economic participation rights.
+
+--------------------------------------------------
+NO LCA RULE
+--------------------------------------------------
+
+Under this model:
+
+LCA must NEVER apply.
+
+Reason:
+Landowner already receives:
+- fixed gross revenue entitlement.
+
+System must:
+- hide LCA,
+- disable LCA,
+- block LCA calculations,
+- prevent LCA schedules.
+
+--------------------------------------------------
+COST RESPONSIBILITY RULE
+--------------------------------------------------
+
+Under this model:
+
+ALL operational costs are borne by:
+LANDOWNER SIDE
+
+This means:
+- operational burden belongs to landowner responsibility,
+- participant pool does not proportionally absorb operational burden unless separately configured.
+
+--------------------------------------------------
+REVENUE DISTRIBUTION ORDER
+--------------------------------------------------
+
+Under FIFTY_PERCENT_REVENUE_MODEL:
+
+1. Gross Revenue
+2. 50% Landowner Share
+3. Remaining 50% Economic Participant Pool
+4. Internal proportional distribution among economic participants
+
+--------------------------------------------------
+ECONOMIC PARTICIPANT POOL
+--------------------------------------------------
+
+Economic participant pool may contain:
+- investors
+- developers
+- managers
+- landowners
+- strategic participants
+- operational participants
+
+Each participant may hold:
+- contractual participation percentages.
+
+These percentages:
+- are distributable,
+- transferable contractually,
+- inheritable contractually,
+
+BUT ARE NOT ownership equity.
+
+--------------------------------------------------
+STRICT NON-EQUITY RULE
+--------------------------------------------------
+
+Under this model:
+the system must NEVER:
+- create ownership percentage,
+- crystallize ownership,
+- calculate land equity,
+- convert contribution into ownership.
+
+==================================================
+GLOBAL MATURITY RULE
+==================================================
+
+For BOTH models:
+
+Only contributions made BEFORE maturity declaration may qualify as contribution participation.
+
+After maturity declaration:
+
+Any payment/support becomes:
+- project cost payment,
+NOT ownership-forming contribution.
+
+==================================================
+POST-MATURITY PAYMENT ENGINE
+==================================================
+
+Implement a separate engine for:
+
+POST_MATURITY_PROJECT_COST_PAYMENTS
+
+Features:
+- reimbursement tracking
+- payable balances
+- reimbursement approvals
+- audit logs
+- settlement history
+- linked expense records
+
+These payments must NEVER:
+- alter ownership,
+- alter participant percentages,
+- alter crystallized rights.
+
+==================================================
+STRICT SYSTEM SEPARATION
+==================================================
+
+The ERP must clearly separate:
+
+1. Ownership Equity
+2. Contractual Participation Rights
+3. Operational Cost
+4. Reimbursable Cost Advances
+5. LCA
+6. Profit Distribution
+7. Revenue Sharing
+
+These must NEVER silently mix together.
+
+==================================================
+AUDIT REQUIREMENTS
+==================================================
+
+Log:
+- maturity declarations
+- ownership crystallization
+- post-maturity payments
+- reimbursement settlements
+- LCA calculations
+- revenue distributions
+- participant allocation changes
+- contractual transfers
+- cost settlements
+
+with full permanent audit history.
+
+==================================================
+IMPORTANT SYSTEM RULE
+==================================================
+
+All downstream modules must inherit behavior from:
+- project commercial model,
+- lifecycle phase,
+- maturity status,
+- participant structure.
+
+INCLUDING:
+- accounting
+- collection
+- stock
+- sales
+- dashboard
+- reporting
+- reimbursement
+- transfer systems
+- settlement engine
+- profit distribution
+- buyer systems
+- notifications
+- permissions.

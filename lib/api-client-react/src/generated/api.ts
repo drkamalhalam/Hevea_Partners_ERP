@@ -50,6 +50,8 @@ import type {
   ApproveExpenditureVerification200,
   ApproveExpenditureVerificationBody,
   ApproveOwnershipTransferBody,
+  ApprovePostMaturityPayment200,
+  ApprovePostMaturityPaymentBody,
   ApproveStockTransfer200,
   ArchiveDistributionPreview200,
   ArchiveDistributionRecord200,
@@ -162,6 +164,7 @@ import type {
   CreatePayableSnapshotBody,
   CreatePaymentReceiverBody,
   CreatePaymentSettingsBody,
+  CreatePostMaturityPayment201,
   CreateProductionAssignmentBody,
   CreateProductionBatchBody,
   CreateProductionEntryBody,
@@ -306,6 +309,9 @@ import type {
   GetPartnerDistributionHistoryParams,
   GetPartnerStatementReportParams,
   GetPayableSnapshot200,
+  GetPostMaturityPayment200,
+  GetPostMaturityPaymentBalance200,
+  GetPostMaturityPaymentBalanceParams,
   GetPrematuritySuccessionDashboardParams,
   GetProductionLogSummaryParams,
   GetProductionReportParams,
@@ -437,6 +443,8 @@ import type {
   ListPendingVerificationContributions200,
   ListPendingVerificationContributionsParams,
   ListPendingVerifications200,
+  ListPostMaturityPayments200,
+  ListPostMaturityPaymentsParams,
   ListProductionAssignmentsParams,
   ListProductionBatchesParams,
   ListProductionEntriesParams,
@@ -513,6 +521,7 @@ import type {
   PaymentReceiverAccount,
   PaymentSettingsAuditEntry,
   PaymentTransaction,
+  PostMaturityPaymentInput,
   PrematuritySuccessionDashboard,
   ProductionAssignment,
   ProductionBatch,
@@ -550,6 +559,8 @@ import type {
   RejectExpenditureBody,
   RejectExpenditureVerification200,
   RejectExpenditureVerificationBody,
+  RejectPostMaturityPayment200,
+  RejectPostMaturityPaymentBody,
   ReleaseAccumulationBody,
   ReleaseAccumulationEntry200,
   ReleaseHeldDistributionBody,
@@ -586,6 +597,8 @@ import type {
   SetSettlementRecommendation200,
   SetSettlementRecommendationBody,
   SetUserRoleInput,
+  SettlePostMaturityPayment200,
+  SettlePostMaturityPaymentBody,
   SettlementAnalytics,
   SettlementComparison,
   SettlementGovernanceSummary,
@@ -48489,4 +48502,670 @@ export const useUpdateEvidenceStatus = <
   TContext
 > => {
   return useMutation(getUpdateEvidenceStatusMutationOptions(options));
+};
+
+/**
+ * @summary List post-maturity cost payments
+ */
+export const getListPostMaturityPaymentsUrl = (
+  params?: ListPostMaturityPaymentsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/post-maturity-payments?${stringifiedParams}`
+    : `/api/post-maturity-payments`;
+};
+
+export const listPostMaturityPayments = async (
+  params?: ListPostMaturityPaymentsParams,
+  options?: RequestInit,
+): Promise<ListPostMaturityPayments200> => {
+  return customFetch<ListPostMaturityPayments200>(
+    getListPostMaturityPaymentsUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListPostMaturityPaymentsQueryKey = (
+  params?: ListPostMaturityPaymentsParams,
+) => {
+  return [`/api/post-maturity-payments`, ...(params ? [params] : [])] as const;
+};
+
+export const getListPostMaturityPaymentsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listPostMaturityPayments>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListPostMaturityPaymentsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listPostMaturityPayments>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListPostMaturityPaymentsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listPostMaturityPayments>>
+  > = ({ signal }) =>
+    listPostMaturityPayments(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listPostMaturityPayments>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListPostMaturityPaymentsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listPostMaturityPayments>>
+>;
+export type ListPostMaturityPaymentsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List post-maturity cost payments
+ */
+
+export function useListPostMaturityPayments<
+  TData = Awaited<ReturnType<typeof listPostMaturityPayments>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListPostMaturityPaymentsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listPostMaturityPayments>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListPostMaturityPaymentsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Record a new post-maturity cost payment
+ */
+export const getCreatePostMaturityPaymentUrl = () => {
+  return `/api/post-maturity-payments`;
+};
+
+export const createPostMaturityPayment = async (
+  postMaturityPaymentInput: PostMaturityPaymentInput,
+  options?: RequestInit,
+): Promise<CreatePostMaturityPayment201> => {
+  return customFetch<CreatePostMaturityPayment201>(
+    getCreatePostMaturityPaymentUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(postMaturityPaymentInput),
+    },
+  );
+};
+
+export const getCreatePostMaturityPaymentMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createPostMaturityPayment>>,
+    TError,
+    { data: BodyType<PostMaturityPaymentInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createPostMaturityPayment>>,
+  TError,
+  { data: BodyType<PostMaturityPaymentInput> },
+  TContext
+> => {
+  const mutationKey = ["createPostMaturityPayment"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createPostMaturityPayment>>,
+    { data: BodyType<PostMaturityPaymentInput> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createPostMaturityPayment(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreatePostMaturityPaymentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createPostMaturityPayment>>
+>;
+export type CreatePostMaturityPaymentMutationBody =
+  BodyType<PostMaturityPaymentInput>;
+export type CreatePostMaturityPaymentMutationError = ErrorType<void>;
+
+/**
+ * @summary Record a new post-maturity cost payment
+ */
+export const useCreatePostMaturityPayment = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createPostMaturityPayment>>,
+    TError,
+    { data: BodyType<PostMaturityPaymentInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createPostMaturityPayment>>,
+  TError,
+  { data: BodyType<PostMaturityPaymentInput> },
+  TContext
+> => {
+  return useMutation(getCreatePostMaturityPaymentMutationOptions(options));
+};
+
+/**
+ * @summary Get payable balance summary per project
+ */
+export const getGetPostMaturityPaymentBalanceUrl = (
+  params?: GetPostMaturityPaymentBalanceParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/post-maturity-payments/balance?${stringifiedParams}`
+    : `/api/post-maturity-payments/balance`;
+};
+
+export const getPostMaturityPaymentBalance = async (
+  params?: GetPostMaturityPaymentBalanceParams,
+  options?: RequestInit,
+): Promise<GetPostMaturityPaymentBalance200> => {
+  return customFetch<GetPostMaturityPaymentBalance200>(
+    getGetPostMaturityPaymentBalanceUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetPostMaturityPaymentBalanceQueryKey = (
+  params?: GetPostMaturityPaymentBalanceParams,
+) => {
+  return [
+    `/api/post-maturity-payments/balance`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetPostMaturityPaymentBalanceQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPostMaturityPaymentBalance>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetPostMaturityPaymentBalanceParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPostMaturityPaymentBalance>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetPostMaturityPaymentBalanceQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getPostMaturityPaymentBalance>>
+  > = ({ signal }) =>
+    getPostMaturityPaymentBalance(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPostMaturityPaymentBalance>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPostMaturityPaymentBalanceQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPostMaturityPaymentBalance>>
+>;
+export type GetPostMaturityPaymentBalanceQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get payable balance summary per project
+ */
+
+export function useGetPostMaturityPaymentBalance<
+  TData = Awaited<ReturnType<typeof getPostMaturityPaymentBalance>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetPostMaturityPaymentBalanceParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPostMaturityPaymentBalance>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPostMaturityPaymentBalanceQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get a single post-maturity cost payment
+ */
+export const getGetPostMaturityPaymentUrl = (id: string) => {
+  return `/api/post-maturity-payments/${id}`;
+};
+
+export const getPostMaturityPayment = async (
+  id: string,
+  options?: RequestInit,
+): Promise<GetPostMaturityPayment200> => {
+  return customFetch<GetPostMaturityPayment200>(
+    getGetPostMaturityPaymentUrl(id),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetPostMaturityPaymentQueryKey = (id: string) => {
+  return [`/api/post-maturity-payments/${id}`] as const;
+};
+
+export const getGetPostMaturityPaymentQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPostMaturityPayment>>,
+  TError = ErrorType<void>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPostMaturityPayment>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetPostMaturityPaymentQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getPostMaturityPayment>>
+  > = ({ signal }) => getPostMaturityPayment(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPostMaturityPayment>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPostMaturityPaymentQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPostMaturityPayment>>
+>;
+export type GetPostMaturityPaymentQueryError = ErrorType<void>;
+
+/**
+ * @summary Get a single post-maturity cost payment
+ */
+
+export function useGetPostMaturityPayment<
+  TData = Awaited<ReturnType<typeof getPostMaturityPayment>>,
+  TError = ErrorType<void>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPostMaturityPayment>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPostMaturityPaymentQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Approve a pending post-maturity payment for reimbursement
+ */
+export const getApprovePostMaturityPaymentUrl = (id: string) => {
+  return `/api/post-maturity-payments/${id}/approve`;
+};
+
+export const approvePostMaturityPayment = async (
+  id: string,
+  approvePostMaturityPaymentBody: ApprovePostMaturityPaymentBody,
+  options?: RequestInit,
+): Promise<ApprovePostMaturityPayment200> => {
+  return customFetch<ApprovePostMaturityPayment200>(
+    getApprovePostMaturityPaymentUrl(id),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(approvePostMaturityPaymentBody),
+    },
+  );
+};
+
+export const getApprovePostMaturityPaymentMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof approvePostMaturityPayment>>,
+    TError,
+    { id: string; data: BodyType<ApprovePostMaturityPaymentBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof approvePostMaturityPayment>>,
+  TError,
+  { id: string; data: BodyType<ApprovePostMaturityPaymentBody> },
+  TContext
+> => {
+  const mutationKey = ["approvePostMaturityPayment"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof approvePostMaturityPayment>>,
+    { id: string; data: BodyType<ApprovePostMaturityPaymentBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return approvePostMaturityPayment(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ApprovePostMaturityPaymentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof approvePostMaturityPayment>>
+>;
+export type ApprovePostMaturityPaymentMutationBody =
+  BodyType<ApprovePostMaturityPaymentBody>;
+export type ApprovePostMaturityPaymentMutationError = ErrorType<void>;
+
+/**
+ * @summary Approve a pending post-maturity payment for reimbursement
+ */
+export const useApprovePostMaturityPayment = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof approvePostMaturityPayment>>,
+    TError,
+    { id: string; data: BodyType<ApprovePostMaturityPaymentBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof approvePostMaturityPayment>>,
+  TError,
+  { id: string; data: BodyType<ApprovePostMaturityPaymentBody> },
+  TContext
+> => {
+  return useMutation(getApprovePostMaturityPaymentMutationOptions(options));
+};
+
+/**
+ * @summary Mark an approved post-maturity payment as settled (fully reimbursed)
+ */
+export const getSettlePostMaturityPaymentUrl = (id: string) => {
+  return `/api/post-maturity-payments/${id}/settle`;
+};
+
+export const settlePostMaturityPayment = async (
+  id: string,
+  settlePostMaturityPaymentBody: SettlePostMaturityPaymentBody,
+  options?: RequestInit,
+): Promise<SettlePostMaturityPayment200> => {
+  return customFetch<SettlePostMaturityPayment200>(
+    getSettlePostMaturityPaymentUrl(id),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(settlePostMaturityPaymentBody),
+    },
+  );
+};
+
+export const getSettlePostMaturityPaymentMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof settlePostMaturityPayment>>,
+    TError,
+    { id: string; data: BodyType<SettlePostMaturityPaymentBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof settlePostMaturityPayment>>,
+  TError,
+  { id: string; data: BodyType<SettlePostMaturityPaymentBody> },
+  TContext
+> => {
+  const mutationKey = ["settlePostMaturityPayment"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof settlePostMaturityPayment>>,
+    { id: string; data: BodyType<SettlePostMaturityPaymentBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return settlePostMaturityPayment(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SettlePostMaturityPaymentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof settlePostMaturityPayment>>
+>;
+export type SettlePostMaturityPaymentMutationBody =
+  BodyType<SettlePostMaturityPaymentBody>;
+export type SettlePostMaturityPaymentMutationError = ErrorType<void>;
+
+/**
+ * @summary Mark an approved post-maturity payment as settled (fully reimbursed)
+ */
+export const useSettlePostMaturityPayment = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof settlePostMaturityPayment>>,
+    TError,
+    { id: string; data: BodyType<SettlePostMaturityPaymentBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof settlePostMaturityPayment>>,
+  TError,
+  { id: string; data: BodyType<SettlePostMaturityPaymentBody> },
+  TContext
+> => {
+  return useMutation(getSettlePostMaturityPaymentMutationOptions(options));
+};
+
+/**
+ * @summary Reject a post-maturity payment reimbursement claim
+ */
+export const getRejectPostMaturityPaymentUrl = (id: string) => {
+  return `/api/post-maturity-payments/${id}/reject`;
+};
+
+export const rejectPostMaturityPayment = async (
+  id: string,
+  rejectPostMaturityPaymentBody: RejectPostMaturityPaymentBody,
+  options?: RequestInit,
+): Promise<RejectPostMaturityPayment200> => {
+  return customFetch<RejectPostMaturityPayment200>(
+    getRejectPostMaturityPaymentUrl(id),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(rejectPostMaturityPaymentBody),
+    },
+  );
+};
+
+export const getRejectPostMaturityPaymentMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof rejectPostMaturityPayment>>,
+    TError,
+    { id: string; data: BodyType<RejectPostMaturityPaymentBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof rejectPostMaturityPayment>>,
+  TError,
+  { id: string; data: BodyType<RejectPostMaturityPaymentBody> },
+  TContext
+> => {
+  const mutationKey = ["rejectPostMaturityPayment"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof rejectPostMaturityPayment>>,
+    { id: string; data: BodyType<RejectPostMaturityPaymentBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return rejectPostMaturityPayment(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RejectPostMaturityPaymentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof rejectPostMaturityPayment>>
+>;
+export type RejectPostMaturityPaymentMutationBody =
+  BodyType<RejectPostMaturityPaymentBody>;
+export type RejectPostMaturityPaymentMutationError = ErrorType<void>;
+
+/**
+ * @summary Reject a post-maturity payment reimbursement claim
+ */
+export const useRejectPostMaturityPayment = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof rejectPostMaturityPayment>>,
+    TError,
+    { id: string; data: BodyType<RejectPostMaturityPaymentBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof rejectPostMaturityPayment>>,
+  TError,
+  { id: string; data: BodyType<RejectPostMaturityPaymentBody> },
+  TContext
+> => {
+  return useMutation(getRejectPostMaturityPaymentMutationOptions(options));
 };

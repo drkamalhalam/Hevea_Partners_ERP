@@ -36,6 +36,7 @@ import ParticipationDashboard from "./pages/ParticipationDashboard";
 import ContributionDisputeCenter from "./pages/ContributionDisputeCenter";
 import Expenditure from "./pages/Expenditure";
 import Burden from "./pages/Burden";
+import PostMaturityPayments from "./pages/PostMaturityPayments";
 import RecoverableAdvances from "./pages/RecoverableAdvances";
 import ExpenditureGovernance from "./pages/ExpenditureGovernance";
 import ExpenditureAnalytics from "./pages/ExpenditureAnalytics";
@@ -310,6 +311,7 @@ function AppRoutes() {
               <Route path="/ownership"><ProtectedRoute component={OwnershipGuidance} /></Route>
               <Route path="/expenditure"><ProtectedRoute component={Expenditure} /></Route>
               <Route path="/burden"><ProtectedRoute component={Burden} /></Route>
+              <Route path="/post-maturity-payments"><ProtectedRoute component={PostMaturityPayments} /></Route>
               <Route path="/advances"><ProtectedRoute component={RecoverableAdvances} /></Route>
               <Route path="/expenditure-governance"><ProtectedRoute component={ExpenditureGovernance} /></Route>
               <Route path="/expenditure-analytics"><ProtectedRoute component={ExpenditureAnalytics} /></Route>
