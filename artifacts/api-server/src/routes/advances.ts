@@ -105,7 +105,7 @@ function formatEvent(row: typeof advanceRecoveryEventsTable.$inferSelect) {
 
 // ── GET /advances/summary ───────────────────────────────────────────────────
 
-router.get("/advances/summary", async (req, res) => {
+router.get("/summary", async (req, res) => {
   const { userId: clerkUserId } = getAuth(req);
   if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
 
@@ -227,7 +227,7 @@ router.get("/advances/summary", async (req, res) => {
 
 // ── GET /advances ───────────────────────────────────────────────────────────
 
-router.get("/advances", async (req, res) => {
+router.get("/", async (req, res) => {
   const { userId: clerkUserId } = getAuth(req);
   if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
 
@@ -292,7 +292,7 @@ router.get("/advances", async (req, res) => {
 // ── POST /advances ──────────────────────────────────────────────────────────
 
 router.post(
-  "/advances",
+  "/",
   requireRole("admin", "developer", "landowner"),
   async (req, res) => {
     const { userId: clerkUserId } = getAuth(req);
@@ -382,7 +382,7 @@ router.post(
 
 // ── GET /advances/:id ───────────────────────────────────────────────────────
 
-router.get("/advances/:id", async (req, res) => {
+router.get("/:id", async (req, res) => {
   const { userId: clerkUserId } = getAuth(req);
   if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
 
@@ -436,7 +436,7 @@ router.get("/advances/:id", async (req, res) => {
 // ── PATCH /advances/:id ─────────────────────────────────────────────────────
 
 router.patch(
-  "/advances/:id",
+  "/:id",
   requireRole("admin", "developer"),
   async (req, res) => {
     const { userId: clerkUserId } = getAuth(req);
@@ -487,7 +487,7 @@ router.patch(
 // ── POST /advances/:id/acknowledge ──────────────────────────────────────────
 
 router.post(
-  "/advances/:id/acknowledge",
+  "/:id/acknowledge",
   requireRole("admin", "developer"),
   async (req, res) => {
     const { userId: clerkUserId } = getAuth(req);
@@ -551,7 +551,7 @@ router.post(
 // ── POST /advances/:id/recover ──────────────────────────────────────────────
 
 router.post(
-  "/advances/:id/recover",
+  "/:id/recover",
   requireRole("admin", "developer"),
   async (req, res) => {
     const { userId: clerkUserId } = getAuth(req);
@@ -648,7 +648,7 @@ router.post(
 // ── POST /advances/:id/write-off ────────────────────────────────────────────
 
 router.post(
-  "/advances/:id/write-off",
+  "/:id/write-off",
   requireRole("admin", "developer"),
   async (req, res) => {
     const { userId: clerkUserId } = getAuth(req);

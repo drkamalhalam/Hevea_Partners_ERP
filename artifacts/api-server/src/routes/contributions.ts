@@ -160,7 +160,7 @@ async function writeVerificationEvent(params: {
 
 // ── GET /contributions/summary ────────────────────────────────────────────────
 
-router.get("/contributions/summary", async (req, res) => {
+router.get("/summary", async (req, res) => {
   const { userId: clerkUserId } = getAuth(req);
   if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
 
@@ -283,7 +283,7 @@ router.get("/contributions/summary", async (req, res) => {
 
 // ── GET /contributions ────────────────────────────────────────────────────────
 
-router.get("/contributions", async (req, res) => {
+router.get("/", async (req, res) => {
   const { userId: clerkUserId } = getAuth(req);
   if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
 
@@ -339,7 +339,7 @@ router.get("/contributions", async (req, res) => {
 // ── POST /contributions ────────────────────────────────────────────────────────
 
 router.post(
-  "/contributions",
+  "/",
   requireRole("admin", "developer"),
   async (req, res) => {
     const { userId: clerkUserId } = getAuth(req);
@@ -480,7 +480,7 @@ router.post(
 // Returns the single active (non-rejected, non-deleted) land_notional for a
 // project, plus project context (lifecycle status, canRecord flag).
 
-router.get("/contributions/land-notional", async (req, res) => {
+router.get("/land-notional", async (req, res) => {
   const { userId: clerkUserId } = getAuth(req);
   if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
 
@@ -536,7 +536,7 @@ router.get("/contributions/land-notional", async (req, res) => {
 // Returns ALL land_notional entries for a project (including rejected),
 // ordered newest-first. Used to display the immutable audit trail.
 
-router.get("/contributions/land-notional/history", async (req, res) => {
+router.get("/land-notional/history", async (req, res) => {
   const { userId: clerkUserId } = getAuth(req);
   if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
 
@@ -575,7 +575,7 @@ router.get("/contributions/land-notional/history", async (req, res) => {
 // MUST be registered before /:id to avoid Express treating "pending-verification"
 // as an :id parameter value.
 
-router.get("/contributions/pending-verification", async (req, res) => {
+router.get("/pending-verification", async (req, res) => {
   const { userId: clerkUserId } = getAuth(req);
   if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
 
@@ -626,7 +626,7 @@ router.get("/contributions/pending-verification", async (req, res) => {
 
 // ── GET /contributions/:id ─────────────────────────────────────────────────────
 
-router.get("/contributions/:id", async (req, res) => {
+router.get("/:id", async (req, res) => {
   const { userId: clerkUserId } = getAuth(req);
   if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
 
@@ -658,7 +658,7 @@ router.get("/contributions/:id", async (req, res) => {
 // ── PATCH /contributions/:id ───────────────────────────────────────────────────
 
 router.patch(
-  "/contributions/:id",
+  "/:id",
   requireRole("admin", "developer"),
   async (req, res) => {
     const { userId: clerkUserId } = getAuth(req);
@@ -737,7 +737,7 @@ router.patch(
 // ── POST /contributions/:id/submit ─────────────────────────────────────────────
 
 router.post(
-  "/contributions/:id/submit",
+  "/:id/submit",
   requireRole("admin", "developer"),
   async (req, res) => {
     const { userId: clerkUserId } = getAuth(req);
@@ -770,7 +770,7 @@ router.post(
 // Extended: designated verifier AND admin/developer can approve.
 // Handles re_approved event for previously-rejected contributions.
 
-router.post("/contributions/:id/verify", async (req, res) => {
+router.post("/:id/verify", async (req, res) => {
   const { userId: clerkUserId } = getAuth(req);
   if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
 
@@ -829,7 +829,7 @@ router.post("/contributions/:id/verify", async (req, res) => {
 // ── POST /contributions/:id/reject ─────────────────────────────────────────────
 // Extended: designated verifier AND admin/developer can reject.
 
-router.post("/contributions/:id/reject", async (req, res) => {
+router.post("/:id/reject", async (req, res) => {
   const { userId: clerkUserId } = getAuth(req);
   if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
 
@@ -884,7 +884,7 @@ router.post("/contributions/:id/reject", async (req, res) => {
 // or verifier_changed event. The contribution must be non-deleted.
 
 router.post(
-  "/contributions/:id/request-verification",
+  "/:id/request-verification",
   requireRole("admin", "developer"),
   async (req, res) => {
     const { userId: clerkUserId } = getAuth(req);
@@ -946,7 +946,7 @@ router.post(
 // ── GET /contributions/:id/verification-history ────────────────────────────────
 // Returns the immutable event timeline for a contribution.
 
-router.get("/contributions/:id/verification-history", async (req, res) => {
+router.get("/:id/verification-history", async (req, res) => {
   const { userId: clerkUserId } = getAuth(req);
   if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
 
@@ -996,7 +996,7 @@ router.get("/contributions/:id/verification-history", async (req, res) => {
 // Counts of disputed / pending / rejected contributions per visible project.
 // Placed before /:id to avoid route shadowing.
 
-router.get("/contributions/dispute-summary", requireRole("admin", "developer"), async (req, res) => {
+router.get("/dispute-summary", requireRole("admin", "developer"), async (req, res) => {
   const { userId: clerkUserId } = getAuth(req);
   if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
 
@@ -1066,7 +1066,7 @@ router.get("/contributions/dispute-summary", requireRole("admin", "developer"), 
 // Triggers governance alert and blocks project from declaring maturity.
 
 router.post(
-  "/contributions/:id/dispute",
+  "/:id/dispute",
   requireRole("admin", "developer"),
   async (req, res) => {
     const { userId: clerkUserId } = getAuth(req);
@@ -1126,7 +1126,7 @@ router.post(
 // action = "reject"    → status becomes rejected (closes dispute without re-approving)
 
 router.post(
-  "/contributions/:id/resolve-dispute",
+  "/:id/resolve-dispute",
   requireRole("admin", "developer"),
   async (req, res) => {
     const { userId: clerkUserId } = getAuth(req);
@@ -1186,7 +1186,7 @@ router.post(
 // ── DELETE /contributions/:id ──────────────────────────────────────────────────
 
 router.delete(
-  "/contributions/:id",
+  "/:id",
   requireRole("admin"),
   async (req, res) => {
     const id = String(req.params.id);

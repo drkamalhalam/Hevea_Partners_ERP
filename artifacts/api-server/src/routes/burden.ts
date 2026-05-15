@@ -252,7 +252,7 @@ function computeImbalance(
 
 // ── GET /burden/summary ───────────────────────────────────────────────────────
 
-router.get("/burden/summary", async (req, res) => {
+router.get("/summary", async (req, res) => {
   const { userId: clerkUserId } = getAuth(req);
   if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
 
@@ -387,7 +387,7 @@ router.get("/burden/summary", async (req, res) => {
 
 // ── GET /burden/rules ─────────────────────────────────────────────────────────
 
-router.get("/burden/rules", async (req, res) => {
+router.get("/rules", async (req, res) => {
   const { userId: clerkUserId } = getAuth(req);
   if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
 
@@ -426,7 +426,7 @@ router.get("/burden/rules", async (req, res) => {
 // ── POST /burden/rules ────────────────────────────────────────────────────────
 
 router.post(
-  "/burden/rules",
+  "/rules",
   requireRole("admin", "developer"),
   async (req, res) => {
     const { userId: clerkUserId } = getAuth(req);
@@ -516,7 +516,7 @@ router.post(
 // ── PATCH /burden/rules/:id ───────────────────────────────────────────────────
 
 router.patch(
-  "/burden/rules/:id",
+  "/rules/:id",
   requireRole("admin", "developer"),
   async (req, res) => {
     const { userId: clerkUserId } = getAuth(req);
@@ -591,7 +591,7 @@ router.patch(
 
 // ── GET /burden/records ───────────────────────────────────────────────────────
 
-router.get("/burden/records", async (req, res) => {
+router.get("/records", async (req, res) => {
   const { userId: clerkUserId } = getAuth(req);
   if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
 
@@ -681,7 +681,7 @@ router.get("/burden/records", async (req, res) => {
 // ── POST /burden/records ──────────────────────────────────────────────────────
 
 router.post(
-  "/burden/records",
+  "/records",
   requireRole("admin", "developer", "landowner"),
   async (req, res) => {
     const { userId: clerkUserId } = getAuth(req);
@@ -888,7 +888,7 @@ router.post(
 // ── PATCH /burden/records/:id ─────────────────────────────────────────────────
 
 router.patch(
-  "/burden/records/:id",
+  "/records/:id",
   requireRole("admin", "developer"),
   async (req, res) => {
     const { userId: clerkUserId } = getAuth(req);
@@ -943,7 +943,7 @@ router.patch(
 // ── POST /burden/records/:id/waive ────────────────────────────────────────────
 
 router.post(
-  "/burden/records/:id/waive",
+  "/records/:id/waive",
   requireRole("admin", "developer"),
   async (req, res) => {
     const { userId: clerkUserId } = getAuth(req);
@@ -1021,7 +1021,7 @@ router.post(
 // ── POST /burden/records/:id/recover ─────────────────────────────────────────
 
 router.post(
-  "/burden/records/:id/recover",
+  "/records/:id/recover",
   requireRole("admin", "developer"),
   async (req, res) => {
     const { userId: clerkUserId } = getAuth(req);

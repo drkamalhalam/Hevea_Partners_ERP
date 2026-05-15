@@ -106,7 +106,7 @@ function formatEntry(
 
 // ── GET /expenditures ─────────────────────────────────────────────────────────
 
-router.get("/expenditures", async (req, res) => {
+router.get("/", async (req, res) => {
   const { userId: clerkUserId } = getAuth(req);
   if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
 
@@ -228,7 +228,7 @@ router.get("/expenditures", async (req, res) => {
 
 // ── POST /expenditures ────────────────────────────────────────────────────────
 
-router.post("/expenditures", async (req, res) => {
+router.post("/", async (req, res) => {
   const { userId: clerkUserId } = getAuth(req);
   if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
 
@@ -301,7 +301,7 @@ router.post("/expenditures", async (req, res) => {
 // ── GET /expenditures/summary ─────────────────────────────────────────────────
 // Must be registered BEFORE /:id to avoid route shadowing.
 
-router.get("/expenditures/summary", async (req, res) => {
+router.get("/summary", async (req, res) => {
   const { userId: clerkUserId } = getAuth(req);
   if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
 
@@ -449,7 +449,7 @@ router.get("/expenditures/summary", async (req, res) => {
 
 // ── GET /expenditures/:id ─────────────────────────────────────────────────────
 
-router.get("/expenditures/:id", async (req, res) => {
+router.get("/:id", async (req, res) => {
   const { userId: clerkUserId } = getAuth(req);
   if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
 
@@ -471,7 +471,7 @@ router.get("/expenditures/:id", async (req, res) => {
 
 // ── PATCH /expenditures/:id ───────────────────────────────────────────────────
 
-router.patch("/expenditures/:id", async (req, res) => {
+router.patch("/:id", async (req, res) => {
   const { userId: clerkUserId } = getAuth(req);
   if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
 
@@ -556,7 +556,7 @@ router.patch("/expenditures/:id", async (req, res) => {
 // ── DELETE /expenditures/:id ──────────────────────────────────────────────────
 
 router.delete(
-  "/expenditures/:id",
+  "/:id",
   requireRole("admin"),
   async (req, res) => {
     const entry = await fetchExpenditure(String(req.params.id));
@@ -573,7 +573,7 @@ router.delete(
 
 // ── POST /expenditures/:id/submit ─────────────────────────────────────────────
 
-router.post("/expenditures/:id/submit", async (req, res) => {
+router.post("/:id/submit", async (req, res) => {
   const { userId: clerkUserId } = getAuth(req);
   if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
 
@@ -636,7 +636,7 @@ router.post("/expenditures/:id/submit", async (req, res) => {
 // ── POST /expenditures/:id/approve ────────────────────────────────────────────
 
 router.post(
-  "/expenditures/:id/approve",
+  "/:id/approve",
   requireRole("admin", "developer"),
   async (req, res) => {
     const { userId: clerkUserId } = getAuth(req);
@@ -690,7 +690,7 @@ router.post(
 // ── POST /expenditures/:id/reject ─────────────────────────────────────────────
 
 router.post(
-  "/expenditures/:id/reject",
+  "/:id/reject",
   requireRole("admin", "developer"),
   async (req, res) => {
     const { userId: clerkUserId } = getAuth(req);
