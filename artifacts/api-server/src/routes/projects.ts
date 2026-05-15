@@ -896,6 +896,22 @@ router.post(
       const currentStatus = project.lifecycleStatus;
       const allowed = LIFECYCLE_TRANSITIONS[currentStatus] ?? [];
 
+      // ── Closure block: reject if any inventory/stock remains ──────────────
+      if (toStatus === "closed") {
+        const { computeClosureReadiness } = await import("./project_closure");
+        const readiness = await computeClosureReadiness(projectId);
+        if (!readiness.isEligible) {
+          res.status(409).json({
+            error: "Project Closure Blocked Due To Remaining Inventory",
+            code: "INVENTORY_NOT_CLEARED",
+            eligibilityStatus: readiness.eligibilityStatus,
+            blockers: readiness.blockers,
+            readiness,
+          });
+          return;
+        }
+      }
+
       // ── Maturity block: reject transition if any contributions are disputed ──
       if (toStatus === "mature_production") {
         const disputedRows = await db

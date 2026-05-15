@@ -7455,6 +7455,52 @@ export interface StockMovementAudit {
   createdAt: string;
 }
 
+export type ClosureReadinessEligibilityStatus =
+  (typeof ClosureReadinessEligibilityStatus)[keyof typeof ClosureReadinessEligibilityStatus];
+
+export const ClosureReadinessEligibilityStatus = {
+  closure_ready: "closure_ready",
+  blocked_inventory: "blocked_inventory",
+  pending_operational: "pending_operational",
+} as const;
+
+export type ClosureReadinessStockBalancesItem = {
+  stockType: string;
+  netKg: number;
+};
+
+export type ClosureReadinessOpenBatchesItem = {
+  id: string;
+  batchNumber: string;
+  status: string;
+};
+
+export type ClosureReadinessPendingTransfersItem = {
+  id: string;
+  transferCode: string;
+  quantityKg: string;
+  transferStatus: string;
+};
+
+export type ClosureReadinessActiveMemosItem = {
+  id: string;
+  memoCode: string;
+  remainingKg: string;
+  dispatchStatus: string;
+};
+
+export interface ClosureReadiness {
+  projectId: string;
+  eligibilityStatus: ClosureReadinessEligibilityStatus;
+  isEligible: boolean;
+  blockers: string[];
+  stockBalances: ClosureReadinessStockBalancesItem[];
+  openBatches: ClosureReadinessOpenBatchesItem[];
+  pendingTransfers: ClosureReadinessPendingTransfersItem[];
+  activeMemos: ClosureReadinessActiveMemosItem[];
+  checkedAt: string;
+}
+
 export type MultiStoreDashboardProject = {
   id?: string;
   name?: string;

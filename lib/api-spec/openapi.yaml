@@ -1065,6 +1065,32 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
 
 
+  /projects/{id}/closure-readiness:
+    get:
+      operationId: getProjectClosureReadiness
+      summary: Check whether a project is eligible for closure (stock validation)
+      tags: [projects]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Closure readiness report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClosureReadiness"
+        "404":
+          description: Project not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /projects/{id}/closure:
     get:
       operationId: getProjectClosureWorkflow
@@ -17039,6 +17065,57 @@ components:
         performedByName: { type: string }
         remarks: { type: string, nullable: true }
         createdAt: { type: string, format: date-time }
+
+    ClosureReadiness:
+      type: object
+      required: [projectId, eligibilityStatus, isEligible, blockers, stockBalances, openBatches, pendingTransfers, activeMemos, checkedAt]
+      properties:
+        projectId: { type: string }
+        eligibilityStatus:
+          type: string
+          enum: [closure_ready, blocked_inventory, pending_operational]
+        isEligible: { type: boolean }
+        blockers:
+          type: array
+          items: { type: string }
+        stockBalances:
+          type: array
+          items:
+            type: object
+            required: [stockType, netKg]
+            properties:
+              stockType: { type: string }
+              netKg: { type: number }
+        openBatches:
+          type: array
+          items:
+            type: object
+            required: [id, batchNumber, status]
+            properties:
+              id: { type: string }
+              batchNumber: { type: string }
+              status: { type: string }
+        pendingTransfers:
+          type: array
+          items:
+            type: object
+            required: [id, transferCode, quantityKg, transferStatus]
+            properties:
+              id: { type: string }
+              transferCode: { type: string }
+              quantityKg: { type: string }
+              transferStatus: { type: string }
+        activeMemos:
+          type: array
+          items:
+            type: object
+            required: [id, memoCode, remainingKg, dispatchStatus]
+            properties:
+              id: { type: string }
+              memoCode: { type: string }
+              remainingKg: { type: string }
+              dispatchStatus: { type: string }
+        checkedAt: { type: string, format: date-time }
 
     MultiStoreDashboard:
       type: object

@@ -53,6 +53,7 @@ import {
   Info,
   ChevronRight,
 } from "lucide-react";
+import ClosureReadinessPanel from "./ClosureReadinessPanel";
 
 // ── Status badge ────────────────────────────────────────────────────────────
 
@@ -290,6 +291,9 @@ export default function ProjectClosurePage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Closure readiness / inventory validation panel */}
+      <ClosureReadinessPanel projectId={projectId} />
 
       {/* No workflow yet */}
       {!wLoading && !workflow && canManage && (

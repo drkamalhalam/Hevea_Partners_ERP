@@ -74,6 +74,7 @@ import type {
   CarryForwardDistributionRecordBody,
   ClaimantContributionPage,
   ClaimantParticipationPage,
+  ClosureReadiness,
   CompleteStockTransfer200,
   ComputePayableParams,
   ConfirmExpenditureVerificationOtp200,
@@ -4400,6 +4401,95 @@ export const useUpdateMissingDeveloperCase = <
 > => {
   return useMutation(getUpdateMissingDeveloperCaseMutationOptions(options));
 };
+
+/**
+ * @summary Check whether a project is eligible for closure (stock validation)
+ */
+export const getGetProjectClosureReadinessUrl = (id: string) => {
+  return `/api/projects/${id}/closure-readiness`;
+};
+
+export const getProjectClosureReadiness = async (
+  id: string,
+  options?: RequestInit,
+): Promise<ClosureReadiness> => {
+  return customFetch<ClosureReadiness>(getGetProjectClosureReadinessUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetProjectClosureReadinessQueryKey = (id: string) => {
+  return [`/api/projects/${id}/closure-readiness`] as const;
+};
+
+export const getGetProjectClosureReadinessQueryOptions = <
+  TData = Awaited<ReturnType<typeof getProjectClosureReadiness>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getProjectClosureReadiness>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetProjectClosureReadinessQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getProjectClosureReadiness>>
+  > = ({ signal }) =>
+    getProjectClosureReadiness(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getProjectClosureReadiness>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetProjectClosureReadinessQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getProjectClosureReadiness>>
+>;
+export type GetProjectClosureReadinessQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Check whether a project is eligible for closure (stock validation)
+ */
+
+export function useGetProjectClosureReadiness<
+  TData = Awaited<ReturnType<typeof getProjectClosureReadiness>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getProjectClosureReadiness>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetProjectClosureReadinessQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary Get the current closure workflow for a project

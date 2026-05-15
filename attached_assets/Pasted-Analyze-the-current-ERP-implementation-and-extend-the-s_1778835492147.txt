@@ -1,0 +1,239 @@
+Analyze the current ERP implementation and extend the system to support the following ownership, transfer, valuation, stock entitlement, payment, and dispute-handling business rules while preserving all existing working functionality.
+
+IMPORTANT:
+
+Reuse existing structures wherever possible. Avoid duplicate systems/modules/tables. Avoid unnecessary rewrites. Preserve existing workflows that already work correctly. Preserve existing OTP verification and approval workflow. Preserve existing valuation engine unless enhancement is necessary. Preserve existing percentage-based ownership architecture. Preserve existing UI structure as much as possible. Focus on extending business behavior safely and consistently. 
+
+The goal is:
+
+stable long-term ownership accounting, practical plantation operations, auditability, dispute resistance, accurate profit distribution, simple real-world usability. =================================== OWNERSHIP & TRANSFER BUSINESS RULES Ownership remains percentage-based. 
+
+Users should primarily interact with:
+
+ownership percentage, transfer percentage, profit percentage. 
+
+Internally, system should maintain high precision ownership calculations to avoid rounding drift and long-term inconsistencies.
+
+===================================
+
+Ownership percentages must support high precision decimals. 
+
+UI may show rounded values, but backend calculations should preserve precise values.
+
+Purpose:
+
+inheritance splitting, repeated transfers, long-term accounting consistency. 
+
+===================================
+
+Ownership changes must create immutable historical records. 
+
+This includes:
+
+transfers, inheritance, nominee succession, dispute settlements, corrections, dilution, ownership locks. 
+
+Historical records must remain auditable and non-editable after finalization.
+
+===================================
+
+Ownership transfer must support BOTH: 
+
+(A) Transfer by Percentage AND (B) Transfer by Transfer Value
+
+Example:
+
+transfer 10% OR transfer value ₹100000 
+
+System should dynamically calculate equivalent values using the project valuation logic.
+
+===================================
+
+Transfer Value and Payable Amount are different concepts. 
+
+TRANSFER VALUE:
+
+ownership valuation basis, used for ownership percentage calculation. 
+
+PAYABLE AMOUNT:
+
+negotiated settlement/payment amount. 
+
+PAID AMOUNT:
+
+actual amount paid. 
+
+Ownership percentage must always depend on: TRANSFER VALUE
+
+NOT:
+
+payable amount, paid amount, installment amount. 
+
+===================================
+
+Once ownership transfer is finalized through the existing OTP approval workflow: ownership transfer becomes fully effective immediately, ownership rights fully transfer, ownership percentage becomes active immediately. 
+
+Whatever amount is actually paid shall be treated as accepted/final for ownership transfer purposes.
+
+Future payment disputes must NOT automatically:
+
+reverse ownership, recalculate ownership, delete transfer history. 
+
+===================================
+
+System must support transfer effective dates. 
+
+Example: Transfer approved: 15 June
+
+Effective from: 1 July
+
+Rules:
+
+old owner receives economic rights before 1 July, new owner receives rights from 1 July onward. 
+
+This applies to:
+
+rubber production, stock entitlement, profit distribution, sale proceeds. 
+
+===================================
+
+Rubber stock entitlement must support production-period ownership attribution. 
+
+Stored rubber produced before transfer effective date may still economically belong to old owner.
+
+System must support configurable handling of pre-transfer stored stock entitlement.
+
+===================================
+
+During transfer, system must allow: 
+
+(A) Retain pre-transfer stored stock entitlement with previous owner
+
+OR
+
+(B) Transfer pre-transfer stored stock entitlement to new owner.
+
+Example: 50 kg stored before transfer date.
+
+Option A: old owner retains entitlement.
+
+Option B: new owner receives entitlement.
+
+System should track this clearly and auditable.
+
+===================================
+
+Optional advanced support: partial split of old stock entitlement. 
+
+Example: 25 kg retained, 25 kg transferred.
+
+Keep optional and lightweight.
+
+===================================
+
+Physical store location does NOT determine economic ownership. 
+
+Economic entitlement depends on:
+
+production timing, effective ownership date, transfer agreement, entitlement selection. 
+
+===================================
+
+System must track: production date, store entry date, unsold quantity, sold quantity, entitlement owner, transferred entitlement quantity, retained entitlement quantity, settlement history. 
+
+===================================
+
+Transfer validation must prevent: transfer beyond transferable ownership, transfer of locked ownership, transfer of disputed ownership. 
+
+System should support:
+
+transferable ownership, locked ownership, disputed ownership, reserved ownership. 
+
+===================================
+
+Pending transfers should temporarily reserve ownership to prevent double-transfer attempts. 
+
+Example: same ownership portion should not be transferred multiple times simultaneously.
+
+===================================
+
+Profit distribution must use ownership percentages. 
+
+System should support:
+
+high precision calculations, effective dates, historical ownership periods, transfer timing, inheritance timing, stock entitlement separation. 
+
+===================================
+
+During ownership/payment disputes: 
+
+DO NOT freeze entire project profit.
+
+Only the disputed participant’s attributable share should be held.
+
+Project operations must continue normally.
+
+===================================
+
+System should support: held profit, held sale proceeds, held distributions, for disputed ownership portions. 
+
+Held amounts must remain:
+
+traceable, auditable, releasable later. 
+
+===================================
+
+Historical ownership and transfer records must remain preserved during disputes. 
+
+Disputes should NOT automatically:
+
+reverse ownership, erase history, alter past snapshots. 
+
+===================================
+
+System should support: freezing further transfer of disputed ownership, temporarily holding disputed payouts. 
+
+===================================
+
+System should maintain a Held Distribution Ledger. 
+
+Purpose: Track:
+
+held profit, held sale proceeds, dispute-linked amounts, release decisions, settlement history. 
+
+===================================
+
+Transfer and ownership system should support: audit trails, timestamps, approval references, participant confirmations, settlement notes, payment references, proof attachments where applicable. 
+
+===================================
+
+System should preserve historical valuation snapshots used during transfers. 
+
+Future valuation logic changes should not alter old transfer history.
+
+===================================
+
+Dashboard and transfer preview should clearly show relevant information such as: ownership percentage, transferable percentage, transfer value, payable amount, paid amount, outstanding amount, effective date, stock entitlement handling, held distributions where applicable. 
+
+===================================
+
+Existing OTP workflow must remain preserved. 
+
+Current functionality already includes:
+
+transferor OTP verification, receiving party review, receiving party rejection rights. 
+
+Do NOT redesign this workflow. Only integrate new business rules around it.
+
+===================================
+
+Preserve simplicity. 
+
+The ERP is intended for practical long-term plantation partnership operations.
+
+Avoid:
+
+overengineering, unnecessary complexity, blockchain/token systems, excessive workflow fragmentation. 
+
+Focus on:
+
+operational practicality, accounting stability, legal defensibility, user clarity, long-term maintainability. 

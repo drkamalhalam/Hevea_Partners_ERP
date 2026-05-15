@@ -1477,6 +1477,54 @@ export const UpdateMissingDeveloperCaseResponse = zod.object({
 });
 
 /**
+ * @summary Check whether a project is eligible for closure (stock validation)
+ */
+export const GetProjectClosureReadinessParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const GetProjectClosureReadinessResponse = zod.object({
+  projectId: zod.string(),
+  eligibilityStatus: zod.enum([
+    "closure_ready",
+    "blocked_inventory",
+    "pending_operational",
+  ]),
+  isEligible: zod.boolean(),
+  blockers: zod.array(zod.string()),
+  stockBalances: zod.array(
+    zod.object({
+      stockType: zod.string(),
+      netKg: zod.number(),
+    }),
+  ),
+  openBatches: zod.array(
+    zod.object({
+      id: zod.string(),
+      batchNumber: zod.string(),
+      status: zod.string(),
+    }),
+  ),
+  pendingTransfers: zod.array(
+    zod.object({
+      id: zod.string(),
+      transferCode: zod.string(),
+      quantityKg: zod.string(),
+      transferStatus: zod.string(),
+    }),
+  ),
+  activeMemos: zod.array(
+    zod.object({
+      id: zod.string(),
+      memoCode: zod.string(),
+      remainingKg: zod.string(),
+      dispatchStatus: zod.string(),
+    }),
+  ),
+  checkedAt: zod.coerce.date(),
+});
+
+/**
  * @summary Get the current closure workflow for a project
  */
 export const GetProjectClosureWorkflowParams = zod.object({

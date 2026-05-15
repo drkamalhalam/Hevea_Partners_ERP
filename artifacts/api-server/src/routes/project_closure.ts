@@ -6,8 +6,12 @@ import {
   projectLifecycleHistoryTable,
   activityTable,
   usersTable,
+  inventoryStockMovementsTable,
+  productionBatchesTable,
+  stockTransfersTable,
+  dispatchMemosTable,
 } from "@workspace/db";
-import { eq, desc, inArray } from "drizzle-orm";
+import { eq, desc, inArray, and, sql } from "drizzle-orm";
 import {
   InitiateProjectClosureBody,
   UpdateProjectClosureWorkflowBody,
@@ -81,6 +85,114 @@ async function findActiveWorkflow(projectId: string) {
     .limit(10);
   return rows.find((w) => (ACTIVE_STATUSES as readonly string[]).includes(w.status)) ?? null;
 }
+
+// ── Closure Readiness Engine ──────────────────────────────────────────────────
+
+interface StockBalance { stockType: string; netKg: number }
+interface OpenBatch { id: string; batchNumber: string; status: string }
+interface PendingTransfer { id: string; transferCode: string; quantityKg: string; transferStatus: string }
+interface ActiveMemo { id: string; memoCode: string; remainingKg: string; dispatchStatus: string }
+
+export interface ClosureReadiness {
+  projectId: string;
+  eligibilityStatus: "closure_ready" | "blocked_inventory" | "pending_operational";
+  isEligible: boolean;
+  blockers: string[];
+  stockBalances: StockBalance[];
+  openBatches: OpenBatch[];
+  pendingTransfers: PendingTransfer[];
+  activeMemos: ActiveMemo[];
+  checkedAt: string;
+}
+
+export async function computeClosureReadiness(projectId: string): Promise<ClosureReadiness> {
+  const [stockRows, openBatchRows, pendingTransferRows, activeMemoRows] = await Promise.all([
+    db
+      .select({
+        stockType: inventoryStockMovementsTable.stockType,
+        totalIn: sql<number>`COALESCE(SUM(CASE WHEN ${inventoryStockMovementsTable.direction} = 'in' AND ${inventoryStockMovementsTable.status} = 'confirmed' THEN ${inventoryStockMovementsTable.quantity}::numeric ELSE 0 END), 0)`,
+        totalOut: sql<number>`COALESCE(SUM(CASE WHEN ${inventoryStockMovementsTable.direction} = 'out' AND ${inventoryStockMovementsTable.status} = 'confirmed' THEN ${inventoryStockMovementsTable.quantity}::numeric ELSE 0 END), 0)`,
+      })
+      .from(inventoryStockMovementsTable)
+      .where(eq(inventoryStockMovementsTable.projectId, projectId))
+      .groupBy(inventoryStockMovementsTable.stockType),
+
+    db
+      .select({ id: productionBatchesTable.id, batchNumber: productionBatchesTable.batchNumber, status: productionBatchesTable.status })
+      .from(productionBatchesTable)
+      .where(and(eq(productionBatchesTable.projectId, projectId), eq(productionBatchesTable.status, "open"))),
+
+    db
+      .select({ id: stockTransfersTable.id, transferCode: stockTransfersTable.transferCode, quantityKg: stockTransfersTable.quantityKg, transferStatus: stockTransfersTable.transferStatus })
+      .from(stockTransfersTable)
+      .where(and(eq(stockTransfersTable.projectId, projectId), inArray(stockTransfersTable.transferStatus, ["pending", "approved"]))),
+
+    db
+      .select({ id: dispatchMemosTable.id, memoCode: dispatchMemosTable.memoCode, remainingKg: dispatchMemosTable.remainingKg, dispatchStatus: dispatchMemosTable.dispatchStatus })
+      .from(dispatchMemosTable)
+      .where(and(eq(dispatchMemosTable.projectId, projectId), inArray(dispatchMemosTable.dispatchStatus, ["open", "partial"]))),
+  ]);
+
+  const stockBalances: StockBalance[] = stockRows.map((r) => ({
+    stockType: r.stockType,
+    netKg: Number(r.totalIn) - Number(r.totalOut),
+  }));
+
+  const blockers: string[] = [];
+
+  const nonZeroStock = stockBalances.filter((b) => b.netKg > 0.001);
+  for (const b of nonZeroStock) {
+    const label = b.stockType === "latex" ? "Latex" : b.stockType === "rubber_sheet" ? "Rubber Sheet" : b.stockType === "rubber_scrap" ? "Rubber Scrap" : b.stockType;
+    blockers.push(`${label} stock balance: ${b.netKg.toFixed(3)} kg remaining`);
+  }
+  if (openBatchRows.length > 0)
+    blockers.push(`${openBatchRows.length} open production batch${openBatchRows.length > 1 ? "es" : ""} not yet closed`);
+  if (pendingTransferRows.length > 0)
+    blockers.push(`${pendingTransferRows.length} pending stock transfer${pendingTransferRows.length > 1 ? "s" : ""} unresolved`);
+  if (activeMemoRows.length > 0)
+    blockers.push(`${activeMemoRows.length} active dispatch memo${activeMemoRows.length > 1 ? "s" : ""} not completed`);
+
+  const isEligible = blockers.length === 0;
+  const eligibilityStatus: ClosureReadiness["eligibilityStatus"] = isEligible
+    ? "closure_ready"
+    : nonZeroStock.length > 0
+      ? "blocked_inventory"
+      : "pending_operational";
+
+  return {
+    projectId,
+    eligibilityStatus,
+    isEligible,
+    blockers,
+    stockBalances,
+    openBatches: openBatchRows,
+    pendingTransfers: pendingTransferRows.map((t) => ({ ...t, quantityKg: String(t.quantityKg) })),
+    activeMemos: activeMemoRows.map((m) => ({ ...m, remainingKg: String(m.remainingKg) })),
+    checkedAt: new Date().toISOString(),
+  };
+}
+
+// ── GET /:id/closure-readiness — stock validation check ───────────────────
+
+router.get("/:id/closure-readiness", async (req, res) => {
+  const id = req.params.id as string;
+  try {
+    const projects = await db
+      .select({ id: projectsTable.id })
+      .from(projectsTable)
+      .where(eq(projectsTable.id, id))
+      .limit(1);
+    if (!projects.length) {
+      res.status(404).json({ error: "Project not found" });
+      return;
+    }
+    const readiness = await computeClosureReadiness(id);
+    res.json(readiness);
+  } catch (err) {
+    req.log.error({ err }, "Failed to compute closure readiness");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
 
 // ── GET /closure/pending — list all active workflows (admin/developer) ─────
 
@@ -157,6 +269,19 @@ router.post(
       if (existing) {
         res.status(409).json({
           error: "An active closure workflow already exists for this project. Complete or cancel it first.",
+        });
+        return;
+      }
+
+      // ── Inventory clearance check ──────────────────────────────────────────
+      const readiness = await computeClosureReadiness(id);
+      if (!readiness.isEligible) {
+        res.status(409).json({
+          error: "Project Closure Blocked Due To Remaining Inventory",
+          code: "INVENTORY_NOT_CLEARED",
+          eligibilityStatus: readiness.eligibilityStatus,
+          blockers: readiness.blockers,
+          readiness,
         });
         return;
       }
@@ -383,6 +508,19 @@ router.patch(
       }
 
       if (action === "waive") {
+        // ── Inventory clearance check before waive ─────────────────────────
+        const waiveReadiness = await computeClosureReadiness(id);
+        if (!waiveReadiness.isEligible) {
+          res.status(409).json({
+            error: "Project Closure Blocked Due To Remaining Inventory",
+            code: "INVENTORY_NOT_CLEARED",
+            eligibilityStatus: waiveReadiness.eligibilityStatus,
+            blockers: waiveReadiness.blockers,
+            readiness: waiveReadiness,
+          });
+          return;
+        }
+
         // Admin waives landowner acknowledgment → acknowledged + lifecycle → closed
         const [updated] = await db
           .update(projectClosureWorkflowsTable)
