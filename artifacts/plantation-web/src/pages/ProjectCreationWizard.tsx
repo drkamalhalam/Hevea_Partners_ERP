@@ -21,6 +21,7 @@ import {
   useActivateProjectViaOnboarding,
   useSaveProjectOnboardingStep,
   getListProjectsQueryKey,
+  getListOnboardingParticipantsQueryKey,
 } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -228,44 +229,56 @@ function StepParticipantKYC({
   onNext: () => void;
   onBack: () => void;
 }) {
+  const qc = useQueryClient();
   const { data: existingData } = useListOnboardingParticipants(projectId);
   const upsertParticipant = useUpsertOnboardingParticipant();
   const { toast } = useToast();
 
   const existing = existingData?.participants?.find((p) => p.role === role);
+  // Stable id used as effect dependency — avoids resetting form on every re-render
+  const existingId = existing?.id;
 
   const form = useForm<ParticipantValues>({
     resolver: zodResolver(participantSchema),
     defaultValues: {
-      fullName: existing?.fullName ?? "",
-      sOnCOn: existing?.sOnCOn ?? "S/O",
-      fatherGuardianName: existing?.fatherGuardianName ?? "",
-      aadhaarNumber: existing?.aadhaarNumber ?? "",
-      mobile: existing?.mobile ?? "",
-      address: existing?.address ?? "",
-      email: existing?.email ?? "",
+      fullName: "",
+      sOnCOn: "S/O",
+      fatherGuardianName: "",
+      aadhaarNumber: "",
+      mobile: "",
+      address: "",
+      email: "",
     },
   });
 
+  // Populate form once the saved record loads — keyed on the record ID so it
+  // only fires when a genuinely different record arrives, not on every render.
   useEffect(() => {
     if (existing) {
       form.reset({
         fullName: existing.fullName ?? "",
         sOnCOn: existing.sOnCOn ?? "S/O",
-        fatherGuardianName: existing.fatherGuardianName ?? "",
+        fatherGuardianName: (existing as any).fatherGuardianName ?? "",
         aadhaarNumber: existing.aadhaarNumber ?? "",
         mobile: existing.mobile ?? "",
         address: existing.address ?? "",
         email: existing.email ?? "",
       });
     }
-  }, [existing]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [existingId]);
 
   const onSubmit = (values: ParticipantValues) => {
     upsertParticipant.mutate(
       { projectId, role, data: values },
       {
-        onSuccess: onNext,
+        onSuccess: () => {
+          // Bust the participants list cache so Step 8 (Documents) sees fresh data
+          qc.invalidateQueries({
+            queryKey: getListOnboardingParticipantsQueryKey(projectId),
+          });
+          onNext();
+        },
         onError: () => toast({ title: `Failed to save ${roleLabel} details`, variant: "destructive" }),
       }
     );
