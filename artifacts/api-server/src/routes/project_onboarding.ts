@@ -16,8 +16,8 @@ function generateOtp(): string {
   return String(Math.floor(100000 + Math.random() * 900000));
 }
 
-// GET /projects/:id/onboarding/state
-router.get("/projects/:id/onboarding/state", requireRole("admin", "developer", "landowner"), async (req, res) => {
+// GET /:id/onboarding/state
+router.get("/:id/onboarding/state", requireRole("admin", "developer", "landowner"), async (req, res) => {
   const id = String(req.params.id);
 
   const [project] = await db
@@ -85,8 +85,8 @@ router.get("/projects/:id/onboarding/state", requireRole("admin", "developer", "
   });
 });
 
-// POST /projects/:id/onboarding/send-otp
-router.post("/projects/:id/onboarding/send-otp", requireRole("admin", "developer"), async (req, res) => {
+// POST /:id/onboarding/send-otp
+router.post("/:id/onboarding/send-otp", requireRole("admin", "developer"), async (req, res) => {
   const id = String(req.params.id);
   const parsed = z.object({
     role: z.enum(["developer", "landowner"]),
@@ -132,8 +132,8 @@ router.post("/projects/:id/onboarding/send-otp", requireRole("admin", "developer
   });
 });
 
-// POST /projects/:id/onboarding/verify-otp
-router.post("/projects/:id/onboarding/verify-otp", requireRole("admin", "developer", "landowner"), async (req, res) => {
+// POST /:id/onboarding/verify-otp
+router.post("/:id/onboarding/verify-otp", requireRole("admin", "developer", "landowner"), async (req, res) => {
   const id = String(req.params.id);
   const parsed = z.object({
     role: z.enum(["developer", "landowner"]),
@@ -194,8 +194,8 @@ router.post("/projects/:id/onboarding/verify-otp", requireRole("admin", "develop
   res.json({ ok: true, role: parsed.data.role, verifiedAt: new Date() });
 });
 
-// POST /projects/:id/onboarding/activate — final activation after dual OTP
-router.post("/projects/:id/onboarding/activate", requireRole("admin", "developer"), async (req, res) => {
+// POST /:id/onboarding/activate — final activation after dual OTP
+router.post("/:id/onboarding/activate", requireRole("admin", "developer"), async (req, res) => {
   const id = String(req.params.id);
 
   const [project] = await db
@@ -257,8 +257,8 @@ router.post("/projects/:id/onboarding/activate", requireRole("admin", "developer
   res.json({ project: updated });
 });
 
-// PATCH /projects/:id/onboarding/step — advance/save wizard step
-router.patch("/projects/:id/onboarding/step", requireRole("admin", "developer"), async (req, res) => {
+// PATCH /:id/onboarding/step — advance/save wizard step
+router.patch("/:id/onboarding/step", requireRole("admin", "developer"), async (req, res) => {
   const id = String(req.params.id);
   const parsed = z.object({ step: z.number().int().min(1).max(10) }).safeParse(req.body);
   if (!parsed.success) {

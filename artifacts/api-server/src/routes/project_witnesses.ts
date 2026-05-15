@@ -14,8 +14,8 @@ const witnessSchema = z.object({
   aadhaarNumber: z.string().optional(),
 });
 
-// GET /projects/:projectId/witnesses
-router.get("/projects/:projectId/witnesses", requireRole("admin", "developer", "landowner", "investor", "employee", "operational_staff"), async (req, res) => {
+// GET /:projectId/witnesses
+router.get("/:projectId/witnesses", requireRole("admin", "developer", "landowner", "investor", "employee", "operational_staff"), async (req, res) => {
   const projectId = String(req.params.projectId);
   const rows = await db
     .select()
@@ -25,8 +25,8 @@ router.get("/projects/:projectId/witnesses", requireRole("admin", "developer", "
   res.json({ witnesses: rows });
 });
 
-// POST /projects/:projectId/witnesses — add new witness
-router.post("/projects/:projectId/witnesses", requireRole("admin", "developer"), async (req, res) => {
+// POST /:projectId/witnesses — add new witness
+router.post("/:projectId/witnesses", requireRole("admin", "developer"), async (req, res) => {
   const projectId = String(req.params.projectId);
 
   const project = await db
@@ -69,8 +69,8 @@ router.post("/projects/:projectId/witnesses", requireRole("admin", "developer"),
   res.status(201).json({ witness: row });
 });
 
-// PUT /projects/:projectId/witnesses/:position — update by position
-router.put("/projects/:projectId/witnesses/:position", requireRole("admin", "developer"), async (req, res) => {
+// PUT /:projectId/witnesses/:position — update by position
+router.put("/:projectId/witnesses/:position", requireRole("admin", "developer"), async (req, res) => {
   const projectId = String(req.params.projectId);
   const position = parseInt(String(req.params.position), 10);
 
@@ -105,8 +105,8 @@ router.put("/projects/:projectId/witnesses/:position", requireRole("admin", "dev
   res.json({ witness: row });
 });
 
-// DELETE /projects/:projectId/witnesses/:position
-router.delete("/projects/:projectId/witnesses/:position", requireRole("admin", "developer"), async (req, res) => {
+// DELETE /:projectId/witnesses/:position
+router.delete("/:projectId/witnesses/:position", requireRole("admin", "developer"), async (req, res) => {
   const projectId = String(req.params.projectId);
   const position = parseInt(String(req.params.position), 10);
 
