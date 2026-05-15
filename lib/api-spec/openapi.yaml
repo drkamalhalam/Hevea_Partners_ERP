@@ -9457,6 +9457,91 @@ paths:
                 items:
                   $ref: "#/components/schemas/MissingDeveloperCaseItem"
 
+
+  /backup/history:
+    get:
+      summary: List backup and export run history
+      operationId: listBackupHistory
+      tags: [Backup]
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 50
+      responses:
+        '200':
+          description: Backup history
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [runs]
+                properties:
+                  runs:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/BackupRun'
+
+  /backup/export/data:
+    post:
+      summary: Export all ERP data as a downloadable JSON file
+      operationId: exportErpData
+      tags: [Backup]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                notes:
+                  type: string
+      responses:
+        '200':
+          description: JSON export file (attachment)
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /backup/export/documents:
+    post:
+      summary: Export document manifest as a downloadable JSON file
+      operationId: exportDocumentManifest
+      tags: [Backup]
+      responses:
+        '200':
+          description: Document manifest file (attachment)
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /backup/verify:
+    get:
+      summary: Run database integrity verification checks
+      operationId: verifyBackupIntegrity
+      tags: [Backup]
+      responses:
+        '200':
+          description: Integrity check results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IntegrityCheckResult'
+
+  /backup/storage-stats:
+    get:
+      summary: Get document storage statistics
+      operationId: getBackupStorageStats
+      tags: [Backup]
+      responses:
+        '200':
+          description: Storage statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BackupStorageStats'
 components:
   schemas:
 
@@ -16282,3 +16367,122 @@ components:
         nomineeEligibleAt: { type: string }
         isNomineeEligible: { type: boolean }
 
+    BackupRun:
+      type: object
+      required: [id, type, status, startedAt, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [data_export, document_manifest, integrity_check, storage_stats]
+        status:
+          type: string
+          enum: [running, completed, failed]
+        triggeredByName:
+          type: string
+          nullable: true
+        startedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+        durationMs:
+          type: integer
+          nullable: true
+        totalRecords:
+          type: integer
+          nullable: true
+        fileSizeBytes:
+          type: integer
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        errorMessage:
+          type: string
+          nullable: true
+        metadata:
+          type: object
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    IntegrityCheckResult:
+      type: object
+      required: [tableCounts, issues, checksPerformed, issueCount, checkedAt, durationMs]
+      properties:
+        tableCounts:
+          type: object
+          additionalProperties:
+            type: integer
+        issues:
+          type: array
+          items:
+            type: object
+            required: [severity, check, detail]
+            properties:
+              severity:
+                type: string
+                enum: [error, warning, info]
+              check:
+                type: string
+              detail:
+                type: string
+        checksPerformed:
+          type: integer
+        issueCount:
+          type: integer
+        checkedAt:
+          type: string
+          format: date-time
+        durationMs:
+          type: integer
+
+    BackupStorageStats:
+      type: object
+      required: [totalDocuments, activeDocuments, archivedDocuments, deletedDocuments, totalFileSizeBytes, byCategory, byProject, checkedAt]
+      properties:
+        totalDocuments:
+          type: integer
+        activeDocuments:
+          type: integer
+        archivedDocuments:
+          type: integer
+        deletedDocuments:
+          type: integer
+        missingPathDocuments:
+          type: integer
+        totalFileSizeBytes:
+          type: integer
+        activeFileSizeBytes:
+          type: integer
+        byCategory:
+          type: array
+          items:
+            type: object
+            properties:
+              category:
+                type: string
+              count:
+                type: integer
+              totalBytes:
+                type: integer
+        byProject:
+          type: array
+          items:
+            type: object
+            properties:
+              projectName:
+                type: string
+              count:
+                type: integer
+              totalBytes:
+                type: integer
+        checkedAt:
+          type: string
+          format: date-time

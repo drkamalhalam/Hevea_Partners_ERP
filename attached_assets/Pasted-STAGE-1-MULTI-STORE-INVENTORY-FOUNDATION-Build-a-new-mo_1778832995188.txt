@@ -1,0 +1,458 @@
+STAGE 1 — MULTI-STORE INVENTORY FOUNDATION
+
+Build a new module called Multi-Store Inventory & Stock Transfer System.
+
+This must integrate with the existing ERP architecture:
+
+- authentication system
+- role system
+- project access system
+- lifecycle system
+- inventory system
+- production/store entry system
+
+Do NOT rebuild existing modules.
+
+====================================================
+CORE BUSINESS RULE
+====================================================
+
+Physical stock movement must NEVER change:
+
+- project ownership
+- landowner rights
+- developer rights
+- profit rights
+- Lifecycle Contribution Accounting (LCA)
+
+Stock transfer changes ONLY physical location.
+
+====================================================
+CURRENT SITUATION
+====================================================
+
+Currently system supports only project-specific stores.
+
+Now extend system to support:
+
+1. Project Stores
+2. Central Shared Stores
+3. Overflow Stores
+
+Central stores may contain stock from multiple projects simultaneously.
+
+====================================================
+CRITICAL ARCHITECTURE RULE
+====================================================
+
+Separate system into 3 independent layers:
+
+1. Ownership Ledger
+2. Inventory Ledger
+3. Physical Location Ledger
+
+Never combine them.
+
+====================================================
+DATABASE STRUCTURE
+====================================================
+
+Create Store table:
+
+- id
+- store_name
+- store_code
+- store_type
+- address
+- capacity_kg
+- current_occupancy_kg
+- manager_user_id
+- active_status
+- created_at
+- updated_at
+
+Store types:
+
+- project_store
+- central_store
+- overflow_store
+
+====================================================
+CREATE INVENTORY LOCATION TABLE
+====================================================
+
+InventoryLocation
+
+- id
+- project_id
+- store_id
+- quantity_kg
+- zone
+- rack
+- remarks
+- created_at
+- updated_at
+
+Purpose:
+
+Track where stock physically exists.
+
+====================================================
+CREATE OWNERSHIP LEDGER
+====================================================
+
+OwnershipLedger
+
+- id
+- project_id
+- total_quantity_kg
+- reserved_quantity_kg
+- sold_quantity_kg
+- available_quantity_kg
+- updated_at
+
+Ownership ledger must remain independent from stores.
+
+====================================================
+CREATE STOCK TRANSFER TABLE
+====================================================
+
+StockTransfer
+
+- id
+- transfer_code
+- project_id
+- from_store_id
+- to_store_id
+- quantity_kg
+- transfer_reason
+- initiated_by
+- approved_by
+- transfer_status
+- created_at
+- updated_at
+
+====================================================
+CREATE STOCK MOVEMENT AUDIT TABLE
+====================================================
+
+StockMovementAudit
+
+- id
+- project_id
+- action_type
+- source_store
+- destination_store
+- quantity_kg
+- performed_by
+- remarks
+- created_at
+
+No hard deletes.
+
+====================================================
+TRANSFER ENGINE LOGIC
+====================================================
+
+Example:
+
+Project A ownership:
+
+1000kg
+
+Store distribution:
+
+Project Store A = 1000kg
+
+Transfer:
+
+300kg to Central Store
+
+After transfer:
+
+Ownership:
+
+Project A = 1000kg
+
+Store distribution:
+
+Project Store A = 700kg
+Central Store = 300kg
+
+Ownership rights remain unchanged.
+
+====================================================
+VALIDATION RULES
+====================================================
+
+Prevent:
+
+- transferring more than available stock
+- negative inventory
+- capacity overflow
+- invalid stores
+- inactive stores
+
+====================================================
+STORE CAPACITY SYSTEM
+====================================================
+
+Track:
+
+Capacity kg
+Occupied kg
+Remaining kg
+
+Example:
+
+Central Store 1
+
+Capacity:
+10000kg
+
+Occupied:
+7800kg
+
+Remaining:
+2200kg
+
+Prevent transfers exceeding capacity.
+
+Show occupancy percentage.
+
+====================================================
+INTERNAL STORE LOCATION TRACKING
+====================================================
+
+Support internal locations:
+
+- zone
+- rack
+- room
+- floor
+
+Purpose:
+
+Future scalability and retrieval.
+
+Example:
+
+Central Store 1
+Zone A
+Rack 3
+
+====================================================
+TRANSFER SCREEN
+====================================================
+
+Create:
+
+Inventory → Transfer Stock
+
+Fields:
+
+From Store
+To Store
+Quantity kg
+
+Reason dropdown:
+
+- Store full
+- Space optimization
+- Overflow movement
+- Drying requirement
+- Other
+
+Show:
+
+Available stock before transfer.
+
+Show:
+
+Destination remaining capacity.
+
+After successful transfer:
+
+Display transfer ID.
+
+====================================================
+PROJECT INVENTORY DASHBOARD
+====================================================
+
+Display:
+
+Project A
+
+Total ownership:
+1000kg
+
+Storage distribution:
+
+Project Store A:
+300kg
+
+Central Store:
+700kg
+
+Reserved:
+200kg
+
+Available:
+800kg
+
+Pending outside store:
+400 sheets
+
+Ownership totals and physical totals must always reconcile.
+
+====================================================
+BUYER DISPATCH INTEGRATION
+====================================================
+
+Buyer should NEVER manually choose store.
+
+When buyer order approved:
+
+Developer selects dispatch source.
+
+Example:
+
+Available:
+
+Project Store A = 200kg
+Central Store = 600kg
+
+Developer selects source.
+
+Generate pickup memo:
+
+- buyer
+- project
+- store
+- zone
+- rack
+- quantity
+- memo code
+- pickup status
+
+Buyer only sees designated pickup location.
+
+====================================================
+PARTIAL DISPATCH SUPPORT
+====================================================
+
+Support partial dispatch.
+
+Example:
+
+Order:
+1000kg
+
+First pickup:
+300kg
+
+Remaining:
+700kg
+
+Status:
+Partially dispatched
+
+Track:
+
+- ordered quantity
+- dispatched quantity
+- remaining quantity
+
+Prevent dispatch exceeding remaining balance.
+
+====================================================
+RESERVED INVENTORY RULES
+====================================================
+
+Inventory states:
+
+- available
+- reserved
+- dispatched
+- sold
+
+Formula:
+
+Available =
+Total − Reserved − Sold
+
+Reserved inventory must be protected.
+
+====================================================
+TRANSFER + RESERVATION RULE
+====================================================
+
+Prevent accidental dispatch problems.
+
+If inventory reserved for buyer:
+
+Either:
+
+1. prevent transfer
+
+OR
+
+2. automatically update dispatch source
+
+Do not allow pickup memo to point to wrong store.
+
+====================================================
+PROJECT LIFECYCLE RESTRICTIONS
+====================================================
+
+Integrate with existing lifecycle system.
+
+Certain project statuses may restrict:
+
+- transfers
+- sales
+- dispatch
+- reservations
+
+Example:
+
+Closed project should not allow active sales.
+
+Use permission matrix based on project lifecycle status.
+
+====================================================
+AUDIT REQUIREMENTS
+====================================================
+
+Every movement must create audit records.
+
+Track complete chain:
+
+Collection
+Store entry
+Transfer
+Reservation
+Dispatch
+Sale
+
+Never allow silent inventory movement.
+
+====================================================
+UI REQUIREMENTS
+====================================================
+
+Developer/Admin screens:
+
+ERP style dashboard.
+
+Store keeper screens:
+
+Simple and operational.
+
+Use:
+- clear inventory numbers
+- transfer summaries
+- stock alerts
+- capacity indicators
+
+Design scalable architecture for future multi-store expansion.

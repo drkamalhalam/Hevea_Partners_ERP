@@ -86,6 +86,7 @@ import ValuationEngine from "./pages/ValuationEngine";
 import InheritanceClaims from "./pages/InheritanceClaims";
 import NomineeSuccessionDashboard from "./pages/NomineeSuccessionDashboard";
 import PrematuritySuccession from "./pages/PrematuritySuccession";
+import BackupExport from "./pages/BackupExport";
 // Layout
 import NotFound from "@/pages/not-found";
 import Layout from "./components/layout/Layout";
@@ -316,6 +317,7 @@ function AppRoutes() {
               {/* System */}
               <Route path="/admin"><AdminRoute component={Admin} /></Route>
               <Route path="/financial-audit-log"><ProtectedRoute component={FinancialAuditLog} /></Route>
+              <Route path="/backup-export"><AdminRoute component={BackupExport} /></Route>
 
               <Route component={NotFound} />
             </Switch>

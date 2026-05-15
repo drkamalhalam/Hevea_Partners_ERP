@@ -15406,3 +15406,97 @@ export const ListMissingDeveloperCasesResponseItem = zod.object({
 export const ListMissingDeveloperCasesResponse = zod.array(
   ListMissingDeveloperCasesResponseItem,
 );
+
+/**
+ * @summary List backup and export run history
+ */
+export const listBackupHistoryQueryLimitDefault = 50;
+
+export const ListBackupHistoryQueryParams = zod.object({
+  limit: zod.coerce.number().default(listBackupHistoryQueryLimitDefault),
+});
+
+export const ListBackupHistoryResponse = zod.object({
+  runs: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      type: zod.enum([
+        "data_export",
+        "document_manifest",
+        "integrity_check",
+        "storage_stats",
+      ]),
+      status: zod.enum(["running", "completed", "failed"]),
+      triggeredByName: zod.string().nullish(),
+      startedAt: zod.coerce.date(),
+      completedAt: zod.coerce.date().nullish(),
+      durationMs: zod.number().nullish(),
+      totalRecords: zod.number().nullish(),
+      fileSizeBytes: zod.number().nullish(),
+      notes: zod.string().nullish(),
+      errorMessage: zod.string().nullish(),
+      metadata: zod.object({}).passthrough().nullish(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+});
+
+/**
+ * @summary Export all ERP data as a downloadable JSON file
+ */
+export const ExportErpDataBody = zod.object({
+  notes: zod.string().optional(),
+});
+
+export const ExportErpDataResponse = zod.object({}).passthrough();
+
+/**
+ * @summary Export document manifest as a downloadable JSON file
+ */
+export const ExportDocumentManifestResponse = zod.object({}).passthrough();
+
+/**
+ * @summary Run database integrity verification checks
+ */
+export const VerifyBackupIntegrityResponse = zod.object({
+  tableCounts: zod.record(zod.string(), zod.number()),
+  issues: zod.array(
+    zod.object({
+      severity: zod.enum(["error", "warning", "info"]),
+      check: zod.string(),
+      detail: zod.string(),
+    }),
+  ),
+  checksPerformed: zod.number(),
+  issueCount: zod.number(),
+  checkedAt: zod.coerce.date(),
+  durationMs: zod.number(),
+});
+
+/**
+ * @summary Get document storage statistics
+ */
+export const GetBackupStorageStatsResponse = zod.object({
+  totalDocuments: zod.number(),
+  activeDocuments: zod.number(),
+  archivedDocuments: zod.number(),
+  deletedDocuments: zod.number(),
+  missingPathDocuments: zod.number().optional(),
+  totalFileSizeBytes: zod.number(),
+  activeFileSizeBytes: zod.number().optional(),
+  byCategory: zod.array(
+    zod.object({
+      category: zod.string().optional(),
+      count: zod.number().optional(),
+      totalBytes: zod.number().optional(),
+    }),
+  ),
+  byProject: zod.array(
+    zod.object({
+      projectName: zod.string().optional(),
+      count: zod.number().optional(),
+      totalBytes: zod.number().optional(),
+    }),
+  ),
+  checkedAt: zod.coerce.date(),
+});

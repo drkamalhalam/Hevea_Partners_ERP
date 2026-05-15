@@ -7243,6 +7243,93 @@ export interface MissingDeveloperCaseItem {
   isNomineeEligible?: boolean;
 }
 
+export type BackupRunType = (typeof BackupRunType)[keyof typeof BackupRunType];
+
+export const BackupRunType = {
+  data_export: "data_export",
+  document_manifest: "document_manifest",
+  integrity_check: "integrity_check",
+  storage_stats: "storage_stats",
+} as const;
+
+export type BackupRunStatus =
+  (typeof BackupRunStatus)[keyof typeof BackupRunStatus];
+
+export const BackupRunStatus = {
+  running: "running",
+  completed: "completed",
+  failed: "failed",
+} as const;
+
+export type BackupRunMetadata = { [key: string]: unknown } | null;
+
+export interface BackupRun {
+  id: string;
+  type: BackupRunType;
+  status: BackupRunStatus;
+  triggeredByName?: string | null;
+  startedAt: string;
+  completedAt?: string | null;
+  durationMs?: number | null;
+  totalRecords?: number | null;
+  fileSizeBytes?: number | null;
+  notes?: string | null;
+  errorMessage?: string | null;
+  metadata?: BackupRunMetadata;
+  createdAt: string;
+}
+
+export type IntegrityCheckResultTableCounts = { [key: string]: number };
+
+export type IntegrityCheckResultIssuesItemSeverity =
+  (typeof IntegrityCheckResultIssuesItemSeverity)[keyof typeof IntegrityCheckResultIssuesItemSeverity];
+
+export const IntegrityCheckResultIssuesItemSeverity = {
+  error: "error",
+  warning: "warning",
+  info: "info",
+} as const;
+
+export type IntegrityCheckResultIssuesItem = {
+  severity: IntegrityCheckResultIssuesItemSeverity;
+  check: string;
+  detail: string;
+};
+
+export interface IntegrityCheckResult {
+  tableCounts: IntegrityCheckResultTableCounts;
+  issues: IntegrityCheckResultIssuesItem[];
+  checksPerformed: number;
+  issueCount: number;
+  checkedAt: string;
+  durationMs: number;
+}
+
+export type BackupStorageStatsByCategoryItem = {
+  category?: string;
+  count?: number;
+  totalBytes?: number;
+};
+
+export type BackupStorageStatsByProjectItem = {
+  projectName?: string;
+  count?: number;
+  totalBytes?: number;
+};
+
+export interface BackupStorageStats {
+  totalDocuments: number;
+  activeDocuments: number;
+  archivedDocuments: number;
+  deletedDocuments: number;
+  missingPathDocuments?: number;
+  totalFileSizeBytes: number;
+  activeFileSizeBytes?: number;
+  byCategory: BackupStorageStatsByCategoryItem[];
+  byProject: BackupStorageStatsByProjectItem[];
+  checkedAt: string;
+}
+
 export type GetUserActivityParams = {
   limit?: number;
 };
@@ -8896,3 +8983,19 @@ export type DeleteGovernanceResolution200 = {
 export type ListMissingDeveloperCasesParams = {
   includeResolved?: boolean;
 };
+
+export type ListBackupHistoryParams = {
+  limit?: number;
+};
+
+export type ListBackupHistory200 = {
+  runs: BackupRun[];
+};
+
+export type ExportErpDataBody = {
+  notes?: string;
+};
+
+export type ExportErpData200 = { [key: string]: unknown };
+
+export type ExportDocumentManifest200 = { [key: string]: unknown };

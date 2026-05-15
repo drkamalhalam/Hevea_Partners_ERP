@@ -56,6 +56,7 @@ import prematuritySuccessionRouter from "./prematurity_succession";
 import notificationsRouter from "./notifications_route";
 import reportsRouter from "./reports";
 import governanceMeetingsRouter from "./governance_meetings";
+import backupRouter from "./backup";
 import devRouter from "./dev";
 
 const router: IRouter = Router();
@@ -129,5 +130,6 @@ router.use("/prematurity-succession", prematuritySuccessionRouter);
 router.use("/notifications", notificationsRouter);
 router.use("/reports", reportsRouter);
 router.use("/governance-meetings", governanceMeetingsRouter);
+router.use("/backup", backupRouter);
 
 export default router;

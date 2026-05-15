@@ -39,6 +39,7 @@ import {
   Database,
   Gavel,
   UserCheck,
+  HardDriveDownload,
 } from "lucide-react";
 import { useRole, ROLE_LABELS, ROLE_COLORS } from "@/contexts/RoleContext";
 import type { UserRole } from "@/contexts/RoleContext";
@@ -364,6 +365,12 @@ const navGroups: NavGroup[] = [
         href: "/operational-access-log",
         icon: ScanSearch,
         roles: ["admin", "developer"] as UserRole[],
+      },
+      {
+        name: "Backup & Export",
+        href: "/backup-export",
+        icon: HardDriveDownload,
+        roles: ["admin"] as UserRole[],
       },
     ],
   },

@@ -62,3 +62,4 @@ export * from "./inheritance";
 export * from "./inheritance_history";
 export * from "./prematurity_succession";
 export * from "./governance_meetings";
+export * from "./backup";
