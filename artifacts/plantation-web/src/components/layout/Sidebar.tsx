@@ -52,6 +52,7 @@ import {
   Settings,
   Activity,
   History as HistoryIcon,
+  Zap,
 } from "lucide-react";
 import { useRole, ROLE_LABELS, ROLE_COLORS } from "@/contexts/RoleContext";
 import type { UserRole } from "@/contexts/RoleContext";
@@ -407,6 +408,12 @@ const navGroups: NavGroup[] = [
         name: "Snapshot Archive",
         href: "/snapshots",
         icon: HistoryIcon,
+        roles: ["admin", "developer"],
+      },
+      {
+        name: "Audit Investigation",
+        href: "/audit-investigation",
+        icon: Zap,
         roles: ["admin", "developer"],
       },
       {

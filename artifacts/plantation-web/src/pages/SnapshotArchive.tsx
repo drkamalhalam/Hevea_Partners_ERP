@@ -27,7 +27,7 @@ import {
   Database,
   FileText,
   GitCompare,
-  History,
+  History as HistoryIcon,
   Lock,
   Plus,
   RefreshCw,
@@ -674,7 +674,7 @@ export default function SnapshotArchive() {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-start gap-3">
           <div className="p-2 rounded-lg bg-slate-800/80 border border-slate-700/60">
-            <History className="h-6 w-6 text-blue-400" />
+            <HistoryIcon className="h-6 w-6 text-blue-400" />
           </div>
           <div>
             <div className="flex items-center gap-2">
@@ -735,7 +735,7 @@ export default function SnapshotArchive() {
           {[
             { value: "archive", icon: Archive, label: "Archive" },
             { value: "compare", icon: GitCompare, label: "Compare" },
-            { value: "timeline", icon: History, label: "Timeline" },
+            { value: "timeline", icon: HistoryIcon, label: "Timeline" },
             { value: "restore", icon: RotateCcw, label: "Restore Preview" },
           ].map(({ value, icon: Icon, label }) => (
             <TabsTrigger key={value} value={value} className="text-xs data-[state=active]:bg-slate-700 data-[state=active]:text-slate-100">
@@ -990,7 +990,7 @@ export default function SnapshotArchive() {
 
           {!resolvedTimelineEntityId ? (
             <div className="text-center py-10">
-              <History className="h-10 w-10 text-slate-700 mx-auto mb-3" />
+              <HistoryIcon className="h-10 w-10 text-slate-700 mx-auto mb-3" />
               <p className="text-slate-400">Select a snapshot type and entity to view its change history.</p>
             </div>
           ) : timelineQuery.isLoading ? (

@@ -80,6 +80,7 @@ import disputesRouter from "./disputes";
 import evidenceRouter from "./evidence";
 import userActivityRouter from "./user_activity";
 import snapshotsRouter from "./snapshots";
+import auditInvestigationRouter from "./audit_investigation";
 
 const router: IRouter = Router();
 
@@ -175,5 +176,6 @@ router.use("/disputes", disputesRouter);
 router.use("/evidence", evidenceRouter);
 router.use("/user-activity", userActivityRouter);
 router.use("/snapshots", snapshotsRouter);
+router.use("/audit-investigation", auditInvestigationRouter);
 
 export default router;

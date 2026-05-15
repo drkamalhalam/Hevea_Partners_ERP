@@ -74,6 +74,7 @@ import GovernanceAlertCenter from "./pages/GovernanceAlertCenter";
 import GovernanceMonitoringDashboard from "./pages/GovernanceMonitoringDashboard";
 import UserActivityDashboard from "./pages/UserActivityDashboard";
 import SnapshotArchive from "./pages/SnapshotArchive";
+import AuditInvestigation from "./pages/AuditInvestigation";
 import OperationalTasks from "./pages/OperationalTasks";
 import OperationalAlerts from "./pages/OperationalAlerts";
 import OperationalAccessLog from "./pages/OperationalAccessLog";
@@ -367,6 +368,7 @@ function AppRoutes() {
               <Route path="/governance-monitoring"><ProtectedRoute component={GovernanceMonitoringDashboard} /></Route>
               <Route path="/user-activity"><ProtectedRoute component={UserActivityDashboard} /></Route>
               <Route path="/snapshots"><ProtectedRoute component={SnapshotArchive} /></Route>
+              <Route path="/audit-investigation"><ProtectedRoute component={AuditInvestigation} /></Route>
 
               {/* Analytics */}
               <Route path="/financial-analytics"><ProtectedRoute component={FinancialAnalytics} /></Route>
