@@ -37,6 +37,7 @@ import {
 import { eq, and, desc, inArray, asc } from "drizzle-orm";
 import { getAuth } from "@clerk/express";
 import { requireRole } from "../middlewares/auth";
+import { writeOverride, OV } from "../lib/overrideLogger";
 import {
   requireSettlementAccess,
   getProjectScopeFilter,
@@ -696,6 +697,27 @@ router.patch("/:id", requireRole("admin", "developer"), async (req, res) => {
     .returning();
 
   if (!updated) return res.status(404).json({ error: "Valuation run not found" });
+
+  if (d.finalPriceOverride !== undefined && d.finalPriceOverride !== null) {
+    const [projRow] = await db
+      .select({ name: projectsTable.name })
+      .from(projectsTable)
+      .where(eq(projectsTable.id, updated.projectId))
+      .limit(1);
+    void writeOverride(req, {
+      projectId: updated.projectId,
+      overrideType: OV.TRANSFER_PRICE_OVERRIDE,
+      module: "valuations",
+      title: `Transfer price manually overridden`,
+      originalValue: { projectGrossValue: updated.projectGrossValue, shareValue: updated.shareValue, formulaVersion: updated.formulaVersion },
+      finalValue: { finalPriceOverride: d.finalPriceOverride, overrideReason: d.overrideReason },
+      overrideReason: d.overrideReason ?? "Final price override applied",
+      relatedTable: "valuation_runs",
+      relatedRecordId: id,
+      metadata: { projectName: projRow?.name, transferId: updated.transferId, status: updated.status },
+    });
+  }
+
   return res.json({ run: updated });
 });
 

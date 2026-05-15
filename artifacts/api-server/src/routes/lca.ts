@@ -13,6 +13,7 @@ import {
 } from "@workspace/db";
 import { requireRole, requireFinancialRole } from "../middlewares/auth";
 import { logFinancialAccess } from "../lib/financialAudit";
+import { writeOverride, OV } from "../lib/overrideLogger";
 
 const router = Router();
 
@@ -670,6 +671,21 @@ router.patch(
       .from(projectsTable)
       .where(eq(projectsTable.id, updated.projectId))
       .limit(1);
+
+    void writeOverride(req, {
+      projectId: updated.projectId,
+      overrideType: OV.LCA_LEDGER_ADJUSTED,
+      module: "lca",
+      title: newStatus === "waived"
+        ? `LCA ledger entry waived`
+        : `LCA ledger entry manually adjusted (${newStatus})`,
+      originalValue: { grossDue: existing.grossDue, totalDue: existing.totalDue, amountPaid: existing.amountPaid, status: existing.status },
+      finalValue: { amountPaid: updated.amountPaid, balance: updated.balance, status: updated.status },
+      overrideReason: body.notes ?? `LCA ledger adjusted to ${newStatus}`,
+      relatedTable: "lca_ledger",
+      relatedRecordId: String(req.params.id),
+      metadata: { configId: existing.configId, year: existing.year, newStatus },
+    });
 
     return res.json(formatEntry({ ...updated, projectName: projectRow?.name }));
   },

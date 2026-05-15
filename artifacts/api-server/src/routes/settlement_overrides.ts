@@ -24,6 +24,7 @@ import {
 } from "@workspace/db";
 import { eq, and, desc, isNull, or, inArray } from "drizzle-orm";
 import { requireRole } from "../middlewares/auth";
+import { writeOverride, OV } from "../lib/overrideLogger";
 import {
   requireSettlementAccess,
   getProjectScopeFilter,
@@ -460,6 +461,20 @@ router.post("/:id/override", async (req, res) => {
     },
   });
 
+  void writeOverride(req, {
+    projectId: existing.projectId ?? "",
+    overrideType: OV.SETTLEMENT_OVERRIDE,
+    module: "settlement",
+    title: `Settlement amount overridden (override #${newCount})`,
+    description: overrideRemarks,
+    originalValue: { amount: existing.recommendedAmount, status: existing.status, breakdown: existing.recommendedBreakdown },
+    finalValue: { amount: String(actualAmount), status: "overridden", breakdown: actualBreakdown },
+    overrideReason: overrideRemarks,
+    relatedTable: "settlement_records",
+    relatedRecordId: id,
+    metadata: { settlementType: existing.settlementType, periodLabel: existing.periodLabel, overrideNumber: newCount },
+  });
+
   return res.json({ record: updated });
 });
 
@@ -525,6 +540,20 @@ router.post(
         wasOverridden: existing.isOverridden,
         overrideCount: existing.overrideCount,
       },
+    });
+
+    void writeOverride(req, {
+      projectId: existing.projectId ?? "",
+      overrideType: OV.SETTLEMENT_FINALIZED,
+      module: "settlement",
+      title: "Settlement record finalized",
+      description: finalizationNotes ?? null,
+      originalValue: { status: existing.status, actualAmount: existing.actualAmount, wasOverridden: existing.isOverridden, overrideCount: existing.overrideCount },
+      finalValue: { status: "finalized", finalAmount: updated.actualAmount },
+      overrideReason: finalizationNotes ?? "Settlement finalized and locked",
+      relatedTable: "settlement_records",
+      relatedRecordId: id,
+      metadata: { settlementType: existing.settlementType, periodLabel: existing.periodLabel },
     });
 
     return res.json({ record: updated });
@@ -629,6 +658,20 @@ router.post(
       performedByName: user.displayName ?? null,
       performedByRole: user.role,
       remarks,
+    });
+
+    void writeOverride(req, {
+      projectId: existing.projectId ?? "",
+      overrideType: OV.SETTLEMENT_REOPENED,
+      module: "settlement",
+      title: "Finalized settlement reopened by admin",
+      description: remarks,
+      originalValue: { status: "finalized", finalizedAt: existing.finalizedAt, finalizedByName: existing.finalizedByName, actualAmount: existing.actualAmount },
+      finalValue: { status: "overridden" },
+      overrideReason: remarks,
+      relatedTable: "settlement_records",
+      relatedRecordId: id,
+      metadata: { settlementType: existing.settlementType, periodLabel: existing.periodLabel },
     });
 
     return res.json({ record: updated });

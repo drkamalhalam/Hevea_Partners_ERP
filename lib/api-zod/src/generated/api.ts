@@ -18702,3 +18702,177 @@ export const ListGovernanceTimelineResponse = zod.object({
     .optional(),
   total: zod.number().optional(),
 });
+
+/**
+ * @summary Cross-project governance override history (admin/developer only)
+ */
+export const ListGovernanceOverridesQueryParams = zod.object({
+  projectId: zod.coerce.string().optional(),
+  overrideType: zod.coerce.string().optional(),
+  module: zod.coerce.string().optional(),
+  actorId: zod.coerce.string().optional(),
+  from: zod.coerce.string().optional(),
+  to: zod.coerce.string().optional(),
+  limit: zod.coerce.number().optional(),
+  offset: zod.coerce.number().optional(),
+});
+
+export const ListGovernanceOverridesResponse = zod.object({
+  overrides: zod
+    .array(
+      zod.object({
+        id: zod.string().optional(),
+        projectId: zod.string().optional(),
+        projectName: zod.string().nullish(),
+        overrideType: zod.string().optional(),
+        module: zod.string().optional(),
+        title: zod.string().optional(),
+        description: zod.string().nullish(),
+        originalValue: zod.record(zod.string(), zod.unknown()).nullish(),
+        finalValue: zod.record(zod.string(), zod.unknown()).nullish(),
+        overrideReason: zod.string().nullish(),
+        actorId: zod.string().nullish(),
+        actorName: zod.string().nullish(),
+        actorRole: zod.string().nullish(),
+        relatedTable: zod.string().nullish(),
+        relatedRecordId: zod.string().nullish(),
+        supportingDocuments: zod
+          .array(zod.record(zod.string(), zod.unknown()))
+          .nullish(),
+        metadata: zod.record(zod.string(), zod.unknown()).nullish(),
+        occurredAt: zod.string().optional(),
+        createdAt: zod.string().optional(),
+      }),
+    )
+    .optional(),
+  total: zod.number().optional(),
+});
+
+/**
+ * @summary Manually log a governance action or override note (admin/developer only)
+ */
+export const AddGovernanceOverrideBody = zod.object({
+  projectId: zod.string(),
+  overrideType: zod.string(),
+  module: zod.string(),
+  title: zod.string(),
+  description: zod.string().optional(),
+  originalValue: zod.record(zod.string(), zod.unknown()).nullish(),
+  finalValue: zod.record(zod.string(), zod.unknown()).nullish(),
+  overrideReason: zod.string(),
+  relatedTable: zod.string().optional(),
+  relatedRecordId: zod.string().optional(),
+  supportingDocuments: zod
+    .array(zod.record(zod.string(), zod.unknown()))
+    .optional(),
+  metadata: zod.record(zod.string(), zod.unknown()).nullish(),
+  occurredAt: zod.string().optional(),
+});
+
+/**
+ * @summary Aggregate override analytics (counts by type, module, actor, time)
+ */
+export const GetGovernanceOverrideAnalyticsQueryParams = zod.object({
+  projectId: zod.coerce.string().optional(),
+  from: zod.coerce.string().optional(),
+  to: zod.coerce.string().optional(),
+});
+
+export const GetGovernanceOverrideAnalyticsResponse = zod.object({
+  total: zod.number().optional(),
+  byType: zod
+    .array(
+      zod.object({
+        overrideType: zod.string().optional(),
+        count: zod.number().optional(),
+      }),
+    )
+    .optional(),
+  byModule: zod
+    .array(
+      zod.object({
+        module: zod.string().optional(),
+        count: zod.number().optional(),
+      }),
+    )
+    .optional(),
+  byActor: zod
+    .array(
+      zod.object({
+        actorName: zod.string().nullish(),
+        actorRole: zod.string().nullish(),
+        count: zod.number().optional(),
+      }),
+    )
+    .optional(),
+  byMonth: zod
+    .array(
+      zod.object({
+        month: zod.string().optional(),
+        count: zod.number().optional(),
+      }),
+    )
+    .optional(),
+  recentActivity: zod
+    .array(
+      zod.object({
+        id: zod.string().optional(),
+        projectId: zod.string().optional(),
+        projectName: zod.string().nullish(),
+        overrideType: zod.string().optional(),
+        module: zod.string().optional(),
+        title: zod.string().optional(),
+        description: zod.string().nullish(),
+        originalValue: zod.record(zod.string(), zod.unknown()).nullish(),
+        finalValue: zod.record(zod.string(), zod.unknown()).nullish(),
+        overrideReason: zod.string().nullish(),
+        actorId: zod.string().nullish(),
+        actorName: zod.string().nullish(),
+        actorRole: zod.string().nullish(),
+        relatedTable: zod.string().nullish(),
+        relatedRecordId: zod.string().nullish(),
+        supportingDocuments: zod
+          .array(zod.record(zod.string(), zod.unknown()))
+          .nullish(),
+        metadata: zod.record(zod.string(), zod.unknown()).nullish(),
+        occurredAt: zod.string().optional(),
+        createdAt: zod.string().optional(),
+      }),
+    )
+    .optional(),
+});
+
+/**
+ * @summary Single governance override record with full detail
+ */
+export const GetGovernanceOverrideParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const GetGovernanceOverrideResponse = zod.object({
+  override: zod
+    .object({
+      id: zod.string().optional(),
+      projectId: zod.string().optional(),
+      projectName: zod.string().nullish(),
+      overrideType: zod.string().optional(),
+      module: zod.string().optional(),
+      title: zod.string().optional(),
+      description: zod.string().nullish(),
+      originalValue: zod.record(zod.string(), zod.unknown()).nullish(),
+      finalValue: zod.record(zod.string(), zod.unknown()).nullish(),
+      overrideReason: zod.string().nullish(),
+      actorId: zod.string().nullish(),
+      actorName: zod.string().nullish(),
+      actorRole: zod.string().nullish(),
+      relatedTable: zod.string().nullish(),
+      relatedRecordId: zod.string().nullish(),
+      supportingDocuments: zod
+        .array(zod.record(zod.string(), zod.unknown()))
+        .nullish(),
+      metadata: zod.record(zod.string(), zod.unknown()).nullish(),
+      occurredAt: zod.string().optional(),
+      createdAt: zod.string().optional(),
+    })
+    .optional(),
+});

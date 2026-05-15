@@ -11341,8 +11341,164 @@ paths:
                     items: { $ref: '#/components/schemas/ProjectTimelineEvent' }
                   total: { type: integer }
 
+  /governance-overrides:
+    get:
+      operationId: listGovernanceOverrides
+      tags: [governance]
+      summary: Cross-project governance override history (admin/developer only)
+      parameters:
+        - { name: projectId, in: query, schema: { type: string } }
+        - { name: overrideType, in: query, schema: { type: string } }
+        - { name: module, in: query, schema: { type: string } }
+        - { name: actorId, in: query, schema: { type: string } }
+        - { name: from, in: query, schema: { type: string } }
+        - { name: to, in: query, schema: { type: string } }
+        - { name: limit, in: query, schema: { type: integer } }
+        - { name: offset, in: query, schema: { type: integer } }
+      responses:
+        '200':
+          description: Paginated governance override records
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  overrides:
+                    type: array
+                    items: { $ref: '#/components/schemas/GovernanceOverride' }
+                  total: { type: integer }
+    post:
+      operationId: addGovernanceOverride
+      tags: [governance]
+      summary: Manually log a governance action or override note (admin/developer only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [projectId, overrideType, module, title, overrideReason]
+              properties:
+                projectId: { type: string }
+                overrideType: { type: string }
+                module: { type: string }
+                title: { type: string }
+                description: { type: string }
+                originalValue: { type: object, nullable: true, additionalProperties: true }
+                finalValue: { type: object, nullable: true, additionalProperties: true }
+                overrideReason: { type: string }
+                relatedTable: { type: string }
+                relatedRecordId: { type: string }
+                supportingDocuments: { type: array, items: { type: object, additionalProperties: true } }
+                metadata: { type: object, nullable: true, additionalProperties: true }
+                occurredAt: { type: string }
+      responses:
+        '201':
+          description: Override record created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  override: { $ref: '#/components/schemas/GovernanceOverride' }
+
+  /governance-overrides/analytics:
+    get:
+      operationId: getGovernanceOverrideAnalytics
+      tags: [governance]
+      summary: Aggregate override analytics (counts by type, module, actor, time)
+      parameters:
+        - { name: projectId, in: query, schema: { type: string } }
+        - { name: from, in: query, schema: { type: string } }
+        - { name: to, in: query, schema: { type: string } }
+      responses:
+        '200':
+          description: Override analytics aggregates
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GovernanceOverrideAnalytics' }
+
+  /governance-overrides/{id}:
+    get:
+      operationId: getGovernanceOverride
+      tags: [governance]
+      summary: Single governance override record with full detail
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Override record
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  override: { $ref: '#/components/schemas/GovernanceOverride' }
+        '404':
+          description: Not found
+
 components:
   schemas:
+
+    GovernanceOverride:
+      type: object
+      properties:
+        id: { type: string }
+        projectId: { type: string }
+        projectName: { type: string, nullable: true }
+        overrideType: { type: string }
+        module: { type: string }
+        title: { type: string }
+        description: { type: string, nullable: true }
+        originalValue: { type: object, nullable: true, additionalProperties: true }
+        finalValue: { type: object, nullable: true, additionalProperties: true }
+        overrideReason: { type: string, nullable: true }
+        actorId: { type: string, nullable: true }
+        actorName: { type: string, nullable: true }
+        actorRole: { type: string, nullable: true }
+        relatedTable: { type: string, nullable: true }
+        relatedRecordId: { type: string, nullable: true }
+        supportingDocuments: { type: array, nullable: true, items: { type: object, additionalProperties: true } }
+        metadata: { type: object, nullable: true, additionalProperties: true }
+        occurredAt: { type: string }
+        createdAt: { type: string }
+
+    GovernanceOverrideAnalytics:
+      type: object
+      properties:
+        total: { type: integer }
+        byType:
+          type: array
+          items:
+            type: object
+            properties:
+              overrideType: { type: string }
+              count: { type: integer }
+        byModule:
+          type: array
+          items:
+            type: object
+            properties:
+              module: { type: string }
+              count: { type: integer }
+        byActor:
+          type: array
+          items:
+            type: object
+            properties:
+              actorName: { type: string, nullable: true }
+              actorRole: { type: string, nullable: true }
+              count: { type: integer }
+        byMonth:
+          type: array
+          items:
+            type: object
+            properties:
+              month: { type: string }
+              count: { type: integer }
+        recentActivity:
+          type: array
+          items: { $ref: '#/components/schemas/GovernanceOverride' }
 
     AuditLogEntry:
       type: object

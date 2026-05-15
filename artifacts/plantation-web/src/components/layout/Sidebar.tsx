@@ -484,6 +484,12 @@ const navGroups: NavGroup[] = [
         roles: ["admin", "developer"] as UserRole[],
       },
       {
+        name: "Override History",
+        href: "/governance-overrides",
+        icon: GitCompare,
+        roles: ["admin", "developer"] as UserRole[],
+      },
+      {
         name: "Audit Log",
         href: "/audit-log",
         icon: ClipboardList,

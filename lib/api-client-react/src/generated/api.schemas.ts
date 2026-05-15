@@ -5,6 +5,68 @@
  * Rubber Plantation Partnership API
  * OpenAPI spec version: 0.1.0
  */
+export type GovernanceOverrideOriginalValue = { [key: string]: unknown } | null;
+
+export type GovernanceOverrideFinalValue = { [key: string]: unknown } | null;
+
+export type GovernanceOverrideSupportingDocumentsItem = {
+  [key: string]: unknown;
+};
+
+export type GovernanceOverrideMetadata = { [key: string]: unknown } | null;
+
+export interface GovernanceOverride {
+  id?: string;
+  projectId?: string;
+  projectName?: string | null;
+  overrideType?: string;
+  module?: string;
+  title?: string;
+  description?: string | null;
+  originalValue?: GovernanceOverrideOriginalValue;
+  finalValue?: GovernanceOverrideFinalValue;
+  overrideReason?: string | null;
+  actorId?: string | null;
+  actorName?: string | null;
+  actorRole?: string | null;
+  relatedTable?: string | null;
+  relatedRecordId?: string | null;
+  supportingDocuments?: GovernanceOverrideSupportingDocumentsItem[] | null;
+  metadata?: GovernanceOverrideMetadata;
+  occurredAt?: string;
+  createdAt?: string;
+}
+
+export type GovernanceOverrideAnalyticsByTypeItem = {
+  overrideType?: string;
+  count?: number;
+};
+
+export type GovernanceOverrideAnalyticsByModuleItem = {
+  module?: string;
+  count?: number;
+};
+
+export type GovernanceOverrideAnalyticsByActorItem = {
+  actorName?: string | null;
+  actorRole?: string | null;
+  count?: number;
+};
+
+export type GovernanceOverrideAnalyticsByMonthItem = {
+  month?: string;
+  count?: number;
+};
+
+export interface GovernanceOverrideAnalytics {
+  total?: number;
+  byType?: GovernanceOverrideAnalyticsByTypeItem[];
+  byModule?: GovernanceOverrideAnalyticsByModuleItem[];
+  byActor?: GovernanceOverrideAnalyticsByActorItem[];
+  byMonth?: GovernanceOverrideAnalyticsByMonthItem[];
+  recentActivity?: GovernanceOverride[];
+}
+
 export type AuditLogEntryOperation =
   (typeof AuditLogEntryOperation)[keyof typeof AuditLogEntryOperation];
 
@@ -10419,4 +10481,66 @@ export type ListGovernanceTimelineParams = {
 export type ListGovernanceTimeline200 = {
   events?: ProjectTimelineEvent[];
   total?: number;
+};
+
+export type ListGovernanceOverridesParams = {
+  projectId?: string;
+  overrideType?: string;
+  module?: string;
+  actorId?: string;
+  from?: string;
+  to?: string;
+  limit?: number;
+  offset?: number;
+};
+
+export type ListGovernanceOverrides200 = {
+  overrides?: GovernanceOverride[];
+  total?: number;
+};
+
+export type AddGovernanceOverrideBodyOriginalValue = {
+  [key: string]: unknown;
+} | null;
+
+export type AddGovernanceOverrideBodyFinalValue = {
+  [key: string]: unknown;
+} | null;
+
+export type AddGovernanceOverrideBodySupportingDocumentsItem = {
+  [key: string]: unknown;
+};
+
+export type AddGovernanceOverrideBodyMetadata = {
+  [key: string]: unknown;
+} | null;
+
+export type AddGovernanceOverrideBody = {
+  projectId: string;
+  overrideType: string;
+  module: string;
+  title: string;
+  description?: string;
+  originalValue?: AddGovernanceOverrideBodyOriginalValue;
+  finalValue?: AddGovernanceOverrideBodyFinalValue;
+  overrideReason: string;
+  relatedTable?: string;
+  relatedRecordId?: string;
+  supportingDocuments?: AddGovernanceOverrideBodySupportingDocumentsItem[];
+  metadata?: AddGovernanceOverrideBodyMetadata;
+  occurredAt?: string;
+};
+
+export type AddGovernanceOverride201 = {
+  override?: GovernanceOverride;
+};
+
+export type GetGovernanceOverrideAnalyticsParams = {
+  projectId?: string;
+  from?: string;
+  to?: string;
+};
+
+export type GetGovernanceOverride200 = {
+  override?: GovernanceOverride;
 };

@@ -23,6 +23,8 @@ import type {
   AcknowledgeAdvanceBody,
   AcknowledgeClosureBody,
   ActivityItem,
+  AddGovernanceOverride201,
+  AddGovernanceOverrideBody,
   AddParticipantInput,
   AddProjectTimelineEventBody,
   AdvanceSummary,
@@ -253,6 +255,8 @@ import type {
   GetFinancialSummaryParams,
   GetGovernanceAlertsParams,
   GetGovernanceMeeting200,
+  GetGovernanceOverride200,
+  GetGovernanceOverrideAnalyticsParams,
   GetGovernanceTasksParams,
   GetGovernanceTimelineParams,
   GetHeldDistributionSummary200Item,
@@ -313,6 +317,7 @@ import type {
   GovernanceMonitoringAlert,
   GovernanceMonitoringEvent,
   GovernanceMonitoringTask,
+  GovernanceOverrideAnalytics,
   GovernanceSummary,
   HealthStatus,
   HeldDistributionEntry,
@@ -374,6 +379,8 @@ import type {
   ListFinancialAccessLogsParams,
   ListGovernanceMeetings200,
   ListGovernanceMeetingsParams,
+  ListGovernanceOverrides200,
+  ListGovernanceOverridesParams,
   ListGovernanceResolutions200,
   ListGovernanceTimeline200,
   ListGovernanceTimelineParams,
@@ -46980,6 +46987,396 @@ export function useListGovernanceTimeline<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getListGovernanceTimelineQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Cross-project governance override history (admin/developer only)
+ */
+export const getListGovernanceOverridesUrl = (
+  params?: ListGovernanceOverridesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/governance-overrides?${stringifiedParams}`
+    : `/api/governance-overrides`;
+};
+
+export const listGovernanceOverrides = async (
+  params?: ListGovernanceOverridesParams,
+  options?: RequestInit,
+): Promise<ListGovernanceOverrides200> => {
+  return customFetch<ListGovernanceOverrides200>(
+    getListGovernanceOverridesUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListGovernanceOverridesQueryKey = (
+  params?: ListGovernanceOverridesParams,
+) => {
+  return [`/api/governance-overrides`, ...(params ? [params] : [])] as const;
+};
+
+export const getListGovernanceOverridesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listGovernanceOverrides>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListGovernanceOverridesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listGovernanceOverrides>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListGovernanceOverridesQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listGovernanceOverrides>>
+  > = ({ signal }) =>
+    listGovernanceOverrides(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listGovernanceOverrides>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListGovernanceOverridesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listGovernanceOverrides>>
+>;
+export type ListGovernanceOverridesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Cross-project governance override history (admin/developer only)
+ */
+
+export function useListGovernanceOverrides<
+  TData = Awaited<ReturnType<typeof listGovernanceOverrides>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListGovernanceOverridesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listGovernanceOverrides>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListGovernanceOverridesQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Manually log a governance action or override note (admin/developer only)
+ */
+export const getAddGovernanceOverrideUrl = () => {
+  return `/api/governance-overrides`;
+};
+
+export const addGovernanceOverride = async (
+  addGovernanceOverrideBody: AddGovernanceOverrideBody,
+  options?: RequestInit,
+): Promise<AddGovernanceOverride201> => {
+  return customFetch<AddGovernanceOverride201>(getAddGovernanceOverrideUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(addGovernanceOverrideBody),
+  });
+};
+
+export const getAddGovernanceOverrideMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof addGovernanceOverride>>,
+    TError,
+    { data: BodyType<AddGovernanceOverrideBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof addGovernanceOverride>>,
+  TError,
+  { data: BodyType<AddGovernanceOverrideBody> },
+  TContext
+> => {
+  const mutationKey = ["addGovernanceOverride"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof addGovernanceOverride>>,
+    { data: BodyType<AddGovernanceOverrideBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return addGovernanceOverride(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AddGovernanceOverrideMutationResult = NonNullable<
+  Awaited<ReturnType<typeof addGovernanceOverride>>
+>;
+export type AddGovernanceOverrideMutationBody =
+  BodyType<AddGovernanceOverrideBody>;
+export type AddGovernanceOverrideMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Manually log a governance action or override note (admin/developer only)
+ */
+export const useAddGovernanceOverride = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof addGovernanceOverride>>,
+    TError,
+    { data: BodyType<AddGovernanceOverrideBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof addGovernanceOverride>>,
+  TError,
+  { data: BodyType<AddGovernanceOverrideBody> },
+  TContext
+> => {
+  return useMutation(getAddGovernanceOverrideMutationOptions(options));
+};
+
+/**
+ * @summary Aggregate override analytics (counts by type, module, actor, time)
+ */
+export const getGetGovernanceOverrideAnalyticsUrl = (
+  params?: GetGovernanceOverrideAnalyticsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/governance-overrides/analytics?${stringifiedParams}`
+    : `/api/governance-overrides/analytics`;
+};
+
+export const getGovernanceOverrideAnalytics = async (
+  params?: GetGovernanceOverrideAnalyticsParams,
+  options?: RequestInit,
+): Promise<GovernanceOverrideAnalytics> => {
+  return customFetch<GovernanceOverrideAnalytics>(
+    getGetGovernanceOverrideAnalyticsUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetGovernanceOverrideAnalyticsQueryKey = (
+  params?: GetGovernanceOverrideAnalyticsParams,
+) => {
+  return [
+    `/api/governance-overrides/analytics`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetGovernanceOverrideAnalyticsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getGovernanceOverrideAnalytics>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetGovernanceOverrideAnalyticsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getGovernanceOverrideAnalytics>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetGovernanceOverrideAnalyticsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getGovernanceOverrideAnalytics>>
+  > = ({ signal }) =>
+    getGovernanceOverrideAnalytics(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getGovernanceOverrideAnalytics>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetGovernanceOverrideAnalyticsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getGovernanceOverrideAnalytics>>
+>;
+export type GetGovernanceOverrideAnalyticsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Aggregate override analytics (counts by type, module, actor, time)
+ */
+
+export function useGetGovernanceOverrideAnalytics<
+  TData = Awaited<ReturnType<typeof getGovernanceOverrideAnalytics>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetGovernanceOverrideAnalyticsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getGovernanceOverrideAnalytics>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetGovernanceOverrideAnalyticsQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Single governance override record with full detail
+ */
+export const getGetGovernanceOverrideUrl = (id: string) => {
+  return `/api/governance-overrides/${id}`;
+};
+
+export const getGovernanceOverride = async (
+  id: string,
+  options?: RequestInit,
+): Promise<GetGovernanceOverride200> => {
+  return customFetch<GetGovernanceOverride200>(
+    getGetGovernanceOverrideUrl(id),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetGovernanceOverrideQueryKey = (id: string) => {
+  return [`/api/governance-overrides/${id}`] as const;
+};
+
+export const getGetGovernanceOverrideQueryOptions = <
+  TData = Awaited<ReturnType<typeof getGovernanceOverride>>,
+  TError = ErrorType<void>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getGovernanceOverride>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetGovernanceOverrideQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getGovernanceOverride>>
+  > = ({ signal }) => getGovernanceOverride(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getGovernanceOverride>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetGovernanceOverrideQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getGovernanceOverride>>
+>;
+export type GetGovernanceOverrideQueryError = ErrorType<void>;
+
+/**
+ * @summary Single governance override record with full detail
+ */
+
+export function useGetGovernanceOverride<
+  TData = Awaited<ReturnType<typeof getGovernanceOverride>>,
+  TError = ErrorType<void>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getGovernanceOverride>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetGovernanceOverrideQueryOptions(id, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

@@ -13,6 +13,7 @@ import {
 import { requireRole } from "../middlewares/auth";
 import { writeAudit } from "../lib/auditLogger";
 import { writeTimeline, TL } from "../lib/timelineLogger";
+import { writeOverride, OV } from "../lib/overrideLogger";
 
 const router = Router();
 
@@ -1257,6 +1258,21 @@ router.post(
       oldData: { verificationStatus: "disputed" },
       newData: { verificationStatus: newStatus, action: b.action },
       actor: { id: actor.id, name: actor.name, role: actor.role },
+    });
+
+    void writeOverride(req, {
+      projectId: updated.projectId,
+      overrideType: b.action === "re_verify" ? OV.CONTRIBUTION_DISPUTE_RESOLVED : OV.CONTRIBUTION_DISPUTE_REJECTED,
+      module: "contributions",
+      title: b.action === "re_verify"
+        ? "Contribution dispute resolved — re-verified"
+        : "Contribution dispute resolved — rejected",
+      originalValue: { verificationStatus: "disputed", amount: existing[0].amount, contributionType: existing[0].contributionType },
+      finalValue: { verificationStatus: newStatus, action: b.action, verifierNotes: typeof b.notes === "string" ? b.notes : null },
+      overrideReason: typeof b.notes === "string" ? b.notes : `Admin resolved dispute via ${b.action}`,
+      relatedTable: "contributions",
+      relatedRecordId: id,
+      metadata: { action: b.action, eventType },
     });
 
     const projectRows = await db.select({ name: projectsTable.name }).from(projectsTable).where(eq(projectsTable.id, updated.projectId)).limit(1);
