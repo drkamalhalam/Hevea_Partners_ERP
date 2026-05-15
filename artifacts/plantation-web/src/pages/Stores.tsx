@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import Layout from "@/components/layout/Layout";
+
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -199,8 +199,7 @@ export default function Stores() {
   const totalOccupancy = activeStores.reduce((s, st) => s + parseFloat(st.currentOccupancyKg || "0"), 0);
 
   return (
-    <Layout>
-      <div className="p-6 space-y-6 max-w-7xl">
+    <div className="p-6 space-y-6 max-w-7xl">
         {/* Header */}
         <div className="flex items-start justify-between">
           <div>
@@ -484,7 +483,6 @@ export default function Stores() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </div>
-    </Layout>
+    </div>
   );
 }

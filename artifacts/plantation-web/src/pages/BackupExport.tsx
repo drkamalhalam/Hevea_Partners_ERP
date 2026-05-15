@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import Layout from "@/components/layout/Layout";
+
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -288,8 +288,7 @@ export default function BackupExport() {
   // ── Render ─────────────────────────────────────────────────────────────
 
   return (
-    <Layout>
-      <div className="p-6 space-y-6 max-w-6xl">
+    <div className="p-6 space-y-6 max-w-6xl">
         {/* Page header */}
         <div className="flex items-start justify-between">
           <div>
@@ -889,7 +888,6 @@ export default function BackupExport() {
             </Card>
           </TabsContent>
         </Tabs>
-      </div>
-    </Layout>
+    </div>
   );
 }
