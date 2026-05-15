@@ -180,6 +180,12 @@ const navGroups: NavGroup[] = [
         roles: ["admin", "developer"] as UserRole[],
       },
       {
+        name: "Continuity Dashboard",
+        href: "/ownership-continuity",
+        icon: Layers,
+        roles: ["admin", "developer"] as UserRole[],
+      },
+      {
         name: "Inheritance Claims",
         href: "/inheritance-claims",
         icon: Gavel,

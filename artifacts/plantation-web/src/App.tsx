@@ -100,6 +100,7 @@ import EmployeeAssignments from "./pages/EmployeeAssignments";
 import InheritanceClaims from "./pages/InheritanceClaims";
 import NomineeSuccessionDashboard from "./pages/NomineeSuccessionDashboard";
 import PrematuritySuccession from "./pages/PrematuritySuccession";
+import OwnershipContinuityDashboard from "./pages/OwnershipContinuityDashboard";
 import BackupExport from "./pages/BackupExport";
 
 // Pages — Multi-Store
@@ -331,6 +332,7 @@ function AppRoutes() {
               <Route path="/inheritance-claims"><ProtectedRoute component={InheritanceClaims} /></Route>
               <Route path="/nominee-succession"><ProtectedRoute component={NomineeSuccessionDashboard} /></Route>
               <Route path="/prematurity-succession"><ProtectedRoute component={PrematuritySuccession} /></Route>
+              <Route path="/ownership-continuity"><ProtectedRoute component={OwnershipContinuityDashboard} /></Route>
               <Route path="/sales"><ProtectedRoute component={Sales} /></Route>
               <Route path="/distribution"><ProtectedRoute component={Distribution} /></Route>
               {/* Sales Orders v2 — Payment Workflow */}
