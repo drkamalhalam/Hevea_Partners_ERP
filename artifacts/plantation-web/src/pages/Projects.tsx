@@ -26,6 +26,7 @@ const statusColors: Record<string, string> = {
   maturing: "bg-emerald-100 text-emerald-800 border-emerald-200",
   tapping: "bg-green-100 text-green-800 border-green-200",
   completed: "bg-gray-100 text-gray-800 border-gray-200",
+  suspended: "bg-red-100 text-red-800 border-red-200",
 };
 
 const formSchema = z.object({
@@ -38,7 +39,7 @@ const formSchema = z.object({
   landAreaUnit: z.string().min(1),
   landNotionalValue: z.coerce.number().optional(),
   landValuePerUnit: z.coerce.number().optional(),
-  status: z.enum(["planning", "developing", "maturing", "tapping", "completed"]),
+  status: z.enum(["planning", "developing", "maturing", "tapping", "completed", "suspended"]),
   startDate: z.string().min(1, "Start date required"),
   expectedMaturityDate: z.string().optional(),
   termYears: z.coerce.number().int().positive(),
@@ -65,7 +66,11 @@ export default function Projects() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "", location: "", village: "", district: "", state: "Tripura",
-      landArea: 0, landAreaUnit: "kani", status: "planning", startDate: "",
+      landArea: 0, landAreaUnit: "kani",
+      landNotionalValue: undefined,
+      landValuePerUnit: undefined,
+      status: "planning" as const,
+      startDate: "", expectedMaturityDate: "",
       termYears: 35, notes: "",
     },
   });
@@ -158,7 +163,7 @@ export default function Projects() {
                   <FormField control={form.control} name="landAreaUnit" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Unit</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl><SelectTrigger data-testid="select-land-unit"><SelectValue /></SelectTrigger></FormControl>
                         <SelectContent>
                           <SelectItem value="kani">Kani</SelectItem>
@@ -172,7 +177,7 @@ export default function Projects() {
                   <FormField control={form.control} name="status" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Status</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl><SelectTrigger data-testid="select-status"><SelectValue /></SelectTrigger></FormControl>
                         <SelectContent>
                           <SelectItem value="planning">Planning</SelectItem>
@@ -180,6 +185,7 @@ export default function Projects() {
                           <SelectItem value="maturing">Maturing</SelectItem>
                           <SelectItem value="tapping">Tapping</SelectItem>
                           <SelectItem value="completed">Completed</SelectItem>
+                          <SelectItem value="suspended">Suspended</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
