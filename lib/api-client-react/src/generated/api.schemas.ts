@@ -132,6 +132,81 @@ export interface DisputePendingSummary {
   urgent?: Dispute[];
 }
 
+export type EvidenceArchiveMetadata = { [key: string]: unknown } | null;
+
+export interface EvidenceArchive {
+  id?: string;
+  projectId?: string | null;
+  projectName?: string | null;
+  documentType?: string;
+  title?: string;
+  description?: string | null;
+  tags?: string[] | null;
+  versionNumber?: number;
+  parentArchiveId?: string | null;
+  isLatestVersion?: boolean;
+  fileObjectPath?: string | null;
+  externalUrl?: string | null;
+  originalFileName?: string | null;
+  fileSizeBytes?: number | null;
+  mimeType?: string | null;
+  checksum?: string | null;
+  relatedTable?: string | null;
+  relatedRecordId?: string | null;
+  documentDate?: string | null;
+  issuingAuthority?: string | null;
+  referenceNumber?: string | null;
+  uploadedById?: string | null;
+  uploadedByName?: string | null;
+  uploadedByRole?: string | null;
+  archiveStatus?: string;
+  metadata?: EvidenceArchiveMetadata;
+  accessCount?: number | null;
+  archivedAt?: string;
+  createdAt?: string;
+}
+
+export interface EvidenceAccessLog {
+  id?: string;
+  evidenceId?: string;
+  projectId?: string | null;
+  documentType?: string | null;
+  documentTitle?: string | null;
+  accessType?: string;
+  actorId?: string | null;
+  actorName?: string | null;
+  actorRole?: string | null;
+  ipAddress?: string | null;
+  userAgent?: string | null;
+  accessedAt?: string;
+}
+
+export type EvidenceStatsByTypeItem = {
+  documentType?: string;
+  count?: number;
+};
+
+export type EvidenceStatsByProjectItem = {
+  projectId?: string;
+  projectName?: string;
+  count?: number;
+};
+
+export type EvidenceStatsByStatusItem = {
+  archiveStatus?: string;
+  count?: number;
+};
+
+export interface EvidenceStats {
+  total?: number;
+  latestVersionCount?: number;
+  totalAccessEvents?: number;
+  byType?: EvidenceStatsByTypeItem[];
+  byProject?: EvidenceStatsByProjectItem[];
+  byStatus?: EvidenceStatsByStatusItem[];
+  recentlyArchived?: EvidenceArchive[];
+}
+
 export type AuditLogEntryOperation =
   (typeof AuditLogEntryOperation)[keyof typeof AuditLogEntryOperation];
 
@@ -10664,4 +10739,87 @@ export type AddDisputeEventBody = {
 export type AddDisputeEvent200 = {
   dispute?: Dispute;
   event?: DisputeResolutionEvent;
+};
+
+export type ListEvidenceParams = {
+  projectId?: string;
+  documentType?: string;
+  archiveStatus?: string;
+  search?: string;
+  onlyLatest?: string;
+  limit?: number;
+  offset?: number;
+};
+
+export type ListEvidence200 = {
+  evidence?: EvidenceArchive[];
+  total?: number;
+};
+
+export type CreateEvidenceBodyMetadata = { [key: string]: unknown } | null;
+
+export type CreateEvidenceBody = {
+  projectId?: string | null;
+  documentType: string;
+  title: string;
+  description?: string | null;
+  tags?: string[] | null;
+  fileObjectPath?: string | null;
+  externalUrl?: string | null;
+  originalFileName?: string | null;
+  fileSizeBytes?: number | null;
+  mimeType?: string | null;
+  checksum?: string | null;
+  relatedTable?: string | null;
+  relatedRecordId?: string | null;
+  documentDate?: string | null;
+  issuingAuthority?: string | null;
+  referenceNumber?: string | null;
+  metadata?: CreateEvidenceBodyMetadata;
+};
+
+export type CreateEvidence201 = {
+  evidence?: EvidenceArchive;
+};
+
+export type GetEvidenceStatsParams = {
+  projectId?: string;
+};
+
+export type GetEvidence200 = {
+  evidence?: EvidenceArchive;
+  versionHistory?: EvidenceArchive[];
+  accessLog?: EvidenceAccessLog[];
+};
+
+export type AddEvidenceVersionBodyMetadata = { [key: string]: unknown } | null;
+
+export type AddEvidenceVersionBody = {
+  documentType: string;
+  title: string;
+  description?: string | null;
+  fileObjectPath?: string | null;
+  externalUrl?: string | null;
+  originalFileName?: string | null;
+  fileSizeBytes?: number | null;
+  mimeType?: string | null;
+  checksum?: string | null;
+  issuingAuthority?: string | null;
+  referenceNumber?: string | null;
+  documentDate?: string | null;
+  metadata?: AddEvidenceVersionBodyMetadata;
+};
+
+export type AddEvidenceVersion201 = {
+  evidence?: EvidenceArchive;
+  superseded?: EvidenceArchive;
+};
+
+export type UpdateEvidenceStatusBody = {
+  archiveStatus: string;
+  reason?: string;
+};
+
+export type UpdateEvidenceStatus200 = {
+  evidence?: EvidenceArchive;
 };

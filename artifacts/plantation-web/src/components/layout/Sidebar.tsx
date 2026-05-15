@@ -497,6 +497,12 @@ const navGroups: NavGroup[] = [
         roles: ["admin", "developer"] as UserRole[],
       },
       {
+        name: "Evidence Archive",
+        href: "/evidence-archive",
+        icon: ShieldCheck,
+        roles: ["admin", "developer"] as UserRole[],
+      },
+      {
         name: "Audit Log",
         href: "/audit-log",
         icon: ClipboardList,

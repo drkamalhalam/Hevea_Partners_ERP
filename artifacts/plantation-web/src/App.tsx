@@ -50,6 +50,7 @@ import AuditLog from "./pages/AuditLog";
 import GovernanceTimeline from "./pages/GovernanceTimeline";
 import GovernanceOverrides from "./pages/GovernanceOverrides";
 import DisputeDashboard from "./pages/DisputeDashboard";
+import EvidenceArchive from "./pages/EvidenceArchive";
 import FinancialAnalytics from "./pages/FinancialAnalytics";
 import TemplateLibrary from "./pages/TemplateLibrary";
 
@@ -377,6 +378,7 @@ function AppRoutes() {
               <Route path="/governance-timeline"><ProtectedRoute component={GovernanceTimeline} /></Route>
               <Route path="/governance-overrides"><ProtectedRoute component={GovernanceOverrides} /></Route>
               <Route path="/disputes"><ProtectedRoute component={DisputeDashboard} /></Route>
+              <Route path="/evidence-archive"><ProtectedRoute component={EvidenceArchive} /></Route>
               <Route path="/financial-audit-log"><ProtectedRoute component={FinancialAuditLog} /></Route>
               <Route path="/backup-export"><AdminRoute component={BackupExport} /></Route>
 

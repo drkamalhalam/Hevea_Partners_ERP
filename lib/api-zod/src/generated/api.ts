@@ -19118,3 +19118,325 @@ export const AddDisputeEventResponse = zod.object({
     })
     .optional(),
 });
+
+/**
+ * @summary Search and list evidence archive records
+ */
+export const ListEvidenceQueryParams = zod.object({
+  projectId: zod.coerce.string().optional(),
+  documentType: zod.coerce.string().optional(),
+  archiveStatus: zod.coerce.string().optional(),
+  search: zod.coerce.string().optional(),
+  onlyLatest: zod.coerce.string().optional(),
+  limit: zod.coerce.number().optional(),
+  offset: zod.coerce.number().optional(),
+});
+
+export const ListEvidenceResponse = zod.object({
+  evidence: zod
+    .array(
+      zod.object({
+        id: zod.string().optional(),
+        projectId: zod.string().nullish(),
+        projectName: zod.string().nullish(),
+        documentType: zod.string().optional(),
+        title: zod.string().optional(),
+        description: zod.string().nullish(),
+        tags: zod.array(zod.string()).nullish(),
+        versionNumber: zod.number().optional(),
+        parentArchiveId: zod.string().nullish(),
+        isLatestVersion: zod.boolean().optional(),
+        fileObjectPath: zod.string().nullish(),
+        externalUrl: zod.string().nullish(),
+        originalFileName: zod.string().nullish(),
+        fileSizeBytes: zod.number().nullish(),
+        mimeType: zod.string().nullish(),
+        checksum: zod.string().nullish(),
+        relatedTable: zod.string().nullish(),
+        relatedRecordId: zod.string().nullish(),
+        documentDate: zod.string().nullish(),
+        issuingAuthority: zod.string().nullish(),
+        referenceNumber: zod.string().nullish(),
+        uploadedById: zod.string().nullish(),
+        uploadedByName: zod.string().nullish(),
+        uploadedByRole: zod.string().nullish(),
+        archiveStatus: zod.string().optional(),
+        metadata: zod.record(zod.string(), zod.unknown()).nullish(),
+        accessCount: zod.number().nullish(),
+        archivedAt: zod.string().optional(),
+        createdAt: zod.string().optional(),
+      }),
+    )
+    .optional(),
+  total: zod.number().optional(),
+});
+
+/**
+ * @summary Archive a new legal document evidence record
+ */
+export const CreateEvidenceBody = zod.object({
+  projectId: zod.string().nullish(),
+  documentType: zod.string(),
+  title: zod.string(),
+  description: zod.string().nullish(),
+  tags: zod.array(zod.string()).nullish(),
+  fileObjectPath: zod.string().nullish(),
+  externalUrl: zod.string().nullish(),
+  originalFileName: zod.string().nullish(),
+  fileSizeBytes: zod.number().nullish(),
+  mimeType: zod.string().nullish(),
+  checksum: zod.string().nullish(),
+  relatedTable: zod.string().nullish(),
+  relatedRecordId: zod.string().nullish(),
+  documentDate: zod.string().nullish(),
+  issuingAuthority: zod.string().nullish(),
+  referenceNumber: zod.string().nullish(),
+  metadata: zod.record(zod.string(), zod.unknown()).nullish(),
+});
+
+/**
+ * @summary Evidence archive statistics and counts
+ */
+export const GetEvidenceStatsQueryParams = zod.object({
+  projectId: zod.coerce.string().optional(),
+});
+
+export const GetEvidenceStatsResponse = zod.object({
+  total: zod.number().optional(),
+  latestVersionCount: zod.number().optional(),
+  totalAccessEvents: zod.number().optional(),
+  byType: zod
+    .array(
+      zod.object({
+        documentType: zod.string().optional(),
+        count: zod.number().optional(),
+      }),
+    )
+    .optional(),
+  byProject: zod
+    .array(
+      zod.object({
+        projectId: zod.string().optional(),
+        projectName: zod.string().optional(),
+        count: zod.number().optional(),
+      }),
+    )
+    .optional(),
+  byStatus: zod
+    .array(
+      zod.object({
+        archiveStatus: zod.string().optional(),
+        count: zod.number().optional(),
+      }),
+    )
+    .optional(),
+  recentlyArchived: zod
+    .array(
+      zod.object({
+        id: zod.string().optional(),
+        projectId: zod.string().nullish(),
+        projectName: zod.string().nullish(),
+        documentType: zod.string().optional(),
+        title: zod.string().optional(),
+        description: zod.string().nullish(),
+        tags: zod.array(zod.string()).nullish(),
+        versionNumber: zod.number().optional(),
+        parentArchiveId: zod.string().nullish(),
+        isLatestVersion: zod.boolean().optional(),
+        fileObjectPath: zod.string().nullish(),
+        externalUrl: zod.string().nullish(),
+        originalFileName: zod.string().nullish(),
+        fileSizeBytes: zod.number().nullish(),
+        mimeType: zod.string().nullish(),
+        checksum: zod.string().nullish(),
+        relatedTable: zod.string().nullish(),
+        relatedRecordId: zod.string().nullish(),
+        documentDate: zod.string().nullish(),
+        issuingAuthority: zod.string().nullish(),
+        referenceNumber: zod.string().nullish(),
+        uploadedById: zod.string().nullish(),
+        uploadedByName: zod.string().nullish(),
+        uploadedByRole: zod.string().nullish(),
+        archiveStatus: zod.string().optional(),
+        metadata: zod.record(zod.string(), zod.unknown()).nullish(),
+        accessCount: zod.number().nullish(),
+        archivedAt: zod.string().optional(),
+        createdAt: zod.string().optional(),
+      }),
+    )
+    .optional(),
+});
+
+/**
+ * @summary Single evidence record with version history and access log
+ */
+export const GetEvidenceParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const GetEvidenceResponse = zod.object({
+  evidence: zod
+    .object({
+      id: zod.string().optional(),
+      projectId: zod.string().nullish(),
+      projectName: zod.string().nullish(),
+      documentType: zod.string().optional(),
+      title: zod.string().optional(),
+      description: zod.string().nullish(),
+      tags: zod.array(zod.string()).nullish(),
+      versionNumber: zod.number().optional(),
+      parentArchiveId: zod.string().nullish(),
+      isLatestVersion: zod.boolean().optional(),
+      fileObjectPath: zod.string().nullish(),
+      externalUrl: zod.string().nullish(),
+      originalFileName: zod.string().nullish(),
+      fileSizeBytes: zod.number().nullish(),
+      mimeType: zod.string().nullish(),
+      checksum: zod.string().nullish(),
+      relatedTable: zod.string().nullish(),
+      relatedRecordId: zod.string().nullish(),
+      documentDate: zod.string().nullish(),
+      issuingAuthority: zod.string().nullish(),
+      referenceNumber: zod.string().nullish(),
+      uploadedById: zod.string().nullish(),
+      uploadedByName: zod.string().nullish(),
+      uploadedByRole: zod.string().nullish(),
+      archiveStatus: zod.string().optional(),
+      metadata: zod.record(zod.string(), zod.unknown()).nullish(),
+      accessCount: zod.number().nullish(),
+      archivedAt: zod.string().optional(),
+      createdAt: zod.string().optional(),
+    })
+    .optional(),
+  versionHistory: zod
+    .array(
+      zod.object({
+        id: zod.string().optional(),
+        projectId: zod.string().nullish(),
+        projectName: zod.string().nullish(),
+        documentType: zod.string().optional(),
+        title: zod.string().optional(),
+        description: zod.string().nullish(),
+        tags: zod.array(zod.string()).nullish(),
+        versionNumber: zod.number().optional(),
+        parentArchiveId: zod.string().nullish(),
+        isLatestVersion: zod.boolean().optional(),
+        fileObjectPath: zod.string().nullish(),
+        externalUrl: zod.string().nullish(),
+        originalFileName: zod.string().nullish(),
+        fileSizeBytes: zod.number().nullish(),
+        mimeType: zod.string().nullish(),
+        checksum: zod.string().nullish(),
+        relatedTable: zod.string().nullish(),
+        relatedRecordId: zod.string().nullish(),
+        documentDate: zod.string().nullish(),
+        issuingAuthority: zod.string().nullish(),
+        referenceNumber: zod.string().nullish(),
+        uploadedById: zod.string().nullish(),
+        uploadedByName: zod.string().nullish(),
+        uploadedByRole: zod.string().nullish(),
+        archiveStatus: zod.string().optional(),
+        metadata: zod.record(zod.string(), zod.unknown()).nullish(),
+        accessCount: zod.number().nullish(),
+        archivedAt: zod.string().optional(),
+        createdAt: zod.string().optional(),
+      }),
+    )
+    .optional(),
+  accessLog: zod
+    .array(
+      zod.object({
+        id: zod.string().optional(),
+        evidenceId: zod.string().optional(),
+        projectId: zod.string().nullish(),
+        documentType: zod.string().nullish(),
+        documentTitle: zod.string().nullish(),
+        accessType: zod.string().optional(),
+        actorId: zod.string().nullish(),
+        actorName: zod.string().nullish(),
+        actorRole: zod.string().nullish(),
+        ipAddress: zod.string().nullish(),
+        userAgent: zod.string().nullish(),
+        accessedAt: zod.string().optional(),
+      }),
+    )
+    .optional(),
+});
+
+/**
+ * @summary Stream download the archived file (logs access)
+ */
+export const DownloadEvidenceParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+/**
+ * @summary Register a new version of an existing archive record
+ */
+export const AddEvidenceVersionParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const AddEvidenceVersionBody = zod.object({
+  documentType: zod.string(),
+  title: zod.string(),
+  description: zod.string().nullish(),
+  fileObjectPath: zod.string().nullish(),
+  externalUrl: zod.string().nullish(),
+  originalFileName: zod.string().nullish(),
+  fileSizeBytes: zod.number().nullish(),
+  mimeType: zod.string().nullish(),
+  checksum: zod.string().nullish(),
+  issuingAuthority: zod.string().nullish(),
+  referenceNumber: zod.string().nullish(),
+  documentDate: zod.string().nullish(),
+  metadata: zod.record(zod.string(), zod.unknown()).nullish(),
+});
+
+/**
+ * @summary Update archive status (active or archived)
+ */
+export const UpdateEvidenceStatusParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const UpdateEvidenceStatusBody = zod.object({
+  archiveStatus: zod.string(),
+  reason: zod.string().optional(),
+});
+
+export const UpdateEvidenceStatusResponse = zod.object({
+  evidence: zod
+    .object({
+      id: zod.string().optional(),
+      projectId: zod.string().nullish(),
+      projectName: zod.string().nullish(),
+      documentType: zod.string().optional(),
+      title: zod.string().optional(),
+      description: zod.string().nullish(),
+      tags: zod.array(zod.string()).nullish(),
+      versionNumber: zod.number().optional(),
+      parentArchiveId: zod.string().nullish(),
+      isLatestVersion: zod.boolean().optional(),
+      fileObjectPath: zod.string().nullish(),
+      externalUrl: zod.string().nullish(),
+      originalFileName: zod.string().nullish(),
+      fileSizeBytes: zod.number().nullish(),
+      mimeType: zod.string().nullish(),
+      checksum: zod.string().nullish(),
+      relatedTable: zod.string().nullish(),
+      relatedRecordId: zod.string().nullish(),
+      documentDate: zod.string().nullish(),
+      issuingAuthority: zod.string().nullish(),
+      referenceNumber: zod.string().nullish(),
+      uploadedById: zod.string().nullish(),
+      uploadedByName: zod.string().nullish(),
+      uploadedByRole: zod.string().nullish(),
+      archiveStatus: zod.string().optional(),
+      metadata: zod.record(zod.string(), zod.unknown()).nullish(),
+      accessCount: zod.number().nullish(),
+      archivedAt: zod.string().optional(),
+      createdAt: zod.string().optional(),
+    })
+    .optional(),
+});

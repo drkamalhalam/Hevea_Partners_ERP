@@ -82,3 +82,4 @@ export * from "./sales_invoices";
 export * from "./central_payment_accounts";
 export * from "./governance_overrides";
 export * from "./disputes";
+export * from "./legal_evidence_archive";

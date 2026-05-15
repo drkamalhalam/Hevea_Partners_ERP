@@ -11561,6 +11561,190 @@ paths:
         '404':
           description: Not found
 
+  /evidence:
+    get:
+      operationId: listEvidence
+      tags: [documents]
+      summary: Search and list evidence archive records
+      parameters:
+        - { name: projectId, in: query, schema: { type: string } }
+        - { name: documentType, in: query, schema: { type: string } }
+        - { name: archiveStatus, in: query, schema: { type: string } }
+        - { name: search, in: query, schema: { type: string } }
+        - { name: onlyLatest, in: query, schema: { type: string } }
+        - { name: limit, in: query, schema: { type: integer } }
+        - { name: offset, in: query, schema: { type: integer } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  evidence:
+                    type: array
+                    items: { $ref: '#/components/schemas/EvidenceArchive' }
+                  total: { type: integer }
+    post:
+      operationId: createEvidence
+      tags: [documents]
+      summary: Archive a new legal document evidence record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [documentType, title]
+              properties:
+                projectId: { type: string, nullable: true }
+                documentType: { type: string }
+                title: { type: string }
+                description: { type: string, nullable: true }
+                tags: { type: array, items: { type: string }, nullable: true }
+                fileObjectPath: { type: string, nullable: true }
+                externalUrl: { type: string, nullable: true }
+                originalFileName: { type: string, nullable: true }
+                fileSizeBytes: { type: integer, nullable: true }
+                mimeType: { type: string, nullable: true }
+                checksum: { type: string, nullable: true }
+                relatedTable: { type: string, nullable: true }
+                relatedRecordId: { type: string, nullable: true }
+                documentDate: { type: string, nullable: true }
+                issuingAuthority: { type: string, nullable: true }
+                referenceNumber: { type: string, nullable: true }
+                metadata: { type: object, additionalProperties: true, nullable: true }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  evidence: { $ref: '#/components/schemas/EvidenceArchive' }
+
+  /evidence/stats:
+    get:
+      operationId: getEvidenceStats
+      tags: [documents]
+      summary: Evidence archive statistics and counts
+      parameters:
+        - { name: projectId, in: query, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EvidenceStats' }
+
+  /evidence/{id}:
+    get:
+      operationId: getEvidence
+      tags: [documents]
+      summary: Single evidence record with version history and access log
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  evidence: { $ref: '#/components/schemas/EvidenceArchive' }
+                  versionHistory:
+                    type: array
+                    items: { $ref: '#/components/schemas/EvidenceArchive' }
+                  accessLog:
+                    type: array
+                    items: { $ref: '#/components/schemas/EvidenceAccessLog' }
+        '404':
+          description: Not found
+
+  /evidence/{id}/download:
+    get:
+      operationId: downloadEvidence
+      tags: [documents]
+      summary: Stream download the archived file (logs access)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: File stream
+        '404':
+          description: Not found
+
+  /evidence/{id}/versions:
+    post:
+      operationId: addEvidenceVersion
+      tags: [documents]
+      summary: Register a new version of an existing archive record
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [documentType, title]
+              properties:
+                documentType: { type: string }
+                title: { type: string }
+                description: { type: string, nullable: true }
+                fileObjectPath: { type: string, nullable: true }
+                externalUrl: { type: string, nullable: true }
+                originalFileName: { type: string, nullable: true }
+                fileSizeBytes: { type: integer, nullable: true }
+                mimeType: { type: string, nullable: true }
+                checksum: { type: string, nullable: true }
+                issuingAuthority: { type: string, nullable: true }
+                referenceNumber: { type: string, nullable: true }
+                documentDate: { type: string, nullable: true }
+                metadata: { type: object, additionalProperties: true, nullable: true }
+      responses:
+        '201':
+          description: New version created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  evidence: { $ref: '#/components/schemas/EvidenceArchive' }
+                  superseded: { $ref: '#/components/schemas/EvidenceArchive' }
+
+  /evidence/{id}/status:
+    patch:
+      operationId: updateEvidenceStatus
+      tags: [documents]
+      summary: Update archive status (active or archived)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [archiveStatus]
+              properties:
+                archiveStatus: { type: string }
+                reason: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  evidence: { $ref: '#/components/schemas/EvidenceArchive' }
+        '404':
+          description: Not found
+
 components:
   schemas:
 
@@ -11688,6 +11872,87 @@ components:
         urgent:
           type: array
           items: { $ref: '#/components/schemas/Dispute' }
+
+    EvidenceArchive:
+      type: object
+      properties:
+        id: { type: string }
+        projectId: { type: string, nullable: true }
+        projectName: { type: string, nullable: true }
+        documentType: { type: string }
+        title: { type: string }
+        description: { type: string, nullable: true }
+        tags: { type: array, nullable: true, items: { type: string } }
+        versionNumber: { type: integer }
+        parentArchiveId: { type: string, nullable: true }
+        isLatestVersion: { type: boolean }
+        fileObjectPath: { type: string, nullable: true }
+        externalUrl: { type: string, nullable: true }
+        originalFileName: { type: string, nullable: true }
+        fileSizeBytes: { type: integer, nullable: true }
+        mimeType: { type: string, nullable: true }
+        checksum: { type: string, nullable: true }
+        relatedTable: { type: string, nullable: true }
+        relatedRecordId: { type: string, nullable: true }
+        documentDate: { type: string, nullable: true }
+        issuingAuthority: { type: string, nullable: true }
+        referenceNumber: { type: string, nullable: true }
+        uploadedById: { type: string, nullable: true }
+        uploadedByName: { type: string, nullable: true }
+        uploadedByRole: { type: string, nullable: true }
+        archiveStatus: { type: string }
+        metadata: { type: object, nullable: true, additionalProperties: true }
+        accessCount: { type: integer, nullable: true }
+        archivedAt: { type: string }
+        createdAt: { type: string }
+
+    EvidenceAccessLog:
+      type: object
+      properties:
+        id: { type: string }
+        evidenceId: { type: string }
+        projectId: { type: string, nullable: true }
+        documentType: { type: string, nullable: true }
+        documentTitle: { type: string, nullable: true }
+        accessType: { type: string }
+        actorId: { type: string, nullable: true }
+        actorName: { type: string, nullable: true }
+        actorRole: { type: string, nullable: true }
+        ipAddress: { type: string, nullable: true }
+        userAgent: { type: string, nullable: true }
+        accessedAt: { type: string }
+
+    EvidenceStats:
+      type: object
+      properties:
+        total: { type: integer }
+        latestVersionCount: { type: integer }
+        totalAccessEvents: { type: integer }
+        byType:
+          type: array
+          items:
+            type: object
+            properties:
+              documentType: { type: string }
+              count: { type: integer }
+        byProject:
+          type: array
+          items:
+            type: object
+            properties:
+              projectId: { type: string }
+              projectName: { type: string }
+              count: { type: integer }
+        byStatus:
+          type: array
+          items:
+            type: object
+            properties:
+              archiveStatus: { type: string }
+              count: { type: integer }
+        recentlyArchived:
+          type: array
+          items: { $ref: '#/components/schemas/EvidenceArchive' }
 
     AuditLogEntry:
       type: object

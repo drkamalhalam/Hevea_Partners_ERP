@@ -99,6 +99,7 @@ Six roles in `usersTable.role`:
 | System | Admin | /admin | Live (admin only) |
 | System | Override History | /governance-overrides | Live (admin/dev) |
 | System | Disputes & Conflicts | /disputes | Live (admin/dev) |
+| System | Evidence Archive | /evidence-archive | Live (admin/dev) |
 | System | Activation Tasks | /activation | Live (admin/dev) |
 
 ---
