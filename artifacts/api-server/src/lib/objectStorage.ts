@@ -9,7 +9,11 @@ import {
   setObjectAclPolicy,
 } from "./objectAcl";
 
-const REPLIT_SIDECAR_ENDPOINT = "http://127.0.0.1:1106";
+// Configurable via REPLIT_SIDECAR_ENDPOINT env var for non-Replit deployments.
+// Default is the Replit GCS sidecar address. Override when hosting on other
+// providers by pointing to your own token/credential service.
+const REPLIT_SIDECAR_ENDPOINT =
+  process.env.REPLIT_SIDECAR_ENDPOINT ?? "http://127.0.0.1:1106";
 
 export const objectStorageClient = new Storage({
   credentials: {
