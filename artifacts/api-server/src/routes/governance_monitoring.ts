@@ -26,8 +26,15 @@ import {
   nomineeActivationWorkflowsTable,
   missingDeveloperCasesTable,
   ownershipSnapshotsTable,
+  governanceOverridesTable,
+  disputesTable,
+  auditLogsTable,
+  settlementRecordsTable,
+  maturityDeclarationsTable,
+  documentsTable,
+  usersTable,
 } from "@workspace/db";
-import { eq, and, gt, ne, inArray, notInArray, desc, isNull, not, isNotNull, or, sql } from "drizzle-orm";
+import { eq, and, gt, ne, inArray, notInArray, desc, isNull, not, isNotNull, or, sql, lt, count, gte, lte, asc } from "drizzle-orm";
 import { requireRole } from "../middlewares/auth";
 
 const router = Router();
@@ -1041,6 +1048,607 @@ router.get("/tasks", async (req, res) => {
     });
   } catch (err) {
     req.log.error({ err }, "Failed to load governance tasks");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ── GET /governance-monitoring/legal-compliance ────────────────────────────
+// Aggregate legal traceability and compliance alerts:
+//   1. Suspicious overrides (missing reason, high frequency)
+//   2. Excessive settlement adjustments (>20% deviation)
+//   3. Missing governance documents (mature projects)
+//   4. Long-pending disputes (>30 days open)
+//   5. Audit trail gaps (active projects with no entries in 60 days)
+//   6. Incomplete maturity workflow (no completed declaration)
+//   7. Missing nominees (active projects)
+//   8. Missing claimant documents (open inheritance claims)
+// Also returns a per-project compliance matrix.
+
+router.get("/legal-compliance", async (req, res) => {
+  try {
+    const now = new Date();
+    const daysSince = (d: Date | string | null | undefined): number => {
+      if (!d) return 0;
+      return Math.floor((Date.now() - new Date(d).getTime()) / (1000 * 60 * 60 * 24));
+    };
+
+    type ComplianceSeverity = "critical" | "high" | "medium" | "low" | "info";
+    interface ComplianceAlert {
+      id: string;
+      category: string;
+      severity: ComplianceSeverity;
+      title: string;
+      description: string;
+      projectId?: string | null;
+      projectName?: string | null;
+      entityId?: string | null;
+      entityType?: string | null;
+      actionPath?: string | null;
+      daysOpen: number;
+      metadata?: Record<string, unknown> | null;
+      detectedAt: string;
+    }
+
+    const alerts: ComplianceAlert[] = [];
+    const projectIdFilter = req.query.projectId as string | undefined;
+
+    // ── Load all active projects ────────────────────────────────────────────
+    const activeProjects = await db
+      .select({
+        id: projectsTable.id,
+        name: projectsTable.name,
+        lifecycleStatus: projectsTable.lifecycleStatus,
+        isActive: projectsTable.isActive,
+      })
+      .from(projectsTable)
+      .where(eq(projectsTable.isActive, true));
+
+    const filteredProjects = projectIdFilter
+      ? activeProjects.filter((p) => p.id === projectIdFilter)
+      : activeProjects;
+    const filteredProjectIds = filteredProjects.map((p) => p.id);
+    const projectById = new Map(filteredProjects.map((p) => [p.id, p]));
+
+    if (filteredProjectIds.length === 0) {
+      res.json({
+        summary: { critical: 0, high: 0, medium: 0, low: 0, total: 0, byCategory: {} },
+        alerts: [],
+        projectMatrix: [],
+      });
+      return;
+    }
+
+    // ── 1. Suspicious overrides ────────────────────────────────────────────
+    // a) Overrides with missing/empty reason
+    const overridesWithNoReason = await db
+      .select({
+        id: governanceOverridesTable.id,
+        projectId: governanceOverridesTable.projectId,
+        overrideType: governanceOverridesTable.overrideType,
+        module: governanceOverridesTable.module,
+        title: governanceOverridesTable.title,
+        actorName: governanceOverridesTable.actorName,
+        actorRole: governanceOverridesTable.actorRole,
+        overrideReason: governanceOverridesTable.overrideReason,
+        originalValue: governanceOverridesTable.originalValue,
+        finalValue: governanceOverridesTable.finalValue,
+        createdAt: governanceOverridesTable.createdAt,
+      })
+      .from(governanceOverridesTable)
+      .where(
+        and(
+          inArray(governanceOverridesTable.projectId, filteredProjectIds),
+          or(
+            isNull(governanceOverridesTable.overrideReason),
+            sql`trim(${governanceOverridesTable.overrideReason}) = ''`,
+          ),
+          gt(governanceOverridesTable.createdAt, new Date(Date.now() - 90 * 86400000)),
+        ),
+      )
+      .orderBy(desc(governanceOverridesTable.createdAt));
+
+    for (const ov of overridesWithNoReason) {
+      const proj = projectById.get(ov.projectId);
+      const days = daysSince(ov.createdAt);
+      alerts.push({
+        id: `override-no-reason-${ov.id}`,
+        category: "suspicious_override",
+        severity: "high",
+        title: `Override Without Justification — ${ov.module ?? "Unknown Module"}`,
+        description: `${ov.title} (${ov.overrideType?.replace(/_/g, " ")}) by ${ov.actorName ?? "Unknown"} (${ov.actorRole ?? "?"}) has no recorded override reason. Entered ${days}d ago.`,
+        projectId: ov.projectId,
+        projectName: proj?.name ?? null,
+        entityId: ov.id,
+        entityType: "governance_override",
+        actionPath: "/governance-overrides",
+        daysOpen: days,
+        metadata: { overrideType: ov.overrideType, module: ov.module, actorName: ov.actorName },
+        detectedAt: now.toISOString(),
+      });
+    }
+
+    // b) High-frequency same-actor overrides (>3 in any single project in last 7 days)
+    const recentOverrides = await db
+      .select({
+        projectId: governanceOverridesTable.projectId,
+        actorId: governanceOverridesTable.actorId,
+        actorName: governanceOverridesTable.actorName,
+        cnt: sql<number>`count(*)::int`,
+      })
+      .from(governanceOverridesTable)
+      .where(
+        and(
+          inArray(governanceOverridesTable.projectId, filteredProjectIds),
+          gt(governanceOverridesTable.createdAt, new Date(Date.now() - 7 * 86400000)),
+        ),
+      )
+      .groupBy(
+        governanceOverridesTable.projectId,
+        governanceOverridesTable.actorId,
+        governanceOverridesTable.actorName,
+      )
+      .having(sql`count(*) > 3`);
+
+    for (const row of recentOverrides) {
+      const proj = projectById.get(row.projectId);
+      alerts.push({
+        id: `override-freq-${row.projectId}-${row.actorId ?? "anon"}`,
+        category: "suspicious_override",
+        severity: "medium",
+        title: "High-Frequency Override Activity Detected",
+        description: `${row.actorName ?? "Unknown actor"} made ${row.cnt} governance overrides in project "${proj?.name ?? "?"}" within the last 7 days. Unusual frequency may indicate unauthorised or unchecked activity.`,
+        projectId: row.projectId,
+        projectName: proj?.name ?? null,
+        entityId: row.actorId ?? null,
+        entityType: "user",
+        actionPath: "/governance-overrides",
+        daysOpen: 0,
+        metadata: { actorName: row.actorName, overrideCount: row.cnt, windowDays: 7 },
+        detectedAt: now.toISOString(),
+      });
+    }
+
+    // ── 2. Excessive settlement adjustments (>20% deviation from recommended) ─
+    const overriddenSettlements = await db
+      .select({
+        id: settlementRecordsTable.id,
+        projectId: settlementRecordsTable.projectId,
+        periodLabel: settlementRecordsTable.periodLabel,
+        settlementType: settlementRecordsTable.settlementType,
+        recommendedAmount: settlementRecordsTable.recommendedAmount,
+        actualAmount: settlementRecordsTable.actualAmount,
+        overrideCount: settlementRecordsTable.overrideCount,
+        lastOverriddenByName: settlementRecordsTable.lastOverriddenByName,
+        lastOverriddenAt: settlementRecordsTable.lastOverriddenAt,
+        status: settlementRecordsTable.status,
+      })
+      .from(settlementRecordsTable)
+      .where(
+        and(
+          inArray(settlementRecordsTable.projectId, filteredProjectIds),
+          eq(settlementRecordsTable.isOverridden, true),
+          isNotNull(settlementRecordsTable.recommendedAmount),
+          isNotNull(settlementRecordsTable.actualAmount),
+          sql`${settlementRecordsTable.recommendedAmount}::numeric > 0`,
+        ),
+      )
+      .orderBy(desc(settlementRecordsTable.lastOverriddenAt));
+
+    for (const sr of overriddenSettlements) {
+      const rec = parseFloat(sr.recommendedAmount ?? "0");
+      const actual = parseFloat(sr.actualAmount ?? "0");
+      if (rec <= 0) continue;
+      const deviationPct = Math.abs((actual - rec) / rec) * 100;
+      if (deviationPct < 20) continue;
+
+      const proj = projectById.get(sr.projectId);
+      const days = daysSince(sr.lastOverriddenAt);
+      const severity: ComplianceSeverity = deviationPct > 50 ? "critical" : deviationPct > 35 ? "high" : "medium";
+
+      alerts.push({
+        id: `settlement-deviation-${sr.id}`,
+        category: "excessive_settlement",
+        severity,
+        title: `Settlement Deviation ${deviationPct.toFixed(1)}% — ${sr.settlementType?.replace(/_/g, " ")}`,
+        description: `Period "${sr.periodLabel}" in "${proj?.name ?? "?"}" — recommended ₹${rec.toLocaleString("en-IN")} vs actual ₹${actual.toLocaleString("en-IN")} (${deviationPct.toFixed(1)}% deviation). ${sr.overrideCount} override(s) applied${sr.lastOverriddenByName ? ` by ${sr.lastOverriddenByName}` : ""}. Status: ${sr.status}.`,
+        projectId: sr.projectId,
+        projectName: proj?.name ?? null,
+        entityId: sr.id,
+        entityType: "settlement_record",
+        actionPath: "/settlement-governance",
+        daysOpen: days,
+        metadata: { deviationPct, recommendedAmount: rec, actualAmount: actual, overrideCount: sr.overrideCount },
+        detectedAt: now.toISOString(),
+      });
+    }
+
+    // ── 3. Missing governance documents (mature_production projects) ────────
+    const matureProjects = filteredProjects.filter((p) => p.lifecycleStatus === "mature_production");
+    if (matureProjects.length > 0) {
+      const matureProjectIds = matureProjects.map((p) => p.id);
+      const projectsWithGovDocs = await db
+        .select({ projectId: documentsTable.projectId })
+        .from(documentsTable)
+        .where(
+          and(
+            inArray(documentsTable.projectId, matureProjectIds),
+            eq(documentsTable.category, "governance"),
+            eq(documentsTable.status, "active"),
+          ),
+        );
+      const projectsWithDocSet = new Set(projectsWithGovDocs.map((r) => r.projectId));
+
+      for (const proj of matureProjects) {
+        if (!projectsWithDocSet.has(proj.id)) {
+          alerts.push({
+            id: `missing-gov-doc-${proj.id}`,
+            category: "missing_governance_doc",
+            severity: "high",
+            title: "No Governance Documents on File",
+            description: `Project "${proj.name}" is in Mature Production but has no active governance category documents (board resolutions, regulatory filings, compliance records).`,
+            projectId: proj.id,
+            projectName: proj.name,
+            entityId: proj.id,
+            entityType: "project",
+            actionPath: "/documents",
+            daysOpen: 0,
+            metadata: { lifecycleStatus: proj.lifecycleStatus },
+            detectedAt: now.toISOString(),
+          });
+        }
+      }
+    }
+
+    // ── 4. Long-pending disputes (>30 days, non-resolved) ──────────────────
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000);
+    const openDisputes = await db
+      .select({
+        id: disputesTable.id,
+        projectId: disputesTable.projectId,
+        disputeType: disputesTable.disputeType,
+        status: disputesTable.status,
+        severity: disputesTable.severity,
+        title: disputesTable.title,
+        createdAt: disputesTable.createdAt,
+        raisedByName: disputesTable.raisedByName,
+      })
+      .from(disputesTable)
+      .where(
+        and(
+          inArray(disputesTable.projectId, filteredProjectIds),
+          inArray(disputesTable.status, ["open", "under_review", "escalated"]),
+          lt(disputesTable.createdAt, thirtyDaysAgo),
+        ),
+      )
+      .orderBy(asc(disputesTable.createdAt));
+
+    for (const d of openDisputes) {
+      const proj = projectById.get(d.projectId);
+      const days = daysSince(d.createdAt);
+      const baseSeverity = d.severity === "critical" ? "critical" : d.severity === "high" ? "high" : "medium";
+      const effectiveSeverity: ComplianceSeverity = days > 90 ? "critical" : baseSeverity;
+
+      alerts.push({
+        id: `dispute-pending-${d.id}`,
+        category: "long_pending_dispute",
+        severity: effectiveSeverity,
+        title: `Stalled Dispute — ${d.disputeType?.replace(/_/g, " ")} (${days}d)`,
+        description: `"${d.title}" in "${proj?.name ?? "?"}" has been in "${d.status?.replace(/_/g, " ")}" status for ${days} day(s)${d.raisedByName ? ` (raised by ${d.raisedByName})` : ""}. Unresolved disputes must be reviewed for legal traceability compliance.`,
+        projectId: d.projectId,
+        projectName: proj?.name ?? null,
+        entityId: d.id,
+        entityType: "dispute",
+        actionPath: "/disputes",
+        daysOpen: days,
+        metadata: { disputeType: d.disputeType, status: d.status, severity: d.severity },
+        detectedAt: now.toISOString(),
+      });
+    }
+
+    // ── 5. Audit trail gaps (active projects with no entries in last 60 days) ─
+    const sixtyDaysAgo = new Date(Date.now() - 60 * 86400000);
+    const recentAuditProjectIds = await db
+      .select({ projectId: auditLogsTable.projectId })
+      .from(auditLogsTable)
+      .where(
+        and(
+          isNotNull(auditLogsTable.projectId),
+          gt(auditLogsTable.createdAt, sixtyDaysAgo),
+          inArray(auditLogsTable.projectId, filteredProjectIds),
+        ),
+      )
+      .groupBy(auditLogsTable.projectId);
+
+    const auditedProjectSet = new Set(
+      recentAuditProjectIds.map((r) => r.projectId).filter(Boolean) as string[],
+    );
+
+    for (const proj of filteredProjects) {
+      if (!auditedProjectSet.has(proj.id)) {
+        alerts.push({
+          id: `audit-gap-${proj.id}`,
+          category: "audit_gap",
+          severity: proj.lifecycleStatus === "mature_production" ? "high" : "medium",
+          title: "Audit Trail Gap — No Activity in 60+ Days",
+          description: `Project "${proj.name}" (${proj.lifecycleStatus?.replace(/_/g, " ") ?? "unknown"}) has no recorded audit events in the last 60 days. Prolonged gaps in the audit trail may indicate compliance blind spots.`,
+          projectId: proj.id,
+          projectName: proj.name,
+          entityId: proj.id,
+          entityType: "project",
+          actionPath: "/audit-log",
+          daysOpen: 60,
+          metadata: { lifecycleStatus: proj.lifecycleStatus, windowDays: 60 },
+          detectedAt: now.toISOString(),
+        });
+      }
+    }
+
+    // ── 6. Incomplete maturity workflow ────────────────────────────────────
+    if (matureProjects.length > 0) {
+      const matureProjectIds = matureProjects.map((p) => p.id);
+
+      // Projects with a declaration stuck in pending_otp > 7 days
+      const sevenDaysAgo = new Date(Date.now() - 7 * 86400000);
+      const stalledDeclarations = await db
+        .select({
+          id: maturityDeclarationsTable.id,
+          projectId: maturityDeclarationsTable.projectId,
+          status: maturityDeclarationsTable.status,
+          initiatedByName: maturityDeclarationsTable.initiatedByName,
+          createdAt: maturityDeclarationsTable.createdAt,
+        })
+        .from(maturityDeclarationsTable)
+        .where(
+          and(
+            inArray(maturityDeclarationsTable.projectId, matureProjectIds),
+            eq(maturityDeclarationsTable.status, "pending_otp"),
+            lt(maturityDeclarationsTable.createdAt, sevenDaysAgo),
+          ),
+        );
+
+      for (const decl of stalledDeclarations) {
+        const proj = projectById.get(decl.projectId);
+        const days = daysSince(decl.createdAt);
+        alerts.push({
+          id: `maturity-stalled-${decl.id}`,
+          category: "incomplete_maturity",
+          severity: days > 30 ? "high" : "medium",
+          title: "Maturity Declaration Stalled — Awaiting OTP",
+          description: `Maturity declaration for "${proj?.name ?? "?"}" initiated by ${decl.initiatedByName ?? "Unknown"} has been pending OTP verification for ${days} day(s). Incomplete OTP verification blocks official lifecycle confirmation.`,
+          projectId: decl.projectId,
+          projectName: proj?.name ?? null,
+          entityId: decl.id,
+          entityType: "maturity_declaration",
+          actionPath: "/projects",
+          daysOpen: days,
+          metadata: { declarationStatus: decl.status, daysStalled: days },
+          detectedAt: now.toISOString(),
+        });
+      }
+
+      // Mature projects with no completed declaration at all
+      const completedDeclarationProjectIds = await db
+        .select({ projectId: maturityDeclarationsTable.projectId })
+        .from(maturityDeclarationsTable)
+        .where(
+          and(
+            inArray(maturityDeclarationsTable.projectId, matureProjectIds),
+            eq(maturityDeclarationsTable.status, "completed"),
+          ),
+        );
+      const completedDeclSet = new Set(completedDeclarationProjectIds.map((r) => r.projectId));
+      const stalledDeclProjectIds = new Set(stalledDeclarations.map((d) => d.projectId));
+
+      for (const proj of matureProjects) {
+        if (!completedDeclSet.has(proj.id) && !stalledDeclProjectIds.has(proj.id)) {
+          alerts.push({
+            id: `maturity-no-decl-${proj.id}`,
+            category: "incomplete_maturity",
+            severity: "high",
+            title: "Mature Project — No Completed Maturity Declaration",
+            description: `Project "${proj.name}" has lifecycle status Mature Production but no completed maturity declaration on record. This is required for full legal lifecycle confirmation.`,
+            projectId: proj.id,
+            projectName: proj.name,
+            entityId: proj.id,
+            entityType: "project",
+            actionPath: "/projects",
+            daysOpen: 0,
+            metadata: { lifecycleStatus: proj.lifecycleStatus },
+            detectedAt: now.toISOString(),
+          });
+        }
+      }
+    }
+
+    // ── 7. Missing nominees (active projects without an active nominee) ─────
+    const nomineeCoveredProjectIds = await db
+      .select({ projectId: projectNomineesTable.projectId })
+      .from(projectNomineesTable)
+      .where(
+        and(
+          inArray(projectNomineesTable.projectId, filteredProjectIds),
+          eq(projectNomineesTable.isActive, true),
+        ),
+      );
+    const nomineeProjectSet = new Set(nomineeCoveredProjectIds.map((r) => r.projectId));
+
+    for (const proj of filteredProjects) {
+      if (!nomineeProjectSet.has(proj.id)) {
+        alerts.push({
+          id: `missing-nominee-legal-${proj.id}`,
+          category: "missing_nominee",
+          severity: proj.lifecycleStatus === "mature_production" ? "critical" : "high",
+          title: "No Active Nominee — Succession Authority Gap",
+          description: `Project "${proj.name}" (${proj.lifecycleStatus?.replace(/_/g, " ") ?? "?"}) has no active governance nominee. Without a registered nominee, succession authority cannot transfer, creating a legal continuity risk.`,
+          projectId: proj.id,
+          projectName: proj.name,
+          entityId: proj.id,
+          entityType: "project",
+          actionPath: "/nominee-succession",
+          daysOpen: 0,
+          metadata: { lifecycleStatus: proj.lifecycleStatus },
+          detectedAt: now.toISOString(),
+        });
+      }
+    }
+
+    // ── 8. Missing claimant documents (open claims with no documents) ───────
+    const openInheritanceClaims = await db
+      .select({
+        id: inheritanceClaimsTable.id,
+        projectId: inheritanceClaimsTable.projectId,
+        claimType: inheritanceClaimsTable.claimType,
+        status: inheritanceClaimsTable.status,
+        initiatedByName: inheritanceClaimsTable.initiatedByName,
+        createdAt: inheritanceClaimsTable.createdAt,
+      })
+      .from(inheritanceClaimsTable)
+      .where(
+        and(
+          inArray(inheritanceClaimsTable.projectId, filteredProjectIds),
+          eq(inheritanceClaimsTable.isActive, true),
+          notInArray(inheritanceClaimsTable.status, ["settled", "rejected"]),
+        ),
+      );
+
+    if (openInheritanceClaims.length > 0) {
+      const openClaimIds = openInheritanceClaims.map((c) => c.id);
+      const claimsWithDocs = await db
+        .select({ claimId: inheritanceDocumentsTable.claimId })
+        .from(inheritanceDocumentsTable)
+        .where(
+          and(
+            inArray(inheritanceDocumentsTable.claimId, openClaimIds),
+            eq(inheritanceDocumentsTable.isActive, true),
+          ),
+        )
+        .groupBy(inheritanceDocumentsTable.claimId);
+
+      const claimsWithDocSet = new Set(claimsWithDocs.map((r) => r.claimId));
+
+      for (const claim of openInheritanceClaims) {
+        if (!claimsWithDocSet.has(claim.id)) {
+          const proj = projectById.get(claim.projectId);
+          const days = daysSince(claim.createdAt);
+          alerts.push({
+            id: `claim-no-docs-${claim.id}`,
+            category: "missing_claimant_doc",
+            severity: days > 30 ? "high" : "medium",
+            title: "Inheritance Claim — No Supporting Documents",
+            description: `${claim.claimType?.replace(/_/g, " ")} claim by ${claim.initiatedByName ?? "Unknown"} in "${proj?.name ?? "?"}" has been open for ${days} day(s) with no documents submitted. Legal verification cannot proceed without documentation.`,
+            projectId: claim.projectId,
+            projectName: proj?.name ?? null,
+            entityId: claim.id,
+            entityType: "inheritance_claim",
+            actionPath: "/inheritance-claims",
+            daysOpen: days,
+            metadata: { claimType: claim.claimType, status: claim.status, daysOpen: days },
+            detectedAt: now.toISOString(),
+          });
+        }
+      }
+    }
+
+    // ── Summary ────────────────────────────────────────────────────────────
+    const summary = {
+      critical: alerts.filter((a) => a.severity === "critical").length,
+      high: alerts.filter((a) => a.severity === "high").length,
+      medium: alerts.filter((a) => a.severity === "medium").length,
+      low: alerts.filter((a) => a.severity === "low").length,
+      total: alerts.length,
+      byCategory: alerts.reduce<Record<string, number>>((acc, a) => {
+        acc[a.category] = (acc[a.category] ?? 0) + 1;
+        return acc;
+      }, {}),
+    };
+
+    // Sort: critical first, then by daysOpen desc
+    alerts.sort((a, b) => {
+      const severityOrder: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3, info: 4 };
+      const sDiff = (severityOrder[a.severity] ?? 5) - (severityOrder[b.severity] ?? 5);
+      return sDiff !== 0 ? sDiff : b.daysOpen - a.daysOpen;
+    });
+
+    // ── Per-project compliance matrix ──────────────────────────────────────
+    type OverallRisk = "critical" | "high" | "medium" | "low" | "healthy";
+
+    interface ProjectCheck {
+      projectId: string;
+      projectName: string;
+      lifecycleStatus: string;
+      overallRisk: OverallRisk;
+      checks: {
+        hasNominee: boolean;
+        hasGovernanceDocs: boolean;
+        hasCompletedMaturity: boolean;
+        hasOpenDisputes: boolean;
+        hasAuditTrail: boolean;
+        hasOverrideIssues: boolean;
+      };
+      alertCount: number;
+    }
+
+    // Build sets for matrix lookups
+    const projectsWithOpenDisputes = new Set(
+      openDisputes.map((d) => d.projectId),
+    );
+    const projectsWithOverrideIssues = new Set([
+      ...overridesWithNoReason.map((o) => o.projectId),
+      ...recentOverrides.map((o) => o.projectId),
+    ]);
+    const projectsWithGovDocs = new Set(
+      matureProjects
+        .map((p) => p.id)
+        .filter((id) => {
+          // Check if in missing gov doc alerts — if not, has docs
+          return !alerts.some((a) => a.category === "missing_governance_doc" && a.projectId === id);
+        }),
+    );
+    const completedDeclProjectIds = new Set(
+      matureProjects
+        .map((p) => p.id)
+        .filter((id) => !alerts.some((a) => a.category === "incomplete_maturity" && a.projectId === id)),
+    );
+
+    const projectMatrix: ProjectCheck[] = filteredProjects.map((proj) => {
+      const hasNominee = nomineeProjectSet.has(proj.id);
+      const hasGovernanceDocs = proj.lifecycleStatus !== "mature_production" || projectsWithGovDocs.has(proj.id);
+      const hasCompletedMaturity = proj.lifecycleStatus !== "mature_production" || completedDeclProjectIds.has(proj.id);
+      const hasOpenDisputes = projectsWithOpenDisputes.has(proj.id);
+      const hasAuditTrail = auditedProjectSet.has(proj.id);
+      const hasOverrideIssues = projectsWithOverrideIssues.has(proj.id);
+
+      const projectAlerts = alerts.filter((a) => a.projectId === proj.id);
+      const hasCritical = projectAlerts.some((a) => a.severity === "critical");
+      const hasHigh = projectAlerts.some((a) => a.severity === "high");
+      const hasMedium = projectAlerts.some((a) => a.severity === "medium");
+
+      const overallRisk: OverallRisk = hasCritical ? "critical"
+        : hasHigh ? "high"
+        : hasMedium ? "medium"
+        : projectAlerts.length > 0 ? "low"
+        : "healthy";
+
+      return {
+        projectId: proj.id,
+        projectName: proj.name,
+        lifecycleStatus: proj.lifecycleStatus ?? "prematurity",
+        overallRisk,
+        checks: {
+          hasNominee,
+          hasGovernanceDocs,
+          hasCompletedMaturity,
+          hasOpenDisputes,
+          hasAuditTrail,
+          hasOverrideIssues,
+        },
+        alertCount: projectAlerts.length,
+      };
+    });
+
+    res.json({ summary, alerts, projectMatrix });
+  } catch (err) {
+    req.log.error({ err }, "Failed to load legal compliance data");
     res.status(500).json({ error: "Internal server error" });
   }
 });

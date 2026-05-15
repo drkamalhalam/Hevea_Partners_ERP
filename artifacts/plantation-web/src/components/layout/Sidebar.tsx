@@ -390,6 +390,12 @@ const navGroups: NavGroup[] = [
         roles: ["admin", "developer"],
       },
       {
+        name: "Gov. Monitoring",
+        href: "/governance-monitoring",
+        icon: ShieldCheck,
+        roles: ["admin", "developer"],
+      },
+      {
         name: "Op. Alerts",
         href: "/operational-alerts",
         icon: ScanSearch,

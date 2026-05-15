@@ -536,7 +536,7 @@ function RecordTimelineTab() {
   const { data, isLoading } = useGetRecordAuditTimeline(
     submitted?.tableName ?? "",
     submitted?.recordId ?? "",
-    { query: { enabled: !!submitted } },
+    { query: { enabled: !!submitted, queryKey: ["/api/audit/record-timeline", submitted?.tableName, submitted?.recordId] } },
   );
 
   const raw = data as { entries?: AuditLogEntry[] } | undefined;
