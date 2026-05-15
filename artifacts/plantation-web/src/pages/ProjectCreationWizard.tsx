@@ -820,10 +820,11 @@ function Step6AgreementDetails({
 // ── Step 7: Witnesses ─────────────────────────────────────────────────────────
 
 const witnessSchema = z.object({
-  fullName: z.string().min(2, "Name required"),
+  fullName: z.string().min(2, "Full name required"),
   sOnCOn: z.string().optional(),
-  mobile: z.string().optional(),
-  address: z.string().optional(),
+  fatherGuardianName: z.string().min(1, "Father/Guardian name required"),
+  mobile: z.string().min(10, "10-digit mobile required").max(10, "10-digit mobile required"),
+  address: z.string().min(5, "Address required"),
   aadhaarNumber: z.string().optional(),
 });
 
@@ -848,7 +849,7 @@ function Step7Witnesses({
 
   const form = useForm<WitnessValues>({
     resolver: zodResolver(witnessSchema),
-    defaultValues: { fullName: "", sOnCOn: "S/O", mobile: "", address: "", aadhaarNumber: "" },
+    defaultValues: { fullName: "", sOnCOn: "S/O", fatherGuardianName: "", mobile: "", address: "", aadhaarNumber: "" },
   });
 
   const addNew = (values: WitnessValues) => {
@@ -857,7 +858,7 @@ function Step7Witnesses({
       {
         onSuccess: () => {
           refetch();
-          form.reset({ fullName: "", sOnCOn: "S/O", mobile: "", address: "", aadhaarNumber: "" });
+          form.reset({ fullName: "", sOnCOn: "S/O", fatherGuardianName: "", mobile: "", address: "", aadhaarNumber: "" });
           setShowForm(false);
           toast({ title: "Witness added" });
         },
@@ -892,14 +893,16 @@ function Step7Witnesses({
       )}
 
       <div className="space-y-2">
-        {witnesses.map((w, i) => (
+        {witnesses.map((w) => (
           <div key={w.id} className="flex items-start justify-between bg-muted/40 rounded-md p-3 border">
             <div>
               <p className="font-medium text-sm">
                 Witness {w.position}: {w.fullName}
-                {w.sOnCOn ? (
-                  <span className="text-muted-foreground font-normal ml-1">({w.sOnCOn})</span>
-                ) : null}
+                {w.sOnCOn && (w as any).fatherGuardianName
+                  ? <span className="text-muted-foreground font-normal ml-1">({w.sOnCOn} {(w as any).fatherGuardianName})</span>
+                  : w.sOnCOn
+                  ? <span className="text-muted-foreground font-normal ml-1">({w.sOnCOn})</span>
+                  : null}
               </p>
               {w.mobile && <p className="text-xs text-muted-foreground mt-0.5">📞 {w.mobile}</p>}
               {w.address && <p className="text-xs text-muted-foreground">📍 {w.address}</p>}
@@ -919,7 +922,7 @@ function Step7Witnesses({
               <FormField control={form.control} name="fullName" render={({ field }) => (
                 <FormItem className="col-span-2">
                   <FormLabel>Full Name *</FormLabel>
-                  <FormControl><Input {...field} /></FormControl>
+                  <FormControl><Input placeholder="Witness full legal name" {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
@@ -929,30 +932,41 @@ function Step7Witnesses({
                   <Select onValueChange={field.onChange} value={field.value ?? "S/O"}>
                     <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                     <SelectContent>
-                      <SelectItem value="S/O">S/O</SelectItem>
-                      <SelectItem value="D/O">D/O</SelectItem>
-                      <SelectItem value="W/O">W/O</SelectItem>
+                      <SelectItem value="S/O">S/O — Son of</SelectItem>
+                      <SelectItem value="D/O">D/O — Daughter of</SelectItem>
+                      <SelectItem value="W/O">W/O — Wife of</SelectItem>
+                      <SelectItem value="C/O">C/O — Care of</SelectItem>
                     </SelectContent>
                   </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="fatherGuardianName" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Father / Guardian Name *</FormLabel>
+                  <FormControl><Input placeholder="Father or guardian's name" {...field} /></FormControl>
+                  <FormMessage />
                 </FormItem>
               )} />
               <FormField control={form.control} name="mobile" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Mobile</FormLabel>
-                  <FormControl><Input maxLength={10} {...field} /></FormControl>
+                  <FormLabel>Mobile *</FormLabel>
+                  <FormControl><Input placeholder="10-digit mobile" maxLength={10} {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
               <FormField control={form.control} name="aadhaarNumber" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Aadhaar</FormLabel>
-                  <FormControl><Input maxLength={12} {...field} /></FormControl>
+                  <FormControl><Input placeholder="12-digit Aadhaar" maxLength={12} {...field} /></FormControl>
+                  <FormMessage />
                 </FormItem>
               )} />
               <FormField control={form.control} name="address" render={({ field }) => (
                 <FormItem className="col-span-2">
-                  <FormLabel>Address</FormLabel>
-                  <FormControl><Input {...field} /></FormControl>
+                  <FormLabel>Address *</FormLabel>
+                  <FormControl><Input placeholder="Witness permanent address" {...field} /></FormControl>
+                  <FormMessage />
                 </FormItem>
               )} />
             </div>

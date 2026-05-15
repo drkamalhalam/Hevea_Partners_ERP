@@ -9,8 +9,9 @@ const router = Router();
 const witnessSchema = z.object({
   fullName: z.string().min(1),
   sOnCOn: z.string().optional(),
-  mobile: z.string().optional(),
-  address: z.string().optional(),
+  fatherGuardianName: z.string().optional(),
+  mobile: z.string().min(10, "Mobile required"),
+  address: z.string().min(2, "Address required"),
   aadhaarNumber: z.string().optional(),
 });
 
@@ -59,8 +60,9 @@ router.post("/:projectId/witnesses", requireRole("admin", "developer"), async (r
       position: nextPos,
       fullName: parsed.data.fullName,
       sOnCOn: parsed.data.sOnCOn ?? null,
-      mobile: parsed.data.mobile ?? null,
-      address: parsed.data.address ?? null,
+      fatherGuardianName: parsed.data.fatherGuardianName ?? null,
+      mobile: parsed.data.mobile,
+      address: parsed.data.address,
       aadhaarNumber: parsed.data.aadhaarNumber ?? null,
       createdBy: req.dbUserId ?? null,
     })
@@ -85,8 +87,9 @@ router.put("/:projectId/witnesses/:position", requireRole("admin", "developer"),
     .set({
       fullName: parsed.data.fullName,
       sOnCOn: parsed.data.sOnCOn ?? null,
-      mobile: parsed.data.mobile ?? null,
-      address: parsed.data.address ?? null,
+      fatherGuardianName: parsed.data.fatherGuardianName ?? null,
+      mobile: parsed.data.mobile,
+      address: parsed.data.address,
       aadhaarNumber: parsed.data.aadhaarNumber ?? null,
       updatedAt: new Date(),
     })

@@ -27,6 +27,8 @@ export const projectWitnessesTable = pgTable("project_witnesses", {
   fullName: text("full_name").notNull(),
   /** "S/O" | "C/O" | "W/O" | "D/O" */
   sOnCOn: text("s_on_c_on"),
+  /** Father / guardian name (goes with sOnCOn) */
+  fatherGuardianName: text("father_guardian_name"),
   mobile: text("mobile"),
   address: text("address"),
   /** Optional per-project configuration */
