@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { useAuth } from "@clerk/react";
 import {
   useListTemplates,
   useCreateTemplate,
@@ -98,6 +99,7 @@ interface UploadDialogProps {
 
 function UploadDialog({ open, onClose, onSuccess }: UploadDialogProps) {
   const { toast } = useToast();
+  const { getToken } = useAuth();
   const createTemplate = useCreateTemplate();
 
   const [name, setName] = useState("");
@@ -132,9 +134,13 @@ function UploadDialog({ open, onClose, onSuccess }: UploadDialogProps) {
     setUploading(true);
     try {
       // Step 1: request presigned upload URL
+      const token = await getToken();
       const urlRes = await fetch("/api/storage/uploads/request-url", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ name: file.name, size: file.size, contentType: file.type }),
       });
       if (!urlRes.ok) throw new Error("Failed to get upload URL");

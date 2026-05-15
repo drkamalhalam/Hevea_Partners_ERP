@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef } from "react";
+import { useAuth } from "@clerk/react";
 import {
   useListDocuments,
   useCreateDocument,
@@ -270,6 +271,7 @@ export default function Documents() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { role } = useRole();
+  const { getToken } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [uploadOpen, setUploadOpen] = useState(false);
@@ -341,9 +343,13 @@ export default function Documents() {
     }
     setUploading(true);
     try {
+      const token = await getToken();
       const urlResp = await fetch("/api/storage/uploads/request-url", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({
           name: selectedFile.name,
           size: selectedFile.size,
