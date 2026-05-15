@@ -23,6 +23,7 @@ router.get("/:projectId/witnesses", requireRole("admin", "developer", "landowner
     .from(projectWitnessesTable)
     .where(eq(projectWitnessesTable.projectId, projectId))
     .orderBy(asc(projectWitnessesTable.position));
+  res.set("Cache-Control", "no-store");
   res.json({ witnesses: rows });
 });
 

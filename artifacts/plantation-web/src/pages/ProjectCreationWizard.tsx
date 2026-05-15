@@ -272,9 +272,10 @@ function StepParticipantKYC({
     upsertParticipant.mutate(
       { projectId, role, data: values },
       {
-        onSuccess: () => {
-          // Bust the participants list cache so Step 8 (Documents) sees fresh data
-          qc.invalidateQueries({
+        onSuccess: async () => {
+          // Refetch now (not just mark stale) so the in-memory cache is populated
+          // with the saved participant before the next step renders.
+          await qc.refetchQueries({
             queryKey: getListOnboardingParticipantsQueryKey(projectId),
           });
           onNext();

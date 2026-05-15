@@ -27,6 +27,7 @@ router.get("/:projectId/participants", requireRole("admin", "developer", "landow
     .from(projectParticipantsTable)
     .where(eq(projectParticipantsTable.projectId, projectId))
     .orderBy(projectParticipantsTable.role);
+  res.set("Cache-Control", "no-store");
   res.json({ participants: rows });
 });
 
