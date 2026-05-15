@@ -3,6 +3,7 @@ import {
   uuid,
   text,
   timestamp,
+  unique,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
@@ -42,7 +43,9 @@ export const projectParticipantsTable = pgTable("project_participants", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().$onUpdate(() => new Date()),
   createdBy: uuid("created_by").references(() => usersTable.id, { onDelete: "set null" }),
-});
+}, (t) => [
+  unique("project_participants_project_role_uq").on(t.projectId, t.role),
+]);
 
 export const insertProjectParticipantSchema = createInsertSchema(projectParticipantsTable).omit({
   id: true,
