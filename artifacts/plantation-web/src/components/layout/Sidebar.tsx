@@ -51,6 +51,7 @@ import {
   CreditCard,
   Settings,
   Activity,
+  History as HistoryIcon,
 } from "lucide-react";
 import { useRole, ROLE_LABELS, ROLE_COLORS } from "@/contexts/RoleContext";
 import type { UserRole } from "@/contexts/RoleContext";
@@ -400,6 +401,12 @@ const navGroups: NavGroup[] = [
         name: "User Activity",
         href: "/user-activity",
         icon: Activity,
+        roles: ["admin", "developer"],
+      },
+      {
+        name: "Snapshot Archive",
+        href: "/snapshots",
+        icon: HistoryIcon,
         roles: ["admin", "developer"],
       },
       {

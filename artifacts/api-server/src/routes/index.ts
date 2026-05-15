@@ -79,6 +79,7 @@ import governanceOverridesRouter from "./governance_overrides";
 import disputesRouter from "./disputes";
 import evidenceRouter from "./evidence";
 import userActivityRouter from "./user_activity";
+import snapshotsRouter from "./snapshots";
 
 const router: IRouter = Router();
 
@@ -173,5 +174,6 @@ router.use("/governance-overrides", governanceOverridesRouter);
 router.use("/disputes", disputesRouter);
 router.use("/evidence", evidenceRouter);
 router.use("/user-activity", userActivityRouter);
+router.use("/snapshots", snapshotsRouter);
 
 export default router;

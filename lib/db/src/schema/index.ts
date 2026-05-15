@@ -84,3 +84,4 @@ export * from "./governance_overrides";
 export * from "./disputes";
 export * from "./legal_evidence_archive";
 export * from "./user_sessions";
+export * from "./record_snapshots";
