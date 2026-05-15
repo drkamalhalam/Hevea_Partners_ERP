@@ -63,6 +63,7 @@ import SalesOrderDashboard from "./pages/SalesOrderDashboard";
 import MoneyCustody from "./pages/MoneyCustody";
 import PaymentReceivers from "./pages/PaymentReceivers";
 import SalesPermissions from "./pages/SalesPermissions";
+import PaymentSettings from "./pages/PaymentSettings";
 import OperationalTasks from "./pages/OperationalTasks";
 import OperationalAlerts from "./pages/OperationalAlerts";
 import OperationalAccessLog from "./pages/OperationalAccessLog";
@@ -339,6 +340,7 @@ function AppRoutes() {
               <Route path="/money-custody"><ProtectedRoute component={MoneyCustody} /></Route>
               <Route path="/payment-receivers"><ProtectedRoute component={PaymentReceivers} /></Route>
               <Route path="/sales-permissions"><ProtectedRoute component={SalesPermissions} /></Route>
+              <Route path="/payment-settings"><ProtectedRoute component={PaymentSettings} /></Route>
 
               {/* Analytics */}
               <Route path="/financial-analytics"><ProtectedRoute component={FinancialAnalytics} /></Route>

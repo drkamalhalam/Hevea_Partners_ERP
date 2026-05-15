@@ -8139,6 +8139,65 @@ export interface DepositBody {
   notes?: string;
 }
 
+export interface CentralPaymentAccount {
+  id?: string;
+  displayName?: string;
+  businessName?: string | null;
+  accountHolderName?: string | null;
+  bankName?: string | null;
+  branchName?: string | null;
+  accountNumber?: string | null;
+  ifscCode?: string | null;
+  upiId?: string | null;
+  merchantName?: string | null;
+  razorpayKeyId?: string | null;
+  hasRazorpaySecret?: boolean;
+  paymentCallbackUrl?: string | null;
+  supportPhone?: string | null;
+  supportEmail?: string | null;
+  isActive?: boolean;
+  notes?: string | null;
+  createdById?: string | null;
+  createdByName?: string;
+  updatedById?: string | null;
+  updatedByName?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CreatePaymentSettingsBody {
+  displayName?: string;
+  businessName?: string;
+  accountHolderName?: string;
+  bankName?: string;
+  branchName?: string;
+  accountNumber?: string;
+  ifscCode?: string;
+  upiId?: string;
+  merchantName?: string;
+  razorpayKeyId?: string;
+  razorpaySecret?: string;
+  paymentCallbackUrl?: string;
+  supportPhone?: string;
+  supportEmail?: string;
+  notes?: string;
+}
+
+export type PaymentSettingsAuditEntryChanges = {
+  [key: string]: unknown;
+} | null;
+
+export interface PaymentSettingsAuditEntry {
+  id?: string;
+  accountId?: string | null;
+  action?: string;
+  changedById?: string | null;
+  changedByName?: string;
+  changedAt?: string;
+  ipAddress?: string | null;
+  changes?: PaymentSettingsAuditEntryChanges;
+}
+
 export type GetUserActivityParams = {
   limit?: number;
 };

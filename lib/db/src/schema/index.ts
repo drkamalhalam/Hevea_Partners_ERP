@@ -78,3 +78,4 @@ export * from "./payment_transactions";
 export * from "./money_custody_ledger";
 export * from "./inventory_reservations";
 export * from "./sales_invoices";
+export * from "./central_payment_accounts";

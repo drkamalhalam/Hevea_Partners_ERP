@@ -73,6 +73,7 @@ import type {
   CancelStockTransferBody,
   CarryForwardDistributionRecord200,
   CarryForwardDistributionRecordBody,
+  CentralPaymentAccount,
   ClaimantContributionPage,
   ClaimantParticipationPage,
   ClosureReadiness,
@@ -149,6 +150,7 @@ import type {
   CreatePayableSnapshot201,
   CreatePayableSnapshotBody,
   CreatePaymentReceiverBody,
+  CreatePaymentSettingsBody,
   CreateProductionAssignmentBody,
   CreateProductionBatchBody,
   CreateProductionEntryBody,
@@ -468,6 +470,7 @@ import type {
   PatchBurdenRecoveryAdjustment,
   PayableComputation,
   PaymentReceiverAccount,
+  PaymentSettingsAuditEntry,
   PaymentTransaction,
   PrematuritySuccessionDashboard,
   ProductionAssignment,
@@ -45445,6 +45448,598 @@ export function useGetSalesInvoiceByNumber<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetSalesInvoiceByNumberQueryOptions(number, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get the currently active central payment account
+ */
+export const getGetActivePaymentSettingsUrl = () => {
+  return `/api/api/payment-settings`;
+};
+
+export const getActivePaymentSettings = async (
+  options?: RequestInit,
+): Promise<CentralPaymentAccount | null> => {
+  return customFetch<CentralPaymentAccount | null>(
+    getGetActivePaymentSettingsUrl(),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetActivePaymentSettingsQueryKey = () => {
+  return [`/api/api/payment-settings`] as const;
+};
+
+export const getGetActivePaymentSettingsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getActivePaymentSettings>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getActivePaymentSettings>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetActivePaymentSettingsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getActivePaymentSettings>>
+  > = ({ signal }) => getActivePaymentSettings({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getActivePaymentSettings>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetActivePaymentSettingsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getActivePaymentSettings>>
+>;
+export type GetActivePaymentSettingsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get the currently active central payment account
+ */
+
+export function useGetActivePaymentSettings<
+  TData = Awaited<ReturnType<typeof getActivePaymentSettings>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getActivePaymentSettings>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetActivePaymentSettingsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a new central payment account (admin only)
+ */
+export const getCreatePaymentSettingsUrl = () => {
+  return `/api/api/payment-settings`;
+};
+
+export const createPaymentSettings = async (
+  createPaymentSettingsBody: CreatePaymentSettingsBody,
+  options?: RequestInit,
+): Promise<CentralPaymentAccount> => {
+  return customFetch<CentralPaymentAccount>(getCreatePaymentSettingsUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createPaymentSettingsBody),
+  });
+};
+
+export const getCreatePaymentSettingsMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createPaymentSettings>>,
+    TError,
+    { data: BodyType<CreatePaymentSettingsBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createPaymentSettings>>,
+  TError,
+  { data: BodyType<CreatePaymentSettingsBody> },
+  TContext
+> => {
+  const mutationKey = ["createPaymentSettings"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createPaymentSettings>>,
+    { data: BodyType<CreatePaymentSettingsBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createPaymentSettings(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreatePaymentSettingsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createPaymentSettings>>
+>;
+export type CreatePaymentSettingsMutationBody =
+  BodyType<CreatePaymentSettingsBody>;
+export type CreatePaymentSettingsMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create a new central payment account (admin only)
+ */
+export const useCreatePaymentSettings = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createPaymentSettings>>,
+    TError,
+    { data: BodyType<CreatePaymentSettingsBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createPaymentSettings>>,
+  TError,
+  { data: BodyType<CreatePaymentSettingsBody> },
+  TContext
+> => {
+  return useMutation(getCreatePaymentSettingsMutationOptions(options));
+};
+
+/**
+ * @summary List all central payment accounts (admin only)
+ */
+export const getListPaymentSettingsUrl = () => {
+  return `/api/api/payment-settings/all`;
+};
+
+export const listPaymentSettings = async (
+  options?: RequestInit,
+): Promise<CentralPaymentAccount[]> => {
+  return customFetch<CentralPaymentAccount[]>(getListPaymentSettingsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListPaymentSettingsQueryKey = () => {
+  return [`/api/api/payment-settings/all`] as const;
+};
+
+export const getListPaymentSettingsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listPaymentSettings>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listPaymentSettings>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListPaymentSettingsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listPaymentSettings>>
+  > = ({ signal }) => listPaymentSettings({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listPaymentSettings>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListPaymentSettingsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listPaymentSettings>>
+>;
+export type ListPaymentSettingsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List all central payment accounts (admin only)
+ */
+
+export function useListPaymentSettings<
+  TData = Awaited<ReturnType<typeof listPaymentSettings>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listPaymentSettings>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListPaymentSettingsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Update a payment account (admin only)
+ */
+export const getUpdatePaymentSettingsUrl = (id: string) => {
+  return `/api/api/payment-settings/${id}`;
+};
+
+export const updatePaymentSettings = async (
+  id: string,
+  createPaymentSettingsBody: CreatePaymentSettingsBody,
+  options?: RequestInit,
+): Promise<CentralPaymentAccount> => {
+  return customFetch<CentralPaymentAccount>(getUpdatePaymentSettingsUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createPaymentSettingsBody),
+  });
+};
+
+export const getUpdatePaymentSettingsMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updatePaymentSettings>>,
+    TError,
+    { id: string; data: BodyType<CreatePaymentSettingsBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updatePaymentSettings>>,
+  TError,
+  { id: string; data: BodyType<CreatePaymentSettingsBody> },
+  TContext
+> => {
+  const mutationKey = ["updatePaymentSettings"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updatePaymentSettings>>,
+    { id: string; data: BodyType<CreatePaymentSettingsBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updatePaymentSettings(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdatePaymentSettingsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updatePaymentSettings>>
+>;
+export type UpdatePaymentSettingsMutationBody =
+  BodyType<CreatePaymentSettingsBody>;
+export type UpdatePaymentSettingsMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update a payment account (admin only)
+ */
+export const useUpdatePaymentSettings = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updatePaymentSettings>>,
+    TError,
+    { id: string; data: BodyType<CreatePaymentSettingsBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updatePaymentSettings>>,
+  TError,
+  { id: string; data: BodyType<CreatePaymentSettingsBody> },
+  TContext
+> => {
+  return useMutation(getUpdatePaymentSettingsMutationOptions(options));
+};
+
+/**
+ * @summary Set account as active (deactivates all others)
+ */
+export const getActivatePaymentSettingsUrl = (id: string) => {
+  return `/api/api/payment-settings/${id}/activate`;
+};
+
+export const activatePaymentSettings = async (
+  id: string,
+  options?: RequestInit,
+): Promise<CentralPaymentAccount> => {
+  return customFetch<CentralPaymentAccount>(getActivatePaymentSettingsUrl(id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getActivatePaymentSettingsMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof activatePaymentSettings>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof activatePaymentSettings>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["activatePaymentSettings"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof activatePaymentSettings>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return activatePaymentSettings(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ActivatePaymentSettingsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof activatePaymentSettings>>
+>;
+
+export type ActivatePaymentSettingsMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Set account as active (deactivates all others)
+ */
+export const useActivatePaymentSettings = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof activatePaymentSettings>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof activatePaymentSettings>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getActivatePaymentSettingsMutationOptions(options));
+};
+
+/**
+ * @summary Deactivate a payment account
+ */
+export const getDeactivatePaymentSettingsUrl = (id: string) => {
+  return `/api/api/payment-settings/${id}/deactivate`;
+};
+
+export const deactivatePaymentSettings = async (
+  id: string,
+  options?: RequestInit,
+): Promise<CentralPaymentAccount> => {
+  return customFetch<CentralPaymentAccount>(
+    getDeactivatePaymentSettingsUrl(id),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getDeactivatePaymentSettingsMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deactivatePaymentSettings>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deactivatePaymentSettings>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["deactivatePaymentSettings"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deactivatePaymentSettings>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deactivatePaymentSettings(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeactivatePaymentSettingsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deactivatePaymentSettings>>
+>;
+
+export type DeactivatePaymentSettingsMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Deactivate a payment account
+ */
+export const useDeactivatePaymentSettings = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deactivatePaymentSettings>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deactivatePaymentSettings>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getDeactivatePaymentSettingsMutationOptions(options));
+};
+
+/**
+ * @summary Audit log for a payment account
+ */
+export const getGetPaymentSettingsAuditUrl = (id: string) => {
+  return `/api/api/payment-settings/${id}/audit`;
+};
+
+export const getPaymentSettingsAudit = async (
+  id: string,
+  options?: RequestInit,
+): Promise<PaymentSettingsAuditEntry[]> => {
+  return customFetch<PaymentSettingsAuditEntry[]>(
+    getGetPaymentSettingsAuditUrl(id),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetPaymentSettingsAuditQueryKey = (id: string) => {
+  return [`/api/api/payment-settings/${id}/audit`] as const;
+};
+
+export const getGetPaymentSettingsAuditQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPaymentSettingsAudit>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPaymentSettingsAudit>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetPaymentSettingsAuditQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getPaymentSettingsAudit>>
+  > = ({ signal }) =>
+    getPaymentSettingsAudit(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPaymentSettingsAudit>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPaymentSettingsAuditQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPaymentSettingsAudit>>
+>;
+export type GetPaymentSettingsAuditQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Audit log for a payment account
+ */
+
+export function useGetPaymentSettingsAudit<
+  TData = Awaited<ReturnType<typeof getPaymentSettingsAudit>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPaymentSettingsAudit>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPaymentSettingsAuditQueryOptions(id, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

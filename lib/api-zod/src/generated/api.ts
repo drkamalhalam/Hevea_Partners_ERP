@@ -18185,3 +18185,228 @@ export const GetSalesInvoiceByNumberResponse = zod.object({
   invoiceDate: zod.string().optional(),
   createdAt: zod.string().optional(),
 });
+
+/**
+ * @summary Get the currently active central payment account
+ */
+export const GetActivePaymentSettingsResponse = zod
+  .union([
+    zod.object({
+      id: zod.string().optional(),
+      displayName: zod.string().optional(),
+      businessName: zod.string().nullish(),
+      accountHolderName: zod.string().nullish(),
+      bankName: zod.string().nullish(),
+      branchName: zod.string().nullish(),
+      accountNumber: zod.string().nullish(),
+      ifscCode: zod.string().nullish(),
+      upiId: zod.string().nullish(),
+      merchantName: zod.string().nullish(),
+      razorpayKeyId: zod.string().nullish(),
+      hasRazorpaySecret: zod.boolean().optional(),
+      paymentCallbackUrl: zod.string().nullish(),
+      supportPhone: zod.string().nullish(),
+      supportEmail: zod.string().nullish(),
+      isActive: zod.boolean().optional(),
+      notes: zod.string().nullish(),
+      createdById: zod.string().nullish(),
+      createdByName: zod.string().optional(),
+      updatedById: zod.string().nullish(),
+      updatedByName: zod.string().optional(),
+      createdAt: zod.string().optional(),
+      updatedAt: zod.string().optional(),
+    }),
+    zod.null(),
+  ])
+  .nullable();
+
+/**
+ * @summary Create a new central payment account (admin only)
+ */
+export const CreatePaymentSettingsBody = zod.object({
+  displayName: zod.string().optional(),
+  businessName: zod.string().optional(),
+  accountHolderName: zod.string().optional(),
+  bankName: zod.string().optional(),
+  branchName: zod.string().optional(),
+  accountNumber: zod.string().optional(),
+  ifscCode: zod.string().optional(),
+  upiId: zod.string().optional(),
+  merchantName: zod.string().optional(),
+  razorpayKeyId: zod.string().optional(),
+  razorpaySecret: zod.string().optional(),
+  paymentCallbackUrl: zod.string().optional(),
+  supportPhone: zod.string().optional(),
+  supportEmail: zod.string().optional(),
+  notes: zod.string().optional(),
+});
+
+/**
+ * @summary List all central payment accounts (admin only)
+ */
+export const ListPaymentSettingsResponseItem = zod.object({
+  id: zod.string().optional(),
+  displayName: zod.string().optional(),
+  businessName: zod.string().nullish(),
+  accountHolderName: zod.string().nullish(),
+  bankName: zod.string().nullish(),
+  branchName: zod.string().nullish(),
+  accountNumber: zod.string().nullish(),
+  ifscCode: zod.string().nullish(),
+  upiId: zod.string().nullish(),
+  merchantName: zod.string().nullish(),
+  razorpayKeyId: zod.string().nullish(),
+  hasRazorpaySecret: zod.boolean().optional(),
+  paymentCallbackUrl: zod.string().nullish(),
+  supportPhone: zod.string().nullish(),
+  supportEmail: zod.string().nullish(),
+  isActive: zod.boolean().optional(),
+  notes: zod.string().nullish(),
+  createdById: zod.string().nullish(),
+  createdByName: zod.string().optional(),
+  updatedById: zod.string().nullish(),
+  updatedByName: zod.string().optional(),
+  createdAt: zod.string().optional(),
+  updatedAt: zod.string().optional(),
+});
+export const ListPaymentSettingsResponse = zod.array(
+  ListPaymentSettingsResponseItem,
+);
+
+/**
+ * @summary Update a payment account (admin only)
+ */
+export const UpdatePaymentSettingsParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const UpdatePaymentSettingsBody = zod.object({
+  displayName: zod.string().optional(),
+  businessName: zod.string().optional(),
+  accountHolderName: zod.string().optional(),
+  bankName: zod.string().optional(),
+  branchName: zod.string().optional(),
+  accountNumber: zod.string().optional(),
+  ifscCode: zod.string().optional(),
+  upiId: zod.string().optional(),
+  merchantName: zod.string().optional(),
+  razorpayKeyId: zod.string().optional(),
+  razorpaySecret: zod.string().optional(),
+  paymentCallbackUrl: zod.string().optional(),
+  supportPhone: zod.string().optional(),
+  supportEmail: zod.string().optional(),
+  notes: zod.string().optional(),
+});
+
+export const UpdatePaymentSettingsResponse = zod.object({
+  id: zod.string().optional(),
+  displayName: zod.string().optional(),
+  businessName: zod.string().nullish(),
+  accountHolderName: zod.string().nullish(),
+  bankName: zod.string().nullish(),
+  branchName: zod.string().nullish(),
+  accountNumber: zod.string().nullish(),
+  ifscCode: zod.string().nullish(),
+  upiId: zod.string().nullish(),
+  merchantName: zod.string().nullish(),
+  razorpayKeyId: zod.string().nullish(),
+  hasRazorpaySecret: zod.boolean().optional(),
+  paymentCallbackUrl: zod.string().nullish(),
+  supportPhone: zod.string().nullish(),
+  supportEmail: zod.string().nullish(),
+  isActive: zod.boolean().optional(),
+  notes: zod.string().nullish(),
+  createdById: zod.string().nullish(),
+  createdByName: zod.string().optional(),
+  updatedById: zod.string().nullish(),
+  updatedByName: zod.string().optional(),
+  createdAt: zod.string().optional(),
+  updatedAt: zod.string().optional(),
+});
+
+/**
+ * @summary Set account as active (deactivates all others)
+ */
+export const ActivatePaymentSettingsParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const ActivatePaymentSettingsResponse = zod.object({
+  id: zod.string().optional(),
+  displayName: zod.string().optional(),
+  businessName: zod.string().nullish(),
+  accountHolderName: zod.string().nullish(),
+  bankName: zod.string().nullish(),
+  branchName: zod.string().nullish(),
+  accountNumber: zod.string().nullish(),
+  ifscCode: zod.string().nullish(),
+  upiId: zod.string().nullish(),
+  merchantName: zod.string().nullish(),
+  razorpayKeyId: zod.string().nullish(),
+  hasRazorpaySecret: zod.boolean().optional(),
+  paymentCallbackUrl: zod.string().nullish(),
+  supportPhone: zod.string().nullish(),
+  supportEmail: zod.string().nullish(),
+  isActive: zod.boolean().optional(),
+  notes: zod.string().nullish(),
+  createdById: zod.string().nullish(),
+  createdByName: zod.string().optional(),
+  updatedById: zod.string().nullish(),
+  updatedByName: zod.string().optional(),
+  createdAt: zod.string().optional(),
+  updatedAt: zod.string().optional(),
+});
+
+/**
+ * @summary Deactivate a payment account
+ */
+export const DeactivatePaymentSettingsParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const DeactivatePaymentSettingsResponse = zod.object({
+  id: zod.string().optional(),
+  displayName: zod.string().optional(),
+  businessName: zod.string().nullish(),
+  accountHolderName: zod.string().nullish(),
+  bankName: zod.string().nullish(),
+  branchName: zod.string().nullish(),
+  accountNumber: zod.string().nullish(),
+  ifscCode: zod.string().nullish(),
+  upiId: zod.string().nullish(),
+  merchantName: zod.string().nullish(),
+  razorpayKeyId: zod.string().nullish(),
+  hasRazorpaySecret: zod.boolean().optional(),
+  paymentCallbackUrl: zod.string().nullish(),
+  supportPhone: zod.string().nullish(),
+  supportEmail: zod.string().nullish(),
+  isActive: zod.boolean().optional(),
+  notes: zod.string().nullish(),
+  createdById: zod.string().nullish(),
+  createdByName: zod.string().optional(),
+  updatedById: zod.string().nullish(),
+  updatedByName: zod.string().optional(),
+  createdAt: zod.string().optional(),
+  updatedAt: zod.string().optional(),
+});
+
+/**
+ * @summary Audit log for a payment account
+ */
+export const GetPaymentSettingsAuditParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const GetPaymentSettingsAuditResponseItem = zod.object({
+  id: zod.string().optional(),
+  accountId: zod.string().nullish(),
+  action: zod.string().optional(),
+  changedById: zod.string().nullish(),
+  changedByName: zod.string().optional(),
+  changedAt: zod.string().optional(),
+  ipAddress: zod.string().nullish(),
+  changes: zod.record(zod.string(), zod.unknown()).nullish(),
+});
+export const GetPaymentSettingsAuditResponse = zod.array(
+  GetPaymentSettingsAuditResponseItem,
+);

@@ -11009,6 +11009,128 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/SalesInvoice' }
 
+  # ── Central Payment Settings ─────────────────────────────────────────────────
+
+  /api/payment-settings:
+    get:
+      operationId: getActivePaymentSettings
+      summary: Get the currently active central payment account
+      tags: [PaymentSettings]
+      responses:
+        '200':
+          description: Active payment settings (null if none configured)
+          content:
+            application/json:
+              schema:
+                nullable: true
+                oneOf:
+                  - $ref: '#/components/schemas/CentralPaymentAccount'
+                  - type: 'null'
+    post:
+      operationId: createPaymentSettings
+      summary: Create a new central payment account (admin only)
+      tags: [PaymentSettings]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreatePaymentSettingsBody' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CentralPaymentAccount' }
+
+  /api/payment-settings/all:
+    get:
+      operationId: listPaymentSettings
+      summary: List all central payment accounts (admin only)
+      tags: [PaymentSettings]
+      responses:
+        '200':
+          description: List of accounts
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/CentralPaymentAccount' }
+
+  /api/payment-settings/{id}:
+    patch:
+      operationId: updatePaymentSettings
+      summary: Update a payment account (admin only)
+      tags: [PaymentSettings]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreatePaymentSettingsBody' }
+      responses:
+        '200':
+          description: Updated account
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CentralPaymentAccount' }
+
+  /api/payment-settings/{id}/activate:
+    post:
+      operationId: activatePaymentSettings
+      summary: Set account as active (deactivates all others)
+      tags: [PaymentSettings]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Activated account
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CentralPaymentAccount' }
+
+  /api/payment-settings/{id}/deactivate:
+    post:
+      operationId: deactivatePaymentSettings
+      summary: Deactivate a payment account
+      tags: [PaymentSettings]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Deactivated account
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CentralPaymentAccount' }
+
+  /api/payment-settings/{id}/audit:
+    get:
+      operationId: getPaymentSettingsAudit
+      summary: Audit log for a payment account
+      tags: [PaymentSettings]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Audit entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/PaymentSettingsAuditEntry' }
+
 
 components:
   schemas:
@@ -18762,3 +18884,63 @@ components:
         generatedAt: { type: string }
         invoiceDate: { type: string }
         createdAt: { type: string }
+
+    # ── Central Payment Settings ─────────────────────────────────────────────
+
+    CentralPaymentAccount:
+      type: object
+      properties:
+        id: { type: string }
+        displayName: { type: string }
+        businessName: { type: string, nullable: true }
+        accountHolderName: { type: string, nullable: true }
+        bankName: { type: string, nullable: true }
+        branchName: { type: string, nullable: true }
+        accountNumber: { type: string, nullable: true }
+        ifscCode: { type: string, nullable: true }
+        upiId: { type: string, nullable: true }
+        merchantName: { type: string, nullable: true }
+        razorpayKeyId: { type: string, nullable: true }
+        hasRazorpaySecret: { type: boolean }
+        paymentCallbackUrl: { type: string, nullable: true }
+        supportPhone: { type: string, nullable: true }
+        supportEmail: { type: string, nullable: true }
+        isActive: { type: boolean }
+        notes: { type: string, nullable: true }
+        createdById: { type: string, nullable: true }
+        createdByName: { type: string }
+        updatedById: { type: string, nullable: true }
+        updatedByName: { type: string }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+
+    CreatePaymentSettingsBody:
+      type: object
+      properties:
+        displayName: { type: string }
+        businessName: { type: string }
+        accountHolderName: { type: string }
+        bankName: { type: string }
+        branchName: { type: string }
+        accountNumber: { type: string }
+        ifscCode: { type: string }
+        upiId: { type: string }
+        merchantName: { type: string }
+        razorpayKeyId: { type: string }
+        razorpaySecret: { type: string }
+        paymentCallbackUrl: { type: string }
+        supportPhone: { type: string }
+        supportEmail: { type: string }
+        notes: { type: string }
+
+    PaymentSettingsAuditEntry:
+      type: object
+      properties:
+        id: { type: string }
+        accountId: { type: string, nullable: true }
+        action: { type: string }
+        changedById: { type: string, nullable: true }
+        changedByName: { type: string }
+        changedAt: { type: string }
+        ipAddress: { type: string, nullable: true }
+        changes: { type: object, nullable: true, additionalProperties: true }

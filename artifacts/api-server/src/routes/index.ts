@@ -70,6 +70,7 @@ import paymentReceiversRouter from "./payment_receivers";
 import salesPermissionsRouter from "./sales_permissions";
 import moneyCustodyRouter from "./money_custody";
 import salesInvoicesRouter from "./sales_invoices_route";
+import paymentSettingsRouter from "./payment_settings";
 
 const router: IRouter = Router();
 
@@ -155,5 +156,6 @@ router.use("/payment-receivers", paymentReceiversRouter);
 router.use("/sales-permissions", salesPermissionsRouter);
 router.use("/money-custody", moneyCustodyRouter);
 router.use("/sales-invoices", salesInvoicesRouter);
+router.use("/payment-settings", paymentSettingsRouter);
 
 export default router;

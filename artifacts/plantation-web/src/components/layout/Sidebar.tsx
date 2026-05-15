@@ -48,6 +48,7 @@ import {
   CalendarDays,
   UserCog,
   CreditCard,
+  Settings,
 } from "lucide-react";
 import { useRole, ROLE_LABELS, ROLE_COLORS } from "@/contexts/RoleContext";
 import type { UserRole } from "@/contexts/RoleContext";
@@ -367,6 +368,12 @@ const navGroups: NavGroup[] = [
         name: "Sales Permissions",
         href: "/sales-permissions",
         icon: ShieldCheck,
+        roles: ["admin", "developer"],
+      },
+      {
+        name: "Payment Settings",
+        href: "/payment-settings",
+        icon: Settings,
         roles: ["admin", "developer"],
       },
       {
