@@ -68,6 +68,7 @@ import {
   ShieldCheck,
   ArrowLeft,
   History,
+  Calculator,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -201,6 +202,25 @@ function RecordLandNotionalDialog({
   const [confirmed, setConfirmed] = useState(false);
   const [error, setError] = useState("");
 
+  // Calculator state
+  const [calcMethod, setCalcMethod] = useState<"tree_capacity" | "kani_area">("tree_capacity");
+  const [ratePerTree, setRatePerTree] = useState("");
+  const [treeCapacity, setTreeCapacity] = useState("");
+  const [ratePerKani, setRatePerKani] = useState("");
+  const [landAreaKani, setLandAreaKani] = useState("");
+
+  const calcResult: number | null = (() => {
+    if (calcMethod === "tree_capacity") {
+      const r = parseFloat(ratePerTree);
+      const t = parseFloat(treeCapacity);
+      return !isNaN(r) && !isNaN(t) && r > 0 && t > 0 ? r * t : null;
+    } else {
+      const r = parseFloat(ratePerKani);
+      const a = parseFloat(landAreaKani);
+      return !isNaN(r) && !isNaN(a) && r > 0 && a > 0 ? r * a : null;
+    }
+  })();
+
   const createMutation = useCreateContribution();
 
   const handleSubmit = async () => {
@@ -264,6 +284,127 @@ function RecordLandNotionalDialog({
             </ul>
           </div>
 
+          {/* ── Calculator ─────────────────────────────────────────────────── */}
+          <div className="rounded-lg border border-emerald-200 dark:border-emerald-800 bg-emerald-50/60 dark:bg-emerald-950/20 p-3 space-y-3">
+            <p className="text-xs font-semibold text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
+              <Calculator className="w-3.5 h-3.5" /> Notional Value Calculator
+            </p>
+
+            {/* Method toggle */}
+            <div className="flex rounded-md overflow-hidden border border-emerald-300 dark:border-emerald-700 text-xs font-medium w-fit">
+              <button
+                type="button"
+                onClick={() => setCalcMethod("tree_capacity")}
+                className={cn(
+                  "px-3 py-1.5 transition-colors",
+                  calcMethod === "tree_capacity"
+                    ? "bg-emerald-600 text-white"
+                    : "bg-white dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/30",
+                )}
+              >
+                By Tree Capacity
+              </button>
+              <button
+                type="button"
+                onClick={() => setCalcMethod("kani_area")}
+                className={cn(
+                  "px-3 py-1.5 border-l border-emerald-300 dark:border-emerald-700 transition-colors",
+                  calcMethod === "kani_area"
+                    ? "bg-emerald-600 text-white"
+                    : "bg-white dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/30",
+                )}
+              >
+                By Land Area (Kani)
+              </button>
+            </div>
+
+            {calcMethod === "tree_capacity" ? (
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <Label className="text-xs">Notional value per tree (₹)</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    step="any"
+                    placeholder="e.g. 2500"
+                    value={ratePerTree}
+                    onChange={(e) => setRatePerTree(e.target.value)}
+                    className="h-8 text-sm"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Tree capacity (no. of trees)</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    step="1"
+                    placeholder="e.g. 400"
+                    value={treeCapacity}
+                    onChange={(e) => setTreeCapacity(e.target.value)}
+                    className="h-8 text-sm"
+                  />
+                </div>
+                <p className="col-span-2 text-xs text-muted-foreground">
+                  Use this method when the exact land area is unknown — value is derived from the planted tree count.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <Label className="text-xs">Notional value per Kani (₹)</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    step="any"
+                    placeholder="e.g. 150000"
+                    value={ratePerKani}
+                    onChange={(e) => setRatePerKani(e.target.value)}
+                    className="h-8 text-sm"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Land area (Kani)</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    step="any"
+                    placeholder="e.g. 3.5"
+                    value={landAreaKani}
+                    onChange={(e) => setLandAreaKani(e.target.value)}
+                    className="h-8 text-sm"
+                  />
+                </div>
+                <p className="col-span-2 text-xs text-muted-foreground">
+                  Use this method when the land area in Kani is known from the survey or deed.
+                  1 Kani ≈ 0.132 acres.
+                </p>
+              </div>
+            )}
+
+            {/* Result row */}
+            <div className="flex items-center gap-3 pt-1">
+              <div className="flex-1 rounded-md bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-800 px-3 py-2 text-sm">
+                {calcResult !== null ? (
+                  <span className="font-semibold text-emerald-700 dark:text-emerald-400">
+                    ₹{calcResult.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+                  </span>
+                ) : (
+                  <span className="text-muted-foreground text-xs">Fill both fields above to compute</span>
+                )}
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={calcResult === null}
+                className="text-emerald-700 border-emerald-300 hover:bg-emerald-50 dark:text-emerald-400 dark:border-emerald-700 dark:hover:bg-emerald-950/40 shrink-0"
+                onClick={() => calcResult !== null && setAmount(String(Math.round(calcResult)))}
+              >
+                Use this value →
+              </Button>
+            </div>
+          </div>
+
           {/* Landowner name */}
           <div className="space-y-1.5">
             <Label>
@@ -290,7 +431,7 @@ function RecordLandNotionalDialog({
                 placeholder="0"
               />
               <p className="text-xs text-muted-foreground">
-                As agreed in the partnership deed
+                Use the calculator above or enter manually
               </p>
             </div>
             <div className="space-y-1.5">
