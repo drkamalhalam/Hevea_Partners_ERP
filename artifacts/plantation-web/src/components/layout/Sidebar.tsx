@@ -383,6 +383,12 @@ const navGroups: NavGroup[] = [
         roles: ["admin", "developer"],
       },
       {
+        name: "Gov. Alert Center",
+        href: "/governance-alert-center",
+        icon: Bell,
+        roles: ["admin", "developer"],
+      },
+      {
         name: "Op. Alerts",
         href: "/operational-alerts",
         icon: ScanSearch,

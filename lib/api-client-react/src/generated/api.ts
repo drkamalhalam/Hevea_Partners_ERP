@@ -250,7 +250,10 @@ import type {
   GetDistributionSummaryParams,
   GetExpenditureSummaryParams,
   GetFinancialSummaryParams,
+  GetGovernanceAlertsParams,
   GetGovernanceMeeting200,
+  GetGovernanceTasksParams,
+  GetGovernanceTimelineParams,
   GetHeldDistributionSummary200Item,
   GetHeldDistributionSummaryParams,
   GetImbalancePartnerSummary200,
@@ -303,6 +306,9 @@ import type {
   GetUserActivityParams,
   GetValuationPreviewParams,
   GovernanceHealthReport,
+  GovernanceMonitoringAlert,
+  GovernanceMonitoringEvent,
+  GovernanceMonitoringTask,
   GovernanceSummary,
   HealthStatus,
   HeldDistributionEntry,
@@ -43302,8 +43308,8 @@ export const getListSalesOrdersUrl = (params?: ListSalesOrdersParams) => {
   const stringifiedParams = normalizedParams.toString();
 
   return stringifiedParams.length > 0
-    ? `/api/api/sales-orders?${stringifiedParams}`
-    : `/api/api/sales-orders`;
+    ? `/api/sales-orders?${stringifiedParams}`
+    : `/api/sales-orders`;
 };
 
 export const listSalesOrders = async (
@@ -43317,7 +43323,7 @@ export const listSalesOrders = async (
 };
 
 export const getListSalesOrdersQueryKey = (params?: ListSalesOrdersParams) => {
-  return [`/api/api/sales-orders`, ...(params ? [params] : [])] as const;
+  return [`/api/sales-orders`, ...(params ? [params] : [])] as const;
 };
 
 export const getListSalesOrdersQueryOptions = <
@@ -43385,7 +43391,7 @@ export function useListSalesOrders<
  * @summary Create a new sales order (draft)
  */
 export const getCreateSalesOrderUrl = () => {
-  return `/api/api/sales-orders`;
+  return `/api/sales-orders`;
 };
 
 export const createSalesOrder = async (
@@ -43482,8 +43488,8 @@ export const getGetSalesOrderStatsUrl = (params?: GetSalesOrderStatsParams) => {
   const stringifiedParams = normalizedParams.toString();
 
   return stringifiedParams.length > 0
-    ? `/api/api/sales-orders/stats/summary?${stringifiedParams}`
-    : `/api/api/sales-orders/stats/summary`;
+    ? `/api/sales-orders/stats/summary?${stringifiedParams}`
+    : `/api/sales-orders/stats/summary`;
 };
 
 export const getSalesOrderStats = async (
@@ -43500,7 +43506,7 @@ export const getGetSalesOrderStatsQueryKey = (
   params?: GetSalesOrderStatsParams,
 ) => {
   return [
-    `/api/api/sales-orders/stats/summary`,
+    `/api/sales-orders/stats/summary`,
     ...(params ? [params] : []),
   ] as const;
 };
@@ -43571,7 +43577,7 @@ export function useGetSalesOrderStats<
  * @summary Expire stale inventory reservations (admin)
  */
 export const getExpireStaleReservationsUrl = () => {
-  return `/api/api/sales-orders/admin/expire-reservations`;
+  return `/api/sales-orders/admin/expire-reservations`;
 };
 
 export const expireStaleReservations = async (
@@ -43655,7 +43661,7 @@ export const useExpireStaleReservations = <
  * @summary Get a single sales order with detail
  */
 export const getGetSalesOrderUrl = (id: string) => {
-  return `/api/api/sales-orders/${id}`;
+  return `/api/sales-orders/${id}`;
 };
 
 export const getSalesOrder = async (
@@ -43669,7 +43675,7 @@ export const getSalesOrder = async (
 };
 
 export const getGetSalesOrderQueryKey = (id: string) => {
-  return [`/api/api/sales-orders/${id}`] as const;
+  return [`/api/sales-orders/${id}`] as const;
 };
 
 export const getGetSalesOrderQueryOptions = <
@@ -43742,7 +43748,7 @@ export function useGetSalesOrder<
  * @summary Initiate payment request and reserve inventory
  */
 export const getRequestPaymentUrl = (id: string) => {
-  return `/api/api/sales-orders/${id}/request-payment`;
+  return `/api/sales-orders/${id}/request-payment`;
 };
 
 export const requestPayment = async (
@@ -43826,7 +43832,7 @@ export const useRequestPayment = <
  * @summary Record detected payment (manual entry or webhook)
  */
 export const getDetectPaymentUrl = (id: string) => {
-  return `/api/api/sales-orders/${id}/detect-payment`;
+  return `/api/sales-orders/${id}/detect-payment`;
 };
 
 export const detectPayment = async (
@@ -43913,7 +43919,7 @@ export const useDetectPayment = <
  * @summary Manually confirm payment, generate invoice and custody entry
  */
 export const getConfirmPaymentUrl = (id: string) => {
-  return `/api/api/sales-orders/${id}/confirm-payment`;
+  return `/api/sales-orders/${id}/confirm-payment`;
 };
 
 export const confirmPayment = async (
@@ -44000,7 +44006,7 @@ export const useConfirmPayment = <
  * @summary Cancel a sales order and release reservations
  */
 export const getCancelSalesOrderUrl = (id: string) => {
-  return `/api/api/sales-orders/${id}/cancel`;
+  return `/api/sales-orders/${id}/cancel`;
 };
 
 export const cancelSalesOrder = async (
@@ -44087,7 +44093,7 @@ export const useCancelSalesOrder = <
  * @summary Record a dispatch event (full or partial)
  */
 export const getDispatchSalesOrderUrl = (id: string) => {
-  return `/api/api/sales-orders/${id}/dispatch`;
+  return `/api/sales-orders/${id}/dispatch`;
 };
 
 export const dispatchSalesOrder = async (
@@ -44187,8 +44193,8 @@ export const getListPaymentReceiversUrl = (
   const stringifiedParams = normalizedParams.toString();
 
   return stringifiedParams.length > 0
-    ? `/api/api/payment-receivers?${stringifiedParams}`
-    : `/api/api/payment-receivers`;
+    ? `/api/payment-receivers?${stringifiedParams}`
+    : `/api/payment-receivers`;
 };
 
 export const listPaymentReceivers = async (
@@ -44207,7 +44213,7 @@ export const listPaymentReceivers = async (
 export const getListPaymentReceiversQueryKey = (
   params?: ListPaymentReceiversParams,
 ) => {
-  return [`/api/api/payment-receivers`, ...(params ? [params] : [])] as const;
+  return [`/api/payment-receivers`, ...(params ? [params] : [])] as const;
 };
 
 export const getListPaymentReceiversQueryOptions = <
@@ -44277,7 +44283,7 @@ export function useListPaymentReceivers<
  * @summary Create a new approved payment receiver account
  */
 export const getCreatePaymentReceiverUrl = () => {
-  return `/api/api/payment-receivers`;
+  return `/api/payment-receivers`;
 };
 
 export const createPaymentReceiver = async (
@@ -44364,7 +44370,7 @@ export const useCreatePaymentReceiver = <
  * @summary Get a payment receiver account
  */
 export const getGetPaymentReceiverUrl = (id: string) => {
-  return `/api/api/payment-receivers/${id}`;
+  return `/api/payment-receivers/${id}`;
 };
 
 export const getPaymentReceiver = async (
@@ -44378,7 +44384,7 @@ export const getPaymentReceiver = async (
 };
 
 export const getGetPaymentReceiverQueryKey = (id: string) => {
-  return [`/api/api/payment-receivers/${id}`] as const;
+  return [`/api/payment-receivers/${id}`] as const;
 };
 
 export const getGetPaymentReceiverQueryOptions = <
@@ -44451,7 +44457,7 @@ export function useGetPaymentReceiver<
  * @summary Update a payment receiver account
  */
 export const getUpdatePaymentReceiverUrl = (id: string) => {
-  return `/api/api/payment-receivers/${id}`;
+  return `/api/payment-receivers/${id}`;
 };
 
 export const updatePaymentReceiver = async (
@@ -44539,7 +44545,7 @@ export const useUpdatePaymentReceiver = <
  * @summary Deactivate a payment receiver account
  */
 export const getDeactivatePaymentReceiverUrl = (id: string) => {
-  return `/api/api/payment-receivers/${id}`;
+  return `/api/payment-receivers/${id}`;
 };
 
 export const deactivatePaymentReceiver = async (
@@ -44639,8 +44645,8 @@ export const getListSalesPermissionsUrl = (
   const stringifiedParams = normalizedParams.toString();
 
   return stringifiedParams.length > 0
-    ? `/api/api/sales-permissions?${stringifiedParams}`
-    : `/api/api/sales-permissions`;
+    ? `/api/sales-permissions?${stringifiedParams}`
+    : `/api/sales-permissions`;
 };
 
 export const listSalesPermissions = async (
@@ -44656,7 +44662,7 @@ export const listSalesPermissions = async (
 export const getListSalesPermissionsQueryKey = (
   params?: ListSalesPermissionsParams,
 ) => {
-  return [`/api/api/sales-permissions`, ...(params ? [params] : [])] as const;
+  return [`/api/sales-permissions`, ...(params ? [params] : [])] as const;
 };
 
 export const getListSalesPermissionsQueryOptions = <
@@ -44726,7 +44732,7 @@ export function useListSalesPermissions<
  * @summary Grant a user sales permission for a project
  */
 export const getCreateSalesPermissionUrl = () => {
-  return `/api/api/sales-permissions`;
+  return `/api/sales-permissions`;
 };
 
 export const createSalesPermission = async (
@@ -44813,7 +44819,7 @@ export const useCreateSalesPermission = <
  * @summary Revoke a sales permission
  */
 export const getRevokeSalesPermissionUrl = (id: string) => {
-  return `/api/api/sales-permissions/${id}/revoke`;
+  return `/api/sales-permissions/${id}/revoke`;
 };
 
 export const revokeSalesPermission = async (
@@ -44908,8 +44914,8 @@ export const getListMoneyCustodyUrl = (params?: ListMoneyCustodyParams) => {
   const stringifiedParams = normalizedParams.toString();
 
   return stringifiedParams.length > 0
-    ? `/api/api/money-custody?${stringifiedParams}`
-    : `/api/api/money-custody`;
+    ? `/api/money-custody?${stringifiedParams}`
+    : `/api/money-custody`;
 };
 
 export const listMoneyCustody = async (
@@ -44925,7 +44931,7 @@ export const listMoneyCustody = async (
 export const getListMoneyCustodyQueryKey = (
   params?: ListMoneyCustodyParams,
 ) => {
-  return [`/api/api/money-custody`, ...(params ? [params] : [])] as const;
+  return [`/api/money-custody`, ...(params ? [params] : [])] as const;
 };
 
 export const getListMoneyCustodyQueryOptions = <
@@ -45007,8 +45013,8 @@ export const getGetMoneyCustodySummaryUrl = (
   const stringifiedParams = normalizedParams.toString();
 
   return stringifiedParams.length > 0
-    ? `/api/api/money-custody/summary/by-holder?${stringifiedParams}`
-    : `/api/api/money-custody/summary/by-holder`;
+    ? `/api/money-custody/summary/by-holder?${stringifiedParams}`
+    : `/api/money-custody/summary/by-holder`;
 };
 
 export const getMoneyCustodySummary = async (
@@ -45028,7 +45034,7 @@ export const getGetMoneyCustodySummaryQueryKey = (
   params?: GetMoneyCustodySummaryParams,
 ) => {
   return [
-    `/api/api/money-custody/summary/by-holder`,
+    `/api/money-custody/summary/by-holder`,
     ...(params ? [params] : []),
   ] as const;
 };
@@ -45100,7 +45106,7 @@ export function useGetMoneyCustodySummary<
  * @summary Record a deposit from a custody entry
  */
 export const getRecordCustodyDepositUrl = (id: string) => {
-  return `/api/api/money-custody/${id}/deposit`;
+  return `/api/money-custody/${id}/deposit`;
 };
 
 export const recordCustodyDeposit = async (
@@ -45198,8 +45204,8 @@ export const getListSalesInvoicesUrl = (params?: ListSalesInvoicesParams) => {
   const stringifiedParams = normalizedParams.toString();
 
   return stringifiedParams.length > 0
-    ? `/api/api/sales-invoices?${stringifiedParams}`
-    : `/api/api/sales-invoices`;
+    ? `/api/sales-invoices?${stringifiedParams}`
+    : `/api/sales-invoices`;
 };
 
 export const listSalesInvoices = async (
@@ -45215,7 +45221,7 @@ export const listSalesInvoices = async (
 export const getListSalesInvoicesQueryKey = (
   params?: ListSalesInvoicesParams,
 ) => {
-  return [`/api/api/sales-invoices`, ...(params ? [params] : [])] as const;
+  return [`/api/sales-invoices`, ...(params ? [params] : [])] as const;
 };
 
 export const getListSalesInvoicesQueryOptions = <
@@ -45284,7 +45290,7 @@ export function useListSalesInvoices<
  * @summary Get a sales invoice by ID
  */
 export const getGetSalesInvoiceUrl = (id: string) => {
-  return `/api/api/sales-invoices/${id}`;
+  return `/api/sales-invoices/${id}`;
 };
 
 export const getSalesInvoice = async (
@@ -45298,7 +45304,7 @@ export const getSalesInvoice = async (
 };
 
 export const getGetSalesInvoiceQueryKey = (id: string) => {
-  return [`/api/api/sales-invoices/${id}`] as const;
+  return [`/api/sales-invoices/${id}`] as const;
 };
 
 export const getGetSalesInvoiceQueryOptions = <
@@ -45371,7 +45377,7 @@ export function useGetSalesInvoice<
  * @summary Get a sales invoice by invoice number
  */
 export const getGetSalesInvoiceByNumberUrl = (number: string) => {
-  return `/api/api/sales-invoices/by-number/${number}`;
+  return `/api/sales-invoices/by-number/${number}`;
 };
 
 export const getSalesInvoiceByNumber = async (
@@ -45385,7 +45391,7 @@ export const getSalesInvoiceByNumber = async (
 };
 
 export const getGetSalesInvoiceByNumberQueryKey = (number: string) => {
-  return [`/api/api/sales-invoices/by-number/${number}`] as const;
+  return [`/api/sales-invoices/by-number/${number}`] as const;
 };
 
 export const getGetSalesInvoiceByNumberQueryOptions = <
@@ -45460,7 +45466,7 @@ export function useGetSalesInvoiceByNumber<
  * @summary Get the currently active central payment account
  */
 export const getGetActivePaymentSettingsUrl = () => {
-  return `/api/api/payment-settings`;
+  return `/api/payment-settings`;
 };
 
 export const getActivePaymentSettings = async (
@@ -45476,7 +45482,7 @@ export const getActivePaymentSettings = async (
 };
 
 export const getGetActivePaymentSettingsQueryKey = () => {
-  return [`/api/api/payment-settings`] as const;
+  return [`/api/payment-settings`] as const;
 };
 
 export const getGetActivePaymentSettingsQueryOptions = <
@@ -45539,7 +45545,7 @@ export function useGetActivePaymentSettings<
  * @summary Create a new central payment account (admin only)
  */
 export const getCreatePaymentSettingsUrl = () => {
-  return `/api/api/payment-settings`;
+  return `/api/payment-settings`;
 };
 
 export const createPaymentSettings = async (
@@ -45626,7 +45632,7 @@ export const useCreatePaymentSettings = <
  * @summary List all central payment accounts (admin only)
  */
 export const getListPaymentSettingsUrl = () => {
-  return `/api/api/payment-settings/all`;
+  return `/api/payment-settings/all`;
 };
 
 export const listPaymentSettings = async (
@@ -45639,7 +45645,7 @@ export const listPaymentSettings = async (
 };
 
 export const getListPaymentSettingsQueryKey = () => {
-  return [`/api/api/payment-settings/all`] as const;
+  return [`/api/payment-settings/all`] as const;
 };
 
 export const getListPaymentSettingsQueryOptions = <
@@ -45701,7 +45707,7 @@ export function useListPaymentSettings<
  * @summary Update a payment account (admin only)
  */
 export const getUpdatePaymentSettingsUrl = (id: string) => {
-  return `/api/api/payment-settings/${id}`;
+  return `/api/payment-settings/${id}`;
 };
 
 export const updatePaymentSettings = async (
@@ -45789,7 +45795,7 @@ export const useUpdatePaymentSettings = <
  * @summary Set account as active (deactivates all others)
  */
 export const getActivatePaymentSettingsUrl = (id: string) => {
-  return `/api/api/payment-settings/${id}/activate`;
+  return `/api/payment-settings/${id}/activate`;
 };
 
 export const activatePaymentSettings = async (
@@ -45873,7 +45879,7 @@ export const useActivatePaymentSettings = <
  * @summary Deactivate a payment account
  */
 export const getDeactivatePaymentSettingsUrl = (id: string) => {
-  return `/api/api/payment-settings/${id}/deactivate`;
+  return `/api/payment-settings/${id}/deactivate`;
 };
 
 export const deactivatePaymentSettings = async (
@@ -45960,7 +45966,7 @@ export const useDeactivatePaymentSettings = <
  * @summary Audit log for a payment account
  */
 export const getGetPaymentSettingsAuditUrl = (id: string) => {
-  return `/api/api/payment-settings/${id}/audit`;
+  return `/api/payment-settings/${id}/audit`;
 };
 
 export const getPaymentSettingsAudit = async (
@@ -45977,7 +45983,7 @@ export const getPaymentSettingsAudit = async (
 };
 
 export const getGetPaymentSettingsAuditQueryKey = (id: string) => {
-  return [`/api/api/payment-settings/${id}/audit`] as const;
+  return [`/api/payment-settings/${id}/audit`] as const;
 };
 
 export const getGetPaymentSettingsAuditQueryOptions = <
@@ -46040,6 +46046,321 @@ export function useGetPaymentSettingsAudit<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetPaymentSettingsAuditQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List current governance alerts across all projects
+ */
+export const getGetGovernanceAlertsUrl = (
+  params?: GetGovernanceAlertsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/governance-monitoring/alerts?${stringifiedParams}`
+    : `/api/governance-monitoring/alerts`;
+};
+
+export const getGovernanceAlerts = async (
+  params?: GetGovernanceAlertsParams,
+  options?: RequestInit,
+): Promise<GovernanceMonitoringAlert[]> => {
+  return customFetch<GovernanceMonitoringAlert[]>(
+    getGetGovernanceAlertsUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetGovernanceAlertsQueryKey = (
+  params?: GetGovernanceAlertsParams,
+) => {
+  return [
+    `/api/governance-monitoring/alerts`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetGovernanceAlertsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getGovernanceAlerts>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetGovernanceAlertsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getGovernanceAlerts>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetGovernanceAlertsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getGovernanceAlerts>>
+  > = ({ signal }) =>
+    getGovernanceAlerts(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getGovernanceAlerts>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetGovernanceAlertsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getGovernanceAlerts>>
+>;
+export type GetGovernanceAlertsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List current governance alerts across all projects
+ */
+
+export function useGetGovernanceAlerts<
+  TData = Awaited<ReturnType<typeof getGovernanceAlerts>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetGovernanceAlertsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getGovernanceAlerts>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetGovernanceAlertsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Chronological audit timeline of governance events
+ */
+export const getGetGovernanceTimelineUrl = (
+  params?: GetGovernanceTimelineParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/governance-monitoring/timeline?${stringifiedParams}`
+    : `/api/governance-monitoring/timeline`;
+};
+
+export const getGovernanceTimeline = async (
+  params?: GetGovernanceTimelineParams,
+  options?: RequestInit,
+): Promise<GovernanceMonitoringEvent[]> => {
+  return customFetch<GovernanceMonitoringEvent[]>(
+    getGetGovernanceTimelineUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetGovernanceTimelineQueryKey = (
+  params?: GetGovernanceTimelineParams,
+) => {
+  return [
+    `/api/governance-monitoring/timeline`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetGovernanceTimelineQueryOptions = <
+  TData = Awaited<ReturnType<typeof getGovernanceTimeline>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetGovernanceTimelineParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getGovernanceTimeline>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetGovernanceTimelineQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getGovernanceTimeline>>
+  > = ({ signal }) =>
+    getGovernanceTimeline(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getGovernanceTimeline>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetGovernanceTimelineQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getGovernanceTimeline>>
+>;
+export type GetGovernanceTimelineQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Chronological audit timeline of governance events
+ */
+
+export function useGetGovernanceTimeline<
+  TData = Awaited<ReturnType<typeof getGovernanceTimeline>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetGovernanceTimelineParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getGovernanceTimeline>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetGovernanceTimelineQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Pending administrative tasks requiring action
+ */
+export const getGetGovernanceTasksUrl = (params?: GetGovernanceTasksParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/governance-monitoring/tasks?${stringifiedParams}`
+    : `/api/governance-monitoring/tasks`;
+};
+
+export const getGovernanceTasks = async (
+  params?: GetGovernanceTasksParams,
+  options?: RequestInit,
+): Promise<GovernanceMonitoringTask[]> => {
+  return customFetch<GovernanceMonitoringTask[]>(
+    getGetGovernanceTasksUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetGovernanceTasksQueryKey = (
+  params?: GetGovernanceTasksParams,
+) => {
+  return [
+    `/api/governance-monitoring/tasks`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetGovernanceTasksQueryOptions = <
+  TData = Awaited<ReturnType<typeof getGovernanceTasks>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetGovernanceTasksParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getGovernanceTasks>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetGovernanceTasksQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getGovernanceTasks>>
+  > = ({ signal }) => getGovernanceTasks(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getGovernanceTasks>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetGovernanceTasksQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getGovernanceTasks>>
+>;
+export type GetGovernanceTasksQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Pending administrative tasks requiring action
+ */
+
+export function useGetGovernanceTasks<
+  TData = Awaited<ReturnType<typeof getGovernanceTasks>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetGovernanceTasksParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getGovernanceTasks>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetGovernanceTasksQueryOptions(params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

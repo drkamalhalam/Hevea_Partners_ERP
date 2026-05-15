@@ -27,13 +27,13 @@ router.get("/", async (req, res) => {
   }
 });
 
-router.get("/:id", async (req, res) => {
+router.get("/:id", async (req, res): Promise<void> => {
   try {
     const [invoice] = await db
       .select()
       .from(salesInvoicesTable)
       .where(eq(salesInvoicesTable.id, req.params.id));
-    if (!invoice) return res.status(404).json({ error: "Invoice not found" });
+    if (!invoice) { res.status(404).json({ error: "Invoice not found" }); return; }
 
     const [order] = await db
       .select()
@@ -47,13 +47,13 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-router.get("/by-number/:number", async (req, res) => {
+router.get("/by-number/:number", async (req, res): Promise<void> => {
   try {
     const [invoice] = await db
       .select()
       .from(salesInvoicesTable)
       .where(eq(salesInvoicesTable.invoiceNumber, req.params.number));
-    if (!invoice) return res.status(404).json({ error: "Invoice not found" });
+    if (!invoice) { res.status(404).json({ error: "Invoice not found" }); return; }
     res.json(invoice);
   } catch (err) {
     req.log.error(err);

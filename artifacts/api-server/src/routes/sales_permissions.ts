@@ -41,14 +41,14 @@ const CreateSchema = z.object({
   notes: z.string().optional(),
 });
 
-router.post("/", async (req, res) => {
+router.post("/", async (req, res): Promise<void> => {
   const parse = CreateSchema.safeParse(req.body);
-  if (!parse.success) return res.status(400).json({ error: parse.error.flatten() });
+  if (!parse.success) { res.status(400).json({ error: parse.error.flatten() }); return; }
   const data = parse.data;
 
   try {
     const [project] = await db.select().from(projectsTable).where(eq(projectsTable.id, data.projectId));
-    if (!project) return res.status(404).json({ error: "Project not found" });
+    if (!project) { res.status(404).json({ error: "Project not found" }); return; }
 
     const [perm] = await db
       .insert(projectSalesPermissionsTable)
@@ -74,14 +74,14 @@ router.post("/", async (req, res) => {
   }
 });
 
-router.patch("/:id/revoke", async (req, res) => {
+router.patch("/:id/revoke", async (req, res): Promise<void> => {
   try {
     const [updated] = await db
       .update(projectSalesPermissionsTable)
       .set({ isActive: false, updatedAt: new Date() })
       .where(eq(projectSalesPermissionsTable.id, req.params.id))
       .returning();
-    if (!updated) return res.status(404).json({ error: "Permission not found" });
+    if (!updated) { res.status(404).json({ error: "Permission not found" }); return; }
     res.json(updated);
   } catch (err) {
     req.log.error(err);

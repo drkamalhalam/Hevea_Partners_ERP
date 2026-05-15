@@ -18410,3 +18410,88 @@ export const GetPaymentSettingsAuditResponseItem = zod.object({
 export const GetPaymentSettingsAuditResponse = zod.array(
   GetPaymentSettingsAuditResponseItem,
 );
+
+/**
+ * @summary List current governance alerts across all projects
+ */
+export const GetGovernanceAlertsQueryParams = zod.object({
+  projectId: zod.coerce.string().optional(),
+  severity: zod.coerce.string().optional(),
+  category: zod.coerce.string().optional(),
+});
+
+export const GetGovernanceAlertsResponseItem = zod.object({
+  id: zod.string().optional(),
+  type: zod.string().optional(),
+  category: zod.string().optional(),
+  severity: zod.string().optional(),
+  title: zod.string().optional(),
+  description: zod.string().optional(),
+  projectId: zod.string().nullish(),
+  projectName: zod.string().nullish(),
+  entityId: zod.string().nullish(),
+  entityType: zod.string().nullish(),
+  actionPath: zod.string().nullish(),
+  metadata: zod.object({}).passthrough().nullish(),
+  createdAt: zod.string().optional(),
+});
+export const GetGovernanceAlertsResponse = zod.array(
+  GetGovernanceAlertsResponseItem,
+);
+
+/**
+ * @summary Chronological audit timeline of governance events
+ */
+export const GetGovernanceTimelineQueryParams = zod.object({
+  projectId: zod.coerce.string().optional(),
+  category: zod.coerce.string().optional(),
+  limit: zod.coerce.string().optional(),
+  offset: zod.coerce.string().optional(),
+});
+
+export const GetGovernanceTimelineResponseItem = zod.object({
+  id: zod.string().optional(),
+  type: zod.string().optional(),
+  category: zod.string().optional(),
+  timestamp: zod.string().optional(),
+  projectId: zod.string().nullish(),
+  projectName: zod.string().nullish(),
+  actor: zod.string().nullish(),
+  title: zod.string().optional(),
+  description: zod.string().optional(),
+  severity: zod.string().optional(),
+  entityId: zod.string().nullish(),
+  entityType: zod.string().nullish(),
+  actionPath: zod.string().nullish(),
+  metadata: zod.object({}).passthrough().nullish(),
+});
+export const GetGovernanceTimelineResponse = zod.array(
+  GetGovernanceTimelineResponseItem,
+);
+
+/**
+ * @summary Pending administrative tasks requiring action
+ */
+export const GetGovernanceTasksQueryParams = zod.object({
+  projectId: zod.coerce.string().optional(),
+  priority: zod.coerce.string().optional(),
+});
+
+export const GetGovernanceTasksResponseItem = zod.object({
+  id: zod.string().optional(),
+  type: zod.string().optional(),
+  category: zod.string().optional(),
+  priority: zod.string().optional(),
+  title: zod.string().optional(),
+  description: zod.string().optional(),
+  projectId: zod.string().nullish(),
+  projectName: zod.string().nullish(),
+  entityId: zod.string().nullish(),
+  entityType: zod.string().nullish(),
+  actionPath: zod.string().nullish(),
+  dueDate: zod.string().nullish(),
+  metadata: zod.object({}).passthrough().nullish(),
+});
+export const GetGovernanceTasksResponse = zod.array(
+  GetGovernanceTasksResponseItem,
+);

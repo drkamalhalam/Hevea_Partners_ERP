@@ -11,11 +11,19 @@ export type UserRoleEnum =
   | "employee"
   | "operational_staff";
 
+export interface DbUser {
+  id: string;
+  displayName: string | null;
+  email: string | null;
+  role: string | null;
+}
+
 declare global {
   namespace Express {
     interface Request {
       userId?: string;
       dbUserId?: string; // UUID from users table, set by requireAuth
+      dbUser?: DbUser;   // Full user row subset, set by requireAuth
       userRole?: UserRoleEnum;
       userProjectIds?: string[];
       canAccessAllProjects?: boolean;
@@ -58,6 +66,12 @@ export async function requireAuth(
         .where(eq(userProjectAssignmentsTable.userId, userRow.id));
 
       req.dbUserId = userRow.id;
+      req.dbUser = {
+        id: userRow.id,
+        displayName: userRow.displayName,
+        email: userRow.email,
+        role: userRow.role,
+      };
       req.userRole = (userRow.role ?? "employee") as UserRoleEnum;
       req.userProjectIds = assignments
         .filter((a) => !a.revokedAt)

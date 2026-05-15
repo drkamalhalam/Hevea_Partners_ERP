@@ -84,13 +84,13 @@ router.get("/", async (req, res) => {
 
 // ── Get single order ──────────────────────────────────────────────────────────
 
-router.get("/:id", async (req, res) => {
+router.get("/:id", async (req, res): Promise<void> => {
   try {
     const [order] = await db
       .select()
       .from(salesOrdersTable)
       .where(eq(salesOrdersTable.id, req.params.id));
-    if (!order) return res.status(404).json({ error: "Order not found" });
+    if (!order) { res.status(404).json({ error: "Order not found" }); return; }
 
     const dispatches = await db
       .select()
@@ -144,9 +144,9 @@ const CreateOrderSchema = z.object({
   remarks: z.string().optional(),
 });
 
-router.post("/", async (req, res) => {
+router.post("/", async (req, res): Promise<void> => {
   const parse = CreateOrderSchema.safeParse(req.body);
-  if (!parse.success) return res.status(400).json({ error: parse.error.flatten() });
+  if (!parse.success) { res.status(400).json({ error: parse.error.flatten() }); return; }
   const data = parse.data;
 
   try {
@@ -154,9 +154,10 @@ router.post("/", async (req, res) => {
       .select()
       .from(projectsTable)
       .where(eq(projectsTable.id, data.projectId));
-    if (!project) return res.status(404).json({ error: "Project not found" });
-    if (project.status === "closed") {
-      return res.status(400).json({ error: "Cannot create sales order for a closed project" });
+    if (!project) { res.status(404).json({ error: "Project not found" }); return; }
+    if (project.lifecycleStatus === "closed") {
+      res.status(400).json({ error: "Cannot create sales order for a closed project" });
+      return;
     }
 
     let receiverName: string | undefined;
@@ -168,7 +169,7 @@ router.post("/", async (req, res) => {
           eq(paymentReceiverAccountsTable.id, data.paymentReceiverAccountId),
           eq(paymentReceiverAccountsTable.isActive, true),
         ));
-      if (!acc) return res.status(400).json({ error: "Payment receiver account not found or inactive" });
+      if (!acc) { res.status(400).json({ error: "Payment receiver account not found or inactive" }); return; }
       receiverName = acc.accountName;
     }
 
@@ -214,16 +215,17 @@ router.post("/", async (req, res) => {
 
 // ── Initiate payment request ──────────────────────────────────────────────────
 
-router.post("/:id/request-payment", async (req, res) => {
+router.post("/:id/request-payment", async (req, res): Promise<void> => {
   try {
     const [order] = await db
       .select()
       .from(salesOrdersTable)
       .where(eq(salesOrdersTable.id, req.params.id));
-    if (!order) return res.status(404).json({ error: "Order not found" });
+    if (!order) { res.status(404).json({ error: "Order not found" }); return; }
 
     if (!["draft"].includes(order.orderStatus)) {
-      return res.status(400).json({ error: `Cannot request payment for order in status: ${order.orderStatus}` });
+      res.status(400).json({ error: `Cannot request payment for order in status: ${order.orderStatus}` });
+      return;
     }
 
     const now = new Date();
@@ -271,18 +273,19 @@ const DetectPaymentSchema = z.object({
   notes: z.string().optional(),
 });
 
-router.post("/:id/detect-payment", async (req, res) => {
+router.post("/:id/detect-payment", async (req, res): Promise<void> => {
   const parse = DetectPaymentSchema.safeParse(req.body);
-  if (!parse.success) return res.status(400).json({ error: parse.error.flatten() });
+  if (!parse.success) { res.status(400).json({ error: parse.error.flatten() }); return; }
 
   try {
     const [order] = await db
       .select()
       .from(salesOrdersTable)
       .where(eq(salesOrdersTable.id, req.params.id));
-    if (!order) return res.status(404).json({ error: "Order not found" });
+    if (!order) { res.status(404).json({ error: "Order not found" }); return; }
     if (!["payment_pending"].includes(order.orderStatus)) {
-      return res.status(400).json({ error: `Cannot detect payment for order in status: ${order.orderStatus}` });
+      res.status(400).json({ error: `Cannot detect payment for order in status: ${order.orderStatus}` });
+      return;
     }
 
     const data = parse.data;
@@ -295,9 +298,10 @@ router.post("/:id/detect-payment", async (req, res) => {
         .where(eq(paymentTransactionsTable.transactionReference, data.transactionReference))
         .limit(1);
       if (duplicate) {
-        return res.status(409).json({
+        res.status(409).json({
           error: `Duplicate transaction: UTR ${data.transactionReference} has already been recorded. If this is a mistake, contact admin.`,
         });
+        return;
       }
     }
 
@@ -339,16 +343,17 @@ router.post("/:id/detect-payment", async (req, res) => {
 
 // ── Confirm payment (manual authorization) ────────────────────────────────────
 
-router.post("/:id/confirm-payment", async (req, res) => {
+router.post("/:id/confirm-payment", async (req, res): Promise<void> => {
   try {
     const [order] = await db
       .select()
       .from(salesOrdersTable)
       .where(eq(salesOrdersTable.id, req.params.id));
-    if (!order) return res.status(404).json({ error: "Order not found" });
+    if (!order) { res.status(404).json({ error: "Order not found" }); return; }
 
     if (!["payment_pending", "awaiting_manual_confirmation", "payment_detected"].includes(order.orderStatus)) {
-      return res.status(400).json({ error: `Cannot confirm payment for order in status: ${order.orderStatus}` });
+      res.status(400).json({ error: `Cannot confirm payment for order in status: ${order.orderStatus}` });
+      return;
     }
 
     const now = new Date();
@@ -455,15 +460,16 @@ router.post("/:id/confirm-payment", async (req, res) => {
 
 // ── Cancel order ──────────────────────────────────────────────────────────────
 
-router.post("/:id/cancel", async (req, res) => {
+router.post("/:id/cancel", async (req, res): Promise<void> => {
   try {
     const [order] = await db
       .select()
       .from(salesOrdersTable)
       .where(eq(salesOrdersTable.id, req.params.id));
-    if (!order) return res.status(404).json({ error: "Order not found" });
+    if (!order) { res.status(404).json({ error: "Order not found" }); return; }
     if (["confirmed", "completed", "cancelled"].includes(order.orderStatus)) {
-      return res.status(400).json({ error: `Cannot cancel order in status: ${order.orderStatus}` });
+      res.status(400).json({ error: `Cannot cancel order in status: ${order.orderStatus}` });
+      return;
     }
 
     const reason = (req.body.reason as string) || "Cancelled by user";
@@ -510,18 +516,19 @@ const DispatchSchema = z.object({
   notes: z.string().optional(),
 });
 
-router.post("/:id/dispatch", async (req, res) => {
+router.post("/:id/dispatch", async (req, res): Promise<void> => {
   const parse = DispatchSchema.safeParse(req.body);
-  if (!parse.success) return res.status(400).json({ error: parse.error.flatten() });
+  if (!parse.success) { res.status(400).json({ error: parse.error.flatten() }); return; }
 
   try {
     const [order] = await db
       .select()
       .from(salesOrdersTable)
       .where(eq(salesOrdersTable.id, req.params.id));
-    if (!order) return res.status(404).json({ error: "Order not found" });
+    if (!order) { res.status(404).json({ error: "Order not found" }); return; }
     if (!["confirmed", "partially_dispatched"].includes(order.orderStatus)) {
-      return res.status(400).json({ error: "Order must be confirmed before dispatch" });
+      res.status(400).json({ error: "Order must be confirmed before dispatch" });
+      return;
     }
 
     const data = parse.data;
@@ -530,7 +537,8 @@ router.post("/:id/dispatch", async (req, res) => {
     const remaining = orderedKg - alreadyDispatched;
 
     if (data.quantityKg > remaining + 0.001) {
-      return res.status(400).json({ error: `Cannot dispatch ${data.quantityKg} kg — only ${remaining.toFixed(3)} kg remaining` });
+      res.status(400).json({ error: `Cannot dispatch ${data.quantityKg} kg — only ${remaining.toFixed(3)} kg remaining` });
+      return;
     }
 
     const now = new Date();

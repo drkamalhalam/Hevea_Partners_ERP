@@ -55,17 +55,17 @@ const DepositSchema = z.object({
   notes: z.string().optional(),
 });
 
-router.post("/:id/deposit", async (req, res) => {
+router.post("/:id/deposit", async (req, res): Promise<void> => {
   const parse = DepositSchema.safeParse(req.body);
-  if (!parse.success) return res.status(400).json({ error: parse.error.flatten() });
+  if (!parse.success) { res.status(400).json({ error: parse.error.flatten() }); return; }
 
   try {
     const [entry] = await db
       .select()
       .from(moneyCustodyLedgerTable)
       .where(eq(moneyCustodyLedgerTable.id, req.params.id));
-    if (!entry) return res.status(404).json({ error: "Ledger entry not found" });
-    if (entry.isClosed) return res.status(400).json({ error: "Entry is already closed" });
+    if (!entry) { res.status(404).json({ error: "Ledger entry not found" }); return; }
+    if (entry.isClosed) { res.status(400).json({ error: "Entry is already closed" }); return; }
 
     const data = parse.data;
     const totalAmount = parseFloat(entry.amount);
@@ -74,7 +74,8 @@ router.post("/:id/deposit", async (req, res) => {
     const newRemaining = totalAmount - newDeposited;
 
     if (newDeposited > totalAmount + 0.01) {
-      return res.status(400).json({ error: "Deposit exceeds total amount" });
+      res.status(400).json({ error: "Deposit exceeds total amount" });
+      return;
     }
 
     const isClosed = newRemaining <= 0.01;

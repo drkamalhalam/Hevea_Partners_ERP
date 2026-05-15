@@ -8198,6 +8198,67 @@ export interface PaymentSettingsAuditEntry {
   changes?: PaymentSettingsAuditEntryChanges;
 }
 
+export type GovernanceMonitoringAlertMetadata = {
+  [key: string]: unknown;
+} | null;
+
+export interface GovernanceMonitoringAlert {
+  id?: string;
+  type?: string;
+  category?: string;
+  severity?: string;
+  title?: string;
+  description?: string;
+  projectId?: string | null;
+  projectName?: string | null;
+  entityId?: string | null;
+  entityType?: string | null;
+  actionPath?: string | null;
+  metadata?: GovernanceMonitoringAlertMetadata;
+  createdAt?: string;
+}
+
+export type GovernanceMonitoringEventMetadata = {
+  [key: string]: unknown;
+} | null;
+
+export interface GovernanceMonitoringEvent {
+  id?: string;
+  type?: string;
+  category?: string;
+  timestamp?: string;
+  projectId?: string | null;
+  projectName?: string | null;
+  actor?: string | null;
+  title?: string;
+  description?: string;
+  severity?: string;
+  entityId?: string | null;
+  entityType?: string | null;
+  actionPath?: string | null;
+  metadata?: GovernanceMonitoringEventMetadata;
+}
+
+export type GovernanceMonitoringTaskMetadata = {
+  [key: string]: unknown;
+} | null;
+
+export interface GovernanceMonitoringTask {
+  id?: string;
+  type?: string;
+  category?: string;
+  priority?: string;
+  title?: string;
+  description?: string;
+  projectId?: string | null;
+  projectName?: string | null;
+  entityId?: string | null;
+  entityType?: string | null;
+  actionPath?: string | null;
+  dueDate?: string | null;
+  metadata?: GovernanceMonitoringTaskMetadata;
+}
+
 export type GetUserActivityParams = {
   limit?: number;
 };
@@ -10193,4 +10254,22 @@ export type ListSalesInvoicesParams = {
   dispatchStatus?: string;
   limit?: string;
   offset?: string;
+};
+
+export type GetGovernanceAlertsParams = {
+  projectId?: string;
+  severity?: string;
+  category?: string;
+};
+
+export type GetGovernanceTimelineParams = {
+  projectId?: string;
+  category?: string;
+  limit?: string;
+  offset?: string;
+};
+
+export type GetGovernanceTasksParams = {
+  projectId?: string;
+  priority?: string;
 };

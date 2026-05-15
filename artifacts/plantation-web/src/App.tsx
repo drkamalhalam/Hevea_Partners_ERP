@@ -64,6 +64,7 @@ import MoneyCustody from "./pages/MoneyCustody";
 import PaymentReceivers from "./pages/PaymentReceivers";
 import SalesPermissions from "./pages/SalesPermissions";
 import PaymentSettings from "./pages/PaymentSettings";
+import GovernanceAlertCenter from "./pages/GovernanceAlertCenter";
 import OperationalTasks from "./pages/OperationalTasks";
 import OperationalAlerts from "./pages/OperationalAlerts";
 import OperationalAccessLog from "./pages/OperationalAccessLog";
@@ -343,6 +344,7 @@ function AppRoutes() {
               <Route path="/payment-receivers"><ProtectedRoute component={PaymentReceivers} /></Route>
               <Route path="/sales-permissions"><ProtectedRoute component={SalesPermissions} /></Route>
               <Route path="/payment-settings"><ProtectedRoute component={PaymentSettings} /></Route>
+              <Route path="/governance-alert-center"><ProtectedRoute component={GovernanceAlertCenter} /></Route>
 
               {/* Analytics */}
               <Route path="/financial-analytics"><ProtectedRoute component={FinancialAnalytics} /></Route>

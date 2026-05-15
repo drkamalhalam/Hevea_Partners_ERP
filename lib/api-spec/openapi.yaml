@@ -10597,7 +10597,7 @@ paths:
 
   # ── Sales Orders v2 ─────────────────────────────────────────────────────────
 
-  /api/sales-orders:
+  /sales-orders:
     get:
       operationId: listSalesOrders
       summary: List sales orders
@@ -10632,7 +10632,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/SalesOrder' }
 
-  /api/sales-orders/stats/summary:
+  /sales-orders/stats/summary:
     get:
       operationId: getSalesOrderStats
       summary: Aggregated stats for sales orders
@@ -10646,7 +10646,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/SalesOrderStats' }
 
-  /api/sales-orders/admin/expire-reservations:
+  /sales-orders/admin/expire-reservations:
     post:
       operationId: expireStaleReservations
       summary: Expire stale inventory reservations (admin)
@@ -10661,7 +10661,7 @@ paths:
                 properties:
                   expired: { type: integer }
 
-  /api/sales-orders/{id}:
+  /sales-orders/{id}:
     get:
       operationId: getSalesOrder
       summary: Get a single sales order with detail
@@ -10675,7 +10675,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/SalesOrderDetail' }
 
-  /api/sales-orders/{id}/request-payment:
+  /sales-orders/{id}/request-payment:
     post:
       operationId: requestPayment
       summary: Initiate payment request and reserve inventory
@@ -10689,7 +10689,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/SalesOrder' }
 
-  /api/sales-orders/{id}/detect-payment:
+  /sales-orders/{id}/detect-payment:
     post:
       operationId: detectPayment
       summary: Record detected payment (manual entry or webhook)
@@ -10708,7 +10708,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/PaymentTransaction' }
 
-  /api/sales-orders/{id}/confirm-payment:
+  /sales-orders/{id}/confirm-payment:
     post:
       operationId: confirmPayment
       summary: Manually confirm payment, generate invoice and custody entry
@@ -10730,7 +10730,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/SalesOrderDetail' }
 
-  /api/sales-orders/{id}/cancel:
+  /sales-orders/{id}/cancel:
     post:
       operationId: cancelSalesOrder
       summary: Cancel a sales order and release reservations
@@ -10751,7 +10751,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/SalesOrder' }
 
-  /api/sales-orders/{id}/dispatch:
+  /sales-orders/{id}/dispatch:
     post:
       operationId: dispatchSalesOrder
       summary: Record a dispatch event (full or partial)
@@ -10772,7 +10772,7 @@ paths:
 
   # ── Payment Receiver Accounts ────────────────────────────────────────────────
 
-  /api/payment-receivers:
+  /payment-receivers:
     get:
       operationId: listPaymentReceivers
       summary: List approved payment receiver accounts
@@ -10804,7 +10804,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/PaymentReceiverAccount' }
 
-  /api/payment-receivers/{id}:
+  /payment-receivers/{id}:
     get:
       operationId: getPaymentReceiver
       summary: Get a payment receiver account
@@ -10858,7 +10858,7 @@ paths:
 
   # ── Sales Permissions ────────────────────────────────────────────────────────
 
-  /api/sales-permissions:
+  /sales-permissions:
     get:
       operationId: listSalesPermissions
       summary: List project sales permissions
@@ -10890,7 +10890,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/SalesPermission' }
 
-  /api/sales-permissions/{id}/revoke:
+  /sales-permissions/{id}/revoke:
     patch:
       operationId: revokeSalesPermission
       summary: Revoke a sales permission
@@ -10906,7 +10906,7 @@ paths:
 
   # ── Money Custody Ledger ─────────────────────────────────────────────────────
 
-  /api/money-custody:
+  /money-custody:
     get:
       operationId: listMoneyCustody
       summary: List money custody ledger entries
@@ -10924,7 +10924,7 @@ paths:
                 type: array
                 items: { $ref: '#/components/schemas/MoneyCustodyEntry' }
 
-  /api/money-custody/summary/by-holder:
+  /money-custody/summary/by-holder:
     get:
       operationId: getMoneyCustodySummary
       summary: Summarised custody balances grouped by holder
@@ -10940,7 +10940,7 @@ paths:
                 type: array
                 items: { $ref: '#/components/schemas/CustodyHolderSummary' }
 
-  /api/money-custody/{id}/deposit:
+  /money-custody/{id}/deposit:
     post:
       operationId: recordCustodyDeposit
       summary: Record a deposit from a custody entry
@@ -10961,7 +10961,7 @@ paths:
 
   # ── Sales Invoices ───────────────────────────────────────────────────────────
 
-  /api/sales-invoices:
+  /sales-invoices:
     get:
       operationId: listSalesInvoices
       summary: List sales invoices
@@ -10981,7 +10981,7 @@ paths:
                 type: array
                 items: { $ref: '#/components/schemas/SalesInvoice' }
 
-  /api/sales-invoices/{id}:
+  /sales-invoices/{id}:
     get:
       operationId: getSalesInvoice
       summary: Get a sales invoice by ID
@@ -10995,7 +10995,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/SalesInvoice' }
 
-  /api/sales-invoices/by-number/{number}:
+  /sales-invoices/by-number/{number}:
     get:
       operationId: getSalesInvoiceByNumber
       summary: Get a sales invoice by invoice number
@@ -11011,7 +11011,7 @@ paths:
 
   # ── Central Payment Settings ─────────────────────────────────────────────────
 
-  /api/payment-settings:
+  /payment-settings:
     get:
       operationId: getActivePaymentSettings
       summary: Get the currently active central payment account
@@ -11042,7 +11042,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/CentralPaymentAccount' }
 
-  /api/payment-settings/all:
+  /payment-settings/all:
     get:
       operationId: listPaymentSettings
       summary: List all central payment accounts (admin only)
@@ -11056,7 +11056,7 @@ paths:
                 type: array
                 items: { $ref: '#/components/schemas/CentralPaymentAccount' }
 
-  /api/payment-settings/{id}:
+  /payment-settings/{id}:
     patch:
       operationId: updatePaymentSettings
       summary: Update a payment account (admin only)
@@ -11078,7 +11078,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/CentralPaymentAccount' }
 
-  /api/payment-settings/{id}/activate:
+  /payment-settings/{id}/activate:
     post:
       operationId: activatePaymentSettings
       summary: Set account as active (deactivates all others)
@@ -11095,7 +11095,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/CentralPaymentAccount' }
 
-  /api/payment-settings/{id}/deactivate:
+  /payment-settings/{id}/deactivate:
     post:
       operationId: deactivatePaymentSettings
       summary: Deactivate a payment account
@@ -11112,7 +11112,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/CentralPaymentAccount' }
 
-  /api/payment-settings/{id}/audit:
+  /payment-settings/{id}/audit:
     get:
       operationId: getPaymentSettingsAudit
       summary: Audit log for a payment account
@@ -11130,6 +11130,62 @@ paths:
               schema:
                 type: array
                 items: { $ref: '#/components/schemas/PaymentSettingsAuditEntry' }
+
+  # ── Governance Monitoring ────────────────────────────────────────────────────
+
+  /governance-monitoring/alerts:
+    get:
+      operationId: getGovernanceAlerts
+      summary: List current governance alerts across all projects
+      tags: [GovernanceMonitoring]
+      parameters:
+        - { name: projectId, in: query, schema: { type: string } }
+        - { name: severity, in: query, schema: { type: string } }
+        - { name: category, in: query, schema: { type: string } }
+      responses:
+        '200':
+          description: List of governance alerts
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/GovernanceMonitoringAlert' }
+
+  /governance-monitoring/timeline:
+    get:
+      operationId: getGovernanceTimeline
+      summary: Chronological audit timeline of governance events
+      tags: [GovernanceMonitoring]
+      parameters:
+        - { name: projectId, in: query, schema: { type: string } }
+        - { name: category, in: query, schema: { type: string } }
+        - { name: limit, in: query, schema: { type: string } }
+        - { name: offset, in: query, schema: { type: string } }
+      responses:
+        '200':
+          description: Timeline events
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/GovernanceMonitoringEvent' }
+
+  /governance-monitoring/tasks:
+    get:
+      operationId: getGovernanceTasks
+      summary: Pending administrative tasks requiring action
+      tags: [GovernanceMonitoring]
+      parameters:
+        - { name: projectId, in: query, schema: { type: string } }
+        - { name: priority, in: query, schema: { type: string } }
+      responses:
+        '200':
+          description: Pending tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/GovernanceMonitoringTask' }
 
 
 components:
@@ -18944,3 +19000,55 @@ components:
         changedAt: { type: string }
         ipAddress: { type: string, nullable: true }
         changes: { type: object, nullable: true, additionalProperties: true }
+
+    GovernanceMonitoringAlert:
+      type: object
+      properties:
+        id: { type: string }
+        type: { type: string }
+        category: { type: string }
+        severity: { type: string }
+        title: { type: string }
+        description: { type: string }
+        projectId: { type: string, nullable: true }
+        projectName: { type: string, nullable: true }
+        entityId: { type: string, nullable: true }
+        entityType: { type: string, nullable: true }
+        actionPath: { type: string, nullable: true }
+        metadata: { type: object, nullable: true }
+        createdAt: { type: string }
+
+    GovernanceMonitoringEvent:
+      type: object
+      properties:
+        id: { type: string }
+        type: { type: string }
+        category: { type: string }
+        timestamp: { type: string }
+        projectId: { type: string, nullable: true }
+        projectName: { type: string, nullable: true }
+        actor: { type: string, nullable: true }
+        title: { type: string }
+        description: { type: string }
+        severity: { type: string }
+        entityId: { type: string, nullable: true }
+        entityType: { type: string, nullable: true }
+        actionPath: { type: string, nullable: true }
+        metadata: { type: object, nullable: true }
+
+    GovernanceMonitoringTask:
+      type: object
+      properties:
+        id: { type: string }
+        type: { type: string }
+        category: { type: string }
+        priority: { type: string }
+        title: { type: string }
+        description: { type: string }
+        projectId: { type: string, nullable: true }
+        projectName: { type: string, nullable: true }
+        entityId: { type: string, nullable: true }
+        entityType: { type: string, nullable: true }
+        actionPath: { type: string, nullable: true }
+        dueDate: { type: string, nullable: true }
+        metadata: { type: object, nullable: true }

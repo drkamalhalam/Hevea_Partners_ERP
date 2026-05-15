@@ -72,14 +72,14 @@ async function writeAudit(
 }
 
 // ── GET /api/payment-settings — active account (no secret) ───────────────────
-router.get("/", async (req, res) => {
+router.get("/", async (req, res): Promise<void> => {
   try {
     const [active] = await db
       .select()
       .from(centralPaymentAccountsTable)
       .where(eq(centralPaymentAccountsTable.isActive, true))
       .limit(1);
-    if (!active) return res.json(null);
+    if (!active) { res.json(null); return; }
     res.json(sanitizeAccount(active));
   } catch (err) {
     req.log.error(err);
@@ -145,9 +145,9 @@ const AccountSchema = z.object({
 });
 
 // ── POST /api/payment-settings — create account ───────────────────────────────
-router.post("/", async (req, res) => {
+router.post("/", async (req, res): Promise<void> => {
   const parse = AccountSchema.safeParse(req.body);
-  if (!parse.success) return res.status(400).json({ error: parse.error.flatten() });
+  if (!parse.success) { res.status(400).json({ error: parse.error.flatten() }); return; }
   const data = parse.data;
 
   try {
@@ -190,9 +190,9 @@ router.post("/", async (req, res) => {
 });
 
 // ── PATCH /api/payment-settings/:id — update account ─────────────────────────
-router.patch("/:id", async (req, res) => {
+router.patch("/:id", async (req, res): Promise<void> => {
   const parse = AccountSchema.partial().safeParse(req.body);
-  if (!parse.success) return res.status(400).json({ error: parse.error.flatten() });
+  if (!parse.success) { res.status(400).json({ error: parse.error.flatten() }); return; }
   const data = parse.data;
 
   try {
@@ -200,7 +200,7 @@ router.patch("/:id", async (req, res) => {
       .select()
       .from(centralPaymentAccountsTable)
       .where(eq(centralPaymentAccountsTable.id, req.params.id));
-    if (!existing) return res.status(404).json({ error: "Account not found" });
+    if (!existing) { res.status(404).json({ error: "Account not found" }); return; }
 
     // Build audit change map (mask sensitive values)
     const auditChanges: Record<string, { old: string; new: string }> = {};
@@ -250,13 +250,13 @@ router.patch("/:id", async (req, res) => {
 });
 
 // ── POST /api/payment-settings/:id/activate ───────────────────────────────────
-router.post("/:id/activate", async (req, res) => {
+router.post("/:id/activate", async (req, res): Promise<void> => {
   try {
     const [existing] = await db
       .select()
       .from(centralPaymentAccountsTable)
       .where(eq(centralPaymentAccountsTable.id, req.params.id));
-    if (!existing) return res.status(404).json({ error: "Account not found" });
+    if (!existing) { res.status(404).json({ error: "Account not found" }); return; }
 
     // Deactivate all others first
     await db
@@ -278,13 +278,13 @@ router.post("/:id/activate", async (req, res) => {
 });
 
 // ── POST /api/payment-settings/:id/deactivate ─────────────────────────────────
-router.post("/:id/deactivate", async (req, res) => {
+router.post("/:id/deactivate", async (req, res): Promise<void> => {
   try {
     const [existing] = await db
       .select()
       .from(centralPaymentAccountsTable)
       .where(eq(centralPaymentAccountsTable.id, req.params.id));
-    if (!existing) return res.status(404).json({ error: "Account not found" });
+    if (!existing) { res.status(404).json({ error: "Account not found" }); return; }
 
     const [updated] = await db
       .update(centralPaymentAccountsTable)

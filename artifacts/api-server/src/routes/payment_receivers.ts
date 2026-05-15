@@ -30,13 +30,13 @@ router.get("/", async (req, res) => {
   }
 });
 
-router.get("/:id", async (req, res) => {
+router.get("/:id", async (req, res): Promise<void> => {
   try {
     const [acc] = await db
       .select()
       .from(paymentReceiverAccountsTable)
       .where(eq(paymentReceiverAccountsTable.id, req.params.id));
-    if (!acc) return res.status(404).json({ error: "Account not found" });
+    if (!acc) { res.status(404).json({ error: "Account not found" }); return; }
     res.json(acc);
   } catch (err) {
     req.log.error(err);
@@ -59,14 +59,14 @@ const CreateSchema = z.object({
   notes: z.string().optional(),
 });
 
-router.post("/", async (req, res) => {
+router.post("/", async (req, res): Promise<void> => {
   const parse = CreateSchema.safeParse(req.body);
-  if (!parse.success) return res.status(400).json({ error: parse.error.flatten() });
+  if (!parse.success) { res.status(400).json({ error: parse.error.flatten() }); return; }
   const data = parse.data;
 
   try {
     const [project] = await db.select().from(projectsTable).where(eq(projectsTable.id, data.projectId));
-    if (!project) return res.status(404).json({ error: "Project not found" });
+    if (!project) { res.status(404).json({ error: "Project not found" }); return; }
 
     // Clear existing default if this will be the new default
     if (data.isDefault) {
@@ -107,13 +107,13 @@ router.post("/", async (req, res) => {
   }
 });
 
-router.patch("/:id", async (req, res) => {
+router.patch("/:id", async (req, res): Promise<void> => {
   try {
     const [existing] = await db
       .select()
       .from(paymentReceiverAccountsTable)
       .where(eq(paymentReceiverAccountsTable.id, req.params.id));
-    if (!existing) return res.status(404).json({ error: "Account not found" });
+    if (!existing) { res.status(404).json({ error: "Account not found" }); return; }
 
     const allowed = ["accountName", "accountIdentifier", "bankIfsc", "bankName", "isDefault", "isActive", "notes", "allowedPaymentModes"];
     const updates: Record<string, unknown> = { updatedAt: new Date() };
