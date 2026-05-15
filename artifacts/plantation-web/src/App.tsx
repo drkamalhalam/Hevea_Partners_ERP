@@ -1,4 +1,5 @@
-import { ClerkProvider, SignIn, SignUp, Show, useClerk } from "@clerk/react";
+import { ClerkProvider, SignIn, SignUp, Show, useClerk, useAuth } from "@clerk/react";
+import { setAuthTokenGetter } from "@workspace/api-client-react";
 import { Switch, Route, useLocation, Router as WouterRouter, Redirect } from "wouter";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -129,6 +130,15 @@ function stripBase(path: string): string {
     : path;
 }
 
+function ClerkAuthTokenSetter() {
+  const { getToken, isSignedIn } = useAuth();
+  useEffect(() => {
+    setAuthTokenGetter(isSignedIn ? () => getToken() : null);
+    return () => { setAuthTokenGetter(null); };
+  }, [isSignedIn, getToken]);
+  return null;
+}
+
 function ClerkQueryClientCacheInvalidator() {
   const { addListener } = useClerk();
   const queryClient = useQueryClient();
@@ -254,6 +264,7 @@ function AppRoutes() {
       routerReplace={(to) => setLocation(stripBase(to), { replace: true })}
     >
       <QueryClientProvider client={queryClient}>
+        <ClerkAuthTokenSetter />
         <ClerkQueryClientCacheInvalidator />
         <RoleProvider>
           <TooltipProvider>
