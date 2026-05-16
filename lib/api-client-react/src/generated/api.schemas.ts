@@ -9021,6 +9021,19 @@ export interface ProjectCardSummary {
   kycParticipantCount: number;
   agreementCount: number;
   latestAgreementStatus?: string | null;
+  contributionTotal: number;
+  contributionVerified: number;
+  contributionOwnershipEligible: number;
+  contributionPendingCount: number;
+  contributionDisputedCount: number;
+  contributorCount: number;
+  advancesTotalOutstanding: number;
+  advancesPendingCount: number;
+  lcaIsConfigured: boolean;
+  participantLandownerCount: number;
+  participantDeveloperCount: number;
+  participantInvestorCount: number;
+  participantOtherCount: number;
 }
 
 export type PersonMasterSummaryKycStatus =

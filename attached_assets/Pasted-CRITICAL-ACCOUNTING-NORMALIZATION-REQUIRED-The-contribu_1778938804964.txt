@@ -1,0 +1,175 @@
+CRITICAL ACCOUNTING NORMALIZATION REQUIRED.
+
+The contribution system currently allows contributions to appear as if:
+PROJECTS are contributors.
+
+This is architecturally incorrect and dangerous.
+
+==================================================
+CORE GOVERNANCE RULE
+==================================================
+
+PROJECTS NEVER CONTRIBUTE.
+
+Projects are:
+- accounting containers
+- governance scopes
+- operational entities
+
+ONLY participants contribute:
+- landowners
+- developers
+- investors
+- economic participants
+
+==================================================
+MANDATORY CONTRIBUTOR ARCHITECTURE
+==================================================
+
+Every contribution record MUST contain:
+
+- project_id
+- contributor_person_id
+- contributor_participant_id
+- contribution_type
+- accounting_behavior
+- lifecycle_context
+
+Contribution records without participant linkage are INVALID.
+
+==================================================
+FORBIDDEN BEHAVIOR
+==================================================
+
+NEVER:
+- display project name as contributor
+- fallback to project identity
+- aggregate orphan contributions under project name
+- allow null contributor identity
+
+==================================================
+ROOT ISSUE TO FIX
+==================================================
+
+Current system likely:
+- stores project_id
+without:
+- contributor_participant_id
+
+or
+UI grouping incorrectly uses:
+project.name
+
+This must be normalized immediately.
+
+==================================================
+DATABASE NORMALIZATION
+==================================================
+
+Contribution table must enforce:
+
+NOT NULL:
+- contributor_person_id
+- contributor_participant_id
+
+except for:
+system-generated migration records explicitly marked as legacy.
+
+==================================================
+PROJECT_PARTICIPANTS IS MANDATORY
+==================================================
+
+All contributions must originate from:
+PROJECT_PARTICIPANTS.
+
+Flow:
+
+PROJECT
+→ PROJECT_PARTICIPANTS
+→ CONTRIBUTION ENTRY
+
+NOT:
+PROJECT
+→ direct contribution.
+
+==================================================
+UI ENFORCEMENT
+==================================================
+
+When project selected:
+
+fetch only:
+PROJECT_PARTICIPANTS
+WHERE:
+project_id = selected_project
+
+Then require explicit participant selection.
+
+NO manual typing.
+NO fallback logic.
+NO global fetches.
+
+==================================================
+LEGACY DATA REPAIR
+==================================================
+
+Find all contribution entries where:
+- contributor_participant_id missing
+OR
+- contributor_person_id missing
+
+Flag as:
+ORPHAN CONTRIBUTIONS.
+
+Provide remediation workflow:
+- map orphan entries to participant
+- audit correction
+- preserve history
+
+==================================================
+PROJECT CARD IMPACT
+==================================================
+
+Project card ownership/contribution intelligence must derive ONLY from:
+valid participant-linked contributions.
+
+Ignore:
+orphan/unlinked contribution records
+until resolved.
+
+==================================================
+ACCOUNTING SAFETY RULE
+==================================================
+
+Ownership calculations must NEVER include:
+- orphan contributions
+- unresolved contributor identity
+- project-self contributions
+
+==================================================
+AUDIT REQUIREMENT
+==================================================
+
+Every ownership-impacting contribution must trace:
+
+Contribution
+→ Participant
+→ Person
+→ Project
+→ Verification
+→ Audit Trail
+
+==================================================
+FINAL TARGET
+==================================================
+
+Contribution architecture must become:
+
+PARTICIPANT-CENTRIC
++ PROJECT-SCOPED
++ IDENTITY-LINKED
++ AUDITABLE
++ OWNERSHIP-SAFE
+
+NOT:
+generic financial entries loosely attached to projects.

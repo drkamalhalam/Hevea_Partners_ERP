@@ -1,0 +1,254 @@
+PROJECT CARDS ARE CURRENTLY STATIC SUMMARY PANELS.
+
+This is incorrect.
+
+Project Cards must become:
+LIVE GOVERNANCE + ACCOUNTING + OPERATIONAL INTELLIGENCE SURFACES.
+
+==================================================
+CORE ARCHITECTURE PRINCIPLE
+==================================================
+
+Projects are NOT static records.
+
+Projects evolve continuously through:
+- contributions
+- reimbursements
+- participant changes
+- operational activity
+- production
+- stock
+- lifecycle transitions
+- governance actions
+
+Therefore:
+Project Cards must evolve dynamically in real time.
+
+==================================================
+CRITICAL CURRENT FAILURE
+==================================================
+
+During PREMATURITY phase:
+- contributions are being recorded
+- ownership basis is changing
+- operational burden is accumulating
+- participant pools are evolving
+
+BUT:
+Project Cards are not reflecting these changes.
+
+This disconnect is architecturally wrong.
+
+==================================================
+PROJECT CARD MUST BE LIVE
+==================================================
+
+Project Card must automatically update when:
+
+--------------------------------------------------
+Contribution recorded
+--------------------------------------------------
+
+Update:
+- total contribution
+- verified contribution
+- ownership-eligible contribution
+- participant contribution map
+- economic pool
+- ownership basis
+
+--------------------------------------------------
+Land Notional Value recorded
+--------------------------------------------------
+
+Update:
+- total land notional value
+- landowner ownership basis
+- contribution structure
+- contribution model intelligence
+
+--------------------------------------------------
+Recoverable advance recorded
+--------------------------------------------------
+
+Update:
+- reimbursable operational burden
+- pending reimbursements
+- recoverable liabilities
+
+--------------------------------------------------
+Participant added/removed
+--------------------------------------------------
+
+Update:
+- participant count
+- role distribution
+- ownership structure
+- governance validation
+
+--------------------------------------------------
+Verification completed
+--------------------------------------------------
+
+Update:
+- verified totals
+- ownership-eligible totals
+- governance status
+
+--------------------------------------------------
+Lifecycle changed
+--------------------------------------------------
+
+Update:
+- contribution eligibility
+- ownership lock state
+- LCA activation
+- accounting behavior
+
+==================================================
+PREMATURITY-SPECIFIC PROJECT CARD DATA
+==================================================
+
+During PREMATURITY phase show:
+
+--------------------------------------------------
+Governance
+--------------------------------------------------
+
+- project model
+- lifecycle phase
+- ownership unlocked/locked
+- maturity readiness
+- agreement status
+- OTP verification status
+
+--------------------------------------------------
+Contribution Intelligence
+--------------------------------------------------
+
+- total contribution
+- verified contribution
+- ownership-eligible contribution
+- pending verification
+- participant-wise contribution
+
+--------------------------------------------------
+Land Contribution Intelligence
+--------------------------------------------------
+
+- landowner
+- Land Notional Value
+- LNV verification
+- LCA configured?
+- LCA escalation structure
+
+--------------------------------------------------
+Participant Structure
+--------------------------------------------------
+
+- landowners
+- developers
+- investors
+- economic participants
+- linked identities
+- missing identity warnings
+
+--------------------------------------------------
+Operational Prematurity Intelligence
+--------------------------------------------------
+
+- prematurity operational cost
+- recoverable advances
+- reimbursement exposure
+- maintenance burden
+
+--------------------------------------------------
+Maturity Readiness
+--------------------------------------------------
+
+- ownership finalized?
+- contribution cutoff ready?
+- unresolved disputes?
+- pending contribution verification?
+- missing governance records?
+
+==================================================
+PROJECT CARD MUST NOT CACHE STATIC VALUES
+==================================================
+
+Project card data must derive dynamically from:
+- contribution ledger
+- participant ledger
+- operational ledger
+- reimbursement ledger
+- lifecycle engine
+- accounting profile
+
+==================================================
+PROJECT CARD IS NOT A DISPLAY PANEL
+==================================================
+
+It is the:
+CENTRAL PROJECT GOVERNANCE SURFACE.
+
+==================================================
+CLICK-THROUGH TRACEABILITY
+==================================================
+
+Every metric/card section must drill into:
+source data.
+
+Example:
+
+Contribution Total
+→ contribution ledger
+→ participant entries
+→ source transaction
+
+Recoverable Advances
+→ reimbursement ledger
+→ operational entries
+
+Ownership Basis
+→ verified ownership-eligible contributions
+
+==================================================
+IMPORTANT ACCOUNTING RULE
+==================================================
+
+Prematurity phase is:
+FINANCIALLY ACTIVE.
+
+Ownership evolves during prematurity.
+
+Therefore:
+Project Cards must continuously evolve until maturity lock occurs.
+
+==================================================
+AFTER MATURITY
+==================================================
+
+Once maturity declared:
+- ownership contribution freezes
+- ownership basis locks
+- share-altering entries blocked
+
+Project Card must visibly indicate:
+OWNERSHIP LOCKED.
+
+==================================================
+FINAL TARGET
+==================================================
+
+Project Card must become:
+
+LIVE
++ PROJECT-SCOPED
++ ACCOUNTING-AWARE
++ CONTRIBUTION-AWARE
++ GOVERNANCE-AWARE
++ TRACEABLE
++ REAL-TIME
+
+instead of:
+static project overview panels disconnected from ledger activity.

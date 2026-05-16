@@ -21087,6 +21087,19 @@ components:
         - distributionPendingCount
         - kycParticipantCount
         - agreementCount
+        - contributionTotal
+        - contributionVerified
+        - contributionOwnershipEligible
+        - contributionPendingCount
+        - contributionDisputedCount
+        - contributorCount
+        - advancesTotalOutstanding
+        - advancesPendingCount
+        - lcaIsConfigured
+        - participantLandownerCount
+        - participantDeveloperCount
+        - participantInvestorCount
+        - participantOtherCount
       properties:
         projectId: { type: string, format: uuid }
         rubberSheetBalanceKg: { type: number }
@@ -21109,6 +21122,23 @@ components:
         kycParticipantCount: { type: integer }
         agreementCount: { type: integer }
         latestAgreementStatus: { type: string, nullable: true }
+        # ── Contribution intelligence ──────────────────────────────────────
+        contributionTotal: { type: number }
+        contributionVerified: { type: number }
+        contributionOwnershipEligible: { type: number }
+        contributionPendingCount: { type: integer }
+        contributionDisputedCount: { type: integer }
+        contributorCount: { type: integer }
+        # ── Recoverable advances ───────────────────────────────────────────
+        advancesTotalOutstanding: { type: number }
+        advancesPendingCount: { type: integer }
+        # ── LCA configuration ─────────────────────────────────────────────
+        lcaIsConfigured: { type: boolean }
+        # ── Participant role breakdown ─────────────────────────────────────
+        participantLandownerCount: { type: integer }
+        participantDeveloperCount: { type: integer }
+        participantInvestorCount: { type: integer }
+        participantOtherCount: { type: integer }
 
     PersonMasterSummary:
       type: object

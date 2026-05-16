@@ -20,6 +20,7 @@ import {
   FileText, AlertTriangle, ChevronRight, Lock, Leaf, Wallet,
   Activity, Scale, BarChart3, AlertCircle, TrendingUp, ShieldX, Wrench,
   Boxes, Factory, ShoppingCart, Banknote, ClipboardList,
+  CheckCircle2, Clock, XCircle, CreditCard, Target,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -181,6 +182,23 @@ type CardSummary = {
   kycParticipantCount: number;
   agreementCount: number;
   latestAgreementStatus?: string | null;
+  // Contribution intelligence
+  contributionTotal: number;
+  contributionVerified: number;
+  contributionOwnershipEligible: number;
+  contributionPendingCount: number;
+  contributionDisputedCount: number;
+  contributorCount: number;
+  // Recoverable advances
+  advancesTotalOutstanding: number;
+  advancesPendingCount: number;
+  // LCA configuration
+  lcaIsConfigured: boolean;
+  // Participant role breakdown
+  participantLandownerCount: number;
+  participantDeveloperCount: number;
+  participantInvestorCount: number;
+  participantOtherCount: number;
 };
 
 function ProjectGovernanceCard({
@@ -393,14 +411,32 @@ function ProjectGovernanceCard({
               }
               href="/partners"
             />
-            {s && s.kycParticipantCount > 0 && (
-              <DataRow
-                label="KYC Verified"
-                value={`${s.kycParticipantCount} of 2`}
-                href="/partners"
-              />
-            )}
           </div>
+          {/* Role breakdown chips */}
+          {s && (s.participantDeveloperCount > 0 || s.participantLandownerCount > 0 || s.participantInvestorCount > 0) && (
+            <div className="flex gap-1.5 mt-1.5 flex-wrap">
+              {s.participantDeveloperCount > 0 && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-violet-50 border border-violet-200 text-violet-700">
+                  {s.participantDeveloperCount} Dev{s.participantDeveloperCount !== 1 ? "s" : ""}
+                </span>
+              )}
+              {s.participantLandownerCount > 0 && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 border border-emerald-200 text-emerald-700">
+                  {s.participantLandownerCount} Landowner{s.participantLandownerCount !== 1 ? "s" : ""}
+                </span>
+              )}
+              {s.participantInvestorCount > 0 && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-sky-50 border border-sky-200 text-sky-700">
+                  {s.participantInvestorCount} Investor{s.participantInvestorCount !== 1 ? "s" : ""}
+                </span>
+              )}
+              {s.participantOtherCount > 0 && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-50 border border-slate-200 text-slate-500">
+                  +{s.participantOtherCount} Other
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         <Separator />
@@ -461,6 +497,117 @@ function ProjectGovernanceCard({
         </div>
 
         <Separator />
+
+        {/* ── §4a Contribution Intelligence ─────────────────────────────── */}
+        {isOwnership && (
+          <>
+            <Separator />
+            <div>
+              <SectionHead icon={TrendingUp} label="Contribution Intelligence" href="/contributions" />
+              {s ? (
+                <>
+                  <div className="grid grid-cols-2 gap-x-3 mt-1">
+                    <DataRow
+                      label="Total Recorded"
+                      value={
+                        s.contributionTotal > 0 ? (
+                          fmtRupees(s.contributionTotal)
+                        ) : (
+                          <span className="text-muted-foreground italic">None yet</span>
+                        )
+                      }
+                      href="/contributions"
+                    />
+                    <DataRow
+                      label="Verified"
+                      value={
+                        s.contributionVerified > 0 ? (
+                          <span className="text-emerald-700 font-semibold">{fmtRupees(s.contributionVerified)}</span>
+                        ) : (
+                          <span className="text-muted-foreground">₹0</span>
+                        )
+                      }
+                      href="/contributions"
+                    />
+                    {s.contributionOwnershipEligible > 0 && (
+                      <DataRow
+                        label="Ownership-Eligible"
+                        value={
+                          <span className="text-violet-700 font-semibold">{fmtRupees(s.contributionOwnershipEligible)}</span>
+                        }
+                        href="/contributions"
+                        span2
+                      />
+                    )}
+                    {s.contributorCount > 0 && (
+                      <DataRow
+                        label="Contributors"
+                        value={`${s.contributorCount} partner${s.contributorCount !== 1 ? "s" : ""}`}
+                        href="/contributions"
+                      />
+                    )}
+                  </div>
+                  {(s.contributionPendingCount > 0 || s.contributionDisputedCount > 0) && (
+                    <div className="flex gap-1.5 mt-1.5 flex-wrap">
+                      {s.contributionPendingCount > 0 && (
+                        <Link href="/contributions">
+                          <span className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full border bg-amber-50 border-amber-200 text-amber-700 cursor-pointer hover:bg-amber-100 transition-colors">
+                            <Clock className="h-2.5 w-2.5" />
+                            {s.contributionPendingCount} Pending Verification
+                          </span>
+                        </Link>
+                      )}
+                      {s.contributionDisputedCount > 0 && (
+                        <Link href="/contributions">
+                          <span className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full border bg-red-50 border-red-200 text-red-700 cursor-pointer hover:bg-red-100 transition-colors">
+                            <XCircle className="h-2.5 w-2.5" />
+                            {s.contributionDisputedCount} Disputed
+                          </span>
+                        </Link>
+                      )}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="mt-1 h-8 animate-pulse rounded bg-muted" />
+              )}
+            </div>
+          </>
+        )}
+
+        {/* ── §4b Recoverable Advances ────────────────────────────────────── */}
+        {s && (s.advancesTotalOutstanding > 0 || s.advancesPendingCount > 0) && (
+          <>
+            <Separator />
+            <div>
+              <SectionHead icon={CreditCard} label="Recoverable Advances" href="/recoverable-advances" />
+              <div className="grid grid-cols-2 gap-x-3 mt-1">
+                <DataRow
+                  label="Outstanding"
+                  value={
+                    s.advancesTotalOutstanding > 0 ? (
+                      <span className="text-orange-600 font-semibold">{fmtRupees(s.advancesTotalOutstanding)}</span>
+                    ) : "₹0"
+                  }
+                  href="/recoverable-advances"
+                  span2
+                />
+                {s.advancesPendingCount > 0 && (
+                  <DataRow
+                    label="Open Advances"
+                    value={
+                      <span className="text-amber-600">
+                        {s.advancesPendingCount} advance{s.advancesPendingCount !== 1 ? "s" : ""}
+                      </span>
+                    }
+                    href="/recoverable-advances"
+                    span2
+                  />
+                )}
+              </div>
+            </div>
+          </>
+        )}
 
         {/* ── §5 Live Stock (Inventory Ledger) ──────────────────────────── */}
         <div>
@@ -718,6 +865,62 @@ function ProjectGovernanceCard({
             )}
           </div>
         </div>
+
+        {/* ── §9a Maturity Readiness ────────────────────────────────────── */}
+        {project.lifecycleStatus === "prematurity" && isOwnership && s && (
+          <>
+            <Separator />
+            <div>
+              <SectionHead icon={Target} label="Maturity Readiness" href="/contributions" />
+              <div className="flex flex-wrap gap-1.5 mt-1.5">
+                {project.ownershipFrozenAt ? (
+                  <span className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded border bg-red-50 border-red-200 text-red-700">
+                    <Lock className="h-2.5 w-2.5" /> Ownership Locked
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded border bg-violet-50 border-violet-200 text-violet-700">
+                    <TrendingUp className="h-2.5 w-2.5" /> Ownership Evolving
+                  </span>
+                )}
+                {s.lcaIsConfigured ? (
+                  <span className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded border bg-green-50 border-green-200 text-green-700">
+                    <CheckCircle2 className="h-2.5 w-2.5" /> LCA Configured
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded border bg-amber-50 border-amber-200 text-amber-700">
+                    <AlertCircle className="h-2.5 w-2.5" /> LCA Not Configured
+                  </span>
+                )}
+                {s.contributionPendingCount > 0 && (
+                  <Link href="/contributions">
+                    <span className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded border bg-amber-50 border-amber-200 text-amber-700 cursor-pointer hover:bg-amber-100 transition-colors">
+                      <Clock className="h-2.5 w-2.5" />
+                      {s.contributionPendingCount} Verification{s.contributionPendingCount !== 1 ? "s" : ""} Pending
+                    </span>
+                  </Link>
+                )}
+                {s.contributionDisputedCount > 0 && (
+                  <Link href="/contributions">
+                    <span className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded border bg-red-50 border-red-200 text-red-700 cursor-pointer hover:bg-red-100 transition-colors">
+                      <XCircle className="h-2.5 w-2.5" />
+                      {s.contributionDisputedCount} Dispute{s.contributionDisputedCount !== 1 ? "s" : ""} Unresolved
+                    </span>
+                  </Link>
+                )}
+                {s.contributionTotal === 0 && !project.ownershipFrozenAt && (
+                  <span className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded border bg-slate-50 border-slate-200 text-slate-500">
+                    <AlertCircle className="h-2.5 w-2.5" /> No Contributions Yet
+                  </span>
+                )}
+                {s.contributionPendingCount === 0 && s.contributionDisputedCount === 0 && s.contributionTotal > 0 && (
+                  <span className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded border bg-green-50 border-green-200 text-green-700">
+                    <CheckCircle2 className="h-2.5 w-2.5" /> Contributions Clean
+                  </span>
+                )}
+              </div>
+            </div>
+          </>
+        )}
 
         {/* ── §10 Governance Alerts ─────────────────────────────────────── */}
         {canAccessAllProjects && issues.length > 0 && (

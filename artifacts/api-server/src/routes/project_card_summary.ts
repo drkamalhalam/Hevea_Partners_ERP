@@ -14,6 +14,9 @@ import {
   distributionRecordsTable,
   projectParticipantsTable,
   agreementsTable,
+  contributionsTable,
+  recoverableAdvancesTable,
+  lcaConfigsTable,
 } from "@workspace/db";
 
 const router = Router();
@@ -80,6 +83,10 @@ router.get("/card-summaries", async (req, res) => {
     distRows,
     participantRows,
     agreementRows,
+    contributionRows,
+    advanceRows,
+    lcaConfigRows,
+    participantRoleRows,
   ] = await Promise.all([
     // Visible projects list
     (() => {
@@ -212,6 +219,63 @@ router.get("/card-summaries", async (req, res) => {
         ),
       )
       .groupBy(agreementsTable.projectId),
+
+    // Contributions: total, verified, ownership-eligible, pending, disputed per project
+    db
+      .select({
+        projectId: contributionsTable.projectId,
+        totalAmount: sql<number>`COALESCE(SUM(${contributionsTable.amount}), 0)`,
+        verifiedAmount: sql<number>`COALESCE(SUM(${contributionsTable.amount}) FILTER (WHERE ${contributionsTable.verificationStatus} = 'verified'), 0)`,
+        ownershipEligibleAmount: sql<number>`COALESCE(SUM(${contributionsTable.amount}) FILTER (WHERE ${contributionsTable.verificationStatus} = 'verified' AND ${contributionsTable.affectsOwnership} = true AND ${contributionsTable.lifecyclePhaseSnapshot} = 'prematurity'), 0)`,
+        pendingCount: sql<number>`count(*) FILTER (WHERE ${contributionsTable.verificationStatus} IN ('draft', 'pending_verification'))::int`,
+        disputedCount: sql<number>`count(*) FILTER (WHERE ${contributionsTable.verificationStatus} = 'disputed')::int`,
+        contributorCount: sql<number>`count(DISTINCT ${contributionsTable.partnerId})::int`,
+      })
+      .from(contributionsTable)
+      .where(
+        and(
+          eq(contributionsTable.isActive, true),
+          projectFilter(contributionsTable.projectId),
+        ),
+      )
+      .groupBy(contributionsTable.projectId),
+
+    // Recoverable advances: outstanding balance + open count per project
+    db
+      .select({
+        projectId: recoverableAdvancesTable.projectId,
+        totalOutstanding: sql<number>`COALESCE(SUM(${recoverableAdvancesTable.originalAmount}::numeric - ${recoverableAdvancesTable.recoveredAmount}::numeric) FILTER (WHERE ${recoverableAdvancesTable.status} NOT IN ('recovered', 'written_off')), 0)`,
+        pendingCount: sql<number>`count(*) FILTER (WHERE ${recoverableAdvancesTable.status} IN ('pending', 'acknowledged', 'in_recovery'))::int`,
+      })
+      .from(recoverableAdvancesTable)
+      .where(
+        and(
+          eq(recoverableAdvancesTable.isActive, true),
+          projectFilter(recoverableAdvancesTable.projectId),
+        ),
+      )
+      .groupBy(recoverableAdvancesTable.projectId),
+
+    // LCA configs: whether at least one config exists per project
+    db
+      .select({
+        projectId: lcaConfigsTable.projectId,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(lcaConfigsTable)
+      .where(projectFilter(lcaConfigsTable.projectId))
+      .groupBy(lcaConfigsTable.projectId),
+
+    // Participant role breakdown per project
+    db
+      .select({
+        projectId: projectParticipantsTable.projectId,
+        role: projectParticipantsTable.role,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(projectParticipantsTable)
+      .where(projectFilter(projectParticipantsTable.projectId))
+      .groupBy(projectParticipantsTable.projectId, projectParticipantsTable.role),
   ]);
 
   // ── Build lookup maps ────────────────────────────────────────────────────────
@@ -240,6 +304,23 @@ router.get("/card-summaries", async (req, res) => {
   const distMap = new Map(distRows.map((r) => [r.projectId, r]));
   const participantMap = new Map(participantRows.map((r) => [r.projectId, r]));
   const agreementMap = new Map(agreementRows.map((r) => [r.projectId, r]));
+  const contributionMap = new Map(contributionRows.map((r) => [r.projectId, r]));
+  const advanceMap = new Map(advanceRows.map((r) => [r.projectId, r]));
+  const lcaConfigMap = new Map(lcaConfigRows.map((r) => [r.projectId, r]));
+
+  // Build participant role breakdown map: projectId -> { landowner, developer, investor, other }
+  const participantRoleMap = new Map<string, { landowner: number; developer: number; investor: number; other: number }>();
+  for (const r of participantRoleRows) {
+    if (!participantRoleMap.has(r.projectId)) {
+      participantRoleMap.set(r.projectId, { landowner: 0, developer: 0, investor: 0, other: 0 });
+    }
+    const entry = participantRoleMap.get(r.projectId)!;
+    const count = Number(r.count);
+    if (r.role === "landowner") entry.landowner += count;
+    else if (r.role === "developer") entry.developer += count;
+    else if (r.role === "investor") entry.investor += count;
+    else entry.other += count;
+  }
 
   const showRevenue = canSeeRevenue(actor.role);
   const showFinancials = canSeeFinancials(actor.role);
@@ -258,6 +339,10 @@ router.get("/card-summaries", async (req, res) => {
     const dist = distMap.get(pid);
     const parts = participantMap.get(pid);
     const agr = agreementMap.get(pid);
+    const contrib = contributionMap.get(pid);
+    const adv = advanceMap.get(pid);
+    const lcaCfg = lcaConfigMap.get(pid);
+    const roles = participantRoleMap.get(pid) ?? { landowner: 0, developer: 0, investor: 0, other: 0 };
 
     return {
       projectId: pid,
@@ -291,12 +376,33 @@ router.get("/card-summaries", async (req, res) => {
       distributionPendingAmount: showFinancials ? (dist ? Number(dist.pendingAmount) : 0) : null,
       distributionPendingCount: dist ? Number(dist.pendingCount) : 0,
 
-      // Participants (KYC)
+      // Participants (KYC total)
       kycParticipantCount: parts ? Number(parts.kycCount) : 0,
 
       // Agreements
       agreementCount: agr ? Number(agr.agreementCount) : 0,
       latestAgreementStatus: agr?.latestStatus ?? null,
+
+      // ── Contribution intelligence ──────────────────────────────────────────
+      contributionTotal: contrib ? Number(contrib.totalAmount) : 0,
+      contributionVerified: contrib ? Number(contrib.verifiedAmount) : 0,
+      contributionOwnershipEligible: contrib ? Number(contrib.ownershipEligibleAmount) : 0,
+      contributionPendingCount: contrib ? Number(contrib.pendingCount) : 0,
+      contributionDisputedCount: contrib ? Number(contrib.disputedCount) : 0,
+      contributorCount: contrib ? Number(contrib.contributorCount) : 0,
+
+      // ── Recoverable advances ───────────────────────────────────────────────
+      advancesTotalOutstanding: adv ? Number(adv.totalOutstanding) : 0,
+      advancesPendingCount: adv ? Number(adv.pendingCount) : 0,
+
+      // ── LCA configuration ──────────────────────────────────────────────────
+      lcaIsConfigured: lcaCfg ? Number(lcaCfg.count) > 0 : false,
+
+      // ── Participant role breakdown ─────────────────────────────────────────
+      participantLandownerCount: roles.landowner,
+      participantDeveloperCount: roles.developer,
+      participantInvestorCount: roles.investor,
+      participantOtherCount: roles.other,
     };
   });
 
