@@ -1,0 +1,257 @@
+ADD FULL CLICK-THROUGH NAVIGATION & DATA TRACEABILITY TO ALL DASHBOARD CARDS, METRICS, COUNTERS, AND ERP SUMMARY COMPONENTS.
+
+Currently dashboard metrics are mostly passive display cards.
+
+This is insufficient for an ERP governance system.
+
+==================================================
+IMPORTANT ERP PRINCIPLE
+==================================================
+
+Every visible metric must be:
+TRACEABLE.
+
+Users must be able to:
+- click metrics
+- drill down
+- inspect source records
+- audit underlying data
+- navigate to operational modules
+
+Dashboard data must NEVER feel disconnected from source records.
+
+==================================================
+IMPLEMENT CLICK-THROUGH BEHAVIOR
+==================================================
+
+ALL dashboard components must support:
+- click navigation
+- source inspection
+- contextual drill-down
+
+==================================================
+EXAMPLES
+==================================================
+
+--------------------------------------------------
+TOTAL PROJECTS
+--------------------------------------------------
+
+Click →
+navigate to:
+Projects module
+
+with:
+- current filters
+- lifecycle segmentation
+- searchable project list
+
+--------------------------------------------------
+TOTAL PARTNERS / PERSONS
+--------------------------------------------------
+
+Click →
+navigate to:
+PERSON_MASTER registry
+
+with:
+- participant list
+- role filters
+- linked accounts
+- governance status
+
+--------------------------------------------------
+AGREEMENTS
+--------------------------------------------------
+
+Click →
+open:
+Agreement registry
+
+show:
+- active agreements
+- pending OTP
+- unsigned deeds
+- expired agreements
+
+--------------------------------------------------
+SYSTEM USERS
+--------------------------------------------------
+
+Click →
+open:
+USER_ACCOUNT management
+
+show:
+- linked PERSON_MASTER
+- active sessions
+- roles
+- permissions
+
+--------------------------------------------------
+GOVERNANCE ISSUES
+--------------------------------------------------
+
+Click →
+open:
+Governance issue center
+
+show:
+- missing linkage
+- missing KYC
+- duplicate risks
+- unresolved disputes
+- unverified persons
+
+--------------------------------------------------
+STOCK ON HAND
+--------------------------------------------------
+
+Click →
+open:
+Inventory dashboard
+
+show:
+- project-wise stock
+- store-wise stock
+- pending transfers
+- dispatches
+- rubber sheets
+- scrap stock
+
+==================================================
+PROJECT LIFECYCLE SECTION
+==================================================
+
+Each lifecycle segment must be clickable.
+
+--------------------------------------------------
+PREMATURITY
+--------------------------------------------------
+
+Click →
+show:
+all prematurity projects.
+
+--------------------------------------------------
+MATURE PRODUCTION
+--------------------------------------------------
+
+Click →
+show:
+actively tapping projects.
+
+--------------------------------------------------
+CLOSED
+--------------------------------------------------
+
+Click →
+show:
+closed/completed projects.
+
+==================================================
+FILTER PRESERVATION
+==================================================
+
+When user clicks a dashboard metric:
+preserve context.
+
+Example:
+“Governance Issues = 31”
+
+Click →
+auto-filter governance page to:
+ONLY unresolved issues.
+
+==================================================
+AUDIT TRACEABILITY
+==================================================
+
+Users must be able to:
+Dashboard Metric
+→ Summary View
+→ Detailed Records
+→ Individual Source Entry
+
+Example:
+Stock Summary
+→ Project Inventory
+→ Store Inventory
+→ Individual Collection Entries
+
+==================================================
+CARD INTERACTION DESIGN
+==================================================
+
+Add:
+- hover states
+- cursor indicators
+- subtle transitions
+- “View Details” affordances
+
+so users understand cards are interactive.
+
+==================================================
+IMPORTANT ERP UX RULE
+==================================================
+
+Dashboard must behave like:
+ERP command center,
+NOT static infographic.
+
+==================================================
+MOBILE/TABLET RESPONSIVENESS
+==================================================
+
+Click-through functionality must remain usable on:
+- mobile
+- tablet
+- desktop
+
+Use:
+- large tap areas
+- touch-friendly navigation
+
+==================================================
+DEEP LINKING
+==================================================
+
+Support:
+URL-based deep linking.
+
+Example:
+Dashboard → Governance Issue → Specific Record
+
+without losing navigation context.
+
+==================================================
+PERMISSION-AWARE NAVIGATION
+==================================================
+
+If user lacks permission:
+- disable navigation
+OR
+- show restricted access message.
+
+==================================================
+DATA SOURCE INDICATOR
+==================================================
+
+Optionally show:
+“Source: Inventory Ledger”
+“Source: PERSON_MASTER”
+“Source: Project Registry”
+
+inside detail views for audit clarity.
+
+==================================================
+FINAL TARGET
+==================================================
+
+Every ERP metric should become:
+INTERACTIVE + TRACEABLE + AUDITABLE.
+
+Users must always be able to trace:
+summary data
+→ source data
+→ operational records.

@@ -3,7 +3,7 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { GovernanceSummary } from "@workspace/api-client-react";
 import { GovernanceAlertPanel, GovernanceStatusBadge } from "@/components/governance";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { format, isThisMonth } from "date-fns";
 import {
   Trees,
@@ -661,50 +661,58 @@ function LifecycleAnalyticsSection({
 
             {/* Phase cards */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-sky-50 border border-sky-100">
-                <Sprout className="w-5 h-5 text-sky-500" />
-                <span className="text-2xl font-bold text-sky-700 tabular-nums">{prematurity}</span>
-                <span className="text-[10px] font-medium text-sky-600 text-center leading-tight">
-                  Prematurity
-                </span>
-              </div>
-              <div className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-emerald-50 border border-emerald-100">
-                <Leaf className="w-5 h-5 text-emerald-500" />
-                <span className="text-2xl font-bold text-emerald-700 tabular-nums">{mature}</span>
-                <span className="text-[10px] font-medium text-emerald-600 text-center leading-tight">
-                  Mature Production
-                </span>
-              </div>
-              <div className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-gray-50 border border-gray-200">
-                <Lock className="w-5 h-5 text-gray-400" />
-                <span className="text-2xl font-bold text-gray-600 tabular-nums">{closed}</span>
-                <span className="text-[10px] font-medium text-gray-500 text-center leading-tight">
-                  Closed
-                </span>
-              </div>
-              <div
-                className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border ${
-                  missingDevCount > 0
-                    ? "bg-red-50 border-red-200"
-                    : "bg-gray-50 border-gray-200"
-                }`}
-              >
-                <UserX className={`w-5 h-5 ${missingDevCount > 0 ? "text-red-500" : "text-gray-400"}`} />
-                <span
-                  className={`text-2xl font-bold tabular-nums ${
-                    missingDevCount > 0 ? "text-red-700" : "text-gray-600"
+              <Link href="/projects">
+                <div className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-sky-50 border border-sky-100 cursor-pointer hover:shadow-md hover:border-sky-200 transition-all">
+                  <Sprout className="w-5 h-5 text-sky-500" />
+                  <span className="text-2xl font-bold text-sky-700 tabular-nums">{prematurity}</span>
+                  <span className="text-[10px] font-medium text-sky-600 text-center leading-tight">
+                    Prematurity
+                  </span>
+                </div>
+              </Link>
+              <Link href="/projects">
+                <div className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-emerald-50 border border-emerald-100 cursor-pointer hover:shadow-md hover:border-emerald-200 transition-all">
+                  <Leaf className="w-5 h-5 text-emerald-500" />
+                  <span className="text-2xl font-bold text-emerald-700 tabular-nums">{mature}</span>
+                  <span className="text-[10px] font-medium text-emerald-600 text-center leading-tight">
+                    Mature Production
+                  </span>
+                </div>
+              </Link>
+              <Link href="/projects">
+                <div className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-gray-50 border border-gray-200 cursor-pointer hover:shadow-md hover:border-gray-300 transition-all">
+                  <Lock className="w-5 h-5 text-gray-400" />
+                  <span className="text-2xl font-bold text-gray-600 tabular-nums">{closed}</span>
+                  <span className="text-[10px] font-medium text-gray-500 text-center leading-tight">
+                    Closed
+                  </span>
+                </div>
+              </Link>
+              <Link href="/nominee-succession">
+                <div
+                  className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border cursor-pointer hover:shadow-md transition-all ${
+                    missingDevCount > 0
+                      ? "bg-red-50 border-red-200 hover:border-red-300"
+                      : "bg-gray-50 border-gray-200 hover:border-gray-300"
                   }`}
                 >
-                  {missingDevCount}
-                </span>
-                <span
-                  className={`text-[10px] font-medium text-center leading-tight ${
-                    missingDevCount > 0 ? "text-red-600" : "text-gray-500"
-                  }`}
-                >
-                  Missing Developer
-                </span>
-              </div>
+                  <UserX className={`w-5 h-5 ${missingDevCount > 0 ? "text-red-500" : "text-gray-400"}`} />
+                  <span
+                    className={`text-2xl font-bold tabular-nums ${
+                      missingDevCount > 0 ? "text-red-700" : "text-gray-600"
+                    }`}
+                  >
+                    {missingDevCount}
+                  </span>
+                  <span
+                    className={`text-[10px] font-medium text-center leading-tight ${
+                      missingDevCount > 0 ? "text-red-600" : "text-gray-500"
+                    }`}
+                  >
+                    Missing Developer
+                  </span>
+                </div>
+              </Link>
             </div>
 
             {/* Legend */}
@@ -1090,15 +1098,18 @@ function GovernanceActionItems({ governance }: { governance?: GovernanceSummary 
       ) : (
         <div className="space-y-2">
           {items.map((item) => (
-            <div key={item.key} className="flex items-center gap-3 p-2 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium truncate">{item.title}</p>
-                <p className="text-[10px] text-muted-foreground truncate">{item.detail}</p>
+            <Link key={item.key} href="/governance">
+              <div className="flex items-center gap-3 p-2 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer">
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium truncate">{item.title}</p>
+                  <p className="text-[10px] text-muted-foreground truncate">{item.detail}</p>
+                </div>
+                <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border flex-shrink-0 ${severityColors[item.severity]}`}>
+                  {item.severity === "high" ? "Attention" : "Incomplete"}
+                </span>
+                <ChevronRight className="w-3 h-3 text-muted-foreground flex-shrink-0" />
               </div>
-              <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border flex-shrink-0 ${severityColors[item.severity]}`}>
-                {item.severity === "high" ? "Attention" : "Incomplete"}
-              </span>
-            </div>
+            </Link>
           ))}
         </div>
       )}
@@ -1109,6 +1120,7 @@ function GovernanceActionItems({ governance }: { governance?: GovernanceSummary 
 // ── Admin Dashboard ───────────────────────────────────────────────────────
 
 function AdminDashboard() {
+  const [, navigate] = useLocation();
   const { data: summary, isLoading: isLoadingSummary } = useGetDashboardSummary();
   const { data: users = [], isLoading: isLoadingUsers } = useListUsers();
   const { data: governance } = useGetGovernanceSummary();
@@ -1145,6 +1157,7 @@ function AdminDashboard() {
             icon={Trees}
             iconColor="bg-blue-50 text-blue-600"
             isLoading={isLoadingSummary}
+            onClick={() => navigate("/projects")}
           />
           <MetricCard
             label="Total Partners"
@@ -1153,6 +1166,7 @@ function AdminDashboard() {
             icon={Users}
             iconColor="bg-emerald-50 text-emerald-600"
             isLoading={isLoadingSummary}
+            onClick={() => navigate("/person-registry")}
           />
           <MetricCard
             label="Agreements"
@@ -1161,6 +1175,7 @@ function AdminDashboard() {
             icon={FileSignature}
             iconColor="bg-amber-50 text-amber-600"
             isLoading={isLoadingSummary}
+            onClick={() => navigate("/agreements")}
           />
           <MetricCard
             label="System Users"
@@ -1169,6 +1184,7 @@ function AdminDashboard() {
             icon={Users}
             iconColor="bg-violet-50 text-violet-600"
             isLoading={isLoadingUsers}
+            onClick={() => navigate("/admin")}
           />
           <MetricCard
             label="Governance Issues"
@@ -1176,6 +1192,7 @@ function AdminDashboard() {
             sub={governance?.overallStatus === "complete" ? "all checks passed" : governance?.overallStatus?.replace(/_/g, " ") ?? "loading..."}
             icon={AlertCircle}
             iconColor={governance?.totalIssues ? "bg-red-50 text-red-500" : "bg-emerald-50 text-emerald-600"}
+            onClick={() => navigate("/governance")}
           />
           <MetricCard
             label="Stock on Hand"
@@ -1183,6 +1200,7 @@ function AdminDashboard() {
             sub="current inventory"
             icon={Warehouse}
             iconColor="bg-teal-50 text-teal-600"
+            onClick={() => navigate("/inventory")}
           />
         </div>
       </section>
@@ -1230,12 +1248,14 @@ function AdminDashboard() {
             ) : (
               <div className="space-y-1">
                 {roleBreakdown.map(([role, count]) => (
-                  <div key={role} className="flex items-center justify-between p-2.5 rounded-lg hover:bg-gray-50/80 transition-colors">
-                    <span className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full capitalize ${ROLE_BADGE[role] ?? "bg-gray-100 text-gray-700"}`}>
-                      {ROLE_LABELS[role as keyof typeof ROLE_LABELS] ?? role}
-                    </span>
-                    <span className="text-sm font-bold tabular-nums">{count}</span>
-                  </div>
+                  <Link key={role} href="/admin">
+                    <div className="flex items-center justify-between p-2.5 rounded-lg hover:bg-gray-50/80 transition-colors cursor-pointer">
+                      <span className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full capitalize ${ROLE_BADGE[role] ?? "bg-gray-100 text-gray-700"}`}>
+                        {ROLE_LABELS[role as keyof typeof ROLE_LABELS] ?? role}
+                      </span>
+                      <span className="text-sm font-bold tabular-nums">{count}</span>
+                    </div>
+                  </Link>
                 ))}
                 <div className="flex items-center justify-between p-2.5 rounded-lg bg-gray-50/80 border-t mt-0.5">
                   <span className="text-xs font-semibold text-muted-foreground">Total</span>
@@ -1293,6 +1313,7 @@ function AdminDashboard() {
 // ── Developer Dashboard ───────────────────────────────────────────────────
 
 function DeveloperDashboard() {
+  const [, navigate] = useLocation();
   const { data: summary } = useGetDashboardSummary();
   const { data: governance, isLoading: isLoadingGovernance } = useGetGovernanceSummary();
   const { data: projects = [], isLoading: isLoadingProjects } = useListProjects();
@@ -1320,6 +1341,7 @@ function DeveloperDashboard() {
             icon={Trees}
             iconColor="bg-blue-50 text-blue-600"
             isLoading={isLoadingProjects}
+            onClick={() => navigate("/projects")}
           />
           <MetricCard
             label="Governance Issues"
@@ -1328,6 +1350,7 @@ function DeveloperDashboard() {
             icon={AlertCircle}
             iconColor={govIssues > 0 ? "bg-red-50 text-red-500" : "bg-emerald-50 text-emerald-600"}
             isLoading={isLoadingGovernance}
+            onClick={() => navigate("/governance")}
           />
           <MetricCard
             label="Projects at Risk"
@@ -1336,6 +1359,7 @@ function DeveloperDashboard() {
             icon={ClipboardCheck}
             iconColor={attentionCount > 0 ? "bg-amber-50 text-amber-600" : "bg-emerald-50 text-emerald-600"}
             isLoading={isLoadingGovernance}
+            onClick={() => navigate("/governance")}
           />
           <MetricCard
             label="Production This Month"
@@ -1343,6 +1367,7 @@ function DeveloperDashboard() {
             sub="rubber produced"
             icon={Scale}
             iconColor="bg-emerald-50 text-emerald-600"
+            onClick={() => navigate("/production-log")}
           />
           <MetricCard
             label="Stock on Hand"
@@ -1350,6 +1375,7 @@ function DeveloperDashboard() {
             sub="current inventory"
             icon={Warehouse}
             iconColor="bg-teal-50 text-teal-600"
+            onClick={() => navigate("/inventory")}
           />
         </div>
       </section>
@@ -1411,6 +1437,7 @@ function DeveloperDashboard() {
 // ── Landowner Dashboard ───────────────────────────────────────────────────
 
 function LandownerDashboard() {
+  const [, navigate] = useLocation();
   const { data: portfolio, isLoading: isLoadingPortfolio } = useGetMyPortfolio();
   const { data: projects = [], isLoading: isLoadingProjects } = useListProjects();
 
@@ -1437,6 +1464,7 @@ function LandownerDashboard() {
             icon={Trees}
             iconColor="bg-blue-50 text-blue-600"
             isLoading={isLoadingProjects}
+            onClick={() => navigate("/projects")}
           />
           <MetricCard
             label="Active Agreements"
@@ -1444,6 +1472,7 @@ function LandownerDashboard() {
             icon={FileSignature}
             iconColor="bg-emerald-50 text-emerald-600"
             isLoading={isLoadingPortfolio}
+            onClick={() => navigate("/agreements")}
           />
           <MetricCard
             label="Pending Verification"
@@ -1452,6 +1481,7 @@ function LandownerDashboard() {
             icon={ClipboardCheck}
             iconColor={pendingAgreements.length > 0 ? "bg-amber-50 text-amber-600" : "bg-emerald-50 text-emerald-600"}
             isLoading={isLoadingPortfolio}
+            onClick={() => navigate("/agreements")}
           />
           <MetricCard
             label="Land Under Agreement"
@@ -1460,6 +1490,7 @@ function LandownerDashboard() {
             icon={MapPin}
             iconColor="bg-violet-50 text-violet-600"
             isLoading={isLoadingPortfolio}
+            onClick={() => navigate("/my-portfolio")}
           />
         </div>
       </section>
@@ -1577,6 +1608,7 @@ function LandownerDashboard() {
 // ── Investor Dashboard ────────────────────────────────────────────────────
 
 function InvestorDashboard() {
+  const [, navigate] = useLocation();
   const { data: portfolio, isLoading: isLoadingPortfolio } = useGetMyPortfolio();
   const { data: projects = [], isLoading: isLoadingProjects } = useListProjects();
   const { data: revenueStats = [] } = useGetRevenueStats();
@@ -1604,6 +1636,7 @@ function InvestorDashboard() {
             icon={Trees}
             iconColor="bg-blue-50 text-blue-600"
             isLoading={isLoadingProjects}
+            onClick={() => navigate("/projects")}
           />
           <MetricCard
             label="Agreements"
@@ -1612,6 +1645,7 @@ function InvestorDashboard() {
             icon={FileSignature}
             iconColor="bg-amber-50 text-amber-600"
             isLoading={isLoadingPortfolio}
+            onClick={() => navigate("/agreements")}
           />
           <MetricCard
             label="Land Portfolio"
@@ -1620,6 +1654,7 @@ function InvestorDashboard() {
             icon={MapPin}
             iconColor="bg-emerald-50 text-emerald-600"
             isLoading={isLoadingPortfolio}
+            onClick={() => navigate("/my-portfolio")}
           />
           <MetricCard
             label="Total Ownership Share"
@@ -1628,6 +1663,7 @@ function InvestorDashboard() {
             icon={TrendingUp}
             iconColor="bg-violet-50 text-violet-600"
             isLoading={isLoadingPortfolio}
+            onClick={() => navigate("/my-portfolio")}
           />
         </div>
       </section>
@@ -1807,6 +1843,7 @@ function PendingTasksPanel() {
 // ── Employee Dashboard ────────────────────────────────────────────────────
 
 function EmployeeDashboard() {
+  const [, navigate] = useLocation();
   const { data: projects = [], isLoading: isLoadingProjects } = useListProjects();
   const { data: production = [], isLoading: isLoadingProduction } = useListProductionRecords();
   const { data: stock = [] } = useGetStockSummary();
@@ -1827,9 +1864,9 @@ function EmployeeDashboard() {
       {/* KPI Cards */}
       <section>
         <div className="grid grid-cols-3 gap-3">
-          <MetricCard label="Assigned Projects" value={projects.length} icon={Trees} iconColor="bg-blue-50 text-blue-600" isLoading={isLoadingProjects} />
-          <MetricCard label="Production This Month" value={thisMonthKg > 0 ? `${thisMonthKg.toLocaleString()} kg` : "—"} sub="rubber produced" icon={Scale} iconColor="bg-emerald-50 text-emerald-600" isLoading={isLoadingProduction} />
-          <MetricCard label="Stock on Hand" value={totalStock > 0 ? `${totalStock.toLocaleString("en-IN", { maximumFractionDigits: 0 })} kg` : "—"} sub="current inventory" icon={Warehouse} iconColor="bg-teal-50 text-teal-600" />
+          <MetricCard label="Assigned Projects" value={projects.length} icon={Trees} iconColor="bg-blue-50 text-blue-600" isLoading={isLoadingProjects} onClick={() => navigate("/projects")} />
+          <MetricCard label="Production This Month" value={thisMonthKg > 0 ? `${thisMonthKg.toLocaleString()} kg` : "—"} sub="rubber produced" icon={Scale} iconColor="bg-emerald-50 text-emerald-600" isLoading={isLoadingProduction} onClick={() => navigate("/production-log")} />
+          <MetricCard label="Stock on Hand" value={totalStock > 0 ? `${totalStock.toLocaleString("en-IN", { maximumFractionDigits: 0 })} kg` : "—"} sub="current inventory" icon={Warehouse} iconColor="bg-teal-50 text-teal-600" onClick={() => navigate("/inventory")} />
         </div>
       </section>
 
@@ -1948,6 +1985,7 @@ function EmployeeDashboard() {
 // ── Operational Staff Dashboard ───────────────────────────────────────────
 
 function StaffDashboard() {
+  const [, navigate] = useLocation();
   const { data: projects = [], isLoading: isLoadingProjects } = useListProjects();
   const { data: stock = [], isLoading: isLoadingStock } = useGetStockSummary();
 
@@ -1961,9 +1999,9 @@ function StaffDashboard() {
       {/* KPI Cards */}
       <section>
         <div className="grid grid-cols-3 gap-3">
-          <MetricCard label="Assigned Projects" value={projects.length} icon={Trees} iconColor="bg-blue-50 text-blue-600" isLoading={isLoadingProjects} />
-          <MetricCard label="Total Stock" value={totalStock > 0 ? `${totalStock.toLocaleString("en-IN", { maximumFractionDigits: 0 })} kg` : "—"} sub="on hand" icon={Warehouse} iconColor="bg-teal-50 text-teal-600" isLoading={isLoadingStock} />
-          <MetricCard label="Pending Distribution" value="0" sub="placeholder" icon={Truck} iconColor="bg-amber-50 text-amber-600" />
+          <MetricCard label="Assigned Projects" value={projects.length} icon={Trees} iconColor="bg-blue-50 text-blue-600" isLoading={isLoadingProjects} onClick={() => navigate("/projects")} />
+          <MetricCard label="Total Stock" value={totalStock > 0 ? `${totalStock.toLocaleString("en-IN", { maximumFractionDigits: 0 })} kg` : "—"} sub="on hand" icon={Warehouse} iconColor="bg-teal-50 text-teal-600" isLoading={isLoadingStock} onClick={() => navigate("/inventory")} />
+          <MetricCard label="Pending Distribution" value="0" sub="placeholder" icon={Truck} iconColor="bg-amber-50 text-amber-600" onClick={() => navigate("/distribution-workflow")} />
         </div>
       </section>
 
