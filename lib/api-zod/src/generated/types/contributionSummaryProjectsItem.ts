@@ -6,17 +6,27 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { ContributionSummaryProjectsItemByType } from "./contributionSummaryProjectsItemByType";
+import type { ContributionSummaryProjectsItemParticipantsItem } from "./contributionSummaryProjectsItemParticipantsItem";
 
 export type ContributionSummaryProjectsItem = {
   projectId: string;
   projectName: string;
+  /** Commercial model: ownership_contribution | fifty_percent_revenue */
+  model: string;
+  /** Project lifecycle phase: prematurity | mature_production | closed */
+  lifecycleStatus: string;
   totalAmount: number;
   verifiedAmount: number;
   /** Sum of verified prematurity contributions that affect ownership */
   ownershipEligibleAmount: number;
+  /** Sum of recoverable_advance type contributions */
+  reimbursableAmount: number;
   byType: ContributionSummaryProjectsItemByType;
   draftCount?: number;
   pendingCount?: number;
   verifiedCount?: number;
   rejectedCount?: number;
+  disputedCount?: number;
+  /** Per-participant contribution breakdown within this project */
+  participants: ContributionSummaryProjectsItemParticipantsItem[];
 };

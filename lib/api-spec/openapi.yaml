@@ -15305,13 +15305,19 @@ components:
           type: array
           items:
             type: object
-            required: [projectId, projectName, totalAmount, verifiedAmount, byType, ownershipEligibleAmount]
+            required: [projectId, projectName, model, lifecycleStatus, totalAmount, verifiedAmount, ownershipEligibleAmount, reimbursableAmount, byType, participants]
             properties:
               projectId:
                 type: string
                 format: uuid
               projectName:
                 type: string
+              model:
+                type: string
+                description: "Commercial model: ownership_contribution | fifty_percent_revenue"
+              lifecycleStatus:
+                type: string
+                description: "Project lifecycle phase: prematurity | mature_production | closed"
               totalAmount:
                 type: number
               verifiedAmount:
@@ -15319,6 +15325,9 @@ components:
               ownershipEligibleAmount:
                 type: number
                 description: Sum of verified prematurity contributions that affect ownership
+              reimbursableAmount:
+                type: number
+                description: Sum of recoverable_advance type contributions
               byType:
                 type: object
                 additionalProperties:
@@ -15331,6 +15340,39 @@ components:
                 type: integer
               rejectedCount:
                 type: integer
+              disputedCount:
+                type: integer
+              participants:
+                type: array
+                description: Per-participant contribution breakdown within this project
+                items:
+                  type: object
+                  required: [partnerName, totalAmount, verifiedAmount, ownershipEligibleAmount, reimbursableAmount]
+                  properties:
+                    partnerId:
+                      type: string
+                      format: uuid
+                      nullable: true
+                    partnerName:
+                      type: string
+                    totalAmount:
+                      type: number
+                    verifiedAmount:
+                      type: number
+                    ownershipEligibleAmount:
+                      type: number
+                    reimbursableAmount:
+                      type: number
+                    draftCount:
+                      type: integer
+                    pendingCount:
+                      type: integer
+                    verifiedCount:
+                      type: integer
+                    rejectedCount:
+                      type: integer
+                    disputedCount:
+                      type: integer
         totals:
           type: object
           required: [totalAmount, verifiedAmount, ownershipEligibleAmount, count]

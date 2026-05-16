@@ -16,7 +16,10 @@ import {
   getListContributionsQueryKey,
   getGetContributionSummaryQueryKey,
 } from "@workspace/api-client-react";
-import type { ContributionEntry } from "@workspace/api-client-react";
+import type {
+  ContributionEntry,
+  ContributionSummaryProjectsItem,
+} from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -86,6 +89,9 @@ import {
   Users,
   ShieldAlert,
   ShieldCheck,
+  ChevronDown,
+  ChevronRight,
+  Building2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -822,6 +828,474 @@ function VerifyRejectDialog({
   );
 }
 
+// ── Contribution Hierarchy (3-level: Project → Participant → Entry) ───────────
+
+type SummaryProject = ContributionSummaryProjectsItem;
+
+function ContributionHierarchy({
+  projects,
+  allEntries,
+  isAdminOrDev,
+  isAdmin,
+  onEdit,
+  onVerify,
+  onSubmit,
+  onDelete,
+}: {
+  projects: SummaryProject[];
+  allEntries: ContributionEntry[];
+  isAdminOrDev: boolean;
+  isAdmin: boolean;
+  onEdit: (c: ContributionEntry) => void;
+  onVerify: (c: ContributionEntry, action: "verify" | "reject") => void;
+  onSubmit: (id: string) => void;
+  onDelete: (id: string) => void;
+}) {
+  const [expandedProjects, setExpandedProjects] = useState<Set<string>>(
+    new Set(),
+  );
+  const [expandedParticipants, setExpandedParticipants] = useState<
+    Set<string>
+  >(new Set());
+
+  function toggleProject(pid: string) {
+    setExpandedProjects((prev) => {
+      const s = new Set(prev);
+      if (s.has(pid)) s.delete(pid);
+      else s.add(pid);
+      return s;
+    });
+  }
+
+  function toggleParticipant(key: string) {
+    setExpandedParticipants((prev) => {
+      const s = new Set(prev);
+      if (s.has(key)) s.delete(key);
+      else s.add(key);
+      return s;
+    });
+  }
+
+  function getEntries(projectId: string, partnerName: string) {
+    return allEntries.filter(
+      (e) => e.projectId === projectId && e.partnerName === partnerName,
+    );
+  }
+
+  if (projects.length === 0) {
+    return (
+      <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
+        No contribution data yet. Record the first contribution to see it here.
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      {projects.map((proj) => {
+        const isExpanded = expandedProjects.has(proj.projectId);
+        const isOwnership = proj.model === "ownership_contribution";
+        const is50pct = proj.model === "fifty_percent_revenue";
+
+        return (
+          <div
+            key={proj.projectId}
+            className="border rounded-lg overflow-hidden bg-card shadow-sm"
+          >
+            {/* ── Level 1: Project ──────────────────────────────── */}
+            <button
+              onClick={() => toggleProject(proj.projectId)}
+              className="w-full text-left p-3 flex items-center gap-3 hover:bg-muted/30 transition-colors"
+            >
+              <div
+                className={cn(
+                  "w-1 self-stretch rounded-full shrink-0",
+                  is50pct ? "bg-amber-400" : "bg-blue-500",
+                )}
+              />
+              <Building2 className="w-4 h-4 shrink-0 text-muted-foreground" />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-semibold text-sm">{proj.projectName}</span>
+                  <span
+                    className={cn(
+                      "text-[10px] px-1.5 py-0.5 rounded-full border font-medium",
+                      is50pct
+                        ? "bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-950/30 dark:border-amber-700 dark:text-amber-400"
+                        : "bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-950/30 dark:border-blue-700 dark:text-blue-400",
+                    )}
+                  >
+                    {is50pct ? "50% Revenue" : "Contribution Model"}
+                  </span>
+                  <span
+                    className={cn(
+                      "text-[10px] px-1.5 py-0.5 rounded-full border font-medium",
+                      proj.lifecycleStatus === "prematurity"
+                        ? "bg-sky-50 border-sky-200 text-sky-700 dark:bg-sky-950/30 dark:border-sky-700 dark:text-sky-400"
+                        : proj.lifecycleStatus === "mature_production"
+                          ? "bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-950/30 dark:border-emerald-700 dark:text-emerald-400"
+                          : "bg-slate-100 border-slate-200 text-slate-500 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-400",
+                    )}
+                  >
+                    {proj.lifecycleStatus === "prematurity"
+                      ? "Prematurity"
+                      : proj.lifecycleStatus === "mature_production"
+                        ? "Mature Production"
+                        : proj.lifecycleStatus === "closed"
+                          ? "Closed"
+                          : proj.lifecycleStatus}
+                  </span>
+                  {(proj.pendingCount ?? 0) > 0 && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700 dark:bg-amber-950/30 dark:border-amber-700 dark:text-amber-400">
+                      {proj.pendingCount} pending
+                    </span>
+                  )}
+                  {(proj.disputedCount ?? 0) > 0 && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-50 border border-red-200 text-red-700 dark:bg-red-950/30 dark:border-red-700 dark:text-red-400">
+                      {proj.disputedCount} disputed
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-4 mt-0.5 flex-wrap text-xs">
+                  <span className="tabular-nums">
+                    <span className="font-medium text-foreground">
+                      {formatINR(proj.totalAmount)}
+                    </span>
+                    <span className="text-muted-foreground ml-1">total</span>
+                  </span>
+                  {proj.verifiedAmount > 0 && (
+                    <span className="tabular-nums text-emerald-700 dark:text-emerald-400">
+                      {formatINR(proj.verifiedAmount)} verified
+                    </span>
+                  )}
+                  {isOwnership && proj.ownershipEligibleAmount > 0 && (
+                    <span className="tabular-nums text-violet-700 dark:text-violet-400">
+                      {formatINR(proj.ownershipEligibleAmount)} ownership-eligible
+                    </span>
+                  )}
+                  {proj.reimbursableAmount > 0 && (
+                    <span className="tabular-nums text-purple-700 dark:text-purple-400">
+                      {formatINR(proj.reimbursableAmount)} reimbursable
+                    </span>
+                  )}
+                  <span className="text-muted-foreground">
+                    {(proj.participants ?? []).length} participant
+                    {(proj.participants ?? []).length !== 1 ? "s" : ""}
+                  </span>
+                </div>
+              </div>
+              {isExpanded ? (
+                <ChevronDown className="w-4 h-4 shrink-0 text-muted-foreground" />
+              ) : (
+                <ChevronRight className="w-4 h-4 shrink-0 text-muted-foreground" />
+              )}
+            </button>
+
+            {/* ── Level 2: Participants ──────────────────────────── */}
+            {isExpanded && (
+              <div className="border-t bg-muted/10 dark:bg-muted/5">
+                {(proj.participants ?? []).length === 0 ? (
+                  <p className="px-6 py-4 text-sm text-muted-foreground italic">
+                    No contributions recorded yet for this project.
+                  </p>
+                ) : (
+                  <div className="divide-y">
+                    {(proj.participants ?? []).map((part) => {
+                      const partKey = `${proj.projectId}:${part.partnerName}`;
+                      const isPartExpanded =
+                        expandedParticipants.has(partKey);
+                      const entries = getEntries(
+                        proj.projectId,
+                        part.partnerName,
+                      );
+                      const totalEntryCount =
+                        (part.verifiedCount ?? 0) +
+                        (part.draftCount ?? 0) +
+                        (part.pendingCount ?? 0) +
+                        (part.rejectedCount ?? 0) +
+                        (part.disputedCount ?? 0);
+
+                      return (
+                        <div key={partKey}>
+                          {/* Participant header row */}
+                          <button
+                            onClick={() => toggleParticipant(partKey)}
+                            className="w-full text-left pl-6 pr-3 py-2.5 flex items-center gap-3 hover:bg-muted/30 transition-colors"
+                          >
+                            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-slate-300 to-slate-400 dark:from-slate-600 dark:to-slate-700 flex items-center justify-center text-xs font-bold text-white shrink-0 select-none">
+                              {part.partnerName.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="text-sm font-medium">
+                                  {part.partnerName}
+                                </span>
+                                {(part.pendingCount ?? 0) > 0 && (
+                                  <span className="text-[10px] px-1 py-0.5 rounded bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 font-medium">
+                                    {part.pendingCount} pending
+                                  </span>
+                                )}
+                                {(part.disputedCount ?? 0) > 0 && (
+                                  <span className="text-[10px] px-1 py-0.5 rounded bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-400 font-medium">
+                                    {part.disputedCount} disputed
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-3 text-xs flex-wrap mt-0.5">
+                                <span className="font-medium tabular-nums text-foreground">
+                                  {formatINR(part.totalAmount)}
+                                </span>
+                                {part.verifiedAmount > 0 && (
+                                  <span className="text-emerald-700 dark:text-emerald-400 tabular-nums">
+                                    {formatINR(part.verifiedAmount)} verified
+                                  </span>
+                                )}
+                                {isOwnership &&
+                                  part.ownershipEligibleAmount > 0 && (
+                                    <span className="text-violet-700 dark:text-violet-400 tabular-nums">
+                                      {formatINR(part.ownershipEligibleAmount)}{" "}
+                                      ownership-eligible
+                                    </span>
+                                  )}
+                                {part.reimbursableAmount > 0 && (
+                                  <span className="text-purple-700 dark:text-purple-400 tabular-nums">
+                                    {formatINR(part.reimbursableAmount)}{" "}
+                                    reimbursable
+                                  </span>
+                                )}
+                                <span className="text-muted-foreground">
+                                  {entries.length > 0
+                                    ? `${entries.length} entr${entries.length !== 1 ? "ies" : "y"}`
+                                    : `${totalEntryCount} entr${totalEntryCount !== 1 ? "ies" : "y"}`}
+                                </span>
+                              </div>
+                            </div>
+                            {isPartExpanded ? (
+                              <ChevronDown className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
+                            ) : (
+                              <ChevronRight className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
+                            )}
+                          </button>
+
+                          {/* ── Level 3: Individual entries ─────────── */}
+                          {isPartExpanded && (
+                            <div className="bg-background border-t">
+                              {entries.length === 0 ? (
+                                <p className="pl-12 pr-4 py-3 text-xs text-muted-foreground italic">
+                                  Entries not loaded — clear all filters to see
+                                  individual entries here.
+                                </p>
+                              ) : (
+                                <div className="overflow-x-auto">
+                                  <Table>
+                                    <TableHeader>
+                                      <TableRow className="hover:bg-transparent">
+                                        <TableHead className="pl-12 text-xs py-2">
+                                          Type
+                                        </TableHead>
+                                        <TableHead className="text-right text-xs py-2">
+                                          Amount
+                                        </TableHead>
+                                        <TableHead className="text-xs py-2">
+                                          Date
+                                        </TableHead>
+                                        <TableHead className="text-xs py-2">
+                                          Phase
+                                        </TableHead>
+                                        <TableHead className="text-xs py-2">
+                                          Status
+                                        </TableHead>
+                                        <TableHead className="text-xs py-2 w-8">
+                                          Own.
+                                        </TableHead>
+                                        {isAdminOrDev && (
+                                          <TableHead className="w-10 py-2" />
+                                        )}
+                                      </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                      {entries.map((c) => (
+                                        <TableRow
+                                          key={c.id}
+                                          className="group hover:bg-muted/20"
+                                        >
+                                          <TableCell className="pl-12 py-2">
+                                            <TypeBadge
+                                              type={
+                                                c.contributionType as Exclude<
+                                                  ContributionType,
+                                                  "all"
+                                                >
+                                              }
+                                            />
+                                            {c.referenceNumber && (
+                                              <div className="text-[10px] text-muted-foreground font-mono mt-0.5">
+                                                {c.referenceNumber}
+                                              </div>
+                                            )}
+                                            {c.remarks && (
+                                              <div
+                                                className="text-[10px] text-muted-foreground mt-0.5 max-w-[220px] truncate"
+                                                title={c.remarks}
+                                              >
+                                                {c.remarks}
+                                              </div>
+                                            )}
+                                            {c.verificationStatus ===
+                                              "verified" &&
+                                              c.verifiedByName && (
+                                                <div className="text-[10px] text-emerald-700 dark:text-emerald-400 mt-0.5">
+                                                  ✓ {c.verifiedByName}
+                                                </div>
+                                              )}
+                                          </TableCell>
+                                          <TableCell className="text-right tabular-nums font-semibold text-sm py-2">
+                                            {formatINR(c.amount)}
+                                          </TableCell>
+                                          <TableCell className="text-xs text-muted-foreground py-2 whitespace-nowrap">
+                                            {c.contributionDate}
+                                          </TableCell>
+                                          <TableCell className="py-2">
+                                            <span
+                                              className={cn(
+                                                "text-[10px] px-1.5 py-0.5 rounded font-medium",
+                                                c.lifecyclePhaseSnapshot ===
+                                                  "prematurity"
+                                                  ? "bg-sky-50 text-sky-700 dark:bg-sky-950/30 dark:text-sky-400"
+                                                  : c.lifecyclePhaseSnapshot ===
+                                                      "mature_production"
+                                                    ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400"
+                                                    : "bg-slate-100 text-slate-500",
+                                              )}
+                                            >
+                                              {c.lifecyclePhaseSnapshot ===
+                                              "prematurity"
+                                                ? "Pre"
+                                                : c.lifecyclePhaseSnapshot ===
+                                                    "mature_production"
+                                                  ? "Mature"
+                                                  : "Closed"}
+                                            </span>
+                                          </TableCell>
+                                          <TableCell className="py-2">
+                                            <StatusBadge
+                                              status={
+                                                c.verificationStatus as Exclude<
+                                                  VerificationStatus,
+                                                  "all"
+                                                >
+                                              }
+                                            />
+                                          </TableCell>
+                                          <TableCell className="py-2">
+                                            {c.affectsOwnership ? (
+                                              <CheckCircle2 className="w-3.5 h-3.5 text-blue-500" />
+                                            ) : (
+                                              <XCircle className="w-3.5 h-3.5 text-muted-foreground/30" />
+                                            )}
+                                          </TableCell>
+                                          {isAdminOrDev && (
+                                            <TableCell className="py-2">
+                                              <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                  <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-7 w-7 opacity-0 group-hover:opacity-100"
+                                                  >
+                                                    <MoreHorizontal className="w-3.5 h-3.5" />
+                                                  </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                  {(c.verificationStatus ===
+                                                    "draft" ||
+                                                    c.verificationStatus ===
+                                                      "pending_verification" ||
+                                                    isAdmin) && (
+                                                    <DropdownMenuItem
+                                                      onClick={() => onEdit(c)}
+                                                    >
+                                                      <Pencil className="w-4 h-4 mr-2" />{" "}
+                                                      Edit
+                                                    </DropdownMenuItem>
+                                                  )}
+                                                  {c.verificationStatus ===
+                                                    "draft" && (
+                                                    <DropdownMenuItem
+                                                      onClick={() =>
+                                                        onSubmit(c.id)
+                                                      }
+                                                    >
+                                                      <Send className="w-4 h-4 mr-2" />{" "}
+                                                      Submit for Verification
+                                                    </DropdownMenuItem>
+                                                  )}
+                                                  {isAdmin &&
+                                                    c.verificationStatus !==
+                                                      "verified" && (
+                                                      <DropdownMenuItem
+                                                        onClick={() =>
+                                                          onVerify(c, "verify")
+                                                        }
+                                                        className="text-emerald-700 dark:text-emerald-400"
+                                                      >
+                                                        <CheckCircle2 className="w-4 h-4 mr-2" />{" "}
+                                                        Verify
+                                                      </DropdownMenuItem>
+                                                    )}
+                                                  {isAdmin &&
+                                                    c.verificationStatus !==
+                                                      "rejected" && (
+                                                      <DropdownMenuItem
+                                                        onClick={() =>
+                                                          onVerify(c, "reject")
+                                                        }
+                                                        className="text-red-600 dark:text-red-400"
+                                                      >
+                                                        <XCircle className="w-4 h-4 mr-2" />{" "}
+                                                        Reject
+                                                      </DropdownMenuItem>
+                                                    )}
+                                                  {isAdmin && (
+                                                    <>
+                                                      <DropdownMenuSeparator />
+                                                      <DropdownMenuItem
+                                                        onClick={() =>
+                                                          onDelete(c.id)
+                                                        }
+                                                        className="text-red-600 dark:text-red-400"
+                                                      >
+                                                        <Trash2 className="w-4 h-4 mr-2" />{" "}
+                                                        Delete
+                                                      </DropdownMenuItem>
+                                                    </>
+                                                  )}
+                                                </DropdownMenuContent>
+                                              </DropdownMenu>
+                                            </TableCell>
+                                          )}
+                                        </TableRow>
+                                      ))}
+                                    </TableBody>
+                                  </Table>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // ── Main Contributions page ────────────────────────────────────────────────────
 
 export default function Contributions() {
@@ -863,6 +1337,10 @@ export default function Contributions() {
   }, [selectedProjectId, typeFilter, statusFilter]);
 
   const { data: contributionsData, isLoading } = useListContributions(listParams);
+  // Unfiltered — always loads all visible contributions so Level 3 entries are
+  // available in the hierarchy regardless of which type/status filters are active.
+  const { data: allContributionsRaw } = useListContributions({});
+  const allContribs = allContributionsRaw?.contributions ?? [];
   const { data: summaryData } = useGetContributionSummary(
     selectedProjectId !== "all" ? { projectId: selectedProjectId } : {},
   );
@@ -1020,42 +1498,37 @@ export default function Contributions() {
         })}
       </div>
 
-      {/* Per-project summary strip (admin/dev) */}
-      {isAdminOrDev && summaryData && summaryData.projects.length > 0 && (
+      {/* Contribution Intelligence — 3-level hierarchy (admin/dev) */}
+      {isAdminOrDev && summaryData && (
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Project Breakdown</CardTitle>
-            <CardDescription className="text-xs">Ownership-eligible = verified prematurity entries that affect ownership</CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Building2 className="w-4 h-4 text-muted-foreground" />
+                  Contribution Intelligence
+                </CardTitle>
+                <CardDescription className="text-xs mt-0.5">
+                  Project → Participant → Entry · Click any row to expand
+                </CardDescription>
+              </div>
+              <span className="text-xs text-muted-foreground tabular-nums">
+                {summaryData.projects.length} project
+                {summaryData.projects.length !== 1 ? "s" : ""}
+              </span>
+            </div>
           </CardHeader>
-          <CardContent className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Project</TableHead>
-                  <TableHead className="text-right">Total</TableHead>
-                  <TableHead className="text-right">Verified</TableHead>
-                  <TableHead className="text-right">Ownership-Eligible</TableHead>
-                  <TableHead className="text-right">Draft / Pending</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {summaryData.projects.map((p) => (
-                  <TableRow key={p.projectId}>
-                    <TableCell className="font-medium">{p.projectName}</TableCell>
-                    <TableCell className="text-right tabular-nums">{formatINR(p.totalAmount)}</TableCell>
-                    <TableCell className="text-right tabular-nums text-emerald-700 dark:text-emerald-400">
-                      {formatINR(p.verifiedAmount)}
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums text-blue-700 dark:text-blue-400 font-medium">
-                      {formatINR(p.ownershipEligibleAmount)}
-                    </TableCell>
-                    <TableCell className="text-right text-muted-foreground text-sm">
-                      {p.draftCount ?? 0} / {p.pendingCount ?? 0}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+          <CardContent>
+            <ContributionHierarchy
+              projects={summaryData.projects}
+              allEntries={allContribs}
+              isAdminOrDev={isAdminOrDev}
+              isAdmin={isAdmin}
+              onEdit={(c) => { setEditEntry(c); setShowForm(true); }}
+              onVerify={(c, action) => setVerifyEntry({ entry: c, action })}
+              onSubmit={handleSubmitForVerification}
+              onDelete={handleDelete}
+            />
           </CardContent>
         </Card>
       )}

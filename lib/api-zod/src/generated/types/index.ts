@@ -178,6 +178,7 @@ export * from "./contributionEntryVerificationStatus";
 export * from "./contributionSummary";
 export * from "./contributionSummaryProjectsItem";
 export * from "./contributionSummaryProjectsItemByType";
+export * from "./contributionSummaryProjectsItemParticipantsItem";
 export * from "./contributionSummaryTotals";
 export * from "./contributionVerificationEvent";
 export * from "./contributionVerificationEventEventType";

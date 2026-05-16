@@ -4752,6 +4752,16 @@ export const GetContributionSummaryResponse = zod.object({
     zod.object({
       projectId: zod.string().uuid(),
       projectName: zod.string(),
+      model: zod
+        .string()
+        .describe(
+          "Commercial model: ownership_contribution | fifty_percent_revenue",
+        ),
+      lifecycleStatus: zod
+        .string()
+        .describe(
+          "Project lifecycle phase: prematurity | mature_production | closed",
+        ),
       totalAmount: zod.number(),
       verifiedAmount: zod.number(),
       ownershipEligibleAmount: zod
@@ -4759,11 +4769,32 @@ export const GetContributionSummaryResponse = zod.object({
         .describe(
           "Sum of verified prematurity contributions that affect ownership",
         ),
+      reimbursableAmount: zod
+        .number()
+        .describe("Sum of recoverable_advance type contributions"),
       byType: zod.record(zod.string(), zod.number()),
       draftCount: zod.number().optional(),
       pendingCount: zod.number().optional(),
       verifiedCount: zod.number().optional(),
       rejectedCount: zod.number().optional(),
+      disputedCount: zod.number().optional(),
+      participants: zod
+        .array(
+          zod.object({
+            partnerId: zod.string().uuid().nullish(),
+            partnerName: zod.string(),
+            totalAmount: zod.number(),
+            verifiedAmount: zod.number(),
+            ownershipEligibleAmount: zod.number(),
+            reimbursableAmount: zod.number(),
+            draftCount: zod.number().optional(),
+            pendingCount: zod.number().optional(),
+            verifiedCount: zod.number().optional(),
+            rejectedCount: zod.number().optional(),
+            disputedCount: zod.number().optional(),
+          }),
+        )
+        .describe("Per-participant contribution breakdown within this project"),
     }),
   ),
   totals: zod.object({

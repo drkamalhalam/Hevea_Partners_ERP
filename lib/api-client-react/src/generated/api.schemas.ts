@@ -2609,18 +2609,41 @@ export interface UpdateContributionBody {
 
 export type ContributionSummaryProjectsItemByType = { [key: string]: number };
 
+export type ContributionSummaryProjectsItemParticipantsItem = {
+  partnerId?: string | null;
+  partnerName: string;
+  totalAmount: number;
+  verifiedAmount: number;
+  ownershipEligibleAmount: number;
+  reimbursableAmount: number;
+  draftCount?: number;
+  pendingCount?: number;
+  verifiedCount?: number;
+  rejectedCount?: number;
+  disputedCount?: number;
+};
+
 export type ContributionSummaryProjectsItem = {
   projectId: string;
   projectName: string;
+  /** Commercial model: ownership_contribution | fifty_percent_revenue */
+  model: string;
+  /** Project lifecycle phase: prematurity | mature_production | closed */
+  lifecycleStatus: string;
   totalAmount: number;
   verifiedAmount: number;
   /** Sum of verified prematurity contributions that affect ownership */
   ownershipEligibleAmount: number;
+  /** Sum of recoverable_advance type contributions */
+  reimbursableAmount: number;
   byType: ContributionSummaryProjectsItemByType;
   draftCount?: number;
   pendingCount?: number;
   verifiedCount?: number;
   rejectedCount?: number;
+  disputedCount?: number;
+  /** Per-participant contribution breakdown within this project */
+  participants: ContributionSummaryProjectsItemParticipantsItem[];
 };
 
 export type ContributionSummaryTotals = {

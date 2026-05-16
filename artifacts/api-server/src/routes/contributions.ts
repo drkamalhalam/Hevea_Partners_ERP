@@ -208,29 +208,50 @@ router.get("/summary", async (req, res) => {
       verificationStatus: contributionsTable.verificationStatus,
       lifecyclePhaseSnapshot: contributionsTable.lifecyclePhaseSnapshot,
       affectsOwnership: contributionsTable.affectsOwnership,
+      partnerId: contributionsTable.partnerId,
+      partnerName: contributionsTable.partnerName,
       projectName: projectsTable.name,
+      projectModel: projectsTable.commercialModel,
+      projectLifecycle: projectsTable.lifecycleStatus,
     })
     .from(contributionsTable)
     .leftJoin(projectsTable, eq(contributionsTable.projectId, projectsTable.id))
     .where(and(...conditions))
     .orderBy(desc(contributionsTable.createdAt));
 
-  // Aggregate per project
-  const projectMap = new Map<
-    string,
-    {
-      projectId: string;
-      projectName: string;
-      totalAmount: number;
-      verifiedAmount: number;
-      ownershipEligibleAmount: number;
-      byType: Record<string, number>;
-      draftCount: number;
-      pendingCount: number;
-      verifiedCount: number;
-      rejectedCount: number;
-    }
-  >();
+  type ParticipantAgg = {
+    partnerId: string | null;
+    partnerName: string;
+    totalAmount: number;
+    verifiedAmount: number;
+    ownershipEligibleAmount: number;
+    reimbursableAmount: number;
+    draftCount: number;
+    pendingCount: number;
+    verifiedCount: number;
+    rejectedCount: number;
+    disputedCount: number;
+  };
+
+  type ProjectAgg = {
+    projectId: string;
+    projectName: string;
+    model: string;
+    lifecycleStatus: string;
+    totalAmount: number;
+    verifiedAmount: number;
+    ownershipEligibleAmount: number;
+    reimbursableAmount: number;
+    byType: Record<string, number>;
+    draftCount: number;
+    pendingCount: number;
+    verifiedCount: number;
+    rejectedCount: number;
+    disputedCount: number;
+    participantMap: Map<string, ParticipantAgg>;
+  };
+
+  const projectMap = new Map<string, ProjectAgg>();
 
   let grandTotal = 0;
   let grandVerified = 0;
@@ -242,40 +263,89 @@ router.get("/summary", async (req, res) => {
       projectMap.set(row.projectId, {
         projectId: row.projectId,
         projectName: row.projectName ?? "Unknown Project",
+        model: row.projectModel ?? "unknown",
+        lifecycleStatus: row.projectLifecycle ?? "unknown",
         totalAmount: 0,
         verifiedAmount: 0,
         ownershipEligibleAmount: 0,
+        reimbursableAmount: 0,
         byType: {},
         draftCount: 0,
         pendingCount: 0,
         verifiedCount: 0,
         rejectedCount: 0,
+        disputedCount: 0,
+        participantMap: new Map(),
       });
     }
     const p = projectMap.get(row.projectId)!;
     p.totalAmount += row.amount;
     p.byType[row.contributionType] = (p.byType[row.contributionType] ?? 0) + row.amount;
 
+    // ── Participant aggregation ────────────────────────────────────────────────
+    const partKey = row.partnerName;
+    if (!p.participantMap.has(partKey)) {
+      p.participantMap.set(partKey, {
+        partnerId: row.partnerId ?? null,
+        partnerName: row.partnerName,
+        totalAmount: 0,
+        verifiedAmount: 0,
+        ownershipEligibleAmount: 0,
+        reimbursableAmount: 0,
+        draftCount: 0,
+        pendingCount: 0,
+        verifiedCount: 0,
+        rejectedCount: 0,
+        disputedCount: 0,
+      });
+    }
+    const part = p.participantMap.get(partKey)!;
+    part.totalAmount += row.amount;
+
+    if (row.contributionType === "recoverable_advance") {
+      part.reimbursableAmount += row.amount;
+      p.reimbursableAmount += row.amount;
+    }
+
     if (row.verificationStatus === "verified") {
       p.verifiedAmount += row.amount;
+      part.verifiedAmount += row.amount;
       grandVerified += row.amount;
       if (row.affectsOwnership && row.lifecyclePhaseSnapshot === "prematurity") {
         p.ownershipEligibleAmount += row.amount;
+        part.ownershipEligibleAmount += row.amount;
         grandOwnership += row.amount;
       }
     }
 
-    if (row.verificationStatus === "draft") p.draftCount++;
-    if (row.verificationStatus === "pending_verification") p.pendingCount++;
-    if (row.verificationStatus === "verified") p.verifiedCount++;
-    if (row.verificationStatus === "rejected") p.rejectedCount++;
+    if (row.verificationStatus === "draft") { p.draftCount++; part.draftCount++; }
+    if (row.verificationStatus === "pending_verification") { p.pendingCount++; part.pendingCount++; }
+    if (row.verificationStatus === "verified") { p.verifiedCount++; part.verifiedCount++; }
+    if (row.verificationStatus === "rejected") { p.rejectedCount++; part.rejectedCount++; }
+    if (row.verificationStatus === "disputed") { p.disputedCount++; part.disputedCount++; }
 
     grandTotal += row.amount;
     grandCount++;
   }
 
   return res.json({
-    projects: Array.from(projectMap.values()),
+    projects: Array.from(projectMap.values()).map((p) => ({
+      projectId: p.projectId,
+      projectName: p.projectName,
+      model: p.model,
+      lifecycleStatus: p.lifecycleStatus,
+      totalAmount: p.totalAmount,
+      verifiedAmount: p.verifiedAmount,
+      ownershipEligibleAmount: p.ownershipEligibleAmount,
+      reimbursableAmount: p.reimbursableAmount,
+      byType: p.byType,
+      draftCount: p.draftCount,
+      pendingCount: p.pendingCount,
+      verifiedCount: p.verifiedCount,
+      rejectedCount: p.rejectedCount,
+      disputedCount: p.disputedCount,
+      participants: Array.from(p.participantMap.values()),
+    })),
     totals: {
       totalAmount: grandTotal,
       verifiedAmount: grandVerified,

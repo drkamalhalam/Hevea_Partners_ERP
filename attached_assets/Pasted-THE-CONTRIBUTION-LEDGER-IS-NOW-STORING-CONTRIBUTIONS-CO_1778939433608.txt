@@ -1,0 +1,147 @@
+THE CONTRIBUTION LEDGER IS NOW STORING CONTRIBUTIONS CORRECTLY AT ENTRY LEVEL.
+
+However:
+the CONTRIBUTION INTELLIGENCE PRESENTATION layer is still incomplete.
+
+==================================================
+CURRENT ISSUE
+==================================================
+
+The “Project Breakdown” table currently shows only:
+PROJECT-LEVEL aggregation.
+
+Example:
+- kaha
+- Kamal Halam
+- Chisty_Murpui_Project
+
+These are correctly:
+PROJECTS.
+
+However:
+the UI currently lacks:
+PARTICIPANT CONTRIBUTION BREAKDOWN.
+
+Because of this:
+the table visually creates the false impression that:
+projects themselves contributed funds.
+
+==================================================
+IMPORTANT GOVERNANCE PRINCIPLE
+==================================================
+
+Projects NEVER contribute.
+
+Projects are:
+- governance scopes
+- accounting containers
+- operational entities
+
+Participants contribute INSIDE projects.
+
+==================================================
+REBUILD CONTRIBUTION INTELLIGENCE UI
+==================================================
+
+The contribution ledger must become hierarchical.
+
+==================================================
+LEVEL 1 — PROJECT CONTRIBUTION SUMMARY
+==================================================
+
+Current table becomes:
+
+PROJECT CONTRIBUTION SUMMARY
+
+Show:
+- project name
+- total contribution
+- verified contribution
+- ownership-eligible contribution
+- participant count
+- reimbursement exposure
+- project model
+- lifecycle phase
+
+==================================================
+LEVEL 2 — PARTICIPANT CONTRIBUTION BREAKDOWN
+==================================================
+
+Expandable under each project.
+
+Show:
+- participant name
+- participant role
+- total contribution
+- ownership-eligible amount
+- reimbursable amount
+- verification status
+
+Example:
+
+Project: kaha
+  Sukumar Tripura → ₹1,00,000
+  RENGTIRJOY → ₹1,222
+
+==================================================
+LEVEL 3 — ENTRY BREAKDOWN
+==================================================
+
+Expandable under participant.
+
+Show:
+- contribution type
+- amount
+- date
+- phase
+- verification
+- audit trail
+- linked agreement
+- accounting behavior
+
+==================================================
+IMPORTANT UI REQUIREMENT
+==================================================
+
+The UI must visually communicate:
+
+PROJECT
+→ PARTICIPANTS
+→ CONTRIBUTIONS
+
+NOT:
+PROJECT
+→ CONTRIBUTION
+
+==================================================
+PROJECT CARD INTEGRATION
+==================================================
+
+Project cards must derive:
+participant contribution intelligence
+from this hierarchy.
+
+==================================================
+ACCOUNTING REQUIREMENT
+==================================================
+
+Ownership calculations must derive from:
+participant-level verified ownership-eligible contributions.
+
+NOT:
+project-level totals alone.
+
+==================================================
+FINAL TARGET
+==================================================
+
+Contribution ledger must become:
+
+PROJECT-CENTRIC
++ PARTICIPANT-CENTRIC
++ HIERARCHICAL
++ TRACEABLE
++ GOVERNANCE-INTELLIGENT
+
+instead of:
+flat project aggregation tables.
