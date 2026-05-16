@@ -397,22 +397,44 @@ function Step4LandDetails({
   const form = useForm<LandValues>({
     resolver: zodResolver(landSchema),
     defaultValues: {
-      landType: (project?.landType as "recorded" | "non_recorded") ?? "recorded",
-      landArea: project?.landArea ?? 0,
-      landAreaUnit: project?.landAreaUnit ?? "kani",
-      landBoundaryDescription: project?.landBoundaryDescription ?? "",
-      gpsCoordinates: project?.gpsCoordinates ?? "",
-      khatianNumber: project?.khatianNumber ?? "",
-      plotNumber: project?.plotNumber ?? "",
-      mouja: project?.mouja ?? "",
-      tahsil: project?.tahsil ?? "",
-      revenueCircle: project?.revenueCircle ?? "",
-      subDivision: project?.subDivision ?? "",
-      landAreaName: project?.landAreaName ?? "",
-      postOffice: project?.postOffice ?? "",
-      policeStation: project?.policeStation ?? "",
+      landType: "recorded",
+      landArea: 0,
+      landAreaUnit: "kani",
+      landBoundaryDescription: "",
+      gpsCoordinates: "",
+      khatianNumber: "",
+      plotNumber: "",
+      mouja: "",
+      tahsil: "",
+      revenueCircle: "",
+      subDivision: "",
+      landAreaName: "",
+      postOffice: "",
+      policeStation: "",
     },
   });
+
+  // Populate form once project data loads
+  useEffect(() => {
+    if (project) {
+      form.reset({
+        landType: (project.landType as "recorded" | "non_recorded") ?? "recorded",
+        landArea: project.landArea ?? 0,
+        landAreaUnit: project.landAreaUnit ?? "kani",
+        landBoundaryDescription: project.landBoundaryDescription ?? "",
+        gpsCoordinates: project.gpsCoordinates ?? "",
+        khatianNumber: project.khatianNumber ?? "",
+        plotNumber: project.plotNumber ?? "",
+        mouja: project.mouja ?? "",
+        tahsil: project.tahsil ?? "",
+        revenueCircle: project.revenueCircle ?? "",
+        subDivision: project.subDivision ?? "",
+        landAreaName: project.landAreaName ?? "",
+        postOffice: project.postOffice ?? "",
+        policeStation: project.policeStation ?? "",
+      });
+    }
+  }, [project?.id]);
 
   const landType = form.watch("landType");
 
@@ -608,14 +630,28 @@ function Step5CapacityFinancial({
   const form = useForm<FinancialValues>({
     resolver: zodResolver(financialSchema),
     defaultValues: {
-      rubberCapacity: project?.rubberCapacity ?? undefined,
-      rubberCapacityUnit: project?.rubberCapacityUnit ?? "trees",
-      landNotionalValue: project?.landNotionalValue ?? undefined,
-      landValuePerUnit: project?.landValuePerUnit ?? undefined,
-      lcaBaseAmount: project?.lcaBaseAmount ? Number(project.lcaBaseAmount) : undefined,
-      lcaEscalationPct: project?.lcaEscalationPct ? Number(project.lcaEscalationPct) : undefined,
+      rubberCapacity: 0,
+      rubberCapacityUnit: "trees",
+      landNotionalValue: 0,
+      landValuePerUnit: 0,
+      lcaBaseAmount: 0,
+      lcaEscalationPct: 0,
     },
   });
+
+  // Populate form once project data loads
+  useEffect(() => {
+    if (project) {
+      form.reset({
+        rubberCapacity: project.rubberCapacity ?? 0,
+        rubberCapacityUnit: project.rubberCapacityUnit ?? "trees",
+        landNotionalValue: project.landNotionalValue ?? 0,
+        landValuePerUnit: project.landValuePerUnit ?? 0,
+        lcaBaseAmount: project.lcaBaseAmount ? Number(project.lcaBaseAmount) : 0,
+        lcaEscalationPct: project.lcaEscalationPct ? Number(project.lcaEscalationPct) : 0,
+      });
+    }
+  }, [project?.id]);
 
   const onSubmit = (values: FinancialValues) => {
     updateProject.mutate(
@@ -1019,9 +1055,14 @@ function Step8Documents({
   onBack: () => void;
 }) {
   const { getToken } = useAuth();
-  const { data: participantData, refetch } = useListOnboardingParticipants(projectId);
+  const { data: participantData, refetch, isLoading, isFetching } = useListOnboardingParticipants(projectId);
   const upsertParticipant = useUpsertOnboardingParticipant();
   const { toast } = useToast();
+
+  // Force a fresh fetch every time this step becomes visible (covers page-reload scenario)
+  useEffect(() => {
+    refetch();
+  }, []);
 
   const participants = participantData?.participants ?? [];
   const developer = participants.find((p) => p.role === "developer");
@@ -1128,7 +1169,12 @@ function Step8Documents({
               {label}: <span className="text-muted-foreground font-normal">{participant?.fullName ?? "—"}</span>
             </p>
 
-            {!participant && (
+            {(isLoading || isFetching) && !participant && (
+              <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                <Loader2 className="h-3 w-3 animate-spin" /> Loading KYC details…
+              </p>
+            )}
+            {!isLoading && !isFetching && !participant && (
               <p className="text-xs text-amber-600">
                 KYC not yet saved — upload will be linked once KYC is complete.
               </p>
