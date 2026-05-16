@@ -10,6 +10,7 @@ import {
   collectionEntriesTable,
   storeEntriesTable,
   salesTransactionsTable,
+  salesOrdersTable,
   lcaLedgerTable,
   distributionRecordsTable,
   projectParticipantsTable,
@@ -91,6 +92,7 @@ router.get("/card-summaries", async (req, res) => {
     participantRoleRows,
     freezeRows,
     crystalRows,
+    salesOrderRows,
   ] = await Promise.all([
     // Visible projects list (includes governance columns)
     (() => {
@@ -314,6 +316,19 @@ router.get("/card-summaries", async (req, res) => {
         ),
       )
       .groupBy(ownershipSnapshotsTable.projectId),
+
+    // V2 Sales Orders pipeline stats per project (Phase 10 bridge — confirmed/in-dispatch/completed orders)
+    db
+      .select({
+        projectId: salesOrdersTable.projectId,
+        confirmedCount: sql<number>`count(*) FILTER (WHERE ${salesOrdersTable.orderStatus} IN ('confirmed', 'partially_dispatched', 'completed'))::int`,
+        completedCount: sql<number>`count(*) FILTER (WHERE ${salesOrdersTable.orderStatus} = 'completed')::int`,
+        pendingDispatchKg: sql<number>`COALESCE(SUM((${salesOrdersTable.quantityKg}::numeric - COALESCE(${salesOrdersTable.quantityDispatchedKg}::numeric, 0))) FILTER (WHERE ${salesOrdersTable.orderStatus} IN ('confirmed', 'partially_dispatched')), 0)`,
+        totalConfirmedRevenue: sql<number>`COALESCE(SUM(${salesOrdersTable.totalAmount}::numeric) FILTER (WHERE ${salesOrdersTable.orderStatus} IN ('confirmed', 'partially_dispatched', 'completed')), 0)`,
+      })
+      .from(salesOrdersTable)
+      .where(projectFilter(salesOrdersTable.projectId))
+      .groupBy(salesOrdersTable.projectId),
   ]);
 
   // ── Build lookup maps ────────────────────────────────────────────────────────
@@ -338,6 +353,7 @@ router.get("/card-summaries", async (req, res) => {
   const collectionMap = new Map(collectionRows.map((r) => [r.projectId, r]));
   const storeMap = new Map(storeRows.map((r) => [r.projectId, r]));
   const salesMap = new Map(salesRows.map((r) => [r.projectId, r]));
+  const salesOrderMap = new Map(salesOrderRows.map((r) => [r.projectId, r]));
   const lcaMap = new Map(lcaRows.map((r) => [r.projectId, r]));
   const distMap = new Map(distRows.map((r) => [r.projectId, r]));
   const participantMap = new Map(participantRows.map((r) => [r.projectId, r]));
@@ -376,6 +392,7 @@ router.get("/card-summaries", async (req, res) => {
     const col = collectionMap.get(pid);
     const store = storeMap.get(pid);
     const sales = salesMap.get(pid);
+    const v2so = salesOrderMap.get(pid);
     const lca = lcaMap.get(pid);
     const dist = distMap.get(pid);
     const parts = participantMap.get(pid);
@@ -414,11 +431,17 @@ router.get("/card-summaries", async (req, res) => {
       storeSheetCount: store ? Number(store.totalSheets) : 0,
       storeWeightKg: store ? Number(store.totalWeightKg) : 0,
 
-      // Sales
-      confirmedSaleCount: sales ? Number(sales.confirmedCount) : 0,
+      // Sales — V1 transactions + V2 orders pipeline (Phase 10 bridge: V2 completed orders
+      // create V1 bridge records so they appear here; in-progress V2 orders are tracked separately)
+      confirmedSaleCount: (sales ? Number(sales.confirmedCount) : 0),
       draftSaleCount: sales ? Number(sales.draftCount) : 0,
       totalGrossRevenue: showRevenue ? (sales ? Number(sales.totalGross) : 0) : null,
       totalNetRevenue: showRevenue ? (sales ? Number(sales.totalNet) : 0) : null,
+      // V2 pipeline visibility (confirmed but not yet fully dispatched)
+      v2ActiveOrderCount: v2so ? Number(v2so.confirmedCount) : 0,
+      v2CompletedOrderCount: v2so ? Number(v2so.completedCount) : 0,
+      v2PendingDispatchKg: v2so ? Number(v2so.pendingDispatchKg) : 0,
+      v2PipelineRevenue: showRevenue ? (v2so ? Number(v2so.totalConfirmedRevenue) : 0) : null,
 
       // LCA outstanding
       lcaOutstandingBalance: showFinancials ? (lca ? Number(lca.outstandingBalance) : 0) : null,

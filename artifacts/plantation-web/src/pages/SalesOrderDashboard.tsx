@@ -3,7 +3,6 @@ import { format, parseISO } from "date-fns";
 import {
   useListSalesOrders,
   useGetSalesOrderStats,
-  useListProjects,
   useListSalesInvoices,
 } from "@workspace/api-client-react";
 import type { SalesOrder } from "@workspace/api-client-react";
@@ -21,7 +20,8 @@ import { useProjectFilter } from "@/contexts/ProjectFilterContext";
 import { Link } from "wouter";
 import {
   TrendingUp, Package, CheckCircle, Clock, XCircle,
-  BarChart3, IndianRupee, ArrowRight
+  BarChart3, IndianRupee, ArrowRight, Truck, Layers,
+  GitMerge, AlertCircle,
 } from "lucide-react";
 
 const STATUS_COLORS: Record<string, string> = {
@@ -57,6 +57,15 @@ function fmt(v: string | null | undefined) {
   try { return format(parseISO(v), "dd MMM yyyy"); } catch { return v; }
 }
 
+function ProgressBar({ value, total, color = "bg-emerald-500" }: { value: number; total: number; color?: string }) {
+  const pct = total > 0 ? Math.min(100, (value / total) * 100) : 0;
+  return (
+    <div className="w-full bg-gray-700 rounded-full h-2">
+      <div className={`h-2 rounded-full transition-all ${color}`} style={{ width: `${pct}%` }} />
+    </div>
+  );
+}
+
 export default function SalesOrderDashboard() {
   const { selectedProjectId } = useProjectFilter();
   const [statusFilter, setStatusFilter] = useState("all");
@@ -76,11 +85,34 @@ export default function SalesOrderDashboard() {
     ["payment_pending", "awaiting_manual_confirmation", "payment_detected"].includes(o.orderStatus ?? "")
   );
 
+  // ── Fulfillment pipeline derived metrics ──────────────────────────────────
+  const activeOrders = orders.filter((o: SalesOrder) =>
+    ["confirmed", "partially_dispatched"].includes(o.orderStatus ?? "")
+  );
+  const completedOrders = orders.filter((o: SalesOrder) => o.orderStatus === "completed");
+
+  const activeKgOrdered = activeOrders.reduce(
+    (s: number, o: SalesOrder) => s + parseFloat(o.quantityKg ?? "0"), 0
+  );
+  const activeKgDispatched = activeOrders.reduce(
+    (s: number, o: SalesOrder) => s + parseFloat((o as any).quantityDispatchedKg ?? "0"), 0
+  );
+  const activeKgPending = activeKgOrdered - activeKgDispatched;
+
+  const bridgedRevenue = completedOrders.reduce(
+    (s: number, o: SalesOrder) => s + parseFloat(o.totalAmount ?? "0"), 0
+  );
+  const pipelineRevenue = activeOrders.reduce(
+    (s: number, o: SalesOrder) => s + parseFloat(o.totalAmount ?? "0"), 0
+  );
+
+  const partiallyDispatched = orders.filter((o: SalesOrder) => o.orderStatus === "partially_dispatched");
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-white">Sales Dashboard</h1>
-        <p className="text-sm text-gray-400 mt-1">Overview of rubber sales, payments, and dispatches</p>
+        <p className="text-sm text-gray-400 mt-1">Order pipeline, dispatch tracking, and inventory bridge status</p>
       </div>
 
       {/* Stats cards */}
@@ -130,6 +162,105 @@ export default function SalesOrderDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Fulfillment pipeline */}
+      {(activeOrders.length > 0 || completedOrders.length > 0) && (
+        <Card className="bg-gray-800 border-gray-700">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <Truck className="w-5 h-5 text-cyan-400" />
+              Fulfillment Pipeline
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="p-3 bg-gray-700/50 rounded-lg">
+                <p className="text-xs text-gray-400 mb-1">Active Orders</p>
+                <p className="text-xl font-bold text-cyan-300">{activeOrders.length}</p>
+                <p className="text-xs text-gray-500 mt-1">confirmed / in dispatch</p>
+              </div>
+              <div className="p-3 bg-gray-700/50 rounded-lg">
+                <p className="text-xs text-gray-400 mb-1">Kg Pending Dispatch</p>
+                <p className="text-xl font-bold text-amber-300">{activeKgPending.toFixed(1)}</p>
+                <p className="text-xs text-gray-500 mt-1">of {activeKgOrdered.toFixed(1)} kg ordered</p>
+              </div>
+              <div className="p-3 bg-gray-700/50 rounded-lg">
+                <p className="text-xs text-gray-400 mb-1">Pipeline Revenue</p>
+                <p className="text-lg font-bold text-emerald-300">{fmtINR(pipelineRevenue)}</p>
+                <p className="text-xs text-gray-500 mt-1">confirmed, not yet bridged</p>
+              </div>
+              <div className="p-3 bg-gray-700/50 rounded-lg">
+                <p className="text-xs text-gray-400 mb-1">Bridged to Ledger</p>
+                <p className="text-lg font-bold text-green-300">{fmtINR(bridgedRevenue)}</p>
+                <p className="text-xs text-gray-500 mt-1">{completedOrders.length} completed orders</p>
+              </div>
+            </div>
+
+            {activeKgOrdered > 0 && (
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs text-gray-400">Dispatch progress (active orders)</span>
+                  <span className="text-xs text-white font-medium">
+                    {activeKgDispatched.toFixed(1)} / {activeKgOrdered.toFixed(1)} kg
+                  </span>
+                </div>
+                <ProgressBar value={activeKgDispatched} total={activeKgOrdered} color="bg-cyan-500" />
+              </div>
+            )}
+
+            {/* Partially dispatched orders needing completion */}
+            {partiallyDispatched.length > 0 && (
+              <div>
+                <p className="text-xs text-gray-400 mb-2 flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3 text-amber-400" />
+                  {partiallyDispatched.length} order{partiallyDispatched.length > 1 ? "s" : ""} partially dispatched — awaiting remaining dispatch
+                </p>
+                <div className="space-y-2">
+                  {partiallyDispatched.map((o: SalesOrder) => {
+                    const ordered = parseFloat(o.quantityKg ?? "0");
+                    const dispatched = parseFloat((o as any).quantityDispatchedKg ?? "0");
+                    return (
+                      <div key={o.id} className="flex items-center gap-3 p-2 bg-gray-700/40 rounded-lg">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-mono text-xs text-white">{o.salesCode}</span>
+                            <span className="text-xs text-gray-400">{o.buyerName}</span>
+                          </div>
+                          <ProgressBar value={dispatched} total={ordered} color="bg-cyan-500" />
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <p className="text-xs text-white font-medium">{dispatched.toFixed(1)}/{ordered.toFixed(1)} kg</p>
+                          <p className="text-xs text-gray-400">{((dispatched / ordered) * 100).toFixed(0)}%</p>
+                        </div>
+                        <Link href={`/sales-orders/${o.id}`}>
+                          <Button variant="ghost" size="sm" className="h-7 px-2 text-gray-400 hover:text-white">
+                            <ArrowRight className="w-3 h-3" />
+                          </Button>
+                        </Link>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Financial bridge status */}
+            <div className="flex items-center gap-2 p-3 bg-emerald-900/20 border border-emerald-700/30 rounded-lg">
+              <GitMerge className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+              <div className="flex-1">
+                <p className="text-xs text-emerald-300 font-medium">Inventory & Financial Bridge</p>
+                <p className="text-xs text-emerald-400/70">
+                  Each dispatch writes to the inventory stock ledger. Completed orders create V1 financial records visible in project cards and settlement sessions.
+                </p>
+              </div>
+              <div className="text-right flex-shrink-0">
+                <p className="text-sm font-bold text-emerald-300">{completedOrders.length}</p>
+                <p className="text-xs text-emerald-400/70">bridged</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Pending actions alert */}
       {pending.length > 0 && (
@@ -211,32 +342,50 @@ export default function SalesOrderDashboard() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-700">
-                    {["Code", "Buyer", "Qty (kg)", "Rate", "Total", "Status", "Date", ""].map(h => (
+                    {["Code", "Buyer", "Qty (kg)", "Dispatched", "Total", "Status", "Date", ""].map(h => (
                       <th key={h} className="px-4 py-3 text-left text-xs text-gray-400 font-medium">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map((o: SalesOrder) => (
-                    <tr key={o.id} className="border-b border-gray-700/50 hover:bg-gray-700/30">
-                      <td className="px-4 py-3 font-mono text-white">{o.salesCode}</td>
-                      <td className="px-4 py-3 text-gray-300">{o.buyerName}</td>
-                      <td className="px-4 py-3 text-gray-300">{parseFloat(o.quantityKg ?? "0").toFixed(1)}</td>
-                      <td className="px-4 py-3 text-gray-300">₹{parseFloat(o.ratePerKg ?? "0").toFixed(2)}</td>
-                      <td className="px-4 py-3 text-white font-medium">{fmtINR(parseFloat(o.totalAmount ?? "0"))}</td>
-                      <td className="px-4 py-3">
-                        <Badge className={`text-xs border ${STATUS_COLORS[o.orderStatus ?? ""] ?? ""}`}>{STATUS_LABEL[o.orderStatus ?? ""] ?? o.orderStatus}</Badge>
-                      </td>
-                      <td className="px-4 py-3 text-gray-400">{fmt(o.createdAt)}</td>
-                      <td className="px-4 py-3">
-                        <Link href={`/sales-orders/${o.id}`}>
-                          <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white p-1 h-auto">
-                            <ArrowRight className="w-4 h-4" />
-                          </Button>
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
+                  {filtered.map((o: SalesOrder) => {
+                    const qty = parseFloat(o.quantityKg ?? "0");
+                    const dispatched = parseFloat((o as any).quantityDispatchedKg ?? "0");
+                    const isActive = ["confirmed", "partially_dispatched"].includes(o.orderStatus ?? "");
+                    return (
+                      <tr key={o.id} className="border-b border-gray-700/50 hover:bg-gray-700/30">
+                        <td className="px-4 py-3 font-mono text-white">{o.salesCode}</td>
+                        <td className="px-4 py-3 text-gray-300">{o.buyerName}</td>
+                        <td className="px-4 py-3 text-gray-300">{qty.toFixed(1)}</td>
+                        <td className="px-4 py-3">
+                          {isActive ? (
+                            <div className="flex items-center gap-2">
+                              <div className="w-16">
+                                <ProgressBar value={dispatched} total={qty} color="bg-cyan-500" />
+                              </div>
+                              <span className="text-xs text-gray-400">{dispatched.toFixed(1)}</span>
+                            </div>
+                          ) : o.orderStatus === "completed" ? (
+                            <span className="text-xs text-green-400 font-medium">✓ {qty.toFixed(1)} kg</span>
+                          ) : (
+                            <span className="text-xs text-gray-500">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-white font-medium">{fmtINR(parseFloat(o.totalAmount ?? "0"))}</td>
+                        <td className="px-4 py-3">
+                          <Badge className={`text-xs border ${STATUS_COLORS[o.orderStatus ?? ""] ?? ""}`}>{STATUS_LABEL[o.orderStatus ?? ""] ?? o.orderStatus}</Badge>
+                        </td>
+                        <td className="px-4 py-3 text-gray-400">{fmt(o.createdAt)}</td>
+                        <td className="px-4 py-3">
+                          <Link href={`/sales-orders/${o.id}`}>
+                            <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white p-1 h-auto">
+                              <ArrowRight className="w-4 h-4" />
+                            </Button>
+                          </Link>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -247,7 +396,12 @@ export default function SalesOrderDashboard() {
       {/* Recent invoices */}
       {invoices.length > 0 && (
         <Card className="bg-gray-800 border-gray-700">
-          <CardHeader><CardTitle className="text-white">Recent Invoices</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <Layers className="w-5 h-5 text-blue-400" />
+              Recent Invoices
+            </CardTitle>
+          </CardHeader>
           <CardContent className="p-0">
             <table className="w-full text-sm">
               <thead>

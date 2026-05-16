@@ -13,6 +13,8 @@ import {
   usersTable,
   paymentReceiverAccountsTable,
   storesTable,
+  inventoryStockMovementsTable,
+  salesTransactionsTable,
 } from "@workspace/db";
 import { eq, and, desc, sql, gte, lte, inArray } from "drizzle-orm";
 import { z } from "zod";
@@ -596,6 +598,67 @@ router.post("/:id/dispatch", async (req, res): Promise<void> => {
         .update(salesInvoicesTable)
         .set({ dispatchStatus: newDispatchStatus, quantityDispatchedKg: newDispatched.toString() })
         .where(eq(salesInvoicesTable.id, order.invoiceId));
+    }
+
+    // ── Phase 10: write confirmed sale_out to canonical inventory ledger ──────
+    // Every dispatch event writes a confirmed sale_out movement so the universal
+    // stock balance (used by inventory pages, field context, project cards) stays
+    // in sync with fulfillment reality.
+    if (order.projectId) {
+      await db.insert(inventoryStockMovementsTable).values({
+        projectId: order.projectId,
+        stockType: "rubber_sheet",   // canonical commodity for rubber sales orders
+        movementType: "sale_out",
+        direction: "out",
+        quantity: data.quantityKg.toString(),
+        unit: "kg",
+        movementDate: format(now, "yyyy-MM-dd"),
+        referenceId: order.salesCode,
+        referenceType: "sale",
+        status: "confirmed",
+        confirmedAt: now,
+        confirmedById: req.dbUser?.id,
+        confirmedByName: req.dbUser?.displayName ?? "",
+        createdById: req.dbUser?.id,
+        createdByName: req.dbUser?.displayName ?? "",
+      });
+
+      // ── Phase 10: V1 financial bridge on full dispatch ─────────────────────
+      // Creates a V1 salesTransactions record (confirmed status) so the project
+      // card, fifty-pct settlement sessions, and distribution engine can see this
+      // revenue without any schema changes to those canonical systems.
+      if (isFullyDispatched) {
+        const saleNumber = `SO-${order.salesCode}`;
+        const [existing] = await db
+          .select({ id: salesTransactionsTable.id })
+          .from(salesTransactionsTable)
+          .where(eq(salesTransactionsTable.saleNumber, saleNumber))
+          .limit(1);
+        if (!existing) {
+          await db.insert(salesTransactionsTable).values({
+            projectId: order.projectId,
+            buyerId: order.buyerId ?? undefined,
+            buyerName: order.buyerName ?? "N/A",
+            saleNumber,
+            saleDate: format(now, "yyyy-MM-dd"),
+            status: "confirmed",
+            totalGrossRevenue: order.totalAmount,
+            totalDeductions: "0",
+            totalNetRevenue: order.totalAmount,
+            confirmedAt: now,
+            confirmedById: req.dbUser?.id,
+            confirmedByName: req.dbUser?.displayName ?? "",
+            createdById: req.dbUser?.id,
+            createdByName: req.dbUser?.displayName ?? "",
+            documentRef: order.salesCode,
+            notes: `Auto-bridged from Sales Order ${order.salesCode}`,
+          });
+          req.log.info(
+            { salesCode: order.salesCode, amount: order.totalAmount },
+            "sales-orders: V1 financial bridge record created for completed order",
+          );
+        }
+      }
     }
 
     await writeAudit(req, order.id, order.salesCode, order.projectId, "dispatched",
