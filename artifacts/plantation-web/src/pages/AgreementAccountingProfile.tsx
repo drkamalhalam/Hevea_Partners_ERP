@@ -41,6 +41,9 @@ import {
   Pencil,
   Check,
   X,
+  Users,
+  Landmark,
+  RotateCcw,
 } from "lucide-react";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -156,48 +159,98 @@ function ContributionFlowDiagram({ profile }: { profile: AgreementAccountingProf
 // ── 50% Revenue model flow diagram ───────────────────────────────────────────
 
 function FiftyPercentFlowDiagram({ profile }: { profile: AgreementAccountingProfile }) {
-  const lo = Number(profile.grossSplitPctLandowner).toFixed(0);
-  const dev = Number(profile.grossSplitPctDeveloper).toFixed(0);
+  const lo  = Number(profile.grossSplitPctLandowner).toFixed(0);
+  const epp = Number(profile.grossSplitPctDeveloper).toFixed(0);   // field stores EPP share
   return (
     <div className="space-y-2 text-sm">
-      <div className="flex items-center gap-2">
-        <div className="flex-1 bg-blue-500/10 border border-blue-500/30 rounded px-3 py-2 text-blue-300 font-medium text-center">
-          Gross Revenue
-        </div>
+      {/* Gross Revenue */}
+      <div className="bg-blue-500/10 border border-blue-500/30 rounded px-3 py-2 text-blue-300 font-medium text-center">
+        Gross Revenue
       </div>
-      <div className="pl-4 flex items-center gap-2">
+
+      {/* Split arrow */}
+      <div className="flex items-center gap-2 pl-3">
         <GitMerge className="h-4 w-4 text-gray-500 flex-shrink-0" />
-        <span className="text-xs text-gray-400">First split (before any cost deductions)</span>
+        <span className="text-xs text-gray-400">First split — before any cost deductions</span>
       </div>
+
+      {/* Two branches */}
       <div className="grid grid-cols-2 gap-3">
+
+        {/* Left: Landowner */}
         <div className="space-y-1.5">
           <div className="bg-amber-500/10 border border-amber-500/30 rounded px-3 py-2 text-amber-300 font-medium text-center text-xs">
+            <Landmark className="h-3.5 w-3.5 inline mr-1 mb-0.5" />
             Landowner {lo}%
           </div>
           {profile.landownerBearsCostSeparately && (
             <div className="flex items-center gap-1 text-xs text-gray-400 pl-2">
-              <Minus className="h-3 w-3 text-red-400" /> Cost share (separate)
+              <Minus className="h-3 w-3 text-red-400 flex-shrink-0" />
+              Reimbursable advances deducted
             </div>
           )}
           <div className="bg-emerald-500/10 border border-emerald-500/30 rounded px-2 py-1.5 text-emerald-300 text-xs text-center">
             Landowner Net
           </div>
         </div>
+
+        {/* Right: Economic Participant Pool */}
         <div className="space-y-1.5">
           <div className="bg-purple-500/10 border border-purple-500/30 rounded px-3 py-2 text-purple-300 font-medium text-center text-xs">
-            Developer {dev}%
+            <Users className="h-3.5 w-3.5 inline mr-1 mb-0.5" />
+            Economic Pool {epp}%
+          </div>
+          <div className="bg-purple-900/20 border border-purple-700/30 rounded px-2 py-1.5 space-y-0.5">
+            <div className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider mb-1">
+              Distributed proportionally among:
+            </div>
+            <div className="flex items-center gap-1 text-xs text-gray-300">
+              <ArrowRight className="h-2.5 w-2.5 text-purple-400 flex-shrink-0" /> Developers
+            </div>
+            <div className="flex items-center gap-1 text-xs text-gray-300">
+              <ArrowRight className="h-2.5 w-2.5 text-purple-400 flex-shrink-0" /> Investors
+            </div>
+            <div className="flex items-center gap-1 text-xs text-gray-300">
+              <ArrowRight className="h-2.5 w-2.5 text-purple-400 flex-shrink-0" /> Other participants
+            </div>
+            <div className="text-[10px] text-gray-500 mt-1 italic">
+              Share % per finalized contribution structure
+            </div>
           </div>
           {profile.developerBearsCostSeparately && (
             <div className="flex items-center gap-1 text-xs text-gray-400 pl-2">
-              <Minus className="h-3 w-3 text-red-400" /> Cost share (separate)
+              <Minus className="h-3 w-3 text-red-400 flex-shrink-0" />
+              Reimbursable advances deducted from pool
             </div>
           )}
-          <div className="bg-emerald-500/10 border border-emerald-500/30 rounded px-2 py-1.5 text-emerald-300 text-xs text-center">
-            Developer Net
-          </div>
         </div>
       </div>
-      <div className="pl-2 text-xs text-gray-500 mt-1">LCA not applicable to this model.</div>
+
+      {/* Governance notices */}
+      <div className="space-y-1.5 pt-1">
+        <div className="flex items-start gap-1.5 bg-yellow-500/5 border border-yellow-500/20 rounded px-2.5 py-2">
+          <AlertTriangle className="h-3.5 w-3.5 text-yellow-500 flex-shrink-0 mt-0.5" />
+          <p className="text-[11px] text-yellow-200/70 leading-snug">
+            <span className="font-semibold">LCA not applicable</span> — Land Contribution Adjustment is a
+            contribution-model obligation only.
+          </p>
+        </div>
+        <div className="flex items-start gap-1.5 bg-slate-500/10 border border-slate-500/20 rounded px-2.5 py-2">
+          <Landmark className="h-3.5 w-3.5 text-slate-400 flex-shrink-0 mt-0.5" />
+          <p className="text-[11px] text-slate-300/70 leading-snug">
+            <span className="font-semibold">Land Notional Value recorded but inactive</span> — LNV is preserved
+            for audit continuity and future model switching; it does not drive ownership calculations under this model.
+          </p>
+        </div>
+        <div className="flex items-start gap-1.5 bg-blue-500/5 border border-blue-500/20 rounded px-2.5 py-2">
+          <RotateCcw className="h-3.5 w-3.5 text-blue-400 flex-shrink-0 mt-0.5" />
+          <p className="text-[11px] text-blue-200/70 leading-snug">
+            <span className="font-semibold">Post-maturity contributions</span> — payments made after project
+            maturity do not create ownership share; they are classified as reimbursable project costs and
+            tracked separately from economic entitlement.
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
@@ -416,7 +469,7 @@ export default function AgreementAccountingProfile({ agreementId }: { agreementI
                       />
                     </div>
                     <div>
-                      <Label className="text-xs text-gray-400 mb-1 block">Developer gross split %</Label>
+                      <Label className="text-xs text-gray-400 mb-1 block">Economic Participant Pool gross split %</Label>
                       <Input
                         type="number"
                         min={0}
@@ -450,29 +503,35 @@ export default function AgreementAccountingProfile({ agreementId }: { agreementI
                     </div>
                     <div className="py-2.5 border-b border-gray-700/50">
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-300">Developer gross split</span>
+                        <span className="text-gray-300">Economic Participant Pool gross split</span>
                         <span className="font-semibold text-purple-300">{Number(profile.grossSplitPctDeveloper).toFixed(1)}%</span>
                       </div>
                     </div>
                   </div>
                 )}
                 <FlagRow
-                  label="Landowner bears cost separately"
-                  hint="Landowner deducts their operational cost share from their own gross split, independently of the developer."
+                  label="Landowner advances costs separately"
+                  hint="The landowner may advance operational costs from their own gross allocation. Such advances are tracked as reimbursable project costs — separate from economic entitlement — and are recovered before net distribution."
                   value={effective.landownerBearsCostSeparately ?? true}
                   editable={editing}
                   onChange={(v) => setDraft((d) => ({ ...d, landownerBearsCostSeparately: v }))}
                 />
                 <FlagRow
-                  label="Developer bears cost separately"
-                  hint="Developer deducts their operational cost share from their own gross split, independently of the landowner."
+                  label="Participants advance costs from pool"
+                  hint="Economic participants (developers, investors, or others) may advance operational costs from their pool share. Such advances become reimbursable project costs tracked separately from ownership or economic entitlement."
                   value={effective.developerBearsCostSeparately ?? true}
                   editable={editing}
                   onChange={(v) => setDraft((d) => ({ ...d, developerBearsCostSeparately: v }))}
                 />
                 <FlagRow
                   label="LCA applicable"
-                  hint="Always false for the 50% revenue model. LCA is a contribution-model obligation only."
+                  hint="Always false for the 50% revenue model. Land Contribution Adjustment is a contribution-model obligation only and does not apply here."
+                  value={false}
+                  editable={false}
+                />
+                <FlagRow
+                  label="LNV active for ownership calculations"
+                  hint="Always false for the 50% revenue model. Land Notional Value is recorded and preserved for audit continuity and future model switching, but it does not drive ownership calculations under this model."
                   value={false}
                   editable={false}
                 />
@@ -517,7 +576,7 @@ export default function AgreementAccountingProfile({ agreementId }: { agreementI
             <span className="text-gray-400 font-medium">Architecture note:</span>{" "}
             {isContribution
               ? "Contribution model: costs and LCA reduce a shared profit pool before distribution. Profit is split by ownership or contribution stakes."
-              : "50% Revenue model: gross revenue is split first. Each party then bears their share of operational costs from their own gross allocation. LCA does not apply."
+              : "50% Revenue model: gross revenue is split first — 50% to the landowner, 50% to the Economic Participant Pool. The pool is then distributed proportionally among developers, investors, and other economic participants based on finalized contribution shares. No single participant is a fixed beneficiary of the entire pool. Operational costs may be advanced by any participant and are tracked as reimbursable project costs, separate from economic entitlement. LCA does not apply. Land Notional Value is recorded and preserved for audit and governance continuity but is inactive for ownership calculations under this model. Post-maturity contributions do not create ownership share — they are reimbursable project costs only."
             }{" "}
             Final distribution calculations are not computed here — this panel defines the accounting structure only.
           </p>
