@@ -1,0 +1,140 @@
+THE 50% REVENUE MODEL UI IS HIDING TOO MUCH INFORMATION.
+
+This is architecturally incorrect.
+
+Under the 50% Revenue Model:
+- Land Notional Value is still mandatory,
+- valuation still matters,
+- governance continuity still matters,
+- future migration remains possible,
+- audit traceability is required.
+
+Therefore:
+the system must NOT completely hide valuation logic and governance information.
+
+==================================================
+IMPORTANT PRINCIPLE
+==================================================
+
+INACTIVE
+does NOT mean
+INVISIBLE.
+
+Under the 50% Revenue Model:
+Land Notional Value is:
+- preserved,
+- auditable,
+- governance-linked,
+- legally relevant,
+
+even though it is:
+- inactive for ownership calculations,
+- inactive for LCA generation.
+
+==================================================
+CORRECT UI BEHAVIOR
+==================================================
+
+Under:
+FIFTY_PERCENT_REVENUE_MODEL
+
+STILL SHOW:
+- Land Notional Value
+- valuation method
+- valuation formula
+- calculation summary
+- governance explanation
+- remarks
+- audit reference
+
+BUT visually indicate:
+INACTIVE UNDER CURRENT MODEL
+
+==================================================
+DO NOT HIDE:
+==================================================
+
+- valuation formula
+- valuation method
+- governance explanation
+- legal context
+- future migration explanation
+- audit traceability information
+
+==================================================
+ONLY DISABLE/HIDE:
+==================================================
+
+- ownership contribution wording
+- ownership percentage logic
+- active contribution calculations
+- ownership crystallization language
+- active LCA applicability
+
+==================================================
+ADD MODEL-AWARE GOVERNANCE PANEL
+==================================================
+
+Show prominently:
+
+“Land Notional Value is preserved for:
+- governance continuity,
+- legal reference,
+- land participation recognition,
+- future commercial model migration.
+
+It is currently inactive for:
+- ownership calculations,
+- LCA generation,
+- equity contribution logic
+under the active 50% Revenue Model.”
+
+==================================================
+FORMULA MUST STILL REMAIN VISIBLE
+==================================================
+
+Example:
+
+₹2500 × 400 Trees
+= ₹10,00,000
+
+Users must still understand:
+- how valuation derived,
+- valuation basis,
+- governance reference value.
+
+==================================================
+VISUAL STATE REQUIREMENT
+==================================================
+
+Use:
+- muted governance badges,
+- inactive indicators,
+- disabled ownership styling,
+- informational warnings
+
+instead of completely hiding the section.
+
+==================================================
+IMPORTANT ARCHITECTURE RULE
+==================================================
+
+The system must distinguish between:
+- INACTIVE
+and
+- NONEXISTENT.
+
+Under 50% model:
+Land Notional Value is INACTIVE for ownership logic,
+but it still EXISTS as governance and audit data.
+
+==================================================
+DO NOT BREAK:
+==================================================
+
+- project creation flow
+- governance validation
+- audit logging
+- future model migration capability
+- deed integration
+- legal continuity.

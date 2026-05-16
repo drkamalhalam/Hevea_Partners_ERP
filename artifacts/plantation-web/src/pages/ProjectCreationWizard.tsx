@@ -852,21 +852,87 @@ function Step5CapacityFinancial({
                 </div>
               </div>
             ) : (
-              <div className="rounded-lg border border-sky-200 bg-sky-50 px-4 py-3 flex items-start gap-3">
-                <Info className="w-4 h-4 text-sky-600 shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-semibold text-sky-900">Preserved — 50% Revenue Split Model</p>
-                  <p className="text-xs text-sky-700 mt-0.5 leading-relaxed">LNV is captured and preserved for governance audit, legal continuity, and potential future migration. It remains <strong>inactive for ownership and LCA calculations</strong> under the Revenue Split model. Entry is still required for governance completeness.</p>
+              <div className="rounded-lg border-2 border-slate-300 bg-slate-50 overflow-hidden">
+                {/* Header */}
+                <div className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 border-b border-slate-300">
+                  <Info className="w-4 h-4 text-slate-500 shrink-0" />
+                  <p className="text-sm font-bold text-slate-700">Governance Status — 50% Revenue Split Model</p>
+                  <Badge variant="outline" className="ml-auto text-slate-500 border-slate-400 text-[10px] shrink-0">Inactive · Not Nonexistent</Badge>
+                </div>
+                {/* Two-column body */}
+                <div className="grid sm:grid-cols-2 gap-0 divide-y sm:divide-y-0 sm:divide-x divide-slate-200">
+                  {/* Preserved for */}
+                  <div className="px-4 py-3 space-y-2">
+                    <div className="flex items-center gap-1.5">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                      <p className="text-xs font-semibold text-emerald-700 uppercase tracking-wide">LNV Is Preserved For</p>
+                    </div>
+                    {[
+                      "Governance continuity and audit trail",
+                      "Legal reference and land participation recognition",
+                      "Deed generation and agreement structure",
+                      "Future commercial model migration",
+                      "Long-term audit traceability",
+                    ].map((item, i) => (
+                      <div key={i} className="flex items-start gap-2">
+                        <div className="w-1 h-1 rounded-full bg-emerald-400 mt-1.5 shrink-0" />
+                        <p className="text-xs text-slate-600 leading-relaxed">{item}</p>
+                      </div>
+                    ))}
+                  </div>
+                  {/* Inactive for */}
+                  <div className="px-4 py-3 space-y-2">
+                    <div className="flex items-center gap-1.5">
+                      <Circle className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">LNV Is Currently Inactive For</p>
+                    </div>
+                    {[
+                      "Ownership equity and crystallisation",
+                      "LCA (Land Contribution Adjustment) generation",
+                      "Contribution proportion calculations",
+                      "Partner equity accounting",
+                      "Ownership-based deed parameters",
+                    ].map((item, i) => (
+                      <div key={i} className="flex items-start gap-2">
+                        <div className="w-1 h-1 rounded-full bg-slate-300 mt-1.5 shrink-0" />
+                        <p className="text-xs text-slate-400 leading-relaxed line-through decoration-slate-300">{item}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {/* Footer note */}
+                <div className="px-4 py-2 bg-amber-50 border-t border-slate-200">
+                  <p className="text-xs text-amber-700 leading-relaxed">
+                    <strong>Entry is still required.</strong> If this project migrates to the Ownership Contribution model, this LNV will automatically activate for all ownership calculations without re-entry.
+                  </p>
                 </div>
               </div>
             )}
 
             {/* ── Valuation Method TABS ─────────────────────────────── */}
             <div className="space-y-1">
-              <div className="flex items-center gap-2 mb-3">
-                <Calculator className="w-3.5 h-3.5 text-amber-600" />
-                <p className="text-xs font-semibold text-amber-900 uppercase tracking-wide">Select Valuation Method</p>
+              <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <Calculator className="w-3.5 h-3.5 text-amber-600" />
+                  <p className="text-xs font-semibold text-amber-900 uppercase tracking-wide">Valuation Method & Calculation</p>
+                </div>
+                {!isOwnershipModel && (
+                  <div className="flex items-center gap-1.5 bg-slate-100 border border-slate-300 rounded-full px-2.5 py-1">
+                    <Circle className="w-2.5 h-2.5 text-slate-400 shrink-0" />
+                    <span className="text-[10px] text-slate-500 font-medium">Recorded for governance — inactive for ownership calculations</span>
+                  </div>
+                )}
               </div>
+
+              {/* 50% model formula-visibility notice */}
+              {!isOwnershipModel && (
+                <div className="flex items-start gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 mb-3">
+                  <Info className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    The valuation formula and result below are <strong>recorded in full</strong> for governance continuity, audit reference, and future migration. They are <strong>not used</strong> in ownership calculations, LCA generation, or equity accounting under the current 50% Revenue Split model.
+                  </p>
+                </div>
+              )}
               <Tabs
                 value={valuationMethod}
                 onValueChange={(v) => form.setValue("valuationMethod", v as "by_tree_capacity" | "by_land_area_kani" | "manual")}
