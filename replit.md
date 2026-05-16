@@ -94,6 +94,7 @@ Six roles in `usersTable.role`:
 | Analytics | Financial Reports | /financial-reports | Live (admin/dev/landowner/investor) |
 | Analytics | Ownership Analytics | /ownership-analytics | Live (admin/dev/landowner/investor) |
 | Analytics | Settlement Analytics | /settlement-analytics | Live (admin/dev/landowner/investor) |
+| Analytics | Operational Analytics | /operational-analytics | Live (all roles) |
 | Analytics | Reports | /reports | Placeholder |
 | Analytics | Documents | /documents | Live |
 | Analytics | Financial Analytics | /financial-analytics | Live |

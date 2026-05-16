@@ -57,6 +57,7 @@ import {
   Banknote,
   Users,
   FileText,
+  Factory,
 } from "lucide-react";
 import { useRole, ROLE_LABELS, ROLE_COLORS } from "@/contexts/RoleContext";
 import type { UserRole } from "@/contexts/RoleContext";
@@ -514,6 +515,12 @@ const navGroups: NavGroup[] = [
         href: "/settlement-analytics",
         icon: Scale,
         roles: ["admin", "developer", "landowner", "investor"],
+      },
+      {
+        name: "Operational Analytics",
+        href: "/operational-analytics",
+        icon: Factory,
+        roles: ["admin", "developer", "operational_staff", "employee", "landowner", "investor"],
       },
       {
         name: "Fin. Analytics",
