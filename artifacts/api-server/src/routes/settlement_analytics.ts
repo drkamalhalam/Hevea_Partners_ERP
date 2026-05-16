@@ -24,6 +24,7 @@ import { getAuth } from "@clerk/express";
 import { db, usersTable, projectsTable, userProjectAssignmentsTable } from "@workspace/db";
 import { eq, and, inArray, isNull, sql, desc, asc } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
+import { requireFinancialAccess, auditMiddleware } from "../middlewares/reportAccessControl";
 
 const router = Router();
 
@@ -90,7 +91,7 @@ router.get("/projects", requireAuth, async (req, res) => {
 
 // ── GET /settlement-analytics/overview?projectId= ────────────────────────
 
-router.get("/overview", requireAuth, async (req, res) => {
+router.get("/overview", requireAuth, requireFinancialAccess, auditMiddleware("settlement_analytics", "overview"), async (req, res) => {
   const { userId: clerkUserId } = getAuth(req);
   if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
   const actor = await resolveActor(clerkUserId);
@@ -323,7 +324,7 @@ router.get("/overview", requireAuth, async (req, res) => {
 
 // ── GET /settlement-analytics/distributions?projectId=&year= ─────────────
 
-router.get("/distributions", requireAuth, async (req, res) => {
+router.get("/distributions", requireAuth, requireFinancialAccess, auditMiddleware("settlement_analytics", "distributions"), async (req, res) => {
   const { userId: clerkUserId } = getAuth(req);
   if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
   const actor = await resolveActor(clerkUserId);
@@ -523,7 +524,7 @@ router.get("/distributions", requireAuth, async (req, res) => {
 
 // ── GET /settlement-analytics/settlements?projectId=&year= ───────────────
 
-router.get("/settlements", requireAuth, async (req, res) => {
+router.get("/settlements", requireAuth, requireFinancialAccess, auditMiddleware("settlement_analytics", "settlements"), async (req, res) => {
   const { userId: clerkUserId } = getAuth(req);
   if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
   const actor = await resolveActor(clerkUserId);
@@ -635,7 +636,7 @@ router.get("/settlements", requireAuth, async (req, res) => {
 
 // ── GET /settlement-analytics/overrides?projectId= ───────────────────────
 
-router.get("/overrides", requireAuth, async (req, res) => {
+router.get("/overrides", requireAuth, requireFinancialAccess, auditMiddleware("settlement_analytics", "overrides"), async (req, res) => {
   const { userId: clerkUserId } = getAuth(req);
   if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
   const actor = await resolveActor(clerkUserId);
@@ -775,7 +776,7 @@ router.get("/overrides", requireAuth, async (req, res) => {
 
 // ── GET /settlement-analytics/landowner?projectId= ───────────────────────
 
-router.get("/landowner", requireAuth, async (req, res) => {
+router.get("/landowner", requireAuth, requireFinancialAccess, auditMiddleware("settlement_analytics", "landowner"), async (req, res) => {
   const { userId: clerkUserId } = getAuth(req);
   if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
   const actor = await resolveActor(clerkUserId);
@@ -915,7 +916,7 @@ router.get("/landowner", requireAuth, async (req, res) => {
 
 // ── GET /settlement-analytics/epp?projectId= ─────────────────────────────
 
-router.get("/epp", requireAuth, async (req, res) => {
+router.get("/epp", requireAuth, requireFinancialAccess, auditMiddleware("settlement_analytics", "epp"), async (req, res) => {
   const { userId: clerkUserId } = getAuth(req);
   if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
   const actor = await resolveActor(clerkUserId);
@@ -1061,7 +1062,7 @@ router.get("/epp", requireAuth, async (req, res) => {
 
 // ── GET /settlement-analytics/pending?projectId= ─────────────────────────
 
-router.get("/pending", requireAuth, async (req, res) => {
+router.get("/pending", requireAuth, requireFinancialAccess, auditMiddleware("settlement_analytics", "pending"), async (req, res) => {
   const { userId: clerkUserId } = getAuth(req);
   if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
   const actor = await resolveActor(clerkUserId);

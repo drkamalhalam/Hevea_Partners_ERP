@@ -1,0 +1,149 @@
+THE CURRENT 50% REVENUE ACCOUNTING PROFILE SCREEN HAS A CRITICAL LOGICAL INCONSISTENCY.
+
+==================================================
+CURRENT PROBLEM
+==================================================
+
+The screen currently shows:
+
+- Landowner 50%
+- Developer 50%
+
+This is incorrect for the ERP accounting architecture.
+
+==================================================
+CORRECT 50% REVENUE MODEL
+==================================================
+
+Under the defined governance/accounting rules:
+
+Gross Revenue is split:
+
+1. 50% → Landowner Share
+2. 50% → Economic Participant Pool
+
+NOT:
+fixed “Developer 50%”.
+
+==================================================
+IMPORTANT ACCOUNTING PRINCIPLE
+==================================================
+
+The remaining 50% may be distributed among:
+- developers
+- investors
+- economic participants
+
+proportionally based on finalized participant share structure.
+
+Therefore:
+Developer is NOT always sole beneficiary.
+
+==================================================
+REBUILD ACCOUNTING FLOW VISUALIZATION
+==================================================
+
+Replace current flow with:
+
+Gross Revenue
+↓
+------------------------------------------------
+|                                              |
+50% Landowner Share            50% Economic Pool
+|                                              |
+Landowner Net                  Distributed among
+(after adjustments)            economic participants
+                               proportionally
+
+==================================================
+ADD ECONOMIC PARTICIPANT POOL VISIBILITY
+==================================================
+
+Show:
+Economic Pool Distribution
+
+Example:
+- Developer → 45%
+- Investor A → 35%
+- Investor B → 20%
+
+based on finalized contribution share allocations.
+
+==================================================
+LNV (LAND NOTIONAL VALUE) RULE
+==================================================
+
+Under 50% model:
+Land Notional Value must still be:
+- recorded
+- preserved
+- auditable
+
+BUT:
+inactive for ownership calculations.
+
+Show clearly:
+
+“Land Notional Value recorded but inactive under current model.”
+
+This is important for:
+- audit continuity
+- future model switching
+- governance traceability
+
+==================================================
+LCA RULE
+==================================================
+
+Correctly show:
+LCA not applicable under 50% model.
+
+==================================================
+REIMBURSEMENT RULE
+==================================================
+
+Add explicit accounting note:
+
+Any payment/contribution after maturity:
+- does NOT create ownership share
+- becomes reimbursable project cost
+- tracked separately from economic ownership
+
+==================================================
+COST BEARING CLARIFICATION
+==================================================
+
+Current wording:
+“Developer bears cost separately”
+
+is oversimplified.
+
+Replace with clearer governance wording.
+
+Correct logic:
+- operational costs may be advanced by participants
+- such advances become reimbursable project costs
+- reimbursement is separate from ownership/economic entitlement
+
+==================================================
+IMPORTANT GOVERNANCE RULE
+==================================================
+
+Do NOT hardcode:
+“Developer 50%”
+
+because:
+multiple economic participants may exist.
+
+==================================================
+FINAL TARGET
+==================================================
+
+The accounting profile must accurately represent:
+- governance logic
+- economic distribution
+- reimbursement architecture
+- participant pool structure
+- model-specific accounting behavior
+
+without misleading simplifications.

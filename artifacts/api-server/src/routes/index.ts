@@ -99,6 +99,7 @@ import operationalAnalyticsRouter from "./operational_analytics";
 import governanceAuditReportsRouter from "./governance_audit_reports";
 import { analyticsHubRouter } from "./analytics_hub";
 import { reportExportsRouter } from "./report_exports";
+import reportAccessAuditRouter from "./report_access_audit";
 
 const router: IRouter = Router();
 
@@ -212,6 +213,7 @@ router.use("/settlement-analytics", settlementAnalyticsRouter);
 router.use("/operational-analytics", operationalAnalyticsRouter);
 router.use("/governance-reports", governanceAuditReportsRouter);
 router.use("/report-exports", reportExportsRouter);
+router.use("/report-access-audit", reportAccessAuditRouter);
 router.use("/analytics-hub", analyticsHubRouter);
 
 export default router;

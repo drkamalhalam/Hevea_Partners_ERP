@@ -26,6 +26,7 @@ import {
 import { eq, and, inArray, isNull, desc, sql } from "drizzle-orm";
 import { z } from "zod";
 import { requireAuth } from "../middlewares/auth";
+import { getAnalyticsHubScope, logReportAccess } from "../middlewares/reportAccessControl";
 
 const router = Router();
 const toNum = (v: unknown) => parseFloat(String(v ?? "0")) || 0;
@@ -403,66 +404,87 @@ router.post("/search", requireAuth, async (req, res) => {
   const totalExpenditure = toNum(exp.approved);
   const operatingProfit = totalRevenue - totalExpenditure;
 
+  // ── Role-based data scope enforcement ─────────────────────────────────────
+  // Employees and operational_staff see only operational metrics — no financial,
+  // ownership, partner, or governance data.  Landowners/investors see financial
+  // and ownership data but not privileged governance overrides detail.
+  const scope = getAnalyticsHubScope(actor.role);
+  logReportAccess(req, "analytics_hub", "search");
+
+  const emptyGov = {
+    disputes: { total: 0, open: 0, critical: 0, resolved: 0 },
+    alerts:   { total: 0, open: 0, critical: 0, high: 0 },
+    overrides: 0,
+  };
+
   res.json({
     matchedProjectCount: matchedProjectIds.length,
     projects: matchedProjects,
     summary: {
-      totalRevenue,
-      totalExpenditure,
-      operatingProfit,
-      profitMargin: totalRevenue > 0 ? ((operatingProfit / totalRevenue) * 100) : 0,
-      totalSalesKg: toNum(rev.total_kg),
-      avgRatePerKg: toNum(rev.avg_rate),
-      salesTransactions: Number(rev.transaction_count ?? 0),
-      totalDistributed: toNum(dist.settled),
-      totalContributions: toNum(contrib.verified),
-      lcaCarryForward: toNum(lca.total_carry_forward),
-      openDisputes: Number(disp.open ?? 0),
-      criticalAlerts: Number(alerts.critical ?? 0),
-      governanceOverrides: Number(overrides.total ?? 0),
-      productionBatches: Number(prod.batch_count ?? 0),
-      totalProducedKg: toNum(prod.total_produced),
-      inventoryValue: toNum(inv.total_value),
+      totalRevenue:        scope.canViewFinancial ? totalRevenue : 0,
+      totalExpenditure:    scope.canViewFinancial ? totalExpenditure : 0,
+      operatingProfit:     scope.canViewFinancial ? operatingProfit : 0,
+      profitMargin:        scope.canViewFinancial && totalRevenue > 0 ? ((operatingProfit / totalRevenue) * 100) : 0,
+      totalSalesKg:        scope.canViewFinancial ? toNum(rev.total_kg) : 0,
+      avgRatePerKg:        scope.canViewFinancial ? toNum(rev.avg_rate) : 0,
+      salesTransactions:   scope.canViewFinancial ? Number(rev.transaction_count ?? 0) : 0,
+      totalDistributed:    scope.canViewFinancial ? toNum(dist.settled) : 0,
+      totalContributions:  scope.canViewFinancial ? toNum(contrib.verified) : 0,
+      lcaCarryForward:     scope.canViewFinancial ? toNum(lca.total_carry_forward) : 0,
+      openDisputes:        scope.canViewGovernance ? Number(disp.open ?? 0) : 0,
+      criticalAlerts:      scope.canViewGovernance ? Number(alerts.critical ?? 0) : 0,
+      governanceOverrides: scope.canViewGovernance ? Number(overrides.total ?? 0) : 0,
+      productionBatches:   scope.canViewOperational ? Number(prod.batch_count ?? 0) : 0,
+      totalProducedKg:     scope.canViewOperational ? toNum(prod.total_produced) : 0,
+      inventoryValue:      scope.canViewOperational ? toNum(inv.total_value) : 0,
     },
-    financialTimeline: (financialTimeline.rows as Record<string, unknown>[]).map(r => ({
-      month: String(r.month ?? "").substring(0, 7),
-      revenue: toNum(r.revenue),
-      expenditure: toNum(r.expenditure),
-      profit: toNum(r.revenue) - toNum(r.expenditure),
-    })),
-    expenditureByCategory: (expByCategory.rows as Record<string, unknown>[]).map(r => ({
-      category: String(r.category ?? ""),
-      count: Number(r.count ?? 0),
-      total: toNum(r.total),
-    })),
-    partnerSummary: (partnerSummary.rows as Record<string, unknown>[]).map(r => ({
-      name: String(r.partner_name ?? ""),
-      contributions: toNum(r.contributions),
-      distributions: toNum(r.distributions),
-    })),
-    governanceSummary: {
-      disputes: { total: Number(disp.total ?? 0), open: Number(disp.open ?? 0), critical: Number(disp.critical ?? 0), resolved: Number(disp.resolved ?? 0) },
-      alerts: { total: Number(alerts.total ?? 0), open: Number(alerts.open ?? 0), critical: Number(alerts.critical ?? 0), high: Number(alerts.high ?? 0) },
-      overrides: Number(overrides.total ?? 0),
-    },
+    financialTimeline: scope.canViewFinancial
+      ? (financialTimeline.rows as Record<string, unknown>[]).map(r => ({
+          month: String(r.month ?? "").substring(0, 7),
+          revenue: toNum(r.revenue),
+          expenditure: toNum(r.expenditure),
+          profit: toNum(r.revenue) - toNum(r.expenditure),
+        }))
+      : [],
+    expenditureByCategory: scope.canViewFinancial
+      ? (expByCategory.rows as Record<string, unknown>[]).map(r => ({
+          category: String(r.category ?? ""),
+          count: Number(r.count ?? 0),
+          total: toNum(r.total),
+        }))
+      : [],
+    partnerSummary: scope.canViewPartners
+      ? (partnerSummary.rows as Record<string, unknown>[]).map(r => ({
+          name: String(r.partner_name ?? ""),
+          contributions: toNum(r.contributions),
+          distributions: toNum(r.distributions),
+        }))
+      : [],
+    governanceSummary: scope.canViewGovernance
+      ? {
+          disputes: { total: Number(disp.total ?? 0), open: Number(disp.open ?? 0), critical: Number(disp.critical ?? 0), resolved: Number(disp.resolved ?? 0) },
+          alerts:   { total: Number(alerts.total ?? 0), open: Number(alerts.open ?? 0), critical: Number(alerts.critical ?? 0), high: Number(alerts.high ?? 0) },
+          overrides: Number(overrides.total ?? 0),
+        }
+      : emptyGov,
     operationalSummary: {
-      productionBatches: Number(prod.batch_count ?? 0),
-      totalProducedKg: toNum(prod.total_produced),
-      inventoryStockTypes: Number(inv.stock_types ?? 0),
-      inventoryTotalQty: toNum(inv.total_qty),
-      inventoryValue: toNum(inv.total_value),
+      productionBatches:    Number(prod.batch_count ?? 0),
+      totalProducedKg:      toNum(prod.total_produced),
+      inventoryStockTypes:  Number(inv.stock_types ?? 0),
+      inventoryTotalQty:    toNum(inv.total_qty),
+      inventoryValue:       toNum(inv.total_value),
     },
     projectBreakdown: (projectBreakdown.rows as Record<string, unknown>[]).map(r => ({
-      id: String(r.id ?? ""),
-      name: String(r.name ?? ""),
-      projectCode: r.project_code ? String(r.project_code) : null,
+      id:              String(r.id ?? ""),
+      name:            String(r.name ?? ""),
+      projectCode:     r.project_code ? String(r.project_code) : null,
       commercialModel: String(r.commercial_model ?? ""),
       lifecycleStatus: String(r.lifecycle_status ?? ""),
       activationStatus: String(r.activation_status ?? ""),
-      revenue: toNum(r.revenue),
-      expenditure: toNum(r.expenditure),
-      distributed: toNum(r.distributed),
-      openDisputes: Number(r.open_disputes ?? 0),
+      revenue:      scope.canViewFinancial  ? toNum(r.revenue)               : 0,
+      expenditure:  scope.canViewFinancial  ? toNum(r.expenditure)           : 0,
+      distributed:  scope.canViewFinancial  ? toNum(r.distributed)           : 0,
+      openDisputes: scope.canViewGovernance ? Number(r.open_disputes ?? 0)   : 0,
       partnerCount: Number(r.partner_count ?? 0),
     })),
   });

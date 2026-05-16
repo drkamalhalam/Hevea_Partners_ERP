@@ -94,3 +94,4 @@ export * from "./person_master_audit";
 export * from "./person_role_assignments";
 export * from "./report_export_jobs";
 export * from "./analytics_saved_views";
+export * from "./report_access_audit";

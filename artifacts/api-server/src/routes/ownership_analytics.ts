@@ -31,6 +31,7 @@ import {
 } from "@workspace/db";
 import { eq, and, inArray, isNull, sql, desc, asc } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
+import { requireOwnershipAccess, auditMiddleware } from "../middlewares/reportAccessControl";
 
 const router = Router();
 
@@ -98,7 +99,7 @@ router.get("/projects", requireAuth, async (req, res) => {
 
 // ── GET /ownership-analytics/overview?projectId= ─────────────────────────
 
-router.get("/overview", requireAuth, async (req, res) => {
+router.get("/overview", requireAuth, requireOwnershipAccess, auditMiddleware("ownership_analytics", "overview"), async (req, res) => {
   const { userId: clerkUserId } = getAuth(req);
   if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
   const actor = await resolveActor(clerkUserId);
@@ -309,7 +310,7 @@ router.get("/overview", requireAuth, async (req, res) => {
 
 // ── GET /ownership-analytics/contributions?projectId=&year= ───────────────
 
-router.get("/contributions", requireAuth, async (req, res) => {
+router.get("/contributions", requireAuth, requireOwnershipAccess, auditMiddleware("ownership_analytics", "contributions"), async (req, res) => {
   const { userId: clerkUserId } = getAuth(req);
   if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
   const actor = await resolveActor(clerkUserId);
@@ -482,7 +483,7 @@ router.get("/contributions", requireAuth, async (req, res) => {
 
 // ── GET /ownership-analytics/snapshots?projectId= ─────────────────────────
 
-router.get("/snapshots", requireAuth, async (req, res) => {
+router.get("/snapshots", requireAuth, requireOwnershipAccess, auditMiddleware("ownership_analytics", "snapshots"), async (req, res) => {
   const { userId: clerkUserId } = getAuth(req);
   if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
   const actor = await resolveActor(clerkUserId);
@@ -542,7 +543,7 @@ router.get("/snapshots", requireAuth, async (req, res) => {
 
 // ── GET /ownership-analytics/transfers?projectId= ─────────────────────────
 
-router.get("/transfers", requireAuth, async (req, res) => {
+router.get("/transfers", requireAuth, requireOwnershipAccess, auditMiddleware("ownership_analytics", "transfers"), async (req, res) => {
   const { userId: clerkUserId } = getAuth(req);
   if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
   const actor = await resolveActor(clerkUserId);
@@ -637,7 +638,7 @@ router.get("/transfers", requireAuth, async (req, res) => {
 
 // ── GET /ownership-analytics/inheritance?projectId= ───────────────────────
 
-router.get("/inheritance", requireAuth, async (req, res) => {
+router.get("/inheritance", requireAuth, requireOwnershipAccess, auditMiddleware("ownership_analytics", "inheritance"), async (req, res) => {
   const { userId: clerkUserId } = getAuth(req);
   if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
   const actor = await resolveActor(clerkUserId);

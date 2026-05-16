@@ -30,6 +30,7 @@ import { z } from "zod";
 import { fetchReportData } from "../lib/reportDataService";
 import { generatePDF, generateExcel, type ReportMeta } from "../lib/reportGenerator";
 import { ObjectStorageService, ObjectNotFoundError } from "../lib/objectStorage";
+import { logReportAccess } from "../middlewares/reportAccessControl";
 
 const router = Router();
 const objectStorage = new ObjectStorageService();
@@ -371,6 +372,9 @@ router.get("/:id/download", async (req, res) => {
   try {
     const file = await objectStorage.getObjectEntityFile(job.fileObjectPath);
     const response = await objectStorage.downloadObject(file, 0);
+
+    // Audit log — fire-and-forget
+    logReportAccess(req, "report_exports", "download", { granted: true });
 
     // Increment download count
     await db
