@@ -317,7 +317,10 @@ router.get("/card-summaries", async (req, res) => {
       )
       .groupBy(ownershipSnapshotsTable.projectId),
 
-    // V2 Sales Orders pipeline stats per project (Phase 10 bridge — confirmed/in-dispatch/completed orders)
+    // V2 Sales Orders pipeline stats per project.
+    // unbridgedRevenue: confirmed V2 orders that do NOT yet have a V1 bridge record —
+    // these are added to totalGrossRevenue so they appear in project cards immediately,
+    // without double-counting orders that already have a V1 salesTransactions bridge.
     db
       .select({
         projectId: salesOrdersTable.projectId,
@@ -325,6 +328,7 @@ router.get("/card-summaries", async (req, res) => {
         completedCount: sql<number>`count(*) FILTER (WHERE ${salesOrdersTable.orderStatus} = 'completed')::int`,
         pendingDispatchKg: sql<number>`COALESCE(SUM((${salesOrdersTable.quantityKg}::numeric - COALESCE(${salesOrdersTable.quantityDispatchedKg}::numeric, 0))) FILTER (WHERE ${salesOrdersTable.orderStatus} IN ('confirmed', 'partially_dispatched')), 0)`,
         totalConfirmedRevenue: sql<number>`COALESCE(SUM(${salesOrdersTable.totalAmount}::numeric) FILTER (WHERE ${salesOrdersTable.orderStatus} IN ('confirmed', 'partially_dispatched', 'completed')), 0)`,
+        unbridgedRevenue: sql<number>`COALESCE(SUM(${salesOrdersTable.totalAmount}::numeric) FILTER (WHERE ${salesOrdersTable.orderStatus} IN ('confirmed', 'partially_dispatched', 'completed') AND NOT EXISTS (SELECT 1 FROM sales_transactions st WHERE st.sale_number = ${salesOrdersTable.salesCode})), 0)`,
       })
       .from(salesOrdersTable)
       .where(projectFilter(salesOrdersTable.projectId))
@@ -431,13 +435,19 @@ router.get("/card-summaries", async (req, res) => {
       storeSheetCount: store ? Number(store.totalSheets) : 0,
       storeWeightKg: store ? Number(store.totalWeightKg) : 0,
 
-      // Sales — V1 transactions + V2 orders pipeline (Phase 10 bridge: V2 completed orders
-      // create V1 bridge records so they appear here; in-progress V2 orders are tracked separately)
-      confirmedSaleCount: (sales ? Number(sales.confirmedCount) : 0),
+      // Sales — V1 transactions PLUS unbridged V2 orders.
+      // totalGrossRevenue = V1 confirmed transactions + V2 confirmed orders not yet in V1.
+      // This is double-count-safe: the NOT EXISTS filter in the V2 query excludes any V2
+      // order that already has a matching V1 bridge record (documentRef = salesCode).
+      confirmedSaleCount: (sales ? Number(sales.confirmedCount) : 0) + (v2so ? Number(v2so.confirmedCount) : 0),
       draftSaleCount: sales ? Number(sales.draftCount) : 0,
-      totalGrossRevenue: showRevenue ? (sales ? Number(sales.totalGross) : 0) : null,
-      totalNetRevenue: showRevenue ? (sales ? Number(sales.totalNet) : 0) : null,
-      // V2 pipeline visibility (confirmed but not yet fully dispatched)
+      totalGrossRevenue: showRevenue
+        ? (sales ? Number(sales.totalGross) : 0) + (v2so ? Number(v2so.unbridgedRevenue) : 0)
+        : null,
+      totalNetRevenue: showRevenue
+        ? (sales ? Number(sales.totalNet) : 0) + (v2so ? Number(v2so.unbridgedRevenue) : 0)
+        : null,
+      // V2 pipeline visibility — dispatch progress + full pipeline revenue
       v2ActiveOrderCount: v2so ? Number(v2so.confirmedCount) : 0,
       v2CompletedOrderCount: v2so ? Number(v2so.completedCount) : 0,
       v2PendingDispatchKg: v2so ? Number(v2so.pendingDispatchKg) : 0,

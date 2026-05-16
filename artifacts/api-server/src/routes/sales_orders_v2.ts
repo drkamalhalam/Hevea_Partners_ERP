@@ -471,6 +471,43 @@ router.post("/:id/confirm-payment", async (req, res): Promise<void> => {
       `Payment confirmed by ${req.dbUser?.displayName}. Invoice ${invoiceNumber} generated. ₹${order.totalAmount}`,
       { invoiceNumber, paymentRef, notes });
 
+    // ── Financial bridge: V1 salesTransactions record at payment confirmation ──
+    // Revenue is recognized the moment cash is received — not at physical dispatch.
+    // This makes the confirmed order immediately visible in project cards, V1 sales
+    // reports, the fifty-percent settlement engine, and distribution sessions.
+    if (order.projectId) {
+      const bridgeSaleNumber = order.salesCode;
+      const [existingBridge] = await db
+        .select({ id: salesTransactionsTable.id })
+        .from(salesTransactionsTable)
+        .where(eq(salesTransactionsTable.saleNumber, bridgeSaleNumber))
+        .limit(1);
+      if (!existingBridge) {
+        await db.insert(salesTransactionsTable).values({
+          projectId: order.projectId,
+          buyerId: order.buyerId ?? undefined,
+          buyerName: order.buyerName ?? "N/A",
+          saleNumber: bridgeSaleNumber,
+          saleDate: format(now, "yyyy-MM-dd"),
+          status: "confirmed",
+          totalGrossRevenue: order.totalAmount,
+          totalDeductions: "0",
+          totalNetRevenue: order.totalAmount,
+          confirmedAt: now,
+          confirmedById: req.dbUser?.id,
+          confirmedByName: req.dbUser?.displayName ?? "",
+          createdById: req.dbUser?.id,
+          createdByName: req.dbUser?.displayName ?? "",
+          documentRef: order.salesCode,
+          notes: `Auto-bridged from Sales Order ${order.salesCode}`,
+        });
+        req.log.info(
+          { salesCode: order.salesCode, amount: order.totalAmount, projectId: order.projectId },
+          "sales-orders: V1 financial bridge record created at payment confirmation",
+        );
+      }
+    }
+
     res.json({ ...updated, invoice });
   } catch (err) {
     req.log.error(err);
@@ -623,42 +660,6 @@ router.post("/:id/dispatch", async (req, res): Promise<void> => {
         createdByName: req.dbUser?.displayName ?? "",
       });
 
-      // ── Phase 10: V1 financial bridge on full dispatch ─────────────────────
-      // Creates a V1 salesTransactions record (confirmed status) so the project
-      // card, fifty-pct settlement sessions, and distribution engine can see this
-      // revenue without any schema changes to those canonical systems.
-      if (isFullyDispatched) {
-        const saleNumber = `SO-${order.salesCode}`;
-        const [existing] = await db
-          .select({ id: salesTransactionsTable.id })
-          .from(salesTransactionsTable)
-          .where(eq(salesTransactionsTable.saleNumber, saleNumber))
-          .limit(1);
-        if (!existing) {
-          await db.insert(salesTransactionsTable).values({
-            projectId: order.projectId,
-            buyerId: order.buyerId ?? undefined,
-            buyerName: order.buyerName ?? "N/A",
-            saleNumber,
-            saleDate: format(now, "yyyy-MM-dd"),
-            status: "confirmed",
-            totalGrossRevenue: order.totalAmount,
-            totalDeductions: "0",
-            totalNetRevenue: order.totalAmount,
-            confirmedAt: now,
-            confirmedById: req.dbUser?.id,
-            confirmedByName: req.dbUser?.displayName ?? "",
-            createdById: req.dbUser?.id,
-            createdByName: req.dbUser?.displayName ?? "",
-            documentRef: order.salesCode,
-            notes: `Auto-bridged from Sales Order ${order.salesCode}`,
-          });
-          req.log.info(
-            { salesCode: order.salesCode, amount: order.totalAmount },
-            "sales-orders: V1 financial bridge record created for completed order",
-          );
-        }
-      }
     }
 
     await writeAudit(req, order.id, order.salesCode, order.projectId, "dispatched",
@@ -700,6 +701,64 @@ router.post("/admin/expire-reservations", async (req, res) => {
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Failed to expire reservations" });
+  }
+});
+
+// ── Reconcile revenue bridges for existing confirmed orders ───────────────────
+// One-time admin endpoint: creates V1 salesTransactions bridge records for all
+// confirmed/in-dispatch/completed V2 orders that predate the auto-bridge logic.
+// Safe to call multiple times — idempotent.
+
+router.post("/admin/reconcile-bridges", async (req, res) => {
+  try {
+    const orders = await db
+      .select()
+      .from(salesOrdersTable)
+      .where(inArray(salesOrdersTable.orderStatus, ["confirmed", "partially_dispatched", "completed"]));
+
+    let created = 0;
+    let skipped = 0;
+    for (const order of orders) {
+      if (!order.projectId) { skipped++; continue; }
+      const bridgeSaleNumber = order.salesCode;
+      const [existing] = await db
+        .select({ id: salesTransactionsTable.id })
+        .from(salesTransactionsTable)
+        .where(eq(salesTransactionsTable.saleNumber, bridgeSaleNumber))
+        .limit(1);
+      if (existing) { skipped++; continue; }
+
+      const confirmedAt = order.paymentConfirmedAt ?? new Date();
+      await db.insert(salesTransactionsTable).values({
+        projectId: order.projectId,
+        buyerId: order.buyerId ?? undefined,
+        buyerName: order.buyerName ?? "N/A",
+        saleNumber: bridgeSaleNumber,
+        saleDate: format(confirmedAt, "yyyy-MM-dd"),
+        status: "confirmed",
+        totalGrossRevenue: order.totalAmount,
+        totalDeductions: "0",
+        totalNetRevenue: order.totalAmount,
+        confirmedAt,
+        confirmedById: order.paymentConfirmedById ?? undefined,
+        confirmedByName: order.paymentConfirmedByName ?? "",
+        createdById: req.dbUser?.id,
+        createdByName: req.dbUser?.displayName ?? "",
+        documentRef: order.salesCode,
+        notes: `Retroactively bridged from Sales Order ${order.salesCode}`,
+      });
+      created++;
+    }
+
+    req.log.info({ created, skipped }, "sales-orders: reconcile-bridges complete");
+    res.json({
+      created,
+      skipped,
+      message: `Created ${created} bridge record${created !== 1 ? "s" : ""}. ${skipped} already existed or had no project.`,
+    });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to reconcile bridges" });
   }
 });
 
