@@ -15,6 +15,7 @@ import {
   getGetExpenditureSummaryQueryKey,
   getListPendingVerificationsQueryKey,
 } from "@workspace/api-client-react";
+import { ProjectFinancialEntryDialog } from "@/components/finance/ProjectFinancialEntryDialog";
 import ExpenditureVerificationTab from "./ExpenditureVerificationTab";
 import type {
   ExpenditureEntry,
@@ -72,6 +73,7 @@ import {
   Upload,
   AlertTriangle,
   Shield,
+  CircleDollarSign,
 } from "lucide-react";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -800,6 +802,7 @@ export default function Expenditure() {
 
   // ── Dialog state ───────────────────────────────────────────────────────────
   const [addOpen, setAddOpen] = useState(false);
+  const [unifiedEntryOpen, setUnifiedEntryOpen] = useState(false);
   const [editEntry, setEditEntry] = useState<ExpenditureEntry | null>(null);
   const [rejectEntry, setRejectEntry] = useState<ExpenditureEntry | null>(null);
   const [deleteEntry, setDeleteEntry] = useState<ExpenditureEntry | null>(null);
@@ -860,13 +863,23 @@ export default function Expenditure() {
           </p>
         </div>
         {canCreate && tab === "overview" && (
-          <Button
-            className="bg-indigo-600 hover:bg-indigo-700 text-white"
-            onClick={() => setAddOpen(true)}
-          >
-            <Plus className="h-4 w-4 mr-1" />
-            Record Expenditure
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              className="border-slate-600 text-slate-300 hover:bg-slate-800"
+              onClick={() => setAddOpen(true)}
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              Expense Only
+            </Button>
+            <Button
+              className="bg-indigo-600 hover:bg-indigo-700 text-white"
+              onClick={() => setUnifiedEntryOpen(true)}
+            >
+              <CircleDollarSign className="h-4 w-4 mr-1" />
+              Record Financial Entry
+            </Button>
+          </div>
         )}
       </div>
 
@@ -1288,6 +1301,22 @@ export default function Expenditure() {
         open={!!rejectEntry}
         entry={rejectEntry}
         onClose={() => setRejectEntry(null)}
+      />
+
+      {/* Unified Financial Entry Dialog */}
+      <ProjectFinancialEntryDialog
+        open={unifiedEntryOpen}
+        onClose={() => setUnifiedEntryOpen(false)}
+        projects={projects.map((p) => ({
+          id: p.id,
+          name: p.name,
+          commercialModel: (p as any).commercialModel ?? "",
+          lifecycleStatus: (p as any).lifecycleStatus ?? "",
+        }))}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: getListExpendituresQueryKey() });
+          queryClient.invalidateQueries({ queryKey: getGetExpenditureSummaryQueryKey() });
+        }}
       />
 
       {/* Delete confirmation */}

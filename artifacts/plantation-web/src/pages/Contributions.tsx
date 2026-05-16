@@ -15,7 +15,10 @@ import {
   getListOnboardingParticipantsQueryKey,
   getListContributionsQueryKey,
   getGetContributionSummaryQueryKey,
+  getListExpendituresQueryKey,
+  getGetExpenditureSummaryQueryKey,
 } from "@workspace/api-client-react";
+import { ProjectFinancialEntryDialog } from "@/components/finance/ProjectFinancialEntryDialog";
 import type {
   ContributionEntry,
   ContributionSummaryProjectsItem,
@@ -92,6 +95,7 @@ import {
   ChevronDown,
   ChevronRight,
   Building2,
+  CircleDollarSign,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -1312,6 +1316,7 @@ export default function Contributions() {
 
   // Dialogs
   const [showForm, setShowForm] = useState(false);
+  const [showUnifiedEntry, setShowUnifiedEntry] = useState(false);
   const [editEntry, setEditEntry] = useState<ContributionEntry | null>(null);
   const [verifyEntry, setVerifyEntry] = useState<{ entry: ContributionEntry; action: "verify" | "reject" } | null>(null);
 
@@ -1420,10 +1425,20 @@ export default function Contributions() {
           </p>
         </div>
         {isAdminOrDev && (
-          <Button onClick={() => { setEditEntry(null); setShowForm(true); }} className="gap-2">
-            <Plus className="w-4 h-4" />
-            Record Contribution
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => { setEditEntry(null); setShowForm(true); }}
+              className="gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Contribution Only
+            </Button>
+            <Button onClick={() => setShowUnifiedEntry(true)} className="gap-2">
+              <CircleDollarSign className="w-4 h-4" />
+              Record Financial Entry
+            </Button>
+          </div>
         )}
       </div>
 
@@ -1778,6 +1793,23 @@ export default function Contributions() {
           onSuccess={invalidate}
         />
       )}
+
+      {/* Unified Financial Entry Dialog */}
+      <ProjectFinancialEntryDialog
+        open={showUnifiedEntry}
+        onClose={() => setShowUnifiedEntry(false)}
+        projects={projects.map((p) => ({
+          id: p.id,
+          name: p.name,
+          commercialModel: p.commercialModel ?? "",
+          lifecycleStatus: p.lifecycleStatus ?? "",
+        }))}
+        onSuccess={() => {
+          invalidate();
+          qc.invalidateQueries({ queryKey: getListExpendituresQueryKey() });
+          qc.invalidateQueries({ queryKey: getGetExpenditureSummaryQueryKey() });
+        }}
+      />
     </div>
   );
 }

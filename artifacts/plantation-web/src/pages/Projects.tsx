@@ -1,5 +1,7 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "wouter";
+import { ProjectFinancialEntryDialog } from "@/components/finance/ProjectFinancialEntryDialog";
+import type { FinancialEntryProject } from "@/components/finance/ProjectFinancialEntryDialog";
 import {
   useListProjects,
   useDeleteProject,
@@ -20,7 +22,7 @@ import {
   FileText, AlertTriangle, ChevronRight, Lock, Leaf, Wallet,
   Activity, Scale, BarChart3, AlertCircle, TrendingUp, ShieldX, Wrench,
   Boxes, Factory, ShoppingCart, Banknote, ClipboardList,
-  CheckCircle2, Clock, XCircle, CreditCard, Target,
+  CheckCircle2, Clock, XCircle, CreditCard, Target, CircleDollarSign,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -207,12 +209,14 @@ function ProjectGovernanceCard({
   cardSummary,
   onDelete,
   canAccessAllProjects,
+  onRecordFinancialEntry,
 }: {
   project: any;
   govAlerts: any;
   cardSummary: CardSummary | undefined;
   onDelete: () => void;
   canAccessAllProjects: boolean;
+  onRecordFinancialEntry: (p: FinancialEntryProject) => void;
 }) {
   // Per-card lightweight fetch — developer + landowner KYC names
   const { data: participantData } = useListOnboardingParticipants(project.id);
@@ -1037,6 +1041,22 @@ function ProjectGovernanceCard({
           </div>
         )}
 
+        {/* Record Financial Entry — prominent CTA */}
+        {!isLocked && canAccessAllProjects && (
+          <Button
+            size="sm"
+            className="w-full h-8 text-[11px] gap-1 mt-1"
+            onClick={() => onRecordFinancialEntry({
+              id: project.id,
+              name: project.name,
+              commercialModel: project.commercialModel ?? "",
+              lifecycleStatus: project.lifecycleStatus ?? "",
+            })}
+          >
+            <CircleDollarSign className="h-3.5 w-3.5" /> Record Financial Entry
+          </Button>
+        )}
+
         {/* Delete action — admin only */}
         {canAccessAllProjects && (
           <Button
@@ -1061,6 +1081,19 @@ export default function Projects() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { canAccessAllProjects } = useRole();
+
+  // Financial entry dialog state
+  const [financialEntryProject, setFinancialEntryProject] = useState<FinancialEntryProject | null>(null);
+
+  const projectsForDialog = useMemo(
+    () => (projects ?? []).map((p: any) => ({
+      id: p.id,
+      name: p.name,
+      commercialModel: p.commercialModel ?? "",
+      lifecycleStatus: p.lifecycleStatus ?? "",
+    })),
+    [projects],
+  );
 
   // Page-level global fetches — governance alerts + live card summaries
   const { data: governance } = useGetGovernanceSummary();
@@ -1136,9 +1169,23 @@ export default function Projects() {
               cardSummary={summaryMap.get(project.id)}
               onDelete={() => handleDelete(project.id, project.name)}
               canAccessAllProjects={canAccessAllProjects}
+              onRecordFinancialEntry={setFinancialEntryProject}
             />
           ))}
         </div>
+      )}
+
+      {/* Project-first financial entry dialog */}
+      {financialEntryProject && (
+        <ProjectFinancialEntryDialog
+          open={!!financialEntryProject}
+          onClose={() => setFinancialEntryProject(null)}
+          initialProject={financialEntryProject}
+          projects={projectsForDialog}
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: getListProjectsQueryKey() });
+          }}
+        />
       )}
     </div>
   );
