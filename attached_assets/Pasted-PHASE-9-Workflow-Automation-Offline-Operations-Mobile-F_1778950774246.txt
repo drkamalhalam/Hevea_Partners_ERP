@@ -1,0 +1,120 @@
+PHASE 9 — Workflow Automation, Offline Operations & Mobile Field Infrastructure
+
+We now have:
+
+governance architecture canonical engines live synchronization settlement governance enterprise intelligence 
+
+Next, transform the ERP into a field-operational plantation infrastructure capable of:
+
+real-world low-connectivity operation mobile-first workflows automation operational continuity large-scale decentralized execution 
+
+CURRENT PROBLEM
+
+The ERP is still too dependent on:
+
+continuous online interaction manual coordination centralized usage patterns desktop-style workflow assumptions 
+
+Real plantation operations require:
+
+field mobility intermittent connectivity delegated execution low-friction workflows operational automation 
+
+TARGET ARCHITECTURE
+
+Create: Mobile & Offline Operational Infrastructure built on top of the canonical governance engines.
+
+CORE RULES
+
+OFFLINE-FIRST FIELD OPERATIONS 
+
+Support offline-capable workflows for:
+
+production entry stock movement dispatch confirmation inventory counting field observations attendance verification expense entry 
+
+Allow local temporary event storage with:
+
+sync queue conflict handling audit-safe reconciliation EVENT QUEUE ARCHITECTURE 
+
+All actions must generate: domain events first.
+
+Support:
+
+queued sync delayed upload retry logic conflict resolution event replay 
+
+Never lose field events because of poor connectivity.
+
+MOBILE QUICK ACTIONS 
+
+Provide fast mobile workflows for:
+
+production logging sheet count entry store intake stock transfer dispatch approval quick expense recording governance verification OTP approvals 
+
+Minimize typing and page navigation.
+
+SMART CONTEXT-AWARE ENTRY 
+
+Mobile UI should auto-load:
+
+current project assigned tasks nearby store authorized actions lifecycle restrictions participant context 
+
+Reduce manual selection burden.
+
+OPERATIONAL AUTOMATION 
+
+Automate:
+
+stock balance updates project card recalculation reimbursement updates settlement readiness participant exposure updates dashboard refresh workflow transitions TASK ENGINE NORMALIZATION 
+
+Convert tasks into: workflow-driven operational actions.
+
+Tasks must support:
+
+assignment escalation verification completion proof linked events linked project linked inventory linked participant FIELD OBSERVER INFRASTRUCTURE 
+
+Expand observer system:
+
+observer presence logs production comparison abnormal pattern detection attendance-linked production analysis trust scoring STORE OPERATION WORKFLOWS 
+
+Support:
+
+pickup memo dispatch approval partial pickup dispatch verification stock audit damaged stock reporting mobile stock counting QR / CODE-READY ARCHITECTURE 
+
+Prepare for future:
+
+QR-coded stock dispatch verification codes store verification codes asset tagging field verification scanning 
+
+WITHOUT restructuring inventory architecture later.
+
+ROLE-BASED MOBILE UX 
+
+Different optimized mobile flows for:
+
+field workers store keepers developers landowners observers accountants auditors AUTOMATED GOVERNANCE CHECKS 
+
+Automatically detect:
+
+inventory mismatch unauthorized movement unusual production duplicate entries delayed verification pending settlement backlog LOW-FRICTION APPROVAL SYSTEMS 
+
+Support:
+
+mobile OTP approvals quick verification actions grouped approvals pending workflow queues SYNC SAFETY 
+
+Offline synchronization must:
+
+preserve audit trail prevent duplication prevent double posting resolve inventory conflicts safely preserve event ordering SCALABILITY 
+
+Support:
+
+multi-store operations multiple field teams concurrent mobile users delayed synchronization high-volume production periods TESTING REQUIREMENTS 
+
+Test:
+
+offline production entry delayed sync duplicate prevention inventory reconciliation mobile transfer workflow dispatch workflow observer logging queued approvals partial pickup low-connectivity operation FINAL TARGET 
+
+Transform the ERP into:
+
+FIELD-READY
+
+OFFLINE-CAPABLE MOBILE-FIRST EVENT-DRIVEN OPERATIONALLY AUTOMATED LOW-CONNECTIVITY SAFE ENTERPRISE GOVERNANCE INFRASTRUCTURE 
+
+capable of supporting real plantation operations at scale.
+

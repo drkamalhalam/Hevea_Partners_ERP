@@ -64,6 +64,7 @@ import SettlementAnalytics from "./pages/SettlementAnalytics";
 import OperationalAnalytics from "./pages/OperationalAnalytics";
 import GovernanceAuditReports from "./pages/GovernanceAuditReports";
 import DataHealth from "./pages/DataHealth";
+import EnterpriseIntelligence from "./pages/EnterpriseIntelligence";
 import TemplateLibrary from "./pages/TemplateLibrary";
 
 // Pages — Operations
@@ -394,6 +395,7 @@ function AppRoutes() {
 
               {/* Analytics */}
               <Route path="/global-analytics"><ProtectedRoute component={GlobalAnalytics} /></Route>
+              <Route path="/enterprise-intelligence"><AdminRoute component={EnterpriseIntelligence} /></Route>
               <Route path="/project-analytics"><ProtectedRoute component={ProjectAnalytics} /></Route>
               <Route path="/financial-reports"><ProtectedRoute component={FinancialReports} /></Route>
               <Route path="/ownership-analytics"><ProtectedRoute component={OwnershipAnalytics} /></Route>

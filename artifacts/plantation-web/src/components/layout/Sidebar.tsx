@@ -501,6 +501,12 @@ const navGroups: NavGroup[] = [
         roles: ["admin", "developer"],
       },
       {
+        name: "Enterprise Intel.",
+        href: "/enterprise-intelligence",
+        icon: Zap,
+        roles: ["admin", "developer"] as UserRole[],
+      },
+      {
         name: "Project Analytics",
         href: "/project-analytics",
         icon: BarChart3,
