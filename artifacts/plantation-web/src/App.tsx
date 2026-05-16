@@ -17,6 +17,8 @@ import ProjectCreationWizard from "./pages/ProjectCreationWizard";
 import ProjectDetails from "./pages/ProjectDetails";
 import Partners from "./pages/Partners";
 import PartnerDetails from "./pages/PartnerDetails";
+import PersonRegistry from "./pages/PersonRegistry";
+import PersonProfile from "./pages/PersonProfile";
 import MyPortfolio from "./pages/MyPortfolio";
 import MyProfile from "./pages/MyProfile";
 import UserProfile from "./pages/UserProfile";
@@ -296,6 +298,8 @@ function AppRoutes() {
               <Route path="/projects/:id/closure"><ProtectedRoute component={ProjectClosurePage} /></Route>
               <Route path="/partners"><ProtectedRoute component={Partners} /></Route>
               <Route path="/partners/:id"><ProtectedRoute component={PartnerDetails} /></Route>
+              <Route path="/person-registry"><ProtectedRoute component={PersonRegistry} /></Route>
+              <Route path="/person-registry/:id"><ProtectedRoute component={PersonProfile} /></Route>
               <Route path="/my-portfolio"><ProtectedRoute component={MyPortfolio} /></Route>
               <Route path="/profile"><ProtectedRoute component={MyProfile} /></Route>
               <Route path="/users/:clerkUserId"><ProtectedRoute component={UserProfile} /></Route>

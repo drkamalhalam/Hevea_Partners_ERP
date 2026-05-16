@@ -1,0 +1,171 @@
+THE CURRENT “REGISTER NEW PARTNER” MODAL IS A GOOD START, BUT IT MUST EVOLVE INTO A FULL PERSON_MASTER GOVERNANCE REGISTRY.
+
+The current modal is still behaving like:
+- a lightweight contact form,
+- basic partner registration,
+- simple project helper UI.
+
+This is insufficient for the ERP architecture.
+
+==================================================
+IMPORTANT ARCHITECTURE PRINCIPLE
+==================================================
+
+The ERP requires:
+UNIFIED PERSON_MASTER GOVERNANCE ARCHITECTURE
+
+NOT:
+simple partner/contact records.
+
+A person may simultaneously be:
+- landowner
+- developer
+- investor
+- worker
+- buyer
+- witness
+- nominee
+- manager
+
+Therefore:
+identity must be centralized and role-flexible.
+
+==================================================
+RENAME THE MODULE
+==================================================
+
+Replace:
+“Register New Partner”
+
+with scalable terminology like:
+- Register Person
+- Create Person Identity
+- Person Registry
+- Identity Registry
+
+Avoid role-specific naming.
+
+==================================================
+IMPLEMENT SEARCH-BEFORE-CREATE
+==================================================
+
+Before creating new identity:
+search existing PERSON_MASTER using:
+- Aadhaar
+- mobile
+- name
+
+Show possible duplicate matches.
+
+Allow:
+- Link Existing Identity
+OR
+- Create New Identity
+
+This is mandatory to prevent duplicate identities.
+
+==================================================
+ROLE SYSTEM REBUILD
+==================================================
+
+Current single-role dropdown is incorrect.
+
+Replace with:
+MULTI-ROLE ASSIGNMENT SYSTEM.
+
+A person may hold:
+- LANDOWNER
+- DEVELOPER
+- INVESTOR
+- BUYER
+- WITNESS
+- WORKER
+- MANAGER
+
+simultaneously.
+
+==================================================
+AADHAAR ARCHITECTURE
+==================================================
+
+“Last 4 digits only” is insufficient for governance architecture.
+
+Implement:
+- secure Aadhaar verification
+- encrypted storage or masked secure storage
+- duplicate detection support
+- verification linkage
+
+Maintain privacy-safe handling.
+
+==================================================
+ADD PERSON_MASTER_ID
+==================================================
+
+Generate permanent identity IDs.
+
+Example:
+PRS-2026-00124
+
+All governance modules must reference:
+PERSON_MASTER_ID
+
+==================================================
+KYC INTEGRATION
+==================================================
+
+Add:
+- Aadhaar upload
+- KYC status
+- OTP verification
+- document linkage
+- verification state
+
+==================================================
+ACCOUNT ACTIVATION SUPPORT
+==================================================
+
+Support:
+- future login activation
+- invite flow
+- account linkage
+- USER_ACCOUNT attachment
+
+without creating duplicate identity.
+
+==================================================
+GOVERNANCE STATUS
+==================================================
+
+Show:
+- Verified
+- Pending Verification
+- Duplicate Risk
+- Active
+- Inactive
+- Linked Projects Count
+
+==================================================
+IMPORTANT GOVERNANCE RULE
+==================================================
+
+This registry becomes the foundational identity layer of the ERP.
+
+Projects, agreements, ownership, reimbursement, inheritance, OTP, and governance workflows must ultimately reference:
+PERSON_MASTER_ID
+
+NOT:
+raw names or project-specific pseudo-identities.
+
+==================================================
+DO NOT BREAK:
+==================================================
+
+- existing projects
+- existing participant relationships
+- agreements
+- OTP logs
+- KYC records
+- audit history
+
+while evolving the modal into a full governance-grade identity registry.

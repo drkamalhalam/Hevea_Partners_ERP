@@ -54,6 +54,7 @@ import {
   History as HistoryIcon,
   Zap,
   Banknote,
+  Users,
 } from "lucide-react";
 import { useRole, ROLE_LABELS, ROLE_COLORS } from "@/contexts/RoleContext";
 import type { UserRole } from "@/contexts/RoleContext";
@@ -95,6 +96,12 @@ const navGroups: NavGroup[] = [
         roles: ["landowner", "investor", "employee", "operational_staff"],
       },
       { name: "My Profile", href: "/profile", icon: UserCircle },
+      {
+        name: "Person Registry",
+        href: "/person-registry",
+        icon: Users,
+        roles: ["admin", "developer"] as UserRole[],
+      },
     ],
   },
   {
