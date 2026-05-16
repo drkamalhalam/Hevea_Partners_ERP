@@ -23,12 +23,10 @@
  */
 
 import { Router } from "express";
-import { getAuth } from "@clerk/express";
 import {
   db, usersTable, projectsTable, userProjectAssignmentsTable,
 } from "@workspace/db";
 import { eq, and, inArray, isNull, sql, asc } from "drizzle-orm";
-import { requireAuth } from "../middlewares/auth";
 
 const router = Router();
 
@@ -37,35 +35,17 @@ const toNum = (v: unknown) => parseFloat(String(v ?? "0")) || 0;
 const toF2 = (v: number) => parseFloat(v.toFixed(2));
 const toF3 = (v: number) => parseFloat(v.toFixed(3));
 
-async function resolveActor(clerkUserId: string) {
-  const [user] = await db.select().from(usersTable).where(eq(usersTable.clerkUserId, clerkUserId)).limit(1);
-  return user ?? null;
-}
 const isPrivileged = (role: string) => role === "admin" || role === "developer";
 
-async function getAssignedIds(userId: string): Promise<string[]> {
-  const rows = await db
-    .select({ projectId: userProjectAssignmentsTable.projectId })
-    .from(userProjectAssignmentsTable)
-    .where(and(eq(userProjectAssignmentsTable.userId, userId), isNull(userProjectAssignmentsTable.revokedAt)));
-  return rows.map((r) => r.projectId);
-}
 
-async function checkProjectAccess(actor: { role: string; id: string }, projectId: string): Promise<boolean> {
-  if (isPrivileged(actor.role)) return true;
-  const ids = await getAssignedIds(actor.id);
-  return ids.includes(projectId);
-}
 
 // ── GET /operational-analytics/projects ──────────────────────────────────
 
-router.get("/projects", requireAuth, async (req, res) => {
-  const { userId: clerkUserId } = getAuth(req);
-  if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
-  const actor = await resolveActor(clerkUserId);
-  if (!actor) return res.status(401).json({ error: "Unauthorized" });
+router.get("/projects", async (req, res) => {
+  if (!req.dbUserId) return res.status(401).json({ error: "Unauthorized" });
+  const actor = { id: req.dbUserId, role: req.userRole ?? "employee", displayName: req.dbUser?.displayName ?? null };
 
-  const allowed = isPrivileged(actor.role) ? null : await getAssignedIds(actor.id);
+  const allowed = req.canAccessAllProjects ? null : (req.userProjectIds ?? []);
   const projects = allowed !== null && allowed.length === 0 ? [] :
     await db.select({
       id: projectsTable.id, name: projectsTable.name, projectCode: projectsTable.projectCode,
@@ -81,15 +61,13 @@ router.get("/projects", requireAuth, async (req, res) => {
 
 // ── GET /operational-analytics/overview?projectId= ───────────────────────
 
-router.get("/overview", requireAuth, async (req, res) => {
-  const { userId: clerkUserId } = getAuth(req);
-  if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
-  const actor = await resolveActor(clerkUserId);
-  if (!actor) return res.status(401).json({ error: "Unauthorized" });
+router.get("/overview", async (req, res) => {
+  if (!req.dbUserId) return res.status(401).json({ error: "Unauthorized" });
+  const actor = { id: req.dbUserId, role: req.userRole ?? "employee", displayName: req.dbUser?.displayName ?? null };
 
   const { projectId } = req.query as { projectId?: string };
   if (!projectId) return res.status(400).json({ error: "projectId required" });
-  if (!(await checkProjectAccess(actor, projectId))) return res.status(403).json({ error: "Forbidden" });
+  if (!((req.canAccessAllProjects === true || (req.userProjectIds ?? []).includes(projectId)))) return res.status(403).json({ error: "Forbidden" });
 
   const pid = projectId;
 
@@ -276,15 +254,13 @@ router.get("/overview", requireAuth, async (req, res) => {
 
 // ── GET /operational-analytics/production?projectId=&year= ───────────────
 
-router.get("/production", requireAuth, async (req, res) => {
-  const { userId: clerkUserId } = getAuth(req);
-  if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
-  const actor = await resolveActor(clerkUserId);
-  if (!actor) return res.status(401).json({ error: "Unauthorized" });
+router.get("/production", async (req, res) => {
+  if (!req.dbUserId) return res.status(401).json({ error: "Unauthorized" });
+  const actor = { id: req.dbUserId, role: req.userRole ?? "employee", displayName: req.dbUser?.displayName ?? null };
 
   const { projectId, year } = req.query as { projectId?: string; year?: string };
   if (!projectId) return res.status(400).json({ error: "projectId required" });
-  if (!(await checkProjectAccess(actor, projectId))) return res.status(403).json({ error: "Forbidden" });
+  if (!((req.canAccessAllProjects === true || (req.userProjectIds ?? []).includes(projectId)))) return res.status(403).json({ error: "Forbidden" });
 
   const yearInt = year && year !== "all" ? parseInt(year, 10) : null;
   const pid = projectId;
@@ -397,15 +373,13 @@ router.get("/production", requireAuth, async (req, res) => {
 
 // ── GET /operational-analytics/batches?projectId= ────────────────────────
 
-router.get("/batches", requireAuth, async (req, res) => {
-  const { userId: clerkUserId } = getAuth(req);
-  if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
-  const actor = await resolveActor(clerkUserId);
-  if (!actor) return res.status(401).json({ error: "Unauthorized" });
+router.get("/batches", async (req, res) => {
+  if (!req.dbUserId) return res.status(401).json({ error: "Unauthorized" });
+  const actor = { id: req.dbUserId, role: req.userRole ?? "employee", displayName: req.dbUser?.displayName ?? null };
 
   const { projectId } = req.query as { projectId?: string };
   if (!projectId) return res.status(400).json({ error: "projectId required" });
-  if (!(await checkProjectAccess(actor, projectId))) return res.status(403).json({ error: "Forbidden" });
+  if (!((req.canAccessAllProjects === true || (req.userProjectIds ?? []).includes(projectId)))) return res.status(403).json({ error: "Forbidden" });
 
   const pid = projectId;
 
@@ -488,15 +462,13 @@ router.get("/batches", requireAuth, async (req, res) => {
 
 // ── GET /operational-analytics/inventory?projectId= ──────────────────────
 
-router.get("/inventory", requireAuth, async (req, res) => {
-  const { userId: clerkUserId } = getAuth(req);
-  if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
-  const actor = await resolveActor(clerkUserId);
-  if (!actor) return res.status(401).json({ error: "Unauthorized" });
+router.get("/inventory", async (req, res) => {
+  if (!req.dbUserId) return res.status(401).json({ error: "Unauthorized" });
+  const actor = { id: req.dbUserId, role: req.userRole ?? "employee", displayName: req.dbUser?.displayName ?? null };
 
   const { projectId } = req.query as { projectId?: string };
   if (!projectId) return res.status(400).json({ error: "projectId required" });
-  if (!(await checkProjectAccess(actor, projectId))) return res.status(403).json({ error: "Forbidden" });
+  if (!((req.canAccessAllProjects === true || (req.userProjectIds ?? []).includes(projectId)))) return res.status(403).json({ error: "Forbidden" });
 
   const pid = projectId;
 
@@ -642,15 +614,13 @@ router.get("/inventory", requireAuth, async (req, res) => {
 
 // ── GET /operational-analytics/sales?projectId=&year= ────────────────────
 
-router.get("/sales", requireAuth, async (req, res) => {
-  const { userId: clerkUserId } = getAuth(req);
-  if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
-  const actor = await resolveActor(clerkUserId);
-  if (!actor) return res.status(401).json({ error: "Unauthorized" });
+router.get("/sales", async (req, res) => {
+  if (!req.dbUserId) return res.status(401).json({ error: "Unauthorized" });
+  const actor = { id: req.dbUserId, role: req.userRole ?? "employee", displayName: req.dbUser?.displayName ?? null };
 
   const { projectId, year } = req.query as { projectId?: string; year?: string };
   if (!projectId) return res.status(400).json({ error: "projectId required" });
-  if (!(await checkProjectAccess(actor, projectId))) return res.status(403).json({ error: "Forbidden" });
+  if (!((req.canAccessAllProjects === true || (req.userProjectIds ?? []).includes(projectId)))) return res.status(403).json({ error: "Forbidden" });
 
   const yearInt = year && year !== "all" ? parseInt(year, 10) : null;
   const pid = projectId;
@@ -795,15 +765,13 @@ router.get("/sales", requireAuth, async (req, res) => {
 
 // ── GET /operational-analytics/wastage?projectId= ────────────────────────
 
-router.get("/wastage", requireAuth, async (req, res) => {
-  const { userId: clerkUserId } = getAuth(req);
-  if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
-  const actor = await resolveActor(clerkUserId);
-  if (!actor) return res.status(401).json({ error: "Unauthorized" });
+router.get("/wastage", async (req, res) => {
+  if (!req.dbUserId) return res.status(401).json({ error: "Unauthorized" });
+  const actor = { id: req.dbUserId, role: req.userRole ?? "employee", displayName: req.dbUser?.displayName ?? null };
 
   const { projectId } = req.query as { projectId?: string };
   if (!projectId) return res.status(400).json({ error: "projectId required" });
-  if (!(await checkProjectAccess(actor, projectId))) return res.status(403).json({ error: "Forbidden" });
+  if (!((req.canAccessAllProjects === true || (req.userProjectIds ?? []).includes(projectId)))) return res.status(403).json({ error: "Forbidden" });
 
   const pid = projectId;
 
@@ -894,15 +862,13 @@ router.get("/wastage", requireAuth, async (req, res) => {
 
 // ── GET /operational-analytics/buyers?projectId= ─────────────────────────
 
-router.get("/buyers", requireAuth, async (req, res) => {
-  const { userId: clerkUserId } = getAuth(req);
-  if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
-  const actor = await resolveActor(clerkUserId);
-  if (!actor) return res.status(401).json({ error: "Unauthorized" });
+router.get("/buyers", async (req, res) => {
+  if (!req.dbUserId) return res.status(401).json({ error: "Unauthorized" });
+  const actor = { id: req.dbUserId, role: req.userRole ?? "employee", displayName: req.dbUser?.displayName ?? null };
 
   const { projectId } = req.query as { projectId?: string };
   if (!projectId) return res.status(400).json({ error: "projectId required" });
-  if (!(await checkProjectAccess(actor, projectId))) return res.status(403).json({ error: "Forbidden" });
+  if (!((req.canAccessAllProjects === true || (req.userProjectIds ?? []).includes(projectId)))) return res.status(403).json({ error: "Forbidden" });
 
   const pid = projectId;
 

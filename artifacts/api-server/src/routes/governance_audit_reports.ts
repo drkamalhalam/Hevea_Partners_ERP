@@ -27,10 +27,9 @@
  */
 
 import { Router } from "express";
-import { getAuth } from "@clerk/express";
-import { db, usersTable, projectsTable } from "@workspace/db";
+import { db, projectsTable } from "@workspace/db";
 import { eq, sql, asc } from "drizzle-orm";
-import { requireAuth, requireRole } from "../middlewares/auth";
+import { requireRole } from "../middlewares/auth";
 import { auditMiddleware } from "../middlewares/reportAccessControl";
 
 const router = Router();
@@ -38,19 +37,11 @@ const router = Router();
 const toNum = (v: unknown) => parseFloat(String(v ?? "0")) || 0;
 const toF2  = (v: number)  => parseFloat(v.toFixed(2));
 
-async function resolveActor(clerkUserId: string) {
-  const [u] = await db.select().from(usersTable).where(eq(usersTable.clerkUserId, clerkUserId)).limit(1);
-  return u ?? null;
-}
-const isPrivileged = (r: string) => r === "admin" || r === "developer";
 
 // ── GET /governance-reports/projects ─────────────────────────────────────
 
-router.get("/projects", requireAuth, async (req, res) => {
-  const { userId: clerkId } = getAuth(req);
-  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
-  const actor = await resolveActor(clerkId);
-  if (!actor || !isPrivileged(actor.role)) return res.status(403).json({ error: "Forbidden" });
+router.get("/projects", async (req, res) => {
+  if (!req.dbUserId || !req.canAccessAllProjects) return res.status(403).json({ error: "Forbidden" });
 
   const projects = await db.select({
     id: projectsTable.id, name: projectsTable.name,
@@ -65,11 +56,8 @@ router.get("/projects", requireAuth, async (req, res) => {
 
 // ── GET /governance-reports/overview?projectId= ───────────────────────────
 
-router.get("/overview", requireAuth, requireRole("admin", "developer"), auditMiddleware("governance_reports", "overview"), async (req, res) => {
-  const { userId: clerkId } = getAuth(req);
-  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
-  const actor = await resolveActor(clerkId);
-  if (!actor || !isPrivileged(actor.role)) return res.status(403).json({ error: "Forbidden" });
+router.get("/overview", requireRole("admin", "developer"), auditMiddleware("governance_reports", "overview"), async (req, res) => {
+  if (!req.dbUserId || !req.canAccessAllProjects) return res.status(403).json({ error: "Forbidden" });
 
   const { projectId } = req.query as { projectId?: string };
   if (!projectId) return res.status(400).json({ error: "projectId required" });
@@ -250,11 +238,8 @@ router.get("/overview", requireAuth, requireRole("admin", "developer"), auditMid
 
 // ── GET /governance-reports/alerts?projectId= ─────────────────────────────
 
-router.get("/alerts", requireAuth, requireRole("admin", "developer"), auditMiddleware("governance_reports", "alerts"), async (req, res) => {
-  const { userId: clerkId } = getAuth(req);
-  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
-  const actor = await resolveActor(clerkId);
-  if (!actor || !isPrivileged(actor.role)) return res.status(403).json({ error: "Forbidden" });
+router.get("/alerts", requireRole("admin", "developer"), auditMiddleware("governance_reports", "alerts"), async (req, res) => {
+  if (!req.dbUserId || !req.canAccessAllProjects) return res.status(403).json({ error: "Forbidden" });
 
   const { projectId } = req.query as { projectId?: string };
   if (!projectId) return res.status(400).json({ error: "projectId required" });
@@ -353,11 +338,8 @@ router.get("/alerts", requireAuth, requireRole("admin", "developer"), auditMiddl
 
 // ── GET /governance-reports/disputes?projectId= ───────────────────────────
 
-router.get("/disputes", requireAuth, requireRole("admin", "developer"), auditMiddleware("governance_reports", "disputes"), async (req, res) => {
-  const { userId: clerkId } = getAuth(req);
-  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
-  const actor = await resolveActor(clerkId);
-  if (!actor || !isPrivileged(actor.role)) return res.status(403).json({ error: "Forbidden" });
+router.get("/disputes", requireRole("admin", "developer"), auditMiddleware("governance_reports", "disputes"), async (req, res) => {
+  if (!req.dbUserId || !req.canAccessAllProjects) return res.status(403).json({ error: "Forbidden" });
 
   const { projectId } = req.query as { projectId?: string };
   if (!projectId) return res.status(400).json({ error: "projectId required" });
@@ -483,11 +465,8 @@ router.get("/disputes", requireAuth, requireRole("admin", "developer"), auditMid
 
 // ── GET /governance-reports/overrides?projectId= ─────────────────────────
 
-router.get("/overrides", requireAuth, requireRole("admin", "developer"), auditMiddleware("governance_reports", "overrides"), async (req, res) => {
-  const { userId: clerkId } = getAuth(req);
-  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
-  const actor = await resolveActor(clerkId);
-  if (!actor || !isPrivileged(actor.role)) return res.status(403).json({ error: "Forbidden" });
+router.get("/overrides", requireRole("admin", "developer"), auditMiddleware("governance_reports", "overrides"), async (req, res) => {
+  if (!req.dbUserId || !req.canAccessAllProjects) return res.status(403).json({ error: "Forbidden" });
 
   const { projectId } = req.query as { projectId?: string };
   if (!projectId) return res.status(400).json({ error: "projectId required" });
@@ -581,11 +560,8 @@ router.get("/overrides", requireAuth, requireRole("admin", "developer"), auditMi
 
 // ── GET /governance-reports/nominees?projectId= ───────────────────────────
 
-router.get("/nominees", requireAuth, async (req, res) => {
-  const { userId: clerkId } = getAuth(req);
-  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
-  const actor = await resolveActor(clerkId);
-  if (!actor || !isPrivileged(actor.role)) return res.status(403).json({ error: "Forbidden" });
+router.get("/nominees", async (req, res) => {
+  if (!req.dbUserId || !req.canAccessAllProjects) return res.status(403).json({ error: "Forbidden" });
 
   const { projectId } = req.query as { projectId?: string };
   if (!projectId) return res.status(400).json({ error: "projectId required" });
@@ -656,11 +632,8 @@ router.get("/nominees", requireAuth, async (req, res) => {
 
 // ── GET /governance-reports/claims?projectId= ────────────────────────────
 
-router.get("/claims", requireAuth, async (req, res) => {
-  const { userId: clerkId } = getAuth(req);
-  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
-  const actor = await resolveActor(clerkId);
-  if (!actor || !isPrivileged(actor.role)) return res.status(403).json({ error: "Forbidden" });
+router.get("/claims", async (req, res) => {
+  if (!req.dbUserId || !req.canAccessAllProjects) return res.status(403).json({ error: "Forbidden" });
 
   const { projectId } = req.query as { projectId?: string };
   if (!projectId) return res.status(400).json({ error: "projectId required" });
@@ -785,11 +758,8 @@ router.get("/claims", requireAuth, async (req, res) => {
 
 // ── GET /governance-reports/evidence?projectId= ───────────────────────────
 
-router.get("/evidence", requireAuth, requireRole("admin", "developer"), auditMiddleware("governance_reports", "evidence"), async (req, res) => {
-  const { userId: clerkId } = getAuth(req);
-  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
-  const actor = await resolveActor(clerkId);
-  if (!actor || !isPrivileged(actor.role)) return res.status(403).json({ error: "Forbidden" });
+router.get("/evidence", requireRole("admin", "developer"), auditMiddleware("governance_reports", "evidence"), async (req, res) => {
+  if (!req.dbUserId || !req.canAccessAllProjects) return res.status(403).json({ error: "Forbidden" });
 
   const { projectId } = req.query as { projectId?: string };
   if (!projectId) return res.status(400).json({ error: "projectId required" });
@@ -895,11 +865,8 @@ router.get("/evidence", requireAuth, requireRole("admin", "developer"), auditMid
 
 // ── GET /governance-reports/audit-log?projectId=&limit= ──────────────────
 
-router.get("/audit-log", requireAuth, requireRole("admin", "developer"), auditMiddleware("governance_reports", "audit_log"), async (req, res) => {
-  const { userId: clerkId } = getAuth(req);
-  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
-  const actor = await resolveActor(clerkId);
-  if (!actor || !isPrivileged(actor.role)) return res.status(403).json({ error: "Forbidden" });
+router.get("/audit-log", requireRole("admin", "developer"), auditMiddleware("governance_reports", "audit_log"), async (req, res) => {
+  if (!req.dbUserId || !req.canAccessAllProjects) return res.status(403).json({ error: "Forbidden" });
 
   const { projectId, limit: limitStr } = req.query as { projectId?: string; limit?: string };
   if (!projectId) return res.status(400).json({ error: "projectId required" });

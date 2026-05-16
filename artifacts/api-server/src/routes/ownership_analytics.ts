@@ -14,12 +14,9 @@
  */
 
 import { Router } from "express";
-import { getAuth } from "@clerk/express";
 import {
   db,
-  usersTable,
   projectsTable,
-  userProjectAssignmentsTable,
   partnersTable,
   contributionsTable,
   ownershipSnapshotsTable,
@@ -29,8 +26,7 @@ import {
   inheritanceOwnershipHistoryTable,
   inheritanceClaimsTable,
 } from "@workspace/db";
-import { eq, and, inArray, isNull, sql, desc, asc } from "drizzle-orm";
-import { requireAuth } from "../middlewares/auth";
+import { eq, and, inArray, sql, desc, asc } from "drizzle-orm";
 import { requireOwnershipAccess, auditMiddleware } from "../middlewares/reportAccessControl";
 
 const router = Router();
@@ -39,40 +35,14 @@ const router = Router();
 const toNum = (v: unknown) => parseFloat(String(v ?? "0")) || 0;
 const toF = (v: number) => parseFloat(v.toFixed(4));
 const toF2 = (v: number) => parseFloat(v.toFixed(2));
-
-async function resolveActor(clerkUserId: string) {
-  const [user] = await db.select().from(usersTable).where(eq(usersTable.clerkUserId, clerkUserId)).limit(1);
-  return user ?? null;
-}
 const isPrivileged = (role: string) => role === "admin" || role === "developer";
-
-async function getAssignedIds(userId: string): Promise<string[]> {
-  const rows = await db
-    .select({ projectId: userProjectAssignmentsTable.projectId })
-    .from(userProjectAssignmentsTable)
-    .where(and(eq(userProjectAssignmentsTable.userId, userId), isNull(userProjectAssignmentsTable.revokedAt)));
-  return rows.map((r) => r.projectId);
-}
-
-async function resolveAllowedIds(actor: { role: string; id: string }): Promise<string[] | null> {
-  if (isPrivileged(actor.role)) return null; // null = all projects
-  return getAssignedIds(actor.id);
-}
-
-async function checkProjectAccess(actor: { role: string; id: string }, projectId: string): Promise<boolean> {
-  if (isPrivileged(actor.role)) return true;
-  const ids = await getAssignedIds(actor.id);
-  return ids.includes(projectId);
-}
 
 // ── GET /ownership-analytics/projects ────────────────────────────────────
 
-router.get("/projects", requireAuth, async (req, res) => {
-  const { userId: clerkUserId } = getAuth(req);
-  if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
-  const actor = await resolveActor(clerkUserId);
-  if (!actor) return res.status(401).json({ error: "Unauthorized" });
-  const allowed = await resolveAllowedIds(actor);
+router.get("/projects", async (req, res) => {
+  if (!req.dbUserId) return res.status(401).json({ error: "Unauthorized" });
+  const actor = { id: req.dbUserId, role: req.userRole ?? "employee", displayName: req.dbUser?.displayName ?? null };
+  const allowed = req.canAccessAllProjects ? null : (req.userProjectIds ?? []);
 
   const projects = allowed !== null && allowed.length === 0
     ? []
@@ -99,15 +69,13 @@ router.get("/projects", requireAuth, async (req, res) => {
 
 // ── GET /ownership-analytics/overview?projectId= ─────────────────────────
 
-router.get("/overview", requireAuth, requireOwnershipAccess, auditMiddleware("ownership_analytics", "overview"), async (req, res) => {
-  const { userId: clerkUserId } = getAuth(req);
-  if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
-  const actor = await resolveActor(clerkUserId);
-  if (!actor) return res.status(401).json({ error: "Unauthorized" });
+router.get("/overview", requireOwnershipAccess, auditMiddleware("ownership_analytics", "overview"), async (req, res) => {
+  if (!req.dbUserId) return res.status(401).json({ error: "Unauthorized" });
+  const actor = { id: req.dbUserId, role: req.userRole ?? "employee", displayName: req.dbUser?.displayName ?? null };
 
   const { projectId } = req.query as { projectId?: string };
   if (!projectId) return res.status(400).json({ error: "projectId required" });
-  if (!(await checkProjectAccess(actor, projectId))) return res.status(403).json({ error: "Forbidden" });
+  if (!((req.canAccessAllProjects === true || (req.userProjectIds ?? []).includes(projectId)))) return res.status(403).json({ error: "Forbidden" });
 
   const [project] = await db.select().from(projectsTable).where(eq(projectsTable.id, projectId)).limit(1);
   if (!project) return res.status(404).json({ error: "Project not found" });
@@ -310,15 +278,13 @@ router.get("/overview", requireAuth, requireOwnershipAccess, auditMiddleware("ow
 
 // ── GET /ownership-analytics/contributions?projectId=&year= ───────────────
 
-router.get("/contributions", requireAuth, requireOwnershipAccess, auditMiddleware("ownership_analytics", "contributions"), async (req, res) => {
-  const { userId: clerkUserId } = getAuth(req);
-  if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
-  const actor = await resolveActor(clerkUserId);
-  if (!actor) return res.status(401).json({ error: "Unauthorized" });
+router.get("/contributions", requireOwnershipAccess, auditMiddleware("ownership_analytics", "contributions"), async (req, res) => {
+  if (!req.dbUserId) return res.status(401).json({ error: "Unauthorized" });
+  const actor = { id: req.dbUserId, role: req.userRole ?? "employee", displayName: req.dbUser?.displayName ?? null };
 
   const { projectId, year } = req.query as { projectId?: string; year?: string };
   if (!projectId) return res.status(400).json({ error: "projectId required" });
-  if (!(await checkProjectAccess(actor, projectId))) return res.status(403).json({ error: "Forbidden" });
+  if (!((req.canAccessAllProjects === true || (req.userProjectIds ?? []).includes(projectId)))) return res.status(403).json({ error: "Forbidden" });
 
   const yearInt = year && year !== "all" ? parseInt(year, 10) : null;
   const pid = projectId;
@@ -483,15 +449,13 @@ router.get("/contributions", requireAuth, requireOwnershipAccess, auditMiddlewar
 
 // ── GET /ownership-analytics/snapshots?projectId= ─────────────────────────
 
-router.get("/snapshots", requireAuth, requireOwnershipAccess, auditMiddleware("ownership_analytics", "snapshots"), async (req, res) => {
-  const { userId: clerkUserId } = getAuth(req);
-  if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
-  const actor = await resolveActor(clerkUserId);
-  if (!actor) return res.status(401).json({ error: "Unauthorized" });
+router.get("/snapshots", requireOwnershipAccess, auditMiddleware("ownership_analytics", "snapshots"), async (req, res) => {
+  if (!req.dbUserId) return res.status(401).json({ error: "Unauthorized" });
+  const actor = { id: req.dbUserId, role: req.userRole ?? "employee", displayName: req.dbUser?.displayName ?? null };
 
   const { projectId } = req.query as { projectId?: string };
   if (!projectId) return res.status(400).json({ error: "projectId required" });
-  if (!(await checkProjectAccess(actor, projectId))) return res.status(403).json({ error: "Forbidden" });
+  if (!((req.canAccessAllProjects === true || (req.userProjectIds ?? []).includes(projectId)))) return res.status(403).json({ error: "Forbidden" });
 
   const snapshots = await db.select().from(ownershipSnapshotsTable)
     .where(eq(ownershipSnapshotsTable.projectId, projectId))
@@ -543,15 +507,13 @@ router.get("/snapshots", requireAuth, requireOwnershipAccess, auditMiddleware("o
 
 // ── GET /ownership-analytics/transfers?projectId= ─────────────────────────
 
-router.get("/transfers", requireAuth, requireOwnershipAccess, auditMiddleware("ownership_analytics", "transfers"), async (req, res) => {
-  const { userId: clerkUserId } = getAuth(req);
-  if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
-  const actor = await resolveActor(clerkUserId);
-  if (!actor) return res.status(401).json({ error: "Unauthorized" });
+router.get("/transfers", requireOwnershipAccess, auditMiddleware("ownership_analytics", "transfers"), async (req, res) => {
+  if (!req.dbUserId) return res.status(401).json({ error: "Unauthorized" });
+  const actor = { id: req.dbUserId, role: req.userRole ?? "employee", displayName: req.dbUser?.displayName ?? null };
 
   const { projectId } = req.query as { projectId?: string };
   if (!projectId) return res.status(400).json({ error: "projectId required" });
-  if (!(await checkProjectAccess(actor, projectId))) return res.status(403).json({ error: "Forbidden" });
+  if (!((req.canAccessAllProjects === true || (req.userProjectIds ?? []).includes(projectId)))) return res.status(403).json({ error: "Forbidden" });
 
   const [transfers, statusSummary, typeSummary] = await Promise.all([
     db.execute(sql`
@@ -638,15 +600,13 @@ router.get("/transfers", requireAuth, requireOwnershipAccess, auditMiddleware("o
 
 // ── GET /ownership-analytics/inheritance?projectId= ───────────────────────
 
-router.get("/inheritance", requireAuth, requireOwnershipAccess, auditMiddleware("ownership_analytics", "inheritance"), async (req, res) => {
-  const { userId: clerkUserId } = getAuth(req);
-  if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
-  const actor = await resolveActor(clerkUserId);
-  if (!actor) return res.status(401).json({ error: "Unauthorized" });
+router.get("/inheritance", requireOwnershipAccess, auditMiddleware("ownership_analytics", "inheritance"), async (req, res) => {
+  if (!req.dbUserId) return res.status(401).json({ error: "Unauthorized" });
+  const actor = { id: req.dbUserId, role: req.userRole ?? "employee", displayName: req.dbUser?.displayName ?? null };
 
   const { projectId } = req.query as { projectId?: string };
   if (!projectId) return res.status(400).json({ error: "projectId required" });
-  if (!(await checkProjectAccess(actor, projectId))) return res.status(403).json({ error: "Forbidden" });
+  if (!((req.canAccessAllProjects === true || (req.userProjectIds ?? []).includes(projectId)))) return res.status(403).json({ error: "Forbidden" });
 
   const [claims, history, claimSummary] = await Promise.all([
     db.execute(sql`

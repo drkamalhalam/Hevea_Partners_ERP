@@ -9,7 +9,6 @@
  */
 
 import { Router } from "express";
-import { getAuth } from "@clerk/express";
 import {
   db,
   projectsTable,
@@ -32,8 +31,6 @@ const toFixed2 = (v: number) => v.toFixed(2);
 // ── GET /global-analytics/overview ────────────────────────────────────────
 
 router.get("/overview", requireRole("admin", "developer"), async (req, res) => {
-  const { userId: clerkUserId } = getAuth(req);
-  if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
 
   const [
     projectStats,

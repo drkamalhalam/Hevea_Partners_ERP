@@ -74,6 +74,15 @@ export async function requireAuth(
   res: Response,
   next: NextFunction,
 ): Promise<void> {
+  // If the global middleware already ran and set req.userId, skip re-verification.
+  // Calling getAuth(req) a second time inside an async context can return null in
+  // Clerk v5 when the AsyncLocalStorage context has shifted (e.g. inside a new
+  // Promise chain created by the route handler).
+  if (req.userId) {
+    next();
+    return;
+  }
+
   const { userId } = getAuth(req);
   if (!userId) {
     res.status(401).json({ error: "Unauthorized" });

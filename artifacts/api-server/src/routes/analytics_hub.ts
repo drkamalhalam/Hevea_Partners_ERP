@@ -14,18 +14,14 @@
  */
 
 import { Router } from "express";
-import { getAuth } from "@clerk/express";
 import { db } from "@workspace/db";
 import {
-  usersTable,
   projectsTable,
   partnersTable,
-  userProjectAssignmentsTable,
   analyticsSavedViewsTable,
 } from "@workspace/db";
-import { eq, and, inArray, isNull, desc, sql } from "drizzle-orm";
+import { eq, and, inArray, desc, sql } from "drizzle-orm";
 import { z } from "zod";
-import { requireAuth } from "../middlewares/auth";
 import { getAnalyticsHubScope, logReportAccess } from "../middlewares/reportAccessControl";
 
 const router = Router();
@@ -33,20 +29,7 @@ const toNum = (v: unknown) => parseFloat(String(v ?? "0")) || 0;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-async function resolveActor(clerkUserId: string) {
-  const [user] = await db.select().from(usersTable).where(eq(usersTable.clerkUserId, clerkUserId)).limit(1);
-  return user ?? null;
-}
-
 const isPrivileged = (role: string) => role === "admin" || role === "developer";
-
-async function getAssignedIds(userId: string): Promise<string[]> {
-  const rows = await db
-    .select({ projectId: userProjectAssignmentsTable.projectId })
-    .from(userProjectAssignmentsTable)
-    .where(and(eq(userProjectAssignmentsTable.userId, userId), isNull(userProjectAssignmentsTable.revokedAt)));
-  return rows.map(r => r.projectId);
-}
 
 /** Builds a WHERE clause fragment for project_id filtering. */
 function projectWhere(projectIds: string[]): string {
@@ -64,13 +47,11 @@ function dateBounds(field: string, dateStart?: string | null, dateEnd?: string |
 
 // ── GET /analytics-hub/meta ───────────────────────────────────────────────────
 
-router.get("/meta", requireAuth, async (req, res) => {
-  const { userId: clerkUserId } = getAuth(req);
-  if (!clerkUserId) return void res.status(401).json({ error: "Unauthorized" });
-  const actor = await resolveActor(clerkUserId);
-  if (!actor) return void res.status(401).json({ error: "Unauthorized" });
+router.get("/meta", async (req, res) => {
+  if (!req.dbUserId) return void res.status(401).json({ error: "Unauthorized" });
+  const actor = { id: req.dbUserId, role: req.userRole ?? "employee" };
 
-  const allowedIds = isPrivileged(actor.role) ? null : await getAssignedIds(actor.id);
+  const allowedIds = isPrivileged(actor.role) ? null : (req.userProjectIds ?? []);
 
   const projects = await db
     .select({
@@ -136,18 +117,16 @@ const SearchSchema = z.object({
   searchText:             z.string().optional().nullable(),
 });
 
-router.post("/search", requireAuth, async (req, res) => {
-  const { userId: clerkUserId } = getAuth(req);
-  if (!clerkUserId) return void res.status(401).json({ error: "Unauthorized" });
-  const actor = await resolveActor(clerkUserId);
-  if (!actor) return void res.status(401).json({ error: "Unauthorized" });
+router.post("/search", async (req, res) => {
+  if (!req.dbUserId) return void res.status(401).json({ error: "Unauthorized" });
+  const actor = { id: req.dbUserId, role: req.userRole ?? "employee" };
 
   const parsed = SearchSchema.safeParse(req.body);
   if (!parsed.success) return void res.status(400).json({ error: "Invalid filters" });
   const filters = parsed.data;
 
   // ── Resolve accessible project IDs ────────────────────────────────────
-  const baseAllowedIds = isPrivileged(actor.role) ? null : await getAssignedIds(actor.id);
+  const baseAllowedIds = isPrivileged(actor.role) ? null : (req.userProjectIds ?? []);
 
   // Build working project set from DB matching all project-level filters
   let projectQuery = db
@@ -503,11 +482,9 @@ const SavedViewSchema = z.object({
   isPublic:     z.boolean().optional(),
 });
 
-router.get("/saved-views", requireAuth, async (req, res) => {
-  const { userId: clerkUserId } = getAuth(req);
-  if (!clerkUserId) return void res.status(401).json({ error: "Unauthorized" });
-  const actor = await resolveActor(clerkUserId);
-  if (!actor) return void res.status(401).json({ error: "Unauthorized" });
+router.get("/saved-views", async (req, res) => {
+  if (!req.dbUserId) return void res.status(401).json({ error: "Unauthorized" });
+  const actor = { id: req.dbUserId, role: req.userRole ?? "employee" };
 
   const views = await db
     .select()
@@ -536,11 +513,9 @@ router.get("/saved-views", requireAuth, async (req, res) => {
   res.json({ views, publicViews: publicViews.filter(v => v.userId !== actor.id) });
 });
 
-router.post("/saved-views", requireAuth, async (req, res) => {
-  const { userId: clerkUserId } = getAuth(req);
-  if (!clerkUserId) return void res.status(401).json({ error: "Unauthorized" });
-  const actor = await resolveActor(clerkUserId);
-  if (!actor) return void res.status(401).json({ error: "Unauthorized" });
+router.post("/saved-views", async (req, res) => {
+  if (!req.dbUserId) return void res.status(401).json({ error: "Unauthorized" });
+  const actor = { id: req.dbUserId, role: req.userRole ?? "employee", displayName: req.dbUser?.displayName ?? null, email: req.dbUser?.email ?? null };
 
   const parsed = SavedViewSchema.safeParse(req.body);
   if (!parsed.success) return void res.status(400).json({ error: "Invalid view", details: parsed.error.flatten() });
@@ -560,11 +535,9 @@ router.post("/saved-views", requireAuth, async (req, res) => {
   res.status(201).json({ view });
 });
 
-router.put("/saved-views/:id", requireAuth, async (req, res) => {
-  const { userId: clerkUserId } = getAuth(req);
-  if (!clerkUserId) return void res.status(401).json({ error: "Unauthorized" });
-  const actor = await resolveActor(clerkUserId);
-  if (!actor) return void res.status(401).json({ error: "Unauthorized" });
+router.put("/saved-views/:id", async (req, res) => {
+  if (!req.dbUserId) return void res.status(401).json({ error: "Unauthorized" });
+  const actor = { id: req.dbUserId, role: req.userRole ?? "employee" };
 
   const viewId = String(req.params.id);
   const [existing] = await db
@@ -588,11 +561,9 @@ router.put("/saved-views/:id", requireAuth, async (req, res) => {
   res.json({ view: updated });
 });
 
-router.delete("/saved-views/:id", requireAuth, async (req, res) => {
-  const { userId: clerkUserId } = getAuth(req);
-  if (!clerkUserId) return void res.status(401).json({ error: "Unauthorized" });
-  const actor = await resolveActor(clerkUserId);
-  if (!actor) return void res.status(401).json({ error: "Unauthorized" });
+router.delete("/saved-views/:id", async (req, res) => {
+  if (!req.dbUserId) return void res.status(401).json({ error: "Unauthorized" });
+  const actor = { id: req.dbUserId, role: req.userRole ?? "employee" };
 
   const deleteId = String(req.params.id);
   const [existing] = await db
@@ -611,11 +582,9 @@ router.delete("/saved-views/:id", requireAuth, async (req, res) => {
   res.json({ success: true });
 });
 
-router.post("/saved-views/:id/pin", requireAuth, async (req, res) => {
-  const { userId: clerkUserId } = getAuth(req);
-  if (!clerkUserId) return void res.status(401).json({ error: "Unauthorized" });
-  const actor = await resolveActor(clerkUserId);
-  if (!actor) return void res.status(401).json({ error: "Unauthorized" });
+router.post("/saved-views/:id/pin", async (req, res) => {
+  if (!req.dbUserId) return void res.status(401).json({ error: "Unauthorized" });
+  const actor = { id: req.dbUserId, role: req.userRole ?? "employee" };
 
   const pinId = String(req.params.id);
   const [existing] = await db
