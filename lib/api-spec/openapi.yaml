@@ -12681,6 +12681,13 @@ components:
           type: ["number", "null"]
         landValuePerUnit:
           type: ["number", "null"]
+        valuationMethod:
+          type: ["string", "null"]
+          enum: [by_tree_capacity, by_land_area_kani, manual]
+        perTreeValue:
+          type: ["number", "null"]
+        landNotionalValueRemarks:
+          type: ["string", "null"]
         commercialModel:
           type: string
           enum: [ownership_contribution, fifty_percent_revenue]
@@ -12792,6 +12799,13 @@ components:
           type: number
         landValuePerUnit:
           type: number
+        valuationMethod:
+          type: string
+          enum: [by_tree_capacity, by_land_area_kani, manual]
+        perTreeValue:
+          type: number
+        landNotionalValueRemarks:
+          type: string
         commercialModel:
           type: string
           enum: [ownership_contribution, fifty_percent_revenue]
@@ -12835,6 +12849,13 @@ components:
           type: number
         landValuePerUnit:
           type: number
+        valuationMethod:
+          type: string
+          enum: [by_tree_capacity, by_land_area_kani, manual]
+        perTreeValue:
+          type: number
+        landNotionalValueRemarks:
+          type: string
         commercialModel:
           type: string
           enum: [ownership_contribution, fifty_percent_revenue]

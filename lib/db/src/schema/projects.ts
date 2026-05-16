@@ -40,10 +40,20 @@ export const projectsTable = pgTable("projects", {
   landAreaUnit: text("land_area_unit").notNull().default("kani"),
   /**
    * Monetised land value used as equity contribution.
-   * Only applicable for ownership_contribution model.
+   * Captured during onboarding for ALL commercial models.
+   * Under fifty_percent_revenue: stored and audited only — never activates.
    */
   landNotionalValue: real("land_notional_value"),
   landValuePerUnit: real("land_value_per_unit"),
+  /**
+   * How the land notional value was computed during onboarding.
+   * "by_tree_capacity" | "by_land_area_kani" | "manual"
+   */
+  valuationMethod: text("valuation_method"),
+  /** Value per tree (INR) — used when valuationMethod = "by_tree_capacity". */
+  perTreeValue: real("per_tree_value"),
+  /** Free-text remarks recorded during LNV onboarding entry. */
+  landNotionalValueRemarks: text("land_notional_value_remarks"),
 
   // ── Governance model ─────────────────────────────────────────────────
   /**

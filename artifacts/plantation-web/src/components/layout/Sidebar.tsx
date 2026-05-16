@@ -269,6 +269,12 @@ const navGroups: NavGroup[] = [
         roles: ["admin", "developer"],
       },
       {
+        name: "LNV Governance",
+        href: "/lnv-governance",
+        icon: Banknote,
+        roles: ["admin", "developer", "landowner", "investor"],
+      },
+      {
         name: "Landowner Account",
         href: "/landowner-account",
         icon: Landmark,

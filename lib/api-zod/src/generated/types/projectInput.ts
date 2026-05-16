@@ -8,6 +8,7 @@
 import type { ProjectInputActivationStatus } from "./projectInputActivationStatus";
 import type { ProjectInputCommercialModel } from "./projectInputCommercialModel";
 import type { ProjectInputStatus } from "./projectInputStatus";
+import type { ProjectInputValuationMethod } from "./projectInputValuationMethod";
 
 export interface ProjectInput {
   name: string;
@@ -21,6 +22,9 @@ export interface ProjectInput {
   landAreaUnit: string;
   landNotionalValue?: number;
   landValuePerUnit?: number;
+  valuationMethod?: ProjectInputValuationMethod;
+  perTreeValue?: number;
+  landNotionalValueRemarks?: string;
   commercialModel: ProjectInputCommercialModel;
   activationStatus?: ProjectInputActivationStatus;
   status: ProjectInputStatus;

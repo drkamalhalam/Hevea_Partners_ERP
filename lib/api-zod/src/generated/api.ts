@@ -587,6 +587,11 @@ export const ListProjectsResponseItem = zod.object({
   landAreaUnit: zod.string(),
   landNotionalValue: zod.number().nullish(),
   landValuePerUnit: zod.number().nullish(),
+  valuationMethod: zod
+    .enum(["by_tree_capacity", "by_land_area_kani", "manual"])
+    .nullish(),
+  perTreeValue: zod.number().nullish(),
+  landNotionalValueRemarks: zod.string().nullish(),
   commercialModel: zod.enum([
     "ownership_contribution",
     "fifty_percent_revenue",
@@ -674,6 +679,11 @@ export const CreateProjectBody = zod.object({
   landAreaUnit: zod.string(),
   landNotionalValue: zod.number().optional(),
   landValuePerUnit: zod.number().optional(),
+  valuationMethod: zod
+    .enum(["by_tree_capacity", "by_land_area_kani", "manual"])
+    .optional(),
+  perTreeValue: zod.number().optional(),
+  landNotionalValueRemarks: zod.string().optional(),
   commercialModel: zod.enum([
     "ownership_contribution",
     "fifty_percent_revenue",
@@ -726,6 +736,11 @@ export const GetProjectResponse = zod.object({
   landAreaUnit: zod.string(),
   landNotionalValue: zod.number().nullish(),
   landValuePerUnit: zod.number().nullish(),
+  valuationMethod: zod
+    .enum(["by_tree_capacity", "by_land_area_kani", "manual"])
+    .nullish(),
+  perTreeValue: zod.number().nullish(),
+  landNotionalValueRemarks: zod.string().nullish(),
   commercialModel: zod.enum([
     "ownership_contribution",
     "fifty_percent_revenue",
@@ -816,6 +831,11 @@ export const UpdateProjectBody = zod.object({
   landAreaUnit: zod.string().optional(),
   landNotionalValue: zod.number().optional(),
   landValuePerUnit: zod.number().optional(),
+  valuationMethod: zod
+    .enum(["by_tree_capacity", "by_land_area_kani", "manual"])
+    .optional(),
+  perTreeValue: zod.number().optional(),
+  landNotionalValueRemarks: zod.string().optional(),
   commercialModel: zod
     .enum(["ownership_contribution", "fifty_percent_revenue"])
     .optional(),
@@ -883,6 +903,11 @@ export const UpdateProjectResponse = zod.object({
   landAreaUnit: zod.string(),
   landNotionalValue: zod.number().nullish(),
   landValuePerUnit: zod.number().nullish(),
+  valuationMethod: zod
+    .enum(["by_tree_capacity", "by_land_area_kani", "manual"])
+    .nullish(),
+  perTreeValue: zod.number().nullish(),
+  landNotionalValueRemarks: zod.string().nullish(),
   commercialModel: zod.enum([
     "ownership_contribution",
     "fifty_percent_revenue",
@@ -3207,6 +3232,11 @@ export const GetMyPortfolioResponse = zod.object({
       landAreaUnit: zod.string(),
       landNotionalValue: zod.number().nullish(),
       landValuePerUnit: zod.number().nullish(),
+      valuationMethod: zod
+        .enum(["by_tree_capacity", "by_land_area_kani", "manual"])
+        .nullish(),
+      perTreeValue: zod.number().nullish(),
+      landNotionalValueRemarks: zod.string().nullish(),
       commercialModel: zod.enum([
         "ownership_contribution",
         "fifty_percent_revenue",
@@ -20241,6 +20271,11 @@ export const GetProjectOnboardingStateResponse = zod.object({
       landAreaUnit: zod.string(),
       landNotionalValue: zod.number().nullish(),
       landValuePerUnit: zod.number().nullish(),
+      valuationMethod: zod
+        .enum(["by_tree_capacity", "by_land_area_kani", "manual"])
+        .nullish(),
+      perTreeValue: zod.number().nullish(),
+      landNotionalValueRemarks: zod.string().nullish(),
       commercialModel: zod.enum([
         "ownership_contribution",
         "fifty_percent_revenue",
@@ -20441,6 +20476,11 @@ export const ActivateProjectViaOnboardingResponse = zod.object({
     landAreaUnit: zod.string(),
     landNotionalValue: zod.number().nullish(),
     landValuePerUnit: zod.number().nullish(),
+    valuationMethod: zod
+      .enum(["by_tree_capacity", "by_land_area_kani", "manual"])
+      .nullish(),
+    perTreeValue: zod.number().nullish(),
+    landNotionalValueRemarks: zod.string().nullish(),
     commercialModel: zod.enum([
       "ownership_contribution",
       "fifty_percent_revenue",

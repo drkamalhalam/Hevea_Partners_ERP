@@ -11,6 +11,7 @@ import type { ProjectConfigurationStatus } from "./projectConfigurationStatus";
 import type { ProjectLandownerValidationStatus } from "./projectLandownerValidationStatus";
 import type { ProjectLifecycleStatus } from "./projectLifecycleStatus";
 import type { ProjectStatus } from "./projectStatus";
+import type { ProjectValuationMethod } from "./projectValuationMethod";
 
 export interface Project {
   id: string;
@@ -30,6 +31,12 @@ export interface Project {
   landNotionalValue?: number | null;
   /** @nullable */
   landValuePerUnit?: number | null;
+  /** @nullable */
+  valuationMethod?: ProjectValuationMethod;
+  /** @nullable */
+  perTreeValue?: number | null;
+  /** @nullable */
+  landNotionalValueRemarks?: string | null;
   commercialModel: ProjectCommercialModel;
   activationStatus: ProjectActivationStatus;
   status: ProjectStatus;

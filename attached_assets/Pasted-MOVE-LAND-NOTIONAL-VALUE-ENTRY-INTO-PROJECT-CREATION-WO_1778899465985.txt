@@ -1,0 +1,197 @@
+MOVE LAND NOTIONAL VALUE ENTRY INTO PROJECT CREATION WORKFLOW.
+
+The current Land Notional Value entry UI and calculator structure is good,
+but architecturally it is placed in the wrong stage.
+
+Land Notional Value is NOT an operational transaction.
+
+It is a foundational commercial/governance configuration that defines:
+- contribution structure,
+- ownership basis,
+- deed structure,
+- maturity economics,
+- land participation value.
+
+Therefore it must be captured during:
+PROJECT CREATION / ONBOARDING.
+
+==================================================
+NEW ARCHITECTURE RULE
+==================================================
+
+Land Notional Value must become part of:
+
+PROJECT CREATION → CAPACITY & FINANCE STEP
+
+NOT:
+a standalone later operational entry module.
+
+==================================================
+MOVE EXISTING UI
+==================================================
+
+Move the current:
+- calculator,
+- explanatory panel,
+- confirmation logic,
+- valuation methods,
+- remarks section
+
+into the:
+Capacity & Finance stage of project creation.
+
+==================================================
+CAPTURE DURING PROJECT CREATION
+==================================================
+
+Required fields:
+
+- Land Area
+- Rubber Capacity
+- Valuation Method
+- Land Notional Value
+- Per Kani Value
+- Per Tree Value
+- LCA
+- LCA Escalation
+- Landowner Mapping
+- Remarks
+
+==================================================
+SUPPORTED VALUATION METHODS
+==================================================
+
+Support:
+1. By Tree Capacity
+2. By Land Area (Kani)
+3. Manual Entry
+
+==================================================
+IMPORTANT MODEL RULE
+==================================================
+
+Even under:
+FIFTY_PERCENT_REVENUE_MODEL
+
+the system must still:
+- capture,
+- preserve,
+- version,
+- audit
+
+Land Notional Value.
+
+Reason:
+future model migration may occur.
+
+However:
+under 50% model,
+Land Notional Value must remain:
+- inactive,
+- non-calculating,
+- non-equity-forming.
+
+==================================================
+DEED INTEGRATION
+==================================================
+
+Land Notional Value must automatically integrate into:
+- deed generation,
+- agreement clauses,
+- contribution structure,
+- governance records.
+
+==================================================
+ACTIVATION RULE
+==================================================
+
+Project activation must validate:
+- Land Notional Value captured
+- valuation method selected
+- landowner linkage verified
+
+before activation.
+
+==================================================
+POST-ACTIVATION RULES
+==================================================
+
+After project activation:
+
+DO NOT allow unrestricted new Land Notional Value creation.
+
+Instead provide:
+- governance view
+- amendment workflow
+- audit tracking
+- admin override process
+
+==================================================
+MATURITY LOCK RULE
+==================================================
+
+After maturity declaration:
+
+Lock:
+- Land Notional Value
+- valuation basis
+- ownership foundation values
+
+Changes after maturity require:
+- super-admin approval
+- governance override
+- audit reason
+- participant approval tracking
+
+==================================================
+AUDIT REQUIREMENTS
+==================================================
+
+Track:
+- original value
+- valuation method
+- calculation basis
+- amendments
+- override actions
+- maturity locks
+
+with permanent audit history.
+
+==================================================
+IMPORTANT ARCHITECTURE PRINCIPLE
+==================================================
+
+Land Notional Value is:
+- a foundational commercial agreement parameter,
+NOT:
+- an operational accounting transaction,
+- recurring ledger entry,
+- day-to-day financial operation.
+
+==================================================
+CONVERT CURRENT MODULE
+==================================================
+
+Convert the current standalone module into:
+
+LAND NOTIONAL VALUE GOVERNANCE MODULE
+
+for:
+- viewing
+- auditing
+- amendments
+- migration handling
+- historical tracking
+
+NOT primary entry creation.
+
+==================================================
+DO NOT BREAK EXISTING PROJECTS
+==================================================
+
+Safely migrate existing records:
+- preserve historical entries
+- preserve audit logs
+- preserve deed references
+- preserve ownership calculations
+- preserve LCA references.

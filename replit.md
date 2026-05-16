@@ -81,6 +81,7 @@ Six roles in `usersTable.role`:
 | Finance | Contributions | /contributions | Live |
 | Finance | LCA Config | /lca/config | Live |
 | Finance | LCA Ledger | /lca/ledger | Live |
+| Finance | LNV Governance | /lnv-governance | Live (admin/dev/landowner/investor) |
 | Finance | Landowner Account | /landowner-account | Live |
 | Finance | Expenditure | /expenditure | Live |
 | Finance | Burden Accounting | /burden | Live |

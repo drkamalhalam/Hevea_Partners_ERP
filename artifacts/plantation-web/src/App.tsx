@@ -103,6 +103,7 @@ import NomineeActivationPage from "./pages/NomineeActivationPage";
 import ProjectClosurePage from "./pages/ProjectClosurePage";
 import OwnershipTransfers from "./pages/OwnershipTransfers";
 import ValuationEngine from "./pages/ValuationEngine";
+import LNVGovernance from "./pages/LNVGovernance";
 import OwnershipStateManager from "./pages/OwnershipStateManager";
 import HeldDistributions from "./pages/HeldDistributions";
 import CollectionEntry from "./pages/CollectionEntry";
@@ -355,6 +356,7 @@ function AppRoutes() {
               <Route path="/ownership-state-manager"><ProtectedRoute component={OwnershipStateManager} /></Route>
               <Route path="/held-distributions"><ProtectedRoute component={HeldDistributions} /></Route>
               <Route path="/valuation-engine"><ProtectedRoute component={ValuationEngine} /></Route>
+              <Route path="/lnv-governance"><ProtectedRoute component={LNVGovernance} /></Route>
               <Route path="/inheritance-claims"><ProtectedRoute component={InheritanceClaims} /></Route>
               <Route path="/nominee-succession"><ProtectedRoute component={NomineeSuccessionDashboard} /></Route>
               <Route path="/prematurity-succession"><ProtectedRoute component={PrematuritySuccession} /></Route>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useAuth } from "@clerk/react";
 import { useLocation, useParams } from "wouter";
 import { useForm } from "react-hook-form";
@@ -35,7 +35,8 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import {
   CheckCircle2, Circle, AlertCircle, ChevronRight, ChevronLeft,
-  Plus, Trash2, Users, MapPin, Leaf, FileText, Shield, KeyRound, Eye, Loader2
+  Plus, Trash2, Users, MapPin, Leaf, FileText, Shield, KeyRound, Eye, Loader2,
+  Banknote, Info,
 } from "lucide-react";
 
 const STEPS = [
@@ -602,10 +603,15 @@ function Step4LandDetails({
 // ── Step 5: Capacity & Financial Config ───────────────────────────────────────
 
 const financialSchema = z.object({
-  rubberCapacity: z.coerce.number().int().positive("Must be positive"),
+  rubberCapacity: z.coerce.number().int().positive("Must be a positive number"),
   rubberCapacityUnit: z.string().default("trees"),
-  landNotionalValue: z.coerce.number().optional(),
-  landValuePerUnit: z.coerce.number().optional(),
+  // LNV — captured for ALL commercial models
+  valuationMethod: z.enum(["by_tree_capacity", "by_land_area_kani", "manual"]).default("manual"),
+  perTreeValue: z.coerce.number().min(0).optional(),
+  landValuePerUnit: z.coerce.number().min(0).optional(),
+  landNotionalValue: z.coerce.number().min(0).optional(),
+  landNotionalValueRemarks: z.string().optional(),
+  // LCA — only activates for ownership model
   lcaBaseAmount: z.coerce.number().optional(),
   lcaEscalationPct: z.coerce.number().optional(),
 });
@@ -626,18 +632,29 @@ function Step5CapacityFinancial({
   const { toast } = useToast();
   const project = projectData as any;
   const isOwnershipModel = project?.commercialModel === "ownership_contribution";
+  const landArea = parseFloat(String(project?.landArea ?? "0")) || 0;
+  const landAreaUnit = project?.landAreaUnit ?? "kani";
 
   const form = useForm<FinancialValues>({
     resolver: zodResolver(financialSchema),
     defaultValues: {
       rubberCapacity: 0,
       rubberCapacityUnit: "trees",
-      landNotionalValue: 0,
+      valuationMethod: "manual",
+      perTreeValue: 0,
       landValuePerUnit: 0,
+      landNotionalValue: 0,
+      landNotionalValueRemarks: "",
       lcaBaseAmount: 0,
       lcaEscalationPct: 0,
     },
   });
+
+  const { watch, setValue } = form;
+  const valuationMethod = watch("valuationMethod");
+  const rubberCapacity = watch("rubberCapacity");
+  const perTreeValue = watch("perTreeValue");
+  const landValuePerUnit = watch("landValuePerUnit");
 
   // Populate form once project data loads
   useEffect(() => {
@@ -645,13 +662,36 @@ function Step5CapacityFinancial({
       form.reset({
         rubberCapacity: project.rubberCapacity ?? 0,
         rubberCapacityUnit: project.rubberCapacityUnit ?? "trees",
-        landNotionalValue: project.landNotionalValue ?? 0,
+        valuationMethod: (project.valuationMethod as any) ?? "manual",
+        perTreeValue: project.perTreeValue ?? 0,
         landValuePerUnit: project.landValuePerUnit ?? 0,
+        landNotionalValue: project.landNotionalValue ?? 0,
+        landNotionalValueRemarks: project.landNotionalValueRemarks ?? "",
         lcaBaseAmount: project.lcaBaseAmount ? Number(project.lcaBaseAmount) : 0,
         lcaEscalationPct: project.lcaEscalationPct ? Number(project.lcaEscalationPct) : 0,
       });
     }
   }, [project?.id]);
+
+  // Auto-compute LNV from the chosen method
+  const computedLNV = useMemo(() => {
+    const cap = parseFloat(String(rubberCapacity)) || 0;
+    const ptv = parseFloat(String(perTreeValue)) || 0;
+    const pku = parseFloat(String(landValuePerUnit)) || 0;
+    if (valuationMethod === "by_tree_capacity") return cap * ptv;
+    if (valuationMethod === "by_land_area_kani") return landArea * pku;
+    return null; // manual — user enters the value directly
+  }, [valuationMethod, rubberCapacity, perTreeValue, landValuePerUnit, landArea]);
+
+  // Keep the landNotionalValue form field in sync with the computed value
+  useEffect(() => {
+    if (computedLNV !== null) {
+      setValue("landNotionalValue", parseFloat(computedLNV.toFixed(2)));
+    }
+  }, [computedLNV, setValue]);
+
+  const fmtINR = (n: number) =>
+    `₹${n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   const onSubmit = (values: FinancialValues) => {
     updateProject.mutate(
@@ -660,8 +700,11 @@ function Step5CapacityFinancial({
         data: {
           rubberCapacity: values.rubberCapacity,
           rubberCapacityUnit: values.rubberCapacityUnit,
-          landNotionalValue: values.landNotionalValue,
+          valuationMethod: values.valuationMethod,
+          perTreeValue: values.perTreeValue,
           landValuePerUnit: values.landValuePerUnit,
+          landNotionalValue: values.landNotionalValue,
+          landNotionalValueRemarks: values.landNotionalValueRemarks || undefined,
           lcaBaseAmount: values.lcaBaseAmount !== undefined ? String(values.lcaBaseAmount) : undefined,
           lcaEscalationPct: values.lcaEscalationPct !== undefined ? String(values.lcaEscalationPct) : undefined,
         } as any,
@@ -675,54 +718,185 @@ function Step5CapacityFinancial({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-        <div className="grid grid-cols-2 gap-4">
-          <FormField control={form.control} name="rubberCapacity" render={({ field }) => (
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+
+        {/* ── Plantation Capacity ─────────────────────────────────── */}
+        <div>
+          <p className="text-sm font-semibold mb-3">Plantation Capacity</p>
+          <div className="grid grid-cols-2 gap-4">
+            <FormField control={form.control} name="rubberCapacity" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Rubber Tree Capacity *</FormLabel>
+                <FormControl><Input type="number" min="1" placeholder="Approx. number of trees" {...field} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+            <FormField control={form.control} name="rubberCapacityUnit" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Capacity Unit</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value ?? "trees"}>
+                  <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                  <SelectContent>
+                    <SelectItem value="trees">Trees</SelectItem>
+                    <SelectItem value="hectares">Hectares</SelectItem>
+                    <SelectItem value="acres">Acres</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )} />
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* ── Land Notional Value ─────────────────────────────────── */}
+        <div className="space-y-4">
+          <div className="flex items-start gap-3">
+            <div className="p-1.5 bg-amber-500/10 border border-amber-500/20 rounded-md shrink-0 mt-0.5">
+              <Banknote className="w-4 h-4 text-amber-600" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold">Land Notional Value</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Foundational commercial parameter. Defines ownership basis, deed structure, contribution structure, and maturity economics. Captured for all commercial models.
+              </p>
+            </div>
+          </div>
+
+          {!isOwnershipModel && (
+            <div className="flex items-start gap-2 bg-sky-50 border border-sky-200 rounded-md p-3">
+              <Info className="w-4 h-4 text-sky-600 shrink-0 mt-0.5" />
+              <p className="text-sm text-sky-700">
+                Under the <strong>50% Revenue Split model</strong>, Land Notional Value is captured and preserved for audit and future reference, but remains <strong>inactive and non-equity-forming</strong>. It will activate automatically if this project migrates to the Ownership Contribution model.
+              </p>
+            </div>
+          )}
+
+          {/* Valuation Method Selector */}
+          <FormField control={form.control} name="valuationMethod" render={({ field }) => (
             <FormItem>
-              <FormLabel>Rubber Tree Capacity *</FormLabel>
-              <FormControl><Input type="number" min="1" placeholder="Approx. number of trees" {...field} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
-          <FormField control={form.control} name="rubberCapacityUnit" render={({ field }) => (
-            <FormItem>
-              <FormLabel>Capacity Unit</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value ?? "trees"}>
-                <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+              <FormLabel>Valuation Method *</FormLabel>
+              <Select onValueChange={field.onChange} value={field.value ?? "manual"}>
+                <FormControl><SelectTrigger><SelectValue placeholder="Select how to compute land value" /></SelectTrigger></FormControl>
                 <SelectContent>
-                  <SelectItem value="trees">Trees</SelectItem>
-                  <SelectItem value="hectares">Hectares</SelectItem>
-                  <SelectItem value="acres">Acres</SelectItem>
+                  <SelectItem value="by_tree_capacity">By Tree Capacity — LNV = Trees × Value per Tree</SelectItem>
+                  <SelectItem value="by_land_area_kani">By Land Area ({landAreaUnit}) — LNV = Area × Value per {landAreaUnit}</SelectItem>
+                  <SelectItem value="manual">Manual Entry — Enter total value directly</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
             </FormItem>
           )} />
 
-          {isOwnershipModel && (
-            <>
-              <Separator className="col-span-2" />
-              <p className="col-span-2 text-sm font-medium text-muted-foreground">
-                Land Valuation (Ownership Contribution Model)
-              </p>
+          {/* By Tree Capacity inputs */}
+          {valuationMethod === "by_tree_capacity" && (
+            <div className="bg-muted/30 border rounded-lg p-4 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Rubber Trees (from above)</p>
+                  <p className="font-semibold text-base">{Number(rubberCapacity || 0).toLocaleString("en-IN")}</p>
+                </div>
+                <FormField control={form.control} name="perTreeValue" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Value per Tree (₹) *</FormLabel>
+                    <FormControl><Input type="number" step="0.01" min="0" placeholder="e.g. 5000" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              </div>
+              {computedLNV !== null && computedLNV > 0 && (
+                <div className="bg-amber-50 border border-amber-200 rounded-md p-3 flex items-center justify-between">
+                  <span className="text-sm text-amber-800">{Number(rubberCapacity||0).toLocaleString("en-IN")} trees × {fmtINR(parseFloat(String(perTreeValue||0)))}</span>
+                  <span className="font-bold text-amber-900 text-lg">{fmtINR(computedLNV)}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* By Land Area inputs */}
+          {valuationMethod === "by_land_area_kani" && (
+            <div className="bg-muted/30 border rounded-lg p-4 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Land Area (from Step 4)</p>
+                  <p className="font-semibold text-base">{landArea.toLocaleString("en-IN")} {landAreaUnit}</p>
+                  {landArea === 0 && (
+                    <p className="text-xs text-destructive mt-1">Land area not set — complete Step 4 first.</p>
+                  )}
+                </div>
+                <FormField control={form.control} name="landValuePerUnit" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Value per {landAreaUnit} (₹) *</FormLabel>
+                    <FormControl><Input type="number" step="0.01" min="0" placeholder="e.g. 25000" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              </div>
+              {computedLNV !== null && computedLNV > 0 && (
+                <div className="bg-amber-50 border border-amber-200 rounded-md p-3 flex items-center justify-between">
+                  <span className="text-sm text-amber-800">{landArea.toLocaleString("en-IN")} {landAreaUnit} × {fmtINR(parseFloat(String(landValuePerUnit||0)))}</span>
+                  <span className="font-bold text-amber-900 text-lg">{fmtINR(computedLNV)}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Manual entry */}
+          {valuationMethod === "manual" && (
+            <div className="grid grid-cols-2 gap-4">
               <FormField control={form.control} name="landNotionalValue" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Land Notional Value (₹)</FormLabel>
-                  <FormControl><Input type="number" step="0.01" placeholder="Total land value in INR" {...field} /></FormControl>
+                  <FormControl><Input type="number" step="0.01" min="0" placeholder="Total land value in INR" {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
               <FormField control={form.control} name="landValuePerUnit" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Value per Unit (₹)</FormLabel>
-                  <FormControl><Input type="number" step="0.01" placeholder="Per kani / acre / hectare" {...field} /></FormControl>
+                  <FormLabel>Value per {landAreaUnit} (₹)</FormLabel>
+                  <FormControl><Input type="number" step="0.01" min="0" placeholder={`Per ${landAreaUnit}`} {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
-              <Separator className="col-span-2" />
-              <p className="col-span-2 text-sm font-medium text-muted-foreground">
-                LCA Configuration (Land Contribution Adjustment)
-              </p>
+            </div>
+          )}
+
+          {/* Auto-computed value readonly display (non-manual methods) */}
+          {valuationMethod !== "manual" && (
+            <FormField control={form.control} name="landNotionalValue" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Total Land Notional Value (₹) — auto-computed</FormLabel>
+                <FormControl>
+                  <Input type="number" step="0.01" readOnly className="bg-muted text-muted-foreground cursor-not-allowed" {...field} />
+                </FormControl>
+                <p className="text-xs text-muted-foreground">Calculated from the inputs above. Switch to Manual Entry to override directly.</p>
+              </FormItem>
+            )} />
+          )}
+
+          {/* Valuation Remarks */}
+          <FormField control={form.control} name="landNotionalValueRemarks" render={({ field }) => (
+            <FormItem>
+              <FormLabel>Valuation Remarks</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="Notes on valuation basis, market reference, deed reference, or any adjustment rationale..."
+                  rows={3}
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+        </div>
+
+        {/* ── LCA Configuration (ownership model only) ─────────────── */}
+        <Separator />
+        {isOwnershipModel ? (
+          <div className="space-y-4">
+            <p className="text-sm font-semibold">LCA Configuration (Land Contribution Adjustment)</p>
+            <div className="grid grid-cols-2 gap-4">
               <FormField control={form.control} name="lcaBaseAmount" render={({ field }) => (
                 <FormItem>
                   <FormLabel>LCA Base Amount (₹ / year)</FormLabel>
@@ -737,14 +911,17 @@ function Step5CapacityFinancial({
                   <FormMessage />
                 </FormItem>
               )} />
-            </>
-          )}
-          {!isOwnershipModel && (
-            <p className="col-span-2 text-sm text-muted-foreground bg-sky-50 border border-sky-200 rounded-md p-3">
-              Land valuation and LCA configuration are not applicable for the 50% Revenue Split model.
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-start gap-2 bg-slate-50 border border-slate-200 rounded-md p-3">
+            <Info className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
+            <p className="text-sm text-slate-600">
+              LCA (Land Contribution Adjustment) is not applicable under the 50% Revenue Split model and will remain inactive.
             </p>
-          )}
-        </div>
+          </div>
+        )}
+
         <div className="flex justify-between pt-2">
           <Button type="button" variant="outline" onClick={onBack}>
             <ChevronLeft className="h-4 w-4 mr-1" /> Back

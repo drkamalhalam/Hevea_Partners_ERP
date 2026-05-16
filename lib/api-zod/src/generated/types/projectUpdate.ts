@@ -8,6 +8,7 @@
 import type { ProjectUpdateActivationStatus } from "./projectUpdateActivationStatus";
 import type { ProjectUpdateCommercialModel } from "./projectUpdateCommercialModel";
 import type { ProjectUpdateStatus } from "./projectUpdateStatus";
+import type { ProjectUpdateValuationMethod } from "./projectUpdateValuationMethod";
 
 export interface ProjectUpdate {
   name?: string;
@@ -21,6 +22,9 @@ export interface ProjectUpdate {
   landAreaUnit?: string;
   landNotionalValue?: number;
   landValuePerUnit?: number;
+  valuationMethod?: ProjectUpdateValuationMethod;
+  perTreeValue?: number;
+  landNotionalValueRemarks?: string;
   commercialModel?: ProjectUpdateCommercialModel;
   activationStatus?: ProjectUpdateActivationStatus;
   status?: ProjectUpdateStatus;

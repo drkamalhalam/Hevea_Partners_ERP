@@ -381,6 +381,19 @@ export interface HealthStatus {
   status: string;
 }
 
+/**
+ * @nullable
+ */
+export type ProjectValuationMethod =
+  | (typeof ProjectValuationMethod)[keyof typeof ProjectValuationMethod]
+  | null;
+
+export const ProjectValuationMethod = {
+  by_tree_capacity: "by_tree_capacity",
+  by_land_area_kani: "by_land_area_kani",
+  manual: "manual",
+} as const;
+
 export type ProjectCommercialModel =
   (typeof ProjectCommercialModel)[keyof typeof ProjectCommercialModel];
 
@@ -464,6 +477,12 @@ export interface Project {
   landNotionalValue?: number | null;
   /** @nullable */
   landValuePerUnit?: number | null;
+  /** @nullable */
+  valuationMethod?: ProjectValuationMethod;
+  /** @nullable */
+  perTreeValue?: number | null;
+  /** @nullable */
+  landNotionalValueRemarks?: string | null;
   commercialModel: ProjectCommercialModel;
   activationStatus: ProjectActivationStatus;
   status: ProjectStatus;
@@ -532,6 +551,15 @@ export interface Project {
   landownerValidationStatus?: ProjectLandownerValidationStatus;
 }
 
+export type ProjectInputValuationMethod =
+  (typeof ProjectInputValuationMethod)[keyof typeof ProjectInputValuationMethod];
+
+export const ProjectInputValuationMethod = {
+  by_tree_capacity: "by_tree_capacity",
+  by_land_area_kani: "by_land_area_kani",
+  manual: "manual",
+} as const;
+
 export type ProjectInputCommercialModel =
   (typeof ProjectInputCommercialModel)[keyof typeof ProjectInputCommercialModel];
 
@@ -580,6 +608,9 @@ export interface ProjectInput {
   landAreaUnit: string;
   landNotionalValue?: number;
   landValuePerUnit?: number;
+  valuationMethod?: ProjectInputValuationMethod;
+  perTreeValue?: number;
+  landNotionalValueRemarks?: string;
   commercialModel: ProjectInputCommercialModel;
   activationStatus?: ProjectInputActivationStatus;
   status: ProjectInputStatus;
@@ -588,6 +619,15 @@ export interface ProjectInput {
   termYears: number;
   notes?: string;
 }
+
+export type ProjectUpdateValuationMethod =
+  (typeof ProjectUpdateValuationMethod)[keyof typeof ProjectUpdateValuationMethod];
+
+export const ProjectUpdateValuationMethod = {
+  by_tree_capacity: "by_tree_capacity",
+  by_land_area_kani: "by_land_area_kani",
+  manual: "manual",
+} as const;
 
 export type ProjectUpdateCommercialModel =
   (typeof ProjectUpdateCommercialModel)[keyof typeof ProjectUpdateCommercialModel];
@@ -637,6 +677,9 @@ export interface ProjectUpdate {
   landAreaUnit?: string;
   landNotionalValue?: number;
   landValuePerUnit?: number;
+  valuationMethod?: ProjectUpdateValuationMethod;
+  perTreeValue?: number;
+  landNotionalValueRemarks?: string;
   commercialModel?: ProjectUpdateCommercialModel;
   activationStatus?: ProjectUpdateActivationStatus;
   status?: ProjectUpdateStatus;
