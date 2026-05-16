@@ -285,7 +285,7 @@ export async function routeAndCreateVerificationRequest({
 
 // ── GET /expenditures/pending-verification ─────────────────────────────────────
 
-router.get("/expenditures/pending-verification", async (req, res) => {
+router.get("/pending-verification", async (req, res) => {
   const { userId: clerkUserId } = getAuth(req);
   if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
 
@@ -356,7 +356,7 @@ router.get("/expenditures/pending-verification", async (req, res) => {
 
 // ── GET /expenditures/:id/verification ────────────────────────────────────────
 
-router.get("/expenditures/:id/verification", async (req, res) => {
+router.get("/:id/verification", async (req, res) => {
   const { userId: clerkUserId } = getAuth(req);
   if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
 
@@ -414,7 +414,7 @@ router.get("/expenditures/:id/verification", async (req, res) => {
 
 // ── POST /expenditures/:id/verification/approve ───────────────────────────────
 
-router.post("/expenditures/:id/verification/approve", async (req, res) => {
+router.post("/:id/verification/approve", async (req, res) => {
   const { userId: clerkUserId } = getAuth(req);
   if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
 
@@ -540,7 +540,7 @@ router.post("/expenditures/:id/verification/approve", async (req, res) => {
 
 // ── POST /expenditures/:id/verification/reject ────────────────────────────────
 
-router.post("/expenditures/:id/verification/reject", async (req, res) => {
+router.post("/:id/verification/reject", async (req, res) => {
   const { userId: clerkUserId } = getAuth(req);
   if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
 

@@ -6,6 +6,7 @@ import {
   contributionsTable,
   contributionVerificationEventsTable,
   projectsTable,
+  projectParticipantsTable,
   partnersTable,
   usersTable,
   userProjectAssignmentsTable,
@@ -435,8 +436,53 @@ router.post(
     if (!isValidDate(b.contributionDate)) {
       return res.status(400).json({ error: "contributionDate must be YYYY-MM-DD" });
     }
-    if (!b.partnerName || typeof b.partnerName !== "string") {
-      return res.status(400).json({ error: "partnerName is required" });
+    // ── Participant validation ─────────────────────────────────────────────────
+    // partnerName must resolve to a real participant in project_participants.
+    // Accept either partnerName (looked up against project roster) or
+    // participantId (direct FK to project_participants.id).
+    // In both cases, partnerName is DERIVED from the DB record — never trusted
+    // from the request body — to eliminate fake contributor names.
+    let resolvedParticipantId: string | null = null;
+    let resolvedPartnerName: string;
+
+    if (typeof b.participantId === "string" && b.participantId) {
+      // Client sent a participantId — look it up and verify it belongs to this project
+      const [participant] = await db
+        .select({ id: projectParticipantsTable.id, fullName: projectParticipantsTable.fullName })
+        .from(projectParticipantsTable)
+        .where(and(
+          eq(projectParticipantsTable.id, b.participantId),
+          eq(projectParticipantsTable.projectId, String(b.projectId)),
+        ))
+        .limit(1);
+      if (!participant) {
+        return res.status(400).json({
+          error: "participantId does not belong to this project.",
+          code: "INVALID_PARTICIPANT",
+        });
+      }
+      resolvedParticipantId = participant.id;
+      resolvedPartnerName = participant.fullName;
+    } else if (typeof b.partnerName === "string" && b.partnerName.trim()) {
+      // Legacy path: partnerName string — verify it matches a real project participant
+      const [participant] = await db
+        .select({ id: projectParticipantsTable.id, fullName: projectParticipantsTable.fullName })
+        .from(projectParticipantsTable)
+        .where(and(
+          eq(projectParticipantsTable.projectId, String(b.projectId)),
+          eq(projectParticipantsTable.fullName, b.partnerName.trim()),
+        ))
+        .limit(1);
+      if (!participant) {
+        return res.status(400).json({
+          error: `"${b.partnerName}" is not a registered participant of this project. Only project participants may have contributions recorded against them.`,
+          code: "INVALID_PARTICIPANT_NAME",
+        });
+      }
+      resolvedParticipantId = participant.id;
+      resolvedPartnerName = participant.fullName; // Use DB name — normalised casing
+    } else {
+      return res.status(400).json({ error: "Either participantId or partnerName is required." });
     }
 
     const cType = b.contributionType as ContributionType;
@@ -563,8 +609,8 @@ router.post(
       .insert(contributionsTable)
       .values({
         projectId: String(b.projectId),
-        partnerId: typeof b.partnerId === "string" ? b.partnerId : null,
-        partnerName: b.partnerName,
+        partnerId: resolvedParticipantId,
+        partnerName: resolvedPartnerName,
         contributionType: cType,
         amount,
         contributionDate: b.contributionDate,
