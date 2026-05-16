@@ -1,0 +1,46 @@
+We are entering an Architecture Stabilization Sprint.
+
+Do NOT add new modules or cosmetic features now.
+
+Priority has shifted from feature expansion to domain integrity, synchronization, and architectural consolidation.
+
+Current problems indicate fragmented business logic:
+
+disconnected inventory systems stale project cards fake contributors/projects appearing as participants unsynchronized financial flows duplicate accounting surfaces orphan participant identity systems lifecycle rule leakage module-owned logic instead of centralized domain logic 
+
+OBJECTIVE
+
+Stabilize the ERP into a unified project-governed domain architecture before any additional features are built.
+
+IMPLEMENTATION PRIORITIES
+
+PHASE 1 — DATA & DOMAIN INTEGRITY
+
+eliminate fake project contributors enforce participant-only financial actors unify person registry and login identity linkage remove free-text participant routing validate project-participant relationships globally 
+
+PHASE 2 — CENTRAL DOMAIN ENGINES Build canonical centralized engines:
+
+Project Domain Engine Financial Event Engine Inventory Movement Engine Participant Identity Engine Live Projection Engine 
+
+PHASE 3 — PAGE DEMOTION Convert modules into views/reporting layers only:
+
+contributions expenditure stock register inventory dashboard sales reporting 
+
+Business rules must move into centralized engines.
+
+PHASE 4 — EVENT-DRIVEN SYNCHRONIZATION All operational actions must emit domain events that automatically update:
+
+project cards inventory dashboards balances ownership projections sales availability participant ledgers 
+
+PHASE 5 — LIFECYCLE HARDENING Prematurity:
+
+ownership logic active production blocked 
+
+Mature:
+
+production/sales active ownership mutation blocked 
+
+PHASE 6 — PROJECT-FIRST ORCHESTRATION Allow global entry UX from anywhere in the app, but internally route every operation through: project validation → lifecycle engine → participant engine → financial/inventory engine → live projections.
+
+DO NOT proceed with further feature expansion until these architectural issues are stabilized.
+
