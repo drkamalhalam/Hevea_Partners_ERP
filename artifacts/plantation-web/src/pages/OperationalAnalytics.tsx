@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useAuthFetcher } from "../lib/authFetch";
 import { useQuery } from "@tanstack/react-query";
 import {
   BarChart, Bar, LineChart, Line, AreaChart, Area,
@@ -13,7 +14,6 @@ import {
 } from "lucide-react";
 
 // ── API helpers ───────────────────────────────────────────────────────────
-const fetcher = (url: string) => fetch(url, { credentials: "include" }).then((r) => r.json());
 
 // ── Constants ─────────────────────────────────────────────────────────────
 const TABS = ["Overview", "Production Reports", "Batch Reports", "Inventory Movement", "Sales Reports", "Wastage Analytics", "Buyer Summaries"] as const;
@@ -130,6 +130,7 @@ function TypeLabel({ type }: { type: string }) {
 
 // ── Main Component ────────────────────────────────────────────────────────
 export default function OperationalAnalytics() {
+  const fetcher = useAuthFetcher();
   const [activeTab, setActiveTab] = useState<Tab>("Overview");
   const [projectId, setProjectId] = useState("");
 

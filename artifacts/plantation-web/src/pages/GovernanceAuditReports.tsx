@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useAuthFetcher } from "../lib/authFetch";
 import { useQuery } from "@tanstack/react-query";
 import {
   BarChart, Bar, LineChart, Line, AreaChart, Area,
@@ -14,7 +15,6 @@ import {
 } from "lucide-react";
 
 // ── API ───────────────────────────────────────────────────────────────────
-const fetcher = (url: string) => fetch(url, { credentials: "include" }).then(r => r.json());
 
 // ── Constants ─────────────────────────────────────────────────────────────
 const TABS = [
@@ -131,6 +131,7 @@ function SeverityDot({ severity }: { severity: string }) {
 
 // ── Main Component ────────────────────────────────────────────────────────
 export default function GovernanceAuditReports() {
+  const fetcher = useAuthFetcher();
   const [tab, setTab] = useState<Tab>("Health Dashboard");
   const [projectId, setProjectId] = useState("");
 

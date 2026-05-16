@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useAuthFetch } from "../lib/authFetch";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -108,6 +109,7 @@ function ProgressBar({ dispatched, total }: { dispatched: string; total: string 
 }
 
 export default function DispatchMemo() {
+  const authFetch = useAuthFetch();
   const { role } = useRole();
   const isAdmin = role === "admin" || role === "developer";
 

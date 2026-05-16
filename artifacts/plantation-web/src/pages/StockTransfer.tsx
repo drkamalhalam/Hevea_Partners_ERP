@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useAuthFetch } from "../lib/authFetch";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -98,6 +99,7 @@ const STOCK_TYPES = [
 ];
 
 export default function StockTransfer() {
+  const authFetch = useAuthFetch();
   const { role } = useRole();
   const isAdmin = role === "admin" || role === "developer";
 

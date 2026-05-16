@@ -11,6 +11,7 @@
  */
 
 import { useState, useMemo, useCallback, useEffect } from "react";
+import { useAuthFetch } from "../lib/authFetch";
 import { useQuery } from "@tanstack/react-query";
 import { useListProjects } from "@workspace/api-client-react";
 import {
@@ -277,10 +278,11 @@ function EventRow({
 // ── Investigation detail panel ────────────────────────────────────────────────
 
 function InvestigationPanel({ event, onClose }: { event: AuditEvent; onClose?: () => void }) {
+  const authFetch = useAuthFetch();
   const detailQuery = useQuery({
     queryKey: ["/api/audit-investigation/detail", event.source, event.id],
     queryFn: async () => {
-      const res = await fetch(`${BASE_URL}/api/audit-investigation/detail/${event.source}/${event.id}`);
+      const res = await authFetch(`${BASE_URL}/api/audit-investigation/detail/${event.source}/${event.id}`);
       if (!res.ok) throw new Error("Failed");
       return res.json() as Promise<Record<string, unknown>>;
     },
@@ -661,6 +663,7 @@ function FilterPanel({
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function AuditInvestigation() {
+  const authFetch = useAuthFetch();
   const { role } = useRole();
   const [tab, setTab] = useState<"search" | "investigation" | "analytics" | "export" | "security">("search");
   const [filters, setFilters] = useState<SearchFilters>(DEFAULT_FILTERS);
@@ -693,7 +696,7 @@ export default function AuditInvestigation() {
   const searchQuery = useQuery({
     queryKey: ["/api/audit-investigation/search", searchParams],
     queryFn: async () => {
-      const res = await fetch(`${BASE_URL}/api/audit-investigation/search?${searchParams}`);
+      const res = await authFetch(`${BASE_URL}/api/audit-investigation/search?${searchParams}`);
       if (!res.ok) throw new Error("Search failed");
       return res.json() as Promise<SearchResult>;
     },
@@ -706,7 +709,7 @@ export default function AuditInvestigation() {
       if (filters.projectId) p.set("projectId", filters.projectId);
       if (filters.dateFrom) p.set("dateFrom", filters.dateFrom);
       if (filters.dateTo) p.set("dateTo", `${filters.dateTo}T23:59:59Z`);
-      const res = await fetch(`${BASE_URL}/api/audit-investigation/analytics?${p}`);
+      const res = await authFetch(`${BASE_URL}/api/audit-investigation/analytics?${p}`);
       if (!res.ok) throw new Error("Analytics failed");
       return res.json() as Promise<AnalyticsData>;
     },
@@ -716,7 +719,7 @@ export default function AuditInvestigation() {
   const optionsQuery = useQuery({
     queryKey: ["/api/audit-investigation/filters/options"],
     queryFn: async () => {
-      const res = await fetch(`${BASE_URL}/api/audit-investigation/filters/options`);
+      const res = await authFetch(`${BASE_URL}/api/audit-investigation/filters/options`);
       if (!res.ok) throw new Error("Failed");
       return res.json() as Promise<FilterOptions>;
     },
@@ -725,7 +728,7 @@ export default function AuditInvestigation() {
   const exportQuery = useQuery({
     queryKey: ["/api/audit-investigation/export"],
     queryFn: async () => {
-      const res = await fetch(`${BASE_URL}/api/audit-investigation/export`);
+      const res = await authFetch(`${BASE_URL}/api/audit-investigation/export`);
       if (!res.ok) throw new Error("Failed");
       return res.json() as Promise<{ available: ExportOption[] }>;
     },
@@ -745,9 +748,9 @@ export default function AuditInvestigation() {
     queryKey: ["audit-integrity-security"],
     queryFn: async (): Promise<SecurityData> => {
       const [ar, cr, tr] = await Promise.all([
-        fetch(`${BASE_URL}/api/audit-integrity/anomalies`),
-        fetch(`${BASE_URL}/api/audit-integrity/coverage`),
-        fetch(`${BASE_URL}/api/audit-integrity/protected-tables`),
+        authFetch(`${BASE_URL}/api/audit-integrity/anomalies`),
+        authFetch(`${BASE_URL}/api/audit-integrity/coverage`),
+        authFetch(`${BASE_URL}/api/audit-integrity/protected-tables`),
       ]);
       const [anomalies, coverage, tables] = await Promise.all([ar.json(), cr.json(), tr.json()]);
       return { anomalies, coverage, tables };

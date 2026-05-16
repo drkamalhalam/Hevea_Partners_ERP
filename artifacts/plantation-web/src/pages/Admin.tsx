@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useAuthFetch } from "../lib/authFetch";
 import { Link } from "wouter";
 import {
   useGetDashboardSummary,
@@ -229,6 +230,7 @@ function UserRow({
 }
 
 export default function Admin() {
+  const authFetch = useAuthFetch();
   const { toast } = useToast();
   const { data: summary, isLoading: isLoadingSummary } = useGetDashboardSummary();
   const { data: projects = [] } = useListProjects();
@@ -247,7 +249,7 @@ export default function Admin() {
 
   const handlePromoteToAdmin = async () => {
     try {
-      const res = await fetch("/api/dev/promote-admin", { method: "POST" });
+      const res = await authFetch("/api/dev/promote-admin", { method: "POST" });
       const data = await res.json();
       if (res.ok) {
         toast({ title: "Promoted to Admin", description: data.message });

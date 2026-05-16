@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useAuthFetch } from "../lib/authFetch";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -111,6 +112,7 @@ const STORE_TYPE_COLORS: Record<string, string> = {
 };
 
 export default function MultiStoreInventory() {
+  const authFetch = useAuthFetch();
   const { role } = useRole();
   const { data: projects = [] } = useListProjects();
 

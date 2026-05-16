@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useAuthFetch } from "../lib/authFetch";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -101,6 +102,7 @@ function CapacityBar({ capacityKg, occupancyKg }: { capacityKg: string; occupanc
 }
 
 export default function Stores() {
+  const authFetch = useAuthFetch();
   const { role } = useRole();
   const isAdmin = role === "admin" || role === "developer";
 

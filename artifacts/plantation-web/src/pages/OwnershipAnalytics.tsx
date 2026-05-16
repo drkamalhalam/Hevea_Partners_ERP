@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useAuthFetcher } from "../lib/authFetch";
 import { useQuery } from "@tanstack/react-query";
 import {
   PieChart, Pie, Cell, BarChart, Bar, LineChart, Line,
@@ -13,7 +14,6 @@ import {
 
 // ── API helpers ───────────────────────────────────────────────────────────
 const API = (path: string) => `/api/${path}`;
-const fetcher = (url: string) => fetch(url, { credentials: "include" }).then((r) => r.json());
 
 // ── Constants ─────────────────────────────────────────────────────────────
 const TABS = ["Overview", "Contributions", "Ownership Timeline", "Transfers", "Inheritance"] as const;
@@ -133,6 +133,7 @@ const CUSTOM_PIE_LABEL = ({ cx, cy, midAngle, innerRadius, outerRadius, percent,
 
 // ── Main Component ────────────────────────────────────────────────────────
 export default function OwnershipAnalytics() {
+  const fetcher = useAuthFetcher();
   const [activeTab, setActiveTab] = useState<Tab>("Overview");
   const [projectId, setProjectId] = useState("");
   const [snapshotIndex, setSnapshotIndex] = useState<number>(0);

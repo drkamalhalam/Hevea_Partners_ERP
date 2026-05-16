@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useAuthFetch } from "../lib/authFetch";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -144,6 +145,7 @@ function issueSeverityIcon(severity: IntegrityIssue["severity"]) {
 // ── Main component ────────────────────────────────────────────────────────
 
 export default function BackupExport() {
+  const authFetch = useAuthFetch();
   const [tab, setTab] = useState("overview");
 
   // History
@@ -205,7 +207,7 @@ export default function BackupExport() {
     setExportingData(true);
     setExportError(null);
     try {
-      const r = await fetch("/api/backup/export/data", { method: "POST" });
+      const r = await authFetch("/api/backup/export/data", { method: "POST" });
       if (!r.ok) {
         const err = await r.json().catch(() => ({})) as { error?: string };
         throw new Error(err.error ?? `HTTP ${r.status}`);
@@ -232,7 +234,7 @@ export default function BackupExport() {
     setExportingDocs(true);
     setExportError(null);
     try {
-      const r = await fetch("/api/backup/export/documents", { method: "POST" });
+      const r = await authFetch("/api/backup/export/documents", { method: "POST" });
       if (!r.ok) {
         const err = await r.json().catch(() => ({})) as { error?: string };
         throw new Error(err.error ?? `HTTP ${r.status}`);

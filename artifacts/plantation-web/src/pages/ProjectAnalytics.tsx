@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useAuthFetch } from "../lib/authFetch";
 import { useQuery } from "@tanstack/react-query";
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
@@ -137,6 +138,7 @@ type Tab = (typeof TABS)[number];
 
 // ── Main Component ────────────────────────────────────────────────────────
 export default function ProjectAnalytics() {
+  const authFetch = useAuthFetch();
   const { role } = useRole();
   const { selectedProjectId, setSelectedProjectId } = useProjectFilter();
   const [activeTab, setActiveTab] = useState<Tab>("Overview");
@@ -145,7 +147,7 @@ export default function ProjectAnalytics() {
   const { data: projectsData } = useQuery({
     queryKey: ["project-analytics-projects"],
     queryFn: () =>
-      fetch(API("project-analytics/projects"), { credentials: "include" })
+      authFetch(API("project-analytics/projects"))
         .then((r) => r.json()) as Promise<{
           projects: { id: string; name: string; commercialModel: string; lifecycleStatus: string; activationStatus: string }[];
         }>,
@@ -168,7 +170,7 @@ export default function ProjectAnalytics() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["project-analytics-overview", localProjectId],
     queryFn: () =>
-      fetch(API(`project-analytics/overview?projectId=${localProjectId}`), { credentials: "include" })
+      authFetch(API(`project-analytics/overview?projectId=${localProjectId}`))
         .then((r) => r.json()),
     enabled: !!localProjectId,
   });

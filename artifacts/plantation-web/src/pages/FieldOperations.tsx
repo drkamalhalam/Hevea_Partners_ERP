@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useAuthFetch } from "../lib/authFetch";
+import { customFetch } from "@workspace/api-client-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRole } from "@/contexts/RoleContext";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -92,33 +94,27 @@ interface ProjectContext {
 // ── Fetch helpers ─────────────────────────────────────────────────────────────
 
 async function fetchFieldOps<T>(path: string): Promise<T> {
-  const res = await fetch(`/api/field-ops${path}`);
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json() as Promise<T>;
+  return customFetch<T>(`/api/field-ops${path}`);
 }
 
 async function postEvent(body: Record<string, unknown>) {
-  const res = await fetch("/api/field-ops/events", {
+  return customFetch("/api/field-ops/events", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
 }
 
 async function patchEventStatus(id: string, status: string, reason?: string) {
-  const res = await fetch(`/api/field-ops/events/${id}/status`, {
+  return customFetch(`/api/field-ops/events/${id}/status`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ status, conflictReason: reason }),
   });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
 }
 
-async function batchProcess() {
-  const res = await fetch("/api/field-ops/events/batch-process", { method: "POST" });
+async function batchProcess(authFetch: (url: string, init?: RequestInit) => Promise<Response>) {
+  const res = await authFetch("/api/field-ops/events/batch-process", { method: "POST" });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
 }
@@ -224,6 +220,7 @@ const QUICK_ACTIONS: QuickAction[] = [
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function FieldOperations() {
+  const authFetch = useAuthFetch();
   const { role } = useRole();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -281,7 +278,7 @@ export default function FieldOperations() {
   });
 
   const batchMut = useMutation({
-    mutationFn: batchProcess,
+    mutationFn: () => batchProcess(authFetch),
     onSuccess: (data: { processed: number; message: string }) => {
       queryClient.invalidateQueries({ queryKey: ["field-ops-events"] });
       toast({ title: "Batch processed", description: data.message });

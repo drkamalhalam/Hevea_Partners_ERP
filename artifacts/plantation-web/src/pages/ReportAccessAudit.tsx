@@ -6,6 +6,7 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
+import { useAuthFetch } from "../lib/authFetch";
 import { useLocation } from "wouter";
 import {
   Shield, RefreshCw, Filter, X, ChevronLeft, ChevronRight,
@@ -107,6 +108,7 @@ function fmtModule(module: string, endpoint: string): string {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function ReportAccessAudit() {
+  const authFetch = useAuthFetch();
   const { role } = useRole();
   const [, navigate] = useLocation();
 

@@ -1,15 +1,12 @@
 import { Router } from "express";
-import { getAuth } from "@clerk/express";
-import { eq, and, inArray, isNull } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 import {
   db,
-  usersTable,
   projectsTable,
   partnersTable,
   landownerLedgerTable,
   lcaLedgerTable,
   burdenRecoveryAdjustmentsTable,
-  userProjectAssignmentsTable,
 } from "@workspace/db";
 
 import { requireFinancialRole } from "../middlewares/auth";
@@ -19,40 +16,13 @@ const router = Router();
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function canAccessAllProjects(role: string): boolean {
-  return role === "admin" || role === "developer";
-}
 
-async function getAssignedProjectIds(userId: string): Promise<string[]> {
-  const rows = await db
-    .select({ projectId: userProjectAssignmentsTable.projectId })
-    .from(userProjectAssignmentsTable)
-    .where(
-      and(
-        eq(userProjectAssignmentsTable.userId, userId),
-        isNull(userProjectAssignmentsTable.revokedAt),
-      ),
-    );
-  return rows.map((r) => r.projectId);
-}
-
-async function resolveActor(clerkUserId: string) {
-  const [user] = await db
-    .select()
-    .from(usersTable)
-    .where(eq(usersTable.clerkUserId, clerkUserId))
-    .limit(1);
-  return user ?? null;
-}
 
 // ── GET /analytics/landowner-profitability ────────────────────────────────────
 
 router.get("/landowner-profitability", requireFinancialRole, async (req, res) => {
-  const { userId: clerkUserId } = getAuth(req);
-  if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
-
-  const actor = await resolveActor(clerkUserId);
-  if (!actor) return res.status(401).json({ error: "Unauthorized" });
+  if (!req.dbUserId) return res.status(401).json({ error: "Unauthorized" });
+  const actor = { id: req.dbUserId, role: req.userRole ?? "employee" };
 
   logFinancialAccess(req, "landowner_profitability", "read", req.query.projectId as string | undefined);
 
@@ -65,8 +35,8 @@ router.get("/landowner-profitability", requireFinancialRole, async (req, res) =>
 
   // ── Project access gate ──────────────────────────────────────────────────
   let allowedProjectIds: string[] | null = null;
-  if (!canAccessAllProjects(actor.role)) {
-    allowedProjectIds = await getAssignedProjectIds(actor.id);
+  if (!req.canAccessAllProjects === true) {
+    allowedProjectIds = (req.userProjectIds ?? []);
     if (allowedProjectIds.length === 0) {
       return res.json({
         summary: {

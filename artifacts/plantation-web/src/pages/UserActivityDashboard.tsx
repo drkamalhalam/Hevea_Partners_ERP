@@ -8,6 +8,7 @@
  */
 
 import { useState, useMemo } from "react";
+import { useAuthFetch } from "../lib/authFetch";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { useProjectFilter } from "../contexts/ProjectFilterContext";
@@ -313,6 +314,7 @@ function SessionRow({ session }: { session: Session }) {
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function UserActivityDashboard() {
+  const authFetch = useAuthFetch();
   const { selectedProjectId } = useProjectFilter();
   const { role } = useRole();
   const [tab, setTab] = useState<"overview" | "users" | "sensitive" | "projects" | "sessions">("overview");
@@ -328,7 +330,7 @@ export default function UserActivityDashboard() {
   const summaryQuery = useQuery({
     queryKey: ["/api/user-activity/summary"],
     queryFn: async () => {
-      const res = await fetch(`${BASE_URL}/api/user-activity/summary`);
+      const res = await authFetch(`${BASE_URL}/api/user-activity/summary`);
       if (!res.ok) throw new Error("Failed");
       return res.json() as Promise<{
         totals: { allTime: number; last30Days: number; sensitiveActions: number; loginSessions: number };
@@ -344,7 +346,7 @@ export default function UserActivityDashboard() {
   const roleSummaryQuery = useQuery({
     queryKey: ["/api/user-activity/role-summary"],
     queryFn: async () => {
-      const res = await fetch(`${BASE_URL}/api/user-activity/role-summary`);
+      const res = await authFetch(`${BASE_URL}/api/user-activity/role-summary`);
       if (!res.ok) throw new Error("Failed");
       return res.json() as Promise<{ byRole: RoleSummary[] }>;
     },
@@ -354,7 +356,7 @@ export default function UserActivityDashboard() {
   const usersQuery = useQuery({
     queryKey: ["/api/user-activity/users"],
     queryFn: async () => {
-      const res = await fetch(`${BASE_URL}/api/user-activity/users`);
+      const res = await authFetch(`${BASE_URL}/api/user-activity/users`);
       if (!res.ok) throw new Error("Failed");
       return res.json() as Promise<{ users: UserSummary[] }>;
     },
@@ -364,7 +366,7 @@ export default function UserActivityDashboard() {
   const userDetailQuery = useQuery({
     queryKey: ["/api/user-activity/user", selectedUser?.id],
     queryFn: async () => {
-      const res = await fetch(`${BASE_URL}/api/user-activity/user/${selectedUser!.id}?limit=30`);
+      const res = await authFetch(`${BASE_URL}/api/user-activity/user/${selectedUser!.id}?limit=30`);
       if (!res.ok) throw new Error("Failed");
       return res.json() as Promise<{
         user: UserSummary | null;
@@ -384,7 +386,7 @@ export default function UserActivityDashboard() {
       if (selectedProjectId) params.set("projectId", selectedProjectId);
       if (sensitiveFrom) params.set("from", sensitiveFrom);
       if (sensitiveTo) params.set("to", sensitiveTo);
-      const res = await fetch(`${BASE_URL}/api/user-activity/sensitive?${params}`);
+      const res = await authFetch(`${BASE_URL}/api/user-activity/sensitive?${params}`);
       if (!res.ok) throw new Error("Failed");
       return res.json() as Promise<{ entries: AuditEntry[]; total: number }>;
     },
@@ -394,7 +396,7 @@ export default function UserActivityDashboard() {
   const projectReportQuery = useQuery({
     queryKey: ["/api/user-activity/project", selectedProjectIdForReport],
     queryFn: async () => {
-      const res = await fetch(`${BASE_URL}/api/user-activity/project/${selectedProjectIdForReport}?limit=20`);
+      const res = await authFetch(`${BASE_URL}/api/user-activity/project/${selectedProjectIdForReport}?limit=20`);
       if (!res.ok) throw new Error("Failed");
       return res.json() as Promise<ProjectActivity>;
     },
@@ -404,7 +406,7 @@ export default function UserActivityDashboard() {
   const sessionsQuery = useQuery({
     queryKey: ["/api/user-activity/sessions"],
     queryFn: async () => {
-      const res = await fetch(`${BASE_URL}/api/user-activity/sessions?limit=50`);
+      const res = await authFetch(`${BASE_URL}/api/user-activity/sessions?limit=50`);
       if (!res.ok) throw new Error("Failed");
       return res.json() as Promise<{ sessions: Session[]; total: number }>;
     },

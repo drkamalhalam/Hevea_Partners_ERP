@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef } from "react";
+import { useAuthFetch } from "../lib/authFetch";
 import {
   useListEvidence,
   useGetEvidenceStats,
@@ -797,6 +798,7 @@ function CreateEvidenceDialog({
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function EvidenceArchive() {
+  const authFetch = useAuthFetch();
   const { role } = useRole();
   const canWrite = role === "admin" || role === "developer";
 

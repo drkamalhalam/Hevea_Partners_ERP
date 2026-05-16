@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useAuthFetch } from "../lib/authFetch";
 import { useQuery } from "@tanstack/react-query";
 import { useProjectFilter } from "../contexts/ProjectFilterContext";
 import { useRole } from "../contexts/RoleContext";
@@ -255,6 +256,7 @@ function TaskRow({ task }: { task: GovernanceMonitoringTask }) {
 // ── Main Page ──────────────────────────────────────────────────────────────────
 
 export default function GovernanceAlertCenter() {
+  const authFetch = useAuthFetch();
   const { selectedProjectId } = useProjectFilter();
   const { role } = useRole();
   const [severityFilter, setSeverityFilter] = useState<string>("all");

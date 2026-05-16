@@ -1,4 +1,5 @@
 import { useUser } from "@clerk/react";
+import { useAuthFetch } from "../lib/authFetch";
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { GovernanceSummary } from "@workspace/api-client-react";
@@ -531,10 +532,11 @@ type PendingClosureEntry = {
 };
 
 function ClosurePendingPanel() {
+  const authFetch = useAuthFetch();
   const { data = [], isLoading } = useQuery<PendingClosureEntry[]>({
     queryKey: ["projects", "closure", "pending"],
     queryFn: () =>
-      fetch("/api/projects/closure/pending", { credentials: "include" }).then((r) => r.json()),
+      authFetch("/api/projects/closure/pending").then((r) => r.json()),
     staleTime: 60_000,
   });
 
@@ -645,10 +647,11 @@ function LifecycleAnalyticsSection({
   projects: Array<{ lifecycleStatus?: string | null }>;
   isLoading: boolean;
 }) {
+  const authFetch = useAuthFetch();
   const { data: tasks } = useQuery<GovernanceTasks>({
     queryKey: ["governance", "tasks"],
     queryFn: () =>
-      fetch("/api/governance/tasks", { credentials: "include" }).then((r) => r.json()),
+      authFetch("/api/governance/tasks").then((r) => r.json()),
     staleTime: 60_000,
   });
 
@@ -792,10 +795,11 @@ function LifecycleAnalyticsSection({
 // ── Governance Task Center ────────────────────────────────────────────────
 
 function GovernanceTaskCenter() {
+  const authFetch = useAuthFetch();
   const { data, isLoading, refetch, isFetching } = useQuery<GovernanceTasks>({
     queryKey: ["governance", "tasks"],
     queryFn: () =>
-      fetch("/api/governance/tasks", { credentials: "include" }).then((r) => r.json()),
+      authFetch("/api/governance/tasks").then((r) => r.json()),
     staleTime: 60_000,
   });
 

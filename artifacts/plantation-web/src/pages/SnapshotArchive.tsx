@@ -14,6 +14,7 @@
  */
 
 import { useState, useMemo, useCallback } from "react";
+import { useAuthFetch } from "../lib/authFetch";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useListProjects } from "@workspace/api-client-react";
 import { useRole } from "../contexts/RoleContext";
@@ -549,6 +550,7 @@ function CaptureForm({
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function SnapshotArchive() {
+  const authFetch = useAuthFetch();
   const { role } = useRole();
   const qc = useQueryClient();
   const [tab, setTab] = useState<"archive" | "compare" | "timeline" | "restore">("archive");
@@ -583,7 +585,7 @@ export default function SnapshotArchive() {
       const params = new URLSearchParams({ limit: "100" });
       if (archiveTypeFilter !== "all") params.set("snapshotType", archiveTypeFilter);
       if (archiveProjectFilter !== "all") params.set("projectId", archiveProjectFilter);
-      const res = await fetch(`${BASE_URL}/api/snapshots?${params}`);
+      const res = await authFetch(`${BASE_URL}/api/snapshots?${params}`);
       if (!res.ok) throw new Error("Failed");
       return res.json() as Promise<{ snapshots: Snapshot[]; total: number }>;
     },
@@ -592,7 +594,7 @@ export default function SnapshotArchive() {
   const compareQuery = useQuery({
     queryKey: ["/api/snapshots/compare", compareA?.id, compareB?.id],
     queryFn: async () => {
-      const res = await fetch(`${BASE_URL}/api/snapshots/compare?a=${compareA!.id}&b=${compareB!.id}`);
+      const res = await authFetch(`${BASE_URL}/api/snapshots/compare?a=${compareA!.id}&b=${compareB!.id}`);
       if (!res.ok) throw new Error("Failed");
       return res.json() as Promise<CompareResult>;
     },
@@ -624,7 +626,7 @@ export default function SnapshotArchive() {
   const restoreQuery = useQuery({
     queryKey: ["/api/snapshots/restore-preview", restoreSnap?.id],
     queryFn: async () => {
-      const res = await fetch(`${BASE_URL}/api/snapshots/restore-preview/${restoreSnap!.id}`);
+      const res = await authFetch(`${BASE_URL}/api/snapshots/restore-preview/${restoreSnap!.id}`);
       if (!res.ok) throw new Error("Failed");
       return res.json() as Promise<RestorePreviewResult>;
     },

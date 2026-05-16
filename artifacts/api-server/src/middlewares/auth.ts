@@ -83,7 +83,8 @@ export async function requireAuth(
     return;
   }
 
-  const { userId } = getAuth(req);
+  const auth = getAuth(req);
+  const { userId } = auth;
   if (!userId) {
     res.status(401).json({ error: "Unauthorized" });
     return;
@@ -96,7 +97,6 @@ export async function requireAuth(
       .from(usersTable)
       .where(eq(usersTable.clerkUserId, userId))
       .limit(1);
-
     if (userRow) {
       const assignments = await db
         .select()

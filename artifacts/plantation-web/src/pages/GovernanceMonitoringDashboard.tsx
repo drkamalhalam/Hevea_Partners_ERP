@@ -8,6 +8,7 @@
  */
 
 import { useState, useMemo } from "react";
+import { useAuthFetch } from "../lib/authFetch";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { useProjectFilter } from "../contexts/ProjectFilterContext";
@@ -307,6 +308,7 @@ function RiskGauge({ label, value, max, color }: { label: string; value: number;
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function GovernanceMonitoringDashboard() {
+  const authFetch = useAuthFetch();
   const { selectedProjectId } = useProjectFilter();
   const { role } = useRole();
   const [tab, setTab] = useState<"overview" | "alerts" | "matrix">("overview");
@@ -318,7 +320,7 @@ export default function GovernanceMonitoringDashboard() {
     queryFn: async () => {
       const params = new URLSearchParams();
       if (selectedProjectId) params.set("projectId", selectedProjectId);
-      const res = await fetch(`${BASE_URL}/api/governance-monitoring/legal-compliance?${params}`);
+      const res = await authFetch(`${BASE_URL}/api/governance-monitoring/legal-compliance?${params}`);
       if (!res.ok) throw new Error("Failed to fetch compliance data");
       return res.json() as Promise<ComplianceResponse>;
     },

@@ -13,7 +13,6 @@
  */
 
 import { Router } from "express";
-import { getAuth } from "@clerk/express";
 import {
   requireSettlementAccess,
   getProjectScopeFilter,

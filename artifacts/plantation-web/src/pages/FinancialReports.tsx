@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useAuthFetcher } from "../lib/authFetch";
 import { useQuery } from "@tanstack/react-query";
 import {
   BarChart, Bar, AreaChart, Area, LineChart, Line, PieChart, Pie, Cell,
@@ -14,7 +15,6 @@ import { useRole } from "../contexts/RoleContext";
 
 // ── API helpers ───────────────────────────────────────────────────────────
 const API = (path: string) => `/api/${path}`;
-const fetcher = (url: string) => fetch(url, { credentials: "include" }).then((r) => r.json());
 
 // ── Constants ─────────────────────────────────────────────────────────────
 const CURRENT_YEAR = new Date().getFullYear();
@@ -117,6 +117,7 @@ function EmptyState({ icon: Icon, label }: { icon: React.ComponentType<{ classNa
 
 // ── Main Component ────────────────────────────────────────────────────────
 export default function FinancialReports() {
+  const fetcher = useAuthFetcher();
   const { role } = useRole();
   const isAdmin = role === "admin" || role === "developer";
 

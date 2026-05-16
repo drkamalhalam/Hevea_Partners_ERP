@@ -9,6 +9,7 @@
  */
 
 import { useState, useCallback, useEffect, useRef } from "react";
+import { useAuthFetch } from "../lib/authFetch";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -296,6 +297,7 @@ function MultiCheckFilter({
 // ── Main Component ─────────────────────────────────────────────────────────────
 
 export default function AnalyticsHub() {
+  const authFetch = useAuthFetch();
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -316,7 +318,7 @@ export default function AnalyticsHub() {
   const { data: meta } = useQuery({
     queryKey: ["analytics-hub-meta"],
     queryFn: async () => {
-      const r = await fetch("/api/analytics-hub/meta", { credentials: "include" });
+      const r = await authFetch("/api/analytics-hub/meta");
       if (!r.ok) throw new Error("Failed to load meta");
       return r.json() as Promise<{ projects: Project[]; partners: Partner[]; filterOptions: Record<string, unknown> }>;
     },
@@ -327,10 +329,9 @@ export default function AnalyticsHub() {
   const { data: results, isFetching, refetch } = useQuery({
     queryKey: ["analytics-hub-search", appliedFilters],
     queryFn: async () => {
-      const r = await fetch("/api/analytics-hub/search", {
+      const r = await authFetch("/api/analytics-hub/search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
         body: JSON.stringify(appliedFilters),
       });
       if (!r.ok) throw new Error("Search failed");
@@ -343,7 +344,7 @@ export default function AnalyticsHub() {
   const { data: savedViewsData, refetch: refetchViews } = useQuery({
     queryKey: ["analytics-hub-saved-views"],
     queryFn: async () => {
-      const r = await fetch("/api/analytics-hub/saved-views", { credentials: "include" });
+      const r = await authFetch("/api/analytics-hub/saved-views");
       if (!r.ok) throw new Error("Failed to load views");
       return r.json() as Promise<{ views: SavedView[]; publicViews: SavedView[] }>;
     },
@@ -353,7 +354,7 @@ export default function AnalyticsHub() {
     mutationFn: async (data: { id?: string; payload: Record<string, unknown> }) => {
       const url = data.id ? `/api/analytics-hub/saved-views/${data.id}` : "/api/analytics-hub/saved-views";
       const method = data.id ? "PUT" : "POST";
-      const r = await fetch(url, { method, headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify(data.payload) });
+      const r = await authFetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(data.payload) });
       if (!r.ok) throw new Error("Save failed");
       return r.json();
     },
@@ -368,7 +369,7 @@ export default function AnalyticsHub() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const r = await fetch(`/api/analytics-hub/saved-views/${id}`, { method: "DELETE", credentials: "include" });
+      const r = await authFetch(`/api/analytics-hub/saved-views/${id}`, { method: "DELETE" });
       if (!r.ok) throw new Error("Delete failed");
       return r.json();
     },
@@ -378,7 +379,7 @@ export default function AnalyticsHub() {
 
   const pinMutation = useMutation({
     mutationFn: async (id: string) => {
-      const r = await fetch(`/api/analytics-hub/saved-views/${id}/pin`, { method: "POST", credentials: "include" });
+      const r = await authFetch(`/api/analytics-hub/saved-views/${id}/pin`, { method: "POST" });
       if (!r.ok) throw new Error("Pin failed");
       return r.json();
     },

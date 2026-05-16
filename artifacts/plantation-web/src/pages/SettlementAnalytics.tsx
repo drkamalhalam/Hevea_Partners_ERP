@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useAuthFetcher } from "../lib/authFetch";
 import { useQuery } from "@tanstack/react-query";
 import {
   BarChart, Bar, LineChart, Line, AreaChart, Area,
@@ -13,7 +14,6 @@ import {
 } from "lucide-react";
 
 // ── API helpers ───────────────────────────────────────────────────────────
-const fetcher = (url: string) => fetch(url, { credentials: "include" }).then((r) => r.json());
 
 // ── Constants ─────────────────────────────────────────────────────────────
 const TABS = ["Overview", "Distribution History", "Settlements", "Overrides", "Landowner Accounting", "EPP Distribution", "Pending Payables"] as const;
@@ -127,6 +127,7 @@ function ModelTag({ model }: { model: string }) {
 
 // ── Main Component ────────────────────────────────────────────────────────
 export default function SettlementAnalytics() {
+  const fetcher = useAuthFetcher();
   const [activeTab, setActiveTab] = useState<Tab>("Overview");
   const [projectId, setProjectId] = useState("");
 

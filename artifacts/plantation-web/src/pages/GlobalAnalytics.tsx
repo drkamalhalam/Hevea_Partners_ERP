@@ -12,6 +12,7 @@
  */
 
 import { useState } from "react";
+import { useAuthFetch } from "../lib/authFetch";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -239,10 +240,11 @@ function SeverityBadge({ level, count }: { level: string; count: number }) {
 // ── Fetch hook ─────────────────────────────────────────────────────────────
 
 function useGlobalOverview() {
+  const authFetch = useAuthFetch();
   return useQuery<GlobalOverview>({
     queryKey: ["global-analytics-overview"],
     queryFn: async () => {
-      const res = await fetch("/api/global-analytics/overview", { credentials: "include" });
+      const res = await authFetch("/api/global-analytics/overview");
       if (!res.ok) throw new Error("Failed to fetch global analytics");
       return res.json() as Promise<GlobalOverview>;
     },

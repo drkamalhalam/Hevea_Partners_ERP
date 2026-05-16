@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useAuthFetch } from "../lib/authFetch";
+import { customFetch } from "@workspace/api-client-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRole } from "@/contexts/RoleContext";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -117,13 +119,12 @@ interface BackfillResult {
 // ── Fetch helpers ─────────────────────────────────────────────────────────────
 
 async function fetchDataHealth<T>(path: string): Promise<T> {
-  const res = await fetch(`/api/admin/data-health${path}`);
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json() as Promise<T>;
+  const res = await customFetch<T>(`/api/admin/data-health${path}`);
+  return res as T;
 }
 
-async function postBackfill(): Promise<BackfillResult> {
-  const res = await fetch("/api/admin/data-health/backfill-crystallization", {
+async function postBackfill(authFetch: (url: string, init?: RequestInit) => Promise<Response>): Promise<BackfillResult> {
+  const res = await authFetch("/api/admin/data-health/backfill-crystallization", {
     method: "POST",
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -207,6 +208,7 @@ function fmtCurrency(v: string | number) {
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function DataHealth() {
+  const authFetch = useAuthFetch();
   const { role } = useRole();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -245,7 +247,7 @@ export default function DataHealth() {
   const [backfillResult, setBackfillResult] = useState<BackfillResult | null>(null);
 
   const backfillMut = useMutation({
-    mutationFn: postBackfill,
+    mutationFn: () => postBackfill(authFetch),
     onSuccess: (data) => {
       setBackfillResult(data);
       queryClient.invalidateQueries({ queryKey: ["data-health-summary"] });

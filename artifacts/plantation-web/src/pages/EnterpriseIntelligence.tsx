@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useAuthFetcher } from "../lib/authFetch";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -97,11 +98,6 @@ interface ProjectScoresResponse {
 
 // ── Fetch helpers ─────────────────────────────────────────────────────────────
 
-async function fetchEI<T>(path: string): Promise<T> {
-  const res = await fetch(`/api/enterprise-intelligence${path}`);
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json() as Promise<T>;
-}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -233,6 +229,8 @@ function RiskSection({
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function EnterpriseIntelligence() {
+  const _fetchEI = useAuthFetcher();
+  const fetchEI = <T,>(path: string): Promise<T> => _fetchEI(`/api/enterprise-intelligence${path}`) as Promise<T>;
   const queryClient = useQueryClient();
   const [showAllScores, setShowAllScores] = useState(false);
 
