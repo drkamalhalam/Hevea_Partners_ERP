@@ -28,6 +28,8 @@ export interface OnboardingParticipant {
   aadhaarObjectPath?: string | null;
   /** @nullable */
   supportingIdObjectPath?: string | null;
+  /** @nullable */
+  personMasterId?: string | null;
   createdAt: string;
   /** @nullable */
   updatedAt?: string | null;

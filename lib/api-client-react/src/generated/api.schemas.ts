@@ -8862,6 +8862,8 @@ export interface OnboardingParticipant {
   aadhaarObjectPath?: string | null;
   /** @nullable */
   supportingIdObjectPath?: string | null;
+  /** @nullable */
+  personMasterId?: string | null;
   createdAt: string;
   /** @nullable */
   updatedAt?: string | null;
@@ -8877,6 +8879,7 @@ export interface OnboardingParticipantInput {
   email?: string;
   aadhaarObjectPath?: string;
   supportingIdObjectPath?: string;
+  personMasterId?: string;
 }
 
 export interface OnboardingWitness {
@@ -8887,11 +8890,15 @@ export interface OnboardingWitness {
   /** @nullable */
   sOnCOn?: string | null;
   /** @nullable */
+  fatherGuardianName?: string | null;
+  /** @nullable */
   mobile?: string | null;
   /** @nullable */
   address?: string | null;
   /** @nullable */
   aadhaarNumber?: string | null;
+  /** @nullable */
+  personMasterId?: string | null;
   createdAt: string;
   /** @nullable */
   updatedAt?: string | null;
@@ -8900,9 +8907,11 @@ export interface OnboardingWitness {
 export interface OnboardingWitnessInput {
   fullName: string;
   sOnCOn?: string;
+  fatherGuardianName?: string;
   mobile?: string;
   address?: string;
   aadhaarNumber?: string;
+  personMasterId?: string;
 }
 
 export interface OtpRoleStatus {

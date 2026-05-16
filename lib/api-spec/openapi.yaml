@@ -20863,6 +20863,7 @@ components:
         email: { type: ["string", "null"] }
         aadhaarObjectPath: { type: ["string", "null"] }
         supportingIdObjectPath: { type: ["string", "null"] }
+        personMasterId: { type: ["string", "null"], format: uuid }
         createdAt: { type: string }
         updatedAt: { type: ["string", "null"] }
 
@@ -20879,6 +20880,7 @@ components:
         email: { type: string }
         aadhaarObjectPath: { type: string }
         supportingIdObjectPath: { type: string }
+        personMasterId: { type: string, format: uuid }
 
     OnboardingWitness:
       type: object
@@ -20889,9 +20891,11 @@ components:
         position: { type: integer }
         fullName: { type: string }
         sOnCOn: { type: ["string", "null"] }
+        fatherGuardianName: { type: ["string", "null"] }
         mobile: { type: ["string", "null"] }
         address: { type: ["string", "null"] }
         aadhaarNumber: { type: ["string", "null"] }
+        personMasterId: { type: ["string", "null"], format: uuid }
         createdAt: { type: string }
         updatedAt: { type: ["string", "null"] }
 
@@ -20901,9 +20905,11 @@ components:
       properties:
         fullName: { type: string }
         sOnCOn: { type: string }
+        fatherGuardianName: { type: string }
         mobile: { type: string }
         address: { type: string }
         aadhaarNumber: { type: string }
+        personMasterId: { type: string, format: uuid }
 
     OtpRoleStatus:
       type: object

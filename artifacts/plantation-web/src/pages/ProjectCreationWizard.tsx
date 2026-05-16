@@ -40,6 +40,7 @@ import {
   Banknote, Info, Gavel, BookOpen, AlertTriangle, TreePine, Calculator, Scale,
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { PersonMasterSelector, type PersonSummary } from "@/components/PersonMasterSelector";
 
 const STEPS = [
   { id: 1, label: "Project Basics", icon: FileText },
@@ -230,8 +231,9 @@ function StepParticipantKYC({
   const { toast } = useToast();
 
   const existing = existingData?.participants?.find((p) => p.role === role);
-  // Stable id used as effect dependency — avoids resetting form on every re-render
   const existingId = existing?.id;
+
+  const [selectedPerson, setSelectedPerson] = useState<PersonSummary | null>(null);
 
   const form = useForm<ParticipantValues>({
     resolver: zodResolver(participantSchema),
@@ -246,8 +248,6 @@ function StepParticipantKYC({
     },
   });
 
-  // Populate form once the saved record loads — keyed on the record ID so it
-  // only fires when a genuinely different record arrives, not on every render.
   useEffect(() => {
     if (existing) {
       form.reset({
@@ -263,20 +263,40 @@ function StepParticipantKYC({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [existingId]);
 
+  const handlePersonSelect = (person: PersonSummary | null) => {
+    setSelectedPerson(person);
+    if (person) {
+      form.reset({
+        fullName: person.fullName ?? "",
+        sOnCOn: person.sOnCOn ?? "S/O",
+        fatherGuardianName: person.fatherGuardianName ?? "",
+        aadhaarNumber: "",
+        mobile: person.mobile ?? "",
+        address: "",
+        email: person.email ?? "",
+      });
+    }
+  };
+
   const onSubmit = (values: ParticipantValues) => {
+    const linkedPersonMasterId =
+      selectedPerson?.id ?? (existing as any)?.personMasterId ?? undefined;
     upsertParticipant.mutate(
-      { projectId, role, data: values },
+      {
+        projectId,
+        role,
+        data: { ...values, personMasterId: linkedPersonMasterId } as any,
+      },
       {
         onSuccess: async () => {
-          // Refetch now (not just mark stale) so the in-memory cache is populated
-          // with the saved participant before the next step renders.
           await qc.refetchQueries({
             queryKey: getListOnboardingParticipantsQueryKey(projectId),
           });
           onNext();
         },
-        onError: () => toast({ title: `Failed to save ${roleLabel} details`, variant: "destructive" }),
-      }
+        onError: () =>
+          toast({ title: `Failed to save ${roleLabel} details`, variant: "destructive" }),
+      },
     );
   };
 
@@ -284,13 +304,33 @@ function StepParticipantKYC({
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
         <p className="text-sm text-muted-foreground">
-          Full legal identity details for the <strong>{roleLabel}</strong> as they appear on official documents.
+          Search the Person Registry and select the <strong>{roleLabel}</strong>, or register a new
+          person. All participants must be linked to the central registry.
         </p>
+
+        <PersonMasterSelector
+          label={`${roleLabel} — Person Registry`}
+          selectedPerson={selectedPerson}
+          onSelect={handlePersonSelect}
+        />
+
+        <div className="flex items-center gap-3">
+          <div className="flex-1 border-t border-dashed" />
+          <span className="text-xs text-muted-foreground shrink-0">
+            {selectedPerson
+              ? "Auto-filled from registry — review & adjust below"
+              : "Fill in details manually if not linking from registry"}
+          </span>
+          <div className="flex-1 border-t border-dashed" />
+        </div>
+
         <div className="grid grid-cols-2 gap-4">
           <FormField control={form.control} name="fullName" render={({ field }) => (
             <FormItem className="col-span-2">
               <FormLabel>Full Legal Name *</FormLabel>
-              <FormControl><Input placeholder={`${roleLabel}'s full name as per Aadhaar`} {...field} /></FormControl>
+              <FormControl>
+                <Input placeholder={`${roleLabel}'s full name as per Aadhaar`} {...field} />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )} />
@@ -298,7 +338,9 @@ function StepParticipantKYC({
             <FormItem>
               <FormLabel>Relation Type</FormLabel>
               <Select onValueChange={field.onChange} value={field.value ?? "S/O"}>
-                <FormControl><SelectTrigger><SelectValue placeholder="Select relation" /></SelectTrigger></FormControl>
+                <FormControl>
+                  <SelectTrigger><SelectValue placeholder="Select relation" /></SelectTrigger>
+                </FormControl>
                 <SelectContent>
                   <SelectItem value="S/O">S/O — Son of</SelectItem>
                   <SelectItem value="D/O">D/O — Daughter of</SelectItem>
@@ -312,45 +354,62 @@ function StepParticipantKYC({
           <FormField control={form.control} name="fatherGuardianName" render={({ field }) => (
             <FormItem>
               <FormLabel>Father / Guardian Name</FormLabel>
-              <FormControl><Input placeholder="Father or guardian's name" {...field} /></FormControl>
+              <FormControl>
+                <Input placeholder="Father or guardian's name" {...field} />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )} />
           <FormField control={form.control} name="aadhaarNumber" render={({ field }) => (
             <FormItem>
               <FormLabel>Aadhaar Number</FormLabel>
-              <FormControl><Input placeholder="12-digit Aadhaar" maxLength={12} {...field} /></FormControl>
+              <FormControl>
+                <Input placeholder="12-digit Aadhaar" maxLength={12} {...field} />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )} />
           <FormField control={form.control} name="mobile" render={({ field }) => (
             <FormItem>
               <FormLabel>Mobile Number *</FormLabel>
-              <FormControl><Input placeholder="10-digit mobile" maxLength={10} {...field} /></FormControl>
+              <FormControl>
+                <Input placeholder="10-digit mobile" maxLength={10} {...field} />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )} />
           <FormField control={form.control} name="email" render={({ field }) => (
             <FormItem>
               <FormLabel>Email</FormLabel>
-              <FormControl><Input type="email" placeholder="Optional email address" {...field} /></FormControl>
+              <FormControl>
+                <Input type="email" placeholder="Optional email address" {...field} />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )} />
           <FormField control={form.control} name="address" render={({ field }) => (
             <FormItem className="col-span-2">
               <FormLabel>Full Address *</FormLabel>
-              <FormControl><Textarea rows={2} placeholder="Complete permanent address with PIN" {...field} /></FormControl>
+              <FormControl>
+                <Textarea
+                  rows={2}
+                  placeholder="Complete permanent address with PIN"
+                  {...field}
+                />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )} />
         </div>
+
         <div className="flex justify-between pt-2">
           <Button type="button" variant="outline" onClick={onBack}>
             <ChevronLeft className="h-4 w-4 mr-1" /> Back
           </Button>
           <Button type="submit" disabled={upsertParticipant.isPending}>
-            {upsertParticipant.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+            {upsertParticipant.isPending ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : null}
             Save & Continue <ChevronRight className="h-4 w-4 ml-1" />
           </Button>
         </div>
@@ -1393,6 +1452,15 @@ const witnessSchema = z.object({
 
 type WitnessValues = z.infer<typeof witnessSchema>;
 
+const EMPTY_WITNESS: WitnessValues = {
+  fullName: "",
+  sOnCOn: "S/O",
+  fatherGuardianName: "",
+  mobile: "",
+  address: "",
+  aadhaarNumber: "",
+};
+
 function Step7Witnesses({
   projectId,
   onNext,
@@ -1406,27 +1474,49 @@ function Step7Witnesses({
   const addWitness = useAddOnboardingWitness();
   const deleteWitness = useDeleteOnboardingWitness();
   const [showForm, setShowForm] = useState(false);
+  const [witnessPersonSel, setWitnessPersonSel] = useState<PersonSummary | null>(null);
   const { toast } = useToast();
 
   const witnesses = witnessData?.witnesses ?? [];
 
   const form = useForm<WitnessValues>({
     resolver: zodResolver(witnessSchema),
-    defaultValues: { fullName: "", sOnCOn: "S/O", fatherGuardianName: "", mobile: "", address: "", aadhaarNumber: "" },
+    defaultValues: EMPTY_WITNESS,
   });
+
+  const handleWitnessPersonSelect = (person: PersonSummary | null) => {
+    setWitnessPersonSel(person);
+    if (person) {
+      form.reset({
+        fullName: person.fullName ?? "",
+        sOnCOn: person.sOnCOn ?? "S/O",
+        fatherGuardianName: person.fatherGuardianName ?? "",
+        mobile: person.mobile ?? "",
+        address: "",
+        aadhaarNumber: "",
+      });
+    }
+  };
 
   const addNew = (values: WitnessValues) => {
     addWitness.mutate(
-      { projectId, data: values },
+      {
+        projectId,
+        data: {
+          ...values,
+          personMasterId: witnessPersonSel?.id ?? undefined,
+        } as any,
+      },
       {
         onSuccess: () => {
           refetch();
-          form.reset({ fullName: "", sOnCOn: "S/O", fatherGuardianName: "", mobile: "", address: "", aadhaarNumber: "" });
+          form.reset(EMPTY_WITNESS);
+          setWitnessPersonSel(null);
           setShowForm(false);
           toast({ title: "Witness added" });
         },
         onError: () => toast({ title: "Failed to add witness", variant: "destructive" }),
-      }
+      },
     );
   };
 
@@ -1434,9 +1524,12 @@ function Step7Witnesses({
     deleteWitness.mutate(
       { projectId, position },
       {
-        onSuccess: () => { refetch(); toast({ title: "Witness removed" }); },
+        onSuccess: () => {
+          refetch();
+          toast({ title: "Witness removed" });
+        },
         onError: () => toast({ title: "Failed to remove witness", variant: "destructive" }),
-      }
+      },
     );
   };
 
@@ -1445,7 +1538,8 @@ function Step7Witnesses({
   return (
     <div className="space-y-5">
       <p className="text-sm text-muted-foreground">
-        Minimum <strong>2 witnesses</strong> are required. They will be named in the partnership deed.
+        Minimum <strong>2 witnesses</strong> are required. They will be named in the partnership
+        deed. Search the Person Registry or register a new person for each witness.
       </p>
 
       {witnesses.length === 0 && (
@@ -1457,20 +1551,41 @@ function Step7Witnesses({
 
       <div className="space-y-2">
         {witnesses.map((w) => (
-          <div key={w.id} className="flex items-start justify-between bg-muted/40 rounded-md p-3 border">
+          <div
+            key={w.id}
+            className="flex items-start justify-between bg-muted/40 rounded-md p-3 border"
+          >
             <div>
-              <p className="font-medium text-sm">
-                Witness {w.position}: {w.fullName}
-                {w.sOnCOn && (w as any).fatherGuardianName
-                  ? <span className="text-muted-foreground font-normal ml-1">({w.sOnCOn} {(w as any).fatherGuardianName})</span>
-                  : w.sOnCOn
-                  ? <span className="text-muted-foreground font-normal ml-1">({w.sOnCOn})</span>
-                  : null}
-              </p>
-              {w.mobile && <p className="text-xs text-muted-foreground mt-0.5">📞 {w.mobile}</p>}
-              {w.address && <p className="text-xs text-muted-foreground">📍 {w.address}</p>}
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="font-medium text-sm">
+                  Witness {w.position}: {w.fullName}
+                  {w.sOnCOn && (w as any).fatherGuardianName ? (
+                    <span className="text-muted-foreground font-normal ml-1">
+                      ({w.sOnCOn} {(w as any).fatherGuardianName})
+                    </span>
+                  ) : w.sOnCOn ? (
+                    <span className="text-muted-foreground font-normal ml-1">({w.sOnCOn})</span>
+                  ) : null}
+                </p>
+                {(w as any).personMasterId && (
+                  <span className="text-[10px] bg-green-100 text-green-700 border border-green-200 rounded px-1.5 py-0.5">
+                    Registry Linked
+                  </span>
+                )}
+              </div>
+              {w.mobile && (
+                <p className="text-xs text-muted-foreground mt-0.5">📞 {w.mobile}</p>
+              )}
+              {w.address && (
+                <p className="text-xs text-muted-foreground">📍 {w.address}</p>
+              )}
             </div>
-            <Button size="sm" variant="ghost" className="text-destructive" onClick={() => remove(w.position)}>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="text-destructive"
+              onClick={() => remove(w.position)}
+            >
               <Trash2 className="h-4 w-4" />
             </Button>
           </div>
@@ -1479,13 +1594,33 @@ function Step7Witnesses({
 
       {showForm ? (
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(addNew)} className="border rounded-md p-4 space-y-3 bg-muted/20">
-            <p className="text-sm font-medium">New Witness</p>
+          <form
+            onSubmit={form.handleSubmit(addNew)}
+            className="border rounded-lg p-4 space-y-4 bg-muted/20"
+          >
+            <p className="text-sm font-semibold">Add Witness</p>
+
+            <PersonMasterSelector
+              label="Search Registry (Optional)"
+              selectedPerson={witnessPersonSel}
+              onSelect={handleWitnessPersonSelect}
+            />
+
+            <div className="flex items-center gap-3">
+              <div className="flex-1 border-t border-dashed" />
+              <span className="text-xs text-muted-foreground shrink-0">
+                {witnessPersonSel ? "Auto-filled — review below" : "Fill in details"}
+              </span>
+              <div className="flex-1 border-t border-dashed" />
+            </div>
+
             <div className="grid grid-cols-2 gap-3">
               <FormField control={form.control} name="fullName" render={({ field }) => (
                 <FormItem className="col-span-2">
                   <FormLabel>Full Name *</FormLabel>
-                  <FormControl><Input placeholder="Witness full legal name" {...field} /></FormControl>
+                  <FormControl>
+                    <Input placeholder="Witness full legal name" {...field} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
@@ -1493,7 +1628,9 @@ function Step7Witnesses({
                 <FormItem>
                   <FormLabel>Relation</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value ?? "S/O"}>
-                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                    <FormControl>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                    </FormControl>
                     <SelectContent>
                       <SelectItem value="S/O">S/O — Son of</SelectItem>
                       <SelectItem value="D/O">D/O — Daughter of</SelectItem>
@@ -1507,38 +1644,61 @@ function Step7Witnesses({
               <FormField control={form.control} name="fatherGuardianName" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Father / Guardian Name *</FormLabel>
-                  <FormControl><Input placeholder="Father or guardian's name" {...field} /></FormControl>
+                  <FormControl>
+                    <Input placeholder="Father or guardian's name" {...field} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
               <FormField control={form.control} name="mobile" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Mobile *</FormLabel>
-                  <FormControl><Input placeholder="10-digit mobile" maxLength={10} {...field} /></FormControl>
+                  <FormControl>
+                    <Input placeholder="10-digit mobile" maxLength={10} {...field} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
               <FormField control={form.control} name="aadhaarNumber" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Aadhaar</FormLabel>
-                  <FormControl><Input placeholder="12-digit Aadhaar" maxLength={12} {...field} /></FormControl>
+                  <FormControl>
+                    <Input placeholder="12-digit Aadhaar" maxLength={12} {...field} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
               <FormField control={form.control} name="address" render={({ field }) => (
                 <FormItem className="col-span-2">
                   <FormLabel>Address *</FormLabel>
-                  <FormControl><Input placeholder="Witness permanent address" {...field} /></FormControl>
+                  <FormControl>
+                    <Input placeholder="Witness permanent address" {...field} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
             </div>
             <div className="flex gap-2">
               <Button type="submit" size="sm" disabled={addWitness.isPending}>
-                {addWitness.isPending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Plus className="h-4 w-4 mr-1" />}
+                {addWitness.isPending ? (
+                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                ) : (
+                  <Plus className="h-4 w-4 mr-1" />
+                )}
                 Add Witness
               </Button>
-              <Button type="button" size="sm" variant="ghost" onClick={() => setShowForm(false)}>Cancel</Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setShowForm(false);
+                  setWitnessPersonSel(null);
+                  form.reset(EMPTY_WITNESS);
+                }}
+              >
+                Cancel
+              </Button>
             </div>
           </form>
         </Form>
@@ -1552,7 +1712,11 @@ function Step7Witnesses({
         <Button type="button" variant="outline" onClick={onBack}>
           <ChevronLeft className="h-4 w-4 mr-1" /> Back
         </Button>
-        <Button onClick={onNext} disabled={!canProceed} title={!canProceed ? "Add at least 2 witnesses" : ""}>
+        <Button
+          onClick={onNext}
+          disabled={!canProceed}
+          title={!canProceed ? "Add at least 2 witnesses" : ""}
+        >
           Save & Continue <ChevronRight className="h-4 w-4 ml-1" />
         </Button>
       </div>

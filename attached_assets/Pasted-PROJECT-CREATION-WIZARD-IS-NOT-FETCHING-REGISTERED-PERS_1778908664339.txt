@@ -1,0 +1,161 @@
+PROJECT CREATION WIZARD IS NOT FETCHING REGISTERED PERSON_MASTER RECORDS FOR SELECTION.
+
+Currently:
+- persons can be registered centrally,
+BUT
+- project creation still behaves like isolated/manual participant entry.
+
+This means the wizard is still using old pseudo-identity logic instead of the new PERSON_MASTER architecture.
+
+==================================================
+IMPORTANT ARCHITECTURE RULE
+==================================================
+
+ALL project participants must originate from:
+PERSON_MASTER
+
+Project creation must NEVER rely on:
+- raw text names
+- isolated local participant objects
+- temporary pseudo-identities
+
+==================================================
+REBUILD PARTICIPANT SELECTION IN PROJECT CREATION
+==================================================
+
+For:
+- Landowner
+- Developer
+- Investor
+- Witness
+- Manager
+- Economic Participant
+- Worker
+- Buyer
+
+the wizard must support:
+
+1. Search Existing PERSON_MASTER
+2. Select Existing Identity
+3. Create New Person if needed
+
+==================================================
+SEARCH REQUIREMENTS
+==================================================
+
+Implement live searchable lookup using:
+- name
+- Aadhaar
+- mobile
+- PERSON_MASTER_ID
+
+Search results must show:
+- full name
+- roles
+- mobile
+- verification status
+- linked projects count
+- PERSON_MASTER_ID
+
+==================================================
+SELECTION BEHAVIOR
+==================================================
+
+When existing person selected:
+- auto-link PERSON_MASTER_ID
+- auto-fill KYC
+- auto-fill verified data
+- auto-fill contact details
+
+DO NOT duplicate identity.
+
+==================================================
+CREATE NEW PERSON FLOW
+==================================================
+
+If person not found:
+allow:
+“Create New Person”
+
+inside wizard.
+
+This must:
+- create PERSON_MASTER properly
+- assign role
+- preserve audit linkage
+- return linked PERSON_MASTER_ID
+
+NOT:
+create temporary project-local identity.
+
+==================================================
+MULTI-ROLE SUPPORT
+==================================================
+
+If selected person already has other roles:
+DO NOT block selection.
+
+Example:
+same person may be:
+- developer in one project
+- landowner in another
+- investor elsewhere
+
+==================================================
+UI REQUIREMENTS
+==================================================
+
+Replace plain text fields with:
+- searchable selectors
+- identity cards
+- verification badges
+- duplicate warnings
+
+==================================================
+DUPLICATE PREVENTION
+==================================================
+
+Warn if:
+- Aadhaar already exists
+- mobile already exists
+- possible name duplicate exists
+
+==================================================
+IMPORTANT GOVERNANCE RULE
+==================================================
+
+Projects must always reference:
+PERSON_MASTER_ID
+
+NOT:
+- raw names
+- temporary entries
+- frontend-only participant objects
+
+==================================================
+BACKWARD COMPATIBILITY
+==================================================
+
+Preserve:
+- existing projects
+- old participant records
+- agreements
+- KYC history
+- OTP logs
+- audit history
+
+while migrating wizard flows to PERSON_MASTER architecture.
+
+==================================================
+FINAL ARCHITECTURE TARGET
+==================================================
+
+Project creation must become:
+
+SEARCH PERSON
+→ LINK PERSON_MASTER
+→ ASSIGN ROLE
+→ CONTINUE GOVERNANCE FLOW
+
+instead of:
+“type random participant details into project form.”

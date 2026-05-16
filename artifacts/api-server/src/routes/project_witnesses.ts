@@ -13,6 +13,7 @@ const witnessSchema = z.object({
   mobile: z.string().min(10, "Mobile required"),
   address: z.string().min(2, "Address required"),
   aadhaarNumber: z.string().optional(),
+  personMasterId: z.string().uuid().optional(),
 });
 
 // GET /:projectId/witnesses
@@ -65,6 +66,7 @@ router.post("/:projectId/witnesses", requireRole("admin", "developer"), async (r
       mobile: parsed.data.mobile,
       address: parsed.data.address,
       aadhaarNumber: parsed.data.aadhaarNumber ?? null,
+      personMasterId: parsed.data.personMasterId ?? null,
       createdBy: req.dbUserId ?? null,
     })
     .returning();
@@ -92,6 +94,7 @@ router.put("/:projectId/witnesses/:position", requireRole("admin", "developer"),
       mobile: parsed.data.mobile,
       address: parsed.data.address,
       aadhaarNumber: parsed.data.aadhaarNumber ?? null,
+      personMasterId: parsed.data.personMasterId ?? null,
       updatedAt: new Date(),
     })
     .where(

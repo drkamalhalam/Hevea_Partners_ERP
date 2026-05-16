@@ -14,11 +14,15 @@ export interface OnboardingWitness {
   /** @nullable */
   sOnCOn?: string | null;
   /** @nullable */
+  fatherGuardianName?: string | null;
+  /** @nullable */
   mobile?: string | null;
   /** @nullable */
   address?: string | null;
   /** @nullable */
   aadhaarNumber?: string | null;
+  /** @nullable */
+  personMasterId?: string | null;
   createdAt: string;
   /** @nullable */
   updatedAt?: string | null;

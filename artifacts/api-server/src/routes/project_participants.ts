@@ -18,6 +18,7 @@ const participantSchema = z.object({
   email: z.string().email().optional().or(z.literal("")),
   aadhaarObjectPath: z.string().optional(),
   supportingIdObjectPath: z.string().optional(),
+  personMasterId: z.string().uuid().optional(),
 });
 
 // GET /:projectId/onboarding/participants
@@ -69,6 +70,7 @@ router.put("/:projectId/onboarding/participants/:role", requireRole("admin", "de
     email: parsed.data.email || null,
     aadhaarObjectPath: parsed.data.aadhaarObjectPath ?? null,
     supportingIdObjectPath: parsed.data.supportingIdObjectPath ?? null,
+    personMasterId: parsed.data.personMasterId ?? null,
     createdBy: req.dbUserId ?? null,
   };
 
@@ -87,6 +89,7 @@ router.put("/:projectId/onboarding/participants/:role", requireRole("admin", "de
         email: payload.email,
         aadhaarObjectPath: payload.aadhaarObjectPath,
         supportingIdObjectPath: payload.supportingIdObjectPath,
+        personMasterId: payload.personMasterId,
         updatedAt: new Date(),
       },
     })

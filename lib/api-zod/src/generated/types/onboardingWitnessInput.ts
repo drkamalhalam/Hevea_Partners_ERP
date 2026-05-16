@@ -9,7 +9,9 @@
 export interface OnboardingWitnessInput {
   fullName: string;
   sOnCOn?: string;
+  fatherGuardianName?: string;
   mobile?: string;
   address?: string;
   aadhaarNumber?: string;
+  personMasterId?: string;
 }

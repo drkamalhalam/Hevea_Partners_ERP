@@ -20471,6 +20471,7 @@ export const ListOnboardingParticipantsResponse = zod.object({
       email: zod.string().nullish(),
       aadhaarObjectPath: zod.string().nullish(),
       supportingIdObjectPath: zod.string().nullish(),
+      personMasterId: zod.string().uuid().nullish(),
       createdAt: zod.string(),
       updatedAt: zod.string().nullish(),
     }),
@@ -20495,6 +20496,7 @@ export const UpsertOnboardingParticipantBody = zod.object({
   email: zod.string().optional(),
   aadhaarObjectPath: zod.string().optional(),
   supportingIdObjectPath: zod.string().optional(),
+  personMasterId: zod.string().uuid().optional(),
 });
 
 export const UpsertOnboardingParticipantResponse = zod.object({
@@ -20511,6 +20513,7 @@ export const UpsertOnboardingParticipantResponse = zod.object({
     email: zod.string().nullish(),
     aadhaarObjectPath: zod.string().nullish(),
     supportingIdObjectPath: zod.string().nullish(),
+    personMasterId: zod.string().uuid().nullish(),
     createdAt: zod.string(),
     updatedAt: zod.string().nullish(),
   }),
@@ -20543,9 +20546,11 @@ export const ListOnboardingWitnessesResponse = zod.object({
       position: zod.number(),
       fullName: zod.string(),
       sOnCOn: zod.string().nullish(),
+      fatherGuardianName: zod.string().nullish(),
       mobile: zod.string().nullish(),
       address: zod.string().nullish(),
       aadhaarNumber: zod.string().nullish(),
+      personMasterId: zod.string().uuid().nullish(),
       createdAt: zod.string(),
       updatedAt: zod.string().nullish(),
     }),
@@ -20562,9 +20567,11 @@ export const AddOnboardingWitnessParams = zod.object({
 export const AddOnboardingWitnessBody = zod.object({
   fullName: zod.string(),
   sOnCOn: zod.string().optional(),
+  fatherGuardianName: zod.string().optional(),
   mobile: zod.string().optional(),
   address: zod.string().optional(),
   aadhaarNumber: zod.string().optional(),
+  personMasterId: zod.string().uuid().optional(),
 });
 
 /**
@@ -20578,9 +20585,11 @@ export const UpdateOnboardingWitnessParams = zod.object({
 export const UpdateOnboardingWitnessBody = zod.object({
   fullName: zod.string(),
   sOnCOn: zod.string().optional(),
+  fatherGuardianName: zod.string().optional(),
   mobile: zod.string().optional(),
   address: zod.string().optional(),
   aadhaarNumber: zod.string().optional(),
+  personMasterId: zod.string().uuid().optional(),
 });
 
 export const UpdateOnboardingWitnessResponse = zod.object({
@@ -20590,9 +20599,11 @@ export const UpdateOnboardingWitnessResponse = zod.object({
     position: zod.number(),
     fullName: zod.string(),
     sOnCOn: zod.string().nullish(),
+    fatherGuardianName: zod.string().nullish(),
     mobile: zod.string().nullish(),
     address: zod.string().nullish(),
     aadhaarNumber: zod.string().nullish(),
+    personMasterId: zod.string().uuid().nullish(),
     createdAt: zod.string(),
     updatedAt: zod.string().nullish(),
   }),
@@ -20723,6 +20734,7 @@ export const GetProjectOnboardingStateResponse = zod.object({
         email: zod.string().nullish(),
         aadhaarObjectPath: zod.string().nullish(),
         supportingIdObjectPath: zod.string().nullish(),
+        personMasterId: zod.string().uuid().nullish(),
         createdAt: zod.string(),
         updatedAt: zod.string().nullish(),
       }),
@@ -20736,9 +20748,11 @@ export const GetProjectOnboardingStateResponse = zod.object({
         position: zod.number(),
         fullName: zod.string(),
         sOnCOn: zod.string().nullish(),
+        fatherGuardianName: zod.string().nullish(),
         mobile: zod.string().nullish(),
         address: zod.string().nullish(),
         aadhaarNumber: zod.string().nullish(),
+        personMasterId: zod.string().uuid().nullish(),
         createdAt: zod.string(),
         updatedAt: zod.string().nullish(),
       }),

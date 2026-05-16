@@ -16,4 +16,5 @@ export interface OnboardingParticipantInput {
   email?: string;
   aadhaarObjectPath?: string;
   supportingIdObjectPath?: string;
+  personMasterId?: string;
 }
