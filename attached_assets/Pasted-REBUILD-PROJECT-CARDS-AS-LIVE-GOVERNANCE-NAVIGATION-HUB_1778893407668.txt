@@ -1,0 +1,288 @@
+REBUILD PROJECT CARDS AS LIVE GOVERNANCE NAVIGATION HUBS.
+
+Project cards must NOT behave as static summary tiles.
+
+Every displayed value, metric, status, warning, badge, and financial figure must be dynamically linked to its originating source module or underlying data record.
+
+The project card must function as:
+- a live governance summary,
+- operational monitoring interface,
+- audit navigation hub,
+- drill-down entry point.
+
+==================================================
+CORE PRINCIPLE
+==================================================
+
+Every displayed project card data item must support:
+
+1. Real-time value rendering
+2. Source linkage
+3. Drill-down navigation
+4. Audit traceability
+5. Permission-aware visibility
+
+Clicking a data field should directly open:
+- the source module,
+- source ledger,
+- source record,
+- source transaction,
+- source agreement,
+- source participant,
+or
+- source report section
+
+from where the value was generated.
+
+==================================================
+PROJECT CARD STRUCTURE
+==================================================
+
+The project card must contain all essential governance data.
+
+==================================================
+SECTION 1 — PROJECT IDENTITY
+==================================================
+
+Display:
+- Project Name
+- Project Code
+- Commercial Model
+- Lifecycle Phase
+- Activation Status
+
+Click behavior:
+- opens project governance master
+
+==================================================
+SECTION 2 — LAND SUMMARY
+==================================================
+
+Display:
+- Land Area
+- Land Type
+- Location
+- Estimated Rubber Capacity
+
+Click behavior:
+- opens land master records
+
+For recorded land:
+- khatian
+- plot
+- revenue records
+
+For non-recorded:
+- GPS/location records
+
+==================================================
+SECTION 3 — PARTICIPANT SUMMARY
+==================================================
+
+Display:
+- Developer
+- Landowner count
+- Economic participant count
+- Ownership structure status
+- Contractual structure status
+
+Click behavior:
+- opens participant management module
+
+==================================================
+SECTION 4 — FINANCIAL STRUCTURE
+==================================================
+
+Dynamically render based on project model.
+
+--------------------------------------------------
+OWNERSHIP_CONTRIBUTION_MODEL
+--------------------------------------------------
+
+Display:
+- Total Recognized Contribution
+- Ownership Structure Active
+- Ownership Crystallized Status
+- LCA Applicability
+- Outstanding Reimbursement
+- Pending Distribution
+
+Click behavior:
+- opens contribution ledger
+- ownership engine
+- LCA records
+- reimbursement records
+
+--------------------------------------------------
+FIFTY_PERCENT_REVENUE_MODEL
+--------------------------------------------------
+
+Display:
+- 50% Gross Revenue Structure
+- Economic Participant Pool
+- Cost Responsibility: Landowner
+- Contractual Participation Structure
+- LCA Disabled
+
+Click behavior:
+- opens revenue allocation engine
+- contractual participation records
+
+==================================================
+SECTION 5 — OPERATIONAL STATUS
+==================================================
+
+Display:
+- Collection Status
+- Store Status
+- Current Stock
+- Last Collection Date
+- Last Sale Date
+
+Click behavior:
+- opens:
+  - collection module
+  - store module
+  - stock ledger
+  - sales ledger
+
+==================================================
+SECTION 6 — COMPLIANCE & LEGAL STATUS
+==================================================
+
+Display:
+- Agreement Status
+- Signed Deed Status
+- OTP Approval Status
+- Witness Verification
+- Missing Configurations
+- Pending Approvals
+
+Click behavior:
+- opens:
+  - agreement records
+  - uploaded documents
+  - OTP logs
+  - deed versions
+  - witness records
+
+==================================================
+SECTION 7 — ALERT & RISK INDICATORS
+==================================================
+
+Display:
+- overdue reimbursement
+- overdue LCA
+- stock mismatch
+- missing documents
+- unverified land
+- pending dispute
+- pending transfer
+- accounting inconsistency
+
+Click behavior:
+- open underlying issue source directly
+
+==================================================
+SECTION 8 — QUICK ACTIONS
+==================================================
+
+Provide:
+- Open Dashboard
+- Add Collection
+- Record Sale
+- View Agreement
+- Manage Participants
+- View Audit Logs
+- Open Reports
+
+==================================================
+LIVE SOURCE TRACEABILITY
+==================================================
+
+Every value must maintain:
+- source module reference
+- source table/entity linkage
+- originating transaction ID
+- timestamp
+- last updated metadata
+
+Example:
+Current Stock:
+click → stock ledger entries
+
+Outstanding LCA:
+click → LCA calculation records
+
+Ownership %:
+click → contribution records and crystallization details
+
+==================================================
+AUDIT TRACEABILITY
+==================================================
+
+Every displayed figure must support:
+- “View Source”
+- “View Calculation”
+- “View Audit History”
+
+where applicable.
+
+==================================================
+REAL-TIME UPDATE RULE
+==================================================
+
+Project cards must dynamically update whenever:
+- accounting changes
+- collection changes
+- stock changes
+- participant changes
+- agreement updates
+- reimbursement updates
+- maturity declarations
+- LCA updates
+occur.
+
+==================================================
+PERMISSION-AWARE VISIBILITY
+==================================================
+
+Users must only see:
+- data permitted by role,
+- linked records permitted by access control,
+- allowed financial details.
+
+Sensitive financial or ownership data must remain role-protected.
+
+==================================================
+IMPORTANT ARCHITECTURE RULE
+==================================================
+
+The project card must become the primary governance navigation interface of the ERP.
+
+It must NOT be:
+- a static dashboard tile,
+- a dead summary box,
+- a disconnected UI widget.
+
+It must behave as a live operational governance node connected to all underlying systems.
+
+==================================================
+DO NOT BREAK EXISTING MODULES
+==================================================
+
+Integrate safely with:
+- collection system
+- store system
+- stock transfer
+- sales module
+- accounting
+- reimbursement engine
+- future ownership engine
+- LCA engine
+- agreement system
+- participant management
+- dashboards
+- notifications
+- reports
+- audit logs.
