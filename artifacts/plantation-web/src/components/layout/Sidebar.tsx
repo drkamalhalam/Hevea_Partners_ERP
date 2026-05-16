@@ -56,6 +56,7 @@ import {
   Zap,
   Banknote,
   Users,
+  FileText,
 } from "lucide-react";
 import { useRole, ROLE_LABELS, ROLE_COLORS } from "@/contexts/RoleContext";
 import type { UserRole } from "@/contexts/RoleContext";
@@ -495,6 +496,12 @@ const navGroups: NavGroup[] = [
         href: "/project-analytics",
         icon: BarChart3,
         roles: ["admin", "developer", "landowner", "investor", "employee", "operational_staff"],
+      },
+      {
+        name: "Financial Reports",
+        href: "/financial-reports",
+        icon: FileText,
+        roles: ["admin", "developer", "landowner", "investor"],
       },
       {
         name: "Fin. Analytics",

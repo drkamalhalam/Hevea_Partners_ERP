@@ -58,6 +58,7 @@ import EvidenceArchive from "./pages/EvidenceArchive";
 import FinancialAnalytics from "./pages/FinancialAnalytics";
 import GlobalAnalytics from "./pages/GlobalAnalytics";
 import ProjectAnalytics from "./pages/ProjectAnalytics";
+import FinancialReports from "./pages/FinancialReports";
 import TemplateLibrary from "./pages/TemplateLibrary";
 
 // Pages — Operations
@@ -386,6 +387,7 @@ function AppRoutes() {
               {/* Analytics */}
               <Route path="/global-analytics"><ProtectedRoute component={GlobalAnalytics} /></Route>
               <Route path="/project-analytics"><ProtectedRoute component={ProjectAnalytics} /></Route>
+              <Route path="/financial-reports"><ProtectedRoute component={FinancialReports} /></Route>
               <Route path="/financial-analytics"><ProtectedRoute component={FinancialAnalytics} /></Route>
               <Route path="/reports"><ProtectedRoute component={Reports} /></Route>
               <Route path="/documents"><ProtectedRoute component={Documents} /></Route>
