@@ -125,6 +125,7 @@ import NomineeSuccessionDashboard from "./pages/NomineeSuccessionDashboard";
 import PrematuritySuccession from "./pages/PrematuritySuccession";
 import OwnershipContinuityDashboard from "./pages/OwnershipContinuityDashboard";
 import BackupExport from "./pages/BackupExport";
+import ReportExports from "./pages/ReportExports";
 
 // Pages — Multi-Store
 import Stores from "./pages/Stores";
@@ -414,6 +415,7 @@ function AppRoutes() {
               <Route path="/evidence-archive"><ProtectedRoute component={EvidenceArchive} /></Route>
               <Route path="/financial-audit-log"><ProtectedRoute component={FinancialAuditLog} /></Route>
               <Route path="/backup-export"><AdminRoute component={BackupExport} /></Route>
+              <Route path="/report-exports"><ProtectedRoute component={ReportExports} /></Route>
 
               {/* Multi-Store Inventory */}
               <Route path="/stores"><ProtectedRoute component={Stores} /></Route>

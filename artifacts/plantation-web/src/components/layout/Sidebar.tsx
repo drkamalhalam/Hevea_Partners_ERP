@@ -41,6 +41,7 @@ import {
   Gavel,
   UserCheck,
   HardDriveDownload,
+  FileDown,
   LayoutGrid,
   FileCheck2,
   Wallet,
@@ -611,6 +612,12 @@ const navGroups: NavGroup[] = [
         href: "/operational-access-log",
         icon: ScanSearch,
         roles: ["admin", "developer"] as UserRole[],
+      },
+      {
+        name: "Report Exports",
+        href: "/report-exports",
+        icon: FileDown,
+        roles: ["admin", "developer", "landowner", "investor", "employee", "operational_staff"] as UserRole[],
       },
       {
         name: "Backup & Export",

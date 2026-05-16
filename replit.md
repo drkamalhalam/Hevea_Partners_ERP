@@ -109,6 +109,7 @@ Six roles in `usersTable.role`:
 | System | Disputes & Conflicts | /disputes | Live (admin/dev) |
 | System | Evidence Archive | /evidence-archive | Live (admin/dev) |
 | System | Activation Tasks | /activation | Live (admin/dev) |
+| System | Report Exports | /report-exports | Live (all roles, role-filtered) |
 
 ---
 

@@ -36,6 +36,12 @@ async function buildAll() {
       "bcrypt",
       "argon2",
       "fsevents",
+      // PDF/Excel generation — fontkit uses @swc/helpers (native CJS) which cannot be bundled
+      "pdfkit",
+      "exceljs",
+      "fontkit",
+      "brotli",
+      "@swc/helpers",
       "re2",
       "farmhash",
       "xxhash-addon",
