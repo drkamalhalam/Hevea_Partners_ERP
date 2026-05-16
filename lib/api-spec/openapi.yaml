@@ -11910,6 +11910,24 @@ paths:
         '409':
           description: Payment already settled
 
+  /projects/card-summaries:
+    get:
+      operationId: getProjectCardSummaries
+      tags: [projects]
+      summary: Get aggregated live data summaries for all accessible project cards
+      responses:
+        "200":
+          description: Card summaries
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [summaries]
+                properties:
+                  summaries:
+                    type: array
+                    items: { $ref: '#/components/schemas/ProjectCardSummary' }
+
   /projects/{projectId}/onboarding/participants:
     get:
       operationId: listOnboardingParticipants
@@ -20675,3 +20693,45 @@ components:
       properties:
         role: { type: string, enum: [developer, landowner] }
         otpCode: { type: string }
+
+    ProjectCardSummary:
+      type: object
+      required:
+        - projectId
+        - rubberSheetBalanceKg
+        - rubberScrapBalanceKg
+        - latexBalanceLitres
+        - pendingStockCount
+        - collectionEntryCount
+        - collectionSheetCount
+        - storeEntryCount
+        - storeSheetCount
+        - storeWeightKg
+        - confirmedSaleCount
+        - draftSaleCount
+        - lcaOutstandingCount
+        - distributionPendingCount
+        - kycParticipantCount
+        - agreementCount
+      properties:
+        projectId: { type: string, format: uuid }
+        rubberSheetBalanceKg: { type: number }
+        rubberScrapBalanceKg: { type: number }
+        latexBalanceLitres: { type: number }
+        pendingStockCount: { type: integer }
+        collectionEntryCount: { type: integer }
+        collectionSheetCount: { type: integer }
+        storeEntryCount: { type: integer }
+        storeSheetCount: { type: integer }
+        storeWeightKg: { type: number }
+        confirmedSaleCount: { type: integer }
+        draftSaleCount: { type: integer }
+        totalGrossRevenue: { type: number, nullable: true }
+        totalNetRevenue: { type: number, nullable: true }
+        lcaOutstandingBalance: { type: number, nullable: true }
+        lcaOutstandingCount: { type: integer }
+        distributionPendingAmount: { type: number, nullable: true }
+        distributionPendingCount: { type: integer }
+        kycParticipantCount: { type: integer }
+        agreementCount: { type: integer }
+        latestAgreementStatus: { type: string, nullable: true }

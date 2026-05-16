@@ -5,8 +5,7 @@ import {
   useDeleteProject,
   getListProjectsQueryKey,
   useGetGovernanceSummary,
-  useGetStockSummary,
-  useListAgreements,
+  useGetProjectCardSummaries,
   useListOnboardingParticipants,
 } from "@workspace/api-client-react";
 import { useRole } from "@/contexts/RoleContext";
@@ -20,6 +19,7 @@ import {
   Plus, MapPin, Trees, Trash2, Hash, Layers, Users, Package,
   FileText, AlertTriangle, ChevronRight, Lock, Leaf, Wallet,
   Activity, Scale, BarChart3, AlertCircle, TrendingUp, ShieldX, Wrench,
+  Boxes, Factory, ShoppingCart, Banknote, ClipboardList,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -89,6 +89,11 @@ function fmtRupees(n: unknown): string {
   return `₹${Number(n).toLocaleString("en-IN")}`;
 }
 
+function fmtKg(n: number): string {
+  if (n === 0) return "0 kg";
+  return `${n.toLocaleString("en-IN", { maximumFractionDigits: 1 })} kg`;
+}
+
 // ── Small UI primitives ───────────────────────────────────────────────────────
 
 function SectionHead({
@@ -154,18 +159,40 @@ function DataRow({
 
 // ── Per-project card ──────────────────────────────────────────────────────────
 
+type CardSummary = {
+  projectId: string;
+  rubberSheetBalanceKg: number;
+  rubberScrapBalanceKg: number;
+  latexBalanceLitres: number;
+  pendingStockCount: number;
+  collectionEntryCount: number;
+  collectionSheetCount: number;
+  storeEntryCount: number;
+  storeSheetCount: number;
+  storeWeightKg: number;
+  confirmedSaleCount: number;
+  draftSaleCount: number;
+  totalGrossRevenue?: number | null;
+  totalNetRevenue?: number | null;
+  lcaOutstandingBalance?: number | null;
+  lcaOutstandingCount: number;
+  distributionPendingAmount?: number | null;
+  distributionPendingCount: number;
+  kycParticipantCount: number;
+  agreementCount: number;
+  latestAgreementStatus?: string | null;
+};
+
 function ProjectGovernanceCard({
   project,
   govAlerts,
-  stockEntry,
-  projectAgreements,
+  cardSummary,
   onDelete,
   canAccessAllProjects,
 }: {
   project: any;
   govAlerts: any;
-  stockEntry: any;
-  projectAgreements: any[];
+  cardSummary: CardSummary | undefined;
   onDelete: () => void;
   canAccessAllProjects: boolean;
 }) {
@@ -179,10 +206,21 @@ function ProjectGovernanceCard({
   const issues: any[] = govAlerts?.issues ?? [];
   const worstStatus: string = govAlerts?.status ?? "complete";
 
-  const latestAgreement = projectAgreements[0] ?? null;
-
   const isLocked = project.governanceLocked === true;
-  const isMissingLandowner = project.landownerValidationStatus === "MISSING" || project.invalidReason === "MISSING_LANDOWNER";
+  const isMissingLandowner =
+    project.landownerValidationStatus === "MISSING" ||
+    project.invalidReason === "MISSING_LANDOWNER";
+
+  const s = cardSummary;
+
+  // Derived booleans for conditional rendering
+  const hasInventory =
+    s && (s.rubberSheetBalanceKg > 0 || s.rubberScrapBalanceKg > 0 || s.latexBalanceLitres > 0);
+  const hasOperations = s && (s.collectionEntryCount > 0 || s.storeEntryCount > 0);
+  const hasSalesActivity = s && s.confirmedSaleCount > 0;
+  const hasLcaOutstanding = s && (s.lcaOutstandingCount > 0);
+  const hasDistPending = s && s.distributionPendingCount > 0;
+  const hasFinanceSection = (hasLcaOutstanding || hasDistPending) && isOwnership;
 
   return (
     <Card
@@ -228,14 +266,17 @@ function ProjectGovernanceCard({
                   {project.village && (
                     <span className="inline-flex items-center gap-0.5 text-[11px] text-muted-foreground">
                       <MapPin className="h-2.5 w-2.5" />
-                      {project.village}{project.district ? `, ${project.district}` : ""}
+                      {project.village}
+                      {project.district ? `, ${project.district}` : ""}
                     </span>
                   )}
                 </div>
               </div>
 
               <div className="flex flex-col items-end gap-1 shrink-0">
-                <span className={`text-[10px] px-1.5 py-0.5 rounded border font-semibold whitespace-nowrap ${ACTIVATION_COLORS[project.activationStatus] ?? "bg-gray-100 text-gray-600 border-gray-200"}`}>
+                <span
+                  className={`text-[10px] px-1.5 py-0.5 rounded border font-semibold whitespace-nowrap ${ACTIVATION_COLORS[project.activationStatus] ?? "bg-gray-100 text-gray-600 border-gray-200"}`}
+                >
                   {ACTIVATION_LABELS[project.activationStatus] ?? project.activationStatus}
                 </span>
                 {project.ownershipFrozenAt && (
@@ -251,12 +292,16 @@ function ProjectGovernanceCard({
 
             {/* Model + lifecycle phase row */}
             <div className="flex flex-wrap gap-1.5">
-              <span className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border font-semibold ${MODEL_COLORS[project.commercialModel] ?? "bg-gray-100 text-gray-600 border-gray-200"}`}>
+              <span
+                className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border font-semibold ${MODEL_COLORS[project.commercialModel] ?? "bg-gray-100 text-gray-600 border-gray-200"}`}
+              >
                 <Layers className="h-2.5 w-2.5" />
                 {MODEL_LABELS[project.commercialModel] ?? project.commercialModel}
               </span>
               {project.status && (
-                <span className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded font-semibold ${STATUS_COLORS[project.status] ?? "bg-gray-100 text-gray-600"}`}>
+                <span
+                  className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded font-semibold ${STATUS_COLORS[project.status] ?? "bg-gray-100 text-gray-600"}`}
+                >
                   <Leaf className="h-2.5 w-2.5" />
                   {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
                 </span>
@@ -275,42 +320,53 @@ function ProjectGovernanceCard({
           <div className="grid grid-cols-2 gap-x-3 mt-1">
             <DataRow
               label="Area"
-              value={project.landArea ? `${project.landArea} ${project.landAreaUnit ?? ""}` : undefined}
+              value={
+                project.landArea
+                  ? `${project.landArea} ${project.landAreaUnit ?? ""}`
+                  : undefined
+              }
               href={`/projects/${project.id}`}
             />
             <DataRow
               label="Type"
               value={
-                project.landType === "recorded" ? "Recorded"
-                  : project.landType === "non_recorded" ? "Non-Recorded"
-                  : undefined
+                project.landType === "recorded"
+                  ? "Recorded"
+                  : project.landType === "non_recorded"
+                    ? "Non-Recorded"
+                    : undefined
               }
             />
             <DataRow label="District" value={project.district} />
             <DataRow
               label="Capacity"
-              value={project.rubberCapacity ? `${fmtNum(project.rubberCapacity)} ${project.rubberCapacityUnit ?? "trees"}` : undefined}
+              value={
+                project.rubberCapacity
+                  ? `${fmtNum(project.rubberCapacity)} ${project.rubberCapacityUnit ?? "trees"}`
+                  : undefined
+              }
             />
           </div>
-          {project.landType === "recorded" && (project.khatianNumber || project.plotNumber || project.mouja) && (
-            <div className="flex gap-1 mt-1.5 flex-wrap">
-              {project.khatianNumber && (
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted border text-muted-foreground">
-                  Khatian {project.khatianNumber}
-                </span>
-              )}
-              {project.plotNumber && (
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted border text-muted-foreground">
-                  Plot {project.plotNumber}
-                </span>
-              )}
-              {project.mouja && (
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted border text-muted-foreground">
-                  {project.mouja}
-                </span>
-              )}
-            </div>
-          )}
+          {project.landType === "recorded" &&
+            (project.khatianNumber || project.plotNumber || project.mouja) && (
+              <div className="flex gap-1 mt-1.5 flex-wrap">
+                {project.khatianNumber && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted border text-muted-foreground">
+                    Khatian {project.khatianNumber}
+                  </span>
+                )}
+                {project.plotNumber && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted border text-muted-foreground">
+                    Plot {project.plotNumber}
+                  </span>
+                )}
+                {project.mouja && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted border text-muted-foreground">
+                    {project.mouja}
+                  </span>
+                )}
+              </div>
+            )}
         </div>
 
         <Separator />
@@ -337,6 +393,13 @@ function ProjectGovernanceCard({
               }
               href="/partners"
             />
+            {s && s.kycParticipantCount > 0 && (
+              <DataRow
+                label="KYC Verified"
+                value={`${s.kycParticipantCount} of 2`}
+                href="/partners"
+              />
+            )}
           </div>
         </div>
 
@@ -376,10 +439,7 @@ function ProjectGovernanceCard({
             ) : (
               <>
                 <DataRow label="Split" value="50 / 50 Revenue" href="/distribution" />
-                <DataRow
-                  label="LCA"
-                  value={<span className="text-muted-foreground italic">N/A</span>}
-                />
+                <DataRow label="LCA" value={<span className="text-muted-foreground italic">N/A</span>} />
                 <DataRow
                   label="EP Pool"
                   value={<span className="text-sky-700">Active</span>}
@@ -393,8 +453,8 @@ function ProjectGovernanceCard({
                 project.agreementDurationYears
                   ? `${project.agreementDurationYears} yrs`
                   : project.termYears
-                  ? `${project.termYears} yrs`
-                  : undefined
+                    ? `${project.termYears} yrs`
+                    : undefined
               }
             />
           </div>
@@ -402,53 +462,232 @@ function ProjectGovernanceCard({
 
         <Separator />
 
-        {/* ── §5 Operational Status ─────────────────────────────────────── */}
+        {/* ── §5 Live Stock (Inventory Ledger) ──────────────────────────── */}
         <div>
-          <SectionHead icon={Package} label="Operational" href="/inventory" />
-          <div className="grid grid-cols-3 gap-x-2 mt-1">
-            <DataRow
-              label="Produced"
-              value={stockEntry ? fmtNum(stockEntry.totalProduced) : undefined}
-              href="/inventory"
-            />
-            <DataRow
-              label="Sold"
-              value={stockEntry ? fmtNum(stockEntry.totalSold) : undefined}
-              href="/sales"
-            />
-            <DataRow
-              label="Stock"
-              value={
-                stockEntry ? (
-                  <span className={
-                    stockEntry.currentStock === 0
-                      ? "text-muted-foreground"
-                      : stockEntry.currentStock > 0
-                      ? "text-emerald-700 font-semibold"
-                      : "text-red-600 font-semibold"
-                  }>
-                    {fmtNum(stockEntry.currentStock)}
+          <SectionHead icon={Boxes} label="Current Stock" href="/inventory" />
+          {s ? (
+            <div className="grid grid-cols-3 gap-x-2 mt-1">
+              <DataRow
+                label="Sheet"
+                value={
+                  <span
+                    className={
+                      s.rubberSheetBalanceKg > 0
+                        ? "text-emerald-700 font-semibold"
+                        : "text-muted-foreground"
+                    }
+                  >
+                    {fmtKg(s.rubberSheetBalanceKg)}
                   </span>
-                ) : undefined
-              }
-              href="/inventory"
-            />
-          </div>
+                }
+                href="/inventory"
+              />
+              <DataRow
+                label="Scrap"
+                value={
+                  <span className={s.rubberScrapBalanceKg > 0 ? "text-emerald-700" : "text-muted-foreground"}>
+                    {fmtKg(s.rubberScrapBalanceKg)}
+                  </span>
+                }
+                href="/inventory"
+              />
+              <DataRow
+                label="Latex"
+                value={
+                  <span className={s.latexBalanceLitres > 0 ? "text-emerald-700" : "text-muted-foreground"}>
+                    {s.latexBalanceLitres > 0
+                      ? `${s.latexBalanceLitres.toLocaleString("en-IN", { maximumFractionDigits: 1 })} L`
+                      : "0 L"}
+                  </span>
+                }
+                href="/inventory"
+              />
+              {s.pendingStockCount > 0 && (
+                <DataRow
+                  label="Pending"
+                  value={
+                    <span className="text-amber-600">
+                      {s.pendingStockCount} movement{s.pendingStockCount !== 1 ? "s" : ""}
+                    </span>
+                  }
+                  href="/inventory"
+                  span2
+                />
+              )}
+            </div>
+          ) : (
+            <div className="mt-1 h-5 animate-pulse rounded bg-muted" />
+          )}
         </div>
+
+        {/* ── §6 Production Operations ──────────────────────────────────── */}
+        {(hasOperations || (s && !hasInventory)) && (
+          <>
+            <Separator />
+            <div>
+              <SectionHead icon={Factory} label="Production Operations" href="/production-log" />
+              <div className="grid grid-cols-2 gap-x-3 mt-1">
+                {s ? (
+                  <>
+                    <DataRow
+                      label="Collections"
+                      value={
+                        s.collectionEntryCount > 0
+                          ? `${fmtNum(s.collectionEntryCount)} batches`
+                          : <span className="text-muted-foreground italic">None</span>
+                      }
+                      href="/production-log"
+                    />
+                    <DataRow
+                      label="Sheets Collected"
+                      value={s.collectionSheetCount > 0 ? fmtNum(s.collectionSheetCount) : undefined}
+                      href="/production-log"
+                    />
+                    <DataRow
+                      label="Store Entries"
+                      value={
+                        s.storeEntryCount > 0
+                          ? fmtNum(s.storeEntryCount)
+                          : <span className="text-muted-foreground italic">None</span>
+                      }
+                      href="/inventory"
+                    />
+                    <DataRow
+                      label="Stored Weight"
+                      value={s.storeWeightKg > 0 ? fmtKg(s.storeWeightKg) : undefined}
+                      href="/inventory"
+                    />
+                  </>
+                ) : (
+                  <div className="col-span-2 mt-1 h-8 animate-pulse rounded bg-muted" />
+                )}
+              </div>
+            </div>
+          </>
+        )}
 
         <Separator />
 
-        {/* ── §6 Compliance & Legal ─────────────────────────────────────── */}
+        {/* ── §7 Sales ──────────────────────────────────────────────────── */}
+        <div>
+          <SectionHead icon={ShoppingCart} label="Sales" href="/sales" />
+          <div className="grid grid-cols-2 gap-x-3 mt-1">
+            {s ? (
+              <>
+                <DataRow
+                  label="Confirmed Sales"
+                  value={
+                    s.confirmedSaleCount > 0 ? (
+                      <span className="text-emerald-700 font-semibold">{fmtNum(s.confirmedSaleCount)}</span>
+                    ) : (
+                      <span className="text-muted-foreground italic">None</span>
+                    )
+                  }
+                  href="/sales"
+                />
+                <DataRow
+                  label="Draft / Pending"
+                  value={
+                    s.draftSaleCount > 0 ? (
+                      <span className="text-amber-600">{fmtNum(s.draftSaleCount)}</span>
+                    ) : (
+                      "0"
+                    )
+                  }
+                  href="/sales"
+                />
+                {s.totalGrossRevenue != null && s.totalGrossRevenue > 0 && (
+                  <DataRow
+                    label="Gross Revenue"
+                    value={fmtRupees(s.totalGrossRevenue)}
+                    href="/sales"
+                  />
+                )}
+                {s.totalNetRevenue != null && s.totalNetRevenue > 0 && (
+                  <DataRow
+                    label="Net Revenue"
+                    value={
+                      <span className="text-emerald-700 font-semibold">
+                        {fmtRupees(s.totalNetRevenue)}
+                      </span>
+                    }
+                    href="/sales"
+                  />
+                )}
+              </>
+            ) : (
+              <div className="col-span-2 mt-1 h-8 animate-pulse rounded bg-muted" />
+            )}
+          </div>
+        </div>
+
+        {/* ── §8 Finance (LCA + Distribution) — ownership model only ────── */}
+        {hasFinanceSection && (
+          <>
+            <Separator />
+            <div>
+              <SectionHead icon={Banknote} label="Finance Obligations" href="/lca/ledger" />
+              <div className="grid grid-cols-2 gap-x-3 mt-1">
+                {hasLcaOutstanding && s && (
+                  <>
+                    <DataRow
+                      label="LCA Outstanding"
+                      value={
+                        s.lcaOutstandingBalance != null ? (
+                          <span className="text-red-600 font-semibold">
+                            {fmtRupees(s.lcaOutstandingBalance)}
+                          </span>
+                        ) : `${s.lcaOutstandingCount} yr${s.lcaOutstandingCount !== 1 ? "s" : ""}`
+                      }
+                      href="/lca/ledger"
+                    />
+                    <DataRow
+                      label="Yrs Unpaid"
+                      value={s.lcaOutstandingCount}
+                      href="/lca/ledger"
+                    />
+                  </>
+                )}
+                {hasDistPending && s && (
+                  <>
+                    <DataRow
+                      label="Dist. Pending"
+                      value={
+                        s.distributionPendingAmount != null ? (
+                          <span className="text-amber-600 font-semibold">
+                            {fmtRupees(s.distributionPendingAmount)}
+                          </span>
+                        ) : `${s.distributionPendingCount} record${s.distributionPendingCount !== 1 ? "s" : ""}`
+                      }
+                      href="/distribution"
+                    />
+                    <DataRow
+                      label="Partners Owed"
+                      value={s.distributionPendingCount}
+                      href="/distribution"
+                    />
+                  </>
+                )}
+              </div>
+            </div>
+          </>
+        )}
+
+        <Separator />
+
+        {/* ── §9 Compliance & Legal ─────────────────────────────────────── */}
         <div>
           <SectionHead icon={FileText} label="Compliance & Legal" href="/agreements" />
           <div className="grid grid-cols-2 gap-x-3 mt-1">
             <DataRow
               label="Agreements"
               value={
-                projectAgreements.length === 0 ? (
+                !s ? (
+                  <span className="text-muted-foreground">…</span>
+                ) : s.agreementCount === 0 ? (
                   <span className="text-amber-600 italic">None</span>
                 ) : (
-                  `${projectAgreements.length}`
+                  `${s.agreementCount}`
                 )
               }
               href="/agreements"
@@ -456,21 +695,31 @@ function ProjectGovernanceCard({
             <DataRow
               label="Status"
               value={
-                latestAgreement ? (
-                  <span className={`text-[10px] px-1 py-0.5 rounded font-medium ${latestAgreement.status === "active" ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}>
-                    {latestAgreement.status}
+                s?.latestAgreementStatus ? (
+                  <span
+                    className={`text-[10px] px-1 py-0.5 rounded font-medium ${
+                      s.latestAgreementStatus === "active"
+                        ? "bg-green-100 text-green-700"
+                        : "bg-amber-100 text-amber-700"
+                    }`}
+                  >
+                    {s.latestAgreementStatus}
                   </span>
                 ) : undefined
               }
               href="/agreements"
             />
             {project.agreementEffectiveDate && (
-              <DataRow label="Effective" value={project.agreementEffectiveDate} span2 />
+              <DataRow
+                label="Effective"
+                value={project.agreementEffectiveDate}
+                span2
+              />
             )}
           </div>
         </div>
 
-        {/* ── §7 Governance Alerts ──────────────────────────────────────── */}
+        {/* ── §10 Governance Alerts ─────────────────────────────────────── */}
         {canAccessAllProjects && issues.length > 0 && (
           <>
             <Separator />
@@ -479,8 +728,12 @@ function ProjectGovernanceCard({
               <div className="mt-1 space-y-1">
                 {issues.slice(0, 3).map((issue: any, idx: number) => (
                   <div key={idx} className="flex items-start gap-1.5">
-                    {ALERT_ICON[issue.severity] ?? <AlertCircle className="h-3 w-3 text-muted-foreground shrink-0 mt-0.5" />}
-                    <p className="text-[11px] text-muted-foreground leading-snug">{issue.message}</p>
+                    {ALERT_ICON[issue.severity] ?? (
+                      <AlertCircle className="h-3 w-3 text-muted-foreground shrink-0 mt-0.5" />
+                    )}
+                    <p className="text-[11px] text-muted-foreground leading-snug">
+                      {issue.message}
+                    </p>
                   </div>
                 ))}
                 {issues.length > 3 && (
@@ -497,7 +750,7 @@ function ProjectGovernanceCard({
 
         <Separator />
 
-        {/* ── §8 Quick Actions ──────────────────────────────────────────── */}
+        {/* ── §11 Quick Actions ─────────────────────────────────────────── */}
         {isLocked ? (
           <div className="space-y-1.5">
             <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
@@ -544,7 +797,7 @@ function ProjectGovernanceCard({
             </Link>
             <Link href="/inventory">
               <Button variant="outline" size="sm" className="w-full h-7 text-[10px] px-1.5 gap-0.5">
-                <Package className="h-3 w-3" /> Inventory
+                <Boxes className="h-3 w-3" /> Inventory
               </Button>
             </Link>
             <Link href={isOwnership ? "/contributions" : "/distribution"}>
@@ -559,21 +812,39 @@ function ProjectGovernanceCard({
                 {isOwnership ? "LCA Ledger" : "Sales"}
               </Button>
             </Link>
+            {canAccessAllProjects && (
+              <>
+                <Link href="/production-log">
+                  <Button variant="outline" size="sm" className="w-full h-7 text-[10px] px-1.5 gap-0.5">
+                    <ClipboardList className="h-3 w-3" /> Production
+                  </Button>
+                </Link>
+                <Link href="/sales">
+                  <Button variant="outline" size="sm" className="w-full h-7 text-[10px] px-1.5 gap-0.5">
+                    <ShoppingCart className="h-3 w-3" /> Sales
+                  </Button>
+                </Link>
+                <Link href="/reports">
+                  <Button variant="outline" size="sm" className="w-full h-7 text-[10px] px-1.5 gap-0.5">
+                    <BarChart3 className="h-3 w-3" /> Reports
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
         )}
 
-        {/* Delete */}
-        <div className="flex justify-end pt-0.5">
+        {/* Delete action — admin only */}
+        {canAccessAllProjects && (
           <Button
             variant="ghost"
             size="sm"
-            className="text-destructive hover:text-destructive h-6 text-[10px] gap-0.5 px-2"
-            data-testid={`button-delete-project-${project.id}`}
+            className="w-full h-7 text-[10px] text-destructive hover:text-destructive hover:bg-destructive/5 mt-0.5"
             onClick={onDelete}
           >
-            <Trash2 className="h-3 w-3" /> Delete project
+            <Trash2 className="h-3 w-3 mr-1" /> Delete Project
           </Button>
-        </div>
+        )}
       </CardContent>
     </Card>
   );
@@ -588,10 +859,9 @@ export default function Projects() {
   const { toast } = useToast();
   const { canAccessAllProjects } = useRole();
 
-  // Page-level global fetches — shared across all cards
+  // Page-level global fetches — governance alerts + live card summaries
   const { data: governance } = useGetGovernanceSummary();
-  const { data: stockData } = useGetStockSummary();
-  const { data: agreements } = useListAgreements();
+  const { data: cardSummaryData } = useGetProjectCardSummaries();
 
   // Build lookup maps so each ProjectCard gets O(1) access
   const govAlertsMap = useMemo(
@@ -599,20 +869,13 @@ export default function Projects() {
     [governance],
   );
 
-  const stockMap = useMemo(
-    () => new Map((stockData ?? []).map((s: any) => [s.projectId, s])),
-    [stockData],
+  const summaryMap = useMemo(
+    () =>
+      new Map<string, CardSummary>(
+        ((cardSummaryData as any)?.summaries ?? []).map((s: CardSummary) => [s.projectId, s]),
+      ),
+    [cardSummaryData],
   );
-
-  const agreementsMap = useMemo(() => {
-    const map = new Map<string, any[]>();
-    for (const a of agreements ?? []) {
-      const list = map.get(a.projectId) ?? [];
-      list.push(a);
-      map.set(a.projectId, list);
-    }
-    return map;
-  }, [agreements]);
 
   function handleDelete(id: string, name: string) {
     if (!confirm(`Delete project "${name}"? This cannot be undone.`)) return;
@@ -667,8 +930,7 @@ export default function Projects() {
               key={project.id}
               project={project}
               govAlerts={canAccessAllProjects ? govAlertsMap.get(project.id) : undefined}
-              stockEntry={stockMap.get(project.id)}
-              projectAgreements={agreementsMap.get(project.id) ?? []}
+              cardSummary={summaryMap.get(project.id)}
               onDelete={() => handleDelete(project.id, project.name)}
               canAccessAllProjects={canAccessAllProjects}
             />

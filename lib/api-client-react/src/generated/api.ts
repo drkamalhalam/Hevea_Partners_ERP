@@ -319,6 +319,7 @@ import type {
   GetPrematuritySuccessionDashboardParams,
   GetProductionLogSummaryParams,
   GetProductionReportParams,
+  GetProjectCardSummaries200,
   GetProjectProfitabilityParams,
   GetRecordAuditTimeline200,
   GetRevenueTrendParams,
@@ -49188,6 +49189,85 @@ export const useRejectPostMaturityPayment = <
 > => {
   return useMutation(getRejectPostMaturityPaymentMutationOptions(options));
 };
+
+/**
+ * @summary Get aggregated live data summaries for all accessible project cards
+ */
+export const getGetProjectCardSummariesUrl = () => {
+  return `/api/projects/card-summaries`;
+};
+
+export const getProjectCardSummaries = async (
+  options?: RequestInit,
+): Promise<GetProjectCardSummaries200> => {
+  return customFetch<GetProjectCardSummaries200>(
+    getGetProjectCardSummariesUrl(),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetProjectCardSummariesQueryKey = () => {
+  return [`/api/projects/card-summaries`] as const;
+};
+
+export const getGetProjectCardSummariesQueryOptions = <
+  TData = Awaited<ReturnType<typeof getProjectCardSummaries>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getProjectCardSummaries>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetProjectCardSummariesQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getProjectCardSummaries>>
+  > = ({ signal }) => getProjectCardSummaries({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getProjectCardSummaries>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetProjectCardSummariesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getProjectCardSummaries>>
+>;
+export type GetProjectCardSummariesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get aggregated live data summaries for all accessible project cards
+ */
+
+export function useGetProjectCardSummaries<
+  TData = Awaited<ReturnType<typeof getProjectCardSummaries>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getProjectCardSummaries>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetProjectCardSummariesQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary List KYC participants for a project

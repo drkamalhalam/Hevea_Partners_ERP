@@ -20028,6 +20028,37 @@ export const RejectPostMaturityPaymentResponse = zod.object({
 });
 
 /**
+ * @summary Get aggregated live data summaries for all accessible project cards
+ */
+export const GetProjectCardSummariesResponse = zod.object({
+  summaries: zod.array(
+    zod.object({
+      projectId: zod.string().uuid(),
+      rubberSheetBalanceKg: zod.number(),
+      rubberScrapBalanceKg: zod.number(),
+      latexBalanceLitres: zod.number(),
+      pendingStockCount: zod.number(),
+      collectionEntryCount: zod.number(),
+      collectionSheetCount: zod.number(),
+      storeEntryCount: zod.number(),
+      storeSheetCount: zod.number(),
+      storeWeightKg: zod.number(),
+      confirmedSaleCount: zod.number(),
+      draftSaleCount: zod.number(),
+      totalGrossRevenue: zod.number().nullish(),
+      totalNetRevenue: zod.number().nullish(),
+      lcaOutstandingBalance: zod.number().nullish(),
+      lcaOutstandingCount: zod.number(),
+      distributionPendingAmount: zod.number().nullish(),
+      distributionPendingCount: zod.number(),
+      kycParticipantCount: zod.number(),
+      agreementCount: zod.number(),
+      latestAgreementStatus: zod.string().nullish(),
+    }),
+  ),
+});
+
+/**
  * @summary List KYC participants for a project
  */
 export const ListOnboardingParticipantsParams = zod.object({

@@ -8921,6 +8921,30 @@ export interface VerifyOnboardingOtpRequest {
   otpCode: string;
 }
 
+export interface ProjectCardSummary {
+  projectId: string;
+  rubberSheetBalanceKg: number;
+  rubberScrapBalanceKg: number;
+  latexBalanceLitres: number;
+  pendingStockCount: number;
+  collectionEntryCount: number;
+  collectionSheetCount: number;
+  storeEntryCount: number;
+  storeSheetCount: number;
+  storeWeightKg: number;
+  confirmedSaleCount: number;
+  draftSaleCount: number;
+  totalGrossRevenue?: number | null;
+  totalNetRevenue?: number | null;
+  lcaOutstandingBalance?: number | null;
+  lcaOutstandingCount: number;
+  distributionPendingAmount?: number | null;
+  distributionPendingCount: number;
+  kycParticipantCount: number;
+  agreementCount: number;
+  latestAgreementStatus?: string | null;
+}
+
 export type GetUserActivityParams = {
   limit?: number;
 };
@@ -11270,6 +11294,10 @@ export type RejectPostMaturityPaymentBody = {
 
 export type RejectPostMaturityPayment200 = {
   payment: PostMaturityCostPayment;
+};
+
+export type GetProjectCardSummaries200 = {
+  summaries: ProjectCardSummary[];
 };
 
 export type ListOnboardingParticipants200 = {

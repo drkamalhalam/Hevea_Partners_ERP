@@ -1,0 +1,253 @@
+FIX PROJECT CARD DATA FETCHING AND MAKE PROJECT CARDS LIVE GOVERNANCE DATA NODES.
+
+Current issue:
+Project cards are not correctly fetching and displaying live project-linked data.
+
+Example:
+Stock data is missing, stale, incorrect, or disconnected from actual project stock records.
+
+This indicates the project card is functioning as a static UI summary instead of a live governance-linked data node.
+
+==================================================
+CORE ARCHITECTURE RULE
+==================================================
+
+Project cards must NEVER use:
+- hardcoded values,
+- stale cache,
+- temporary frontend state,
+- disconnected summaries,
+- manually entered totals.
+
+Every displayed value must come directly from:
+- live project-linked data sources,
+- validated aggregation queries,
+- real-time operational records.
+
+==================================================
+PROJECT CARD DATA ENGINE
+==================================================
+
+Implement a centralized:
+
+PROJECT_CARD_DATA_AGGREGATION_ENGINE
+
+This engine must dynamically fetch and aggregate data from:
+- collection system
+- store system
+- stock ledger
+- stock transfer system
+- sales ledger
+- reimbursement engine
+- ownership engine
+- LCA engine
+- participant system
+- agreement system
+- audit system
+
+==================================================
+STOCK FETCHING RULES
+==================================================
+
+Project stock displayed on project cards must represent:
+
+REAL CONSOLIDATED PROJECT STOCK
+
+including:
+- project stores
+- central stores
+- overflow stores
+- transferred stock
+- pending dispatch stock
+- reserved stock
+- buyer pickup pending stock
+
+==================================================
+IMPORTANT STOCK CALCULATION RULE
+==================================================
+
+Project stock must calculate using:
+
+TOTAL INWARD
+MINUS
+TOTAL OUTWARD
+MINUS
+DISPATCHED STOCK
+PLUS/MINUS
+TRANSFER ADJUSTMENTS
+
+grouped by:
+- project ownership
+NOT merely physical location.
+
+==================================================
+VERY IMPORTANT RULE
+==================================================
+
+Physical stock location must NEVER break project ownership accounting.
+
+Even if stock moved to:
+- central store
+- overflow store
+- another warehouse
+
+project card must still show:
+- correct project-owned stock.
+
+==================================================
+LIVE QUERY REQUIREMENT
+==================================================
+
+Project cards must fetch:
+- latest committed stock ledger state,
+NOT:
+- cached page memory,
+- stale API snapshots,
+- delayed frontend totals.
+
+==================================================
+PROJECT CARD DATA SECTIONS
+==================================================
+
+Project cards must dynamically fetch:
+
+1. Current Stock
+2. Collection Totals
+3. Store Totals
+4. Sales Totals
+5. Pending Dispatch
+6. Reserved Buyer Stock
+7. Outstanding Reimbursement
+8. Pending Profit Distribution
+9. LCA Outstanding
+10. Participant Count
+11. Agreement Status
+12. Operational Status
+
+==================================================
+CLICK-THROUGH TRACEABILITY
+==================================================
+
+Every displayed value must support click-through navigation.
+
+Example:
+
+Current Stock
+→ open stock ledger
+
+Pending Dispatch
+→ open dispatch records
+
+Sales Total
+→ open sales ledger
+
+==================================================
+AUTO REFRESH REQUIREMENT
+==================================================
+
+Project cards must auto-refresh whenever:
+- collection added
+- stock transferred
+- sale completed
+- dispatch approved
+- store entry created
+- stock adjusted
+- reimbursement settled
+- distribution completed
+
+==================================================
+EVENT-DRIVEN UPDATE SYSTEM
+==================================================
+
+Implement event-driven synchronization.
+
+Examples:
+- STOCK_UPDATED
+- SALE_COMPLETED
+- TRANSFER_COMPLETED
+- COLLECTION_CONFIRMED
+
+Project cards must refresh affected values after relevant events.
+
+==================================================
+REMOVE STATIC SUMMARY LOGIC
+==================================================
+
+Eliminate:
+- manually maintained totals
+- duplicated summary tables
+- stale frontend counters
+- disconnected cache values
+
+unless explicitly used as validated performance cache with invalidation rules.
+
+==================================================
+DEBUGGING REQUIREMENTS
+==================================================
+
+Add logs for:
+- aggregation query execution
+- stock reconciliation
+- project stock ownership calculation
+- transfer adjustments
+- refresh triggers
+- failed fetches
+- stale cache detection
+
+==================================================
+PROJECT STOCK RECONCILIATION
+==================================================
+
+Add reconciliation validation:
+
+If:
+project card stock
+≠
+actual stock ledger balance
+
+then:
+- raise warning,
+- generate reconciliation alert,
+- block silent mismatch.
+
+==================================================
+PERMISSION RULES
+==================================================
+
+Users must only see:
+- project data permitted by role,
+- financial values allowed by permission,
+- operational data within access scope.
+
+==================================================
+IMPORTANT GOVERNANCE RULE
+==================================================
+
+The project card must become:
+- the live operational truth layer,
+- the governance navigation hub,
+- the real-time project status surface.
+
+It must NEVER behave as:
+- a disconnected UI tile,
+- a manually updated dashboard box,
+- a static summary widget.
+
+==================================================
+DO NOT BREAK EXISTING MODULES
+==================================================
+
+Integrate safely with:
+- collection system
+- store system
+- stock transfer system
+- sales module
+- buyer module
+- accounting
+- dashboards
+- notifications
+- reports
+- audit logs
+- ownership engine
+- reimbursement engine
+- LCA engine.
