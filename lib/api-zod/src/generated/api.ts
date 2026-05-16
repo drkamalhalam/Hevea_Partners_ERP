@@ -642,6 +642,20 @@ export const ListProjectsResponseItem = zod.object({
   agreementSpecialTerms: zod.string().nullish(),
   onboardingStep: zod.number().nullish(),
   onboardingCompletedAt: zod.string().nullish(),
+  configurationStatus: zod
+    .enum([
+      "VALID",
+      "INVALID_PROJECT_CONFIGURATION",
+      "PENDING_REMEDIATION",
+      "UNDER_REVIEW",
+    ])
+    .optional(),
+  invalidReason: zod.string().nullish(),
+  governanceLocked: zod.boolean().optional(),
+  remediationRequired: zod.boolean().optional(),
+  landownerValidationStatus: zod
+    .enum(["PENDING", "VALIDATED", "MISSING", "BROKEN_LINKAGE", "INVALID"])
+    .optional(),
 });
 export const ListProjectsResponse = zod.array(ListProjectsResponseItem);
 
@@ -767,6 +781,20 @@ export const GetProjectResponse = zod.object({
   agreementSpecialTerms: zod.string().nullish(),
   onboardingStep: zod.number().nullish(),
   onboardingCompletedAt: zod.string().nullish(),
+  configurationStatus: zod
+    .enum([
+      "VALID",
+      "INVALID_PROJECT_CONFIGURATION",
+      "PENDING_REMEDIATION",
+      "UNDER_REVIEW",
+    ])
+    .optional(),
+  invalidReason: zod.string().nullish(),
+  governanceLocked: zod.boolean().optional(),
+  remediationRequired: zod.boolean().optional(),
+  landownerValidationStatus: zod
+    .enum(["PENDING", "VALIDATED", "MISSING", "BROKEN_LINKAGE", "INVALID"])
+    .optional(),
 });
 
 /**
@@ -910,6 +938,20 @@ export const UpdateProjectResponse = zod.object({
   agreementSpecialTerms: zod.string().nullish(),
   onboardingStep: zod.number().nullish(),
   onboardingCompletedAt: zod.string().nullish(),
+  configurationStatus: zod
+    .enum([
+      "VALID",
+      "INVALID_PROJECT_CONFIGURATION",
+      "PENDING_REMEDIATION",
+      "UNDER_REVIEW",
+    ])
+    .optional(),
+  invalidReason: zod.string().nullish(),
+  governanceLocked: zod.boolean().optional(),
+  remediationRequired: zod.boolean().optional(),
+  landownerValidationStatus: zod
+    .enum(["PENDING", "VALIDATED", "MISSING", "BROKEN_LINKAGE", "INVALID"])
+    .optional(),
 });
 
 /**
@@ -3220,6 +3262,20 @@ export const GetMyPortfolioResponse = zod.object({
       agreementSpecialTerms: zod.string().nullish(),
       onboardingStep: zod.number().nullish(),
       onboardingCompletedAt: zod.string().nullish(),
+      configurationStatus: zod
+        .enum([
+          "VALID",
+          "INVALID_PROJECT_CONFIGURATION",
+          "PENDING_REMEDIATION",
+          "UNDER_REVIEW",
+        ])
+        .optional(),
+      invalidReason: zod.string().nullish(),
+      governanceLocked: zod.boolean().optional(),
+      remediationRequired: zod.boolean().optional(),
+      landownerValidationStatus: zod
+        .enum(["PENDING", "VALIDATED", "MISSING", "BROKEN_LINKAGE", "INVALID"])
+        .optional(),
     }),
   ),
 });
@@ -20209,6 +20265,20 @@ export const GetProjectOnboardingStateResponse = zod.object({
       agreementSpecialTerms: zod.string().nullish(),
       onboardingStep: zod.number().nullish(),
       onboardingCompletedAt: zod.string().nullish(),
+      configurationStatus: zod
+        .enum([
+          "VALID",
+          "INVALID_PROJECT_CONFIGURATION",
+          "PENDING_REMEDIATION",
+          "UNDER_REVIEW",
+        ])
+        .optional(),
+      invalidReason: zod.string().nullish(),
+      governanceLocked: zod.boolean().optional(),
+      remediationRequired: zod.boolean().optional(),
+      landownerValidationStatus: zod
+        .enum(["PENDING", "VALIDATED", "MISSING", "BROKEN_LINKAGE", "INVALID"])
+        .optional(),
     })
     .optional(),
   participants: zod
@@ -20395,6 +20465,20 @@ export const ActivateProjectViaOnboardingResponse = zod.object({
     agreementSpecialTerms: zod.string().nullish(),
     onboardingStep: zod.number().nullish(),
     onboardingCompletedAt: zod.string().nullish(),
+    configurationStatus: zod
+      .enum([
+        "VALID",
+        "INVALID_PROJECT_CONFIGURATION",
+        "PENDING_REMEDIATION",
+        "UNDER_REVIEW",
+      ])
+      .optional(),
+    invalidReason: zod.string().nullish(),
+    governanceLocked: zod.boolean().optional(),
+    remediationRequired: zod.boolean().optional(),
+    landownerValidationStatus: zod
+      .enum(["PENDING", "VALIDATED", "MISSING", "BROKEN_LINKAGE", "INVALID"])
+      .optional(),
   }),
 });
 
@@ -20414,4 +20498,42 @@ export const SaveProjectOnboardingStepBody = zod.object({
 export const SaveProjectOnboardingStepResponse = zod.object({
   ok: zod.boolean().optional(),
   onboardingStep: zod.number().optional(),
+});
+
+/**
+ * @summary Re-validate landowner governance for a project
+ */
+export const ValidateProjectGovernanceParams = zod.object({
+  projectId: zod.coerce.string().uuid(),
+});
+
+export const ValidateProjectGovernanceResponse = zod.object({
+  projectId: zod.string().uuid(),
+  valid: zod.boolean(),
+  configurationStatus: zod.enum([
+    "VALID",
+    "INVALID_PROJECT_CONFIGURATION",
+    "PENDING_REMEDIATION",
+    "UNDER_REVIEW",
+  ]),
+  landownerValidationStatus: zod.enum([
+    "PENDING",
+    "VALIDATED",
+    "MISSING",
+    "BROKEN_LINKAGE",
+    "INVALID",
+  ]),
+  invalidReason: zod.string().nullish(),
+});
+
+/**
+ * @summary Scan all active projects and update landowner governance status
+ */
+export const ScanAllProjectsGovernanceResponse = zod.object({
+  ok: zod.boolean(),
+  summary: zod.object({
+    total: zod.number().optional(),
+    valid: zod.number().optional(),
+    invalid: zod.number().optional(),
+  }),
 });

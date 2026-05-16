@@ -785,6 +785,38 @@ export const lcaLedgerStatusEnum = pgEnum("lca_ledger_status", [
   "waived",
 ]);
 
+// ── Landowner governance enums ────────────────────────────────────────────
+
+/**
+ * Top-level configuration validity state for a plantation project.
+ *   VALID                       — all governance checks pass; project is operationally valid
+ *   INVALID_PROJECT_CONFIGURATION — one or more mandatory governance requirements are unmet
+ *   PENDING_REMEDIATION         — admin has acknowledged the issue and initiated repair
+ *   UNDER_REVIEW                — admin is actively reviewing / investigating
+ */
+export const projectConfigurationStatusEnum = pgEnum("project_configuration_status", [
+  "VALID",
+  "INVALID_PROJECT_CONFIGURATION",
+  "PENDING_REMEDIATION",
+  "UNDER_REVIEW",
+]);
+
+/**
+ * Validation state of the landowner linkage for a project.
+ *   PENDING          — not yet validated (new or unscanned project)
+ *   VALIDATED        — at least one active landowner participant found and verified
+ *   MISSING          — no landowner participant record exists for this project
+ *   BROKEN_LINKAGE   — landowner record exists but is structurally broken (cascade delete, orphan)
+ *   INVALID          — landowner data fails minimum required-field validation
+ */
+export const projectLandownerValidationStatusEnum = pgEnum("project_landowner_validation_status", [
+  "PENDING",
+  "VALIDATED",
+  "MISSING",
+  "BROKEN_LINKAGE",
+  "INVALID",
+]);
+
 // ── Inheritance & succession enums ────────────────────────────────────────
 
 /**

@@ -425,6 +425,27 @@ export const ProjectLifecycleStatus = {
   closed: "closed",
 } as const;
 
+export type ProjectConfigurationStatus =
+  (typeof ProjectConfigurationStatus)[keyof typeof ProjectConfigurationStatus];
+
+export const ProjectConfigurationStatus = {
+  VALID: "VALID",
+  INVALID_PROJECT_CONFIGURATION: "INVALID_PROJECT_CONFIGURATION",
+  PENDING_REMEDIATION: "PENDING_REMEDIATION",
+  UNDER_REVIEW: "UNDER_REVIEW",
+} as const;
+
+export type ProjectLandownerValidationStatus =
+  (typeof ProjectLandownerValidationStatus)[keyof typeof ProjectLandownerValidationStatus];
+
+export const ProjectLandownerValidationStatus = {
+  PENDING: "PENDING",
+  VALIDATED: "VALIDATED",
+  MISSING: "MISSING",
+  BROKEN_LINKAGE: "BROKEN_LINKAGE",
+  INVALID: "INVALID",
+} as const;
+
 export interface Project {
   id: string;
   name: string;
@@ -503,6 +524,12 @@ export interface Project {
   onboardingStep?: number | null;
   /** @nullable */
   onboardingCompletedAt?: string | null;
+  configurationStatus?: ProjectConfigurationStatus;
+  /** @nullable */
+  invalidReason?: string | null;
+  governanceLocked?: boolean;
+  remediationRequired?: boolean;
+  landownerValidationStatus?: ProjectLandownerValidationStatus;
 }
 
 export type ProjectInputCommercialModel =
@@ -11302,4 +11329,44 @@ export type SaveProjectOnboardingStepBody = {
 export type SaveProjectOnboardingStep200 = {
   ok?: boolean;
   onboardingStep?: number;
+};
+
+export type ValidateProjectGovernance200ConfigurationStatus =
+  (typeof ValidateProjectGovernance200ConfigurationStatus)[keyof typeof ValidateProjectGovernance200ConfigurationStatus];
+
+export const ValidateProjectGovernance200ConfigurationStatus = {
+  VALID: "VALID",
+  INVALID_PROJECT_CONFIGURATION: "INVALID_PROJECT_CONFIGURATION",
+  PENDING_REMEDIATION: "PENDING_REMEDIATION",
+  UNDER_REVIEW: "UNDER_REVIEW",
+} as const;
+
+export type ValidateProjectGovernance200LandownerValidationStatus =
+  (typeof ValidateProjectGovernance200LandownerValidationStatus)[keyof typeof ValidateProjectGovernance200LandownerValidationStatus];
+
+export const ValidateProjectGovernance200LandownerValidationStatus = {
+  PENDING: "PENDING",
+  VALIDATED: "VALIDATED",
+  MISSING: "MISSING",
+  BROKEN_LINKAGE: "BROKEN_LINKAGE",
+  INVALID: "INVALID",
+} as const;
+
+export type ValidateProjectGovernance200 = {
+  projectId: string;
+  valid: boolean;
+  configurationStatus: ValidateProjectGovernance200ConfigurationStatus;
+  landownerValidationStatus: ValidateProjectGovernance200LandownerValidationStatus;
+  invalidReason?: string | null;
+};
+
+export type ScanAllProjectsGovernance200Summary = {
+  total?: number;
+  valid?: number;
+  invalid?: number;
+};
+
+export type ScanAllProjectsGovernance200 = {
+  ok: boolean;
+  summary: ScanAllProjectsGovernance200Summary;
 };

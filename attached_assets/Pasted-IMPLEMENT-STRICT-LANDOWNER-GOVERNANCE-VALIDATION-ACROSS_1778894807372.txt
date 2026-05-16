@@ -1,0 +1,337 @@
+IMPLEMENT STRICT LANDOWNER GOVERNANCE VALIDATION ACROSS THE ENTIRE ERP.
+
+A project must NEVER exist operationally without at least one valid linked landowner.
+
+The system must treat landowner presence as a foundational governance requirement.
+
+==================================================
+CORE GOVERNANCE RULE
+==================================================
+
+NO project may:
+- be operational,
+- activate,
+- collect production,
+- create stock,
+- process accounting,
+- process sales,
+- distribute profit,
+- generate LCA,
+- process ownership,
+- process reimbursement
+
+without at least one valid linked landowner.
+
+==================================================
+NEW PROJECT CREATION VALIDATION
+==================================================
+
+During project creation:
+
+At least one landowner must be:
+- added,
+- verified,
+- linked to land records.
+
+Required minimum landowner information:
+
+- Full Name
+- S/O or C/O
+- Father/Guardian Name
+- Aadhaar Number
+- Mobile Number
+- Address
+- Linked Land Information
+
+==================================================
+STRICT VALIDATION RULES
+==================================================
+
+Block:
+- Save
+- Continue
+- Generate Deed
+- OTP Approval
+- Activation
+
+if:
+- no landowner exists,
+- landowner is inactive,
+- landowner linkage is broken.
+
+==================================================
+FRONTEND VALIDATION
+==================================================
+
+Show warning:
+
+“At least one verified landowner is required before project creation can continue.”
+
+Disable:
+- next step,
+- save button,
+- activation button.
+
+==================================================
+DATABASE CHANGES
+==================================================
+
+Add governance fields to project master:
+
+- configuration_status
+- invalid_reason
+- governance_locked
+- remediation_required
+- landowner_validation_status
+
+Suggested values:
+
+configuration_status:
+- VALID
+- INVALID_PROJECT_CONFIGURATION
+- PENDING_REMEDIATION
+- UNDER_REVIEW
+
+landowner_validation_status:
+- PENDING
+- VALIDATED
+- MISSING
+- BROKEN_LINKAGE
+- INVALID
+
+==================================================
+PROJECT CARD RULES
+==================================================
+
+Project cards must NEVER behave as valid operational projects if:
+- no landowner exists,
+- landowner deleted,
+- linkage broken,
+- land mapping invalid.
+
+Instead:
+mark project as:
+
+INVALID_PROJECT_CONFIGURATION
+
+Reason:
+MISSING_LANDOWNER
+
+==================================================
+INVALID PROJECT CARD UI
+==================================================
+
+Display warning prominently:
+
+⚠ Invalid Configuration
+Missing Mandatory Landowner
+
+Operational Access Blocked
+
+Buttons:
+- Repair Project
+- View Audit Logs
+
+==================================================
+EXISTING PROJECT REMEDIATION ENGINE
+==================================================
+
+Automatically scan all existing projects.
+
+Detect projects where:
+- no landowner exists,
+- landowner linkage broken,
+- landowner deleted,
+- land records exist without landowner assignment.
+
+==================================================
+AUTO INVALIDATION
+==================================================
+
+When invalidity detected:
+
+Automatically:
+- mark project invalid,
+- governance lock project,
+- require remediation,
+- preserve all historical records.
+
+Set:
+
+configuration_status:
+INVALID_PROJECT_CONFIGURATION
+
+invalid_reason:
+MISSING_LANDOWNER
+
+governance_locked:
+TRUE
+
+remediation_required:
+TRUE
+
+landowner_validation_status:
+MISSING
+
+==================================================
+IMPORTANT SAFETY RULE
+==================================================
+
+DO NOT DELETE:
+- project records,
+- accounting history,
+- stock history,
+- uploads,
+- audit logs,
+- agreements,
+- participant records,
+- transaction history.
+
+Preserve all historical continuity.
+
+==================================================
+BLOCKED OPERATIONS
+==================================================
+
+Invalid projects must NOT allow:
+- collection entry
+- store entry
+- stock creation
+- sales
+- accounting
+- reimbursement
+- maturity declaration
+- ownership processing
+- LCA processing
+- profit distribution
+- transfers
+
+until corrected.
+
+==================================================
+ALLOWED ACTIONS FOR INVALID PROJECTS
+==================================================
+
+Admins may:
+- open project
+- edit project
+- assign landowner
+- repair linkage
+- upload documents
+- view audit logs
+- export reports
+
+==================================================
+LANDOWNER REPAIR WORKFLOW
+==================================================
+
+Provide repair tools:
+
+- Add Landowner
+- Link Existing Landowner
+- Reassign Land
+- Upload Aadhaar
+- Verify OTP
+- Validate Land Mapping
+
+==================================================
+AUTO RESTORATION
+==================================================
+
+Once:
+- valid landowner linked,
+- land mapping verified,
+- validation passes,
+
+automatically restore project:
+
+configuration_status:
+VALID
+
+invalid_reason:
+NULL
+
+governance_locked:
+FALSE
+
+remediation_required:
+FALSE
+
+landowner_validation_status:
+VALIDATED
+
+==================================================
+AUDIT REQUIREMENTS
+==================================================
+
+Track:
+- project invalidation
+- governance lock
+- landowner removal
+- linkage break
+- restoration
+- repair actions
+- admin overrides
+
+with permanent audit logs.
+
+==================================================
+PROJECT LIST FILTERING
+==================================================
+
+Default operational project lists must HIDE:
+- invalid projects,
+- governance-locked projects.
+
+Admins may still view them.
+
+==================================================
+AGREEMENT & OTP SAFETY
+==================================================
+
+If signed deed already exists:
+- preserve deed,
+- preserve signatures,
+- preserve OTP logs.
+
+If landowner removed after OTP:
+- invalidate governance,
+- preserve legal evidence,
+- require re-validation.
+
+==================================================
+ROLE-BASED ACCESS
+==================================================
+
+Normal users:
+- cannot operate invalid projects.
+
+Admins:
+- may repair and restore governance.
+
+==================================================
+IMPORTANT ARCHITECTURE RULE
+==================================================
+
+ALL downstream modules must validate:
+- landowner integrity,
+- governance lock,
+- configuration validity
+
+before operation.
+
+INCLUDING:
+- collection
+- stock
+- accounting
+- sales
+- reimbursement
+- ownership
+- LCA
+- reporting
+- transfers
+- dashboards
+- notifications
+- profit distribution
+
+No module may bypass governance validation.

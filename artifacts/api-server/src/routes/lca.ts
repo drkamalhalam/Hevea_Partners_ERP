@@ -177,6 +177,15 @@ router.post(
       .limit(1);
     if (!project) return res.status(404).json({ error: "Project not found" });
 
+    // ── Governance lock check ──────────────────────────────────────────
+    if (project.governanceLocked) {
+      return res.status(423).json({
+        error: "Project is governance-locked. At least one valid landowner must be linked before LCA configuration can be created.",
+        code: "GOVERNANCE_LOCKED",
+        configurationStatus: project.configurationStatus,
+      });
+    }
+
     if (project.lifecycleStatus !== "mature_production") {
       return res.status(400).json({
         error: "LCA can only be configured for projects in mature_production phase",

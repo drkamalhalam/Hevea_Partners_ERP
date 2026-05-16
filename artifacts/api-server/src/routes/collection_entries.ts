@@ -157,6 +157,20 @@ router.post("/", async (req, res) => {
     return res.status(400).json({ error: "projectId and employeeId are required." });
   }
 
+  // ── Governance lock check ────────────────────────────────────────────
+  const [govColl] = await db
+    .select({ governanceLocked: projectsTable.governanceLocked, configurationStatus: projectsTable.configurationStatus })
+    .from(projectsTable)
+    .where(eq(projectsTable.id, projectId))
+    .limit(1);
+  if (govColl?.governanceLocked) {
+    return res.status(423).json({
+      error: "Project is governance-locked. At least one valid landowner must be linked before collection entries can be created.",
+      code: "GOVERNANCE_LOCKED",
+      configurationStatus: govColl.configurationStatus,
+    });
+  }
+
   const now = new Date();
   const entryDate = format(now, "yyyy-MM-dd");
   const entryTime = format(now, "HH:mm");

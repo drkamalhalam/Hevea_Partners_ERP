@@ -603,6 +603,7 @@ import type {
   SalesTransaction,
   SaveProjectOnboardingStep200,
   SaveProjectOnboardingStepBody,
+  ScanAllProjectsGovernance200,
   SeedImbalanceLedger200,
   SendOnboardingOtpRequest,
   SendProjectOnboardingOtp200,
@@ -709,6 +710,7 @@ import type {
   UpsertPartnerOwnershipStateBody,
   UpsertUserInput,
   UserProfile,
+  ValidateProjectGovernance200,
   ValuationPreview,
   ValuationProfitRecordPage,
   ValuationRunDetail,
@@ -50332,4 +50334,175 @@ export const useSaveProjectOnboardingStep = <
   TContext
 > => {
   return useMutation(getSaveProjectOnboardingStepMutationOptions(options));
+};
+
+/**
+ * @summary Re-validate landowner governance for a project
+ */
+export const getValidateProjectGovernanceUrl = (projectId: string) => {
+  return `/api/projects/${projectId}/governance/validate`;
+};
+
+export const validateProjectGovernance = async (
+  projectId: string,
+  options?: RequestInit,
+): Promise<ValidateProjectGovernance200> => {
+  return customFetch<ValidateProjectGovernance200>(
+    getValidateProjectGovernanceUrl(projectId),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getValidateProjectGovernanceMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof validateProjectGovernance>>,
+    TError,
+    { projectId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof validateProjectGovernance>>,
+  TError,
+  { projectId: string },
+  TContext
+> => {
+  const mutationKey = ["validateProjectGovernance"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof validateProjectGovernance>>,
+    { projectId: string }
+  > = (props) => {
+    const { projectId } = props ?? {};
+
+    return validateProjectGovernance(projectId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ValidateProjectGovernanceMutationResult = NonNullable<
+  Awaited<ReturnType<typeof validateProjectGovernance>>
+>;
+
+export type ValidateProjectGovernanceMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Re-validate landowner governance for a project
+ */
+export const useValidateProjectGovernance = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof validateProjectGovernance>>,
+    TError,
+    { projectId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof validateProjectGovernance>>,
+  TError,
+  { projectId: string },
+  TContext
+> => {
+  return useMutation(getValidateProjectGovernanceMutationOptions(options));
+};
+
+/**
+ * @summary Scan all active projects and update landowner governance status
+ */
+export const getScanAllProjectsGovernanceUrl = () => {
+  return `/api/admin/governance/scan`;
+};
+
+export const scanAllProjectsGovernance = async (
+  options?: RequestInit,
+): Promise<ScanAllProjectsGovernance200> => {
+  return customFetch<ScanAllProjectsGovernance200>(
+    getScanAllProjectsGovernanceUrl(),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getScanAllProjectsGovernanceMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof scanAllProjectsGovernance>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof scanAllProjectsGovernance>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["scanAllProjectsGovernance"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof scanAllProjectsGovernance>>,
+    void
+  > = () => {
+    return scanAllProjectsGovernance(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ScanAllProjectsGovernanceMutationResult = NonNullable<
+  Awaited<ReturnType<typeof scanAllProjectsGovernance>>
+>;
+
+export type ScanAllProjectsGovernanceMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Scan all active projects and update landowner governance status
+ */
+export const useScanAllProjectsGovernance = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof scanAllProjectsGovernance>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof scanAllProjectsGovernance>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(getScanAllProjectsGovernanceMutationOptions(options));
 };

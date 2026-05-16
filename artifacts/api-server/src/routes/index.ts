@@ -86,6 +86,8 @@ import postMaturityPaymentsRouter from "./post_maturity_payments";
 import projectParticipantsRouter from "./project_participants";
 import projectWitnessesRouter from "./project_witnesses";
 import projectOnboardingRouter from "./project_onboarding";
+import projectGovernanceRouter from "./project_governance";
+import adminGovernanceRouter from "./admin_governance";
 
 const router: IRouter = Router();
 
@@ -187,5 +189,7 @@ router.use("/post-maturity-payments", postMaturityPaymentsRouter);
 router.use("/projects", projectParticipantsRouter);
 router.use("/projects", projectWitnessesRouter);
 router.use("/projects", projectOnboardingRouter);
+router.use("/projects", projectGovernanceRouter);
+router.use("/admin/governance", adminGovernanceRouter);
 
 export default router;

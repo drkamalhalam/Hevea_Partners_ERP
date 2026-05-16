@@ -338,6 +338,20 @@ router.post(
       return res.status(403).json({ error: "Forbidden" });
     }
 
+    // ── Governance lock check ──────────────────────────────────────────
+    const [govSale] = await db
+      .select({ governanceLocked: projectsTable.governanceLocked, configurationStatus: projectsTable.configurationStatus })
+      .from(projectsTable)
+      .where(eq(projectsTable.id, projectId))
+      .limit(1);
+    if (govSale?.governanceLocked) {
+      return res.status(423).json({
+        error: "Project is governance-locked. At least one valid landowner must be linked before sales can be recorded.",
+        code: "GOVERNANCE_LOCKED",
+        configurationStatus: govSale.configurationStatus,
+      });
+    }
+
     // Auto-generate sale number
     const dateStr = saleDate.replace(/-/g, "");
     const [countRow] = await db

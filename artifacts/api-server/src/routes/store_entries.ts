@@ -133,6 +133,20 @@ router.post("/", async (req, res) => {
     return res.status(400).json({ error: "projectId and employeeId are required." });
   }
 
+  // ── Governance lock check ────────────────────────────────────────────
+  const [govStore] = await db
+    .select({ governanceLocked: projectsTable.governanceLocked, configurationStatus: projectsTable.configurationStatus })
+    .from(projectsTable)
+    .where(eq(projectsTable.id, projectId))
+    .limit(1);
+  if (govStore?.governanceLocked) {
+    return res.status(423).json({
+      error: "Project is governance-locked. At least one valid landowner must be linked before store entries can be created.",
+      code: "GOVERNANCE_LOCKED",
+      configurationStatus: govStore.configurationStatus,
+    });
+  }
+
   // Prevent over-storing: stored cannot exceed collected
   const pending = await getPendingOutsideStore(projectId);
   if (sheetCount > pending) {

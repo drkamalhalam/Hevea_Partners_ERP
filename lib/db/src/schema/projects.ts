@@ -15,6 +15,8 @@ import {
   projectLifecycleStatusEnum,
   projectCommercialModelEnum,
   projectActivationStatusEnum,
+  projectConfigurationStatusEnum,
+  projectLandownerValidationStatusEnum,
 } from "./enums";
 import { usersTable } from "./users";
 
@@ -118,6 +120,31 @@ export const projectsTable = pgTable("projects", {
   /** Current wizard step (1–10). Null means wizard not yet started. */
   onboardingStep: integer("onboarding_step").default(1),
   onboardingCompletedAt: timestamp("onboarding_completed_at", { withTimezone: true }),
+
+  // ── Landowner Governance ─────────────────────────────────────────────────
+  /**
+   * Top-level configuration validity — computed automatically whenever
+   * landowner participants change.  INVALID_PROJECT_CONFIGURATION projects
+   * have governanceLocked=true and all write operations are blocked.
+   */
+  configurationStatus: projectConfigurationStatusEnum("configuration_status")
+    .notNull()
+    .default("VALID"),
+  /** Short machine-readable reason code, e.g. "MISSING_LANDOWNER". */
+  invalidReason: text("invalid_reason"),
+  /**
+   * When TRUE every operational write route (production, sales, LCA, etc.)
+   * rejects with HTTP 423 until an admin resolves the invalidity.
+   */
+  governanceLocked: boolean("governance_locked").notNull().default(false),
+  /** Set TRUE whenever an admin-initiated repair workflow is needed. */
+  remediationRequired: boolean("remediation_required").notNull().default(false),
+  /** Detailed landowner linkage state. */
+  landownerValidationStatus: projectLandownerValidationStatusEnum(
+    "landowner_validation_status",
+  )
+    .notNull()
+    .default("PENDING"),
 
   // ── Misc ─────────────────────────────────────────────────────────────
   notes: text("notes"),

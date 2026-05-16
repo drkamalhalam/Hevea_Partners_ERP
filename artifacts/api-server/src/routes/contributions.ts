@@ -384,11 +384,22 @@ router.post(
         lifecycleStatus: projectsTable.lifecycleStatus,
         commercialModel: projectsTable.commercialModel,
         name: projectsTable.name,
+        governanceLocked: projectsTable.governanceLocked,
+        configurationStatus: projectsTable.configurationStatus,
       })
       .from(projectsTable)
       .where(eq(projectsTable.id, String(b.projectId)))
       .limit(1);
     if (!projectRows[0]) return res.status(400).json({ error: "Project not found" });
+
+    // ── Governance lock check ──────────────────────────────────────────
+    if (projectRows[0].governanceLocked) {
+      return res.status(423).json({
+        error: "Project is governance-locked. At least one valid landowner must be linked before contributions can be recorded.",
+        code: "GOVERNANCE_LOCKED",
+        configurationStatus: projectRows[0].configurationStatus,
+      });
+    }
 
     // ── Commercial model guard (fifty_percent_revenue) ────────────────────────
     // Under the 50% Revenue Model: no ownership equity is ever created.

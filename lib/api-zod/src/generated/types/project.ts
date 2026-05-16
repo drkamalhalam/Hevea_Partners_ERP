@@ -7,6 +7,8 @@
  */
 import type { ProjectActivationStatus } from "./projectActivationStatus";
 import type { ProjectCommercialModel } from "./projectCommercialModel";
+import type { ProjectConfigurationStatus } from "./projectConfigurationStatus";
+import type { ProjectLandownerValidationStatus } from "./projectLandownerValidationStatus";
 import type { ProjectLifecycleStatus } from "./projectLifecycleStatus";
 import type { ProjectStatus } from "./projectStatus";
 
@@ -88,4 +90,10 @@ export interface Project {
   onboardingStep?: number | null;
   /** @nullable */
   onboardingCompletedAt?: string | null;
+  configurationStatus?: ProjectConfigurationStatus;
+  /** @nullable */
+  invalidReason?: string | null;
+  governanceLocked?: boolean;
+  remediationRequired?: boolean;
+  landownerValidationStatus?: ProjectLandownerValidationStatus;
 }

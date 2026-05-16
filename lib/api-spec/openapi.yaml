@@ -12208,6 +12208,57 @@ paths:
                   ok: { type: boolean }
                   onboardingStep: { type: integer }
 
+  /projects/{projectId}/governance/validate:
+    post:
+      operationId: validateProjectGovernance
+      tags: [projects]
+      summary: Re-validate landowner governance for a project
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Governance validation result
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [projectId, valid, configurationStatus, landownerValidationStatus]
+                properties:
+                  projectId: { type: string, format: uuid }
+                  valid: { type: boolean }
+                  configurationStatus:
+                    type: string
+                    enum: [VALID, INVALID_PROJECT_CONFIGURATION, PENDING_REMEDIATION, UNDER_REVIEW]
+                  landownerValidationStatus:
+                    type: string
+                    enum: [PENDING, VALIDATED, MISSING, BROKEN_LINKAGE, INVALID]
+                  invalidReason: { type: string, nullable: true }
+
+  /admin/governance/scan:
+    post:
+      operationId: scanAllProjectsGovernance
+      tags: [admin]
+      summary: Scan all active projects and update landowner governance status
+      responses:
+        "200":
+          description: Scan summary
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, summary]
+                properties:
+                  ok: { type: boolean }
+                  summary:
+                    type: object
+                    properties:
+                      total: { type: integer }
+                      valid: { type: integer }
+                      invalid: { type: integer }
+
 components:
   schemas:
 
@@ -12684,6 +12735,18 @@ components:
           type: ["integer", "null"]
         onboardingCompletedAt:
           type: ["string", "null"]
+        configurationStatus:
+          type: string
+          enum: [VALID, INVALID_PROJECT_CONFIGURATION, PENDING_REMEDIATION, UNDER_REVIEW]
+        invalidReason:
+          type: ["string", "null"]
+        governanceLocked:
+          type: boolean
+        remediationRequired:
+          type: boolean
+        landownerValidationStatus:
+          type: string
+          enum: [PENDING, VALIDATED, MISSING, BROKEN_LINKAGE, INVALID]
 
     ProjectInput:
       type: object

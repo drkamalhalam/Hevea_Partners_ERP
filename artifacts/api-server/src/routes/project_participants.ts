@@ -3,6 +3,7 @@ import { db, projectParticipantsTable, projectsTable } from "@workspace/db";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod/v4";
 import { requireRole } from "../middlewares/auth";
+import { applyGovernanceValidation } from "../lib/landownerGovernance";
 
 const router = Router();
 
@@ -91,6 +92,11 @@ router.put("/:projectId/participants/:role", requireRole("admin", "developer"), 
     })
     .returning();
 
+  // Landowner added/updated: re-validate project governance (may unlock a previously locked project)
+  if (role === "landowner") {
+    await applyGovernanceValidation(projectId, req.log);
+  }
+
   res.json({ participant: row });
 });
 
@@ -106,6 +112,12 @@ router.delete("/:projectId/participants/:role", requireRole("admin", "developer"
         eq(projectParticipantsTable.role, role),
       ),
     );
+
+  // Landowner removed: re-validate (will mark project governance-locked if no landowner remains)
+  if (role === "landowner") {
+    await applyGovernanceValidation(projectId, req.log);
+  }
+
   res.json({ ok: true });
 });
 

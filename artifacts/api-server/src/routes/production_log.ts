@@ -205,6 +205,20 @@ router.post(
       return res.status(403).json({ error: "Forbidden" });
     }
 
+    // ── Governance lock check ──────────────────────────────────────────
+    const [govBatch] = await db
+      .select({ governanceLocked: projectsTable.governanceLocked, configurationStatus: projectsTable.configurationStatus })
+      .from(projectsTable)
+      .where(eq(projectsTable.id, projectId))
+      .limit(1);
+    if (govBatch?.governanceLocked) {
+      return res.status(423).json({
+        error: "Project is governance-locked. At least one valid landowner must be linked before production batches can be created.",
+        code: "GOVERNANCE_LOCKED",
+        configurationStatus: govBatch.configurationStatus,
+      });
+    }
+
     // Auto-generate batch number: BATCH-YYYYMMDD-NNN
     const dateStr = batchDate.replace(/-/g, "");
     const [countRow] = await db

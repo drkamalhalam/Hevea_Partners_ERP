@@ -19,7 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   Plus, MapPin, Trees, Trash2, Hash, Layers, Users, Package,
   FileText, AlertTriangle, ChevronRight, Lock, Leaf, Wallet,
-  Activity, Scale, BarChart3, AlertCircle, TrendingUp,
+  Activity, Scale, BarChart3, AlertCircle, TrendingUp, ShieldX, Wrench,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -181,11 +181,33 @@ function ProjectGovernanceCard({
 
   const latestAgreement = projectAgreements[0] ?? null;
 
+  const isLocked = project.governanceLocked === true;
+  const isMissingLandowner = project.landownerValidationStatus === "MISSING" || project.invalidReason === "MISSING_LANDOWNER";
+
   return (
     <Card
       data-testid={`card-project-${project.id}`}
-      className="flex flex-col border hover:shadow-lg transition-all duration-200"
+      className={`flex flex-col border transition-all duration-200 ${isLocked ? "border-red-200 bg-red-50/30 hover:shadow-md" : "hover:shadow-lg"}`}
     >
+      {/* ── Governance Lock Banner ────────────────────────────────────────── */}
+      {isLocked && (
+        <div className="mx-4 mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5">
+          <div className="flex items-start gap-2">
+            <ShieldX className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
+            <div className="min-w-0 flex-1">
+              <p className="text-[11px] font-bold text-red-800 uppercase tracking-wide">
+                Invalid Configuration — Operational Access Blocked
+              </p>
+              <p className="text-[11px] text-red-700 mt-0.5">
+                {isMissingLandowner
+                  ? "Missing Mandatory Landowner. At least one verified landowner with full KYC must be linked before this project can operate."
+                  : `Configuration issue: ${project.invalidReason ?? "Unknown"}.`}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── §1 Identity ─────────────────────────────────────────────────── */}
       <CardHeader className="px-4 pt-4 pb-3">
         <Link href={`/projects/${project.id}`}>
@@ -476,40 +498,69 @@ function ProjectGovernanceCard({
         <Separator />
 
         {/* ── §8 Quick Actions ──────────────────────────────────────────── */}
-        <div className="grid grid-cols-3 gap-1.5">
-          <Link href={`/projects/${project.id}`}>
-            <Button variant="outline" size="sm" className="w-full h-7 text-[10px] px-1.5 gap-0.5">
-              <Activity className="h-3 w-3" /> Dashboard
-            </Button>
-          </Link>
-          <Link href="/partners">
-            <Button variant="outline" size="sm" className="w-full h-7 text-[10px] px-1.5 gap-0.5">
-              <Users className="h-3 w-3" /> Participants
-            </Button>
-          </Link>
-          <Link href="/agreements">
-            <Button variant="outline" size="sm" className="w-full h-7 text-[10px] px-1.5 gap-0.5">
-              <FileText className="h-3 w-3" /> Agreements
-            </Button>
-          </Link>
-          <Link href="/inventory">
-            <Button variant="outline" size="sm" className="w-full h-7 text-[10px] px-1.5 gap-0.5">
-              <Package className="h-3 w-3" /> Inventory
-            </Button>
-          </Link>
-          <Link href={isOwnership ? "/contributions" : "/distribution"}>
-            <Button variant="outline" size="sm" className="w-full h-7 text-[10px] px-1.5 gap-0.5">
-              <Wallet className="h-3 w-3" />
-              {isOwnership ? "Contributions" : "Distribution"}
-            </Button>
-          </Link>
-          <Link href={isOwnership ? "/lca/ledger" : "/sales"}>
-            <Button variant="outline" size="sm" className="w-full h-7 text-[10px] px-1.5 gap-0.5">
-              {isOwnership ? <Scale className="h-3 w-3" /> : <TrendingUp className="h-3 w-3" />}
-              {isOwnership ? "LCA Ledger" : "Sales"}
-            </Button>
-          </Link>
-        </div>
+        {isLocked ? (
+          <div className="space-y-1.5">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+              Repair Actions
+            </p>
+            <div className="grid grid-cols-2 gap-1.5">
+              <Link href={`/projects/create/${project.id}`}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full h-8 text-[11px] px-2 gap-1 border-red-300 text-red-700 hover:bg-red-50"
+                >
+                  <Wrench className="h-3.5 w-3.5" /> Repair / Add Landowner
+                </Button>
+              </Link>
+              <Link href={`/projects/${project.id}`}>
+                <Button variant="outline" size="sm" className="w-full h-8 text-[11px] px-2 gap-1">
+                  <Activity className="h-3.5 w-3.5" /> View Project
+                </Button>
+              </Link>
+            </div>
+            {canAccessAllProjects && (
+              <p className="text-[10px] text-muted-foreground pt-0.5">
+                Operational modules blocked until landowner KYC is completed.
+              </p>
+            )}
+          </div>
+        ) : (
+          <div className="grid grid-cols-3 gap-1.5">
+            <Link href={`/projects/${project.id}`}>
+              <Button variant="outline" size="sm" className="w-full h-7 text-[10px] px-1.5 gap-0.5">
+                <Activity className="h-3 w-3" /> Dashboard
+              </Button>
+            </Link>
+            <Link href="/partners">
+              <Button variant="outline" size="sm" className="w-full h-7 text-[10px] px-1.5 gap-0.5">
+                <Users className="h-3 w-3" /> Participants
+              </Button>
+            </Link>
+            <Link href="/agreements">
+              <Button variant="outline" size="sm" className="w-full h-7 text-[10px] px-1.5 gap-0.5">
+                <FileText className="h-3 w-3" /> Agreements
+              </Button>
+            </Link>
+            <Link href="/inventory">
+              <Button variant="outline" size="sm" className="w-full h-7 text-[10px] px-1.5 gap-0.5">
+                <Package className="h-3 w-3" /> Inventory
+              </Button>
+            </Link>
+            <Link href={isOwnership ? "/contributions" : "/distribution"}>
+              <Button variant="outline" size="sm" className="w-full h-7 text-[10px] px-1.5 gap-0.5">
+                <Wallet className="h-3 w-3" />
+                {isOwnership ? "Contributions" : "Distribution"}
+              </Button>
+            </Link>
+            <Link href={isOwnership ? "/lca/ledger" : "/sales"}>
+              <Button variant="outline" size="sm" className="w-full h-7 text-[10px] px-1.5 gap-0.5">
+                {isOwnership ? <Scale className="h-3 w-3" /> : <TrendingUp className="h-3 w-3" />}
+                {isOwnership ? "LCA Ledger" : "Sales"}
+              </Button>
+            </Link>
+          </div>
+        )}
 
         {/* Delete */}
         <div className="flex justify-end pt-0.5">

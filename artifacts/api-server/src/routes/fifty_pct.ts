@@ -284,6 +284,21 @@ router.post(
     const actor = clerkUserId ? await resolveActor(clerkUserId) : null;
 
     const d = parsed.data;
+
+    // ── Governance lock check ──────────────────────────────────────────
+    const [govFifty] = await db
+      .select({ governanceLocked: projectsTable.governanceLocked, configurationStatus: projectsTable.configurationStatus })
+      .from(projectsTable)
+      .where(eq(projectsTable.id, d.projectId))
+      .limit(1);
+    if (govFifty?.governanceLocked) {
+      return res.status(423).json({
+        error: "Project is governance-locked. At least one valid landowner must be linked before revenue distribution sessions can be created.",
+        code: "GOVERNANCE_LOCKED",
+        configurationStatus: govFifty.configurationStatus,
+      });
+    }
+
     const gross = d.grossRevenue;
     const { landownerSplit, participantPoolSplit } = computeSplit(gross);
     const landownerNet = computeLandownerNet(landownerSplit, d.operationalCost, d.lcaAmount);
