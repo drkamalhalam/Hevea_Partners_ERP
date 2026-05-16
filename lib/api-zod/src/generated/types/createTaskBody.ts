@@ -15,6 +15,10 @@ export interface CreateTaskBody {
   priority?: CreateTaskBodyPriority;
   projectId?: string;
   projectName?: string;
+  /** Person Master ID — preferred assignment field */
+  assignedToPersonId?: string;
+  assignedToPersonName?: string;
+  /** Legacy user account ID (optional, auto-bridged from personId) */
   assignedToId?: string;
   assignedToName?: string;
   assignedToRole?: string;

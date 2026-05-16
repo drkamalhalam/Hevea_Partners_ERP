@@ -6858,6 +6858,9 @@ paths:
           name: assignedToId
           schema: { type: string, format: uuid }
         - in: query
+          name: assignedToPersonId
+          schema: { type: string, format: uuid }
+        - in: query
           name: taskType
           schema: { type: string, enum: [production_entry, stock_update, inspection, general] }
       responses:
@@ -17669,7 +17672,9 @@ components:
         priority: { type: string, enum: [low, normal, high, urgent] }
         projectId: { type: string, format: uuid }
         projectName: { type: string }
-        assignedToId: { type: string, format: uuid }
+        assignedToPersonId: { type: string, format: uuid, description: "Person Master ID — primary identity-centric assignment" }
+        assignedToPersonName: { type: string, description: "Full name from Person Master registry" }
+        assignedToId: { type: string, format: uuid, description: "Legacy user account ID (backward compat — auto-populated if person has linked account)" }
         assignedToName: { type: string }
         assignedToRole: { type: string }
         assignedById: { type: string, format: uuid }
@@ -17695,7 +17700,9 @@ components:
         priority: { type: string, enum: [low, normal, high, urgent] }
         projectId: { type: string, format: uuid }
         projectName: { type: string }
-        assignedToId: { type: string, format: uuid }
+        assignedToPersonId: { type: string, format: uuid, description: "Person Master ID — preferred assignment field" }
+        assignedToPersonName: { type: string }
+        assignedToId: { type: string, format: uuid, description: "Legacy user account ID (optional, auto-bridged from personId)" }
         assignedToName: { type: string }
         assignedToRole: { type: string }
         dueDate: { type: string, format: date }
@@ -17713,6 +17720,8 @@ components:
         priority: { type: string, enum: [low, normal, high, urgent] }
         projectId: { type: string, format: uuid }
         projectName: { type: string }
+        assignedToPersonId: { type: string, format: uuid }
+        assignedToPersonName: { type: string }
         assignedToId: { type: string, format: uuid }
         assignedToName: { type: string }
         assignedToRole: { type: string }

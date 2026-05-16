@@ -8,7 +8,6 @@ import {
   ClipboardList,
   PackageOpen,
   Search,
-  Filter,
   CheckCheck,
   CircleDot,
   XCircle,
@@ -21,6 +20,8 @@ import {
   FolderKanban,
   Loader2,
   Play,
+  X,
+  UserCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -51,7 +52,6 @@ import {
   useCreateTask,
   useUpdateTask,
   useDeleteTask,
-  useListUsers,
   useListProjects,
   getListTasksQueryKey,
   getGetTaskSummaryQueryKey,
@@ -62,6 +62,11 @@ import type {
   UpdateTaskBody,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
+import {
+  PersonMasterSelector,
+  type PersonSummary,
+  derivePersonId,
+} from "@/components/PersonMasterSelector";
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -113,6 +118,11 @@ function dueDateLabel(dueDate: string | null | undefined, status: string) {
   return { label: `Due ${format(d, "d MMM")}`, className: "text-muted-foreground" };
 }
 
+/** Resolve the best display name for an assignee from a task record */
+function resolveAssigneeName(task: OperationalTask): string | null {
+  return task.assignedToPersonName ?? task.assignedToName ?? null;
+}
+
 // ── Task Card ─────────────────────────────────────────────────────────────
 
 function TaskCard({
@@ -132,7 +142,7 @@ function TaskCard({
   const sc = statusConfig(task.status);
   const pc = priorityConfig(task.priority);
   const due = dueDateLabel(task.dueDate, task.status);
-  const isActive = task.status === "pending" || task.status === "in_progress";
+  const assigneeName = resolveAssigneeName(task);
 
   return (
     <div
@@ -181,12 +191,26 @@ function TaskCard({
                 {task.projectName}
               </span>
             )}
-            {due && <span className={`inline-flex items-center gap-1 ${due.className}`}><Calendar className="w-3 h-3" />{due.label}</span>}
+            {assigneeName && (
+              <span className="inline-flex items-center gap-1">
+                {task.assignedToPersonId ? (
+                  <UserCheck className="w-3 h-3 text-emerald-500" />
+                ) : (
+                  <User className="w-3 h-3" />
+                )}
+                {assigneeName}
+              </span>
+            )}
+            {due && (
+              <span className={`inline-flex items-center gap-1 ${due.className}`}>
+                <Calendar className="w-3 h-3" />
+                {due.label}
+              </span>
+            )}
           </div>
         </div>
 
         <div className="flex-shrink-0 flex items-center gap-1.5">
-          {/* Quick action buttons */}
           {task.status === "pending" && (
             <Button
               size="sm"
@@ -257,6 +281,22 @@ function TaskCard({
               <span className="text-muted-foreground block mb-0.5">Priority</span>
               <span className="font-medium">{priorityConfig(task.priority).label}</span>
             </div>
+            {assigneeName && (
+              <div>
+                <span className="text-muted-foreground block mb-0.5">Assigned to</span>
+                <span className="font-medium flex items-center gap-1">
+                  {task.assignedToPersonId && (
+                    <UserCheck className="w-3 h-3 text-emerald-500 flex-shrink-0" />
+                  )}
+                  {assigneeName}
+                </span>
+                {task.assignedToPersonId && (
+                  <span className="text-muted-foreground font-mono text-[10px]">
+                    Registry identity
+                  </span>
+                )}
+              </div>
+            )}
             {task.assignedByName && (
               <div>
                 <span className="text-muted-foreground block mb-0.5">Assigned by</span>
@@ -302,44 +342,59 @@ function TaskFormDialog({
 }) {
   const { toast } = useToast();
   const qc = useQueryClient();
-  const { data: users = [] } = useListUsers();
   const { data: projects = [] } = useListProjects();
   const createMut = useCreateTask();
   const updateMut = useUpdateTask();
 
   const isEdit = !!editTask;
 
-  const [form, setForm] = useState<Partial<CreateTaskBody>>({
+  // Person assignment state
+  const [assignedPerson, setAssignedPerson] = useState<PersonSummary | null>(null);
+  // For edit mode: track whether the user has actively changed the assignment
+  const [assignmentChanged, setAssignmentChanged] = useState(false);
+
+  const [form, setForm] = useState({
     title: editTask?.title ?? "",
     description: editTask?.description ?? "",
-    taskType: (editTask?.taskType as any) ?? "general",
-    priority: (editTask?.priority as any) ?? "normal",
-    projectId: editTask?.projectId ?? undefined,
-    assignedToId: editTask?.assignedToId ?? undefined,
-    dueDate: editTask?.dueDate ?? undefined,
+    taskType: (editTask?.taskType ?? "general") as
+      | "production_entry"
+      | "stock_update"
+      | "inspection"
+      | "general",
+    priority: (editTask?.priority ?? "normal") as "low" | "normal" | "high" | "urgent",
+    projectId: editTask?.projectId ?? "",
+    dueDate: editTask?.dueDate ?? "",
     notes: editTask?.notes ?? "",
   });
 
-  const workerUsers = users.filter(
-    (u) => u.role === "employee" || u.role === "operational_staff"
-  );
+  // Current assignee display (edit mode — before any change)
+  const currentAssigneeName =
+    editTask?.assignedToPersonName ?? editTask?.assignedToName ?? null;
+  const currentAssigneeIsRegistry = !!editTask?.assignedToPersonId;
 
   async function handleSubmit() {
-    if (!form.title?.trim()) {
+    if (!form.title.trim()) {
       toast({ title: "Title is required", variant: "destructive" });
       return;
     }
     try {
+      // Resolve assignment fields
+      const personId = assignmentChanged
+        ? (assignedPerson?.id ?? undefined)
+        : (isEdit ? editTask?.assignedToPersonId ?? undefined : undefined);
+      const personName = assignmentChanged
+        ? (assignedPerson?.fullName ?? undefined)
+        : (isEdit ? editTask?.assignedToPersonName ?? undefined : undefined);
+
       const body = {
-        title: form.title!,
+        title: form.title,
         description: form.description || undefined,
-        taskType: form.taskType ?? "general",
-        priority: form.priority ?? "normal",
+        taskType: form.taskType,
+        priority: form.priority,
         projectId: form.projectId || undefined,
         projectName: projects.find((p) => p.id === form.projectId)?.name,
-        assignedToId: form.assignedToId || undefined,
-        assignedToName: workerUsers.find((u) => u.id === form.assignedToId)?.displayName ?? undefined,
-        assignedToRole: workerUsers.find((u) => u.id === form.assignedToId)?.role ?? undefined,
+        assignedToPersonId: personId,
+        assignedToPersonName: personName,
         dueDate: form.dueDate || undefined,
         notes: form.notes || undefined,
       };
@@ -348,7 +403,7 @@ function TaskFormDialog({
         await updateMut.mutateAsync({ id: editTask!.id, data: body as UpdateTaskBody });
         toast({ title: "Task updated" });
       } else {
-        await createMut.mutateAsync({ data: body });
+        await createMut.mutateAsync({ data: body as CreateTaskBody });
         toast({ title: "Task created" });
       }
       qc.invalidateQueries({ queryKey: getListTasksQueryKey() });
@@ -363,26 +418,28 @@ function TaskFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{isEdit ? "Edit Task" : "Create Task"}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
+          {/* Title */}
           <div className="space-y-1.5">
             <Label>Title *</Label>
             <Input
-              value={form.title ?? ""}
+              value={form.title}
               onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
               placeholder="Task title"
             />
           </div>
 
+          {/* Type + Priority */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>Type</Label>
               <Select
-                value={form.taskType ?? "general"}
+                value={form.taskType}
                 onValueChange={(v) => setForm((f) => ({ ...f, taskType: v as any }))}
               >
                 <SelectTrigger><SelectValue /></SelectTrigger>
@@ -397,7 +454,7 @@ function TaskFormDialog({
             <div className="space-y-1.5">
               <Label>Priority</Label>
               <Select
-                value={form.priority ?? "normal"}
+                value={form.priority}
                 onValueChange={(v) => setForm((f) => ({ ...f, priority: v as any }))}
               >
                 <SelectTrigger><SelectValue /></SelectTrigger>
@@ -411,64 +468,122 @@ function TaskFormDialog({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label>Project</Label>
-              <Select
-                value={form.projectId ?? "__none__"}
-                onValueChange={(v) => setForm((f) => ({ ...f, projectId: v === "__none__" ? undefined : v }))}
-              >
-                <SelectTrigger><SelectValue placeholder="Any project" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none__">— None —</SelectItem>
-                  {projects.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Assign to</Label>
-              <Select
-                value={form.assignedToId ?? "__none__"}
-                onValueChange={(v) => setForm((f) => ({ ...f, assignedToId: v === "__none__" ? undefined : v }))}
-              >
-                <SelectTrigger><SelectValue placeholder="Unassigned" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none__">— Unassigned —</SelectItem>
-                  {workerUsers.map((u) => (
-                    <SelectItem key={u.id ?? u.clerkUserId} value={u.id ?? ""}>
-                      {u.displayName ?? u.email ?? (u.id ?? "").slice(0, 8)} ({u.role})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          {/* Project */}
+          <div className="space-y-1.5">
+            <Label>Project</Label>
+            <Select
+              value={form.projectId || "__none__"}
+              onValueChange={(v) =>
+                setForm((f) => ({ ...f, projectId: v === "__none__" ? "" : v }))
+              }
+            >
+              <SelectTrigger><SelectValue placeholder="Any project" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">— None —</SelectItem>
+                {projects.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
+          {/* Assignee — Person Master */}
+          <div className="space-y-1.5">
+            <Label className="flex items-center gap-1.5">
+              <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
+              Assign to (Person Registry)
+            </Label>
+
+            {/* Edit mode: show current assignee before any change */}
+            {isEdit && !assignmentChanged && currentAssigneeName && (
+              <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
+                <UserCheck className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-emerald-900 truncate">{currentAssigneeName}</p>
+                  {currentAssigneeIsRegistry && (
+                    <p className="text-[11px] text-emerald-600">Registry identity</p>
+                  )}
+                </div>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 text-xs text-emerald-700 hover:bg-emerald-100 flex-shrink-0"
+                  onClick={() => setAssignmentChanged(true)}
+                >
+                  Change
+                </Button>
+              </div>
+            )}
+
+            {/* Show selector when: create mode, or edit mode after "Change" clicked */}
+            {(!isEdit || assignmentChanged || !currentAssigneeName) && (
+              <>
+                {assignedPerson ? (
+                  <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
+                    <UserCheck className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-emerald-900 truncate">
+                        {assignedPerson.fullName}
+                      </p>
+                      <p className="text-[11px] text-emerald-600 font-mono">
+                        {derivePersonId(assignedPerson.id, assignedPerson.createdAt)}
+                      </p>
+                    </div>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7 text-emerald-700 hover:bg-emerald-100 flex-shrink-0"
+                      onClick={() => {
+                        setAssignedPerson(null);
+                        if (isEdit) setAssignmentChanged(false);
+                      }}
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                ) : (
+                  <PersonMasterSelector
+                    selectedPerson={assignedPerson}
+                    onSelect={(p) => {
+                      setAssignedPerson(p);
+                      if (p) setAssignmentChanged(true);
+                    }}
+                  />
+                )}
+                <p className="text-[11px] text-muted-foreground">
+                  Search the Person Registry by name, mobile, or Aadhaar. Workers without
+                  login accounts can still receive tasks.
+                </p>
+              </>
+            )}
+          </div>
+
+          {/* Due Date */}
           <div className="space-y-1.5">
             <Label>Due Date</Label>
             <Input
               type="date"
-              value={form.dueDate ?? ""}
-              onChange={(e) => setForm((f) => ({ ...f, dueDate: e.target.value || undefined }))}
+              value={form.dueDate}
+              onChange={(e) => setForm((f) => ({ ...f, dueDate: e.target.value }))}
             />
           </div>
 
+          {/* Description */}
           <div className="space-y-1.5">
             <Label>Description</Label>
             <Textarea
-              value={form.description ?? ""}
+              value={form.description}
               onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
               placeholder="What needs to be done?"
               rows={3}
             />
           </div>
 
+          {/* Notes */}
           <div className="space-y-1.5">
             <Label>Notes for assignee</Label>
             <Textarea
-              value={form.notes ?? ""}
+              value={form.notes}
               onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
               placeholder="Any instructions or context"
               rows={2}
@@ -477,7 +592,9 @@ function TaskFormDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
+          <Button variant="outline" onClick={onClose} disabled={saving}>
+            Cancel
+          </Button>
           <Button onClick={handleSubmit} disabled={saving}>
             {saving && <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />}
             {isEdit ? "Save Changes" : "Create Task"}
@@ -503,7 +620,7 @@ export default function OperationalTasks() {
   const [editTask, setEditTask] = useState<OperationalTask | undefined>();
 
   const queryStatus =
-    statusFilter === "active" ? undefined : statusFilter === "all" ? undefined : statusFilter;
+    statusFilter === "active" || statusFilter === "all" ? undefined : statusFilter;
 
   const { data: tasks = [], isLoading } = useListTasks({
     status: queryStatus as any,
@@ -512,29 +629,30 @@ export default function OperationalTasks() {
   const updateMut = useUpdateTask();
   const deleteMut = useDeleteTask();
 
-  // Filter locally
   const filtered = tasks.filter((t) => {
-    if (statusFilter === "active" && (t.status === "completed" || t.status === "cancelled")) return false;
-    if (statusFilter !== "active" && statusFilter !== "all" && t.status !== statusFilter) return false;
+    if (statusFilter === "active" && (t.status === "completed" || t.status === "cancelled"))
+      return false;
+    if (statusFilter !== "active" && statusFilter !== "all" && t.status !== statusFilter)
+      return false;
     if (typeFilter !== "all" && t.taskType !== typeFilter) return false;
     if (search) {
       const q = search.toLowerCase();
+      const name = (t.assignedToPersonName ?? t.assignedToName ?? "").toLowerCase();
       return (
         t.title.toLowerCase().includes(q) ||
         (t.projectName ?? "").toLowerCase().includes(q) ||
-        (t.assignedToName ?? "").toLowerCase().includes(q)
+        name.includes(q)
       );
     }
     return true;
   });
 
-  // Group for worker view: pending/in_progress first, then completed
   const active = filtered.filter((t) => t.status === "pending" || t.status === "in_progress");
   const done = filtered.filter((t) => t.status === "completed" || t.status === "cancelled");
 
-  async function handleStatusChange(id: string, status: string, notes?: string) {
+  async function handleStatusChange(id: string, status: string) {
     try {
-      await updateMut.mutateAsync({ id, data: { status: status as any, notes } });
+      await updateMut.mutateAsync({ id, data: { status: status as any } });
       qc.invalidateQueries({ queryKey: getListTasksQueryKey() });
       qc.invalidateQueries({ queryKey: getGetTaskSummaryQueryKey() });
       toast({ title: status === "completed" ? "Task completed!" : "Task updated" });
@@ -561,12 +679,17 @@ export default function OperationalTasks() {
         <div>
           <h1 className="text-xl font-semibold text-gray-900">Operational Tasks</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            {canManage ? "Create and manage tasks for field staff" : "Your assigned tasks"}
+            {canManage
+              ? "Assign tasks to any registered person — no login account required"
+              : "Your assigned tasks"}
           </p>
         </div>
         {canManage && (
           <Button
-            onClick={() => { setEditTask(undefined); setShowForm(true); }}
+            onClick={() => {
+              setEditTask(undefined);
+              setShowForm(true);
+            }}
             className="gap-1.5 h-9"
           >
             <Plus className="w-4 h-4" /> New Task
@@ -587,13 +710,21 @@ export default function OperationalTasks() {
           </div>
           <div className="rounded-xl border bg-white p-3.5 shadow-sm">
             <p className="text-xs text-muted-foreground">Urgent</p>
-            <p className={`text-2xl font-bold mt-0.5 ${summary.urgent > 0 ? "text-red-600" : "text-gray-400"}`}>
+            <p
+              className={`text-2xl font-bold mt-0.5 ${
+                summary.urgent > 0 ? "text-red-600" : "text-gray-400"
+              }`}
+            >
               {summary.urgent}
             </p>
           </div>
           <div className="rounded-xl border bg-white p-3.5 shadow-sm">
             <p className="text-xs text-muted-foreground">Overdue</p>
-            <p className={`text-2xl font-bold mt-0.5 ${summary.overdue > 0 ? "text-red-600" : "text-gray-400"}`}>
+            <p
+              className={`text-2xl font-bold mt-0.5 ${
+                summary.overdue > 0 ? "text-red-600" : "text-gray-400"
+              }`}
+            >
               {summary.overdue}
             </p>
           </div>
@@ -605,20 +736,19 @@ export default function OperationalTasks() {
         <div className="relative flex-1 min-w-[180px]">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
           <Input
-            className="pl-8 h-8 text-xs"
-            placeholder="Search tasks…"
+            className="pl-8 h-9 text-sm"
+            placeholder="Search tasks or assignees…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="h-8 w-[130px] text-xs">
-            <Filter className="w-3 h-3 mr-1" />
+          <SelectTrigger className="h-9 text-sm w-[130px]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="all">All Statuses</SelectItem>
+            <SelectItem value="all">All statuses</SelectItem>
             <SelectItem value="pending">Pending</SelectItem>
             <SelectItem value="in_progress">In Progress</SelectItem>
             <SelectItem value="completed">Completed</SelectItem>
@@ -626,13 +756,13 @@ export default function OperationalTasks() {
           </SelectContent>
         </Select>
         <Select value={typeFilter} onValueChange={setTypeFilter}>
-          <SelectTrigger className="h-8 w-[140px] text-xs">
-            <SelectValue placeholder="All types" />
+          <SelectTrigger className="h-9 text-sm w-[140px]">
+            <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Types</SelectItem>
-            <SelectItem value="production_entry">Production Entry</SelectItem>
-            <SelectItem value="stock_update">Stock Update</SelectItem>
+            <SelectItem value="all">All types</SelectItem>
+            <SelectItem value="production_entry">Production</SelectItem>
+            <SelectItem value="stock_update">Stock</SelectItem>
             <SelectItem value="inspection">Inspection</SelectItem>
             <SelectItem value="general">General</SelectItem>
           </SelectContent>
@@ -642,27 +772,27 @@ export default function OperationalTasks() {
       {/* Task list */}
       {isLoading ? (
         <div className="space-y-3">
-          {[...Array(4)].map((_, i) => (
+          {[1, 2, 3].map((i) => (
             <Skeleton key={i} className="h-16 rounded-xl" />
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center h-40 text-muted-foreground">
-            <CheckSquare2 className="w-8 h-8 mb-2 opacity-25" />
-            <p className="text-sm font-medium">No tasks found</p>
-            <p className="text-xs mt-0.5">
-              {canManage ? "Create a task to get started" : "You have no assigned tasks"}
-            </p>
-          </CardContent>
-        </Card>
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <CheckSquare2 className="w-10 h-10 text-muted-foreground/30 mb-3" />
+          <p className="text-sm font-medium text-muted-foreground">No tasks found</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            {canManage
+              ? "Create a task and assign it to anyone in the Person Registry"
+              : "No tasks assigned to you yet"}
+          </p>
+        </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-5">
           {active.length > 0 && (
             <div className="space-y-2">
               {statusFilter === "all" && (
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-1">
-                  Active ({active.length})
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide px-1">
+                  Active · {active.length}
                 </p>
               )}
               {active.map((t) => (
@@ -671,25 +801,32 @@ export default function OperationalTasks() {
                   task={t}
                   canManage={canManage}
                   onStatusChange={handleStatusChange}
-                  onEdit={(task) => { setEditTask(task); setShowForm(true); }}
+                  onEdit={(task) => {
+                    setEditTask(task);
+                    setShowForm(true);
+                  }}
                   onDelete={handleDelete}
                 />
               ))}
             </div>
           )}
-
-          {done.length > 0 && statusFilter !== "active" && (
+          {done.length > 0 && (
             <div className="space-y-2">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-1">
-                Completed / Cancelled ({done.length})
-              </p>
+              {(statusFilter === "all" || statusFilter === "active") && (
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide px-1">
+                  Completed / Cancelled · {done.length}
+                </p>
+              )}
               {done.map((t) => (
                 <TaskCard
                   key={t.id}
                   task={t}
                   canManage={canManage}
                   onStatusChange={handleStatusChange}
-                  onEdit={(task) => { setEditTask(task); setShowForm(true); }}
+                  onEdit={(task) => {
+                    setEditTask(task);
+                    setShowForm(true);
+                  }}
                   onDelete={handleDelete}
                 />
               ))}
@@ -702,7 +839,10 @@ export default function OperationalTasks() {
       {showForm && (
         <TaskFormDialog
           open={showForm}
-          onClose={() => { setShowForm(false); setEditTask(undefined); }}
+          onClose={() => {
+            setShowForm(false);
+            setEditTask(undefined);
+          }}
           editTask={editTask}
         />
       )}

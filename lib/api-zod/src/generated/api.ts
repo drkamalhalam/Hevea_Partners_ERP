@@ -11039,6 +11039,7 @@ export const ListTasksQueryParams = zod.object({
     .optional(),
   projectId: zod.coerce.string().uuid().optional(),
   assignedToId: zod.coerce.string().uuid().optional(),
+  assignedToPersonId: zod.coerce.string().uuid().optional(),
   taskType: zod
     .enum(["production_entry", "stock_update", "inspection", "general"])
     .optional(),
@@ -11058,7 +11059,22 @@ export const ListTasksResponseItem = zod.object({
   priority: zod.enum(["low", "normal", "high", "urgent"]),
   projectId: zod.string().uuid().optional(),
   projectName: zod.string().optional(),
-  assignedToId: zod.string().uuid().optional(),
+  assignedToPersonId: zod
+    .string()
+    .uuid()
+    .optional()
+    .describe("Person Master ID — primary identity-centric assignment"),
+  assignedToPersonName: zod
+    .string()
+    .optional()
+    .describe("Full name from Person Master registry"),
+  assignedToId: zod
+    .string()
+    .uuid()
+    .optional()
+    .describe(
+      "Legacy user account ID (backward compat — auto-populated if person has linked account)",
+    ),
   assignedToName: zod.string().optional(),
   assignedToRole: zod.string().optional(),
   assignedById: zod.string().uuid().optional(),
@@ -11088,7 +11104,17 @@ export const CreateTaskBody = zod.object({
   priority: zod.enum(["low", "normal", "high", "urgent"]).optional(),
   projectId: zod.string().uuid().optional(),
   projectName: zod.string().optional(),
-  assignedToId: zod.string().uuid().optional(),
+  assignedToPersonId: zod
+    .string()
+    .uuid()
+    .optional()
+    .describe("Person Master ID — preferred assignment field"),
+  assignedToPersonName: zod.string().optional(),
+  assignedToId: zod
+    .string()
+    .uuid()
+    .optional()
+    .describe("Legacy user account ID (optional, auto-bridged from personId)"),
   assignedToName: zod.string().optional(),
   assignedToRole: zod.string().optional(),
   dueDate: zod.coerce.date().optional(),
@@ -11131,7 +11157,22 @@ export const GetTaskResponse = zod.object({
   priority: zod.enum(["low", "normal", "high", "urgent"]),
   projectId: zod.string().uuid().optional(),
   projectName: zod.string().optional(),
-  assignedToId: zod.string().uuid().optional(),
+  assignedToPersonId: zod
+    .string()
+    .uuid()
+    .optional()
+    .describe("Person Master ID — primary identity-centric assignment"),
+  assignedToPersonName: zod
+    .string()
+    .optional()
+    .describe("Full name from Person Master registry"),
+  assignedToId: zod
+    .string()
+    .uuid()
+    .optional()
+    .describe(
+      "Legacy user account ID (backward compat — auto-populated if person has linked account)",
+    ),
   assignedToName: zod.string().optional(),
   assignedToRole: zod.string().optional(),
   assignedById: zod.string().uuid().optional(),
@@ -11167,6 +11208,8 @@ export const UpdateTaskBody = zod.object({
   priority: zod.enum(["low", "normal", "high", "urgent"]).optional(),
   projectId: zod.string().uuid().optional(),
   projectName: zod.string().optional(),
+  assignedToPersonId: zod.string().uuid().optional(),
+  assignedToPersonName: zod.string().optional(),
   assignedToId: zod.string().uuid().optional(),
   assignedToName: zod.string().optional(),
   assignedToRole: zod.string().optional(),
@@ -11188,7 +11231,22 @@ export const UpdateTaskResponse = zod.object({
   priority: zod.enum(["low", "normal", "high", "urgent"]),
   projectId: zod.string().uuid().optional(),
   projectName: zod.string().optional(),
-  assignedToId: zod.string().uuid().optional(),
+  assignedToPersonId: zod
+    .string()
+    .uuid()
+    .optional()
+    .describe("Person Master ID — primary identity-centric assignment"),
+  assignedToPersonName: zod
+    .string()
+    .optional()
+    .describe("Full name from Person Master registry"),
+  assignedToId: zod
+    .string()
+    .uuid()
+    .optional()
+    .describe(
+      "Legacy user account ID (backward compat — auto-populated if person has linked account)",
+    ),
   assignedToName: zod.string().optional(),
   assignedToRole: zod.string().optional(),
   assignedById: zod.string().uuid().optional(),

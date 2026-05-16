@@ -1,0 +1,148 @@
+THE TASK SYSTEM IS STILL USING OLD AUTH/USER-CENTRIC ASSIGNMENT ARCHITECTURE.
+
+Currently:
+PERSON_MASTER registry identities cannot properly receive tasks.
+
+This means the task engine is still assigning using:
+- USER_ACCOUNT
+- auth user IDs
+- old partner tables
+- employee-specific tables
+
+instead of:
+PERSON_MASTER.
+
+==================================================
+IMPORTANT ARCHITECTURE PRINCIPLE
+==================================================
+
+Tasks must belong to:
+PERSON_MASTER identities,
+NOT directly to USER_ACCOUNT.
+
+Reason:
+- some persons may not yet have login accounts
+- governance identity must remain stable
+- login accounts are optional
+- tasks must survive account changes
+- workers/participants may activate later
+
+==================================================
+REBUILD TASK ASSIGNMENT ARCHITECTURE
+==================================================
+
+TASK
+→ assigned_to
+→ PERSON_MASTER_ID
+
+NOT:
+USER_ACCOUNT_ID directly.
+
+==================================================
+TASK ASSIGNMENT FLOW
+==================================================
+
+Allow task assignment to:
+- landowners
+- developers
+- workers
+- managers
+- buyers
+- witnesses
+- collection agents
+- store keepers
+- economic participants
+
+through:
+PERSON_MASTER selection.
+
+==================================================
+SEARCH REQUIREMENTS
+==================================================
+
+Task assignment selector must search:
+PERSON_MASTER
+
+using:
+- name
+- mobile
+- PERSON_MASTER_ID
+- role
+
+==================================================
+USER ACCOUNT LINKAGE
+==================================================
+
+If assigned PERSON_MASTER has linked USER_ACCOUNT:
+- show tasks in app/dashboard
+- enable notifications
+- enable login workflow
+
+If no USER_ACCOUNT exists:
+- task still remains valid
+- task stays governance-linked
+- allow future account activation
+- preserve assignment continuity
+
+==================================================
+IMPORTANT GOVERNANCE RULE
+==================================================
+
+A person must NOT lose:
+- task history
+- assignments
+- responsibilities
+
+because:
+- login changed
+- account recreated
+- authentication updated
+
+Therefore:
+task ownership must remain identity-centric.
+
+==================================================
+TASK VISIBILITY RULE
+==================================================
+
+When USER_ACCOUNT links to PERSON_MASTER:
+automatically show:
+- assigned tasks
+- pending tasks
+- historical tasks
+
+==================================================
+BACKWARD COMPATIBILITY
+==================================================
+
+Preserve:
+- existing task records
+- notifications
+- audit history
+- workflow status
+- assignment logs
+
+while migrating task ownership to PERSON_MASTER architecture.
+
+==================================================
+FUTURE SUPPORT
+==================================================
+
+This architecture must support:
+- offline workers
+- future account activation
+- reassignment
+- inheritance continuity
+- governance audits
+- workforce scaling
+
+==================================================
+FINAL ARCHITECTURE TARGET
+==================================================
+
+The ERP must become:
+
+IDENTITY-CENTRIC TASK GOVERNANCE
+
+NOT:
+AUTH-ACCOUNT-CENTRIC TASK ASSIGNMENT.

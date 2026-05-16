@@ -8,6 +8,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { projectsTable } from "./projects";
 import { usersTable } from "./users";
+import { personMasterTable } from "./person_master";
 import { taskTypeEnum, taskStatusEnum, taskPriorityEnum } from "./enums";
 
 /**
@@ -35,6 +36,16 @@ export const operationalTasksTable = pgTable("operational_tasks", {
   }),
   projectName: text("project_name"),
 
+  // Identity-centric assignment: points to person_master (governance identity).
+  // This is the primary assignment field — a person does not need a login account.
+  assignedToPersonId: uuid("assigned_to_person_id").references(
+    () => personMasterTable.id,
+    { onDelete: "set null" }
+  ),
+  assignedToPersonName: text("assigned_to_person_name"),
+
+  // Legacy user-account assignment (preserved for backward compatibility).
+  // Populated automatically when the assigned person has a linked user account.
   assignedToId: uuid("assigned_to_id").references(() => usersTable.id, {
     onDelete: "set null",
   }),

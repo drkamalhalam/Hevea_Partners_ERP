@@ -17,6 +17,8 @@ export interface UpdateTaskBody {
   priority?: UpdateTaskBodyPriority;
   projectId?: string;
   projectName?: string;
+  assignedToPersonId?: string;
+  assignedToPersonName?: string;
   assignedToId?: string;
   assignedToName?: string;
   assignedToRole?: string;

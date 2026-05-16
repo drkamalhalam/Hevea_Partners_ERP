@@ -18,6 +18,11 @@ export interface OperationalTask {
   priority: OperationalTaskPriority;
   projectId?: string;
   projectName?: string;
+  /** Person Master ID — primary identity-centric assignment */
+  assignedToPersonId?: string;
+  /** Full name from Person Master registry */
+  assignedToPersonName?: string;
+  /** Legacy user account ID (backward compat — auto-populated if person has linked account) */
   assignedToId?: string;
   assignedToName?: string;
   assignedToRole?: string;

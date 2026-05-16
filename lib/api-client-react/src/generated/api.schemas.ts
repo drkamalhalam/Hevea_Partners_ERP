@@ -5225,6 +5225,11 @@ export interface OperationalTask {
   priority: OperationalTaskPriority;
   projectId?: string;
   projectName?: string;
+  /** Person Master ID — primary identity-centric assignment */
+  assignedToPersonId?: string;
+  /** Full name from Person Master registry */
+  assignedToPersonName?: string;
+  /** Legacy user account ID (backward compat — auto-populated if person has linked account) */
   assignedToId?: string;
   assignedToName?: string;
   assignedToRole?: string;
@@ -5269,6 +5274,10 @@ export interface CreateTaskBody {
   priority?: CreateTaskBodyPriority;
   projectId?: string;
   projectName?: string;
+  /** Person Master ID — preferred assignment field */
+  assignedToPersonId?: string;
+  assignedToPersonName?: string;
+  /** Legacy user account ID (optional, auto-bridged from personId) */
   assignedToId?: string;
   assignedToName?: string;
   assignedToRole?: string;
@@ -5316,6 +5325,8 @@ export interface UpdateTaskBody {
   priority?: UpdateTaskBodyPriority;
   projectId?: string;
   projectName?: string;
+  assignedToPersonId?: string;
+  assignedToPersonName?: string;
   assignedToId?: string;
   assignedToName?: string;
   assignedToRole?: string;
@@ -10192,6 +10203,7 @@ export type ListTasksParams = {
   status?: ListTasksStatus;
   projectId?: string;
   assignedToId?: string;
+  assignedToPersonId?: string;
   taskType?: ListTasksTaskType;
 };
 
