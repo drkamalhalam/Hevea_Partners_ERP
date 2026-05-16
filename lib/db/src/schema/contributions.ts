@@ -82,6 +82,12 @@ export const contributionsTable = pgTable("contributions", {
   // Used to filter the verified-prematurity ownership guidance query.
   affectsOwnership: boolean("affects_ownership").notNull().default(true),
 
+  // When true, this entry represents a reimbursable/recoverable advance.
+  // Forces affectsOwnership=false regardless of contributionType.
+  // The amount goes to the recoverable ledger only — never to ownership equity.
+  // Applicable to: economic_investment, manual_adjustment types.
+  reimbursementFlag: boolean("reimbursement_flag").notNull().default(false),
+
   // ── Verification lifecycle ────────────────────────────────────────────────
   verificationStatus: contributionVerificationStatusEnum("verification_status")
     .notNull()

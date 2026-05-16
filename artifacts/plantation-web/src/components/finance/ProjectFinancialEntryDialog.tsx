@@ -87,7 +87,8 @@ type EntryTypeConfig = {
   onlyFor50pct?: boolean;
   ownershipAffecting?: boolean;
   requiresParticipant?: boolean;
-  // post-mature behavior: force it to a safe category instead
+  // when true, the dialog shows a "mark as reimbursable" toggle for this type
+  canBeReimbursable?: boolean;
 };
 
 const ENTRY_TYPES: Record<string, EntryTypeConfig> = {
@@ -103,6 +104,7 @@ const ENTRY_TYPES: Record<string, EntryTypeConfig> = {
     requiresParticipant: true,
     blockedInMature: true,
     blockedInClosed: true,
+    canBeReimbursable: true,
   },
   land_notional: {
     label: "Land Notional Value",
@@ -138,6 +140,7 @@ const ENTRY_TYPES: Record<string, EntryTypeConfig> = {
     description: "Admin-initiated correction or reconciliation",
     requiresParticipant: true,
     blockedInClosed: true,
+    canBeReimbursable: true,
   },
   // ── Operational costs (expenditure ledger) ────────────────────────────────
   operational_labor: {
@@ -266,6 +269,94 @@ function getEntryWarning(
 
 // ── Helper: lifecycle label ──────────────────────────────────────────────────
 
+// ── System accounting behavior derivation ───────────────────────────────────
+
+type AccountingBehaviorVariant = "ownership" | "reimbursable" | "operational" | "frozen" | "model_blocked";
+
+type AccountingBehavior = {
+  label: string;
+  description: string;
+  variant: AccountingBehaviorVariant;
+};
+
+function getAccountingBehavior(
+  key: string,
+  lifecycle: string,
+  model: string,
+  reimbursementFlag: boolean,
+): AccountingBehavior | null {
+  const cfg = ENTRY_TYPES[key];
+  if (!cfg) return null;
+  const is50pct = model === "fifty_percent_revenue";
+  const isMature = lifecycle === "mature_production" || lifecycle === "closed";
+
+  if (cfg.ledger === "expenditure") {
+    return {
+      label: "Operational Expense",
+      description: is50pct
+        ? "Recorded for burden accounting and 50% revenue settlement calculations."
+        : "Recorded to the operational burden ledger. No ownership equity impact.",
+      variant: "operational",
+    };
+  }
+
+  if (reimbursementFlag) {
+    return {
+      label: "Reimbursable Advance",
+      description: "Recorded to the recoverable ledger only. Will NOT influence ownership equity under any circumstances.",
+      variant: "reimbursable",
+    };
+  }
+
+  if (key === "recoverable_advance") {
+    return {
+      label: "Recoverable Advance",
+      description: "Recorded as a recoverable bridge advance. Tracked for future revenue recovery — no equity impact.",
+      variant: "reimbursable",
+    };
+  }
+
+  if (cfg.ownershipAffecting && !is50pct && !isMature) {
+    return {
+      label: "Ownership-Affecting Investment",
+      description: "Will contribute to this participant's ownership equity once verified (prematurity only).",
+      variant: "ownership",
+    };
+  }
+
+  if (cfg.ownershipAffecting && is50pct) {
+    return {
+      label: "Operational Accounting Only",
+      description: "50% Revenue model: recorded for burden accounting only. No ownership equity is created in this project.",
+      variant: "model_blocked",
+    };
+  }
+
+  if (cfg.ownershipAffecting && isMature) {
+    return {
+      label: "Post-Maturity Entry",
+      description: "Ownership is frozen at maturity. Recorded for accounting purposes only — equity will not change.",
+      variant: "frozen",
+    };
+  }
+
+  return {
+    label: "Accounting Entry",
+    description: "Recorded to the contribution ledger without ownership equity impact.",
+    variant: "operational",
+  };
+}
+
+const BEHAVIOR_STYLES: Record<AccountingBehaviorVariant, { wrap: string; icon: React.FC<{ className?: string }> }> = {
+  ownership:    { wrap: "bg-blue-50 border-blue-200 text-blue-800 dark:bg-blue-950/20 dark:border-blue-700 dark:text-blue-300", icon: ShieldCheck },
+  reimbursable: { wrap: "bg-purple-50 border-purple-200 text-purple-800 dark:bg-purple-950/20 dark:border-purple-700 dark:text-purple-300", icon: RotateCcw },
+  operational:  { wrap: "bg-slate-50 border-slate-200 text-slate-600 dark:bg-slate-900/30 dark:border-slate-600 dark:text-slate-400", icon: Leaf },
+  frozen:       { wrap: "bg-slate-100 border-slate-300 text-slate-600 dark:bg-slate-900/50 dark:border-slate-600 dark:text-slate-400", icon: Lock },
+  model_blocked:{ wrap: "bg-orange-50 border-orange-200 text-orange-800 dark:bg-orange-950/20 dark:border-orange-700 dark:text-orange-300", icon: ShieldAlert },
+};
+
+// ── Helper: lifecycle label ──────────────────────────────────────────────────
+
 function lifecycleLabel(s: string): string {
   if (s === "prematurity") return "Prematurity";
   if (s === "mature_production") return "Mature Production";
@@ -311,14 +402,21 @@ export function ProjectFinancialEntryDialog({
   const [remarks, setRemarks] = useState("");
   const [agreementId, setAgreementId] = useState("");
   const [affectsOwnership, setAffectsOwnership] = useState(true);
+  const [reimbursementFlag, setReimbursementFlag] = useState(false);
   const [error, setError] = useState("");
 
   // ── Reset when project changes ─────────────────────────────────────────────
   useEffect(() => {
     setEntryTypeKey("");
     setSelectedParticipantId("");
+    setReimbursementFlag(false);
     setError("");
   }, [projectId]);
+
+  // ── Reset reimbursementFlag when entry type changes ─────────────────────────
+  useEffect(() => {
+    setReimbursementFlag(false);
+  }, [entryTypeKey]);
 
   // ── Auto-reset blocked type when project changes ───────────────────────────
   const project = useMemo(
@@ -398,6 +496,7 @@ export function ProjectFinancialEntryDialog({
             agreementId: (agreementId && agreementId !== "__none__") ? agreementId : undefined,
             referenceNumber: referenceNumber || undefined,
             remarks: remarks || undefined,
+            reimbursementFlag: reimbursementFlag || undefined,
             ...(isManualAdj ? { affectsOwnership } : {}),
           },
         });
@@ -448,6 +547,7 @@ export function ProjectFinancialEntryDialog({
     setRemarks("");
     setAgreementId("");
     setAffectsOwnership(true);
+    setReimbursementFlag(false);
     setError("");
     onClose();
   }
@@ -594,6 +694,22 @@ export function ProjectFinancialEntryDialog({
             </div>
           )}
 
+          {/* ── System accounting behavior panel ──────────────────────────── */}
+          {entryTypeKey && !blockReason && (() => {
+            const behavior = getAccountingBehavior(entryTypeKey, lifecycle, model, reimbursementFlag);
+            if (!behavior) return null;
+            const { wrap, icon: BehaviorIcon } = BEHAVIOR_STYLES[behavior.variant];
+            return (
+              <div className={cn("flex items-start gap-2.5 rounded-lg border p-2.5 text-xs", wrap)}>
+                <BehaviorIcon className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                <div>
+                  <p className="font-semibold leading-tight mb-0.5">System will record as: {behavior.label}</p>
+                  <p className="opacity-80 leading-snug">{behavior.description}</p>
+                </div>
+              </div>
+            );
+          })()}
+
           {/* ── Fields (shown only when entry type is selected) ──────────── */}
           {cfg && !blockReason && (
             <>
@@ -634,6 +750,26 @@ export function ProjectFinancialEntryDialog({
                   <p className="text-[10px] text-muted-foreground">
                     Only participants linked to this project are shown.
                   </p>
+                </div>
+              )}
+
+              {/* Reimbursable advance toggle (economic_investment + manual_adjustment) */}
+              {cfg.ledger === "contribution" && cfg.canBeReimbursable && (
+                <div className="flex items-start gap-2.5 rounded-lg border border-dashed border-purple-300 dark:border-purple-700 bg-purple-50/50 dark:bg-purple-950/10 p-2.5">
+                  <Checkbox
+                    id="reimbursement-flag"
+                    checked={reimbursementFlag}
+                    onCheckedChange={(v) => setReimbursementFlag(v === true)}
+                    className="mt-0.5"
+                  />
+                  <div>
+                    <label htmlFor="reimbursement-flag" className="text-xs font-medium cursor-pointer leading-tight">
+                      Mark as reimbursable advance
+                    </label>
+                    <p className="text-[10px] text-muted-foreground mt-0.5 leading-snug">
+                      Recorded to recoverable ledger only — ownership equity will NOT be updated.
+                    </p>
+                  </div>
                 </div>
               )}
 

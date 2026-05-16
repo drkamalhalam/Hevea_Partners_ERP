@@ -494,6 +494,13 @@ router.post(
       affectsOwnership = b.affectsOwnership;
     }
 
+    // reimbursementFlag always overrides ownership — reimbursable entries go to the
+    // recoverable ledger only and must never create equity, regardless of type.
+    const reimbursementFlag = b.reimbursementFlag === true;
+    if (reimbursementFlag) {
+      affectsOwnership = false;
+    }
+
     // Fetch current project lifecycle phase + commercial model for guards
     const projectRows = await db
       .select({
@@ -619,6 +626,7 @@ router.post(
         referenceNumber: typeof b.referenceNumber === "string" ? b.referenceNumber : null,
         remarks: typeof b.remarks === "string" ? b.remarks : null,
         affectsOwnership,
+        reimbursementFlag,
         verificationStatus: "draft",
         recordedBy: actor.id,
         recordedByName: actor.name,

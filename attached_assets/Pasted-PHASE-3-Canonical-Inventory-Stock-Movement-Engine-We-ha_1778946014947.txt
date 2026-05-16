@@ -1,0 +1,141 @@
+PHASE 3 — Canonical Inventory & Stock Movement Engine
+
+We have stabilized participant integrity and unified financial architecture.
+
+Now rebuild inventory, stock, production, transfer, and sales synchronization into ONE canonical inventory movement engine.
+
+CURRENT PROBLEM
+
+The ERP currently has fragmented inventory behavior:
+
+stock register inventory dashboard production entries sales deduction stock movement transfers 
+
+are partially disconnected.
+
+Symptoms:
+
+project cards not updating inventory not syncing with sales stock register stale/zero negative stock states duplicate stock logic inventory pages behaving independently 
+
+TARGET ARCHITECTURE
+
+Create ONE inventory movement engine.
+
+All inventory-changing actions must generate canonical inventory movement events.
+
+Everything else becomes:
+
+dashboards reporting views summaries analytics 
+
+CORE RULES
+
+SINGLE SOURCE OF TRUTH 
+
+Inventory balance must derive ONLY from: inventory movement ledger.
+
+Remove duplicate/manual stock calculations.
+
+Do NOT allow pages to maintain independent stock state.
+
+INVENTORY MOVEMENT TYPES 
+
+Support:
+
+production_in stock_in stock_out sales_dispatch transfer_out transfer_in adjustment wastage return correction 
+
+Every movement must create immutable audit entries.
+
+REQUIRED MOVEMENT FIELDS 
+
+Every inventory movement must include:
+
+projectId storeId inventoryType movementType quantity unit sourceReference linkedEventId createdBy lifecyclePhase timestamps audit metadata PROJECT-FIRST INVENTORY CONTROL 
+
+All inventory operations must validate:
+
+project exists lifecycle permits operation store linkage valid sufficient balance exists participant authorization valid 
+
+Inventory behavior must always be project-governed.
+
+PRODUCTION SYNCHRONIZATION 
+
+Production entries must automatically:
+
+create production inventory movement update project stock balance update store balance update project cards update dashboard summaries update sales availability 
+
+No manual stock update allowed.
+
+SALES SYNCHRONIZATION 
+
+Confirmed sales must automatically:
+
+create stock-out movement reduce inventory balance reduce project stock update sales totals update project card update financial engine 
+
+Prevent:
+
+sale beyond stock negative inventory invalid dispatch TRANSFER ENGINE 
+
+Transfers must:
+
+reduce source store increase destination store preserve project ownership preserve participant rights create linked transfer events maintain full audit trace 
+
+Physical movement must NEVER alter ownership entitlement.
+
+PROJECT CARD LIVE SYNCHRONIZATION 
+
+Every inventory event must immediately update:
+
+project stock production totals sales totals pending dispatch wastage totals inventory availability dashboard metrics 
+
+Project cards must become live inventory projections.
+
+REMOVE DUPLICATE INVENTORY SYSTEMS 
+
+Current:
+
+stock register inventory dashboard 
+
+must become:
+
+views over same inventory engine. 
+
+There must NOT be separate stock systems anymore.
+
+STORE NETWORK SUPPORT 
+
+Support:
+
+project stores shared stores central stores overflow stores 
+
+But inventory ownership must remain project-scoped.
+
+PENDING & HOLD STATES 
+
+Support:
+
+pending production confirmation pending dispatch reserved stock damaged stock audit hold verification hold 
+
+These must affect availability calculations correctly.
+
+INVENTORY VALIDATION 
+
+Prevent:
+
+negative balances invalid unit conversions orphan inventory records project mismatches unauthorized transfers stock movement without source event EVENT-DRIVEN ARCHITECTURE 
+
+Inventory recalculation must happen from movement events only.
+
+No static/manual stock summaries.
+
+REPORTING PAGES 
+
+Inventory pages become:
+
+reporting analytics filtering audit exploration 
+
+NOT inventory authorities.
+
+TESTING REQUIREMENTS 
+
+Test:
+
+production entry sales deduction transfer flow stock adjustment pending dispatch shared store movement negative stock prevention project card synchronization dashboard synchronization mature project production flow project-scoped ownership preservation 

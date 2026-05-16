@@ -4318,6 +4318,11 @@ export const ListPendingVerificationContributionsResponse = zod.object({
         .describe(
           "Whether this contribution is eligible to influence ownership guidance",
         ),
+      reimbursementFlag: zod
+        .boolean()
+        .describe(
+          "When true, entry affects recoverable ledger only — never creates ownership equity",
+        ),
       verificationStatus: zod.enum([
         "draft",
         "pending_verification",
@@ -4393,6 +4398,11 @@ export const RequestContributionVerificationResponse = zod.object({
     .boolean()
     .describe(
       "Whether this contribution is eligible to influence ownership guidance",
+    ),
+  reimbursementFlag: zod
+    .boolean()
+    .describe(
+      "When true, entry affects recoverable ledger only — never creates ownership equity",
     ),
   verificationStatus: zod.enum([
     "draft",
@@ -4501,6 +4511,11 @@ export const GetLandNotionalContributionResponse = zod.object({
           .describe(
             "Whether this contribution is eligible to influence ownership guidance",
           ),
+        reimbursementFlag: zod
+          .boolean()
+          .describe(
+            "When true, entry affects recoverable ledger only — never creates ownership equity",
+          ),
         verificationStatus: zod.enum([
           "draft",
           "pending_verification",
@@ -4590,6 +4605,11 @@ export const GetLandNotionalHistoryResponse = zod.object({
         .describe(
           "Whether this contribution is eligible to influence ownership guidance",
         ),
+      reimbursementFlag: zod
+        .boolean()
+        .describe(
+          "When true, entry affects recoverable ledger only — never creates ownership equity",
+        ),
       verificationStatus: zod.enum([
         "draft",
         "pending_verification",
@@ -4675,6 +4695,11 @@ export const ListContributionsResponse = zod.object({
         .describe(
           "Whether this contribution is eligible to influence ownership guidance",
         ),
+      reimbursementFlag: zod
+        .boolean()
+        .describe(
+          "When true, entry affects recoverable ledger only — never creates ownership equity",
+        ),
       verificationStatus: zod.enum([
         "draft",
         "pending_verification",
@@ -4745,6 +4770,12 @@ export const CreateContributionBody = zod.object({
   referenceNumber: zod.string().optional(),
   remarks: zod.string().optional(),
   affectsOwnership: zod.boolean().optional(),
+  reimbursementFlag: zod
+    .boolean()
+    .optional()
+    .describe(
+      "When true, forces affectsOwnership=false — reimbursable advance only",
+    ),
   designatedVerifierId: zod
     .string()
     .uuid()
@@ -4850,6 +4881,11 @@ export const GetContributionResponse = zod.object({
     .describe(
       "Whether this contribution is eligible to influence ownership guidance",
     ),
+  reimbursementFlag: zod
+    .boolean()
+    .describe(
+      "When true, entry affects recoverable ledger only — never creates ownership equity",
+    ),
   verificationStatus: zod.enum([
     "draft",
     "pending_verification",
@@ -4908,6 +4944,7 @@ export const UpdateContributionBody = zod.object({
   referenceNumber: zod.string().optional(),
   remarks: zod.string().optional(),
   affectsOwnership: zod.boolean().optional(),
+  reimbursementFlag: zod.boolean().optional(),
 });
 
 export const UpdateContributionResponse = zod.object({
@@ -4935,6 +4972,11 @@ export const UpdateContributionResponse = zod.object({
     .boolean()
     .describe(
       "Whether this contribution is eligible to influence ownership guidance",
+    ),
+  reimbursementFlag: zod
+    .boolean()
+    .describe(
+      "When true, entry affects recoverable ledger only — never creates ownership equity",
     ),
   verificationStatus: zod.enum([
     "draft",
@@ -5011,6 +5053,11 @@ export const SubmitContributionForVerificationResponse = zod.object({
     .describe(
       "Whether this contribution is eligible to influence ownership guidance",
     ),
+  reimbursementFlag: zod
+    .boolean()
+    .describe(
+      "When true, entry affects recoverable ledger only — never creates ownership equity",
+    ),
   verificationStatus: zod.enum([
     "draft",
     "pending_verification",
@@ -5083,6 +5130,11 @@ export const VerifyContributionResponse = zod.object({
     .describe(
       "Whether this contribution is eligible to influence ownership guidance",
     ),
+  reimbursementFlag: zod
+    .boolean()
+    .describe(
+      "When true, entry affects recoverable ledger only — never creates ownership equity",
+    ),
   verificationStatus: zod.enum([
     "draft",
     "pending_verification",
@@ -5154,6 +5206,11 @@ export const RejectContributionResponse = zod.object({
     .boolean()
     .describe(
       "Whether this contribution is eligible to influence ownership guidance",
+    ),
+  reimbursementFlag: zod
+    .boolean()
+    .describe(
+      "When true, entry affects recoverable ledger only — never creates ownership equity",
     ),
   verificationStatus: zod.enum([
     "draft",
@@ -5258,6 +5315,11 @@ export const RaiseContributionDisputeResponse = zod.object({
     .describe(
       "Whether this contribution is eligible to influence ownership guidance",
     ),
+  reimbursementFlag: zod
+    .boolean()
+    .describe(
+      "When true, entry affects recoverable ledger only — never creates ownership equity",
+    ),
   verificationStatus: zod.enum([
     "draft",
     "pending_verification",
@@ -5335,6 +5397,11 @@ export const ResolveContributionDisputeResponse = zod.object({
     .boolean()
     .describe(
       "Whether this contribution is eligible to influence ownership guidance",
+    ),
+  reimbursementFlag: zod
+    .boolean()
+    .describe(
+      "When true, entry affects recoverable ledger only — never creates ownership equity",
     ),
   verificationStatus: zod.enum([
     "draft",

@@ -30,6 +30,8 @@ export interface ContributionEntry {
   remarks?: string | null;
   /** Whether this contribution is eligible to influence ownership guidance */
   affectsOwnership: boolean;
+  /** When true, entry affects recoverable ledger only — never creates ownership equity */
+  reimbursementFlag: boolean;
   verificationStatus: ContributionEntryVerificationStatus;
   /** @nullable */
   verifiedAt?: Date | null;

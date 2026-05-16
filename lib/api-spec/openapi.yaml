@@ -15159,6 +15159,7 @@ components:
         - contributionDate
         - lifecyclePhaseSnapshot
         - affectsOwnership
+        - reimbursementFlag
         - verificationStatus
         - createdAt
       properties:
@@ -15197,6 +15198,9 @@ components:
         affectsOwnership:
           type: boolean
           description: Whether this contribution is eligible to influence ownership guidance
+        reimbursementFlag:
+          type: boolean
+          description: When true, entry affects recoverable ledger only — never creates ownership equity
         verificationStatus:
           type: string
           enum: [draft, pending_verification, verified, rejected, disputed]
@@ -15276,6 +15280,9 @@ components:
           type: string
         affectsOwnership:
           type: boolean
+        reimbursementFlag:
+          type: boolean
+          description: When true, forces affectsOwnership=false — reimbursable advance only
         designatedVerifierId:
           type: string
           format: uuid
@@ -15300,6 +15307,8 @@ components:
         remarks:
           type: string
         affectsOwnership:
+          type: boolean
+        reimbursementFlag:
           type: boolean
 
     ContributionSummary:

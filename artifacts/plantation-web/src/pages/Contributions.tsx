@@ -1429,20 +1429,10 @@ export default function Contributions() {
           </p>
         </div>
         {isAdminOrDev && (
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              onClick={() => { setEditEntry(null); setShowForm(true); }}
-              className="gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              Contribution Only
-            </Button>
-            <Button onClick={() => setShowUnifiedEntry(true)} className="gap-2">
-              <CircleDollarSign className="w-4 h-4" />
-              Record Financial Entry
-            </Button>
-          </div>
+          <Button onClick={() => setShowUnifiedEntry(true)} className="gap-2">
+            <CircleDollarSign className="w-4 h-4" />
+            Record Financial Entry
+          </Button>
         )}
       </div>
 
@@ -1623,8 +1613,8 @@ export default function Contributions() {
               <HandCoins className="w-10 h-10 mx-auto text-muted-foreground/40" />
               <p className="text-sm text-muted-foreground">No contribution entries found.</p>
               {isAdminOrDev && (
-                <Button size="sm" variant="outline" onClick={() => { setEditEntry(null); setShowForm(true); }}>
-                  <Plus className="w-4 h-4 mr-1" /> Record First Contribution
+                <Button size="sm" variant="outline" onClick={() => setShowUnifiedEntry(true)}>
+                  <Plus className="w-4 h-4 mr-1" /> Record First Entry
                 </Button>
               )}
             </div>

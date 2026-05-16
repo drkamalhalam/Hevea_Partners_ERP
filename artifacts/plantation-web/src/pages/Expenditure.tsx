@@ -870,7 +870,7 @@ export default function Expenditure() {
             <Button
               variant="outline"
               className="border-slate-600 text-slate-300 hover:bg-slate-800"
-              onClick={() => setAddOpen(true)}
+              onClick={() => setUnifiedEntryOpen(true)}
             >
               <Plus className="h-4 w-4 mr-1" />
               Expense Only
@@ -1233,7 +1233,7 @@ export default function Expenditure() {
                   <Button
                     size="sm"
                     className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs"
-                    onClick={() => setAddOpen(true)}
+                    onClick={() => setUnifiedEntryOpen(true)}
                   >
                     <Plus className="h-3 w-3 mr-1" />
                     Record first expenditure

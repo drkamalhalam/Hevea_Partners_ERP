@@ -22,6 +22,8 @@ export interface CreateContributionBody {
   referenceNumber?: string;
   remarks?: string;
   affectsOwnership?: boolean;
+  /** When true, forces affectsOwnership=false — reimbursable advance only */
+  reimbursementFlag?: boolean;
   /** DB UUID of the user who should verify this contribution */
   designatedVerifierId?: string;
 }

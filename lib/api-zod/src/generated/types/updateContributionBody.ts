@@ -15,4 +15,5 @@ export interface UpdateContributionBody {
   referenceNumber?: string;
   remarks?: string;
   affectsOwnership?: boolean;
+  reimbursementFlag?: boolean;
 }

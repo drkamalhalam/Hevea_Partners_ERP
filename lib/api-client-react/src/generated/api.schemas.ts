@@ -2520,6 +2520,8 @@ export interface ContributionEntry {
   remarks?: string | null;
   /** Whether this contribution is eligible to influence ownership guidance */
   affectsOwnership: boolean;
+  /** When true, entry affects recoverable ledger only — never creates ownership equity */
+  reimbursementFlag: boolean;
   verificationStatus: ContributionEntryVerificationStatus;
   /** @nullable */
   verifiedAt?: string | null;
@@ -2585,6 +2587,8 @@ export interface CreateContributionBody {
   referenceNumber?: string;
   remarks?: string;
   affectsOwnership?: boolean;
+  /** When true, forces affectsOwnership=false — reimbursable advance only */
+  reimbursementFlag?: boolean;
   /** DB UUID of the user who should verify this contribution */
   designatedVerifierId?: string;
 }
@@ -2608,6 +2612,7 @@ export interface UpdateContributionBody {
   referenceNumber?: string;
   remarks?: string;
   affectsOwnership?: boolean;
+  reimbursementFlag?: boolean;
 }
 
 export type ContributionSummaryProjectsItemByType = { [key: string]: number };
