@@ -56,6 +56,7 @@ import GovernanceOverrides from "./pages/GovernanceOverrides";
 import DisputeDashboard from "./pages/DisputeDashboard";
 import EvidenceArchive from "./pages/EvidenceArchive";
 import FinancialAnalytics from "./pages/FinancialAnalytics";
+import GlobalAnalytics from "./pages/GlobalAnalytics";
 import TemplateLibrary from "./pages/TemplateLibrary";
 
 // Pages — Operations
@@ -382,6 +383,7 @@ function AppRoutes() {
               <Route path="/audit-investigation"><ProtectedRoute component={AuditInvestigation} /></Route>
 
               {/* Analytics */}
+              <Route path="/global-analytics"><ProtectedRoute component={GlobalAnalytics} /></Route>
               <Route path="/financial-analytics"><ProtectedRoute component={FinancialAnalytics} /></Route>
               <Route path="/reports"><ProtectedRoute component={Reports} /></Route>
               <Route path="/documents"><ProtectedRoute component={Documents} /></Route>

@@ -51,6 +51,7 @@ import {
   CreditCard,
   Settings,
   Activity,
+  Globe,
   History as HistoryIcon,
   Zap,
   Banknote,
@@ -483,6 +484,12 @@ const navGroups: NavGroup[] = [
   {
     label: "Analytics",
     items: [
+      {
+        name: "Global Analytics",
+        href: "/global-analytics",
+        icon: Globe,
+        roles: ["admin", "developer"],
+      },
       {
         name: "Fin. Analytics",
         href: "/financial-analytics",
