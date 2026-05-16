@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRole } from "@/contexts/RoleContext";
 import {
   useListContributions,
@@ -11,6 +11,8 @@ import {
   useGetContributionSummary,
   useListProjects,
   useListAgreements,
+  useListOnboardingParticipants,
+  getListOnboardingParticipantsQueryKey,
   getListContributionsQueryKey,
   getGetContributionSummaryQueryKey,
 } from "@workspace/api-client-react";
@@ -80,6 +82,10 @@ import {
   RotateCcw,
   SlidersHorizontal,
   IndianRupee,
+  Lock,
+  Users,
+  ShieldAlert,
+  ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -215,13 +221,62 @@ function StatusBadge({ status }: { status: Exclude<VerificationStatus, "all"> })
   );
 }
 
+// ── Governance helpers ─────────────────────────────────────────────────────────
+
+type ProjectMeta = {
+  id: string;
+  name: string;
+  commercialModel: string;
+  lifecycleStatus: string;
+};
+
+/** Returns a human-readable block reason for a contribution type given project context.
+ *  Returns null if the type is allowed. */
+function getTypeBlockReason(
+  type: Exclude<ContributionType, "all">,
+  model: string | undefined,
+  lifecycle: string | undefined,
+): string | null {
+  const is50pct = model === "fifty_percent_revenue";
+  const isPostMaturity =
+    lifecycle === "mature_production" || lifecycle === "closed";
+
+  if (type === "land_notional") {
+    if (is50pct) return "Land Notional is not permitted under the 50% Revenue Model";
+    if (isPostMaturity) return "Land Notional can only be recorded during prematurity phase";
+  }
+  if (type === "economic_investment") {
+    if (isPostMaturity)
+      return "Economic Investment is blocked post-maturity — use Post-Maturity Cost Payments instead";
+  }
+  if (type === "recoverable_advance") {
+    if (isPostMaturity)
+      return "Recoverable Advance is blocked post-maturity — use Post-Maturity Cost Payments instead";
+  }
+  return null;
+}
+
+/** Returns a soft warning (non-blocking) for a type given project context. */
+function getTypeSoftWarning(
+  type: Exclude<ContributionType, "all">,
+  model: string | undefined,
+): string | null {
+  if (model === "fifty_percent_revenue") {
+    if (type === "economic_investment" || type === "recoverable_advance")
+      return "This type will NOT affect ownership equity — the 50% Revenue Model has no ownership structure.";
+    if (type === "operational_cost" || type === "manual_adjustment")
+      return "Allowed under the 50% Revenue Model (no ownership impact).";
+  }
+  return null;
+}
+
 // ── Contribution form dialog ───────────────────────────────────────────────────
 
 interface ContributionFormProps {
   open: boolean;
   onClose: () => void;
   editEntry?: ContributionEntry | null;
-  projects: { id: string; name: string }[];
+  projects: ProjectMeta[];
   agreements: { id: string; projectId: string; status: string }[];
   onSuccess: () => void;
 }
@@ -236,30 +291,77 @@ function ContributionFormDialog({
 }: ContributionFormProps) {
   const isEdit = !!editEntry;
   const [projectId, setProjectId] = useState(editEntry?.projectId ?? "");
-  const [partnerName, setPartnerName] = useState(editEntry?.partnerName ?? "");
+  const [selectedParticipant, setSelectedParticipant] = useState<{
+    fullName: string;
+    role: string;
+  } | null>(null);
   const [cType, setCType] = useState<Exclude<ContributionType, "all">>(
     (editEntry?.contributionType as Exclude<ContributionType, "all">) ?? "economic_investment",
   );
   const [amount, setAmount] = useState(editEntry?.amount?.toString() ?? "");
-  const [date, setDate] = useState(editEntry?.contributionDate ?? new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(
+    editEntry?.contributionDate ?? new Date().toISOString().slice(0, 10),
+  );
   const [agreementId, setAgreementId] = useState(editEntry?.agreementId ?? "");
   const [referenceNumber, setReferenceNumber] = useState(editEntry?.referenceNumber ?? "");
   const [remarks, setRemarks] = useState(editEntry?.remarks ?? "");
-  const [affectsOwnership, setAffectsOwnership] = useState(editEntry?.affectsOwnership ?? true);
+  const [affectsOwnership, setAffectsOwnership] = useState(
+    editEntry?.affectsOwnership ?? true,
+  );
   const [error, setError] = useState("");
 
   const createMutation = useCreateContribution();
   const updateMutation = useUpdateContribution();
 
-  const filteredAgreements = agreements.filter((a) => !projectId || a.projectId === projectId);
+  // ── Project-scoped participant list ───────────────────────────────────────
+  const participantProjectId = projectId || "00000000-0000-0000-0000-000000000000";
+  const { data: participantsData } = useListOnboardingParticipants(
+    participantProjectId,
+    {
+      query: {
+        enabled: open && !!projectId && !isEdit,
+        queryKey: getListOnboardingParticipantsQueryKey(participantProjectId),
+      },
+    },
+  );
+  const participants = participantsData?.participants ?? [];
+
+  // ── Derived project context ────────────────────────────────────────────────
+  const selectedProject = projects.find((p) => p.id === projectId);
+  const model = selectedProject?.commercialModel;
+  const lifecycle = selectedProject?.lifecycleStatus;
+  const is50pct = model === "fifty_percent_revenue";
+  const isPostMaturity =
+    lifecycle === "mature_production" || lifecycle === "closed";
+
+  // ── Reset participant when project changes ─────────────────────────────────
+  useEffect(() => {
+    if (!isEdit) {
+      setSelectedParticipant(null);
+      // Auto-switch type away from blocked types
+      const blockReason = getTypeBlockReason(cType, model, lifecycle);
+      if (blockReason) setCType("operational_cost");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId]);
+
+  const filteredAgreements = agreements.filter(
+    (a) => !projectId || a.projectId === projectId,
+  );
 
   const handleSubmit = async () => {
     setError("");
     const parsedAmount = parseFloat(amount);
     if (!projectId) return setError("Project is required");
-    if (!partnerName.trim()) return setError("Partner name is required");
-    if (isNaN(parsedAmount) || parsedAmount <= 0) return setError("Amount must be a positive number");
+    if (!isEdit && !selectedParticipant)
+      return setError("Please select a project participant");
+    if (isNaN(parsedAmount) || parsedAmount <= 0)
+      return setError("Amount must be a positive number");
     if (!date) return setError("Contribution date is required");
+
+    const currentBlockReason = getTypeBlockReason(cType, model, lifecycle);
+    if (currentBlockReason)
+      return setError(`Cannot record: ${currentBlockReason}`);
 
     try {
       if (isEdit && editEntry) {
@@ -279,7 +381,7 @@ function ContributionFormDialog({
         await createMutation.mutateAsync({
           data: {
             projectId,
-            partnerName: partnerName.trim(),
+            partnerName: selectedParticipant!.fullName,
             contributionType: cType,
             amount: parsedAmount,
             contributionDate: date,
@@ -300,9 +402,26 @@ function ContributionFormDialog({
 
   const isPending = createMutation.isPending || updateMutation.isPending;
 
+  // ── Helper: lifecycle label ────────────────────────────────────────────────
+  const lifecycleLabel = (s: string | undefined) => {
+    if (s === "prematurity") return "Prematurity";
+    if (s === "mature_production") return "Mature Production";
+    if (s === "closed") return "Closed";
+    return s ?? "—";
+  };
+
+  const modelLabel = (m: string | undefined) => {
+    if (m === "ownership_contribution") return "Contribution Model";
+    if (m === "fifty_percent_revenue") return "50% Revenue Model";
+    return m ?? "—";
+  };
+
+  const roleLabel = (r: string) =>
+    r === "landowner" ? "Landowner" : r === "developer" ? "Developer" : r;
+
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <HandCoins className="w-5 h-5 text-primary" />
@@ -311,7 +430,8 @@ function ContributionFormDialog({
         </DialogHeader>
 
         <div className="space-y-4 py-2">
-          {/* Project */}
+
+          {/* ── Project selector (create only) ─────────────────────────── */}
           {!isEdit && (
             <div className="space-y-1.5">
               <Label>Project <span className="text-red-500">*</span></Label>
@@ -328,45 +448,182 @@ function ContributionFormDialog({
             </div>
           )}
 
-          {/* Partner name */}
-          {!isEdit && (
-            <div className="space-y-1.5">
-              <Label>Partner Name <span className="text-red-500">*</span></Label>
-              <Input
-                value={partnerName}
-                onChange={(e) => setPartnerName(e.target.value)}
-                placeholder="e.g. Ramesh Kumar"
-              />
+          {/* ── Project context panel ─────────────────────────────────── */}
+          {projectId && selectedProject && (
+            <div className="rounded-lg border bg-muted/40 p-3 space-y-2">
+              <div className="flex items-center flex-wrap gap-2 text-xs">
+                {/* Model badge */}
+                <span className={cn(
+                  "inline-flex items-center gap-1 px-2 py-0.5 rounded-full border font-medium",
+                  is50pct
+                    ? "bg-amber-50 border-amber-300 text-amber-700 dark:bg-amber-950/30 dark:border-amber-700 dark:text-amber-400"
+                    : "bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-950/30 dark:border-blue-700 dark:text-blue-400",
+                )}>
+                  {is50pct ? <ShieldAlert className="w-3 h-3" /> : <ShieldCheck className="w-3 h-3" />}
+                  {modelLabel(model)}
+                </span>
+                {/* Lifecycle badge */}
+                <span className={cn(
+                  "inline-flex items-center gap-1 px-2 py-0.5 rounded-full border font-medium",
+                  lifecycle === "prematurity"
+                    ? "bg-sky-50 border-sky-200 text-sky-700 dark:bg-sky-950/30 dark:border-sky-700 dark:text-sky-400"
+                    : lifecycle === "mature_production"
+                    ? "bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-950/30 dark:border-emerald-700 dark:text-emerald-400"
+                    : "bg-slate-100 border-slate-300 text-slate-500 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-400",
+                )}>
+                  {lifecycleLabel(lifecycle)}
+                </span>
+              </div>
+
+              {/* Post-maturity warning */}
+              {isPostMaturity && (
+                <div className="flex items-start gap-2 text-xs text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded p-2">
+                  <Lock className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                  <span>
+                    <strong>Ownership contributions locked.</strong> This project has passed the prematurity phase.
+                    Economic investment, recoverable advance, and land notional contributions are blocked.
+                    Only operational costs and manual adjustments are permitted.
+                  </span>
+                </div>
+              )}
+
+              {/* 50% model notice */}
+              {is50pct && (
+                <div className="flex items-start gap-2 text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-700 rounded p-2">
+                  <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                  <span>
+                    <strong>50% Revenue Model:</strong> No ownership equity is created. Land notional is blocked.
+                    All other contributions are recorded for cost-tracking only — they will never affect participant
+                    share percentages.
+                  </span>
+                </div>
+              )}
             </div>
           )}
 
-          {/* Type */}
+          {/* ── Participant selector (create only) ──────────────────────── */}
+          {!isEdit && (
+            <div className="space-y-1.5">
+              <Label className="flex items-center gap-1.5">
+                <Users className="w-3.5 h-3.5 text-muted-foreground" />
+                Project Participant <span className="text-red-500">*</span>
+              </Label>
+              {!projectId ? (
+                <p className="text-xs text-muted-foreground italic">Select a project first to see its linked participants.</p>
+              ) : participants.length === 0 ? (
+                <div className="rounded-lg border border-dashed p-3 text-center">
+                  <Users className="w-5 h-5 mx-auto mb-1 text-muted-foreground/50" />
+                  <p className="text-xs text-muted-foreground">No KYC participants linked to this project yet.</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Add participants via the Project Onboarding module first.</p>
+                </div>
+              ) : (
+                <Select
+                  value={selectedParticipant?.fullName ?? ""}
+                  onValueChange={(v) => {
+                    const p = participants.find((x) => x.fullName === v);
+                    if (p) setSelectedParticipant({ fullName: p.fullName, role: p.role });
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select participant" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {participants.map((p) => (
+                      <SelectItem key={p.id} value={p.fullName}>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{p.fullName}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {roleLabel(p.role)}
+                            {p.mobile ? ` · ${p.mobile}` : ""}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              {selectedParticipant && (
+                <p className="text-[10px] text-muted-foreground">
+                  Recording as: <strong>{selectedParticipant.fullName}</strong> ({roleLabel(selectedParticipant.role)}) — linked to this project.
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* ── Contribution type ─────────────────────────────────────── */}
           <div className="space-y-1.5">
             <Label>Contribution Type <span className="text-red-500">*</span></Label>
-            <Select value={cType} onValueChange={(v) => setCType(v as Exclude<ContributionType, "all">)}>
+            <Select
+              value={cType}
+              onValueChange={(v) => setCType(v as Exclude<ContributionType, "all">)}
+            >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {(Object.keys(TYPE_CONFIG) as Exclude<ContributionType, "all">[]).map((t) => (
-                  <SelectItem key={t} value={t}>
-                    <div className="flex flex-col">
-                      <span>{TYPE_CONFIG[t].label}</span>
-                      <span className="text-xs text-muted-foreground">{TYPE_CONFIG[t].description}</span>
-                    </div>
-                  </SelectItem>
-                ))}
+                {(Object.keys(TYPE_CONFIG) as Exclude<ContributionType, "all">[]).map((t) => {
+                  const blockReason = getTypeBlockReason(t, model, lifecycle);
+                  return (
+                    <SelectItem key={t} value={t} disabled={!!blockReason}>
+                      <div className="flex flex-col">
+                        <span className={cn(blockReason && "text-muted-foreground line-through")}>
+                          {TYPE_CONFIG[t].label}
+                          {blockReason && <Lock className="w-3 h-3 inline ml-1 text-red-400" />}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {blockReason ?? TYPE_CONFIG[t].description}
+                        </span>
+                      </div>
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
-            {cType === "operational_cost" && (
-              <p className="text-xs text-orange-600 dark:text-orange-400 flex items-center gap-1">
-                <AlertTriangle className="w-3 h-3" />
-                Operational costs do not create ownership rights.
+
+            {/* Soft warning for current selection */}
+            {(() => {
+              const warn = getTypeSoftWarning(cType, model);
+              if (warn)
+                return (
+                  <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                    <AlertTriangle className="w-3 h-3 shrink-0" /> {warn}
+                  </p>
+                );
+              if (cType === "operational_cost")
+                return (
+                  <p className="text-xs text-orange-600 dark:text-orange-400 flex items-center gap-1">
+                    <AlertTriangle className="w-3 h-3 shrink-0" />
+                    Operational costs do not create ownership rights.
+                  </p>
+                );
+              return null;
+            })()}
+
+            {/* Accounting impact hint */}
+            {cType === "land_notional" && (
+              <p className="text-[10px] text-muted-foreground">
+                Affects: ownership basis · landowner contribution recognition · ownership calculation · governance audit.
+                Not a cash transaction.
+              </p>
+            )}
+            {cType === "economic_investment" && (
+              <p className="text-[10px] text-muted-foreground">
+                Affects: participant share pool · ownership structure · contribution ledger · project card totals.
+              </p>
+            )}
+            {cType === "recoverable_advance" && (
+              <p className="text-[10px] text-muted-foreground">
+                Affects: reimbursable operational ledger · recoverable balances · project liabilities. Not direct ownership share.
+              </p>
+            )}
+            {cType === "manual_adjustment" && (
+              <p className="text-[10px] text-muted-foreground">
+                Affects: correction ledger · audit records · financial reconciliation. Audit reason in Remarks is strongly recommended.
               </p>
             )}
           </div>
 
-          {/* Amount + Date */}
+          {/* ── Amount + Date ─────────────────────────────────────────── */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>Amount (₹) <span className="text-red-500">*</span></Label>
@@ -388,10 +645,13 @@ function ContributionFormDialog({
             </div>
           </div>
 
-          {/* Agreement */}
+          {/* ── Agreement ─────────────────────────────────────────────── */}
           <div className="space-y-1.5">
             <Label>Linked Agreement <span className="text-muted-foreground text-xs">(optional)</span></Label>
-            <Select value={agreementId || "none"} onValueChange={(v) => setAgreementId(v === "none" ? "" : v)}>
+            <Select
+              value={agreementId || "none"}
+              onValueChange={(v) => setAgreementId(v === "none" ? "" : v)}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="No agreement linked" />
               </SelectTrigger>
@@ -406,9 +666,12 @@ function ContributionFormDialog({
             </Select>
           </div>
 
-          {/* Reference */}
+          {/* ── Reference ─────────────────────────────────────────────── */}
           <div className="space-y-1.5">
-            <Label>Reference Number <span className="text-muted-foreground text-xs">(voucher/transaction)</span></Label>
+            <Label>
+              Reference Number{" "}
+              <span className="text-muted-foreground text-xs">(voucher/transaction)</span>
+            </Label>
             <Input
               value={referenceNumber}
               onChange={(e) => setReferenceNumber(e.target.value)}
@@ -416,7 +679,7 @@ function ContributionFormDialog({
             />
           </div>
 
-          {/* Manual adjustment override */}
+          {/* ── Manual adjustment ownership toggle ────────────────────── */}
           {cType === "manual_adjustment" && (
             <div className="flex items-center gap-3 p-3 rounded-lg border bg-slate-50 dark:bg-slate-900/50">
               <input
@@ -432,13 +695,24 @@ function ContributionFormDialog({
             </div>
           )}
 
-          {/* Remarks */}
+          {/* ── Remarks ───────────────────────────────────────────────── */}
           <div className="space-y-1.5">
-            <Label>Remarks</Label>
+            <Label>
+              Remarks
+              {cType === "manual_adjustment" && (
+                <span className="ml-1 text-xs text-amber-600 dark:text-amber-400">
+                  (audit reason recommended)
+                </span>
+              )}
+            </Label>
             <Textarea
               value={remarks}
               onChange={(e) => setRemarks(e.target.value)}
-              placeholder="Optional notes about this contribution…"
+              placeholder={
+                cType === "manual_adjustment"
+                  ? "Required audit reason: explain why this manual adjustment is needed…"
+                  : "Optional notes about this contribution…"
+              }
               rows={2}
             />
           </div>
@@ -1012,7 +1286,12 @@ export default function Contributions() {
           open={showForm}
           onClose={() => { setShowForm(false); setEditEntry(null); }}
           editEntry={editEntry}
-          projects={projects.map((p) => ({ id: p.id, name: p.name }))}
+          projects={projects.map((p) => ({
+            id: p.id,
+            name: p.name,
+            commercialModel: p.commercialModel,
+            lifecycleStatus: p.lifecycleStatus,
+          }))}
           agreements={agreements}
           onSuccess={invalidate}
         />

@@ -1,0 +1,302 @@
+THE CONTRIBUTION ENTRY MODULE CURRENTLY VIOLATES CORE GOVERNANCE AND PROJECT-SCOPING RULES.
+
+This module must be rebuilt to follow:
+- project-scoped participant logic
+- model-aware contribution rules
+- lifecycle validation
+- accounting traceability
+- project-card financial intelligence
+
+==================================================
+CURRENT PROBLEMS
+==================================================
+
+1. Partner Name is manual text entry
+2. Contribution logic is not model-aware
+3. Matured projects are selectable
+4. Contribution types are disconnected from project accounting visibility
+5. No linkage to project card financial intelligence
+6. No participant validation
+7. No lifecycle enforcement
+
+==================================================
+IMPORTANT GOVERNANCE PRINCIPLE
+==================================================
+
+Contributions are NOT standalone records.
+
+They directly affect:
+- ownership
+- economic pool
+- reimbursement
+- project accounting
+- project card summaries
+- future distributions
+- governance audits
+
+Therefore:
+contribution entries must be tightly controlled.
+
+==================================================
+PARTNER FIELD REBUILD
+==================================================
+
+REMOVE:
+manual typing field.
+
+Current:
+“Partner Name”
+
+This is incorrect.
+
+==================================================
+REPLACE WITH:
+==================================================
+
+PROJECT-SCOPED PARTICIPANT SELECTOR
+
+Flow:
+1. User selects project
+2. System fetches linked project participants
+3. Dropdown shows only valid participants
+
+Source must be:
+PROJECT_PARTICIPANTS
+
+NOT:
+manual text entry
+NOT global PERSON_MASTER role lookup.
+
+==================================================
+FETCH RULE
+==================================================
+
+When project selected:
+
+fetch:
+PROJECT_PARTICIPANTS
+WHERE:
+project_id = selected_project
+
+Then show:
+- name
+- participant role
+- share %
+- participant type
+- verification status
+
+==================================================
+MATURED PROJECT RESTRICTION
+==================================================
+
+Contribution entry must NOT allow:
+ownership/economic contribution
+for matured projects.
+
+Because user already defined:
+
+“All contribution must be before maturity is declared.”
+
+Therefore:
+
+==================================================
+VALIDATION RULE
+==================================================
+
+If project lifecycle phase =
+MATURE PRODUCTION
+OR CLOSED
+
+BLOCK:
+- ownership contribution
+- economic investment
+- land notional contribution
+
+==================================================
+ALLOW ONLY:
+==================================================
+
+For matured projects:
+- reimbursable operational advances
+- recoverable adjustments
+- operational settlements
+
+NOT:
+ownership-affecting contribution.
+
+==================================================
+MODEL-AWARE CONTRIBUTION TYPES
+==================================================
+
+Contribution types must dynamically adapt based on:
+PROJECT MODEL.
+
+==================================================
+UNDER CONTRIBUTION MODEL
+==================================================
+
+Allow:
+- Economic Investment
+- Land Notional Value
+- Prematurity Contribution
+- Ownership Contribution
+- Recoverable Advance
+- Manual Adjustment
+
+==================================================
+UNDER 50% REVENUE MODEL
+==================================================
+
+DISALLOW:
+- Ownership Contribution
+- Share-Altering Contribution
+
+Allow only:
+- Recoverable Advance
+- Operational Advance
+- Manual Adjustment
+
+Because:
+50% model does NOT use ownership contribution logic.
+
+==================================================
+LAND NOTIONAL VALUE RULE
+==================================================
+
+Land Notional Value:
+- should normally originate during project creation
+- not random manual contribution entry later
+
+If editable:
+- require governance permission
+- audit logging
+- project-phase validation
+
+==================================================
+CONTRIBUTION ACCOUNTING IMPACT
+==================================================
+
+Every contribution type must explicitly define:
+HOW IT AFFECTS PROJECT ACCOUNTING.
+
+==================================================
+EXAMPLES
+==================================================
+
+--------------------------------------------------
+Economic Investment
+--------------------------------------------------
+
+Affects:
+- participant share pool
+- ownership structure
+- contribution ledger
+- project card contribution totals
+
+--------------------------------------------------
+Land Notional Value
+--------------------------------------------------
+
+Affects:
+- ownership basis
+- landowner contribution recognition
+- ownership calculation
+- governance audit
+
+NOT:
+cash ledger.
+
+--------------------------------------------------
+Recoverable Advance
+--------------------------------------------------
+
+Affects:
+- reimbursable operational ledger
+- recoverable balances
+- project liabilities
+
+NOT:
+ownership share.
+
+--------------------------------------------------
+Manual Adjustment
+--------------------------------------------------
+
+Affects:
+- correction ledger
+- audit records
+- financial reconciliation
+
+Must require:
+remarks + audit reason.
+
+==================================================
+PROJECT CARD INTEGRATION
+==================================================
+
+Contribution entries must automatically update:
+PROJECT CARD financial intelligence.
+
+==================================================
+PROJECT CARD SHOULD REFLECT
+==================================================
+
+- total ownership contribution
+- total recoverable advances
+- total reimbursable operational burden
+- land notional value
+- contribution model
+- participant contribution distribution
+- economic pool structure
+- pending reimbursements
+- maturity contribution cutoff status
+
+==================================================
+TRACEABILITY RULE
+==================================================
+
+Every project-card metric must drill down to:
+source contribution entries.
+
+==================================================
+IMPORTANT GOVERNANCE RULE
+==================================================
+
+Contribution entries must NEVER silently alter:
+- ownership
+- reimbursement
+- economic entitlement
+
+without:
+- traceability
+- audit linkage
+- model validation
+- lifecycle validation
+
+==================================================
+UI REQUIREMENTS
+==================================================
+
+After project selection:
+show:
+- project model
+- lifecycle phase
+- contribution eligibility
+- ownership locked/unlocked status
+
+before allowing entry.
+
+==================================================
+FINAL TARGET
+==================================================
+
+Contribution module must become:
+
+PROJECT-SCOPED
++ MODEL-AWARE
++ LIFECYCLE-AWARE
++ ACCOUNTING-TRACEABLE
++ GOVERNANCE-CONTROLLED
+
+NOT:
+generic free-form financial entry.
