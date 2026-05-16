@@ -15242,16 +15242,21 @@ components:
 
     CreateContributionBody:
       type: object
-      required: [projectId, partnerName, contributionType, amount, contributionDate]
+      required: [projectId, contributionType, amount, contributionDate]
       properties:
         projectId:
           type: string
           format: uuid
+        participantId:
+          type: string
+          format: uuid
+          description: FK to project_participants.id — preferred over partnerName for new records
         partnerId:
           type: string
           format: uuid
         partnerName:
           type: string
+          description: Legacy field — must match a registered project participant's full name if participantId is not provided
         contributionType:
           type: string
           enum: [land_notional, economic_investment, operational_cost, recoverable_advance, manual_adjustment]

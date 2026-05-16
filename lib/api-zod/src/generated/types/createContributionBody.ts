@@ -9,8 +9,11 @@ import type { CreateContributionBodyContributionType } from "./createContributio
 
 export interface CreateContributionBody {
   projectId: string;
+  /** FK to project_participants.id — preferred over partnerName for new records */
+  participantId?: string;
   partnerId?: string;
-  partnerName: string;
+  /** Legacy field — must match a registered project participant's full name if participantId is not provided */
+  partnerName?: string;
   contributionType: CreateContributionBodyContributionType;
   amount: number;
   contributionDate: Date;

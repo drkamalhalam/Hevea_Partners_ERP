@@ -9,6 +9,7 @@ import {
   getGetContributionSummaryQueryKey,
   getListExpendituresQueryKey,
   getGetExpenditureSummaryQueryKey,
+  getGetProjectCardSummariesQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -304,7 +305,7 @@ export function ProjectFinancialEntryDialog({
   const [entryTypeKey, setEntryTypeKey] = useState<string>("");
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
-  const [selectedParticipantName, setSelectedParticipantName] = useState("");
+  const [selectedParticipantId, setSelectedParticipantId] = useState("");
   const [description, setDescription] = useState("");
   const [referenceNumber, setReferenceNumber] = useState("");
   const [remarks, setRemarks] = useState("");
@@ -315,7 +316,7 @@ export function ProjectFinancialEntryDialog({
   // ── Reset when project changes ─────────────────────────────────────────────
   useEffect(() => {
     setEntryTypeKey("");
-    setSelectedParticipantName("");
+    setSelectedParticipantId("");
     setError("");
   }, [projectId]);
 
@@ -379,11 +380,13 @@ export function ProjectFinancialEntryDialog({
 
     try {
       if (cfg.ledger === "contribution") {
-        if (!selectedParticipantName) return setError("Please select a project participant.");
+        const selectedParticipant = participants.find((p) => p.id === selectedParticipantId);
+        if (!selectedParticipant) return setError("Please select a project participant.");
         await createContrib.mutateAsync({
           data: {
             projectId,
-            partnerName: selectedParticipantName,
+            participantId: selectedParticipant.id,
+            partnerName: selectedParticipant.fullName,
             contributionType: cfg.contributionType! as
               | "land_notional"
               | "economic_investment"
@@ -400,6 +403,7 @@ export function ProjectFinancialEntryDialog({
         });
         qc.invalidateQueries({ queryKey: getListContributionsQueryKey() });
         qc.invalidateQueries({ queryKey: getGetContributionSummaryQueryKey() });
+        qc.invalidateQueries({ queryKey: getGetProjectCardSummariesQueryKey() });
       } else {
         if (!description.trim()) return setError("Description is required for expenses.");
         await createExpend.mutateAsync({
@@ -422,6 +426,7 @@ export function ProjectFinancialEntryDialog({
         });
         qc.invalidateQueries({ queryKey: getListExpendituresQueryKey() });
         qc.invalidateQueries({ queryKey: getGetExpenditureSummaryQueryKey() });
+        qc.invalidateQueries({ queryKey: getGetProjectCardSummariesQueryKey() });
       }
 
       onSuccess?.();
@@ -437,7 +442,7 @@ export function ProjectFinancialEntryDialog({
     setEntryTypeKey("");
     setAmount("");
     setDate(new Date().toISOString().slice(0, 10));
-    setSelectedParticipantName("");
+    setSelectedParticipantId("");
     setDescription("");
     setReferenceNumber("");
     setRemarks("");
@@ -601,13 +606,13 @@ export function ProjectFinancialEntryDialog({
                       No participants found for this project. Add participants first.
                     </p>
                   ) : (
-                    <Select value={selectedParticipantName} onValueChange={setSelectedParticipantName}>
+                    <Select value={selectedParticipantId} onValueChange={setSelectedParticipantId}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select participant…" />
                       </SelectTrigger>
                       <SelectContent>
                         {participants.map((p) => (
-                          <SelectItem key={p.id} value={p.fullName}>
+                          <SelectItem key={p.id} value={p.id}>
                             <div className="flex items-center gap-2">
                               <span className={cn(
                                 "text-[9px] px-1 py-0.5 rounded font-semibold uppercase",

@@ -17,6 +17,7 @@ import {
   getGetContributionSummaryQueryKey,
   getListExpendituresQueryKey,
   getGetExpenditureSummaryQueryKey,
+  getGetProjectCardSummariesQueryKey,
 } from "@workspace/api-client-react";
 import { ProjectFinancialEntryDialog } from "@/components/finance/ProjectFinancialEntryDialog";
 import type {
@@ -302,6 +303,7 @@ function ContributionFormDialog({
   const isEdit = !!editEntry;
   const [projectId, setProjectId] = useState(editEntry?.projectId ?? "");
   const [selectedParticipant, setSelectedParticipant] = useState<{
+    id: string;
     fullName: string;
     role: string;
   } | null>(null);
@@ -391,6 +393,7 @@ function ContributionFormDialog({
         await createMutation.mutateAsync({
           data: {
             projectId,
+            participantId: selectedParticipant!.id,
             partnerName: selectedParticipant!.fullName,
             contributionType: cType,
             amount: parsedAmount,
@@ -528,10 +531,10 @@ function ContributionFormDialog({
                 </div>
               ) : (
                 <Select
-                  value={selectedParticipant?.fullName ?? ""}
+                  value={selectedParticipant?.id ?? ""}
                   onValueChange={(v) => {
-                    const p = participants.find((x) => x.fullName === v);
-                    if (p) setSelectedParticipant({ fullName: p.fullName, role: p.role });
+                    const p = participants.find((x) => x.id === v);
+                    if (p) setSelectedParticipant({ id: p.id, fullName: p.fullName, role: p.role });
                   }}
                 >
                   <SelectTrigger>
@@ -539,7 +542,7 @@ function ContributionFormDialog({
                   </SelectTrigger>
                   <SelectContent>
                     {participants.map((p) => (
-                      <SelectItem key={p.id} value={p.fullName}>
+                      <SelectItem key={p.id} value={p.id}>
                         <div className="flex flex-col">
                           <span className="font-medium">{p.fullName}</span>
                           <span className="text-xs text-muted-foreground">
@@ -1371,6 +1374,7 @@ export default function Contributions() {
   function invalidate() {
     qc.invalidateQueries({ queryKey: getListContributionsQueryKey() });
     qc.invalidateQueries({ queryKey: getGetContributionSummaryQueryKey() });
+    qc.invalidateQueries({ queryKey: getGetProjectCardSummariesQueryKey() });
   }
 
   async function handleSubmitForVerification(id: string) {
@@ -1808,6 +1812,7 @@ export default function Contributions() {
           invalidate();
           qc.invalidateQueries({ queryKey: getListExpendituresQueryKey() });
           qc.invalidateQueries({ queryKey: getGetExpenditureSummaryQueryKey() });
+          qc.invalidateQueries({ queryKey: getGetProjectCardSummariesQueryKey() });
         }}
       />
     </div>

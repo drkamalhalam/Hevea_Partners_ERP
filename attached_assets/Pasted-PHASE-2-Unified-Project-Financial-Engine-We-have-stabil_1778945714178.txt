@@ -1,0 +1,119 @@
+PHASE 2 — Unified Project Financial Engine
+
+We have stabilized contribution integrity. Now rebuild the financial architecture into one unified project-governed financial event engine.
+
+CURRENT PROBLEM
+
+The ERP still treats:
+
+contributions expenditure recoverable advances reimbursements operational costs 
+
+as separate disconnected modules.
+
+This creates:
+
+duplicate logic stale project cards inconsistent ownership effects fragmented ledgers lifecycle leakage confusing UX 
+
+TARGET ARCHITECTURE
+
+Create ONE canonical financial event engine.
+
+All financial activity must flow through: Project → Financial Event
+
+The system itself decides:
+
+accounting behavior ownership impact reimbursement treatment ledger routing lifecycle restrictions 
+
+CORE RULES
+
+REMOVE SEPARATE CONTRIBUTION VS EXPENDITURE THINKING 
+
+Replace both modules with: Unified Financial Entry Engine.
+
+Old pages become:
+
+reporting views only filters over the same financial ledger SINGLE FINANCIAL EVENT TABLE 
+
+Create canonical financial event architecture.
+
+Every event must include:
+
+projectId participantId eventType lifecyclePhase ownershipImpact reimbursementFlag verificationStatus amount createdBy timestamps audit metadata SYSTEM-CONTROLLED EVENT BEHAVIOR 
+
+The user should NOT manually decide accounting mechanics.
+
+System derives behavior automatically from:
+
+project lifecycle project accounting model event type reimbursement flag participant role PREMATURITY LOGIC 
+
+Allow:
+
+ownership-impacting investments operational expenses recoverable advances land notional LCA-related events 
+
+If reimbursementFlag = TRUE:
+
+event affects recoverable ledger only does NOT affect ownership guidance 
+
+If reimbursementFlag = FALSE:
+
+eligible ownership-affecting event only if project accounting model supports ownership MATURE PHASE LOGIC 
+
+Automatically block:
+
+land notional entries ownership-changing contributions ownership mutation events 
+
+Allow only:
+
+operational expenses recoverable adjustments mature operational accounting production-linked financial events 50% REVENUE MODEL RULES 
+
+For 50% revenue projects:
+
+ownership equity must NEVER be created land notional must be blocked contributions tracked only for burden/reimbursement/accounting no ownership guidance calculations 
+
+System must clearly communicate: “Recorded for operational accounting only — no ownership equity impact.”
+
+PROJECT-FIRST ENTRY UX 
+
+Allow financial entry from anywhere:
+
+dashboard project card quick actions operations pages 
+
+BUT internally route through: Project Financial Engine.
+
+PROJECT-SCOPED PARTICIPANTS ONLY 
+
+Financial events may ONLY use: verified project-linked participants.
+
+Never allow:
+
+free text project names unrelated participants orphan IDs LIVE PROJECT CARD SYNCHRONIZATION 
+
+Every valid financial event must immediately update:
+
+project financial totals ownership guidance burden accounting reimbursement balances recoverable advances operational cost totals dashboard summaries 
+
+Project cards must behave like live computed projections.
+
+OLD PAGES 
+
+Existing:
+
+contributions expenditure 
+
+pages should become:
+
+filtered reporting views analytics surfaces audit/history explorers 
+
+NOT primary accounting controllers anymore.
+
+AUDIT SAFETY 
+
+Never delete historical records automatically.
+
+Preserve:
+
+audit history migration traceability correction logs invalid record flags TESTING REQUIREMENTS 
+
+Test:
+
+prematurity ownership event prematurity reimbursable event mature operational expense mature ownership attempt (must block) 50% revenue model contribution project card synchronization participant validation reimbursement calculations recoverable balances ownership guidance recalculation 

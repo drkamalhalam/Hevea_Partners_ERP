@@ -4717,8 +4717,20 @@ export const ListContributionsResponse = zod.object({
  */
 export const CreateContributionBody = zod.object({
   projectId: zod.string().uuid(),
+  participantId: zod
+    .string()
+    .uuid()
+    .optional()
+    .describe(
+      "FK to project_participants.id — preferred over partnerName for new records",
+    ),
   partnerId: zod.string().uuid().optional(),
-  partnerName: zod.string(),
+  partnerName: zod
+    .string()
+    .optional()
+    .describe(
+      "Legacy field — must match a registered project participant's full name if participantId is not provided",
+    ),
   contributionType: zod.enum([
     "land_notional",
     "economic_investment",

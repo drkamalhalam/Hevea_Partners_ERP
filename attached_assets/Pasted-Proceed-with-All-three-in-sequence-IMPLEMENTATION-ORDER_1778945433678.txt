@@ -1,0 +1,51 @@
+Proceed with: “All three in sequence”.
+
+IMPLEMENTATION ORDER
+
+STEP 1 — Fix the /expenditure/pending-verification 500 route bug
+
+stabilize route ordering ensure verification APIs resolve correctly remove conflicting route handlers add error-safe fallback responses verify pending verification loads without crashing 
+
+STEP 2 — Harden contribution write integrity Critical requirement: Contribution records must NEVER trust frontend-provided participant names.
+
+Implement strict backend validation:
+
+Validate: projectId exists participantId exists participant is linked to selected project participant is active/eligible 
+
+Derive participantName from database only. Never accept free-text participant names from frontend payloads.
+
+Reject:
+
+project names as contributors orphan participant IDs free-text contributor creation participants not linked to project lifecycle-invalid entries Enforce lifecycle: PREMATURITY: allow ownership-impacting entries MATURE: block ownership-changing contribution types Ensure all contribution entries include: projectId participantId participantType lifecyclePhase createdBy verificationStatus audit timestamps 
+
+STEP 3 — Run historical data audit Scan all existing contribution and financial records for:
+
+project names stored as contributors contributor names without participant IDs orphan participant IDs mismatched project-participant relationships free-text contributor corruption invalid lifecycle entries mature-phase ownership contributions duplicate/malformed participant records 
+
+Do NOT auto-delete records.
+
+Instead:
+
+flag corrupted records generate remediation report mark invalid entries for admin review preserve audit history 
+
+STEP 4 — LIVE PROJECT SYNCHRONIZATION After contribution validation succeeds:
+
+Automatically update:
+
+project card totals ownership guidance participant contribution totals prematurity ownership projections financial summaries dashboard metrics 
+
+Project cards must immediately reflect valid contribution events.
+
+No manual refresh totals. No stale cached summaries.
+
+STEP 5 — PROJECT-SCOPED DATA ENFORCEMENT All financial/project queries must become project-scoped.
+
+Never fetch:
+
+global participants unrelated landowners unrelated contributors 
+
+All dropdowns and participant selectors must derive strictly from: selected project → linked verified participants.
+
+After implementation: test contribution creation end-to-end using:
+
+valid participant invalid participant mature project prematurity project unlinked participant fake/free-text participant attempt project card synchronization 

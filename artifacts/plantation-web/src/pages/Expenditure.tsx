@@ -14,6 +14,7 @@ import {
   getListExpendituresQueryKey,
   getGetExpenditureSummaryQueryKey,
   getListPendingVerificationsQueryKey,
+  getGetProjectCardSummariesQueryKey,
 } from "@workspace/api-client-react";
 import { ProjectFinancialEntryDialog } from "@/components/finance/ProjectFinancialEntryDialog";
 import ExpenditureVerificationTab from "./ExpenditureVerificationTab";
@@ -248,6 +249,7 @@ function ExpenditureFormDialog({
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: getListExpendituresQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetExpenditureSummaryQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetProjectCardSummariesQueryKey() });
   };
 
   const createMutation = useCreateExpenditure({
@@ -466,6 +468,7 @@ function RejectDialog({
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getListExpendituresQueryKey() });
         queryClient.invalidateQueries({ queryKey: getGetExpenditureSummaryQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetProjectCardSummariesQueryKey() });
         onClose();
         setNotes("");
       },
@@ -547,6 +550,7 @@ function ExpenditureRow({
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: getListExpendituresQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetExpenditureSummaryQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetProjectCardSummariesQueryKey() });
   };
 
   const submitMutation = useSubmitExpenditure({
@@ -812,9 +816,8 @@ export default function Expenditure() {
     mutation: {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getListExpendituresQueryKey() });
-        queryClient.invalidateQueries({
-          queryKey: getGetExpenditureSummaryQueryKey(),
-        });
+        queryClient.invalidateQueries({ queryKey: getGetExpenditureSummaryQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetProjectCardSummariesQueryKey() });
         setDeleteEntry(null);
       },
     },
@@ -1316,6 +1319,7 @@ export default function Expenditure() {
         onSuccess={() => {
           queryClient.invalidateQueries({ queryKey: getListExpendituresQueryKey() });
           queryClient.invalidateQueries({ queryKey: getGetExpenditureSummaryQueryKey() });
+          queryClient.invalidateQueries({ queryKey: getGetProjectCardSummariesQueryKey() });
         }}
       />
 
