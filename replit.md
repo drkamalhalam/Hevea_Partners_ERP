@@ -91,6 +91,8 @@ Six roles in `usersTable.role`:
 | Operations | Production Log | /production-log | Live |
 | Analytics | Global Analytics | /global-analytics | Live (admin/dev) |
 | Analytics | Project Analytics | /project-analytics | Live (all roles, project-filtered) |
+| Analytics | Financial Reports | /financial-reports | Live (admin/dev/landowner/investor) |
+| Analytics | Ownership Analytics | /ownership-analytics | Live (admin/dev/landowner/investor) |
 | Analytics | Reports | /reports | Placeholder |
 | Analytics | Documents | /documents | Live |
 | Analytics | Financial Analytics | /financial-analytics | Live |
