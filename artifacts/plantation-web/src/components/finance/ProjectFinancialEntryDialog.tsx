@@ -392,7 +392,7 @@ export function ProjectFinancialEntryDialog({
               | "manual_adjustment",
             amount: parsedAmount,
             contributionDate: date,
-            agreementId: agreementId || undefined,
+            agreementId: (agreementId && agreementId !== "__none__") ? agreementId : undefined,
             referenceNumber: referenceNumber || undefined,
             remarks: remarks || undefined,
             ...(isManualAdj ? { affectsOwnership } : {}),
@@ -676,7 +676,7 @@ export function ProjectFinancialEntryDialog({
                       <SelectValue placeholder="Select agreement…" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="__none__">None</SelectItem>
                       {agreements.map((a) => (
                         <SelectItem key={a.id} value={a.id}>Agreement {a.id.slice(0, 8)}…</SelectItem>
                       ))}
