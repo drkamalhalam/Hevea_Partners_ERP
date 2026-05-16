@@ -1,0 +1,141 @@
+PHASE 6 — Governance Hardening, Settlement Engine & Ownership Finalization
+
+We now have:
+
+participant integrity unified financial engine inventory movement engine live project state engine global action orchestration 
+
+Next, harden the ERP into a true governance-grade plantation operating system by implementing settlement governance, ownership crystallization, reimbursement intelligence, dispute safety, and irreversible lifecycle controls.
+
+CURRENT PROBLEM
+
+The ERP still lacks fully hardened governance enforcement for:
+
+ownership finalization maturity lock reimbursement separation settlement integrity dispute-safe accounting irreversible lifecycle transitions distribution governance inheritance-safe ownership continuity 
+
+Without this:
+
+ownership can drift mature projects can be mutated settlements become unreliable disputes can corrupt distributions governance trust weakens 
+
+TARGET ARCHITECTURE
+
+Projects must transition from: “evolving prematurity investment entities” into: “locked mature economic entities”.
+
+CORE RULES
+
+OWNERSHIP CRYSTALLIZATION ENGINE 
+
+When project transitions into: MATURE PRODUCTION
+
+the ERP must permanently crystallize:
+
+ownership structure ownership percentages verified ownership contributions land notional allocation participant ownership basis 
+
+After crystallization: ownership becomes immutable except through:
+
+approved share transfer inheritance governance-authorized correction MATURITY LOCK RULES 
+
+After maturity: automatically block:
+
+ownership-changing contributions land notional changes ownership recalculation ownership dilution participant share mutation 
+
+Allow only:
+
+operational accounting production inventory sales reimbursements settlement operations DUAL OTP FINALIZATION 
+
+Maturity declaration and ownership crystallization require:
+
+authorized governance approval dual OTP confirmation immutable audit record 
+
+Store:
+
+crystallization snapshot participant ownership snapshot project valuation snapshot lifecycle transition audit REIMBURSEMENT ENGINE 
+
+Strictly separate:
+
+ownership contribution vs reimbursable operational burden 
+
+All post-maturity financial events must automatically become:
+
+reimbursable operational burden-linked 
+
+Never ownership-linked.
+
+SETTLEMENT ENGINE 
+
+Create canonical settlement/distribution engine.
+
+Handle:
+
+revenue distribution operational burden reimbursement holdbacks dispute reserve pending settlement buyer receivables unpaid liabilities carried operational burden MODEL-AWARE DISTRIBUTION 
+
+CONTRIBUTION MODEL:
+
+reimburse operational burden first process LCA distribute remaining profit by crystallized ownership 
+
+50% REVENUE MODEL:
+
+50% gross revenue to landowner side remaining 50% distributed through economic participant pool no LCA no ownership-equity contribution logic DISTRIBUTION HOLD SYSTEM 
+
+Allow governance-controlled:
+
+participant-level holds dispute reserves partial distribution freeze 
+
+Never freeze entire project unnecessarily.
+
+Support:
+
+participant disputes pending verification inheritance review legal hold operational audit hold SHARE TRANSFER GOVERNANCE 
+
+Allow post-maturity ownership changes ONLY through:
+
+share transfer workflow inheritance workflow governance-approved correction 
+
+Must include:
+
+OTP verification valuation logic audit preservation historical ownership tracking INHERITANCE & NOMINEE CONTINUITY 
+
+Support:
+
+nominee mapping inheritance transition ownership succession historical continuity 
+
+Never orphan ownership after participant death/inactivity.
+
+LCA HARDENING 
+
+LCA applies ONLY:
+
+contribution model mature projects verified landowner crystallized ownership structure 
+
+Automatically block LCA under:
+
+50% revenue model prematurity phase PROJECT HEALTH GOVERNANCE 
+
+Project cards must show:
+
+crystallized ownership state maturity lock status settlement exposure reimbursement burden pending disputes held distributions governance warnings inheritance flags IMMUTABLE AUDIT TRAILS 
+
+Preserve:
+
+historical ownership states maturity transitions transfer history settlement history reimbursement evolution participant role history 
+
+Never overwrite governance-critical history.
+
+DISPUTE-SAFE ACCOUNTING 
+
+Disputes must NOT corrupt:
+
+project inventory financial balances ownership history operational continuity 
+
+System must isolate:
+
+disputed participant portion without freezing entire project operations. TESTING REQUIREMENTS 
+
+Test:
+
+maturity crystallization dual OTP lock post-maturity contribution blocking reimbursement-only mature entries contribution model settlement 50% revenue settlement LCA activation rules dispute hold partial settlement freeze inheritance transfer share transfer historical audit preservation FINAL GOVERNANCE TARGET 
+
+Transform the ERP into:
+
+IMMUTABLE
+
+GOVERNANCE-HARDENED DISPUTE-TOLERANT OWNERSHIP-SAFE AUDIT-PRESERVING LIFECYCLE-ENFORCED ENTERPRISE-GRADE PLANTATION GOVERNANCE OPERATING SYSTEM. 

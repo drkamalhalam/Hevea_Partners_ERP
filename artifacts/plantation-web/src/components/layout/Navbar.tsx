@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState } from "react"; // used by ProjectSelector + NotificationsDropdown sub-components
 import { useUser, useClerk } from "@clerk/react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { useCommandPalette } from "@/contexts/CommandPaletteContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,11 +26,10 @@ import {
   User,
   Bell,
   Search,
-  Sun,
-  Moon,
   Trees,
   ChevronDown,
   Check,
+  Command,
 } from "lucide-react";
 import Sidebar from "./Sidebar";
 import { useRole, ROLE_LABELS, ROLE_COLORS } from "@/contexts/RoleContext";
@@ -237,8 +236,7 @@ export default function Navbar() {
   const { signOut } = useClerk();
   const { role } = useRole();
   const [location] = useLocation();
-  const [isDark, setIsDark] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
+  const { setOpen: openPalette } = useCommandPalette();
 
   const basePath = Object.keys(PAGE_TITLES)
     .filter((k) => location === k || location.startsWith(k + "/"))
@@ -283,15 +281,18 @@ export default function Navbar() {
       {/* Project selector */}
       <ProjectSelector />
 
-      {/* Search bar — desktop */}
+      {/* Command palette trigger — desktop */}
       <div className="flex-1 hidden md:flex justify-center max-w-xs mx-auto">
-        <div className="relative w-full">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-          <Input
-            placeholder="Search projects, partners…"
-            className="h-8 pl-8 text-xs bg-gray-50 border-gray-200 focus-visible:ring-1 focus-visible:ring-emerald-500 focus-visible:border-emerald-400"
-          />
-        </div>
+        <button
+          onClick={() => openPalette(true)}
+          className="relative w-full flex items-center gap-2 h-8 px-3 rounded-md text-xs text-muted-foreground bg-gray-50 border border-gray-200 hover:bg-gray-100 hover:border-gray-300 transition-colors cursor-pointer"
+        >
+          <Search className="w-3.5 h-3.5 flex-shrink-0" />
+          <span className="flex-1 text-left">Search or jump to…</span>
+          <kbd className="hidden sm:inline-flex items-center gap-0.5 rounded border border-gray-200 bg-white px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground/70">
+            <Command className="w-2.5 h-2.5" />K
+          </kbd>
+        </button>
       </div>
 
       {/* Spacer — mobile */}
@@ -299,25 +300,14 @@ export default function Navbar() {
 
       {/* Right actions */}
       <div className="flex items-center gap-1">
-        {/* Mobile search */}
+        {/* Mobile search — opens palette */}
         <Button
           variant="ghost"
           size="icon"
           className="md:hidden h-8 w-8 text-muted-foreground"
-          onClick={() => setSearchOpen(!searchOpen)}
+          onClick={() => openPalette(true)}
         >
           <Search className="h-4 w-4" />
-        </Button>
-
-        {/* Theme toggle (placeholder) */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 text-muted-foreground hover:text-foreground hidden sm:flex"
-          onClick={() => setIsDark(!isDark)}
-          title="Toggle theme (coming soon)"
-        >
-          {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
         </Button>
 
         <NotificationsDropdown />
@@ -383,20 +373,6 @@ export default function Navbar() {
         </DropdownMenu>
       </div>
 
-      {/* Mobile search bar — expands below header */}
-      {searchOpen && (
-        <div className="absolute top-14 left-0 right-0 bg-white border-b px-4 py-2 md:hidden z-40">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-            <Input
-              autoFocus
-              placeholder="Search projects, partners…"
-              className="h-8 pl-8 text-xs"
-              onBlur={() => setSearchOpen(false)}
-            />
-          </div>
-        </div>
-      )}
     </header>
   );
 }

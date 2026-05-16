@@ -59,6 +59,7 @@ import {
   useGetGovernanceSummary,
   useListTasks,
   useGetTaskSummary,
+  useGetProjectCardSummaries,
 } from "@workspace/api-client-react";
 import {
   AreaChart,
@@ -275,16 +276,31 @@ function ActivityPanel() {
 
 function ProjectSummaryTable({ compact }: { compact?: boolean }) {
   const { data: projects = [], isLoading } = useListProjects();
-  const { data: stock = [] } = useGetStockSummary();
+  const { data: cardData } = useGetProjectCardSummaries();
+  const cardSummaries = cardData?.summaries ?? [];
+
+  // Build a fast O(1) lookup map from projectId → card summary
+  const cardMap = useMemo(
+    () => new Map(cardSummaries.map((c) => [c.projectId, c])),
+    [cardSummaries],
+  );
+
+  const LIFECYCLE_BADGE: Record<string, { label: string; cls: string }> = {
+    prematurity:       { label: "Pre-Maturity",  cls: "bg-violet-100 text-violet-700" },
+    mature_production: { label: "Mature Prod.",   cls: "bg-emerald-100 text-emerald-700" },
+    closed:            { label: "Closed",          cls: "bg-gray-100 text-gray-600" },
+  };
+
+  const colSpan = compact ? 5 : 7;
 
   return (
     <Card className="border border-gray-200 shadow-none bg-white">
       <CardHeader className="pb-2 px-5 pt-4">
         <div className="flex items-start justify-between gap-2 flex-wrap">
           <div>
-            <CardTitle className="text-sm font-semibold">Project Summary</CardTitle>
+            <CardTitle className="text-sm font-semibold">Live Project State</CardTitle>
             <p className="text-[11px] text-muted-foreground mt-0.5">
-              {compact ? "Your assigned plantation projects" : "All plantation projects under management"}
+              {compact ? "Your assigned plantation projects" : "Real-time state across all plantation projects"}
             </p>
           </div>
           <Link href="/projects">
@@ -301,13 +317,16 @@ function ProjectSummaryTable({ compact }: { compact?: boolean }) {
               <tr className="border-b bg-gray-50">
                 <th className="text-left px-5 py-2.5 font-semibold text-muted-foreground">Project</th>
                 <th className="text-left px-4 py-2.5 font-semibold text-muted-foreground hidden sm:table-cell">Location</th>
-                <th className="text-left px-4 py-2.5 font-semibold text-muted-foreground">Status</th>
-                <th className="text-right px-4 py-2.5 font-semibold text-muted-foreground hidden md:table-cell">Land Area</th>
+                <th className="text-left px-4 py-2.5 font-semibold text-muted-foreground hidden md:table-cell">Phase</th>
                 {!compact && (
                   <>
-                    <th className="text-right px-4 py-2.5 font-semibold text-muted-foreground hidden lg:table-cell">Est. Revenue</th>
-                    <th className="text-right px-4 py-2.5 font-semibold text-muted-foreground hidden lg:table-cell">Expenditure</th>
+                    <th className="text-right px-4 py-2.5 font-semibold text-muted-foreground hidden lg:table-cell">Contributions</th>
+                    <th className="text-right px-4 py-2.5 font-semibold text-muted-foreground hidden lg:table-cell">Stock (kg)</th>
+                    <th className="text-right px-4 py-2.5 font-semibold text-muted-foreground hidden lg:table-cell">Sales</th>
                   </>
+                )}
+                {compact && (
+                  <th className="text-right px-4 py-2.5 font-semibold text-muted-foreground hidden lg:table-cell">Stock (kg)</th>
                 )}
                 <th className="text-right px-5 py-2.5 font-semibold text-muted-foreground">Action</th>
               </tr>
@@ -316,58 +335,91 @@ function ProjectSummaryTable({ compact }: { compact?: boolean }) {
               {isLoading ? (
                 [...Array(3)].map((_, i) => (
                   <tr key={i} className="border-b">
-                    <td className="px-5 py-3" colSpan={compact ? 5 : 7}>
+                    <td className="px-5 py-3" colSpan={colSpan}>
                       <Skeleton className="h-4 w-full" />
                     </td>
                   </tr>
                 ))
               ) : projects.length === 0 ? (
                 <tr>
-                  <td colSpan={compact ? 5 : 7} className="text-center py-8 text-muted-foreground text-sm">
+                  <td colSpan={colSpan} className="text-center py-8 text-muted-foreground text-sm">
                     No projects assigned
                   </td>
                 </tr>
               ) : (
-                projects.map((p, idx) => (
-                  <tr key={p.id} className="border-b last:border-0 hover:bg-gray-50/70 transition-colors">
-                    <td className="px-5 py-3 font-medium text-foreground">
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-md bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px] font-bold flex-shrink-0">
-                          {String(idx + 1).padStart(2, "0")}
+                projects.map((p, idx) => {
+                  const card = cardMap.get(p.id);
+                  const lcBadge = p.lifecycleStatus ? LIFECYCLE_BADGE[p.lifecycleStatus] : null;
+                  const sheetKg  = card?.rubberSheetBalanceKg ?? 0;
+                  const scrapKg  = card?.rubberScrapBalanceKg ?? 0;
+                  const totalStockKg = sheetKg + scrapKg;
+                  const contribTotal = card?.contributionTotal ?? null;
+                  const saleCount    = card ? (card.confirmedSaleCount ?? 0) : null;
+
+                  return (
+                    <tr key={p.id} className="border-b last:border-0 hover:bg-gray-50/70 transition-colors">
+                      <td className="px-5 py-3 font-medium text-foreground">
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 rounded-md bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px] font-bold flex-shrink-0">
+                            {String(idx + 1).padStart(2, "0")}
+                          </div>
+                          <span className="truncate max-w-[140px]">{p.name}</span>
                         </div>
-                        <span className="truncate max-w-[140px]">{p.name}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">{p.district ?? "—"}</td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full capitalize ${STATUS_COLORS[p.status] ?? "bg-gray-100 text-gray-600"}`}>
-                        {p.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right text-muted-foreground hidden md:table-cell">
-                      {p.landArea ? `${p.landArea} kani` : "—"}
-                    </td>
-                    {!compact && (
-                      <>
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">{p.district ?? "—"}</td>
+                      <td className="px-4 py-3 hidden md:table-cell">
+                        {lcBadge ? (
+                          <span className={`inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full ${lcBadge.cls}`}>
+                            {lcBadge.label}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </td>
+                      {!compact && (
+                        <>
+                          <td className="px-4 py-3 text-right hidden lg:table-cell">
+                            {contribTotal != null ? (
+                              <span className="font-medium text-blue-700">
+                                ₹{contribTotal.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                              </span>
+                            ) : <span className="text-muted-foreground">—</span>}
+                          </td>
+                          <td className="px-4 py-3 text-right hidden lg:table-cell">
+                            {totalStockKg > 0 ? (
+                              <span className="font-medium text-teal-700">
+                                {totalStockKg.toLocaleString("en-IN", { maximumFractionDigits: 1 })}
+                              </span>
+                            ) : <span className="text-muted-foreground text-[11px]">—</span>}
+                          </td>
+                          <td className="px-4 py-3 text-right hidden lg:table-cell">
+                            {saleCount != null ? (
+                              <span className={`font-medium ${saleCount > 0 ? "text-emerald-700" : "text-muted-foreground"}`}>
+                                {saleCount}
+                              </span>
+                            ) : <span className="text-muted-foreground">—</span>}
+                          </td>
+                        </>
+                      )}
+                      {compact && (
                         <td className="px-4 py-3 text-right hidden lg:table-cell">
-                          <span className="font-medium text-emerald-700">₹{((p.landArea ?? 10) * 12).toFixed(0)}k</span>
-                          <span className="text-muted-foreground text-[10px] ml-0.5">est.</span>
+                          {totalStockKg > 0 ? (
+                            <span className="font-medium text-teal-700">
+                              {totalStockKg.toLocaleString("en-IN", { maximumFractionDigits: 1 })} kg
+                            </span>
+                          ) : <span className="text-muted-foreground text-[11px]">—</span>}
                         </td>
-                        <td className="px-4 py-3 text-right hidden lg:table-cell">
-                          <span className="font-medium text-rose-600">₹{((p.landArea ?? 10) * 4).toFixed(0)}k</span>
-                          <span className="text-muted-foreground text-[10px] ml-0.5">est.</span>
-                        </td>
-                      </>
-                    )}
-                    <td className="px-5 py-3 text-right">
-                      <Link href={`/projects/${p.id}`}>
-                        <Button variant="ghost" size="sm" className="h-6 text-xs gap-1 text-primary">
-                          View <ChevronRight className="w-3 h-3" />
-                        </Button>
-                      </Link>
-                    </td>
-                  </tr>
-                ))
+                      )}
+                      <td className="px-5 py-3 text-right">
+                        <Link href={`/projects/${p.id}`}>
+                          <Button variant="ghost" size="sm" className="h-6 text-xs gap-1 text-primary">
+                            View <ChevronRight className="w-3 h-3" />
+                          </Button>
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

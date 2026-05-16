@@ -1,8 +1,10 @@
 import { ReactNode } from "react";
 import Sidebar from "./Sidebar";
 import Navbar from "./Navbar";
+import GlobalCommandPalette from "./GlobalCommandPalette";
 import { SidebarProvider, useSidebar } from "@/contexts/SidebarContext";
 import { ProjectFilterProvider } from "@/contexts/ProjectFilterContext";
+import { CommandPaletteProvider } from "@/contexts/CommandPaletteContext";
 import { cn } from "@/lib/utils";
 
 function LayoutInner({ children }: { children: ReactNode }) {
@@ -32,6 +34,9 @@ function LayoutInner({ children }: { children: ReactNode }) {
           {children}
         </main>
       </div>
+
+      {/* Global command palette — renders above everything */}
+      <GlobalCommandPalette />
     </div>
   );
 }
@@ -40,7 +45,9 @@ export default function Layout({ children }: { children: ReactNode }) {
   return (
     <SidebarProvider>
       <ProjectFilterProvider>
-        <LayoutInner>{children}</LayoutInner>
+        <CommandPaletteProvider>
+          <LayoutInner>{children}</LayoutInner>
+        </CommandPaletteProvider>
       </ProjectFilterProvider>
     </SidebarProvider>
   );
