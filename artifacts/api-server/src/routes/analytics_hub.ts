@@ -221,11 +221,11 @@ router.post("/search", requireAuth, async (req, res) => {
     db.execute(sql.raw(`
       SELECT
         COUNT(*)::int AS transaction_count,
-        COALESCE(SUM(net_amount), 0)::numeric AS total_net,
-        COALESCE(SUM(gross_amount), 0)::numeric AS total_gross,
-        COALESCE(SUM(net_weight_kg), 0)::numeric AS total_kg,
-        COALESCE(AVG(rate_per_kg), 0)::numeric AS avg_rate
-      FROM sales
+        COALESCE(SUM(total_net_revenue), 0)::numeric AS total_net,
+        COALESCE(SUM(total_gross_revenue), 0)::numeric AS total_gross,
+        0::numeric AS total_kg,
+        0::numeric AS avg_rate
+      FROM sales_transactions
       WHERE ${pWhere} AND is_active = true AND ${dateBound("sale_date")}
     `)),
 
@@ -275,8 +275,8 @@ router.post("/search", requireAuth, async (req, res) => {
       SELECT month, SUM(revenue)::numeric AS revenue, SUM(expenditure)::numeric AS expenditure
       FROM (
         SELECT DATE_TRUNC('month', sale_date)::date AS month,
-               SUM(net_amount)::numeric AS revenue, 0 AS expenditure
-        FROM sales WHERE ${pWhere} AND is_active = true AND sale_date IS NOT NULL
+               SUM(total_net_revenue)::numeric AS revenue, 0 AS expenditure
+        FROM sales_transactions WHERE ${pWhere} AND is_active = true AND sale_date IS NOT NULL
           AND ${dateBound("sale_date")}
         GROUP BY 1
         UNION ALL
@@ -344,19 +344,19 @@ router.post("/search", requireAuth, async (req, res) => {
     db.execute(sql.raw(`
       SELECT
         COUNT(*)::int AS batch_count,
-        COALESCE(SUM(quantity_produced), 0)::numeric AS total_produced
-      FROM production_log
-      WHERE ${pWhere} AND ${dateBound("production_date")}
+        COALESCE(SUM(total_sheet_kg + total_scrap_kg), 0)::numeric AS total_produced
+      FROM production_batches
+      WHERE ${pWhere} AND ${dateBound("batch_date")}
     `)).catch(() => ({ rows: [{ batch_count: 0, total_produced: 0 }] })),
 
     // Inventory balances
     db.execute(sql.raw(`
       SELECT
         COUNT(*)::int AS stock_types,
-        COALESCE(SUM(balance_quantity), 0)::numeric AS total_qty,
-        COALESCE(SUM(balance_value), 0)::numeric AS total_value
-      FROM inventory
-      WHERE ${pWhere}
+        COALESCE(SUM(quantity), 0)::numeric AS total_qty,
+        COALESCE(SUM(quantity * COALESCE(unit_cost, 0)), 0)::numeric AS total_value
+      FROM inventory_items
+      WHERE ${pWhere} AND deleted_at IS NULL
     `)).catch(() => ({ rows: [{ stock_types: 0, total_qty: 0, total_value: 0 }] })),
 
     // Per-project breakdown
@@ -370,7 +370,7 @@ router.post("/search", requireAuth, async (req, res) => {
         COALESCE(part.count, 0)::int AS partner_count
       FROM projects p
       LEFT JOIN (
-        SELECT project_id, SUM(net_amount) AS total FROM sales WHERE is_active = true AND ${dateBound("sale_date")} GROUP BY project_id
+        SELECT project_id, SUM(total_net_revenue) AS total FROM sales_transactions WHERE is_active = true AND ${dateBound("sale_date")} GROUP BY project_id
       ) rev ON rev.project_id = p.id
       LEFT JOIN (
         SELECT project_id, SUM(amount) AS total FROM expenditures WHERE is_active = true AND verification_status = 'approved' AND ${dateBound("created_at")} GROUP BY project_id
