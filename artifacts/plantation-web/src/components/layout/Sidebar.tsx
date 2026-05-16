@@ -638,6 +638,12 @@ const navGroups: NavGroup[] = [
         icon: HardDriveDownload,
         roles: ["admin"] as UserRole[],
       },
+      {
+        name: "Data Health",
+        href: "/data-health",
+        icon: Activity,
+        roles: ["admin", "developer"] as UserRole[],
+      },
     ],
   },
   {
