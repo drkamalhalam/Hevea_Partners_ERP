@@ -89,6 +89,7 @@ Six roles in `usersTable.role`:
 | Operations | Sales | /sales | Live |
 | Operations | Distribution | /distribution | Live |
 | Operations | Production Log | /production-log | Live |
+| Analytics | Analytics Hub | /analytics-hub | Live (all roles) |
 | Analytics | Global Analytics | /global-analytics | Live (admin/dev) |
 | Analytics | Project Analytics | /project-analytics | Live (all roles, project-filtered) |
 | Analytics | Financial Reports | /financial-reports | Live (admin/dev/landowner/investor) |

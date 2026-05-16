@@ -325,9 +325,9 @@ export default function ReportExports() {
 
   // ── Generate export ───────────────────────────────────────────────────────
   const handleGenerate = async () => {
-    if (!reportType) return toast({ title: "Please select a report type", variant: "destructive" });
-    if (!exportFormat) return toast({ title: "Please select a format", variant: "destructive" });
-    if (!projectId) return toast({ title: "Please select a project", variant: "destructive" });
+    if (!reportType) { toast({ title: "Please select a report type", variant: "destructive" }); return; }
+    if (!exportFormat) { toast({ title: "Please select a format", variant: "destructive" }); return; }
+    if (!projectId) { toast({ title: "Please select a project", variant: "destructive" }); return; }
 
     setGenerating(true);
     try {

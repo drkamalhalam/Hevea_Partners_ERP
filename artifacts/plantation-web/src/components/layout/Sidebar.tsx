@@ -59,6 +59,7 @@ import {
   Users,
   FileText,
   Factory,
+  SlidersHorizontal,
 } from "lucide-react";
 import { useRole, ROLE_LABELS, ROLE_COLORS } from "@/contexts/RoleContext";
 import type { UserRole } from "@/contexts/RoleContext";
@@ -487,6 +488,12 @@ const navGroups: NavGroup[] = [
   {
     label: "Analytics",
     items: [
+      {
+        name: "Analytics Hub",
+        href: "/analytics-hub",
+        icon: SlidersHorizontal,
+        roles: ["admin", "developer", "landowner", "investor", "employee", "operational_staff"] as UserRole[],
+      },
       {
         name: "Global Analytics",
         href: "/global-analytics",

@@ -126,6 +126,7 @@ import PrematuritySuccession from "./pages/PrematuritySuccession";
 import OwnershipContinuityDashboard from "./pages/OwnershipContinuityDashboard";
 import BackupExport from "./pages/BackupExport";
 import ReportExports from "./pages/ReportExports";
+import AnalyticsHub from "./pages/AnalyticsHub";
 
 // Pages — Multi-Store
 import Stores from "./pages/Stores";
@@ -416,6 +417,7 @@ function AppRoutes() {
               <Route path="/financial-audit-log"><ProtectedRoute component={FinancialAuditLog} /></Route>
               <Route path="/backup-export"><AdminRoute component={BackupExport} /></Route>
               <Route path="/report-exports"><ProtectedRoute component={ReportExports} /></Route>
+              <Route path="/analytics-hub"><ProtectedRoute component={AnalyticsHub} /></Route>
 
               {/* Multi-Store Inventory */}
               <Route path="/stores"><ProtectedRoute component={Stores} /></Route>
