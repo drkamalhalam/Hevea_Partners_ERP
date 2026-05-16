@@ -595,6 +595,12 @@ const navGroups: NavGroup[] = [
         roles: ["admin", "developer"] as UserRole[],
       },
       {
+        name: "Governance Reports",
+        href: "/governance-audit-reports",
+        icon: Database,
+        roles: ["admin", "developer"] as UserRole[],
+      },
+      {
         name: "Access Audit Log",
         href: "/financial-audit-log",
         icon: ShieldAlert,
