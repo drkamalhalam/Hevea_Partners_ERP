@@ -1,7 +1,8 @@
-import { useState } from "react"; // used by ProjectSelector + NotificationsDropdown sub-components
+import { useState, useMemo } from "react";
 import { useUser, useClerk } from "@clerk/react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useCommandPalette } from "@/contexts/CommandPaletteContext";
 import {
   DropdownMenu,
@@ -30,6 +31,7 @@ import {
   ChevronDown,
   Check,
   Command,
+  Layers,
 } from "lucide-react";
 import Sidebar from "./Sidebar";
 import { useRole, ROLE_LABELS, ROLE_COLORS } from "@/contexts/RoleContext";
@@ -90,74 +92,204 @@ const MOCK_NOTIFICATIONS = [
   },
 ];
 
+// ── Project selector helpers ───────────────────────────────────────────────
+
+function activationDot(status: string) {
+  if (status === "active") return "bg-emerald-500";
+  if (status === "suspended") return "bg-red-500";
+  if (status === "ready_for_activation") return "bg-blue-500";
+  if (status === "pending_verification") return "bg-yellow-500";
+  return "bg-gray-400";
+}
+
+function activationLabel(status: string) {
+  if (status === "active") return "Active";
+  if (status === "suspended") return "Suspended";
+  if (status === "ready_for_activation") return "Ready";
+  if (status === "pending_verification") return "Pending";
+  if (status === "draft") return "Draft";
+  if (status === "closed") return "Closed";
+  return status;
+}
+
+function activationBadgeClass(status: string) {
+  if (status === "active") return "bg-emerald-100 text-emerald-700 border-emerald-200";
+  if (status === "suspended") return "bg-red-100 text-red-700 border-red-200";
+  if (status === "ready_for_activation") return "bg-blue-100 text-blue-700 border-blue-200";
+  if (status === "pending_verification") return "bg-yellow-100 text-yellow-700 border-yellow-200";
+  return "bg-gray-100 text-gray-600 border-gray-200";
+}
+
+function lifecycleBadgeClass(status: string) {
+  if (status === "mature_production") return "bg-emerald-50 text-emerald-600";
+  if (status === "prematurity") return "bg-amber-50 text-amber-700";
+  return "bg-gray-50 text-gray-500";
+}
+
+function lifecycleLabel(status: string) {
+  if (status === "mature_production") return "Mature";
+  if (status === "prematurity") return "Pre-mat.";
+  if (status === "closed") return "Closed";
+  return status;
+}
+
 // ── Project selector ───────────────────────────────────────────────────────
 
 function ProjectSelector() {
   const { data: projects = [] } = useListProjects();
   const { selectedProjectId, setSelectedProjectId } = useProjectFilter();
   const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
 
   const selected = projects.find((p) => p.id === selectedProjectId);
 
+  const filtered = useMemo(() => {
+    if (!search.trim()) return projects;
+    const q = search.toLowerCase();
+    return projects.filter(
+      (p) =>
+        p.name.toLowerCase().includes(q) ||
+        (p.projectCode ?? "").toLowerCase().includes(q)
+    );
+  }, [projects, search]);
+
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={(v) => { setOpen(v); if (!v) setSearch(""); }}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
           size="sm"
-          className="h-8 gap-1.5 text-xs font-medium border-gray-200 text-gray-700 hover:bg-gray-50 max-w-[200px] hidden sm:flex"
+          className={cn(
+            "h-9 gap-2 pl-2.5 pr-2 font-medium border hidden sm:flex items-center transition-all",
+            selectedProjectId
+              ? "bg-emerald-50 border-emerald-300 text-emerald-800 hover:bg-emerald-100 max-w-[260px]"
+              : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50 max-w-[180px]"
+          )}
         >
-          <Trees className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
-          <span className="truncate flex-1 text-left">
-            {selected ? selected.name : "All Projects"}
-          </span>
-          <ChevronDown className="w-3 h-3 text-gray-400 flex-shrink-0" />
+          {selectedProjectId ? (
+            <Trees className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
+          ) : (
+            <Layers className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+          )}
+          <div className="flex flex-col items-start min-w-0 flex-1">
+            <span className="text-xs font-semibold truncate leading-tight">
+              {selected ? selected.name : "All Projects"}
+            </span>
+            {selected && (selected as { projectCode?: string | null }).projectCode && (
+              <span className="text-[10px] font-normal text-emerald-600 leading-tight">
+                {(selected as { projectCode?: string | null }).projectCode}
+              </span>
+            )}
+          </div>
+          <ChevronDown className={cn("w-3.5 h-3.5 flex-shrink-0 transition-transform", open && "rotate-180", selectedProjectId ? "text-emerald-500" : "text-gray-400")} />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-56 p-1" align="start">
-        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 py-1.5">
-          Filter by Project
-        </p>
-        <button
-          className="w-full flex items-center gap-2 px-2 py-1.5 rounded text-sm hover:bg-accent transition-colors"
-          onClick={() => {
-            setSelectedProjectId(null);
-            setOpen(false);
-          }}
-        >
-          <Trees className="w-3.5 h-3.5 text-muted-foreground" />
-          <span className="flex-1 text-left">All Projects</span>
-          {selectedProjectId === null && (
-            <Check className="w-3 h-3 text-emerald-600" />
-          )}
-        </button>
-        {projects.map((p) => (
-          <button
-            key={p.id}
-            className="w-full flex items-center gap-2 px-2 py-1.5 rounded text-sm hover:bg-accent transition-colors"
-            onClick={() => {
-              setSelectedProjectId(p.id);
-              setOpen(false);
-            }}
-          >
-            <span
-              className={cn(
-                "w-1.5 h-1.5 rounded-full flex-shrink-0",
-                p.status === "tapping"
-                  ? "bg-green-500"
-                  : p.status === "maturing"
-                  ? "bg-emerald-400"
-                  : p.status === "developing"
-                  ? "bg-amber-400"
-                  : "bg-blue-400"
-              )}
+
+      <PopoverContent className="w-80 p-0 shadow-xl border border-gray-200 rounded-xl overflow-hidden" align="start" sideOffset={6}>
+        {/* Header */}
+        <div className="bg-gray-50 border-b border-gray-100 px-3 pt-3 pb-2">
+          <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">
+            Switch Project Context
+          </p>
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search projects…"
+              className="pl-8 h-8 text-xs border-gray-200 bg-white focus-visible:ring-emerald-500"
+              autoFocus={false}
             />
-            <span className="flex-1 text-left truncate">{p.name}</span>
-            {selectedProjectId === p.id && (
-              <Check className="w-3 h-3 text-emerald-600" />
+          </div>
+        </div>
+
+        {/* All Projects option */}
+        <div className="p-1.5 border-b border-gray-100">
+          <button
+            className={cn(
+              "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all",
+              selectedProjectId === null
+                ? "bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200"
+                : "hover:bg-gray-50 text-gray-700"
+            )}
+            onClick={() => { setSelectedProjectId(null); setOpen(false); setSearch(""); }}
+          >
+            <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0", selectedProjectId === null ? "bg-emerald-100" : "bg-gray-100")}>
+              <Layers className={cn("w-4 h-4", selectedProjectId === null ? "text-emerald-600" : "text-gray-500")} />
+            </div>
+            <div className="flex-1 text-left">
+              <p className="font-semibold text-sm leading-tight">All Projects</p>
+              <p className="text-[11px] text-gray-400 leading-tight">{projects.length} projects total</p>
+            </div>
+            {selectedProjectId === null && (
+              <Check className="w-4 h-4 text-emerald-600 flex-shrink-0" />
             )}
           </button>
-        ))}
+        </div>
+
+        {/* Project list */}
+        <div className="max-h-72 overflow-y-auto p-1.5 space-y-0.5">
+          {filtered.length === 0 && (
+            <p className="text-xs text-gray-400 text-center py-4">No projects match "{search}"</p>
+          )}
+          {filtered.map((p) => {
+            const proj = p as typeof p & { projectCode?: string | null; activationStatus?: string; lifecycleStatus?: string };
+            const isSelected = selectedProjectId === p.id;
+            return (
+              <button
+                key={p.id}
+                className={cn(
+                  "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-left",
+                  isSelected
+                    ? "bg-emerald-50 ring-1 ring-emerald-200"
+                    : "hover:bg-gray-50"
+                )}
+                onClick={() => { setSelectedProjectId(p.id); setOpen(false); setSearch(""); }}
+              >
+                {/* Status dot */}
+                <div className="flex-shrink-0 relative">
+                  <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", isSelected ? "bg-emerald-100" : "bg-gray-100")}>
+                    <Trees className={cn("w-4 h-4", isSelected ? "text-emerald-600" : "text-gray-500")} />
+                  </div>
+                  <span className={cn("absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-white", activationDot(proj.activationStatus ?? ""))} />
+                </div>
+
+                {/* Name + meta */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className={cn("font-semibold text-sm truncate", isSelected ? "text-emerald-900" : "text-gray-800")}>
+                      {p.name}
+                    </span>
+                    {proj.projectCode && (
+                      <span className="text-[10px] font-mono font-medium text-gray-400 flex-shrink-0">
+                        {proj.projectCode}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1 mt-0.5">
+                    <span className={cn("text-[10px] font-medium px-1.5 py-0.5 rounded border", activationBadgeClass(proj.activationStatus ?? ""))}>
+                      {activationLabel(proj.activationStatus ?? "")}
+                    </span>
+                    <span className={cn("text-[10px] font-medium px-1.5 py-0.5 rounded", lifecycleBadgeClass(proj.lifecycleStatus ?? ""))}>
+                      {lifecycleLabel(proj.lifecycleStatus ?? "")}
+                    </span>
+                  </div>
+                </div>
+
+                {isSelected && <Check className="w-4 h-4 text-emerald-600 flex-shrink-0" />}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Footer */}
+        {projects.length > 5 && (
+          <div className="border-t border-gray-100 px-3 py-2 bg-gray-50">
+            <p className="text-[10px] text-gray-400 text-center">
+              Showing {filtered.length} of {projects.length} projects
+            </p>
+          </div>
+        )}
       </PopoverContent>
     </Popover>
   );
