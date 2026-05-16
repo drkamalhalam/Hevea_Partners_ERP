@@ -1,0 +1,127 @@
+PHASE 4 — Live Project State Engine & Reactive Project Cards
+
+We have stabilized:
+
+participant integrity financial engine inventory movement engine 
+
+Now transform project cards and dashboards into LIVE reactive ERP state projections.
+
+CURRENT PROBLEM
+
+Project cards currently behave like:
+
+static summaries stale cached snapshots disconnected widgets 
+
+They do NOT reliably reflect:
+
+financial events inventory changes production sales transfers reimbursements lifecycle changes governance actions 
+
+This creates:
+
+inconsistent project visibility stale metrics disconnected operational state user distrust governance risk 
+
+TARGET ARCHITECTURE
+
+Project cards become: LIVE PROJECT STATE ENGINES.
+
+They are not static records anymore.
+
+They are reactive projections derived from:
+
+financial ledger inventory movement ledger participant engine lifecycle engine settlement engine production engine governance engine 
+
+CORE RULES
+
+PROJECT CARDS MUST NEVER STORE MANUAL TOTALS 
+
+All metrics must derive dynamically from canonical ledgers/events.
+
+Do NOT:
+
+cache independent totals maintain separate card-only balances calculate from disconnected queries 
+
+Project cards must always represent: current validated project state.
+
+PROJECT CARD = LIVE BUSINESS ENTITY 
+
+Treat each project as: a living operational and economic entity.
+
+Every valid event must evolve project state automatically.
+
+EVENT SOURCES 
+
+Project cards must react instantly to:
+
+financial entries ownership changes production logs inventory movements transfers sales confirmations reimbursements distributions governance approvals lifecycle transitions participant changes PREMATURITY PROJECT CARD 
+
+During prematurity show:
+
+ownership guidance verified ownership pool land notional value contribution totals reimbursement exposure participant structure maturity readiness unresolved governance issues pending verification operational burden MATURE PROJECT CARD 
+
+During mature phase show:
+
+production totals inventory balances stock movement sales revenue operational burden receivables distribution eligibility pending reimbursements settlement exposure buyer outstanding CLOSED PROJECT CARD 
+
+During closed state show:
+
+final settlement archived ownership historical profitability dispute status closure audit final balances CLICK-THROUGH TRACEABILITY 
+
+Every metric must drill down to: source ledger/events.
+
+Flow: Card Metric → Summary View → Ledger Entries → Source Event → Audit Trail
+
+Example: Stock Balance → inventory movements → production entries → dispatch history
+
+REACTIVE DASHBOARDS 
+
+Dashboards must become: live computed views over project state engine.
+
+Do NOT use stale snapshot tables.
+
+LIVE SYNCHRONIZATION 
+
+When any valid event occurs:
+
+project card updates dashboard updates participant balances update inventory projections update ownership guidance recalculates sales availability recalculates 
+
+No manual refresh logic.
+
+PROJECT-SCOPED AUTHORITY 
+
+Project cards become: the authoritative orchestration surfaces.
+
+From project card users must access:
+
+financial entry production entry inventory actions transfers sales participant management governance tools audit views 
+
+WITHOUT creating isolated duplicate modules.
+
+GLOBAL ACTION UX 
+
+Allow quick actions from anywhere in app:
+
+dashboard quick entry mobile workflows 
+
+BUT internally route through: Project State Engine.
+
+PERFORMANCE RULES 
+
+Implement efficient:
+
+event subscriptions reactive recalculation scoped invalidation computed projections incremental refresh 
+
+Avoid:
+
+full page recomputation heavy polling duplicated calculations GOVERNANCE WARNINGS 
+
+Project cards must visibly show:
+
+invalid participant linkage pending verification ownership conflicts lifecycle violations inventory anomalies reimbursement exposure unresolved audit flags PROJECT HEALTH INTELLIGENCE 
+
+Compute live:
+
+operational health financial exposure ownership stability reimbursement burden production trends stock pressure settlement readiness TESTING REQUIREMENTS 
+
+Test:
+
+financial entry → project card update production entry → inventory update sales → stock deduction transfer → stock synchronization lifecycle transition → UI/state changes reimbursement → burden recalculation ownership verification → guidance update dashboard synchronization multi-project live updates mobile quick actions 

@@ -1133,6 +1133,7 @@ export * from "./stockMovementDirection";
 export * from "./stockMovementStatus";
 export * from "./stockMovementStockType";
 export * from "./stockSummary";
+export * from "./stockSummaryStockByTypeItem";
 export * from "./stockTransfer";
 export * from "./stockTypeSummary";
 export * from "./stockValuationItem";

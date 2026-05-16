@@ -3606,9 +3606,36 @@ export const GetGovernanceSummaryResponse = zod.object({
 export const GetStockSummaryResponseItem = zod.object({
   projectId: zod.string().uuid(),
   projectName: zod.string(),
-  totalProduced: zod.number(),
-  totalSold: zod.number(),
-  currentStock: zod.number(),
+  location: zod.string().nullish(),
+  district: zod.string().nullish(),
+  stockByType: zod
+    .array(
+      zod.object({
+        stockType: zod.string(),
+        totalIn: zod.number(),
+        totalOut: zod.number(),
+        balance: zod.number(),
+        unit: zod.string(),
+        lastMovementAt: zod.string().nullish(),
+      }),
+    )
+    .describe(
+      "Per stock-type balance derived from the canonical movement ledger",
+    ),
+  totalProduced: zod
+    .number()
+    .describe(
+      "Sum of all in-movements for kg-denominated stock types (backward compat)",
+    ),
+  totalSold: zod
+    .number()
+    .describe(
+      "Sum of all out-movements for kg-denominated stock types (backward compat)",
+    ),
+  currentStock: zod
+    .number()
+    .describe("Net balance for kg-denominated stock types (backward compat)"),
+  lastMovementAt: zod.string().nullish(),
 });
 export const GetStockSummaryResponse = zod.array(GetStockSummaryResponseItem);
 
@@ -10185,9 +10212,14 @@ export const CreateStockMovementBody = zod.object({
     "opening",
     "production_in",
     "purchase_in",
+    "stock_in",
     "sale_out",
+    "stock_out",
     "transfer_out",
+    "transfer_in",
     "wastage",
+    "return",
+    "correction",
     "adjustment_in",
     "adjustment_out",
   ]),

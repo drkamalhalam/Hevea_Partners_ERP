@@ -13711,19 +13711,41 @@ components:
 
     StockSummary:
       type: object
-      required: [projectId, projectName, totalProduced, totalSold, currentStock]
+      required: [projectId, projectName, totalProduced, totalSold, currentStock, stockByType]
       properties:
         projectId:
           type: string
           format: uuid
         projectName:
           type: string
+        location:
+          type: ["string", "null"]
+        district:
+          type: ["string", "null"]
+        stockByType:
+          type: array
+          description: Per stock-type balance derived from the canonical movement ledger
+          items:
+            type: object
+            required: [stockType, totalIn, totalOut, balance, unit]
+            properties:
+              stockType: { type: string }
+              totalIn: { type: number }
+              totalOut: { type: number }
+              balance: { type: number }
+              unit: { type: string }
+              lastMovementAt: { type: ["string", "null"] }
         totalProduced:
           type: number
+          description: Sum of all in-movements for kg-denominated stock types (backward compat)
         totalSold:
           type: number
+          description: Sum of all out-movements for kg-denominated stock types (backward compat)
         currentStock:
           type: number
+          description: Net balance for kg-denominated stock types (backward compat)
+        lastMovementAt:
+          type: ["string", "null"]
 
     ProductionRecord:
       type: object
@@ -17258,7 +17280,7 @@ components:
         stockType: { type: string, enum: [latex, rubber_sheet, rubber_scrap] }
         movementType:
           type: string
-          enum: [opening, production_in, purchase_in, sale_out, transfer_out, wastage, adjustment_in, adjustment_out]
+          enum: [opening, production_in, purchase_in, stock_in, sale_out, stock_out, transfer_out, transfer_in, wastage, return, correction, adjustment_in, adjustment_out]
         quantity: { type: number, minimum: 0.001 }
         unit: { type: string, enum: [litres, kg] }
         movementDate: { type: string, format: date }

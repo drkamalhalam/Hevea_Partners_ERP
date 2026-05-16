@@ -26,9 +26,14 @@ const MOVEMENT_TYPES = [
   "opening",
   "production_in",
   "purchase_in",
+  "stock_in",
   "sale_out",
+  "stock_out",
   "transfer_out",
+  "transfer_in",
   "wastage",
+  "return",
+  "correction",
   "adjustment_in",
   "adjustment_out",
 ] as const;
@@ -38,9 +43,14 @@ const DIRECTION_MAP: Record<MovementType, "in" | "out"> = {
   opening: "in",
   production_in: "in",
   purchase_in: "in",
+  stock_in: "in",
   sale_out: "out",
+  stock_out: "out",
   transfer_out: "out",
+  transfer_in: "in",
   wastage: "out",
+  return: "in",    // returned goods come back into stock
+  correction: "in", // positive correction; use adjustment_out for negative
   adjustment_in: "in",
   adjustment_out: "out",
 };

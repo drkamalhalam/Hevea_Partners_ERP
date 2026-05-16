@@ -613,6 +613,59 @@ router.post(
     if (tx.status === "confirmed") return res.status(400).json({ error: "Sale is already confirmed" });
     if (tx.status === "cancelled") return res.status(400).json({ error: "Cannot confirm a cancelled sale" });
 
+    // ── Negative stock guard — prevent confirming a sale beyond available balance ─
+    // Fetch line items to know what stock types and quantities will be deducted.
+    const pendingSaleItems = await db
+      .select()
+      .from(salesLineItemsTable)
+      .where(eq(salesLineItemsTable.transactionId, txId));
+
+    if (pendingSaleItems.length > 0) {
+      // Current confirmed balance per stock type for this project
+      const balanceRows = await db
+        .select({
+          stockType: inventoryStockMovementsTable.stockType,
+          direction: inventoryStockMovementsTable.direction,
+          total: sql<string>`COALESCE(SUM(${inventoryStockMovementsTable.quantity}::numeric), 0)`,
+        })
+        .from(inventoryStockMovementsTable)
+        .where(
+          and(
+            eq(inventoryStockMovementsTable.projectId, tx.projectId),
+            eq(inventoryStockMovementsTable.status, "confirmed"),
+            eq(inventoryStockMovementsTable.isActive, true),
+          ),
+        )
+        .groupBy(
+          inventoryStockMovementsTable.stockType,
+          inventoryStockMovementsTable.direction,
+        );
+
+      const balanceMap: Record<string, number> = {};
+      for (const row of balanceRows) {
+        balanceMap[row.stockType] =
+          (balanceMap[row.stockType] ?? 0) +
+          (row.direction === "in" ? Number(row.total) : -Number(row.total));
+      }
+
+      // Aggregate demand by stock type across all line items
+      const demandMap: Record<string, number> = {};
+      for (const item of pendingSaleItems) {
+        demandMap[item.productType] =
+          (demandMap[item.productType] ?? 0) + Number(item.quantity);
+      }
+
+      for (const [stockType, demand] of Object.entries(demandMap)) {
+        const available = balanceMap[stockType] ?? 0;
+        // 0.5g tolerance for floating-point rounding
+        if (demand > available + 0.0005) {
+          return res.status(400).json({
+            error: `Insufficient ${stockType} stock. Sale requires ${demand.toFixed(3)}, available: ${Math.max(available, 0).toFixed(3)}. Record production first or reduce sale quantity.`,
+          });
+        }
+      }
+    }
+
     const actorName = actor.displayName ?? actor.email ?? "Unknown";
 
     const [updated] = await db

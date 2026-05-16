@@ -5,11 +5,23 @@
  * Rubber Plantation Partnership API
  * OpenAPI spec version: 0.1.0
  */
+import type { StockSummaryStockByTypeItem } from "./stockSummaryStockByTypeItem";
 
 export interface StockSummary {
   projectId: string;
   projectName: string;
+  /** @nullable */
+  location?: string | null;
+  /** @nullable */
+  district?: string | null;
+  /** Per stock-type balance derived from the canonical movement ledger */
+  stockByType: StockSummaryStockByTypeItem[];
+  /** Sum of all in-movements for kg-denominated stock types (backward compat) */
   totalProduced: number;
+  /** Sum of all out-movements for kg-denominated stock types (backward compat) */
   totalSold: number;
+  /** Net balance for kg-denominated stock types (backward compat) */
   currentStock: number;
+  /** @nullable */
+  lastMovementAt?: string | null;
 }

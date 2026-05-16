@@ -1100,12 +1100,33 @@ export interface ActivityItem {
   createdAt: string;
 }
 
+export type StockSummaryStockByTypeItem = {
+  stockType: string;
+  totalIn: number;
+  totalOut: number;
+  balance: number;
+  unit: string;
+  /** @nullable */
+  lastMovementAt?: string | null;
+};
+
 export interface StockSummary {
   projectId: string;
   projectName: string;
+  /** @nullable */
+  location?: string | null;
+  /** @nullable */
+  district?: string | null;
+  /** Per stock-type balance derived from the canonical movement ledger */
+  stockByType: StockSummaryStockByTypeItem[];
+  /** Sum of all in-movements for kg-denominated stock types (backward compat) */
   totalProduced: number;
+  /** Sum of all out-movements for kg-denominated stock types (backward compat) */
   totalSold: number;
+  /** Net balance for kg-denominated stock types (backward compat) */
   currentStock: number;
+  /** @nullable */
+  lastMovementAt?: string | null;
 }
 
 export interface ProductionRecord {
@@ -4728,9 +4749,14 @@ export const CreateStockMovementBodyMovementType = {
   opening: "opening",
   production_in: "production_in",
   purchase_in: "purchase_in",
+  stock_in: "stock_in",
   sale_out: "sale_out",
+  stock_out: "stock_out",
   transfer_out: "transfer_out",
+  transfer_in: "transfer_in",
   wastage: "wastage",
+  return: "return",
+  correction: "correction",
   adjustment_in: "adjustment_in",
   adjustment_out: "adjustment_out",
 } as const;
