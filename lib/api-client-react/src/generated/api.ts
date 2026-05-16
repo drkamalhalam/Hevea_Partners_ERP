@@ -49193,7 +49193,7 @@ export const useRejectPostMaturityPayment = <
  * @summary List KYC participants for a project
  */
 export const getListOnboardingParticipantsUrl = (projectId: string) => {
-  return `/api/projects/${projectId}/participants`;
+  return `/api/projects/${projectId}/onboarding/participants`;
 };
 
 export const listOnboardingParticipants = async (
@@ -49210,7 +49210,7 @@ export const listOnboardingParticipants = async (
 };
 
 export const getListOnboardingParticipantsQueryKey = (projectId: string) => {
-  return [`/api/projects/${projectId}/participants`] as const;
+  return [`/api/projects/${projectId}/onboarding/participants`] as const;
 };
 
 export const getListOnboardingParticipantsQueryOptions = <
@@ -49291,7 +49291,7 @@ export const getUpsertOnboardingParticipantUrl = (
   projectId: string,
   role: "developer" | "landowner",
 ) => {
-  return `/api/projects/${projectId}/participants/${role}`;
+  return `/api/projects/${projectId}/onboarding/participants/${role}`;
 };
 
 export const upsertOnboardingParticipant = async (
@@ -49406,7 +49406,7 @@ export const getDeleteOnboardingParticipantUrl = (
   projectId: string,
   role: "developer" | "landowner",
 ) => {
-  return `/api/projects/${projectId}/participants/${role}`;
+  return `/api/projects/${projectId}/onboarding/participants/${role}`;
 };
 
 export const deleteOnboardingParticipant = async (

@@ -11910,7 +11910,7 @@ paths:
         '409':
           description: Payment already settled
 
-  /projects/{projectId}/participants:
+  /projects/{projectId}/onboarding/participants:
     get:
       operationId: listOnboardingParticipants
       tags: [projects]
@@ -11933,7 +11933,7 @@ paths:
                     type: array
                     items: { $ref: '#/components/schemas/OnboardingParticipant' }
 
-  /projects/{projectId}/participants/{role}:
+  /projects/{projectId}/onboarding/participants/{role}:
     put:
       operationId: upsertOnboardingParticipant
       tags: [projects]

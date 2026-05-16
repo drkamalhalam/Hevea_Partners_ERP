@@ -1,0 +1,188 @@
+FIX THE KYC PERSISTENCE AND DOCUMENT LINKAGE BUG IN PROJECT CREATION.
+
+Current issue:
+Even after Developer KYC and Landowner KYC are completed,
+the Documents step still shows:
+
+“KYC not yet saved — upload will be linked once KYC is complete.”
+
+This indicates the workflow completion state and the persisted KYC entity state are inconsistent.
+
+==================================================
+ROOT PROBLEM TO FIX
+==================================================
+
+The sidebar step completion status is becoming TRUE,
+but the actual KYC entity is either:
+- not persisted,
+- not linked,
+- not committed,
+- not loaded correctly,
+or
+- not mapped into the document upload context.
+
+This must be fixed at architecture level.
+
+==================================================
+STRICT SAVE RULE
+==================================================
+
+A KYC step must NEVER become “completed” unless:
+
+1. KYC entity successfully saved to database
+2. Entity ID generated
+3. Project linkage completed
+4. Save transaction committed successfully
+5. Data reload validation passed
+
+Only after successful persistence:
+- mark step completed.
+
+==================================================
+BACKEND VALIDATION
+==================================================
+
+Before allowing Documents page:
+
+Verify:
+- Developer KYC exists in DB
+- Landowner KYC exists in DB
+- linked project_id exists
+- entity IDs exist
+
+If missing:
+- block document upload,
+- show explicit validation error.
+
+==================================================
+DOCUMENT LINKAGE RULE
+==================================================
+
+Document uploads must directly link to:
+- persisted Developer KYC entity
+- persisted Landowner KYC entity
+
+NOT:
+- temporary frontend state
+- local form memory
+- incomplete draft object
+
+==================================================
+FIX STEP COMPLETION LOGIC
+==================================================
+
+Do NOT use:
+- frontend-only validation
+- local component state
+- temporary memory objects
+
+to mark KYC complete.
+
+Instead:
+after save:
+- re-fetch persisted entity from backend
+- validate linkage
+- then mark step complete.
+
+==================================================
+ADD SAVE STATUS STATES
+==================================================
+
+KYC step must support proper save states:
+
+- NOT_STARTED
+- IN_PROGRESS
+- SAVING
+- SAVED
+- FAILED
+- LINKED
+- VERIFIED
+
+==================================================
+DOCUMENT PAGE LOGIC
+==================================================
+
+When opening Documents page:
+
+Fetch:
+- Developer KYC entity
+- Landowner KYC entity
+
+If found:
+show:
+- Developer Name
+- Landowner Name
+- KYC status
+- linked entity IDs
+
+DO NOT show:
+“KYC not yet saved”
+
+if entities exist.
+
+==================================================
+RECOMMENDED FIX FLOW
+==================================================
+
+1. Save KYC form
+2. Persist DB transaction
+3. Generate entity ID
+4. Link to project
+5. Commit transaction
+6. Reload saved entity
+7. Validate linkage
+8. Mark step completed
+9. Enable document uploads
+
+==================================================
+UI IMPROVEMENTS
+==================================================
+
+Replace vague text with actual status.
+
+Examples:
+
+✔ Developer KYC Saved
+Linked to Project Successfully
+
+✔ Landowner KYC Saved
+Linked to Project Successfully
+
+OR
+
+⚠ KYC Save Failed
+Please retry before continuing.
+
+==================================================
+DEBUGGING REQUIREMENTS
+==================================================
+
+Add logs for:
+- KYC save request
+- DB insert success
+- project linkage success
+- entity reload
+- upload linkage mapping
+- step completion update
+
+==================================================
+IMPORTANT ARCHITECTURE RULE
+==================================================
+
+Workflow completion must ALWAYS depend on:
+persisted backend state,
+NOT temporary frontend state.
+
+==================================================
+DO NOT BREAK EXISTING FLOW
+==================================================
+
+Preserve:
+- existing project drafts
+- uploaded documents
+- OTP flow
+- agreement workflow
+- witness flow
+- project creation sequence
+
+while fixing persistence consistency.

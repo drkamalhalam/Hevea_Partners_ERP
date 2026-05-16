@@ -20,8 +20,8 @@ const participantSchema = z.object({
   supportingIdObjectPath: z.string().optional(),
 });
 
-// GET /:projectId/participants
-router.get("/:projectId/participants", requireRole("admin", "developer", "landowner", "investor", "employee", "operational_staff"), async (req, res) => {
+// GET /:projectId/onboarding/participants
+router.get("/:projectId/onboarding/participants", requireRole("admin", "developer", "landowner", "investor", "employee", "operational_staff"), async (req, res) => {
   const projectId = String(req.params.projectId);
   const rows = await db
     .select()
@@ -32,8 +32,8 @@ router.get("/:projectId/participants", requireRole("admin", "developer", "landow
   res.json({ participants: rows });
 });
 
-// PUT /:projectId/participants/:role — upsert
-router.put("/:projectId/participants/:role", requireRole("admin", "developer"), async (req, res) => {
+// PUT /:projectId/onboarding/participants/:role — upsert
+router.put("/:projectId/onboarding/participants/:role", requireRole("admin", "developer"), async (req, res) => {
   const projectId = String(req.params.projectId);
   const role = String(req.params.role);
   if (role !== "developer" && role !== "landowner") {
@@ -100,8 +100,8 @@ router.put("/:projectId/participants/:role", requireRole("admin", "developer"), 
   res.json({ participant: row });
 });
 
-// DELETE /:projectId/participants/:role
-router.delete("/:projectId/participants/:role", requireRole("admin", "developer"), async (req, res) => {
+// DELETE /:projectId/onboarding/participants/:role
+router.delete("/:projectId/onboarding/participants/:role", requireRole("admin", "developer"), async (req, res) => {
   const projectId = String(req.params.projectId);
   const role = String(req.params.role);
   await db

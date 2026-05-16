@@ -1171,13 +1171,25 @@ function Step8Documents({
 
             {(isLoading || isFetching) && !participant && (
               <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                <Loader2 className="h-3 w-3 animate-spin" /> Loading KYC details…
+                <Loader2 className="h-3 w-3 animate-spin" /> Verifying KYC record…
+              </p>
+            )}
+            {!isLoading && !isFetching && participant && (
+              <p className="text-xs text-green-700 flex items-center gap-1.5">
+                <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                KYC saved — linked to project successfully
               </p>
             )}
             {!isLoading && !isFetching && !participant && (
-              <p className="text-xs text-amber-600">
-                KYC not yet saved — upload will be linked once KYC is complete.
-              </p>
+              <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-md p-2">
+                <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-0.5 text-amber-600" />
+                <div>
+                  <p className="text-xs font-medium text-amber-800">KYC not saved</p>
+                  <p className="text-xs text-amber-700 mt-0.5">
+                    Go back to the {label} KYC step and save before uploading documents.
+                  </p>
+                </div>
+              </div>
             )}
 
             <div className="grid grid-cols-2 gap-4">
