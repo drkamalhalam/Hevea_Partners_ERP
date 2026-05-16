@@ -184,9 +184,6 @@ export default function BurdenRecovery() {
 
   // Queries
   const { data: projects = [] } = useListProjects({});
-  const { data: partners = [] } = useListPartners({});
-  const landowners = partners.filter((p) => p.role === "landowner");
-
   const summaryQuery = useGetBurdenRecoverySummary(
     { projectId: filterProjectId || undefined },
     {
@@ -505,8 +502,6 @@ export default function BurdenRecovery() {
         form={adjForm}
         setForm={setAdjForm}
         projects={projects}
-        allPartners={partners}
-        landowners={landowners}
         onSubmit={handleCreate}
         isPending={createAdj.isPending}
         submitLabel="Create Adjustment"
@@ -521,8 +516,6 @@ export default function BurdenRecovery() {
         form={adjForm}
         setForm={setAdjForm}
         projects={projects}
-        allPartners={partners}
-        landowners={landowners}
         onSubmit={handleUpdate}
         isPending={updateAdj.isPending}
         submitLabel="Save Changes"
@@ -919,8 +912,6 @@ function AdjFormDialog({
   form,
   setForm,
   projects,
-  allPartners,
-  landowners,
   onSubmit,
   isPending,
   submitLabel,
@@ -932,13 +923,18 @@ function AdjFormDialog({
   form: typeof EMPTY_ADJ;
   setForm: React.Dispatch<React.SetStateAction<typeof EMPTY_ADJ>>;
   projects: { id: string; name: string }[];
-  allPartners: { id: string; name: string; role: string }[];
-  landowners: { id: string; name: string; role: string }[];
   onSubmit: () => void;
   isPending: boolean;
   submitLabel: string;
   showProjectPartner: boolean;
 }) {
+  // Self-fetch project-scoped partner list
+  const { data: scopedPartnersData } = useListPartners(
+    form.projectId ? { projectId: form.projectId } : undefined,
+  );
+  const allPartners: { id: string; name: string; role: string }[] =
+    (scopedPartnersData as any)?.partners ?? (Array.isArray(scopedPartnersData) ? scopedPartnersData : []);
+  const landowners = allPartners.filter((p) => p.role === "landowner");
   const totalAmt = parseFloat(form.totalAmount);
   const recAmt = parseFloat(form.recoverableAmount);
   const splitNotice =

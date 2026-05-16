@@ -297,7 +297,7 @@ export default function PartnerPayable() {
   // ── Data fetches ──────────────────────────────────────────────────────
 
   const { data: projects = [] } = useListProjects();
-  const { data: partners = [] } = useListPartners();
+  const { data: partners = [] } = useListPartners(projectId ? { projectId } : undefined);
 
   const ready = !!(projectId && partnerId);
 

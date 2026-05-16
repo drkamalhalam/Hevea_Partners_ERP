@@ -386,7 +386,7 @@ function ParticipationTab({
   );
   const { data: claimsData } = useListInheritanceClaims({});
   const { data: projectsData } = useListProjects();
-  const { data: partnersData } = useListPartners();
+  const { data: partnersData } = useListPartners(projectId ? { projectId } : undefined);
 
   const createMut = useCreateClaimantParticipation();
   const updateMut = useUpdateClaimantParticipation();

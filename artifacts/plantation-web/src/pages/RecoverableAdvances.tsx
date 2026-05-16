@@ -221,7 +221,6 @@ function NewAdvanceDialog({
 }) {
   const { toast } = useToast();
   const { data: projects } = useListProjects();
-  const { data: partners } = useListPartners();
   const createMutation = useCreateAdvance();
 
   const [form, setForm] = useState({
@@ -239,6 +238,15 @@ function NewAdvanceDialog({
     recoveryMethod: "",
     notes: "",
   });
+
+  // Project-scoped partner list — updates automatically when form.projectId changes
+  const { data: scopedPartnersData } = useListPartners(
+    form.projectId ? { projectId: form.projectId } : undefined,
+  );
+  const activePartners = (
+    (scopedPartnersData as any)?.partners ??
+    (Array.isArray(scopedPartnersData) ? scopedPartnersData : [])
+  ).filter((p: { isActive?: boolean }) => p.isActive !== false);
 
   function field(key: keyof typeof form) {
     return (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
@@ -287,8 +295,6 @@ function NewAdvanceDialog({
       },
     );
   }
-
-  const activePartners = (partners ?? []).filter((p: { isActive?: boolean }) => p.isActive !== false);
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>

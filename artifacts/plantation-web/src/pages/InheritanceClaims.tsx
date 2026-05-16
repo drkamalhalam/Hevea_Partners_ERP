@@ -374,7 +374,9 @@ export default function InheritanceClaims() {
   // ── Data fetches ────────────────────────────────────────────────────
 
   const { data: projects = [] } = useListProjects();
-  const { data: partnersData } = useListPartners({});
+  const { data: partnersData } = useListPartners(
+    filterProject !== "all" ? { projectId: filterProject } : undefined,
+  );
   const partners = (partnersData as any)?.partners ?? (Array.isArray(partnersData) ? partnersData : []);
 
   const pid = filterProject === "all" ? undefined : filterProject;

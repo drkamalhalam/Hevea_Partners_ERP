@@ -719,7 +719,7 @@ export default function LossAbsorption() {
 
   // Data
   const { data: projectsData } = useListProjects();
-  const { data: partnersData } = useListPartners();
+  const { data: partnersData } = useListPartners(projectId ? { projectId } : undefined);
 
   const projectOptions = useMemo(
     () => (projectsData as any)?.projects ?? (Array.isArray(projectsData) ? projectsData : []),

@@ -252,7 +252,9 @@ export default function OwnershipTransfers() {
   const { data: projectsData } = useListProjects();
   const projects = projectsData ?? [];
 
-  const { data: partnersData } = useListPartners();
+  const { data: partnersData } = useListPartners(
+    filterProject !== "all" ? { projectId: filterProject } : undefined,
+  );
   const partners = useMemo(() => (partnersData as any)?.partners ?? [], [partnersData]);
 
   const listQuery = useListOwnershipTransfers(

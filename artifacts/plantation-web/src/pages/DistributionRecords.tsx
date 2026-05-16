@@ -461,7 +461,6 @@ function DetailPanel({ id, onClose, canEdit }: { id: string; onClose: () => void
 
 function CreateDialog({ open, onClose, onCreated }: { open: boolean; onClose: () => void; onCreated: () => void }) {
   const { data: projectsData } = useListProjects();
-  const { data: partnersData  } = useListPartners();
   const create = useCreateDistributionRecord();
 
   const [form, setForm] = useState({
@@ -476,6 +475,10 @@ function CreateDialog({ open, onClose, onCreated }: { open: boolean; onClose: ()
     priorCarryForward: "",
     notes: "",
   });
+
+  // Project-scoped partner list — updates when form.projectId changes
+  const formProjectId = form.projectId !== "__none__" ? form.projectId : undefined;
+  const { data: partnersData } = useListPartners(formProjectId ? { projectId: formProjectId } : undefined);
 
   const set = (k: keyof typeof form, v: string) => setForm(f => ({ ...f, [k]: v }));
 
@@ -619,7 +622,7 @@ export default function DistributionRecords() {
   const { data: pendingData } = useGetDistributionPendingPayable({ projectId, partnerId });
   const { data: archiveData } = useGetDistributionArchive({ projectId, partnerId });
   const { data: projectsData } = useListProjects();
-  const { data: partnersData  } = useListPartners();
+  const { data: partnersData } = useListPartners(projectId ? { projectId } : undefined);
 
   const records  = recordsData?.records ?? [];
   const summary  = summaryData;

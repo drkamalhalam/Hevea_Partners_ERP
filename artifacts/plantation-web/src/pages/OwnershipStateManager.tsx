@@ -141,7 +141,7 @@ export default function OwnershipStateManager() {
   const { data: projectsData } = useListProjects();
   const projects = (projectsData as any) ?? [];
 
-  const { data: partnersData } = useListPartners();
+  const { data: partnersData } = useListPartners(projectId ? { projectId } : undefined);
   const partners: any[] = (partnersData as any)?.partners ?? [];
 
   const statesQuery = useListPartnerOwnershipStates(projectId, {

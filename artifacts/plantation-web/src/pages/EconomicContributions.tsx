@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRole } from "@/contexts/RoleContext";
 import {
   useListPendingVerificationContributions,
@@ -12,6 +12,8 @@ import {
   useListProjects,
   useListUsers,
   useGetMe,
+  useListOnboardingParticipants,
+  getListOnboardingParticipantsQueryKey,
   getListPendingVerificationContributionsQueryKey,
   getListContributionsQueryKey,
   getListContributionVerificationHistoryQueryKey,
@@ -75,6 +77,7 @@ import {
   ShieldCheck,
   Smartphone,
   ArrowLeft,
+  Users,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
@@ -464,10 +467,28 @@ function RecordContributionDialog({
   const projects = useMemo(() => projectsData ?? [], [projectsData]);
   const users = useMemo(() => usersData ?? [], [usersData]);
 
+  // Project-scoped participant list
+  const participantProjectId = projectId || "00000000-0000-0000-0000-000000000000";
+  const { data: participantsData } = useListOnboardingParticipants(
+    participantProjectId,
+    {
+      query: {
+        enabled: open && !!projectId,
+        queryKey: getListOnboardingParticipantsQueryKey(participantProjectId),
+      },
+    },
+  );
+  const participants = participantsData?.participants ?? [];
+
+  // Reset participant name when project changes
+  useEffect(() => {
+    setPartnerName("");
+  }, [projectId]);
+
   const handleSubmit = async () => {
     setError("");
     if (!projectId) return setError("Project is required");
-    if (!partnerName.trim()) return setError("Contributing partner name is required");
+    if (!partnerName.trim()) return setError("Please select a project participant");
     const parsedAmount = parseFloat(amount);
     if (isNaN(parsedAmount) || parsedAmount <= 0) return setError("Amount must be a positive number");
     if (!date) return setError("Contribution date is required");
@@ -526,8 +547,41 @@ function RecordContributionDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label>Contributing Partner <span className="text-red-500">*</span></Label>
-            <Input value={partnerName} onChange={(e) => setPartnerName(e.target.value)} placeholder="e.g. Ramesh Kumar" />
+            <Label className="flex items-center gap-1.5">
+              <Users className="w-3.5 h-3.5 text-muted-foreground" />
+              Contributing Participant <span className="text-red-500">*</span>
+            </Label>
+            {!projectId ? (
+              <p className="text-xs text-muted-foreground italic">Select a project first to see its participants.</p>
+            ) : participants.length === 0 ? (
+              <div className="rounded-lg border border-dashed p-3 text-center">
+                <Users className="w-5 h-5 mx-auto mb-1 text-muted-foreground/40" />
+                <p className="text-xs text-muted-foreground">No KYC participants linked to this project yet.</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Add participants via the Project Onboarding module first.</p>
+              </div>
+            ) : (
+              <Select
+                value={partnerName}
+                onValueChange={setPartnerName}
+              >
+                <SelectTrigger><SelectValue placeholder="Select participant…" /></SelectTrigger>
+                <SelectContent>
+                  {participants.map((p) => (
+                    <SelectItem key={p.id} value={p.fullName}>
+                      <div className="flex flex-col">
+                        <span className="font-medium">{p.fullName}</span>
+                        <span className="text-xs text-muted-foreground capitalize">{p.role}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            {partnerName && (
+              <p className="text-[10px] text-muted-foreground">
+                Recording as: <strong>{partnerName}</strong> — linked to this project's participant registry.
+              </p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-3">

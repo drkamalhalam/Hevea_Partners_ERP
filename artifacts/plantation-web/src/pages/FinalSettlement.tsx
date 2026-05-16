@@ -822,7 +822,7 @@ export default function FinalSettlement() {
   const [reopenTarget, setReopenTarget] = useState<string | null>(null);
 
   const { data: projectsData } = useListProjects();
-  const { data: partnersData } = useListPartners();
+  const { data: partnersData } = useListPartners(filterProject ? { projectId: filterProject } : undefined);
   const projectOptions: Array<{ id: string; name: string }> = (projectsData as any)?.projects ?? [];
   const partnerOptions: Array<{ id: string; name: string }> = (partnersData as any)?.partners ?? [];
 

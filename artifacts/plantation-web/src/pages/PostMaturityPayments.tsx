@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRole } from "@/contexts/RoleContext";
 import {
   useListPostMaturityPayments,
@@ -8,6 +8,8 @@ import {
   useRejectPostMaturityPayment,
   useGetPostMaturityPaymentBalance,
   useListProjects,
+  useListOnboardingParticipants,
+  getListOnboardingParticipantsQueryKey,
   getListPostMaturityPaymentsQueryKey,
   getGetPostMaturityPaymentBalanceQueryKey,
 } from "@workspace/api-client-react";
@@ -52,6 +54,7 @@ import {
   Banknote,
   ShieldCheck,
   Filter,
+  Users,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -127,6 +130,24 @@ export default function PostMaturityPayments() {
   const matureProjects = projects.filter(
     (p) => p.lifecycleStatus === "mature_production" && p.isActive,
   );
+
+  // ── Project-scoped participant list for the create form ─────────────────
+  const formParticipantProjectId = form.projectId || "00000000-0000-0000-0000-000000000000";
+  const { data: formParticipantsData } = useListOnboardingParticipants(
+    formParticipantProjectId,
+    {
+      query: {
+        enabled: showCreate && !!form.projectId,
+        queryKey: getListOnboardingParticipantsQueryKey(formParticipantProjectId),
+      },
+    },
+  );
+  const formParticipants = formParticipantsData?.participants ?? [];
+
+  // Reset paying party when project changes
+  useEffect(() => {
+    if (showCreate) setForm((f) => ({ ...f, partnerName: "" }));
+  }, [form.projectId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const listParams = {
     ...(filterProjectId ? { projectId: filterProjectId } : {}),
@@ -524,13 +545,37 @@ export default function PostMaturityPayments() {
                 )}
               </div>
               <div className="col-span-2">
-                <Label>Paying Party Name *</Label>
-                <Input
-                  className="mt-1"
-                  value={form.partnerName}
-                  onChange={(e) => setForm((f) => ({ ...f, partnerName: e.target.value }))}
-                  placeholder="e.g., Ramesh Kumar"
-                />
+                <Label className="flex items-center gap-1.5">
+                  <Users className="w-3.5 h-3.5 text-muted-foreground" />
+                  Paying Party <span className="text-red-500">*</span>
+                </Label>
+                {!form.projectId ? (
+                  <p className="text-xs text-gray-400 mt-1 italic">Select a project above first.</p>
+                ) : formParticipants.length === 0 ? (
+                  <div className="mt-1 rounded border border-dashed border-gray-300 p-2 text-center">
+                    <p className="text-xs text-gray-500">No KYC participants linked to this project yet.</p>
+                    <p className="text-xs text-gray-400">Add participants via the Project Onboarding module first.</p>
+                  </div>
+                ) : (
+                  <Select
+                    value={form.partnerName}
+                    onValueChange={(v) => setForm((f) => ({ ...f, partnerName: v }))}
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Select participant…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {formParticipants.map((p) => (
+                        <SelectItem key={p.id} value={p.fullName}>
+                          <div className="flex flex-col">
+                            <span>{p.fullName}</span>
+                            <span className="text-xs text-muted-foreground capitalize">{p.role}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
               <div>
                 <Label>Amount (INR) *</Label>

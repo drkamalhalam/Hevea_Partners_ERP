@@ -1,0 +1,354 @@
+WE MUST NOW ENTER A FULL ERP ARCHITECTURE NORMALIZATION & GOVERNANCE ENFORCEMENT PHASE.
+
+The ERP has evolved beyond prototype stage.
+
+The governance/business logic is strong, but many modules are still bypassing the intended architecture and operating as isolated feature-level implementations.
+
+This is causing:
+- incorrect data fetching
+- global role leakage
+- disconnected accounting logic
+- participant inconsistencies
+- project-scoping failures
+- weak traceability
+- governance risk
+
+DO NOT continue adding large new features until architecture normalization is completed.
+
+==================================================
+PRIMARY OBJECTIVE
+==================================================
+
+Transform the ERP from:
+MODULE-FIRST ARCHITECTURE
+
+into:
+CENTRAL GOVERNANCE KERNEL ARCHITECTURE.
+
+==================================================
+CORE GOVERNANCE KERNEL
+==================================================
+
+ALL modules must ultimately operate through:
+
+PROJECT
+│
+├── PROJECT_MODEL
+├── LIFECYCLE_STATE
+├── PROJECT_PARTICIPANTS
+├── PERSON_MASTER
+├── ACCOUNTING_PROFILE
+├── CONTRIBUTION_LEDGER
+├── OPERATIONAL_LEDGER
+├── REIMBURSEMENT_LEDGER
+├── INVENTORY_LEDGER
+├── TASK_ENGINE
+├── AGREEMENT_ENGINE
+└── AUDIT_ENGINE
+
+==================================================
+MANDATORY SYSTEM-WIDE ARCHITECTURE RULES
+==================================================
+
+--------------------------------------------------
+RULE 1 — IDENTITY GOVERNANCE
+--------------------------------------------------
+
+ALL human identities must originate from:
+PERSON_MASTER.
+
+There must NEVER be:
+- raw text governance identities
+- module-specific pseudo-identities
+- duplicate participant systems
+
+USER_ACCOUNT is only:
+authentication/access layer.
+
+==================================================
+RULE 2 — PROJECT-CENTRIC GOVERNANCE
+==================================================
+
+ALL operational/accounting/governance actions must originate from:
+PROJECT context.
+
+Correct flow:
+
+PROJECT
+→ PROJECT_PARTICIPANTS
+→ allowed operations
+→ accounting behavior
+→ permissions
+→ visibility
+
+==================================================
+RULE 3 — NO GLOBAL FETCHES FOR PROJECT OPERATIONS
+==================================================
+
+Project-scoped modules must NEVER fetch:
+global role-based lists.
+
+WRONG:
+PERSON_MASTER WHERE role = LANDOWNER
+
+CORRECT:
+PROJECT_PARTICIPANTS
+WHERE:
+project_id = selected_project
+AND participant_role = LANDOWNER
+
+==================================================
+RULE 4 — ROLE ≠ PROJECT MEMBERSHIP
+==================================================
+
+Global role assignment does NOT imply:
+project participation.
+
+A person may globally hold:
+LANDOWNER role
+
+without belonging to a specific project.
+
+==================================================
+RULE 5 — PROJECT_PARTICIPANTS IS MANDATORY
+==================================================
+
+All project-linked operations must use:
+PROJECT_PARTICIPANTS
+as the governance linkage layer.
+
+This includes:
+- contributions
+- accounting
+- LCA
+- reimbursements
+- tasks
+- stock visibility
+- agreements
+- permissions
+- distributions
+
+==================================================
+RULE 6 — MODEL-AWARE ACCOUNTING
+==================================================
+
+Accounting behavior must dynamically adapt based on:
+PROJECT_MODEL.
+
+--------------------------------------------------
+CONTRIBUTION MODEL
+--------------------------------------------------
+
+Supports:
+- ownership contribution
+- Land Notional Value
+- LCA
+- ownership distribution
+
+--------------------------------------------------
+50% REVENUE MODEL
+--------------------------------------------------
+
+Supports:
+- 50% landowner gross revenue share
+- 50% economic participant pool
+- reimbursable operational advances
+
+DOES NOT support:
+- ownership contribution
+- LCA
+- share-altering post-maturity contribution
+
+==================================================
+RULE 7 — LIFECYCLE ENFORCEMENT
+==================================================
+
+Project lifecycle controls:
+- contribution eligibility
+- ownership locking
+- LCA activation
+- reimbursement rules
+- accounting behavior
+
+Once project becomes:
+MATURE PRODUCTION
+
+BLOCK:
+- ownership contribution
+- Land Notional Value changes
+- share-altering contribution
+
+Allow only:
+- reimbursable operational entries
+- adjustments
+- settlements
+
+==================================================
+RULE 8 — OWNERSHIP ≠ OPERATIONAL COST
+==================================================
+
+Strictly separate:
+- ownership contribution
+- operational burden
+- reimbursement
+- recoverable advance
+- economic entitlement
+
+Post-maturity payments:
+→ reimbursable operational cost only.
+
+NOT:
+ownership contribution.
+
+==================================================
+RULE 9 — PROJECT CARD IS CENTRAL OPERATING SURFACE
+==================================================
+
+Project Card must become:
+central governance and operational command center.
+
+ALL entries must update project intelligence automatically.
+
+Project card must reflect:
+- project model
+- lifecycle
+- participant structure
+- ownership basis
+- Land Notional Value
+- reimbursement exposure
+- contribution totals
+- stock position
+- production
+- operational status
+- governance alerts
+- financial summaries
+
+==================================================
+RULE 10 — TRACEABILITY IS MANDATORY
+==================================================
+
+Every metric must trace to:
+source records.
+
+Flow:
+Dashboard/Card
+→ Summary
+→ Ledger
+→ Source Entry
+→ Audit Trail
+
+==================================================
+RULE 11 — TASKS MUST BE IDENTITY-CENTRIC
+==================================================
+
+Tasks belong to:
+PERSON_MASTER_ID
+
+NOT:
+USER_ACCOUNT directly.
+
+==================================================
+RULE 12 — AGREEMENTS MUST BE PROJECT-GOVERNED
+==================================================
+
+Agreement behavior must derive from:
+- project model
+- project participants
+- lifecycle state
+- governance structure
+
+==================================================
+RULE 13 — MODULES MUST STOP OPERATING IN ISOLATION
+==================================================
+
+Current isolated forms/modules must be normalized into:
+project-governed workflows.
+
+This includes:
+- contribution entry
+- reimbursement
+- LCA
+- landowner account
+- investor account
+- task assignment
+- stock visibility
+- accounting profiles
+
+==================================================
+PHASED NORMALIZATION PLAN
+==================================================
+
+PHASE 1 — Identity & Participant Enforcement
+- PERSON_MASTER normalization
+- USER_ACCOUNT linkage
+- PROJECT_PARTICIPANTS enforcement
+- duplicate prevention
+
+PHASE 2 — Project Scope Enforcement
+- eliminate global fetches
+- enforce project-scoped participant queries
+- normalize permissions/visibility
+
+PHASE 3 — Accounting Engine Stabilization
+- model-aware accounting
+- lifecycle enforcement
+- reimbursement separation
+- contribution governance
+
+PHASE 4 — Project Card Centralization
+- all modules feed project card
+- drill-down traceability
+- operational intelligence
+
+PHASE 5 — Workflow Normalization
+- tasks
+- stock
+- sales
+- dispatch
+- approvals
+- collection
+
+==================================================
+IMPORTANT IMPLEMENTATION RULE
+==================================================
+
+Do NOT merely patch pages visually.
+
+Refactor underlying:
+- data flow
+- fetch logic
+- governance linkage
+- accounting behavior
+- participant sourcing
+
+==================================================
+BACKWARD COMPATIBILITY
+==================================================
+
+Preserve:
+- existing projects
+- agreements
+- OTP history
+- audit logs
+- KYC records
+- ownership records
+- operational ledgers
+
+while normalizing architecture.
+
+==================================================
+FINAL TARGET
+==================================================
+
+Transform the ERP into:
+
+PROJECT-CENTRIC
++ IDENTITY-CENTRIC
++ GOVERNANCE-CONTROLLED
++ ACCOUNTING-TRACEABLE
++ LIFECYCLE-AWARE
++ AUDITABLE
+ENTERPRISE ERP ARCHITECTURE
+
+instead of:
+loosely connected independent modules.

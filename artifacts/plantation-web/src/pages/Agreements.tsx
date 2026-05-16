@@ -261,7 +261,6 @@ function StatusBadge({
 export default function Agreements() {
   const { data: agreements, isLoading } = useListAgreements();
   const { data: projects } = useListProjects();
-  const { data: partners } = useListPartners();
   const { data: pendingActivation } = useListPendingActivationAgreements();
   const createAgreement = useCreateAgreement();
   const queryClient = useQueryClient();
@@ -272,6 +271,10 @@ export default function Agreements() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusCategory>("all");
   const [projectFilter, setProjectFilter] = useState<string>("__all__");
+
+  const { data: partners } = useListPartners(
+    projectFilter !== "__all__" && projectFilter ? { projectId: projectFilter } : undefined,
+  );
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
