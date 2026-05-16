@@ -1,0 +1,184 @@
+REBUILD THE ENTIRE PROJECT FINANCIAL ARCHITECTURE INTO A PROJECT-CENTRIC LIVE ERP STATE ENGINE.
+
+The current Contribution module and Expenditure module are causing disconnected accounting, duplicate logic, wrong ownership behavior, fake contributors, and project cards that do not evolve correctly.
+
+NEW CORE RULE: The PROJECT is the controlling intelligence layer. Every financial, production, inventory, sales, governance, and settlement event must originate from and update the project.
+
+REMOVE SEPARATE PRIMARY ENTRY MODULES:
+
+/contributions /expenditure 
+
+These may remain ONLY as filtered reporting views later. No direct data entry should happen there anymore.
+
+REPLACE WITH: PROJECT FINANCIAL ENGINE
+
+Create a unified: “Record Financial Entry” system.
+
+This must be accessible:
+
+from Project Card from Project Dashboard from Financial Center 
+
+PROJECT-FIRST FLOW
+
+STEP 1: User selects project.
+
+OR if launched from project card: project auto-selected.
+
+Immediately load:
+
+project model lifecycle phase ownership status linked participants linked landowners developer accounting rules maturity state allowed entry types 
+
+PROJECT LIFECYCLE RULES
+
+PREMATURITY:
+
+ownership still open contributions may affect ownership reimbursable entries allowed land notional allowed 
+
+MATURE:
+
+ownership frozen permanently NO ownership creation allowed ALL new entries automatically become: operational cost recoverable payment reimbursable burden reimburse checkbox must disappear automatically 
+
+CLOSED:
+
+block all new ownership/cost entries only settlement adjustments allowed 
+
+REMOVE: Contribution Type confusion.
+
+DO NOT ask:
+
+contribution vs expenditure ownership vs expense 
+
+Instead ask: “What financial event happened?”
+
+ENTRY TYPES
+
+Support:
+
+Economic Investment Operational Expense Recoverable Advance Land Notional Value LCA Payment Manual Adjustment Infrastructure Asset Consumables Plantation Operations Transport Fertilizer Labour Maintenance Machinery Miscellaneous 
+
+LIFECYCLE-DRIVEN BEHAVIOR
+
+PREMATURITY: Show: [ ] Mark as reimbursable
+
+Unchecked:
+
+ownership eligible contribution 
+
+Checked:
+
+recoverable only no ownership effect 
+
+MATURE: Hide reimburse checkbox. Automatically classify all entries as:
+
+recoverable operational payable non-ownership 
+
+LAND NOTIONAL RULES
+
+Land Notional Value:
+
+allowed only in prematurity allowed only for linked landowner one-time only permanently fixed non-cash contribution updates ownership basis updates project valuation updates landowner contribution pool 
+
+Block:
+
+developers selecting land notional investors selecting land notional mature projects duplicate land notional entry 
+
+PROJECT PARTICIPANT RULES
+
+Participants must ONLY come from: linked project participants.
+
+No manual typing.
+
+No free text participant names.
+
+Dropdown must show:
+
+linked landowners linked developers linked investors approved economic participants 
+
+Block all unrelated persons.
+
+PROJECT CARD MUST BECOME LIVE ERP STATE ENGINE
+
+Every validated event must auto-update project card instantly.
+
+FINANCIAL ENTRY updates:
+
+total investment ownership eligible pool recoverable payable project operational burden participant exposure landowner exposure 
+
+LAND NOTIONAL updates:
+
+project valuation landowner ownership base ownership pool 
+
+PRODUCTION ENTRY updates:
+
+production totals productivity trends maturity readiness 
+
+STORE ENTRY updates:
+
+stock on hand sheet stock scrap stock pending outside stock 
+
+SALE CONFIRMATION updates:
+
+gross revenue realized revenue stock reduction settlement eligibility 
+
+PAYMENT RECEIVED updates:
+
+buyer outstanding cash realization receivable balances 
+
+SETTLEMENT updates:
+
+distributed amount pending distributions held distributions dispute reserve 
+
+PROJECT CARD MUST NEVER:
+
+calculate from random disconnected queries guess participant data aggregate invalid records 
+
+ALL project card metrics must originate ONLY from validated ledgers.
+
+CREATE CENTRAL PROJECT STATE ENGINE
+
+Architecture:
+
+Action/Event → validated ledger → project state engine → project card auto refresh → dashboard auto refresh → participant auto refresh
+
+CREATE LIVE PROJECT METRICS
+
+Project cards must evolve by lifecycle.
+
+PREMATURITY CARD: focus on:
+
+investment ownership pool land valuation development progress maturity readiness 
+
+MATURE CARD: focus on:
+
+production inventory sales revenue burden settlement 
+
+CLOSED CARD: focus on:
+
+final settlement archived ownership historical performance 
+
+REMOVE FAKE PROJECT CONTRIBUTORS ISSUE
+
+Currently project names are appearing as contributors.
+
+Fix permanently:
+
+contributor must always reference participant/person registry id project ids can NEVER enter participant/contributor fields enforce foreign key validation migrate bad legacy records safely 
+
+CREATE SINGLE SOURCE OF TRUTH
+
+Every economic event must update:
+
+project ledger participant ledger ownership engine settlement engine project card dashboard 
+
+NO duplicate disconnected accounting logic allowed.
+
+MAKE ENTIRE SYSTEM RESPONSIVE:
+
+mobile tablet desktop 
+
+All project card metrics must be clickable and navigate to their validated source ledger.
+
+Do NOT create isolated modules anymore.
+
+Everything must revolve around: PROJECT → EVENT → VALIDATED LEDGER → LIVE PROJECT STATE.
+
