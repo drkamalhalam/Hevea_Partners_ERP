@@ -9,6 +9,7 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { projectsTable } from "./projects";
 import { usersTable } from "./users";
+import { personMasterTable } from "./person_master";
 
 /**
  * project_witnesses — witness details captured during project onboarding.
@@ -33,6 +34,9 @@ export const projectWitnessesTable = pgTable("project_witnesses", {
   address: text("address"),
   /** Optional per-project configuration */
   aadhaarNumber: text("aadhaar_number"),
+
+  /** FK to person_master — canonical identity for this witness */
+  personMasterId: uuid("person_master_id").references(() => personMasterTable.id, { onDelete: "set null" }),
 
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().$onUpdate(() => new Date()),

@@ -1,0 +1,209 @@
+THE ERP CURRENTLY HAS TWO VALID BUT UNLINKED IDENTITY SYSTEMS.
+
+==================================================
+CURRENT STATE
+==================================================
+
+--------------------------------------------------
+SYSTEM A
+--------------------------------------------------
+
+/partners
+
+Created from:
+- signup/login/email authentication system
+
+These are:
+USER_ACCOUNT identities.
+
+--------------------------------------------------
+SYSTEM B
+--------------------------------------------------
+
+/person-registry
+
+Created from:
+- manual ERP identity registration
+
+These are:
+PERSON_MASTER identities.
+
+==================================================
+THE CORE PROBLEM
+==================================================
+
+These two systems currently have:
+NO LINKAGE LAYER.
+
+Therefore:
+- login users are not visible in PERSON_MASTER flows
+- PERSON_MASTER identities are isolated from authentication
+- project creation cannot see authenticated partners
+- duplicate identities may emerge later
+
+==================================================
+IMPORTANT ARCHITECTURE PRINCIPLE
+==================================================
+
+Do NOT replace either system.
+
+Instead:
+LINK THEM PROPERLY.
+
+==================================================
+FINAL ARCHITECTURE
+==================================================
+
+--------------------------------------------------
+PERSON_MASTER
+--------------------------------------------------
+
+Canonical governance identity.
+
+Contains:
+- legal identity
+- Aadhaar
+- KYC
+- roles
+- project relationships
+- agreements
+- ownership linkage
+
+--------------------------------------------------
+USER_ACCOUNT
+--------------------------------------------------
+
+Authentication/access layer.
+
+Contains:
+- email
+- password
+- OTP login
+- sessions
+- permissions
+
+==================================================
+REQUIRED RELATIONSHIP
+==================================================
+
+USER_ACCOUNT
+→ linked_to
+PERSON_MASTER
+
+NOT:
+separate independent identities.
+
+==================================================
+IMPLEMENT USER_ACCOUNT ↔ PERSON_MASTER LINKAGE
+==================================================
+
+Add:
+PERSON_MASTER_ID
+inside USER_ACCOUNT.
+
+==================================================
+AUTO-LINK EXISTING LOGIN USERS
+==================================================
+
+For existing authenticated users:
+
+If USER_ACCOUNT has no PERSON_MASTER linkage:
+
+System should:
+1. attempt automatic matching using:
+   - email
+   - mobile
+   - Aadhaar
+   - name similarity
+
+2. if confident match found:
+   auto-link PERSON_MASTER
+
+3. otherwise:
+   create new PERSON_MASTER safely
+
+==================================================
+PROJECT CREATION REQUIREMENT
+==================================================
+
+Project creation must query:
+PERSON_MASTER
+
+INCLUDING:
+persons linked through USER_ACCOUNT.
+
+This ensures:
+existing login users appear during selection.
+
+==================================================
+PARTNERS PAGE REBUILD
+==================================================
+
+/partners page must become:
+
+A VIEW OF:
+PERSON_MASTER + USER_ACCOUNT
+
+combined.
+
+==================================================
+DISPLAY REQUIREMENTS
+==================================================
+
+Show:
+- linked account status
+- login enabled
+- governance verified
+- linked roles
+- project count
+
+==================================================
+MANUAL PERSON FLOW
+==================================================
+
+If person manually registered in PERSON_MASTER:
+
+Allow future:
+- account activation
+- USER_ACCOUNT creation
+- login linkage
+
+WITHOUT creating duplicate identity.
+
+==================================================
+IMPORTANT GOVERNANCE RULE
+==================================================
+
+There must NEVER be:
+- one USER_ACCOUNT identity
+AND
+- separate PERSON_MASTER identity
+for the same physical person.
+
+All systems must converge toward:
+ONE PERSON_MASTER identity.
+
+==================================================
+BACKWARD COMPATIBILITY
+==================================================
+
+Preserve:
+- existing logins
+- existing projects
+- agreements
+- OTP history
+- KYC records
+- ownership structures
+- audit logs
+
+while implementing identity convergence.
+
+==================================================
+FINAL TARGET
+==================================================
+
+ALL ERP modules must ultimately operate using:
+PERSON_MASTER
+
+while USER_ACCOUNT remains:
+authentication/access layer only.

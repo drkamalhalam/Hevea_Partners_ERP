@@ -33,4 +33,19 @@ export interface UserProfile {
   assignedProjectIds: string[];
   projectAssignments?: ProjectAssignmentItem[];
   createdAt?: string;
+  /**
+   * Linked person_master identity record (null if not yet linked to the registry)
+   * @nullable
+   */
+  personMasterId?: string | null;
+  /**
+   * Full name from the linked person_master record
+   * @nullable
+   */
+  personMasterName?: string | null;
+  /**
+   * KYC status from the linked person_master record
+   * @nullable
+   */
+  personMasterKycStatus?: string | null;
 }

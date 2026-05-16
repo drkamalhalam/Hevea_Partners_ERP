@@ -1,6 +1,12 @@
 import { Router } from "express";
-import { db, usersTable, userProjectAssignmentsTable, activityTable } from "@workspace/db";
-import { eq, and, desc } from "drizzle-orm";
+import {
+  db,
+  usersTable,
+  userProjectAssignmentsTable,
+  activityTable,
+  personMasterTable,
+} from "@workspace/db";
+import { eq, and, desc, or } from "drizzle-orm";
 import { writeAudit } from "../lib/auditLogger";
 import {
   UpdateUserRoleBody,
@@ -9,9 +15,11 @@ import {
   UpdateProjectAssignmentBody,
 } from "@workspace/api-zod";
 import { requireRole } from "../middlewares/auth";
+import { z } from "zod/v4";
 
 const router = Router();
 
+// ── Helper: build a single user profile (with person_master join) ──────────
 async function buildUserProfile(clerkUserId: string) {
   const [userRow] = await db
     .select()
@@ -27,6 +35,21 @@ async function buildUserProfile(clerkUserId: string) {
     : [];
 
   const activeAssignments = assignments.filter((a) => !a.revokedAt);
+
+  // Look up linked person_master (if any)
+  const pmRow = userRow
+    ? (
+        await db
+          .select({
+            id: personMasterTable.id,
+            fullName: personMasterTable.fullName,
+            kycStatus: personMasterTable.kycStatus,
+          })
+          .from(personMasterTable)
+          .where(eq(personMasterTable.userId, userRow.id))
+          .limit(1)
+      )[0] ?? null
+    : null;
 
   return {
     clerkUserId: userRow?.clerkUserId ?? clerkUserId,
@@ -45,10 +68,13 @@ async function buildUserProfile(clerkUserId: string) {
       projectRole: a.projectRole ?? null,
     })),
     createdAt: (userRow?.createdAt ?? new Date()).toISOString(),
+    personMasterId: pmRow?.id ?? null,
+    personMasterName: pmRow?.fullName ?? null,
+    personMasterKycStatus: pmRow?.kycStatus ?? null,
   };
 }
 
-// GET /users — admin or developer (developers need user list to assign project participants)
+// GET /users — admin or developer
 router.get("/", requireRole("admin", "developer"), async (req, res) => {
   try {
     const users = await db
@@ -58,10 +84,26 @@ router.get("/", requireRole("admin", "developer"), async (req, res) => {
 
     const assignments = await db.select().from(userProjectAssignmentsTable);
 
+    // Batch fetch all linked person_master records
+    const personMasterRows = await db
+      .select({
+        userId: personMasterTable.userId,
+        id: personMasterTable.id,
+        fullName: personMasterTable.fullName,
+        kycStatus: personMasterTable.kycStatus,
+      })
+      .from(personMasterTable)
+      .where(
+        or(...users.map((u) => eq(personMasterTable.userId, u.id))),
+      );
+
+    const pmByUserId = new Map(personMasterRows.map((r) => [r.userId, r]));
+
     const profiles = users.map((u) => {
       const active = assignments.filter(
         (a) => a.userId === u.id && !a.revokedAt,
       );
+      const pm = pmByUserId.get(u.id) ?? null;
       return {
         clerkUserId: u.clerkUserId,
         role: u.role,
@@ -79,6 +121,9 @@ router.get("/", requireRole("admin", "developer"), async (req, res) => {
           projectRole: a.projectRole ?? null,
         })),
         createdAt: u.createdAt.toISOString(),
+        personMasterId: pm?.id ?? null,
+        personMasterName: pm?.fullName ?? null,
+        personMasterKycStatus: pm?.kycStatus ?? null,
       };
     });
 
@@ -159,6 +204,193 @@ router.put("/:clerkUserId/role", requireRole("admin"), async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
+
+// ── POST /users/:clerkUserId/link-person ────────────────────────────────────
+// Link a user account to a specific person_master record (admin only)
+const linkPersonBody = z.object({ personMasterId: z.string().uuid() });
+
+router.post(
+  "/:clerkUserId/link-person",
+  requireRole("admin"),
+  async (req, res) => {
+    const clerkUserId = String(req.params.clerkUserId);
+    const parsed = linkPersonBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: "personMasterId (UUID) is required" });
+      return;
+    }
+
+    try {
+      const [userRow] = await db
+        .select({ id: usersTable.id })
+        .from(usersTable)
+        .where(eq(usersTable.clerkUserId, clerkUserId))
+        .limit(1);
+
+      if (!userRow) {
+        res.status(404).json({ error: "User not found" });
+        return;
+      }
+
+      const [person] = await db
+        .select({ id: personMasterTable.id, userId: personMasterTable.userId })
+        .from(personMasterTable)
+        .where(eq(personMasterTable.id, parsed.data.personMasterId))
+        .limit(1);
+
+      if (!person) {
+        res.status(404).json({ error: "Person not found in registry" });
+        return;
+      }
+
+      if (person.userId === userRow.id) {
+        res.json({ personMasterId: person.id, action: "already_linked" });
+        return;
+      }
+
+      await db
+        .update(personMasterTable)
+        .set({ userId: userRow.id })
+        .where(eq(personMasterTable.id, person.id));
+
+      req.log.info(
+        { clerkUserId, personMasterId: person.id },
+        "User manually linked to person_master",
+      );
+
+      res.json({ personMasterId: person.id, action: "linked" });
+    } catch (err) {
+      req.log.error({ err }, "Failed to link user to person_master");
+      res.status(500).json({ error: "Internal server error" });
+    }
+  },
+);
+
+// ── POST /users/:clerkUserId/auto-link-person ────────────────────────────────
+// Auto-match user → person_master by email/phone, or create a new record.
+router.post(
+  "/:clerkUserId/auto-link-person",
+  requireRole("admin"),
+  async (req, res) => {
+    const clerkUserId = String(req.params.clerkUserId);
+
+    try {
+      const [userRow] = await db
+        .select()
+        .from(usersTable)
+        .where(eq(usersTable.clerkUserId, clerkUserId))
+        .limit(1);
+
+      if (!userRow) {
+        res.status(404).json({ error: "User not found" });
+        return;
+      }
+
+      // Check if already linked
+      const [existing] = await db
+        .select({ id: personMasterTable.id })
+        .from(personMasterTable)
+        .where(eq(personMasterTable.userId, userRow.id))
+        .limit(1);
+
+      if (existing) {
+        res.json({
+          personMasterId: existing.id,
+          action: "already_linked",
+          matchField: null,
+        });
+        return;
+      }
+
+      // Try matching by email
+      if (userRow.email) {
+        const [emailMatch] = await db
+          .select({ id: personMasterTable.id, userId: personMasterTable.userId })
+          .from(personMasterTable)
+          .where(eq(personMasterTable.email, userRow.email))
+          .limit(1);
+
+        if (emailMatch && !emailMatch.userId) {
+          await db
+            .update(personMasterTable)
+            .set({ userId: userRow.id })
+            .where(eq(personMasterTable.id, emailMatch.id));
+
+          req.log.info(
+            { clerkUserId, personMasterId: emailMatch.id },
+            "Auto-linked user to person_master by email",
+          );
+
+          res.json({
+            personMasterId: emailMatch.id,
+            action: "linked_by_email",
+            matchField: "email",
+          });
+          return;
+        }
+      }
+
+      // Try matching by phone
+      if (userRow.phone) {
+        const [phoneMatch] = await db
+          .select({ id: personMasterTable.id, userId: personMasterTable.userId })
+          .from(personMasterTable)
+          .where(
+            or(
+              eq(personMasterTable.mobile, userRow.phone),
+              eq(personMasterTable.alternateMobile, userRow.phone),
+            ),
+          )
+          .limit(1);
+
+        if (phoneMatch && !phoneMatch.userId) {
+          await db
+            .update(personMasterTable)
+            .set({ userId: userRow.id })
+            .where(eq(personMasterTable.id, phoneMatch.id));
+
+          req.log.info(
+            { clerkUserId, personMasterId: phoneMatch.id },
+            "Auto-linked user to person_master by phone",
+          );
+
+          res.json({
+            personMasterId: phoneMatch.id,
+            action: "linked_by_phone",
+            matchField: "phone",
+          });
+          return;
+        }
+      }
+
+      // No match — create a new person_master record for this user
+      const [newPerson] = await db
+        .insert(personMasterTable)
+        .values({
+          fullName: userRow.displayName ?? userRow.email ?? "Unknown",
+          email: userRow.email ?? undefined,
+          mobile: userRow.phone ?? undefined,
+          userId: userRow.id,
+          createdBy: req.dbUserId ?? undefined,
+        })
+        .returning({ id: personMasterTable.id });
+
+      req.log.info(
+        { clerkUserId, personMasterId: newPerson.id },
+        "Created new person_master for user",
+      );
+
+      res.json({
+        personMasterId: newPerson.id,
+        action: "created",
+        matchField: null,
+      });
+    } catch (err) {
+      req.log.error({ err }, "Failed to auto-link user to person_master");
+      res.status(500).json({ error: "Internal server error" });
+    }
+  },
+);
 
 // POST /users/:clerkUserId/projects — admin only
 router.post(

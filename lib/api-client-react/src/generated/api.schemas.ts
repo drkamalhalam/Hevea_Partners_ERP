@@ -1205,6 +1205,21 @@ export interface UserProfile {
   assignedProjectIds: string[];
   projectAssignments?: ProjectAssignmentItem[];
   createdAt?: string;
+  /**
+   * Linked person_master identity record (null if not yet linked to the registry)
+   * @nullable
+   */
+  personMasterId?: string | null;
+  /**
+   * Full name from the linked person_master record
+   * @nullable
+   */
+  personMasterName?: string | null;
+  /**
+   * KYC status from the linked person_master record
+   * @nullable
+   */
+  personMasterKycStatus?: string | null;
 }
 
 /**
@@ -9262,6 +9277,40 @@ export interface PersonMasterMergeInput {
   /** @minLength 10 */
   reason: string;
 }
+
+export type LinkUserToPersonBody = {
+  personMasterId: string;
+};
+
+export type LinkUserToPerson200Action =
+  (typeof LinkUserToPerson200Action)[keyof typeof LinkUserToPerson200Action];
+
+export const LinkUserToPerson200Action = {
+  linked: "linked",
+  already_linked: "already_linked",
+} as const;
+
+export type LinkUserToPerson200 = {
+  personMasterId: string;
+  action: LinkUserToPerson200Action;
+};
+
+export type AutoLinkUserToPerson200Action =
+  (typeof AutoLinkUserToPerson200Action)[keyof typeof AutoLinkUserToPerson200Action];
+
+export const AutoLinkUserToPerson200Action = {
+  already_linked: "already_linked",
+  linked_by_email: "linked_by_email",
+  linked_by_phone: "linked_by_phone",
+  created: "created",
+} as const;
+
+export type AutoLinkUserToPerson200 = {
+  personMasterId: string;
+  action: AutoLinkUserToPerson200Action;
+  /** @nullable */
+  matchField?: string | null;
+};
 
 export type GetUserActivityParams = {
   limit?: number;

@@ -64,6 +64,21 @@ export const GetMeResponse = zod.object({
     )
     .optional(),
   createdAt: zod.string().optional(),
+  personMasterId: zod
+    .string()
+    .uuid()
+    .nullish()
+    .describe(
+      "Linked person_master identity record (null if not yet linked to the registry)",
+    ),
+  personMasterName: zod
+    .string()
+    .nullish()
+    .describe("Full name from the linked person_master record"),
+  personMasterKycStatus: zod
+    .string()
+    .nullish()
+    .describe("KYC status from the linked person_master record"),
 });
 
 /**
@@ -143,6 +158,21 @@ export const UpsertMeResponse = zod.object({
     )
     .optional(),
   createdAt: zod.string().optional(),
+  personMasterId: zod
+    .string()
+    .uuid()
+    .nullish()
+    .describe(
+      "Linked person_master identity record (null if not yet linked to the registry)",
+    ),
+  personMasterName: zod
+    .string()
+    .nullish()
+    .describe("Full name from the linked person_master record"),
+  personMasterKycStatus: zod
+    .string()
+    .nullish()
+    .describe("KYC status from the linked person_master record"),
 });
 
 /**
@@ -210,6 +240,21 @@ export const UpdateMyProfileResponse = zod.object({
     )
     .optional(),
   createdAt: zod.string().optional(),
+  personMasterId: zod
+    .string()
+    .uuid()
+    .nullish()
+    .describe(
+      "Linked person_master identity record (null if not yet linked to the registry)",
+    ),
+  personMasterName: zod
+    .string()
+    .nullish()
+    .describe("Full name from the linked person_master record"),
+  personMasterKycStatus: zod
+    .string()
+    .nullish()
+    .describe("KYC status from the linked person_master record"),
 });
 
 /**
@@ -269,6 +314,21 @@ export const ListUsersResponseItem = zod.object({
     )
     .optional(),
   createdAt: zod.string().optional(),
+  personMasterId: zod
+    .string()
+    .uuid()
+    .nullish()
+    .describe(
+      "Linked person_master identity record (null if not yet linked to the registry)",
+    ),
+  personMasterName: zod
+    .string()
+    .nullish()
+    .describe("Full name from the linked person_master record"),
+  personMasterKycStatus: zod
+    .string()
+    .nullish()
+    .describe("KYC status from the linked person_master record"),
 });
 export const ListUsersResponse = zod.array(ListUsersResponseItem);
 
@@ -333,6 +393,21 @@ export const GetUserProfileResponse = zod.object({
     )
     .optional(),
   createdAt: zod.string().optional(),
+  personMasterId: zod
+    .string()
+    .uuid()
+    .nullish()
+    .describe(
+      "Linked person_master identity record (null if not yet linked to the registry)",
+    ),
+  personMasterName: zod
+    .string()
+    .nullish()
+    .describe("Full name from the linked person_master record"),
+  personMasterKycStatus: zod
+    .string()
+    .nullish()
+    .describe("KYC status from the linked person_master record"),
 });
 
 /**
@@ -404,6 +479,21 @@ export const UpdateUserProfileResponse = zod.object({
     )
     .optional(),
   createdAt: zod.string().optional(),
+  personMasterId: zod
+    .string()
+    .uuid()
+    .nullish()
+    .describe(
+      "Linked person_master identity record (null if not yet linked to the registry)",
+    ),
+  personMasterName: zod
+    .string()
+    .nullish()
+    .describe("Full name from the linked person_master record"),
+  personMasterKycStatus: zod
+    .string()
+    .nullish()
+    .describe("KYC status from the linked person_master record"),
 });
 
 /**
@@ -478,6 +568,21 @@ export const UpdateUserRoleResponse = zod.object({
     )
     .optional(),
   createdAt: zod.string().optional(),
+  personMasterId: zod
+    .string()
+    .uuid()
+    .nullish()
+    .describe(
+      "Linked person_master identity record (null if not yet linked to the registry)",
+    ),
+  personMasterName: zod
+    .string()
+    .nullish()
+    .describe("Full name from the linked person_master record"),
+  personMasterKycStatus: zod
+    .string()
+    .nullish()
+    .describe("KYC status from the linked person_master record"),
 });
 
 /**
@@ -538,6 +643,40 @@ export const RemoveUserFromProjectParams = zod.object({
 
 export const RemoveUserFromProjectResponse = zod.object({
   ok: zod.boolean().optional(),
+});
+
+/**
+ * @summary Link a user account to an existing person_master record (admin only)
+ */
+export const LinkUserToPersonParams = zod.object({
+  clerkUserId: zod.coerce.string(),
+});
+
+export const LinkUserToPersonBody = zod.object({
+  personMasterId: zod.string().uuid(),
+});
+
+export const LinkUserToPersonResponse = zod.object({
+  personMasterId: zod.string().uuid(),
+  action: zod.enum(["linked", "already_linked"]),
+});
+
+/**
+ * @summary Auto-link or auto-create a person_master entry for a user (admin only)
+ */
+export const AutoLinkUserToPersonParams = zod.object({
+  clerkUserId: zod.coerce.string(),
+});
+
+export const AutoLinkUserToPersonResponse = zod.object({
+  personMasterId: zod.string().uuid(),
+  action: zod.enum([
+    "already_linked",
+    "linked_by_email",
+    "linked_by_phone",
+    "created",
+  ]),
+  matchField: zod.string().nullish(),
 });
 
 /**

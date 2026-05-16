@@ -63,6 +63,7 @@ import type {
   AssignProjectInput,
   AutoGenerateLcaLedgerBody,
   AutoGenerateLcaResult,
+  AutoLinkUserToPerson200,
   BackupStorageStats,
   BatchAnalytics,
   BatchMovement,
@@ -373,6 +374,8 @@ import type {
   LcaLookupResult,
   LcaPaymentEvent,
   LcaSummary,
+  LinkUserToPerson200,
+  LinkUserToPersonBody,
   LinkUserToPersonMaster200,
   LinkUserToPersonMasterBody,
   ListAdvancesParams,
@@ -1615,6 +1618,180 @@ export const useRemoveUserFromProject = <
   TContext
 > => {
   return useMutation(getRemoveUserFromProjectMutationOptions(options));
+};
+
+/**
+ * @summary Link a user account to an existing person_master record (admin only)
+ */
+export const getLinkUserToPersonUrl = (clerkUserId: string) => {
+  return `/api/users/${clerkUserId}/link-person`;
+};
+
+export const linkUserToPerson = async (
+  clerkUserId: string,
+  linkUserToPersonBody: LinkUserToPersonBody,
+  options?: RequestInit,
+): Promise<LinkUserToPerson200> => {
+  return customFetch<LinkUserToPerson200>(getLinkUserToPersonUrl(clerkUserId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(linkUserToPersonBody),
+  });
+};
+
+export const getLinkUserToPersonMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof linkUserToPerson>>,
+    TError,
+    { clerkUserId: string; data: BodyType<LinkUserToPersonBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof linkUserToPerson>>,
+  TError,
+  { clerkUserId: string; data: BodyType<LinkUserToPersonBody> },
+  TContext
+> => {
+  const mutationKey = ["linkUserToPerson"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof linkUserToPerson>>,
+    { clerkUserId: string; data: BodyType<LinkUserToPersonBody> }
+  > = (props) => {
+    const { clerkUserId, data } = props ?? {};
+
+    return linkUserToPerson(clerkUserId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type LinkUserToPersonMutationResult = NonNullable<
+  Awaited<ReturnType<typeof linkUserToPerson>>
+>;
+export type LinkUserToPersonMutationBody = BodyType<LinkUserToPersonBody>;
+export type LinkUserToPersonMutationError = ErrorType<void>;
+
+/**
+ * @summary Link a user account to an existing person_master record (admin only)
+ */
+export const useLinkUserToPerson = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof linkUserToPerson>>,
+    TError,
+    { clerkUserId: string; data: BodyType<LinkUserToPersonBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof linkUserToPerson>>,
+  TError,
+  { clerkUserId: string; data: BodyType<LinkUserToPersonBody> },
+  TContext
+> => {
+  return useMutation(getLinkUserToPersonMutationOptions(options));
+};
+
+/**
+ * @summary Auto-link or auto-create a person_master entry for a user (admin only)
+ */
+export const getAutoLinkUserToPersonUrl = (clerkUserId: string) => {
+  return `/api/users/${clerkUserId}/auto-link-person`;
+};
+
+export const autoLinkUserToPerson = async (
+  clerkUserId: string,
+  options?: RequestInit,
+): Promise<AutoLinkUserToPerson200> => {
+  return customFetch<AutoLinkUserToPerson200>(
+    getAutoLinkUserToPersonUrl(clerkUserId),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getAutoLinkUserToPersonMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof autoLinkUserToPerson>>,
+    TError,
+    { clerkUserId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof autoLinkUserToPerson>>,
+  TError,
+  { clerkUserId: string },
+  TContext
+> => {
+  const mutationKey = ["autoLinkUserToPerson"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof autoLinkUserToPerson>>,
+    { clerkUserId: string }
+  > = (props) => {
+    const { clerkUserId } = props ?? {};
+
+    return autoLinkUserToPerson(clerkUserId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AutoLinkUserToPersonMutationResult = NonNullable<
+  Awaited<ReturnType<typeof autoLinkUserToPerson>>
+>;
+
+export type AutoLinkUserToPersonMutationError = ErrorType<void>;
+
+/**
+ * @summary Auto-link or auto-create a person_master entry for a user (admin only)
+ */
+export const useAutoLinkUserToPerson = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof autoLinkUserToPerson>>,
+    TError,
+    { clerkUserId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof autoLinkUserToPerson>>,
+  TError,
+  { clerkUserId: string },
+  TContext
+> => {
+  return useMutation(getAutoLinkUserToPersonMutationOptions(options));
 };
 
 /**

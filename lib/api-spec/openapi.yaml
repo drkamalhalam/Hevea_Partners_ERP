@@ -249,6 +249,77 @@ paths:
               schema:
                 $ref: "#/components/schemas/OkResponse"
 
+  /users/{clerkUserId}/link-person:
+    post:
+      operationId: linkUserToPerson
+      tags: [users]
+      summary: Link a user account to an existing person_master record (admin only)
+      parameters:
+        - in: path
+          name: clerkUserId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [personMasterId]
+              properties:
+                personMasterId:
+                  type: string
+                  format: uuid
+      responses:
+        "200":
+          description: Linked successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [personMasterId, action]
+                properties:
+                  personMasterId:
+                    type: string
+                    format: uuid
+                  action:
+                    type: string
+                    enum: [linked, already_linked]
+        "404":
+          description: User or person not found
+
+  /users/{clerkUserId}/auto-link-person:
+    post:
+      operationId: autoLinkUserToPerson
+      tags: [users]
+      summary: Auto-link or auto-create a person_master entry for a user (admin only)
+      parameters:
+        - in: path
+          name: clerkUserId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Auto-link result
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [personMasterId, action]
+                properties:
+                  personMasterId:
+                    type: string
+                    format: uuid
+                  action:
+                    type: string
+                    enum: [already_linked, linked_by_email, linked_by_phone, created]
+                  matchField:
+                    type: ["string", "null"]
+        "404":
+          description: User not found
+
   /users/{clerkUserId}/activity:
     get:
       operationId: getUserActivity
@@ -13762,6 +13833,16 @@ components:
             $ref: "#/components/schemas/ProjectAssignmentItem"
         createdAt:
           type: string
+        personMasterId:
+          type: ["string", "null"]
+          format: uuid
+          description: Linked person_master identity record (null if not yet linked to the registry)
+        personMasterName:
+          type: ["string", "null"]
+          description: Full name from the linked person_master record
+        personMasterKycStatus:
+          type: ["string", "null"]
+          description: KYC status from the linked person_master record
 
     UpsertUserInput:
       type: object
