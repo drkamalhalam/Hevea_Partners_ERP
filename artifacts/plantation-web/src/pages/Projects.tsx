@@ -8,6 +8,7 @@ import {
   getListProjectsQueryKey,
   useGetGovernanceSummary,
   useGetProjectCardSummaries,
+  getGetProjectCardSummariesQueryKey,
   useListOnboardingParticipants,
 } from "@workspace/api-client-react";
 import { useRole } from "@/contexts/RoleContext";
@@ -191,6 +192,9 @@ type CardSummary = {
   contributionPendingCount: number;
   contributionDisputedCount: number;
   contributorCount: number;
+  // Reimbursement exposure
+  reimbursementTotal: number;
+  reimbursementCount: number;
   // Recoverable advances
   advancesTotalOutstanding: number;
   advancesPendingCount: number;
@@ -268,8 +272,29 @@ function ProjectGovernanceCard({
         </div>
       )}
 
+      {/* ── Lifecycle Phase Band ─────────────────────────────────────────── */}
+      {project.lifecycleStatus && (() => {
+        const lc = project.lifecycleStatus;
+        const colorClass =
+          lc === "prematurity" ? "bg-violet-50 border border-violet-200 text-violet-700" :
+          lc === "mature_production" ? "bg-emerald-50 border border-emerald-200 text-emerald-700" :
+          lc === "closed" ? "bg-gray-100 border border-gray-200 text-gray-500" :
+          "bg-slate-50 border border-slate-200 text-slate-500";
+        const label =
+          lc === "prematurity" ? "Pre-Maturity — Contributions & Ownership Active" :
+          lc === "mature_production" ? "Mature Production — Harvest & Revenue Active" :
+          lc === "closed" ? "Project Closed — Archive Mode" : null;
+        if (!label) return null;
+        return (
+          <div className={`mx-4 mt-3 rounded-md px-2.5 py-1 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider ${colorClass}`}>
+            <Activity className="h-2.5 w-2.5 shrink-0" />
+            {label}
+          </div>
+        );
+      })()}
+
       {/* ── §1 Identity ─────────────────────────────────────────────────── */}
-      <CardHeader className="px-4 pt-4 pb-3">
+      <CardHeader className="px-4 pt-3 pb-3">
         <Link href={`/projects/${project.id}`}>
           <div className="group/identity cursor-pointer space-y-1.5">
             {/* Name + status badges */}
@@ -538,6 +563,16 @@ function ProjectGovernanceCard({
                         label="Ownership-Eligible"
                         value={
                           <span className="text-violet-700 font-semibold">{fmtRupees(s.contributionOwnershipEligible)}</span>
+                        }
+                        href="/contributions"
+                        span2
+                      />
+                    )}
+                    {s.reimbursementTotal > 0 && (
+                      <DataRow
+                        label="Reimbursement Exp."
+                        value={
+                          <span className="text-orange-600 font-semibold">{fmtRupees(s.reimbursementTotal)}</span>
                         }
                         href="/contributions"
                         span2
@@ -985,7 +1020,109 @@ function ProjectGovernanceCard({
               </p>
             )}
           </div>
+        ) : project.lifecycleStatus === "prematurity" ? (
+          /* ── Pre-Maturity quick actions ─────────────────────────────── */
+          <div className="grid grid-cols-3 gap-1.5">
+            <Link href="/contributions">
+              <Button variant="outline" size="sm" className="w-full h-7 text-[10px] px-1.5 gap-0.5 border-violet-200 text-violet-700 hover:bg-violet-50">
+                <TrendingUp className="h-3 w-3" /> Contributions
+              </Button>
+            </Link>
+            <Link href="/partners">
+              <Button variant="outline" size="sm" className="w-full h-7 text-[10px] px-1.5 gap-0.5">
+                <Users className="h-3 w-3" /> Participants
+              </Button>
+            </Link>
+            <Link href="/agreements">
+              <Button variant="outline" size="sm" className="w-full h-7 text-[10px] px-1.5 gap-0.5">
+                <FileText className="h-3 w-3" /> Agreements
+              </Button>
+            </Link>
+            {isOwnership && (
+              <Link href="/lca/config">
+                <Button variant="outline" size="sm" className="w-full h-7 text-[10px] px-1.5 gap-0.5">
+                  <Scale className="h-3 w-3" /> LCA Config
+                </Button>
+              </Link>
+            )}
+            <Link href="/production-log">
+              <Button variant="outline" size="sm" className="w-full h-7 text-[10px] px-1.5 gap-0.5">
+                <ClipboardList className="h-3 w-3" /> Production
+              </Button>
+            </Link>
+            <Link href={`/projects/${project.id}`}>
+              <Button variant="outline" size="sm" className="w-full h-7 text-[10px] px-1.5 gap-0.5">
+                <Activity className="h-3 w-3" /> Dashboard
+              </Button>
+            </Link>
+          </div>
+        ) : project.lifecycleStatus === "mature_production" ? (
+          /* ── Mature Production quick actions ────────────────────────── */
+          <div className="grid grid-cols-3 gap-1.5">
+            <Link href="/production-log">
+              <Button variant="outline" size="sm" className="w-full h-7 text-[10px] px-1.5 gap-0.5 border-emerald-200 text-emerald-700 hover:bg-emerald-50">
+                <ClipboardList className="h-3 w-3" /> Production
+              </Button>
+            </Link>
+            <Link href="/inventory">
+              <Button variant="outline" size="sm" className="w-full h-7 text-[10px] px-1.5 gap-0.5">
+                <Boxes className="h-3 w-3" /> Inventory
+              </Button>
+            </Link>
+            <Link href="/sales">
+              <Button variant="outline" size="sm" className="w-full h-7 text-[10px] px-1.5 gap-0.5">
+                <ShoppingCart className="h-3 w-3" /> Sales
+              </Button>
+            </Link>
+            <Link href={isOwnership ? "/contributions" : "/distribution"}>
+              <Button variant="outline" size="sm" className="w-full h-7 text-[10px] px-1.5 gap-0.5">
+                <Wallet className="h-3 w-3" />
+                {isOwnership ? "Contributions" : "Distribution"}
+              </Button>
+            </Link>
+            <Link href={isOwnership ? "/lca/ledger" : "/distribution"}>
+              <Button variant="outline" size="sm" className="w-full h-7 text-[10px] px-1.5 gap-0.5">
+                {isOwnership ? <Scale className="h-3 w-3" /> : <TrendingUp className="h-3 w-3" />}
+                {isOwnership ? "LCA Ledger" : "Settlement"}
+              </Button>
+            </Link>
+            <Link href={`/projects/${project.id}`}>
+              <Button variant="outline" size="sm" className="w-full h-7 text-[10px] px-1.5 gap-0.5">
+                <Activity className="h-3 w-3" /> Dashboard
+              </Button>
+            </Link>
+          </div>
+        ) : project.lifecycleStatus === "closed" ? (
+          /* ── Closed quick actions ───────────────────────────────────── */
+          <div className="grid grid-cols-3 gap-1.5">
+            <Link href="/settlement-governance">
+              <Button variant="outline" size="sm" className="w-full h-7 text-[10px] px-1.5 gap-0.5">
+                <Scale className="h-3 w-3" /> Settlement
+              </Button>
+            </Link>
+            <Link href="/reports">
+              <Button variant="outline" size="sm" className="w-full h-7 text-[10px] px-1.5 gap-0.5">
+                <BarChart3 className="h-3 w-3" /> Reports
+              </Button>
+            </Link>
+            <Link href="/documents">
+              <Button variant="outline" size="sm" className="w-full h-7 text-[10px] px-1.5 gap-0.5">
+                <FileText className="h-3 w-3" /> Documents
+              </Button>
+            </Link>
+            <Link href="/governance">
+              <Button variant="outline" size="sm" className="w-full h-7 text-[10px] px-1.5 gap-0.5">
+                <ClipboardList className="h-3 w-3" /> Governance
+              </Button>
+            </Link>
+            <Link href={`/projects/${project.id}`}>
+              <Button variant="outline" size="sm" className="w-full h-7 text-[10px] px-1.5 gap-0.5">
+                <Activity className="h-3 w-3" /> Dashboard
+              </Button>
+            </Link>
+          </div>
         ) : (
+          /* ── Default (draft / no lifecycle) quick actions ───────────── */
           <div className="grid grid-cols-3 gap-1.5">
             <Link href={`/projects/${project.id}`}>
               <Button variant="outline" size="sm" className="w-full h-7 text-[10px] px-1.5 gap-0.5">
@@ -1019,25 +1156,6 @@ function ProjectGovernanceCard({
                 {isOwnership ? "LCA Ledger" : "Sales"}
               </Button>
             </Link>
-            {canAccessAllProjects && (
-              <>
-                <Link href="/production-log">
-                  <Button variant="outline" size="sm" className="w-full h-7 text-[10px] px-1.5 gap-0.5">
-                    <ClipboardList className="h-3 w-3" /> Production
-                  </Button>
-                </Link>
-                <Link href="/sales">
-                  <Button variant="outline" size="sm" className="w-full h-7 text-[10px] px-1.5 gap-0.5">
-                    <ShoppingCart className="h-3 w-3" /> Sales
-                  </Button>
-                </Link>
-                <Link href="/reports">
-                  <Button variant="outline" size="sm" className="w-full h-7 text-[10px] px-1.5 gap-0.5">
-                    <BarChart3 className="h-3 w-3" /> Reports
-                  </Button>
-                </Link>
-              </>
-            )}
           </div>
         )}
 
@@ -1184,6 +1302,7 @@ export default function Projects() {
           projects={projectsForDialog}
           onSuccess={() => {
             queryClient.invalidateQueries({ queryKey: getListProjectsQueryKey() });
+            queryClient.invalidateQueries({ queryKey: getGetProjectCardSummariesQueryKey() });
           }}
         />
       )}

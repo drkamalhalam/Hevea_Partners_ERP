@@ -20804,6 +20804,8 @@ export const GetProjectCardSummariesResponse = zod.object({
       contributionPendingCount: zod.number(),
       contributionDisputedCount: zod.number(),
       contributorCount: zod.number(),
+      reimbursementTotal: zod.number(),
+      reimbursementCount: zod.number(),
       advancesTotalOutstanding: zod.number(),
       advancesPendingCount: zod.number(),
       lcaIsConfigured: zod.boolean(),

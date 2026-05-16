@@ -15,6 +15,7 @@ import {
   getGetInventoryStockSummaryQueryKey,
   getListStockMovementsQueryKey,
   ListStockMovementsStatus,
+  getGetProjectCardSummariesQueryKey,
 } from "@workspace/api-client-react";
 import type { StockMovement } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -201,6 +202,7 @@ export default function Inventory() {
     qc.invalidateQueries({ queryKey: getGetInventoryStockBalanceQueryKey() });
     qc.invalidateQueries({ queryKey: getGetInventoryStockSummaryQueryKey() });
     qc.invalidateQueries({ queryKey: getListStockMovementsQueryKey() });
+    qc.invalidateQueries({ queryKey: getGetProjectCardSummariesQueryKey() });
   }
 
   // ── Dialog state ──────────────────────────────────────────────────────────

@@ -1,0 +1,158 @@
+PHASE 5 — Global Action System, Workflow Normalization & Module Demotion
+
+We now have:
+
+participant integrity unified financial engine inventory movement engine live project state engine 
+
+Next, normalize the entire ERP into: GLOBAL ACTION UX + CENTRAL DOMAIN GOVERNANCE.
+
+CURRENT PROBLEM
+
+The ERP still psychologically behaves like:
+
+separate pages separate modules separate systems 
+
+Examples:
+
+contribution page expenditure page stock page inventory page sales page 
+
+This causes:
+
+duplicated workflows user confusion fragmented business logic inconsistent project synchronization architecture bypasses 
+
+TARGET ARCHITECTURE
+
+Users may initiate actions from anywhere in the ERP.
+
+BUT internally ALL actions must route through:
+
+Project Domain Engine Lifecycle Engine Participant Engine Financial Engine Inventory Engine Governance Engine 
+
+CORE RULES
+
+GLOBAL ACTION SYSTEM 
+
+Create universal/global actions:
+
+Quick Financial Entry Quick Production Entry Quick Inventory Transfer Quick Sale Quick Payment Quick Task Assignment Quick Governance Action 
+
+Accessible from:
+
+dashboard project card inventory views production views mobile quick actions search/global command palette PROJECT CONTEXT IS MANDATORY 
+
+Even if launched globally: every action must require:
+
+project context participant validation lifecycle validation permission validation 
+
+No operation may bypass project governance.
+
+MODULE DEMOTION 
+
+Existing pages become:
+
+views reports filters analytics audit explorers 
+
+NOT primary business authorities.
+
+Demote:
+
+contributions expenditure stock register inventory dashboard sales pages 
+
+into: specialized filtered projections over centralized engines.
+
+REMOVE DUPLICATED BUSINESS LOGIC 
+
+No page/module may independently:
+
+calculate ownership calculate stock calculate reimbursements calculate balances calculate participant totals 
+
+All calculations must derive from canonical engines.
+
+GLOBAL SEARCH & ACTION ROUTING 
+
+Implement: global ERP command/search system.
+
+Example: User searches:
+
+project participant inventory sale stock agreement 
+
+Then quickly launches actions within valid project context.
+
+SMART CONTEXTUAL ACTIONS 
+
+Actions available must dynamically adapt to:
+
+project lifecycle participant role permissions inventory state accounting model 
+
+Example: Prematurity:
+
+ownership contribution allowed 
+
+Mature:
+
+ownership actions hidden/blocked automatically MOBILE-FIRST OPERATIONAL UX 
+
+Support fast operational workflows:
+
+field production logging stock movement quick financial entry quick verification mobile approvals 
+
+without sacrificing governance validation.
+
+EVENT-DRIVEN ORCHESTRATION 
+
+Every action must emit domain events:
+
+production.logged inventory.transferred sale.confirmed financial.recorded reimbursement.updated lifecycle.changed 
+
+Then automatically synchronize:
+
+project cards dashboards balances availability participant state audit trails PROJECT CARD AS PRIMARY OPERATING HUB 
+
+Project cards become: central orchestration surfaces.
+
+From project card users should:
+
+view live state perform actions inspect ledgers manage participants view inventory manage financials inspect governance issues REMOVE ISOLATED THINKING 
+
+No module should behave like: its own mini-system.
+
+Everything must behave like: one integrated ERP ecosystem.
+
+PERMISSION & GOVERNANCE ENFORCEMENT 
+
+Every action must validate:
+
+participant eligibility lifecycle eligibility ownership restrictions reimbursement rules inventory availability project permissions 
+
+centrally.
+
+LIVE UI SYNCHRONIZATION 
+
+After any action:
+
+dashboards update cards update balances update stock updates participant projections update workflow queues update 
+
+without manual refresh workflows.
+
+AUDIT-FIRST ARCHITECTURE 
+
+Every action must preserve:
+
+who initiated project context participant context source device timestamp lifecycle phase resulting state change FUTURE-READY FOUNDATION 
+
+Architecture must support future:
+
+mobile apps offline sync advanced analytics AI projections workflow automation dispute management advanced settlement logic multi-company expansion 
+
+WITHOUT rewriting core engines.
+
+FINAL ERP TARGET 
+
+Transform the ERP into:
+
+PROJECT-GOVERNED
+
+EVENT-DRIVEN LIVE SYNCHRONIZED DOMAIN-CENTRIC AUDITABLE MOBILE-READY GOVERNANCE-FIRST ERP ARCHITECTURE 
+
+instead of: disconnected module-based CRUD application architecture.
+

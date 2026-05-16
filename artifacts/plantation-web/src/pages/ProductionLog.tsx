@@ -17,6 +17,7 @@ import {
   getListProductionEntriesQueryKey,
   getGetProductionLogSummaryQueryKey,
   getListProductionBatchesQueryOptions,
+  getGetProjectCardSummariesQueryKey,
 } from "@workspace/api-client-react";
 import type { ProductionBatch, ProductionEntry } from "@workspace/api-client-react";
 import { CreateProductionEntryBodyUnit, UpdateProductionEntryBodyUnit } from "@workspace/api-client-react";
@@ -168,6 +169,7 @@ export default function ProductionLog() {
     qc.invalidateQueries({ queryKey: getListProductionBatchesQueryKey() });
     qc.invalidateQueries({ queryKey: getListProductionEntriesQueryKey() });
     qc.invalidateQueries({ queryKey: getGetProductionLogSummaryQueryKey() });
+    qc.invalidateQueries({ queryKey: getGetProjectCardSummariesQueryKey() });
   }
 
   // ── Dialog state ──────────────────────────────────────────────────────────

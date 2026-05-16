@@ -9084,6 +9084,8 @@ export interface ProjectCardSummary {
   contributionPendingCount: number;
   contributionDisputedCount: number;
   contributorCount: number;
+  reimbursementTotal: number;
+  reimbursementCount: number;
   advancesTotalOutstanding: number;
   advancesPendingCount: number;
   lcaIsConfigured: boolean;

@@ -28,6 +28,7 @@ import {
   getGetSaleQueryKey,
   getListProductionBatchesQueryKey,
   getListSaleDocumentsQueryKey,
+  getGetProjectCardSummariesQueryKey,
 } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -191,6 +192,7 @@ function SaleDetailPanel({ txId, onClose }: { txId: string; onClose: () => void 
     qc.invalidateQueries({ queryKey: getGetSaleQueryKey(txId) });
     qc.invalidateQueries({ queryKey: getListSalesQueryKey() });
     qc.invalidateQueries({ queryKey: getGetSalesSummaryQueryKey() });
+    qc.invalidateQueries({ queryKey: getGetProjectCardSummariesQueryKey() });
   }
 
   async function handleConfirm() {

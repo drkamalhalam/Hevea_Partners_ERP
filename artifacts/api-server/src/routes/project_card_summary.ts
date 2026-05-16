@@ -220,7 +220,7 @@ router.get("/card-summaries", async (req, res) => {
       )
       .groupBy(agreementsTable.projectId),
 
-    // Contributions: total, verified, ownership-eligible, pending, disputed per project
+    // Contributions: total, verified, ownership-eligible, pending, disputed, reimbursement per project
     db
       .select({
         projectId: contributionsTable.projectId,
@@ -230,6 +230,8 @@ router.get("/card-summaries", async (req, res) => {
         pendingCount: sql<number>`count(*) FILTER (WHERE ${contributionsTable.verificationStatus} IN ('draft', 'pending_verification'))::int`,
         disputedCount: sql<number>`count(*) FILTER (WHERE ${contributionsTable.verificationStatus} = 'disputed')::int`,
         contributorCount: sql<number>`count(DISTINCT ${contributionsTable.partnerId})::int`,
+        reimbursementTotal: sql<number>`COALESCE(SUM(${contributionsTable.amount}) FILTER (WHERE ${contributionsTable.reimbursementFlag} = true), 0)`,
+        reimbursementCount: sql<number>`count(*) FILTER (WHERE ${contributionsTable.reimbursementFlag} = true)::int`,
       })
       .from(contributionsTable)
       .where(
@@ -390,6 +392,8 @@ router.get("/card-summaries", async (req, res) => {
       contributionPendingCount: contrib ? Number(contrib.pendingCount) : 0,
       contributionDisputedCount: contrib ? Number(contrib.disputedCount) : 0,
       contributorCount: contrib ? Number(contrib.contributorCount) : 0,
+      reimbursementTotal: contrib ? Number(contrib.reimbursementTotal) : 0,
+      reimbursementCount: contrib ? Number(contrib.reimbursementCount) : 0,
 
       // ── Recoverable advances ───────────────────────────────────────────────
       advancesTotalOutstanding: adv ? Number(adv.totalOutstanding) : 0,

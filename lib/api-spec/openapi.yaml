@@ -21171,6 +21171,8 @@ components:
         - contributionPendingCount
         - contributionDisputedCount
         - contributorCount
+        - reimbursementTotal
+        - reimbursementCount
         - advancesTotalOutstanding
         - advancesPendingCount
         - lcaIsConfigured
@@ -21207,6 +21209,9 @@ components:
         contributionPendingCount: { type: integer }
         contributionDisputedCount: { type: integer }
         contributorCount: { type: integer }
+        # ── Reimbursement exposure ────────────────────────────────────────
+        reimbursementTotal: { type: number }
+        reimbursementCount: { type: integer }
         # ── Recoverable advances ───────────────────────────────────────────
         advancesTotalOutstanding: { type: number }
         advancesPendingCount: { type: integer }
