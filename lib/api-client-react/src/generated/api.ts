@@ -448,6 +448,7 @@ import type {
   ListOwnershipTransfers200,
   ListOwnershipTransfersParams,
   ListPartnerClaimantsParams,
+  ListPartnersParams,
   ListPayableAdjustments200,
   ListPayableAdjustmentsParams,
   ListPayableSnapshots200,
@@ -6149,41 +6150,57 @@ export function useGetPersonMasterAudit<
 /**
  * @summary List all partners
  */
-export const getListPartnersUrl = () => {
-  return `/api/partners`;
+export const getListPartnersUrl = (params?: ListPartnersParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/partners?${stringifiedParams}`
+    : `/api/partners`;
 };
 
 export const listPartners = async (
+  params?: ListPartnersParams,
   options?: RequestInit,
 ): Promise<Partner[]> => {
-  return customFetch<Partner[]>(getListPartnersUrl(), {
+  return customFetch<Partner[]>(getListPartnersUrl(params), {
     ...options,
     method: "GET",
   });
 };
 
-export const getListPartnersQueryKey = () => {
-  return [`/api/partners`] as const;
+export const getListPartnersQueryKey = (params?: ListPartnersParams) => {
+  return [`/api/partners`, ...(params ? [params] : [])] as const;
 };
 
 export const getListPartnersQueryOptions = <
   TData = Awaited<ReturnType<typeof listPartners>>,
   TError = ErrorType<unknown>,
->(options?: {
-  query?: UseQueryOptions<
-    Awaited<ReturnType<typeof listPartners>>,
-    TError,
-    TData
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}) => {
+>(
+  params?: ListPartnersParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listPartners>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey = queryOptions?.queryKey ?? getListPartnersQueryKey();
+  const queryKey = queryOptions?.queryKey ?? getListPartnersQueryKey(params);
 
   const queryFn: QueryFunction<Awaited<ReturnType<typeof listPartners>>> = ({
     signal,
-  }) => listPartners({ signal, ...requestOptions });
+  }) => listPartners(params, { signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof listPartners>>,
@@ -6204,15 +6221,18 @@ export type ListPartnersQueryError = ErrorType<unknown>;
 export function useListPartners<
   TData = Awaited<ReturnType<typeof listPartners>>,
   TError = ErrorType<unknown>,
->(options?: {
-  query?: UseQueryOptions<
-    Awaited<ReturnType<typeof listPartners>>,
-    TError,
-    TData
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getListPartnersQueryOptions(options);
+>(
+  params?: ListPartnersParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listPartners>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListPartnersQueryOptions(params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

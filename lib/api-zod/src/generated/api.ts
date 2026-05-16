@@ -2454,6 +2454,20 @@ export const GetPersonMasterAuditResponse = zod.array(
 /**
  * @summary List all partners
  */
+export const ListPartnersQueryParams = zod.object({
+  projectId: zod.coerce
+    .string()
+    .uuid()
+    .optional()
+    .describe(
+      "When provided, restricts results to partners linked to this project (via ledger entries or project participants). Use this for all project-scoped financial screens to prevent governance data leakage.\n",
+    ),
+  role: zod.coerce
+    .string()
+    .optional()
+    .describe("Filter by partner role (landowner, developer, investor)"),
+});
+
 export const ListPartnersResponseItem = zod.object({
   id: zod.string().uuid(),
   name: zod.string(),

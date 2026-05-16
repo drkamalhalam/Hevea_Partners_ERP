@@ -9376,6 +9376,18 @@ export type RemovePersonMasterRole200 = {
   success?: boolean;
 };
 
+export type ListPartnersParams = {
+  /**
+ * When provided, restricts results to partners linked to this project (via ledger entries or project participants). Use this for all project-scoped financial screens to prevent governance data leakage.
+
+ */
+  projectId?: string;
+  /**
+   * Filter by partner role (landowner, developer, investor)
+   */
+  role?: string;
+};
+
 export type ListPartnerClaimantsParams = {
   projectId?: string;
 };

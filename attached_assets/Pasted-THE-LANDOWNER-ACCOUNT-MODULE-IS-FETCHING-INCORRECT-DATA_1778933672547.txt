@@ -1,0 +1,137 @@
+THE LANDOWNER ACCOUNT MODULE IS FETCHING INCORRECT DATA.
+
+Current behavior:
+When a project is selected, the landowner dropdown still shows unrelated/global landowners that do NOT belong to the selected project.
+
+Example:
+Project selected:
+“Gandacherra Block B”
+
+But unrelated landowners still appear in dropdown.
+
+==================================================
+THIS IS A GOVERNANCE DATA ISOLATION ISSUE
+==================================================
+
+This is NOT merely a UI bug.
+
+Incorrect participant fetching may cause:
+- wrong revenue attribution
+- incorrect LCA calculations
+- invalid financial visibility
+- governance contamination
+- accounting inconsistency
+
+==================================================
+ROOT CAUSE
+==================================================
+
+The system is likely querying:
+
+PERSON_MASTER
+WHERE role = LANDOWNER
+
+instead of:
+
+PROJECT_PARTICIPANTS
+WHERE:
+project_id = selected_project
+AND participant_role = LANDOWNER
+
+==================================================
+IMPORTANT ARCHITECTURE PRINCIPLE
+==================================================
+
+Global role ≠ project assignment.
+
+A person may globally have:
+LANDOWNER role
+
+but still NOT belong to a specific project.
+
+==================================================
+CORRECT DATA SOURCE
+==================================================
+
+All project-scoped financial/accounting/governance screens must fetch participants from:
+
+PROJECT_PARTICIPANTS
+
+NOT directly from:
+PERSON_MASTER role filters.
+
+==================================================
+CORRECT FETCH LOGIC
+==================================================
+
+When project selected:
+
+1. fetch selected project ID
+2. query only linked participants
+3. filter by participant role within that project
+
+Example:
+
+WHERE:
+project_id = selected_project
+AND participant_role = LANDOWNER
+
+==================================================
+APPLY THIS RULE TO ALL MODULES
+==================================================
+
+Review and fix:
+- landowner account
+- investor account
+- reimbursement
+- LCA
+- revenue sharing
+- project dashboards
+- operational tasks
+- stock permissions
+- governance modules
+
+Ensure all are:
+PROJECT-SCOPED.
+
+==================================================
+IMPORTANT GOVERNANCE RULE
+==================================================
+
+Project-level financial visibility must NEVER leak unrelated participants.
+
+==================================================
+UI REQUIREMENTS
+==================================================
+
+If project has:
+- zero linked landowners
+
+show:
+“No landowners linked to this project”
+
+NOT:
+global registry identities.
+
+==================================================
+VALIDATION RULE
+==================================================
+
+Before financial entries:
+validate:
+- participant belongs to selected project
+- participant role valid for that project
+
+==================================================
+FINAL ARCHITECTURE TARGET
+==================================================
+
+ERP data fetching must follow:
+
+PROJECT
+→ PROJECT_PARTICIPANTS
+→ PERSON_MASTER
+
+NOT:
+PROJECT
+→ global PERSON_MASTER role lookup.

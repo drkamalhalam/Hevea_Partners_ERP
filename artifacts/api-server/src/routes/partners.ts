@@ -1,6 +1,14 @@
 import { Router } from "express";
-import { db, partnersTable, activityTable, partnerClaimantsTable, usersTable } from "@workspace/db";
-import { eq, and } from "drizzle-orm";
+import {
+  db,
+  partnersTable,
+  activityTable,
+  partnerClaimantsTable,
+  usersTable,
+  landownerLedgerTable,
+  projectParticipantsTable,
+} from "@workspace/db";
+import { eq, and, or, inArray, isNull, isNotNull } from "drizzle-orm";
 import {
   CreatePartnerBody,
   UpdatePartnerBody,
@@ -25,10 +33,72 @@ function formatPartner(p: typeof partnersTable.$inferSelect) {
   };
 }
 
-// GET /partners — all authenticated users can see partners
+// GET /partners
+// ?projectId=<uuid>  — restricts to partners linked to this project only.
+//                      Prevents governance data leakage across projects.
+//                      Scoping sources: landowner ledger entries for the project
+//                      OR project_participants.person_master_id → partners.person_master_id
+// ?role=<string>     — further filter by partner role (landowner | developer | investor)
 router.get("/", async (req, res) => {
   try {
-    const partners = await db.select().from(partnersTable).orderBy(partnersTable.createdAt);
+    const { projectId, role } = req.query as Record<string, string | undefined>;
+
+    if (projectId) {
+      // ── Project-scoped fetch ───────────────────────────────────────────────
+      // Two linking mechanisms (OR):
+      //   (a) partner appears in landowner_ledger_entries for this project
+      //   (b) partner.person_master_id matches a project_participant for this project
+      const [ledgerRows, participantRows] = await Promise.all([
+        db
+          .selectDistinct({ id: landownerLedgerTable.partnerId })
+          .from(landownerLedgerTable)
+          .where(eq(landownerLedgerTable.projectId, projectId)),
+
+        db
+          .selectDistinct({ personMasterId: projectParticipantsTable.personMasterId })
+          .from(projectParticipantsTable)
+          .where(
+            and(
+              eq(projectParticipantsTable.projectId, projectId),
+              isNotNull(projectParticipantsTable.personMasterId),
+            ),
+          ),
+      ]);
+
+      const ledgerIds = ledgerRows.map((r) => r.id).filter(Boolean) as string[];
+      const personIds = participantRows.map((r) => r.personMasterId).filter(Boolean) as string[];
+
+      if (ledgerIds.length === 0 && personIds.length === 0) {
+        // No links at all for this project — return empty (correct governance behavior)
+        return void res.json([]);
+      }
+
+      const scopeConditions = [];
+      if (ledgerIds.length > 0) scopeConditions.push(inArray(partnersTable.id, ledgerIds));
+      if (personIds.length > 0) scopeConditions.push(inArray(partnersTable.personMasterId, personIds));
+
+      const baseConditions = [isNull(partnersTable.deletedAt)];
+      if (role) baseConditions.push(eq(partnersTable.role, role));
+
+      const partners = await db
+        .select()
+        .from(partnersTable)
+        .where(and(...baseConditions, or(...scopeConditions)))
+        .orderBy(partnersTable.name);
+
+      return void res.json(partners.map(formatPartner));
+    }
+
+    // ── Global fetch (no project filter) ──────────────────────────────────
+    const conditions = [isNull(partnersTable.deletedAt)];
+    if (role) conditions.push(eq(partnersTable.role, role));
+
+    const partners = await db
+      .select()
+      .from(partnersTable)
+      .where(and(...conditions))
+      .orderBy(partnersTable.name);
+
     res.json(partners.map(formatPartner));
   } catch (err) {
     req.log.error({ err }, "Failed to list partners");

@@ -1538,6 +1538,23 @@ paths:
       operationId: listPartners
       tags: [partners]
       summary: List all partners
+      parameters:
+        - name: projectId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+          description: >
+            When provided, restricts results to partners linked to this project
+            (via ledger entries or project participants). Use this for all
+            project-scoped financial screens to prevent governance data leakage.
+        - name: role
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter by partner role (landowner, developer, investor)
       responses:
         "200":
           description: List of partners

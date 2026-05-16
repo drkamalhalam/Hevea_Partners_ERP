@@ -718,6 +718,7 @@ export * from "./listOwnershipSnapshotsParams";
 export * from "./listOwnershipTransfers200";
 export * from "./listOwnershipTransfersParams";
 export * from "./listPartnerClaimantsParams";
+export * from "./listPartnersParams";
 export * from "./listPayableAdjustments200";
 export * from "./listPayableAdjustmentsParams";
 export * from "./listPayableSnapshots200";

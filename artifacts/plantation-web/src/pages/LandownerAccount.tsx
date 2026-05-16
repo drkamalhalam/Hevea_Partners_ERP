@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRole } from "@/contexts/RoleContext";
 import {
   useGetLandownerAccountSummary,
@@ -12,6 +12,7 @@ import {
   getGetLandownerAccountSummaryQueryKey,
   getListLandownerLedgerEntriesQueryKey,
   getGetLandownerLcaReceivableQueryKey,
+  getListPartnersQueryKey,
 } from "@workspace/api-client-react";
 import type { LandownerLedgerEntry } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -184,9 +185,25 @@ export default function LandownerAccount() {
   const [reverseTarget, setReverseTarget] = useState<LandownerLedgerEntry | null>(null);
   const [form, setForm] = useState({ ...EMPTY_FORM });
 
+  // Reset partner filter whenever project changes (governance isolation)
+  useEffect(() => {
+    setFilterPartnerId("");
+  }, [filterProjectId]);
+
   // Queries
   const { data: projects = [] } = useListProjects({});
-  const { data: partners = [] } = useListPartners({});
+
+  // Project-scoped landowner list for the filter bar.
+  // When a project is selected, only landowners linked to THAT project are shown.
+  // When no project is selected, all landowners across all projects are shown.
+  const filterLandownerParams = filterProjectId
+    ? { projectId: filterProjectId, role: "landowner" }
+    : { role: "landowner" };
+  const { data: filterLandowners = [] } = useListPartners(filterLandownerParams, {
+    query: {
+      queryKey: getListPartnersQueryKey(filterLandownerParams),
+    },
+  });
 
   const summaryQuery = useGetLandownerAccountSummary(
     {
@@ -416,18 +433,35 @@ export default function LandownerAccount() {
             </SelectContent>
           </Select>
         </div>
-        {isAdminOrDev && partners.length > 0 && (
+        {isAdminOrDev && (
           <div className="flex items-center gap-2">
             <Label className="text-zinc-400 text-sm shrink-0">Landowner:</Label>
-            <Select value={filterPartnerId || "__all__"} onValueChange={(v) => setFilterPartnerId(v === "__all__" ? "" : v)}>
-              <SelectTrigger className="w-52 bg-zinc-800 border-zinc-700 text-zinc-200">
-                <SelectValue placeholder="All landowners" />
+            <Select
+              value={filterPartnerId || "__all__"}
+              onValueChange={(v) => setFilterPartnerId(v === "__all__" ? "" : v)}
+              disabled={!!filterProjectId && filterLandowners.length === 0}
+            >
+              <SelectTrigger className="w-56 bg-zinc-800 border-zinc-700 text-zinc-200">
+                <SelectValue placeholder={
+                  filterProjectId && filterLandowners.length === 0
+                    ? "No landowners linked to this project"
+                    : "All landowners"
+                } />
               </SelectTrigger>
               <SelectContent className="bg-zinc-800 border-zinc-700">
-                <SelectItem value="__all__" className="text-zinc-200">All landowners</SelectItem>
-                {partners.filter((p) => p.role === "landowner").map((p) => (
-                  <SelectItem key={p.id} value={p.id} className="text-zinc-200">{p.name}</SelectItem>
-                ))}
+                {filterProjectId && filterLandowners.length === 0 ? (
+                  <div className="px-3 py-4 text-center">
+                    <p className="text-xs text-zinc-500">No landowners linked to this project.</p>
+                    <p className="text-xs text-zinc-600 mt-1">Add landowner ledger entries to link participants.</p>
+                  </div>
+                ) : (
+                  <>
+                    <SelectItem value="__all__" className="text-zinc-200">All landowners</SelectItem>
+                    {filterLandowners.map((p) => (
+                      <SelectItem key={p.id} value={p.id} className="text-zinc-200">{p.name}</SelectItem>
+                    ))}
+                  </>
+                )}
               </SelectContent>
             </Select>
           </div>
@@ -582,7 +616,6 @@ export default function LandownerAccount() {
         setForm={setForm}
         setEntryType={setEntryType}
         projects={projects}
-        partners={partners}
         onSubmit={handleCreate}
         isPending={createEntry.isPending}
         submitLabel="Create Entry"
@@ -598,7 +631,6 @@ export default function LandownerAccount() {
         setForm={setForm}
         setEntryType={setEntryType}
         projects={projects}
-        partners={partners}
         onSubmit={handleUpdate}
         isPending={updateEntry.isPending}
         submitLabel="Save Changes"
@@ -867,7 +899,6 @@ function EntryFormDialog({
   setForm,
   setEntryType,
   projects,
-  partners,
   onSubmit,
   isPending,
   submitLabel,
@@ -880,13 +911,29 @@ function EntryFormDialog({
   setForm: React.Dispatch<React.SetStateAction<typeof EMPTY_FORM>>;
   setEntryType: (t: string) => void;
   projects: { id: string; name: string }[];
-  partners: { id: string; name: string; role: string }[];
   onSubmit: () => void;
   isPending: boolean;
   submitLabel: string;
   showProjectPartner: boolean;
 }) {
-  const landowners = partners.filter((p) => p.role === "landowner");
+  // ── Project-scoped landowner list ─────────────────────────────────────────
+  // When the user picks a project in this dialog, only landowners linked to
+  // THAT project appear in the partner dropdown — governance data isolation.
+  const dialogLandownerParams = form.projectId
+    ? { projectId: form.projectId, role: "landowner" }
+    : { role: "landowner" };
+  const { data: landowners = [] } = useListPartners(dialogLandownerParams, {
+    query: {
+      enabled: open,
+      queryKey: getListPartnersQueryKey(dialogLandownerParams),
+    },
+  });
+
+  // Clear partnerId when the form's project selection changes
+  useEffect(() => {
+    setForm((f) => ({ ...f, partnerId: "" }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.projectId]);
   const showRevenueFields = form.entryType === "revenue_entitlement";
   const showRecoverableToggle =
     form.entryType === "operational_burden" || form.entryType === "recoverable_adjustment";
@@ -916,16 +963,36 @@ function EntryFormDialog({
               </div>
               <div className="space-y-1.5">
                 <Label className="text-zinc-300 text-sm">Landowner Partner</Label>
-                <Select value={form.partnerId} onValueChange={(v) => setForm((f) => ({ ...f, partnerId: v }))}>
+                <Select
+                  value={form.partnerId}
+                  onValueChange={(v) => setForm((f) => ({ ...f, partnerId: v }))}
+                  disabled={!!form.projectId && landowners.length === 0}
+                >
                   <SelectTrigger className="bg-zinc-800 border-zinc-600 text-zinc-200">
-                    <SelectValue placeholder="Select partner" />
+                    <SelectValue placeholder={
+                      form.projectId && landowners.length === 0
+                        ? "No landowners linked to this project"
+                        : "Select landowner"
+                    } />
                   </SelectTrigger>
                   <SelectContent className="bg-zinc-800 border-zinc-700">
-                    {landowners.map((p) => (
-                      <SelectItem key={p.id} value={p.id} className="text-zinc-200">{p.name}</SelectItem>
-                    ))}
+                    {form.projectId && landowners.length === 0 ? (
+                      <div className="px-3 py-3 text-center">
+                        <p className="text-xs text-zinc-500">No landowners linked to this project.</p>
+                        <p className="text-xs text-zinc-600 mt-0.5">Select a different project or add this landowner via the project participants first.</p>
+                      </div>
+                    ) : (
+                      landowners.map((p) => (
+                        <SelectItem key={p.id} value={p.id} className="text-zinc-200">{p.name}</SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
+                {form.projectId && landowners.length > 0 && (
+                  <p className="text-[10px] text-zinc-600">
+                    Showing only landowners linked to the selected project.
+                  </p>
+                )}
               </div>
             </div>
           )}
