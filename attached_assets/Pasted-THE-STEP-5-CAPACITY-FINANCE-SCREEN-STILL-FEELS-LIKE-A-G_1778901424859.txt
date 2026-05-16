@@ -1,0 +1,274 @@
+THE STEP 5 CAPACITY & FINANCE SCREEN STILL FEELS LIKE A GENERIC NUMERIC FORM.
+
+The previous instruction was NOT implemented correctly.
+
+Fields were merely moved into Step 5,
+but the governance-oriented experience, valuation intelligence, and legal/commercial structure were NOT restored.
+
+The screen still looks like:
+- a basic accounting form,
+- random numeric inputs,
+- disconnected finance fields.
+
+This is architecturally wrong.
+
+==================================================
+IMPORTANT DESIGN PRINCIPLE
+==================================================
+
+This screen represents:
+
+THE ECONOMIC FOUNDATION OF THE PLANTATION PARTNERSHIP.
+
+It defines:
+- land participation value,
+- ownership basis,
+- future LCA structure,
+- commercial governance,
+- deed-linked economic configuration.
+
+Therefore the UI must visually feel:
+- serious,
+- guided,
+- legally important,
+- governance-oriented,
+- valuation-aware.
+
+NOT:
+like a plain admin settings form.
+
+==================================================
+FULL UI/UX REBUILD REQUIRED
+==================================================
+
+Rebuild the entire Step 5 visual structure.
+
+==================================================
+1. SEPARATE THE SCREEN INTO DISTINCT GOVERNANCE CARDS
+==================================================
+
+Create clearly separated visual sections:
+
+--------------------------------------------------
+A. Plantation Capacity Card
+--------------------------------------------------
+
+Contains:
+- Rubber Tree Capacity
+- Capacity Unit
+- Land Area
+- Estimated Yield Guidance
+
+This should visually represent:
+PLANTATION CAPACITY CONFIGURATION
+
+--------------------------------------------------
+B. Land Notional Value Governance Card
+--------------------------------------------------
+
+This must become the primary highlighted section.
+
+Contains:
+- explanation panel,
+- valuation method tabs,
+- calculator,
+- remarks,
+- confirmation acknowledgment,
+- calculated value,
+- governance guidance.
+
+--------------------------------------------------
+C. LCA Governance Card
+--------------------------------------------------
+
+Separate visually from Land Notional Value.
+
+Contains:
+- LCA explanation,
+- maturity applicability,
+- escalation guidance,
+- annual adjustment logic.
+
+==================================================
+2. RESTORE THE ORIGINAL EXPLANATION PANEL
+==================================================
+
+The current screen lost the governance explanation.
+
+Restore a visually highlighted governance information box.
+
+Explain:
+- non-cash recognition
+- fixed foundational value
+- separate from operational expense
+- prematurity-only ownership basis
+- linked to agreement/deed
+
+This panel should visually stand out.
+
+==================================================
+3. RESTORE VALUATION METHOD TABS
+==================================================
+
+Restore:
+
+[ By Tree Capacity ]
+[ By Land Area (Kani) ]
+[ Manual Entry ]
+
+These tabs must dynamically change:
+- calculator inputs
+- help text
+- formulas
+
+==================================================
+4. ADD LIVE CALCULATION EXPERIENCE
+==================================================
+
+As user types:
+- automatically calculate suggested value
+- show valuation summary
+- show basis explanation
+
+Example:
+
+400 Trees × ₹2500
+= ₹10,00,000 Land Notional Value
+
+==================================================
+5. ADD GOVERNANCE STATUS BADGES
+==================================================
+
+Show visual badges like:
+
+- Mandatory Governance Field
+- Ownership Foundation
+- Inactive Under 50% Model
+- Locked After Maturity
+
+==================================================
+6. RESTORE CONFIRMATION ACKNOWLEDGMENT
+==================================================
+
+Add a visually prominent confirmation section.
+
+Checkbox example:
+
+“I confirm that this Land Notional Value represents fixed non-cash recognition of land participation and is separate from operational costs or reimbursable project expenses.”
+
+This acknowledgment must:
+- be mandatory,
+- saved,
+- audit logged,
+- linked to deed generation.
+
+==================================================
+7. ADD REMARKS / LEGAL REFERENCE SECTION
+==================================================
+
+Provide:
+- deed clause reference
+- survey reference
+- valuation justification
+- governance notes
+
+This must support:
+- long-form notes
+- future audit review
+
+==================================================
+8. IMPROVE LCA UI
+==================================================
+
+The current LCA section is visually dead.
+
+Rebuild with:
+- explanation card
+- maturity warning
+- escalation explanation
+- applicability note
+
+Example:
+
+“LCA applies only after maturity under Ownership Contribution Model projects.”
+
+==================================================
+9. ADD MODEL-AWARE UI BEHAVIOR
+==================================================
+
+--------------------------------------------------
+OWNERSHIP_CONTRIBUTION_MODEL
+--------------------------------------------------
+
+Show:
+- active valuation logic
+- ownership contribution explanation
+- LCA applicability
+
+--------------------------------------------------
+FIFTY_PERCENT_REVENUE_MODEL
+--------------------------------------------------
+
+Still require value entry,
+BUT show:
+
+“Recorded for governance, legal continuity, and future migration. Not currently used for ownership calculation.”
+
+==================================================
+10. VISUAL HIERARCHY REQUIREMENT
+==================================================
+
+This screen must visually feel like:
+- governance onboarding,
+- commercial configuration,
+- legal-economic setup.
+
+NOT:
+- generic admin form.
+
+Use:
+- highlighted cards
+- section separation
+- contextual colors
+- governance badges
+- calculation summaries
+- informational side panels
+- guided layout
+
+==================================================
+11. RESPONSIVE DESIGN
+==================================================
+
+Mobile:
+- stacked governance cards
+- expandable sections
+
+Tablet/Desktop:
+- multi-card structured layout
+- side-by-side explanation + calculator
+
+==================================================
+12. IMPORTANT ARCHITECTURE RULE
+==================================================
+
+This screen defines:
+- ownership foundation,
+- land participation economics,
+- future governance behavior,
+- deed-linked commercial structure.
+
+The UI must communicate this seriousness clearly.
+
+==================================================
+DO NOT BREAK EXISTING FLOW
+==================================================
+
+Preserve:
+- project creation sequence
+- saved data
+- validation logic
+- agreement workflow
+- OTP flow
+- activation process
+
+while completely redesigning the user experience properly.

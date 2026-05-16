@@ -32,6 +32,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import {
   CheckCircle2, Circle, AlertCircle, ChevronRight, ChevronLeft,
@@ -606,13 +607,11 @@ function Step4LandDetails({
 const financialSchema = z.object({
   rubberCapacity: z.coerce.number().int().positive("Must be a positive number"),
   rubberCapacityUnit: z.string().default("trees"),
-  // LNV — captured for ALL commercial models
   valuationMethod: z.enum(["by_tree_capacity", "by_land_area_kani", "manual"]).default("manual"),
   perTreeValue: z.coerce.number().min(0).optional(),
   landValuePerUnit: z.coerce.number().min(0).optional(),
   landNotionalValue: z.coerce.number().min(0).optional(),
   landNotionalValueRemarks: z.string().optional(),
-  // LCA — only activates for ownership model
   lcaBaseAmount: z.coerce.number().optional(),
   lcaEscalationPct: z.coerce.number().optional(),
 });
@@ -658,7 +657,6 @@ function Step5CapacityFinancial({
   const perTreeValue = watch("perTreeValue");
   const landValuePerUnit = watch("landValuePerUnit");
 
-  // Populate form once project data loads
   useEffect(() => {
     if (project) {
       form.reset({
@@ -675,7 +673,6 @@ function Step5CapacityFinancial({
     }
   }, [project?.id]);
 
-  // Auto-compute LNV from the chosen method
   const computedLNV = useMemo(() => {
     const cap = parseFloat(String(rubberCapacity)) || 0;
     const ptv = parseFloat(String(perTreeValue)) || 0;
@@ -685,7 +682,6 @@ function Step5CapacityFinancial({
     return null;
   }, [valuationMethod, rubberCapacity, perTreeValue, landValuePerUnit, landArea]);
 
-  // Keep the landNotionalValue form field in sync with the computed value
   useEffect(() => {
     if (computedLNV !== null) {
       setValue("landNotionalValue", parseFloat(computedLNV.toFixed(2)));
@@ -724,376 +720,490 @@ function Step5CapacityFinancial({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
 
-        {/* ── Governance Configuration Banner ──────────────────────── */}
-        <div className="rounded-lg border border-amber-300 bg-gradient-to-r from-amber-50 to-orange-50 p-4 flex items-start gap-3">
-          <div className="p-1.5 bg-amber-500/15 border border-amber-400/30 rounded-md shrink-0 mt-0.5">
-            <Gavel className="w-4 h-4 text-amber-700" />
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-amber-900">Governance Configuration — Land Valuation & Financial Foundation</p>
-            <p className="text-xs text-amber-800/80 mt-1 leading-relaxed">
-              The values configured in this step are <strong>foundational governance declarations</strong> — not ordinary accounting entries. They form the legal and commercial basis for deed generation, ownership equity, contribution structure, LCA calculation, and maturity economics. Enter them with the same care as a signed contractual commitment.
-            </p>
-          </div>
-        </div>
-
-        {/* ── What is Land Notional Value? ─────────────────────────── */}
-        <div className="rounded-lg border border-slate-200 bg-slate-50/60 p-4 space-y-3">
-          <div className="flex items-center gap-2">
-            <BookOpen className="w-4 h-4 text-slate-600 shrink-0" />
-            <p className="text-sm font-semibold text-slate-800">Understanding Land Notional Value (LNV)</p>
-          </div>
-          <div className="grid grid-cols-1 gap-1.5 pl-6">
-            {[
-              "Non-cash recognition of the land's economic contribution to the project — no money changes hands",
-              "Fixed and foundation-based — does not escalate automatically with inflation or time",
-              "Must be recorded before the project reaches the Mature Production lifecycle stage",
-              "Entirely separate from operational expenses, advance payments, and recoverable items",
-              "Linked to deed generation, ownership equity, and contribution proportion calculations",
-              "Becomes the basis for Land Contribution Adjustment (LCA) under Ownership Contribution model",
-              "Audit-linked — this declaration will appear in governance records and agreement snapshots",
-            ].map((point, i) => (
-              <div key={i} className="flex items-start gap-2">
-                <div className="w-1 h-1 rounded-full bg-slate-400 mt-2 shrink-0" />
-                <p className="text-xs text-slate-600 leading-relaxed">{point}</p>
+        {/* ════ Page-level governance header ════════════════════════ */}
+        <div className="rounded-xl border-2 border-amber-300 bg-gradient-to-br from-amber-50 via-orange-50 to-amber-50 p-4">
+          <div className="flex items-start gap-3">
+            <div className="p-2 bg-amber-500/15 border border-amber-400/40 rounded-lg shrink-0">
+              <Gavel className="w-5 h-5 text-amber-700" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap mb-1">
+                <p className="text-sm font-bold text-amber-900">Economic Foundation — Governance Configuration</p>
+                <Badge className="bg-amber-600 hover:bg-amber-600 text-white text-[10px] px-1.5 py-0">Step 5 of 10</Badge>
               </div>
-            ))}
+              <p className="text-xs text-amber-800/90 leading-relaxed">
+                This step defines the <strong>economic and legal foundation</strong> of the plantation partnership — land participation value, ownership basis, LCA structure, and commercial governance. These are not accounting form fields. They are <strong>deed-linked governance declarations</strong> that form the basis of ownership equity, contribution proportions, and maturity economics.
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* ── Plantation Capacity ─────────────────────────────────── */}
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <TreePine className="w-4 h-4 text-green-600 shrink-0" />
-            <p className="text-sm font-semibold">Plantation Capacity</p>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <FormField control={form.control} name="rubberCapacity" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Rubber Tree Capacity *</FormLabel>
-                <FormControl><Input type="number" min="1" placeholder="Approx. number of trees" {...field} /></FormControl>
-                <p className="text-xs text-muted-foreground mt-1">Used for tree-capacity valuation method and production planning.</p>
-                <FormMessage />
-              </FormItem>
-            )} />
-            <FormField control={form.control} name="rubberCapacityUnit" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Capacity Unit</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value ?? "trees"}>
-                  <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                  <SelectContent>
-                    <SelectItem value="trees">Trees</SelectItem>
-                    <SelectItem value="hectares">Hectares</SelectItem>
-                    <SelectItem value="acres">Acres</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )} />
-          </div>
-        </div>
-
-        <Separator />
-
-        {/* ── Land Notional Value Declaration ─────────────────────── */}
-        <div className="space-y-5">
-          <div className="flex items-center gap-2">
-            <Scale className="w-4 h-4 text-amber-600 shrink-0" />
-            <p className="text-sm font-semibold">Land Notional Value Declaration</p>
-          </div>
-
-          {/* Model-aware status panel */}
-          {isOwnershipModel ? (
-            <div className="rounded-lg border border-green-200 bg-green-50 p-3.5 flex items-start gap-3">
-              <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm font-medium text-green-900">Active — Ownership Contribution Model</p>
-                <p className="text-xs text-green-700 mt-0.5 leading-relaxed">
-                  This LNV directly determines ownership equity, LCA base calculation, contribution proportions, and all deed parameters. It is a legally binding governance value once the project is activated.
-                </p>
+        {/* ════ CARD A — Plantation Capacity ════════════════════════ */}
+        <Card className="border-emerald-200 shadow-sm">
+          <CardHeader className="bg-gradient-to-r from-emerald-50 to-green-50 border-b border-emerald-200 py-3 px-4">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2 text-emerald-900">
+                <TreePine className="w-4 h-4 text-emerald-600" />
+                Plantation Capacity
+              </CardTitle>
+              <div className="flex gap-1.5">
+                <Badge variant="outline" className="text-emerald-700 border-emerald-300 text-[10px]">Required</Badge>
+                <Badge variant="outline" className="text-slate-500 border-slate-300 text-[10px]">Feeds Valuation</Badge>
               </div>
             </div>
-          ) : (
-            <div className="rounded-lg border border-sky-200 bg-sky-50 p-3.5 flex items-start gap-3">
-              <Info className="w-4 h-4 text-sky-600 shrink-0 mt-0.5" />
+          </CardHeader>
+          <CardContent className="pt-4 pb-5 px-4 space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <FormField control={form.control} name="rubberCapacity" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Rubber Tree Capacity *</FormLabel>
+                  <FormControl>
+                    <Input type="number" min="1" placeholder="e.g. 1200" className="bg-white" {...field} />
+                  </FormControl>
+                  <p className="text-xs text-muted-foreground mt-1">Planted trees; used in tree-capacity valuation</p>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="rubberCapacityUnit" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Capacity Unit</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value ?? "trees"}>
+                    <FormControl><SelectTrigger className="bg-white"><SelectValue /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      <SelectItem value="trees">Trees</SelectItem>
+                      <SelectItem value="hectares">Hectares</SelectItem>
+                      <SelectItem value="acres">Acres</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            </div>
+
+            {/* Land area read-back from Step 4 */}
+            <div className="flex items-center justify-between bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-2.5">
               <div>
-                <p className="text-sm font-medium text-sky-900">Preserved — 50% Revenue Split Model</p>
-                <p className="text-xs text-sky-700 mt-0.5 leading-relaxed">
-                  Under the Revenue Split model, LNV is captured and preserved for governance audit and future reference. It remains <strong>inactive for ownership and LCA calculations</strong> but will activate automatically if this project migrates to the Ownership Contribution model. Entry is still required.
-                </p>
+                <p className="text-xs text-emerald-700 font-medium">Land Area — from Step 4</p>
+                {landArea > 0
+                  ? <p className="text-base font-bold text-emerald-900 mt-0.5">{landArea.toLocaleString("en-IN")} {landAreaUnit}</p>
+                  : <p className="text-xs text-amber-700 mt-0.5 flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> Not set — complete Step 4 first</p>
+                }
+              </div>
+              <Badge variant="outline" className="text-emerald-600 border-emerald-300 text-[10px] shrink-0">Auto-linked</Badge>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* ════ CARD B — Land Notional Value Governance ═════════════ */}
+        <Card className="border-amber-300 shadow-md">
+          <CardHeader className="bg-gradient-to-r from-amber-50 to-orange-50 border-b border-amber-200 py-3 px-4">
+            <div className="flex items-start justify-between gap-2 flex-wrap">
+              <CardTitle className="text-sm font-bold flex items-center gap-2 text-amber-900">
+                <Scale className="w-4 h-4 text-amber-600" />
+                Land Notional Value Declaration
+              </CardTitle>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <Badge className="bg-amber-600 hover:bg-amber-600 text-white text-[10px] px-1.5">Governance Declaration</Badge>
+                {isOwnershipModel
+                  ? <Badge className="bg-green-600 hover:bg-green-600 text-white text-[10px] px-1.5">Ownership Foundation</Badge>
+                  : <Badge variant="outline" className="text-slate-500 border-slate-300 text-[10px]">Inactive · 50% Model</Badge>
+                }
+                <Badge variant="outline" className="text-blue-600 border-blue-300 text-[10px]">Audit Logged</Badge>
+                <Badge variant="outline" className="text-red-600 border-red-300 text-[10px]">Locked After Activation</Badge>
               </div>
             </div>
-          )}
+          </CardHeader>
+          <CardContent className="pt-5 pb-5 px-4 space-y-5">
 
-          {/* Valuation Method Selector */}
-          <div className="space-y-3">
-            <FormField control={form.control} name="valuationMethod" render={({ field }) => (
-              <FormItem>
-                <div className="flex items-center gap-2 mb-1">
-                  <Calculator className="w-3.5 h-3.5 text-muted-foreground" />
-                  <FormLabel className="mb-0">Valuation Method *</FormLabel>
+            {/* What is LNV — explanation panel */}
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-2.5">
+              <div className="flex items-center gap-2">
+                <BookOpen className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">What is Land Notional Value?</p>
+              </div>
+              <div className="grid sm:grid-cols-2 gap-x-6 gap-y-1.5 pl-1">
+                {[
+                  ["Non-cash recognition", "Land's economic contribution — no money changes hands"],
+                  ["Fixed & foundational", "Does not escalate automatically with inflation or time"],
+                  ["Pre-maturity requirement", "Must be recorded before Mature Production lifecycle stage"],
+                  ["Separate from operations", "Distinct from expenses, advances, and recoverable items"],
+                  ["Deed-linked", "Referenced in deed generation and agreement structure"],
+                  ["LCA basis", "Becomes the base for Land Contribution Adjustment calculations"],
+                  ["Ownership equity", "Determines contribution proportions and partner equity"],
+                  ["Audit trail", "Permanently recorded in governance and agreement snapshots"],
+                ].map(([title, desc], i) => (
+                  <div key={i} className="flex items-start gap-2">
+                    <div className="w-1 h-1 rounded-full bg-amber-400 mt-1.5 shrink-0" />
+                    <p className="text-xs text-slate-600 leading-relaxed"><span className="font-medium text-slate-700">{title}:</span> {desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Model-aware status */}
+            {isOwnershipModel ? (
+              <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 flex items-start gap-3">
+                <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-semibold text-green-900">Active — Ownership Contribution Model</p>
+                  <p className="text-xs text-green-700 mt-0.5 leading-relaxed">This LNV directly determines ownership equity, LCA calculations, contribution proportions, and all deed parameters. It becomes a legally binding governance commitment upon project activation.</p>
                 </div>
-                <Select onValueChange={field.onChange} value={field.value ?? "manual"}>
-                  <FormControl><SelectTrigger><SelectValue placeholder="Select how to determine land value" /></SelectTrigger></FormControl>
-                  <SelectContent>
-                    <SelectItem value="by_tree_capacity">By Tree Capacity — LNV = Trees × Value per Tree</SelectItem>
-                    <SelectItem value="by_land_area_kani">By Land Area ({landAreaUnit}) — LNV = Area × Value per {landAreaUnit}</SelectItem>
-                    <SelectItem value="manual">Manual / Report-Based — Enter total value directly</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )} />
-
-            {/* Per-method guidance text */}
-            {valuationMethod === "by_tree_capacity" && (
-              <div className="flex items-start gap-2 bg-blue-50 border border-blue-200 rounded-md px-3 py-2">
-                <Info className="w-3.5 h-3.5 text-blue-600 shrink-0 mt-0.5" />
-                <p className="text-xs text-blue-700">Use this method when the plantation tree count is well-established and a per-tree market value is available. Ideal for projects with precise rubber tree census records or nursery records.</p>
               </div>
-            )}
-            {valuationMethod === "by_land_area_kani" && (
-              <div className="flex items-start gap-2 bg-blue-50 border border-blue-200 rounded-md px-3 py-2">
-                <Info className="w-3.5 h-3.5 text-blue-600 shrink-0 mt-0.5" />
-                <p className="text-xs text-blue-700">Use this method when exact land area is available from survey or registry records. The per-{landAreaUnit} value should reflect prevailing local agricultural or plantation land rates at the time of project formation.</p>
-              </div>
-            )}
-            {valuationMethod === "manual" && (
-              <div className="flex items-start gap-2 bg-blue-50 border border-blue-200 rounded-md px-3 py-2">
-                <Info className="w-3.5 h-3.5 text-blue-600 shrink-0 mt-0.5" />
-                <p className="text-xs text-blue-700">Use this method when a certified valuation report, deed-referenced amount, or prior assessment is available. Enter the total assessed value directly. Reference the source document in the Remarks field below.</p>
-              </div>
-            )}
-          </div>
-
-          {/* By Tree Capacity inputs */}
-          {valuationMethod === "by_tree_capacity" && (
-            <div className="border border-amber-200 bg-amber-50/40 rounded-lg p-4 space-y-4">
-              <p className="text-xs font-medium text-amber-900 uppercase tracking-wide">Calculation Inputs</p>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white border border-amber-200 rounded-md p-3">
-                  <p className="text-xs text-muted-foreground mb-1">Rubber Trees (from above)</p>
-                  <p className="font-bold text-base text-amber-900">{Number(rubberCapacity || 0).toLocaleString("en-IN")}</p>
-                  <p className="text-xs text-muted-foreground mt-1">trees (auto-linked)</p>
+            ) : (
+              <div className="rounded-lg border border-sky-200 bg-sky-50 px-4 py-3 flex items-start gap-3">
+                <Info className="w-4 h-4 text-sky-600 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-semibold text-sky-900">Preserved — 50% Revenue Split Model</p>
+                  <p className="text-xs text-sky-700 mt-0.5 leading-relaxed">LNV is captured and preserved for governance audit, legal continuity, and potential future migration. It remains <strong>inactive for ownership and LCA calculations</strong> under the Revenue Split model. Entry is still required for governance completeness.</p>
                 </div>
-                <FormField control={form.control} name="perTreeValue" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Value per Tree (₹) *</FormLabel>
-                    <FormControl><Input type="number" step="0.01" min="0" placeholder="e.g. 5000" className="bg-white" {...field} /></FormControl>
-                    <p className="text-xs text-muted-foreground mt-1">Market or assessed rate per tree</p>
-                    <FormMessage />
+              </div>
+            )}
+
+            {/* ── Valuation Method TABS ─────────────────────────────── */}
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 mb-3">
+                <Calculator className="w-3.5 h-3.5 text-amber-600" />
+                <p className="text-xs font-semibold text-amber-900 uppercase tracking-wide">Select Valuation Method</p>
+              </div>
+              <Tabs
+                value={valuationMethod}
+                onValueChange={(v) => form.setValue("valuationMethod", v as "by_tree_capacity" | "by_land_area_kani" | "manual")}
+              >
+                <TabsList className="w-full h-auto grid grid-cols-3 bg-amber-100/70 p-1 rounded-lg">
+                  <TabsTrigger value="by_tree_capacity" className="flex flex-col items-center gap-0.5 py-2 text-[11px] data-[state=active]:bg-white data-[state=active]:text-amber-900 data-[state=active]:shadow-sm rounded-md">
+                    <TreePine className="w-3.5 h-3.5" />
+                    <span className="font-medium">By Tree Capacity</span>
+                    <span className="text-[10px] text-muted-foreground hidden sm:block">Trees × Rate</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="by_land_area_kani" className="flex flex-col items-center gap-0.5 py-2 text-[11px] data-[state=active]:bg-white data-[state=active]:text-amber-900 data-[state=active]:shadow-sm rounded-md">
+                    <MapPin className="w-3.5 h-3.5" />
+                    <span className="font-medium">By Land Area</span>
+                    <span className="text-[10px] text-muted-foreground hidden sm:block">{landAreaUnit} × Rate</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="manual" className="flex flex-col items-center gap-0.5 py-2 text-[11px] data-[state=active]:bg-white data-[state=active]:text-amber-900 data-[state=active]:shadow-sm rounded-md">
+                    <FileText className="w-3.5 h-3.5" />
+                    <span className="font-medium">Manual / Report</span>
+                    <span className="text-[10px] text-muted-foreground hidden sm:block">Direct Entry</span>
+                  </TabsTrigger>
+                </TabsList>
+
+                {/* ── Tab: By Tree Capacity ── */}
+                <TabsContent value="by_tree_capacity" className="mt-4 space-y-4">
+                  <div className="flex items-start gap-2 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5">
+                    <Info className="w-3.5 h-3.5 text-blue-600 shrink-0 mt-0.5" />
+                    <p className="text-xs text-blue-700 leading-relaxed">Use this method when the plantation tree count is well-established and a per-tree market value is available. Best for projects with precise rubber tree census or nursery planting records.</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex flex-col justify-center">
+                      <p className="text-[10px] text-amber-700 uppercase tracking-wide font-medium">Rubber Trees (auto-linked)</p>
+                      <p className="text-2xl font-bold text-amber-900 mt-1">{Number(rubberCapacity || 0).toLocaleString("en-IN")}</p>
+                      <p className="text-[10px] text-amber-600 mt-0.5">trees from capacity field above</p>
+                    </div>
+                    <FormField control={form.control} name="perTreeValue" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Value per Tree (₹) *</FormLabel>
+                        <FormControl><Input type="number" step="0.01" min="0" placeholder="e.g. 5,000" className="bg-white" {...field} /></FormControl>
+                        <p className="text-xs text-muted-foreground mt-1">Market or assessed rate per rubber tree</p>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  </div>
+                  {/* Live calculation result */}
+                  <div className={`rounded-xl border-2 p-4 transition-all ${computedLNV && computedLNV > 0 ? "border-amber-400 bg-amber-50" : "border-slate-200 bg-slate-50"}`}>
+                    <p className="text-[10px] text-amber-700 font-semibold uppercase tracking-wide mb-3">Live Valuation Result</p>
+                    <div className="flex items-end justify-between gap-2">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 text-sm">
+                          <span className="font-semibold text-slate-700">{Number(rubberCapacity || 0).toLocaleString("en-IN")} trees</span>
+                          <span className="text-slate-400">×</span>
+                          <span className="font-semibold text-slate-700">{fmtINR(parseFloat(String(perTreeValue || 0)))}</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">per tree</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[10px] text-amber-700 font-medium mb-0.5">= Land Notional Value</p>
+                        <p className={`text-2xl font-bold ${computedLNV && computedLNV > 0 ? "text-amber-900" : "text-slate-400"}`}>
+                          {computedLNV !== null ? fmtINR(computedLNV) : "—"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </TabsContent>
+
+                {/* ── Tab: By Land Area ── */}
+                <TabsContent value="by_land_area_kani" className="mt-4 space-y-4">
+                  <div className="flex items-start gap-2 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5">
+                    <Info className="w-3.5 h-3.5 text-blue-600 shrink-0 mt-0.5" />
+                    <p className="text-xs text-blue-700 leading-relaxed">Use this method when exact land area is available from survey or registry records. The per-{landAreaUnit} value should reflect prevailing local agricultural or plantation land rates at the time of project formation.</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex flex-col justify-center">
+                      <p className="text-[10px] text-amber-700 uppercase tracking-wide font-medium">Land Area (from Step 4)</p>
+                      {landArea > 0
+                        ? <>
+                            <p className="text-2xl font-bold text-amber-900 mt-1">{landArea.toLocaleString("en-IN")}</p>
+                            <p className="text-[10px] text-amber-600 mt-0.5">{landAreaUnit} — auto-linked</p>
+                          </>
+                        : <p className="text-xs text-destructive mt-1 flex items-center gap-1 font-medium"><AlertTriangle className="w-3 h-3" /> Not set in Step 4</p>
+                      }
+                    </div>
+                    <FormField control={form.control} name="landValuePerUnit" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Value per {landAreaUnit} (₹) *</FormLabel>
+                        <FormControl><Input type="number" step="0.01" min="0" placeholder="e.g. 25,000" className="bg-white" {...field} /></FormControl>
+                        <p className="text-xs text-muted-foreground mt-1">Local plantation land rate per {landAreaUnit}</p>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  </div>
+                  {/* Live calculation result */}
+                  <div className={`rounded-xl border-2 p-4 transition-all ${computedLNV && computedLNV > 0 ? "border-amber-400 bg-amber-50" : "border-slate-200 bg-slate-50"}`}>
+                    <p className="text-[10px] text-amber-700 font-semibold uppercase tracking-wide mb-3">Live Valuation Result</p>
+                    <div className="flex items-end justify-between gap-2">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 text-sm">
+                          <span className="font-semibold text-slate-700">{landArea.toLocaleString("en-IN")} {landAreaUnit}</span>
+                          <span className="text-slate-400">×</span>
+                          <span className="font-semibold text-slate-700">{fmtINR(parseFloat(String(landValuePerUnit || 0)))}</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">per {landAreaUnit}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[10px] text-amber-700 font-medium mb-0.5">= Land Notional Value</p>
+                        <p className={`text-2xl font-bold ${computedLNV && computedLNV > 0 ? "text-amber-900" : "text-slate-400"}`}>
+                          {computedLNV !== null ? fmtINR(computedLNV) : "—"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </TabsContent>
+
+                {/* ── Tab: Manual Entry ── */}
+                <TabsContent value="manual" className="mt-4 space-y-4">
+                  <div className="flex items-start gap-2 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5">
+                    <Info className="w-3.5 h-3.5 text-blue-600 shrink-0 mt-0.5" />
+                    <p className="text-xs text-blue-700 leading-relaxed">Use this method when a certified valuation report, deed-referenced amount, or prior assessment is available. Enter the total assessed value directly and reference the source document in the Remarks field below.</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField control={form.control} name="landNotionalValue" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Land Notional Value (₹) *</FormLabel>
+                        <FormControl><Input type="number" step="0.01" min="0" placeholder="Total assessed value in INR" className="bg-white text-base font-semibold" {...field} /></FormControl>
+                        <p className="text-xs text-muted-foreground mt-1">From valuation report, deed, or prior assessment</p>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="landValuePerUnit" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Implied Rate per {landAreaUnit} (₹)</FormLabel>
+                        <FormControl><Input type="number" step="0.01" min="0" placeholder={`Per ${landAreaUnit} — optional`} className="bg-white" {...field} /></FormControl>
+                        <p className="text-xs text-muted-foreground mt-1">For reference and cross-verification</p>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  </div>
+                  {/* Manual value display */}
+                  <div className="rounded-xl border-2 border-amber-300 bg-amber-50 p-4">
+                    <p className="text-[10px] text-amber-700 font-semibold uppercase tracking-wide mb-1">Declared Land Notional Value</p>
+                    <p className="text-2xl font-bold text-amber-900">
+                      {watch("landNotionalValue") && Number(watch("landNotionalValue")) > 0
+                        ? fmtINR(Number(watch("landNotionalValue")))
+                        : <span className="text-slate-400 text-lg">Enter value above</span>
+                      }
+                    </p>
+                  </div>
+                </TabsContent>
+              </Tabs>
+
+              {/* Hidden sync field for non-manual methods */}
+              {valuationMethod !== "manual" && (
+                <FormField control={form.control} name="landNotionalValue" render={({ field }) => (
+                  <FormItem className="hidden">
+                    <FormControl><input type="hidden" {...field} /></FormControl>
                   </FormItem>
                 )} />
-              </div>
-              {computedLNV !== null && (
-                <div className={`rounded-md p-3 flex items-center justify-between ${computedLNV > 0 ? "bg-amber-100 border border-amber-300" : "bg-muted border"}`}>
-                  <div>
-                    <p className="text-xs text-amber-800 font-medium">Computed Land Notional Value</p>
-                    <p className="text-xs text-amber-700 mt-0.5">{Number(rubberCapacity||0).toLocaleString("en-IN")} trees × {fmtINR(parseFloat(String(perTreeValue||0)))}</p>
-                  </div>
-                  <p className={`font-bold text-xl ${computedLNV > 0 ? "text-amber-900" : "text-muted-foreground"}`}>{fmtINR(computedLNV)}</p>
-                </div>
               )}
             </div>
-          )}
 
-          {/* By Land Area inputs */}
-          {valuationMethod === "by_land_area_kani" && (
-            <div className="border border-amber-200 bg-amber-50/40 rounded-lg p-4 space-y-4">
-              <p className="text-xs font-medium text-amber-900 uppercase tracking-wide">Calculation Inputs</p>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white border border-amber-200 rounded-md p-3">
-                  <p className="text-xs text-muted-foreground mb-1">Land Area (from Step 4)</p>
-                  <p className="font-bold text-base text-amber-900">{landArea.toLocaleString("en-IN")} {landAreaUnit}</p>
-                  {landArea === 0 && (
-                    <p className="text-xs text-destructive mt-1 flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> Return to Step 4 to set land area</p>
+            {/* ── Valuation Remarks & Reference ─────────────────────── */}
+            <div className="space-y-2">
+              <FormField control={form.control} name="landNotionalValueRemarks" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-1.5">
+                    <FileText className="w-3.5 h-3.5 text-muted-foreground" />
+                    Valuation Remarks & Legal Reference
+                  </FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Enter deed clause reference, survey number, market assessment basis, valuation reasoning, assessor name, or any governance notes that should be permanently recorded with this declaration..."
+                      rows={4}
+                      className="bg-white resize-none"
+                      {...field}
+                    />
+                  </FormControl>
+                  <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1.5">
+                    {["Deed Clause ref.", "Survey No.", "Kani rate & source", "Valuation report date", "Assessor / authority"].map(ex => (
+                      <span key={ex} className="text-[10px] text-muted-foreground font-medium">· {ex}</span>
+                    ))}
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            </div>
+
+            {/* ── Governance Acknowledgment ─────────────────────────── */}
+            <div className={`rounded-xl border-2 p-4 transition-all duration-200 ${lnvConfirmed ? "border-green-400 bg-green-50" : "border-amber-400 bg-amber-50"}`}>
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  id="lnv-confirm"
+                  checked={lnvConfirmed}
+                  onCheckedChange={(v) => setLnvConfirmed(!!v)}
+                  className="mt-1 shrink-0 border-amber-400 data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
+                />
+                <label htmlFor="lnv-confirm" className="cursor-pointer select-none flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    {lnvConfirmed
+                      ? <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0" />
+                      : <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                    }
+                    <p className="text-sm font-bold text-slate-800">
+                      Governance Acknowledgment <span className="text-destructive">*</span>
+                    </p>
+                    {lnvConfirmed && <Badge className="bg-green-600 hover:bg-green-600 text-white text-[10px]">Confirmed</Badge>}
+                  </div>
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    I confirm that the Land Notional Value entered above represents a <strong>fixed, non-cash recognition</strong> of the land's economic participation in this plantation partnership. I confirm this value is <strong>entirely separate</strong> from operational expenses, advance payments, reimbursables, and recoverable items. I understand this declaration will be <strong>linked to deed generation, ownership equity, governance records, and audit logs</strong>, and cannot be amended on an active project without a governance override.
+                  </p>
+                </label>
+              </div>
+              {!lnvConfirmed && (
+                <p className="text-xs text-amber-700 font-medium mt-2.5 pl-7 flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3" /> This acknowledgment is required before you can proceed to the next step.
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* ════ CARD C — LCA Governance ═════════════════════════════ */}
+        <Card className={`shadow-sm ${isOwnershipModel ? "border-purple-200" : "border-slate-200"}`}>
+          <CardHeader className={`border-b py-3 px-4 ${isOwnershipModel ? "bg-gradient-to-r from-purple-50 to-violet-50 border-purple-200" : "bg-slate-50 border-slate-200"}`}>
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <CardTitle className={`text-sm font-semibold flex items-center gap-2 ${isOwnershipModel ? "text-purple-900" : "text-slate-600"}`}>
+                <Banknote className={`w-4 h-4 ${isOwnershipModel ? "text-purple-600" : "text-slate-400"}`} />
+                Land Contribution Adjustment (LCA)
+              </CardTitle>
+              <div className="flex gap-1.5">
+                {isOwnershipModel
+                  ? <>
+                      <Badge className="bg-purple-600 hover:bg-purple-600 text-white text-[10px]">Active After Maturity</Badge>
+                      <Badge variant="outline" className="text-purple-600 border-purple-300 text-[10px]">Ownership Model</Badge>
+                    </>
+                  : <Badge variant="outline" className="text-slate-400 border-slate-300 text-[10px]">Not Applicable · 50% Model</Badge>
+                }
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-4 pb-5 px-4 space-y-4">
+            {isOwnershipModel ? (
+              <>
+                {/* LCA explanation */}
+                <div className="rounded-lg border border-purple-200 bg-purple-50/60 p-4 space-y-2.5">
+                  <div className="flex items-center gap-2">
+                    <BookOpen className="w-3.5 h-3.5 text-purple-600 shrink-0" />
+                    <p className="text-xs font-semibold text-purple-800 uppercase tracking-wide">What is LCA?</p>
+                  </div>
+                  <div className="grid sm:grid-cols-2 gap-x-6 gap-y-1.5 pl-1">
+                    {[
+                      ["Annual adjustment", "Credited yearly to the landowner's contribution account"],
+                      ["Sequential escalation", "Year 1 base escalated by the configured % each subsequent year"],
+                      ["Carry-forward", "Unpaid LCA balances accumulate — never lost across years"],
+                      ["Separate from burden", "Independent from operational expenditure and cost recovery"],
+                      ["Ledger credit", "Appears as a credit in the landowner account and affects net position"],
+                      ["Config only now", "No LCA entries created until Mature Production is declared"],
+                    ].map(([title, desc], i) => (
+                      <div key={i} className="flex items-start gap-2">
+                        <div className="w-1 h-1 rounded-full bg-purple-400 mt-1.5 shrink-0" />
+                        <p className="text-xs text-purple-700 leading-relaxed"><span className="font-medium text-purple-800">{title}:</span> {desc}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Maturity applicability warning */}
+                <div className="flex items-start gap-2.5 rounded-lg border border-orange-200 bg-orange-50 px-3.5 py-3">
+                  <AlertTriangle className="w-4 h-4 text-orange-600 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-xs font-semibold text-orange-800">Applies Only After Mature Production</p>
+                    <p className="text-xs text-orange-700 leading-relaxed mt-0.5">
+                      These are <strong>configuration values only</strong> — no LCA entries are generated until this project formally transitions to the Mature Production lifecycle stage. The configured amounts are locked at project activation and require a governance override to amend thereafter.
+                    </p>
+                  </div>
+                </div>
+
+                {/* LCA inputs */}
+                <div className="border border-purple-200 bg-purple-50/30 rounded-lg p-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField control={form.control} name="lcaBaseAmount" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>LCA Base Amount (₹ / year)</FormLabel>
+                        <FormControl><Input type="number" step="0.01" placeholder="e.g. 50,000" className="bg-white" {...field} /></FormControl>
+                        <p className="text-xs text-muted-foreground mt-1">Year-1 annual credit before escalation</p>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="lcaEscalationPct" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Annual Escalation (%)</FormLabel>
+                        <FormControl><Input type="number" step="0.01" min="0" max="100" placeholder="e.g. 5.00" className="bg-white" {...field} /></FormControl>
+                        <p className="text-xs text-muted-foreground mt-1">Compounding rate per maturity year</p>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  </div>
+                  {/* LCA preview */}
+                  {watch("lcaBaseAmount") && Number(watch("lcaBaseAmount")) > 0 && (
+                    <div className="mt-4 bg-purple-50 border border-purple-200 rounded-lg p-3">
+                      <p className="text-[10px] text-purple-700 font-semibold uppercase tracking-wide mb-2">Escalation Preview</p>
+                      <div className="flex gap-4 flex-wrap">
+                        {[1, 2, 3, 5].map(yr => {
+                          const base = Number(watch("lcaBaseAmount")) || 0;
+                          const pct = Number(watch("lcaEscalationPct")) || 0;
+                          const val = base * Math.pow(1 + pct / 100, yr - 1);
+                          return (
+                            <div key={yr} className="text-center">
+                              <p className="text-[10px] text-purple-600">Year {yr}</p>
+                              <p className="text-xs font-bold text-purple-900">{fmtINR(val)}</p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
                   )}
                 </div>
-                <FormField control={form.control} name="landValuePerUnit" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Value per {landAreaUnit} (₹) *</FormLabel>
-                    <FormControl><Input type="number" step="0.01" min="0" placeholder="e.g. 25000" className="bg-white" {...field} /></FormControl>
-                    <p className="text-xs text-muted-foreground mt-1">Local plantation land rate</p>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-              </div>
-              {computedLNV !== null && (
-                <div className={`rounded-md p-3 flex items-center justify-between ${computedLNV > 0 ? "bg-amber-100 border border-amber-300" : "bg-muted border"}`}>
-                  <div>
-                    <p className="text-xs text-amber-800 font-medium">Computed Land Notional Value</p>
-                    <p className="text-xs text-amber-700 mt-0.5">{landArea.toLocaleString("en-IN")} {landAreaUnit} × {fmtINR(parseFloat(String(landValuePerUnit||0)))}</p>
-                  </div>
-                  <p className={`font-bold text-xl ${computedLNV > 0 ? "text-amber-900" : "text-muted-foreground"}`}>{fmtINR(computedLNV)}</p>
+              </>
+            ) : (
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 flex items-start gap-3">
+                <Info className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-slate-600">LCA Not Applicable — 50% Revenue Split Model</p>
+                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                    Land Contribution Adjustment does not apply to this commercial model. Under the Revenue Split arrangement, the landowner's return is governed by the 50/50 revenue split rather than contribution-based equity. LCA will become available only if this project migrates to the Ownership Contribution model under a governance override.
+                  </p>
                 </div>
-              )}
-            </div>
-          )}
-
-          {/* Manual entry */}
-          {valuationMethod === "manual" && (
-            <div className="border border-amber-200 bg-amber-50/40 rounded-lg p-4 space-y-4">
-              <p className="text-xs font-medium text-amber-900 uppercase tracking-wide">Direct Value Entry</p>
-              <div className="grid grid-cols-2 gap-4">
-                <FormField control={form.control} name="landNotionalValue" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Land Notional Value (₹) *</FormLabel>
-                    <FormControl><Input type="number" step="0.01" min="0" placeholder="Total assessed value in INR" className="bg-white font-semibold" {...field} /></FormControl>
-                    <p className="text-xs text-muted-foreground mt-1">From valuation report or deed reference</p>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-                <FormField control={form.control} name="landValuePerUnit" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Implied Rate per {landAreaUnit} (₹)</FormLabel>
-                    <FormControl><Input type="number" step="0.01" min="0" placeholder={`Optional — per ${landAreaUnit}`} className="bg-white" {...field} /></FormControl>
-                    <p className="text-xs text-muted-foreground mt-1">For reference only</p>
-                    <FormMessage />
-                  </FormItem>
-                )} />
               </div>
-            </div>
-          )}
-
-          {/* Auto-computed total (non-manual) */}
-          {valuationMethod !== "manual" && (
-            <FormField control={form.control} name="landNotionalValue" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Total Land Notional Value (₹) — auto-computed</FormLabel>
-                <FormControl>
-                  <Input type="number" step="0.01" readOnly className="bg-muted text-muted-foreground cursor-not-allowed font-semibold text-base" {...field} />
-                </FormControl>
-                <p className="text-xs text-muted-foreground">Calculated automatically from the inputs above. Switch to Manual Entry to override directly.</p>
-              </FormItem>
-            )} />
-          )}
-
-          {/* Remarks / Reference Section */}
-          <div className="space-y-2">
-            <FormField control={form.control} name="landNotionalValueRemarks" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Valuation Remarks & Reference</FormLabel>
-                <FormControl>
-                  <Textarea
-                    placeholder="Enter reference details that support this valuation..."
-                    rows={3}
-                    {...field}
-                  />
-                </FormControl>
-                <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1.5">
-                  {["Deed Clause ref.", "Survey No.", "Market rate basis", "Valuation report date", "Assessor name"].map(ex => (
-                    <span key={ex} className="text-xs text-muted-foreground">· {ex}</span>
-                  ))}
-                </div>
-                <FormMessage />
-              </FormItem>
-            )} />
-          </div>
-
-          {/* ── Governance Acknowledgment ──────────────────────────── */}
-          <div className={`rounded-lg border p-4 transition-colors ${lnvConfirmed ? "border-green-300 bg-green-50" : "border-amber-300 bg-amber-50"}`}>
-            <div className="flex items-start gap-3">
-              <Checkbox
-                id="lnv-confirm"
-                checked={lnvConfirmed}
-                onCheckedChange={(v) => setLnvConfirmed(!!v)}
-                className="mt-0.5 shrink-0"
-              />
-              <label htmlFor="lnv-confirm" className="cursor-pointer select-none">
-                <p className="text-sm font-semibold text-slate-800">
-                  Governance Acknowledgment <span className="text-destructive">*</span>
-                </p>
-                <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                  I confirm that this Land Notional Value is a <strong>fixed, non-cash governance declaration</strong>, entirely separate from operational expenses, advance payments, and recoverable items. I understand that this value will be linked to deed generation, ownership equity, governance records, and future audit logs, and that it cannot be changed on an active project without a governance override.
-                </p>
-              </label>
-            </div>
-            {!lnvConfirmed && (
-              <p className="text-xs text-amber-700 mt-2 pl-7">This acknowledgment is required before you can proceed.</p>
             )}
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        <Separator />
-
-        {/* ── LCA Configuration ────────────────────────────────────── */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <Banknote className="w-4 h-4 text-purple-600 shrink-0" />
-            <p className="text-sm font-semibold">Land Contribution Adjustment (LCA)</p>
-          </div>
-
-          {isOwnershipModel ? (
-            <>
-              {/* LCA explanation */}
-              <div className="rounded-lg border border-purple-200 bg-purple-50/50 p-4 space-y-2">
-                <p className="text-xs font-medium text-purple-900 uppercase tracking-wide">What is LCA?</p>
-                <div className="grid grid-cols-1 gap-1.5">
-                  {[
-                    "An annual adjustment credited to the landowner's contribution account",
-                    "Applied sequentially each year — Year 1 base, escalated by the configured % each subsequent year",
-                    "Carry-forward mechanism preserves unpaid LCA balances across years — they are never lost",
-                    "Separate from operational expenditure, burden accounting, and distribution",
-                    "Becomes part of the landowner's credit ledger and affects net position calculations",
-                  ].map((point, i) => (
-                    <div key={i} className="flex items-start gap-2">
-                      <div className="w-1 h-1 rounded-full bg-purple-400 mt-2 shrink-0" />
-                      <p className="text-xs text-purple-700 leading-relaxed">{point}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Maturity warning */}
-              <div className="flex items-start gap-2.5 rounded-md border border-orange-200 bg-orange-50 px-3 py-2.5">
-                <AlertTriangle className="w-3.5 h-3.5 text-orange-600 shrink-0 mt-0.5" />
-                <p className="text-xs text-orange-800 leading-relaxed">
-                  <strong>LCA activates only after this project transitions to Mature Production.</strong> These values are configuration only — no LCA entries are generated until maturity is formally declared. The configured amounts are locked at activation and require a governance override to change thereafter.
-                </p>
-              </div>
-
-              {/* LCA inputs */}
-              <div className="border border-purple-200 bg-purple-50/30 rounded-lg p-4 space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField control={form.control} name="lcaBaseAmount" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>LCA Base Amount (₹ / year)</FormLabel>
-                      <FormControl><Input type="number" step="0.01" placeholder="Annual base LCA amount" className="bg-white" {...field} /></FormControl>
-                      <p className="text-xs text-muted-foreground mt-1">Year-1 LCA credit amount before escalation</p>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                  <FormField control={form.control} name="lcaEscalationPct" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Annual Escalation (%)</FormLabel>
-                      <FormControl><Input type="number" step="0.01" min="0" max="100" placeholder="e.g. 5.00" className="bg-white" {...field} /></FormControl>
-                      <p className="text-xs text-muted-foreground mt-1">Compounding rate applied each maturity year</p>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                </div>
-              </div>
-            </>
-          ) : (
-            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 flex items-start gap-3">
-              <Info className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm font-medium text-slate-700">LCA Not Applicable</p>
-                <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                  Land Contribution Adjustment does not apply to the 50% Revenue Split commercial model. Under this model, the landowner's return is governed by the revenue split arrangement rather than contribution-based equity. LCA will only become available if this project migrates to the Ownership Contribution model.
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="flex justify-between pt-2">
+        {/* ── Navigation ─────────────────────────────────────────── */}
+        <div className="flex justify-between pt-1">
           <Button type="button" variant="outline" onClick={onBack}>
             <ChevronLeft className="h-4 w-4 mr-1" /> Back
           </Button>
-          <Button type="submit" disabled={updateProject.isPending || !lnvConfirmed}>
+          <Button type="submit" disabled={updateProject.isPending || !lnvConfirmed} className={lnvConfirmed ? "bg-green-700 hover:bg-green-800" : ""}>
             {updateProject.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
             Save & Continue <ChevronRight className="h-4 w-4 ml-1" />
           </Button>
