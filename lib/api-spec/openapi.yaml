@@ -10928,6 +10928,55 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/ObservationAssignment' }
 
+  # ── Workforce Assignments (Person Registry-backed) ──────────────────────────
+
+  /workforce-assignments:
+    get:
+      operationId: listWorkforceAssignments
+      tags: [workforce]
+      summary: List project workforce assignments (Person Registry-backed)
+      parameters:
+        - { name: projectId, in: query, schema: { type: string } }
+        - { name: assignmentType, in: query, schema: { type: string } }
+        - { name: activeOnly, in: query, schema: { type: string } }
+      responses:
+        '200':
+          description: Workforce assignments
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/WorkforceAssignment' }
+    post:
+      operationId: createWorkforceAssignment
+      tags: [workforce]
+      summary: Create a workforce assignment from Person Registry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateWorkforceAssignmentBody' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WorkforceAssignment' }
+
+  /workforce-assignments/{id}/deactivate:
+    patch:
+      operationId: deactivateWorkforceAssignment
+      tags: [workforce]
+      summary: Deactivate a workforce assignment
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Deactivated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WorkforceAssignment' }
+
   # ── Sales Orders v2 ─────────────────────────────────────────────────────────
 
   /sales-orders:
@@ -20498,6 +20547,43 @@ components:
         startDatetime: { type: string }
         endDatetime: { type: string }
         notes: { type: string }
+
+    # ── Workforce Assignments ─────────────────────────────────────────────────
+
+    WorkforceAssignment:
+      type: object
+      properties:
+        id: { type: string }
+        projectId: { type: string }
+        projectName: { type: string, nullable: true }
+        personId: { type: string }
+        personNameSnapshot: { type: string, nullable: true }
+        personMobile: { type: string, nullable: true }
+        personAadhaarLast4: { type: string, nullable: true }
+        roleType: { type: string }
+        assignmentType: { type: string }
+        startDate: { type: string, nullable: true }
+        endDate: { type: string, nullable: true }
+        isActive: { type: boolean }
+        notes: { type: string, nullable: true }
+        observationType: { type: string, nullable: true }
+        assignedById: { type: string, nullable: true }
+        assignedByName: { type: string, nullable: true }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+
+    CreateWorkforceAssignmentBody:
+      type: object
+      required: [projectId, personId, roleType, assignmentType]
+      properties:
+        projectId: { type: string }
+        personId: { type: string }
+        roleType: { type: string }
+        assignmentType: { type: string }
+        startDate: { type: string }
+        endDate: { type: string }
+        notes: { type: string }
+        observationType: { type: string }
 
     # ── Sales Orders v2 ──────────────────────────────────────────────────────
 

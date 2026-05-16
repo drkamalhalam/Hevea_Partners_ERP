@@ -1,0 +1,152 @@
+Rebuild Employee Assignment and Observer Assignment to use the unified Person Registry architecture instead of manual UUID entry.
+
+CRITICAL OBJECTIVE Eliminate all manual identity entry from workforce/governance assignment flows.
+
+The following patterns are now FORBIDDEN:
+
+Paste UUID manually Type employee name manually Free-text observer identity Assign using disconnected auth users 
+
+ALL workforce assignment must originate from: Person Registry → canonical identity system.
+
+================================================== REBUILD REQUIREMENTS REMOVE MANUAL UUID INPUT 
+
+Delete:
+
+“Observer User ID” “Paste user UUID from Admin panel” any free-text employee identity field 
+
+These are invalid ERP behaviors.
+
+Replace with:
+
+searchable dropdown selector registry-backed identity picker ================================================== 2. PERSON REGISTRY AS SOURCE OF TRUTH 
+
+All assignment modules must use: Person Registry
+
+NOT:
+
+auth users table directly login account table directly temporary local state manually typed names 
+
+Assignment architecture:
+
+Person Registry ↓ Project Workforce Assignment ↓ Governance / Production / Analytics
+
+================================================== 3. CREATE SHARED PERSON SELECTOR COMPONENT 
+
+Build reusable component:
+
+Capabilities:
+
+searchable dropdown async fetch role filtering active-only filtering optional project compatibility filtering 
+
+Display:
+
+full name role badge phone/email optional active status 
+
+Store:
+
+personId personName snapshot 
+
+Never store only free-text names.
+
+================================================== 4. EMPLOYEE ASSIGNMENT REBUILD 
+
+Assignment dialog must show:
+
+Project ↓ Select Employee (dropdown from Person Registry) ↓ Role in Project ↓ Start Date ↓ End Date ↓ Notes
+
+Dropdown query:
+
+active persons only employee-capable roles only 
+
+Allowed roles:
+
+employee supervisor manager field worker governance staff ================================================== 5. OBSERVER ASSIGNMENT REBUILD 
+
+Observer assignment must become governance-driven.
+
+Dialog:
+
+Project ↓ Select Observer ↓ Observation Type
+
+routine surprise audit verification ↓ Start ↓ End ↓ Observation Notes 
+
+Observer dropdown source: Person Registry
+
+Filter:
+
+governance-enabled persons OR observer role OR admin-authorized staff ================================================== 6. CREATE WORKFORCE TABLE INSIDE PROJECT 
+
+Each project must own:
+
+project_workforce_assignments
+
+Fields:
+
+id projectId personId roleType assignmentType ('employee','observer','supervisor') startDate endDate active notes assignedBy createdAt 
+
+This becomes: canonical workforce structure.
+
+================================================== 7. PROJECT CARD INTEGRATION 
+
+Inside every Project Card create:
+
+WORKFORCE TAB
+
+Sections:
+
+Active Employees Observers Supervisors Historical Assignments 
+
+Allow:
+
+add assignment remove assignment transfer assignment end assignment 
+
+Assignments made anywhere must sync to:
+
+Project Card Analytics Hub Governance Engine Production Intelligence ================================================== 8. GOVERNANCE INTELLIGENCE INTEGRATION 
+
+Observer assignments must feed:
+
+observer analytics governance score anomaly detection production trust engine 
+
+Analytics examples:
+
+production during observer presence production without observer scrap ratio variance stock mismatch comparison employee productivity variance ================================================== 9. VALIDATION RULES 
+
+BLOCK:
+
+assignment of inactive persons duplicate active observer assignment assignment without valid project orphan person references deleted registry persons 
+
+If person removed from registry:
+
+preserve historical snapshot prevent new assignments ================================================== 10. UI/UX REQUIREMENTS 
+
+NO UUIDS visible to users.
+
+Users should experience: ERP-grade workforce assignment.
+
+Search examples:
+
+type “Suku” → Sukumar Tripura
+
+type “Bir” → Birendra Reang
+
+Use:
+
+responsive dropdown keyboard searchable selector mobile-friendly assignment dialog ================================================== 11. SYNC REQUIREMENTS 
+
+Assignments must immediately sync to:
+
+Project Card Analytics Hub Governance Intelligence Observer Analytics Employee Productivity Production Monitoring 
+
+NO stale assignment state allowed.
+
+================================================== 12. REMOVE DISCONNECTED LEGACY LOGIC 
+
+Deprecate:
+
+manual observer UUID entry local employee arrays disconnected auth-user assignment duplicate workforce sources 
+
+There must be ONLY ONE workforce truth: Person Registry + Project Workforce Assignment.
+
+This rebuild is foundational governance architecture. Do not patch existing manual UUID behavior. Replace it completely with registry-driven ERP assignment logic.
+

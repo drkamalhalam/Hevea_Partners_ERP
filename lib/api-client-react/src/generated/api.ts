@@ -192,6 +192,7 @@ import type {
   CreateValuationProfitRecordBody,
   CreateValuationRun201,
   CreateValuationRunBody,
+  CreateWorkforceAssignmentBody,
   CustodyHolderSummary,
   DashboardSummary,
   DeactivatePaymentReceiver200,
@@ -490,6 +491,7 @@ import type {
   ListTransferRofrOffers200,
   ListValuationProfitRecordsParams,
   ListValuationRunsParams,
+  ListWorkforceAssignmentsParams,
   LockOwnershipPercentageBody,
   LookupFiftyPctLcaParams,
   LookupFiftyPctPartnersParams,
@@ -747,6 +749,7 @@ import type {
   VerifyTransferOtp200,
   VerifyTransferOtpBody,
   WaiveBurdenRecordBody,
+  WorkforceAssignment,
   WriteOffAdvanceBody,
 } from "./api.schemas";
 
@@ -44453,6 +44456,283 @@ export const useCloseObservationAssignment = <
   TContext
 > => {
   return useMutation(getCloseObservationAssignmentMutationOptions(options));
+};
+
+/**
+ * @summary List project workforce assignments (Person Registry-backed)
+ */
+export const getListWorkforceAssignmentsUrl = (
+  params?: ListWorkforceAssignmentsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/workforce-assignments?${stringifiedParams}`
+    : `/api/workforce-assignments`;
+};
+
+export const listWorkforceAssignments = async (
+  params?: ListWorkforceAssignmentsParams,
+  options?: RequestInit,
+): Promise<WorkforceAssignment[]> => {
+  return customFetch<WorkforceAssignment[]>(
+    getListWorkforceAssignmentsUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListWorkforceAssignmentsQueryKey = (
+  params?: ListWorkforceAssignmentsParams,
+) => {
+  return [`/api/workforce-assignments`, ...(params ? [params] : [])] as const;
+};
+
+export const getListWorkforceAssignmentsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listWorkforceAssignments>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListWorkforceAssignmentsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listWorkforceAssignments>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListWorkforceAssignmentsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listWorkforceAssignments>>
+  > = ({ signal }) =>
+    listWorkforceAssignments(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listWorkforceAssignments>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListWorkforceAssignmentsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listWorkforceAssignments>>
+>;
+export type ListWorkforceAssignmentsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List project workforce assignments (Person Registry-backed)
+ */
+
+export function useListWorkforceAssignments<
+  TData = Awaited<ReturnType<typeof listWorkforceAssignments>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListWorkforceAssignmentsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listWorkforceAssignments>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListWorkforceAssignmentsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a workforce assignment from Person Registry
+ */
+export const getCreateWorkforceAssignmentUrl = () => {
+  return `/api/workforce-assignments`;
+};
+
+export const createWorkforceAssignment = async (
+  createWorkforceAssignmentBody: CreateWorkforceAssignmentBody,
+  options?: RequestInit,
+): Promise<WorkforceAssignment> => {
+  return customFetch<WorkforceAssignment>(getCreateWorkforceAssignmentUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createWorkforceAssignmentBody),
+  });
+};
+
+export const getCreateWorkforceAssignmentMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createWorkforceAssignment>>,
+    TError,
+    { data: BodyType<CreateWorkforceAssignmentBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createWorkforceAssignment>>,
+  TError,
+  { data: BodyType<CreateWorkforceAssignmentBody> },
+  TContext
+> => {
+  const mutationKey = ["createWorkforceAssignment"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createWorkforceAssignment>>,
+    { data: BodyType<CreateWorkforceAssignmentBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createWorkforceAssignment(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateWorkforceAssignmentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createWorkforceAssignment>>
+>;
+export type CreateWorkforceAssignmentMutationBody =
+  BodyType<CreateWorkforceAssignmentBody>;
+export type CreateWorkforceAssignmentMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create a workforce assignment from Person Registry
+ */
+export const useCreateWorkforceAssignment = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createWorkforceAssignment>>,
+    TError,
+    { data: BodyType<CreateWorkforceAssignmentBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createWorkforceAssignment>>,
+  TError,
+  { data: BodyType<CreateWorkforceAssignmentBody> },
+  TContext
+> => {
+  return useMutation(getCreateWorkforceAssignmentMutationOptions(options));
+};
+
+/**
+ * @summary Deactivate a workforce assignment
+ */
+export const getDeactivateWorkforceAssignmentUrl = (id: string) => {
+  return `/api/workforce-assignments/${id}/deactivate`;
+};
+
+export const deactivateWorkforceAssignment = async (
+  id: string,
+  options?: RequestInit,
+): Promise<WorkforceAssignment> => {
+  return customFetch<WorkforceAssignment>(
+    getDeactivateWorkforceAssignmentUrl(id),
+    {
+      ...options,
+      method: "PATCH",
+    },
+  );
+};
+
+export const getDeactivateWorkforceAssignmentMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deactivateWorkforceAssignment>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deactivateWorkforceAssignment>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["deactivateWorkforceAssignment"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deactivateWorkforceAssignment>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deactivateWorkforceAssignment(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeactivateWorkforceAssignmentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deactivateWorkforceAssignment>>
+>;
+
+export type DeactivateWorkforceAssignmentMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Deactivate a workforce assignment
+ */
+export const useDeactivateWorkforceAssignment = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deactivateWorkforceAssignment>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deactivateWorkforceAssignment>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getDeactivateWorkforceAssignmentMutationOptions(options));
 };
 
 /**

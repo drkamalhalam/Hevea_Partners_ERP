@@ -9,6 +9,7 @@ import ProjectNomineeSection from "./ProjectNominee";
 import ProjectLifecycleSection from "./ProjectLifecycleSection";
 import { OwnershipFreezePanel } from "@/components/ownership/OwnershipFreezePanel";
 import MissingDeveloperPanel from "./MissingDeveloperPanel";
+import WorkforceTab from "./WorkforceTab";
 
 const statusColors: Record<string, string> = {
   planning: "bg-blue-100 text-blue-800",
@@ -281,6 +282,15 @@ export default function ProjectDetails() {
       <MissingDeveloperPanel projectId={id} />
 
       <ProjectParticipants projectId={id} />
+
+      {/* ── Workforce Assignments (Person Registry-backed) ─────────────── */}
+      <div className="border border-slate-800 rounded-xl p-5 space-y-4 bg-slate-950/40">
+        <div className="flex items-center gap-2">
+          <h3 className="text-slate-100 font-semibold text-sm">Workforce</h3>
+          <span className="text-[10px] bg-blue-900/40 text-blue-300 border border-blue-800/50 px-2 py-0.5 rounded-full">Registry-backed</span>
+        </div>
+        <WorkforceTab projectId={id} />
+      </div>
 
       <ProjectNomineeSection projectId={id} />
     </div>

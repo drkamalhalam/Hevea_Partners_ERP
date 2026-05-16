@@ -18215,6 +18215,81 @@ export const CloseObservationAssignmentResponse = zod.object({
 });
 
 /**
+ * @summary List project workforce assignments (Person Registry-backed)
+ */
+export const ListWorkforceAssignmentsQueryParams = zod.object({
+  projectId: zod.coerce.string().optional(),
+  assignmentType: zod.coerce.string().optional(),
+  activeOnly: zod.coerce.string().optional(),
+});
+
+export const ListWorkforceAssignmentsResponseItem = zod.object({
+  id: zod.string().optional(),
+  projectId: zod.string().optional(),
+  projectName: zod.string().nullish(),
+  personId: zod.string().optional(),
+  personNameSnapshot: zod.string().nullish(),
+  personMobile: zod.string().nullish(),
+  personAadhaarLast4: zod.string().nullish(),
+  roleType: zod.string().optional(),
+  assignmentType: zod.string().optional(),
+  startDate: zod.string().nullish(),
+  endDate: zod.string().nullish(),
+  isActive: zod.boolean().optional(),
+  notes: zod.string().nullish(),
+  observationType: zod.string().nullish(),
+  assignedById: zod.string().nullish(),
+  assignedByName: zod.string().nullish(),
+  createdAt: zod.string().optional(),
+  updatedAt: zod.string().optional(),
+});
+export const ListWorkforceAssignmentsResponse = zod.array(
+  ListWorkforceAssignmentsResponseItem,
+);
+
+/**
+ * @summary Create a workforce assignment from Person Registry
+ */
+export const CreateWorkforceAssignmentBody = zod.object({
+  projectId: zod.string(),
+  personId: zod.string(),
+  roleType: zod.string(),
+  assignmentType: zod.string(),
+  startDate: zod.string().optional(),
+  endDate: zod.string().optional(),
+  notes: zod.string().optional(),
+  observationType: zod.string().optional(),
+});
+
+/**
+ * @summary Deactivate a workforce assignment
+ */
+export const DeactivateWorkforceAssignmentParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const DeactivateWorkforceAssignmentResponse = zod.object({
+  id: zod.string().optional(),
+  projectId: zod.string().optional(),
+  projectName: zod.string().nullish(),
+  personId: zod.string().optional(),
+  personNameSnapshot: zod.string().nullish(),
+  personMobile: zod.string().nullish(),
+  personAadhaarLast4: zod.string().nullish(),
+  roleType: zod.string().optional(),
+  assignmentType: zod.string().optional(),
+  startDate: zod.string().nullish(),
+  endDate: zod.string().nullish(),
+  isActive: zod.boolean().optional(),
+  notes: zod.string().nullish(),
+  observationType: zod.string().nullish(),
+  assignedById: zod.string().nullish(),
+  assignedByName: zod.string().nullish(),
+  createdAt: zod.string().optional(),
+  updatedAt: zod.string().optional(),
+});
+
+/**
  * @summary List sales orders
  */
 export const ListSalesOrdersQueryParams = zod.object({

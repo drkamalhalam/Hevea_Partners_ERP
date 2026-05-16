@@ -8393,6 +8393,38 @@ export interface CreateObservationAssignmentBody {
   notes?: string;
 }
 
+export interface WorkforceAssignment {
+  id?: string;
+  projectId?: string;
+  projectName?: string | null;
+  personId?: string;
+  personNameSnapshot?: string | null;
+  personMobile?: string | null;
+  personAadhaarLast4?: string | null;
+  roleType?: string;
+  assignmentType?: string;
+  startDate?: string | null;
+  endDate?: string | null;
+  isActive?: boolean;
+  notes?: string | null;
+  observationType?: string | null;
+  assignedById?: string | null;
+  assignedByName?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CreateWorkforceAssignmentBody {
+  projectId: string;
+  personId: string;
+  roleType: string;
+  assignmentType: string;
+  startDate?: string;
+  endDate?: string;
+  notes?: string;
+  observationType?: string;
+}
+
 export interface SalesOrder {
   id?: string;
   salesCode?: string;
@@ -11392,6 +11424,12 @@ export type ListProductionAssignmentsParams = {
 
 export type ListObservationAssignmentsParams = {
   projectId?: string;
+};
+
+export type ListWorkforceAssignmentsParams = {
+  projectId?: string;
+  assignmentType?: string;
+  activeOnly?: string;
 };
 
 export type ListSalesOrdersParams = {

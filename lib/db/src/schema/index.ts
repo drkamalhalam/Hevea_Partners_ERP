@@ -97,3 +97,4 @@ export * from "./analytics_saved_views";
 export * from "./report_access_audit";
 
 export * from "./field_event_queue";
+export * from "./workforce";
