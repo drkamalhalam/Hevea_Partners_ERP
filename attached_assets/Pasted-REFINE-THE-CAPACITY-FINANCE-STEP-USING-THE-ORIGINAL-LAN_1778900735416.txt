@@ -1,0 +1,208 @@
+REFINE THE CAPACITY & FINANCE STEP USING THE ORIGINAL LAND NOTIONAL VALUE GOVERNANCE UI DESIGN.
+
+The current implementation inside:
+Step 5 → Capacity & Finance
+
+is too simplified and lost important governance, legal, and valuation structure from the earlier standalone Land Notional Value module.
+
+The earlier UI structure was architecturally better because it included:
+- valuation guidance,
+- governance explanation,
+- valuation methodology,
+- confirmation acknowledgment,
+- contextual/legal framing.
+
+The new implementation incorrectly reduced this into a plain numeric finance form.
+
+==================================================
+IMPORTANT PRINCIPLE
+==================================================
+
+Land Notional Value and LCA are NOT ordinary accounting fields.
+
+They are:
+- foundational governance declarations,
+- commercial agreement parameters,
+- contribution valuation records,
+- deed-linked legal references.
+
+Therefore the UI must reflect:
+- legal seriousness,
+- valuation methodology,
+- governance context,
+- audit clarity.
+
+==================================================
+KEEP THE CURRENT WORKFLOW LOCATION
+==================================================
+
+Land Notional Value MUST remain inside:
+
+PROJECT CREATION
+→ STEP 5: CAPACITY & FINANCE
+
+DO NOT move it back into standalone operational entry.
+
+==================================================
+RESTORE THE FOLLOWING FROM THE OLD DESIGN
+==================================================
+
+--------------------------------------------------
+1. GOVERNANCE EXPLANATION PANEL
+--------------------------------------------------
+
+Restore the informational panel explaining:
+
+- Land Notional Value is non-cash recognition
+- It is fixed/foundation-based
+- It does not escalate automatically
+- It must be recorded before maturity
+- It is separate from operational expenses
+- It forms part of governance structure
+
+The explanation panel must appear visually prominent.
+
+==================================================
+2. RESTORE VALUATION CALCULATOR
+==================================================
+
+Restore intelligent valuation methods:
+
+- By Tree Capacity
+- By Land Area (Kani)
+- Manual Entry
+
+Allow automatic calculation assistance.
+
+==================================================
+3. RESTORE CALCULATION GUIDANCE
+==================================================
+
+Show contextual help text.
+
+Examples:
+
+“Use this method when exact land area is unavailable.”
+
+“Value may be derived from estimated rubber capacity.”
+
+==================================================
+4. RESTORE CONFIRMATION ACKNOWLEDGMENT
+==================================================
+
+Restore mandatory checkbox confirmation.
+
+Example:
+
+“I confirm that this land notional value is fixed, non-cash, and separate from operational expenses or advance payments.”
+
+This acknowledgment must:
+- be stored,
+- audit logged,
+- linked to deed generation.
+
+==================================================
+5. RESTORE REMARKS SECTION
+==================================================
+
+Add remarks/reference section.
+
+Examples:
+- deed clause reference
+- survey reference
+- valuation reasoning
+- special governance notes
+
+==================================================
+6. MODEL-AWARE DISPLAY
+==================================================
+
+--------------------------------------------------
+OWNERSHIP_CONTRIBUTION_MODEL
+--------------------------------------------------
+
+Display:
+- active valuation
+- ownership contribution relevance
+- LCA configuration
+
+--------------------------------------------------
+FIFTY_PERCENT_REVENUE_MODEL
+--------------------------------------------------
+
+Display:
+- preserved for governance
+- inactive for ownership calculation
+- future migration reference only
+
+BUT:
+still require entry.
+
+==================================================
+7. LCA UI REFINEMENT
+==================================================
+
+LCA section must also include:
+- explanation
+- applicability notes
+- escalation explanation
+- maturity applicability warning
+
+Example:
+
+“LCA applies only after maturity under Ownership Contribution Model projects.”
+
+==================================================
+8. IMPROVE VISUAL HIERARCHY
+==================================================
+
+The section should visually feel like:
+- governance configuration,
+NOT:
+- generic finance form.
+
+Use:
+- grouped cards
+- explanation panels
+- highlighted warnings
+- valuation method tabs
+- audit acknowledgment styling
+
+==================================================
+9. DEED & GOVERNANCE LINKAGE
+==================================================
+
+All entered values must automatically integrate into:
+- deed generation
+- agreement structure
+- governance records
+- ownership foundation
+- future audit logs
+
+==================================================
+10. IMPORTANT ARCHITECTURE RULE
+==================================================
+
+This section is:
+FOUNDATIONAL GOVERNANCE CONFIGURATION
+
+NOT:
+- ordinary accounting setup,
+- simple numeric form,
+- operational transaction entry.
+
+The UI must reflect this importance.
+
+==================================================
+DO NOT BREAK EXISTING FLOW
+==================================================
+
+Preserve:
+- current project creation sequence
+- validation flow
+- OTP flow
+- agreement workflow
+- activation logic
+- existing saved data
+
+while restoring the richer governance-oriented experience.
