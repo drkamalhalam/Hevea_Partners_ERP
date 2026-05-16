@@ -91,6 +91,7 @@ import projectGovernanceRouter from "./project_governance";
 import adminGovernanceRouter from "./admin_governance";
 import personMasterRouter from "./person_master";
 import globalAnalyticsRouter from "./global_analytics";
+import projectAnalyticsRouter from "./project_analytics";
 
 const router: IRouter = Router();
 
@@ -197,5 +198,6 @@ router.use("/projects", projectGovernanceRouter);
 router.use("/admin/governance", adminGovernanceRouter);
 router.use("/person-master", personMasterRouter);
 router.use("/global-analytics", globalAnalyticsRouter);
+router.use("/project-analytics", projectAnalyticsRouter);
 
 export default router;

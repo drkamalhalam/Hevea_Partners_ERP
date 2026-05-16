@@ -90,6 +90,7 @@ Six roles in `usersTable.role`:
 | Operations | Distribution | /distribution | Live |
 | Operations | Production Log | /production-log | Live |
 | Analytics | Global Analytics | /global-analytics | Live (admin/dev) |
+| Analytics | Project Analytics | /project-analytics | Live (all roles, project-filtered) |
 | Analytics | Reports | /reports | Placeholder |
 | Analytics | Documents | /documents | Live |
 | Analytics | Financial Analytics | /financial-analytics | Live |
