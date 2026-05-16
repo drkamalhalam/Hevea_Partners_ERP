@@ -1,0 +1,139 @@
+PHASE 7 — ERP Data Migration, Legacy Normalization & Backward Compatibility
+
+We now have:
+
+governance architecture unified financial engine inventory movement engine live project state engine settlement governance lifecycle hardening 
+
+Next, safely normalize existing/legacy data into the new canonical ERP architecture without destroying operational continuity.
+
+CURRENT PROBLEM
+
+The ERP already contains:
+
+old project records legacy participant mappings disconnected contributor data free-text identities stale stock totals duplicated accounting entries partially linked records old module-era structures 
+
+If not normalized carefully:
+
+ownership calculations become unreliable project cards stay inconsistent inventory mismatches continue settlements become unsafe audit trust breaks 
+
+TARGET ARCHITECTURE
+
+Migrate all legacy data into: canonical domain-driven ERP structure.
+
+WITHOUT:
+
+deleting history corrupting audit trails breaking existing operations 
+
+CORE RULES
+
+NEVER DELETE LEGACY HISTORY 
+
+Preserve:
+
+historical records audit timestamps old references transaction lineage previous ownership states old agreement links 
+
+Use:
+
+normalization mapping reconciliation archival flags 
+
+NOT destructive deletion.
+
+CREATE LEGACY NORMALIZATION PIPELINE 
+
+Implement migration processors for:
+
+participant normalization inventory normalization financial normalization ownership normalization agreement normalization project linkage normalization PARTICIPANT NORMALIZATION 
+
+Find and repair:
+
+free-text contributors orphan participant names duplicate identities login/person mismatches old partner tables unlinked participants 
+
+Normalize all financial/inventory/governance references into: PERSON_MASTER + PROJECT_PARTICIPANTS.
+
+PROJECT NORMALIZATION 
+
+Validate all projects for:
+
+linked landowner lifecycle state accounting model participant structure inventory ownership agreement linkage governance completeness 
+
+Flag:
+
+incomplete projects invalid maturity state missing landowner missing project model invalid ownership structure FINANCIAL NORMALIZATION 
+
+Normalize:
+
+contributions expenditures reimbursements recoverable advances ownership-affecting entries 
+
+into: Unified Financial Event Engine.
+
+Detect:
+
+duplicate entries lifecycle-invalid entries mature ownership violations invalid reimbursement logic project-self contributors INVENTORY NORMALIZATION 
+
+Normalize:
+
+stock register inventory balances production history transfers sales deductions 
+
+into: Inventory Movement Engine.
+
+Detect:
+
+negative inventory duplicate stock orphan stock movements missing source references inconsistent balances OWNERSHIP RECONSTRUCTION 
+
+Recalculate ownership guidance using:
+
+verified contributions lifecycle rules accounting model reimbursement exclusions 
+
+Generate:
+
+reconstructed ownership projections conflict warnings unresolved ownership anomalies 
+
+Do NOT automatically overwrite finalized ownership without governance approval.
+
+PROJECT CARD REBUILD 
+
+Recompute project cards entirely from:
+
+canonical ledgers event history inventory engine settlement engine participant engine 
+
+Remove stale cached/project-local summaries.
+
+DATA RECONCILIATION DASHBOARDS 
+
+Create admin reconciliation dashboards for:
+
+orphan participants stock mismatches ownership conflicts invalid lifecycle entries missing agreements unverified financial events broken references MIGRATION SAFETY 
+
+All migrations must support:
+
+rollback dry-run preview reconciliation reports audit logging staged migration batches LEGACY COMPATIBILITY LAYER 
+
+Temporarily support: old module routes/pages while internally redirecting them into: canonical engines.
+
+Prevent immediate user disruption during migration phase.
+
+GOVERNANCE FLAGS 
+
+Add visible warnings for:
+
+legacy data unresolved invalid ownership lineage unverified historical entries unresolved inventory mismatch incomplete participant mapping ADMIN OVERRIDE & APPROVAL 
+
+Critical normalization actions must require:
+
+admin review audit approval governance confirmation 
+
+Especially:
+
+ownership reconstruction participant merges lifecycle correction inventory reconciliation TESTING REQUIREMENTS 
+
+Test:
+
+old contribution migration old inventory migration participant mapping ownership reconstruction project card recomputation historical audit preservation rollback safety staged migration batches unresolved conflict handling FINAL TARGET 
+
+Transform the ERP from: legacy disconnected module data
+
+into: fully normalized canonical enterprise ERP architecture
+
+WITHOUT losing:
+
+operational continuity audit history ownership traceability governance integrity. 

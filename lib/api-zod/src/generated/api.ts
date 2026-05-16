@@ -20813,6 +20813,11 @@ export const GetProjectCardSummariesResponse = zod.object({
       participantDeveloperCount: zod.number(),
       participantInvestorCount: zod.number(),
       participantOtherCount: zod.number(),
+      ownershipFrozen: zod.boolean(),
+      ownershipFrozenAt: zod.coerce.date().nullish(),
+      crystallizationParticipantCount: zod.number(),
+      settlementExposure: zod.number().nullish(),
+      maturityLocked: zod.boolean(),
     }),
   ),
 });

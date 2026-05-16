@@ -205,6 +205,12 @@ type CardSummary = {
   participantDeveloperCount: number;
   participantInvestorCount: number;
   participantOtherCount: number;
+  // Governance / crystallization
+  ownershipFrozen: boolean;
+  ownershipFrozenAt?: string | null;
+  crystallizationParticipantCount: number;
+  settlementExposure?: number | null;
+  maturityLocked: boolean;
 };
 
 function ProjectGovernanceCard({
@@ -955,6 +961,49 @@ function ProjectGovernanceCard({
                   <span className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded border bg-green-50 border-green-200 text-green-700">
                     <CheckCircle2 className="h-2.5 w-2.5" /> Contributions Clean
                   </span>
+                )}
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* ── §9b Maturity Lock State (mature_production only) ──────────── */}
+        {project.lifecycleStatus === "mature_production" && s && (
+          <>
+            <Separator />
+            <div>
+              <SectionHead icon={Lock} label="Maturity Lock State" href="/ownership-analytics" />
+              <div className="flex flex-wrap gap-1.5 mt-1.5">
+                {s.ownershipFrozen ? (
+                  <span className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded border bg-emerald-50 border-emerald-200 text-emerald-700">
+                    <Lock className="h-2.5 w-2.5" /> Ownership Crystallized
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded border bg-amber-50 border-amber-200 text-amber-700">
+                    <AlertCircle className="h-2.5 w-2.5" /> Not Yet Crystallized
+                  </span>
+                )}
+                {s.crystallizationParticipantCount > 0 && (
+                  <span className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded border bg-violet-50 border-violet-200 text-violet-700">
+                    <TrendingUp className="h-2.5 w-2.5" />
+                    {s.crystallizationParticipantCount} Partner{s.crystallizationParticipantCount !== 1 ? "s" : ""} Locked
+                  </span>
+                )}
+                {s.settlementExposure != null && s.settlementExposure > 0 && (
+                  <Link href="/settlement-governance">
+                    <span className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded border bg-orange-50 border-orange-200 text-orange-700 cursor-pointer hover:bg-orange-100 transition-colors">
+                      <AlertCircle className="h-2.5 w-2.5" />
+                      ₹{s.settlementExposure.toLocaleString("en-IN", { maximumFractionDigits: 0 })} Settlement Exposure
+                    </span>
+                  </Link>
+                )}
+                {s.reimbursementTotal > 0 && (
+                  <Link href="/contributions">
+                    <span className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded border bg-blue-50 border-blue-200 text-blue-700 cursor-pointer hover:bg-blue-100 transition-colors">
+                      <CheckCircle2 className="h-2.5 w-2.5" />
+                      ₹{s.reimbursementTotal.toLocaleString("en-IN", { maximumFractionDigits: 0 })} Reimbursable
+                    </span>
+                  </Link>
                 )}
               </div>
             </div>

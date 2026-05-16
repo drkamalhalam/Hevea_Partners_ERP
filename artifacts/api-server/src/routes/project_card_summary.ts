@@ -17,6 +17,8 @@ import {
   contributionsTable,
   recoverableAdvancesTable,
   lcaConfigsTable,
+  projectOwnershipFreezesTable,
+  ownershipSnapshotsTable,
 } from "@workspace/db";
 
 const router = Router();
@@ -87,13 +89,15 @@ router.get("/card-summaries", async (req, res) => {
     advanceRows,
     lcaConfigRows,
     participantRoleRows,
+    freezeRows,
+    crystalRows,
   ] = await Promise.all([
-    // Visible projects list
+    // Visible projects list (includes governance columns)
     (() => {
-      if (!visibleProjectIds) return db.select({ id: projectsTable.id }).from(projectsTable);
+      if (!visibleProjectIds) return db.select({ id: projectsTable.id, ownershipFrozenAt: projectsTable.ownershipFrozenAt, lifecycleStatus: projectsTable.lifecycleStatus }).from(projectsTable);
       if (visibleProjectIds.length === 0) return Promise.resolve([]);
       return db
-        .select({ id: projectsTable.id })
+        .select({ id: projectsTable.id, ownershipFrozenAt: projectsTable.ownershipFrozenAt, lifecycleStatus: projectsTable.lifecycleStatus })
         .from(projectsTable)
         .where(inArray(projectsTable.id, visibleProjectIds));
     })(),
@@ -278,6 +282,38 @@ router.get("/card-summaries", async (req, res) => {
       .from(projectParticipantsTable)
       .where(projectFilter(projectParticipantsTable.projectId))
       .groupBy(projectParticipantsTable.projectId, projectParticipantsTable.role),
+
+    // Ownership freeze status per project
+    db
+      .select({
+        projectId: projectOwnershipFreezesTable.projectId,
+        status: projectOwnershipFreezesTable.status,
+        frozenAt: projectOwnershipFreezesTable.frozenAt,
+      })
+      .from(projectOwnershipFreezesTable)
+      .where(
+        visibleProjectIds && visibleProjectIds.length > 0
+          ? inArray(projectOwnershipFreezesTable.projectId, visibleProjectIds)
+          : undefined,
+      ),
+
+    // Crystallization snapshot: participant count per project
+    db
+      .select({
+        projectId: ownershipSnapshotsTable.projectId,
+        snapshotCount: sql<number>`count(*)::int`,
+        latestAt: sql<string>`MAX(${ownershipSnapshotsTable.snapshotAt})`,
+      })
+      .from(ownershipSnapshotsTable)
+      .where(
+        and(
+          eq(ownershipSnapshotsTable.snapshotType, "maturity_declaration"),
+          visibleProjectIds && visibleProjectIds.length > 0
+            ? inArray(ownershipSnapshotsTable.projectId, visibleProjectIds)
+            : undefined,
+        ),
+      )
+      .groupBy(ownershipSnapshotsTable.projectId),
   ]);
 
   // ── Build lookup maps ────────────────────────────────────────────────────────
@@ -309,6 +345,9 @@ router.get("/card-summaries", async (req, res) => {
   const contributionMap = new Map(contributionRows.map((r) => [r.projectId, r]));
   const advanceMap = new Map(advanceRows.map((r) => [r.projectId, r]));
   const lcaConfigMap = new Map(lcaConfigRows.map((r) => [r.projectId, r]));
+  const freezeMap = new Map(freezeRows.map((r) => [r.projectId, r]));
+  const crystalMap = new Map(crystalRows.map((r) => [r.projectId, r]));
+  const projectGovernanceMap = new Map(projects.map((p) => [p.id, p]));
 
   // Build participant role breakdown map: projectId -> { landowner, developer, investor, other }
   const participantRoleMap = new Map<string, { landowner: number; developer: number; investor: number; other: number }>();
@@ -345,6 +384,17 @@ router.get("/card-summaries", async (req, res) => {
     const adv = advanceMap.get(pid);
     const lcaCfg = lcaConfigMap.get(pid);
     const roles = participantRoleMap.get(pid) ?? { landowner: 0, developer: 0, investor: 0, other: 0 };
+    const freeze = freezeMap.get(pid);
+    const crystal = crystalMap.get(pid);
+    const gov = projectGovernanceMap.get(pid);
+    const ownershipFrozen = !!freeze || !!gov?.ownershipFrozenAt;
+    const lifecycleStatus = gov?.lifecycleStatus ?? "prematurity";
+    const maturityLocked = lifecycleStatus !== "prematurity";
+
+    // Settlement exposure: total unpaid distribution + outstanding LCA (financial-role-gated)
+    const settlementExposure = showFinancials
+      ? (dist ? Number(dist.pendingAmount) : 0) + (lca ? Number(lca.outstandingBalance) : 0)
+      : null;
 
     return {
       projectId: pid,
@@ -407,6 +457,13 @@ router.get("/card-summaries", async (req, res) => {
       participantDeveloperCount: roles.developer,
       participantInvestorCount: roles.investor,
       participantOtherCount: roles.other,
+
+      // ── Governance / crystallization ───────────────────────────────────────
+      ownershipFrozen,
+      ownershipFrozenAt: gov?.ownershipFrozenAt?.toISOString() ?? null,
+      crystallizationParticipantCount: crystal ? Number(crystal.snapshotCount) : 0,
+      settlementExposure,
+      maturityLocked,
     };
   });
 

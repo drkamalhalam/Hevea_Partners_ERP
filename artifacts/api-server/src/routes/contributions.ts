@@ -496,7 +496,7 @@ router.post(
 
     // reimbursementFlag always overrides ownership — reimbursable entries go to the
     // recoverable ledger only and must never create equity, regardless of type.
-    const reimbursementFlag = b.reimbursementFlag === true;
+    let reimbursementFlag = b.reimbursementFlag === true;
     if (reimbursementFlag) {
       affectsOwnership = false;
     }
@@ -545,6 +545,13 @@ router.post(
     // are permitted after maturity. Ownership-forming types (economic_investment,
     // recoverable_advance) must use the Post-Maturity Cost Payments system.
     const currentLifecycle = projectRows[0].lifecycleStatus ?? "prematurity";
+
+    // Auto-set reimbursementFlag for post-maturity operational costs.
+    // After maturity, all operational costs are reimbursable burdens — never equity.
+    if (!reimbursementFlag && currentLifecycle !== "prematurity" && cType === "operational_cost") {
+      reimbursementFlag = true;
+      affectsOwnership = false;
+    }
     if (
       currentLifecycle !== "prematurity" &&
       (cType === "economic_investment" || cType === "recoverable_advance")

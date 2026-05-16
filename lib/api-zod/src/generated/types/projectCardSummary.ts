@@ -43,4 +43,9 @@ export interface ProjectCardSummary {
   participantDeveloperCount: number;
   participantInvestorCount: number;
   participantOtherCount: number;
+  ownershipFrozen: boolean;
+  ownershipFrozenAt?: Date | null;
+  crystallizationParticipantCount: number;
+  settlementExposure?: number | null;
+  maturityLocked: boolean;
 }

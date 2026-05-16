@@ -8,8 +8,11 @@ import {
   projectNomineesTable,
   projectLifecycleHistoryTable,
   contributionsTable,
+  ownershipSnapshotsTable,
+  projectOwnershipFreezesTable,
+  type OwnershipSnapshotEntry,
 } from "@workspace/db";
-import { eq, and, inArray, desc, isNull, count } from "drizzle-orm";
+import { eq, and, inArray, desc, isNull, count, sql } from "drizzle-orm";
 import {
   CreateProjectBody,
   UpdateProjectBody,
@@ -1048,6 +1051,87 @@ router.post(
         relatedRecordId: entry.id,
         metadata: { fromStatus: currentStatus, toStatus, remarks: remarks ?? null },
       });
+
+      // ── Ownership crystallization on maturity transition ────────────────────
+      // When a project transitions to mature_production, permanently crystallize
+      // the ownership structure: create an immutable snapshot of each partner's
+      // verified contributions, write the freeze record, and stamp ownershipFrozenAt.
+      if (toStatus === "mature_production") {
+        try {
+          const crystalRows = await db
+            .select({
+              partnerId: contributionsTable.partnerId,
+              partnerName: sql<string>`MAX(${contributionsTable.partnerName})`,
+              landAmount: sql<number>`COALESCE(SUM(${contributionsTable.amount}) FILTER (WHERE ${contributionsTable.contributionType} = 'land_notional'), 0)`,
+              economicAmount: sql<number>`COALESCE(SUM(${contributionsTable.amount}) FILTER (WHERE ${contributionsTable.contributionType} = 'economic_investment'), 0)`,
+              totalAmount: sql<number>`COALESCE(SUM(${contributionsTable.amount}) FILTER (WHERE ${contributionsTable.affectsOwnership} = true), 0)`,
+            })
+            .from(contributionsTable)
+            .where(
+              and(
+                eq(contributionsTable.projectId, projectId),
+                eq(contributionsTable.verificationStatus, "verified"),
+                eq(contributionsTable.isActive, true),
+                isNull(contributionsTable.deletedAt),
+              ),
+            )
+            .groupBy(contributionsTable.partnerId)
+            .having(sql`COALESCE(SUM(${contributionsTable.amount}) FILTER (WHERE ${contributionsTable.affectsOwnership} = true), 0) > 0`);
+
+          const grandTotal = crystalRows.reduce((acc, r) => acc + Number(r.totalAmount), 0);
+          const landTotal = crystalRows.reduce((acc, r) => acc + Number(r.landAmount), 0);
+          const economicTotal = crystalRows.reduce((acc, r) => acc + Number(r.economicAmount), 0);
+
+          const entries: OwnershipSnapshotEntry[] = crystalRows.map((r) => ({
+            partnerKey: r.partnerId ?? r.partnerName,
+            partnerId: r.partnerId ?? null,
+            partnerName: r.partnerName,
+            landAmount: Number(r.landAmount),
+            economicAmount: Number(r.economicAmount),
+            totalAmount: Number(r.totalAmount),
+            percentage:
+              grandTotal > 0
+                ? Math.round((Number(r.totalAmount) / grandTotal) * 10000) / 100
+                : 0,
+          }));
+
+          await db.insert(ownershipSnapshotsTable).values({
+            projectId,
+            snapshotType: "maturity_declaration",
+            lifecycleStatus: "mature_production",
+            totalRecognizedAmount: grandTotal,
+            landTotal,
+            economicTotal,
+            entries,
+            notes: `Auto-crystallized on maturity transition${actingUserName ? ` by ${actingUserName}` : ""}`,
+            triggeredBy: actingUserId ?? null,
+            triggeredByName: actingUserName ?? null,
+          });
+
+          await db
+            .insert(projectOwnershipFreezesTable)
+            .values({
+              projectId,
+              status: "frozen",
+              frozenBy: actingUserId ?? null,
+              frozenByName: actingUserName ?? null,
+              notes: "Ownership frozen automatically on maturity declaration",
+            })
+            .onConflictDoNothing();
+
+          await db
+            .update(projectsTable)
+            .set({ ownershipFrozenAt: new Date() })
+            .where(eq(projectsTable.id, projectId));
+
+          req.log.info(
+            { projectId, partnerCount: entries.length, grandTotal },
+            "Ownership crystallized on maturity transition",
+          );
+        } catch (crystalErr) {
+          req.log.error({ projectId, err: crystalErr }, "Ownership crystallization failed — lifecycle transition still recorded");
+        }
+      }
 
       req.log.info(
         { projectId, fromStatus: currentStatus, toStatus },

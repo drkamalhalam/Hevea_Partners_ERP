@@ -21180,6 +21180,9 @@ components:
         - participantDeveloperCount
         - participantInvestorCount
         - participantOtherCount
+        - ownershipFrozen
+        - crystallizationParticipantCount
+        - maturityLocked
       properties:
         projectId: { type: string, format: uuid }
         rubberSheetBalanceKg: { type: number }
@@ -21222,6 +21225,12 @@ components:
         participantDeveloperCount: { type: integer }
         participantInvestorCount: { type: integer }
         participantOtherCount: { type: integer }
+        # ── Governance / crystallization ───────────────────────────────────
+        ownershipFrozen: { type: boolean }
+        ownershipFrozenAt: { type: string, format: date-time, nullable: true }
+        crystallizationParticipantCount: { type: integer }
+        settlementExposure: { type: number, nullable: true }
+        maturityLocked: { type: boolean }
 
     PersonMasterSummary:
       type: object
