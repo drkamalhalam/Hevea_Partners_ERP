@@ -166,6 +166,7 @@ import type {
   CreatePayableSnapshotBody,
   CreatePaymentReceiverBody,
   CreatePaymentSettingsBody,
+  CreatePersonMaster,
   CreatePostMaturityPayment201,
   CreateProductionAssignmentBody,
   CreateProductionBatchBody,
@@ -372,6 +373,8 @@ import type {
   LcaLookupResult,
   LcaPaymentEvent,
   LcaSummary,
+  LinkUserToPersonMaster200,
+  LinkUserToPersonMasterBody,
   ListAdvancesParams,
   ListAuditLogs200,
   ListAuditLogsParams,
@@ -450,6 +453,7 @@ import type {
   ListPendingVerificationContributions200,
   ListPendingVerificationContributionsParams,
   ListPendingVerifications200,
+  ListPersonMasterParams,
   ListPostMaturityPayments200,
   ListPostMaturityPaymentsParams,
   ListProductionAssignmentsParams,
@@ -498,6 +502,7 @@ import type {
   MaturityBlockers,
   MaturityDeclaration,
   MaturityOtpVerification,
+  MergePersonMaster200,
   MissingDeveloperCase,
   MissingDeveloperCaseItem,
   MoneyCustodyEntry,
@@ -530,6 +535,14 @@ import type {
   PaymentReceiverAccount,
   PaymentSettingsAuditEntry,
   PaymentTransaction,
+  PersonMasterAuditEvent,
+  PersonMasterDuplicateError,
+  PersonMasterMergeInput,
+  PersonMasterProfile,
+  PersonMasterRemediationResult,
+  PersonMasterSummary,
+  PersonRoleAssignment,
+  PersonRoleAssignmentInput,
   PostMaturityPaymentInput,
   PrematuritySuccessionDashboard,
   ProductionAssignment,
@@ -574,6 +587,7 @@ import type {
   ReleaseAccumulationBody,
   ReleaseAccumulationEntry200,
   ReleaseHeldDistributionBody,
+  RemovePersonMasterRole200,
   ReopenSettlement200,
   ReopenSettlementBody,
   ReportSummary,
@@ -691,6 +705,7 @@ import type {
   UpdatePayableAdjustment200,
   UpdatePayableAdjustmentBody,
   UpdatePaymentReceiverBody,
+  UpdatePersonMaster,
   UpdateProductionEntryBody,
   UpdateProfileInput,
   UpdateSaleBody,
@@ -5074,6 +5089,885 @@ export const useAcknowledgeProjectClosure = <
 > => {
   return useMutation(getAcknowledgeProjectClosureMutationOptions(options));
 };
+
+/**
+ * @summary Search the person master registry
+ */
+export const getListPersonMasterUrl = (params?: ListPersonMasterParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/person-master?${stringifiedParams}`
+    : `/api/person-master`;
+};
+
+export const listPersonMaster = async (
+  params?: ListPersonMasterParams,
+  options?: RequestInit,
+): Promise<PersonMasterSummary[]> => {
+  return customFetch<PersonMasterSummary[]>(getListPersonMasterUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListPersonMasterQueryKey = (
+  params?: ListPersonMasterParams,
+) => {
+  return [`/api/person-master`, ...(params ? [params] : [])] as const;
+};
+
+export const getListPersonMasterQueryOptions = <
+  TData = Awaited<ReturnType<typeof listPersonMaster>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListPersonMasterParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listPersonMaster>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListPersonMasterQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listPersonMaster>>
+  > = ({ signal }) => listPersonMaster(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listPersonMaster>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListPersonMasterQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listPersonMaster>>
+>;
+export type ListPersonMasterQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Search the person master registry
+ */
+
+export function useListPersonMaster<
+  TData = Awaited<ReturnType<typeof listPersonMaster>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListPersonMasterParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listPersonMaster>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListPersonMasterQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a new person master record
+ */
+export const getCreatePersonMasterUrl = () => {
+  return `/api/person-master`;
+};
+
+export const createPersonMaster = async (
+  createPersonMaster: CreatePersonMaster,
+  options?: RequestInit,
+): Promise<PersonMasterSummary> => {
+  return customFetch<PersonMasterSummary>(getCreatePersonMasterUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createPersonMaster),
+  });
+};
+
+export const getCreatePersonMasterMutationOptions = <
+  TError = ErrorType<PersonMasterDuplicateError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createPersonMaster>>,
+    TError,
+    { data: BodyType<CreatePersonMaster> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createPersonMaster>>,
+  TError,
+  { data: BodyType<CreatePersonMaster> },
+  TContext
+> => {
+  const mutationKey = ["createPersonMaster"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createPersonMaster>>,
+    { data: BodyType<CreatePersonMaster> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createPersonMaster(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreatePersonMasterMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createPersonMaster>>
+>;
+export type CreatePersonMasterMutationBody = BodyType<CreatePersonMaster>;
+export type CreatePersonMasterMutationError =
+  ErrorType<PersonMasterDuplicateError>;
+
+/**
+ * @summary Create a new person master record
+ */
+export const useCreatePersonMaster = <
+  TError = ErrorType<PersonMasterDuplicateError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createPersonMaster>>,
+    TError,
+    { data: BodyType<CreatePersonMaster> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createPersonMaster>>,
+  TError,
+  { data: BodyType<CreatePersonMaster> },
+  TContext
+> => {
+  return useMutation(getCreatePersonMasterMutationOptions(options));
+};
+
+/**
+ * @summary Scan for unlinked participants, unlinked partners, and duplicate identities
+ */
+export const getGetPersonMasterRemediationScanUrl = () => {
+  return `/api/person-master/remediation`;
+};
+
+export const getPersonMasterRemediationScan = async (
+  options?: RequestInit,
+): Promise<PersonMasterRemediationResult> => {
+  return customFetch<PersonMasterRemediationResult>(
+    getGetPersonMasterRemediationScanUrl(),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetPersonMasterRemediationScanQueryKey = () => {
+  return [`/api/person-master/remediation`] as const;
+};
+
+export const getGetPersonMasterRemediationScanQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPersonMasterRemediationScan>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getPersonMasterRemediationScan>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetPersonMasterRemediationScanQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getPersonMasterRemediationScan>>
+  > = ({ signal }) =>
+    getPersonMasterRemediationScan({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPersonMasterRemediationScan>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPersonMasterRemediationScanQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPersonMasterRemediationScan>>
+>;
+export type GetPersonMasterRemediationScanQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Scan for unlinked participants, unlinked partners, and duplicate identities
+ */
+
+export function useGetPersonMasterRemediationScan<
+  TData = Awaited<ReturnType<typeof getPersonMasterRemediationScan>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getPersonMasterRemediationScan>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPersonMasterRemediationScanQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Merge a duplicate person master record into a target record (admin only)
+ */
+export const getMergePersonMasterUrl = () => {
+  return `/api/person-master/merge`;
+};
+
+export const mergePersonMaster = async (
+  personMasterMergeInput: PersonMasterMergeInput,
+  options?: RequestInit,
+): Promise<MergePersonMaster200> => {
+  return customFetch<MergePersonMaster200>(getMergePersonMasterUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(personMasterMergeInput),
+  });
+};
+
+export const getMergePersonMasterMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof mergePersonMaster>>,
+    TError,
+    { data: BodyType<PersonMasterMergeInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof mergePersonMaster>>,
+  TError,
+  { data: BodyType<PersonMasterMergeInput> },
+  TContext
+> => {
+  const mutationKey = ["mergePersonMaster"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof mergePersonMaster>>,
+    { data: BodyType<PersonMasterMergeInput> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return mergePersonMaster(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type MergePersonMasterMutationResult = NonNullable<
+  Awaited<ReturnType<typeof mergePersonMaster>>
+>;
+export type MergePersonMasterMutationBody = BodyType<PersonMasterMergeInput>;
+export type MergePersonMasterMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Merge a duplicate person master record into a target record (admin only)
+ */
+export const useMergePersonMaster = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof mergePersonMaster>>,
+    TError,
+    { data: BodyType<PersonMasterMergeInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof mergePersonMaster>>,
+  TError,
+  { data: BodyType<PersonMasterMergeInput> },
+  TContext
+> => {
+  return useMutation(getMergePersonMasterMutationOptions(options));
+};
+
+/**
+ * @summary Get full person profile including roles and project links
+ */
+export const getGetPersonMasterUrl = (id: string) => {
+  return `/api/person-master/${id}`;
+};
+
+export const getPersonMaster = async (
+  id: string,
+  options?: RequestInit,
+): Promise<PersonMasterProfile> => {
+  return customFetch<PersonMasterProfile>(getGetPersonMasterUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetPersonMasterQueryKey = (id: string) => {
+  return [`/api/person-master/${id}`] as const;
+};
+
+export const getGetPersonMasterQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPersonMaster>>,
+  TError = ErrorType<void>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPersonMaster>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetPersonMasterQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getPersonMaster>>> = ({
+    signal,
+  }) => getPersonMaster(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPersonMaster>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPersonMasterQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPersonMaster>>
+>;
+export type GetPersonMasterQueryError = ErrorType<void>;
+
+/**
+ * @summary Get full person profile including roles and project links
+ */
+
+export function useGetPersonMaster<
+  TData = Awaited<ReturnType<typeof getPersonMaster>>,
+  TError = ErrorType<void>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPersonMaster>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPersonMasterQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Update non-sensitive fields on a person master record
+ */
+export const getUpdatePersonMasterUrl = (id: string) => {
+  return `/api/person-master/${id}`;
+};
+
+export const updatePersonMaster = async (
+  id: string,
+  updatePersonMaster: UpdatePersonMaster,
+  options?: RequestInit,
+): Promise<PersonMasterSummary> => {
+  return customFetch<PersonMasterSummary>(getUpdatePersonMasterUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updatePersonMaster),
+  });
+};
+
+export const getUpdatePersonMasterMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updatePersonMaster>>,
+    TError,
+    { id: string; data: BodyType<UpdatePersonMaster> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updatePersonMaster>>,
+  TError,
+  { id: string; data: BodyType<UpdatePersonMaster> },
+  TContext
+> => {
+  const mutationKey = ["updatePersonMaster"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updatePersonMaster>>,
+    { id: string; data: BodyType<UpdatePersonMaster> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updatePersonMaster(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdatePersonMasterMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updatePersonMaster>>
+>;
+export type UpdatePersonMasterMutationBody = BodyType<UpdatePersonMaster>;
+export type UpdatePersonMasterMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update non-sensitive fields on a person master record
+ */
+export const useUpdatePersonMaster = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updatePersonMaster>>,
+    TError,
+    { id: string; data: BodyType<UpdatePersonMaster> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updatePersonMaster>>,
+  TError,
+  { id: string; data: BodyType<UpdatePersonMaster> },
+  TContext
+> => {
+  return useMutation(getUpdatePersonMasterMutationOptions(options));
+};
+
+/**
+ * @summary Attach a system user account to an existing person master record
+ */
+export const getLinkUserToPersonMasterUrl = (id: string) => {
+  return `/api/person-master/${id}/link-user`;
+};
+
+export const linkUserToPersonMaster = async (
+  id: string,
+  linkUserToPersonMasterBody: LinkUserToPersonMasterBody,
+  options?: RequestInit,
+): Promise<LinkUserToPersonMaster200> => {
+  return customFetch<LinkUserToPersonMaster200>(
+    getLinkUserToPersonMasterUrl(id),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(linkUserToPersonMasterBody),
+    },
+  );
+};
+
+export const getLinkUserToPersonMasterMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof linkUserToPersonMaster>>,
+    TError,
+    { id: string; data: BodyType<LinkUserToPersonMasterBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof linkUserToPersonMaster>>,
+  TError,
+  { id: string; data: BodyType<LinkUserToPersonMasterBody> },
+  TContext
+> => {
+  const mutationKey = ["linkUserToPersonMaster"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof linkUserToPersonMaster>>,
+    { id: string; data: BodyType<LinkUserToPersonMasterBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return linkUserToPersonMaster(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type LinkUserToPersonMasterMutationResult = NonNullable<
+  Awaited<ReturnType<typeof linkUserToPersonMaster>>
+>;
+export type LinkUserToPersonMasterMutationBody =
+  BodyType<LinkUserToPersonMasterBody>;
+export type LinkUserToPersonMasterMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Attach a system user account to an existing person master record
+ */
+export const useLinkUserToPersonMaster = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof linkUserToPersonMaster>>,
+    TError,
+    { id: string; data: BodyType<LinkUserToPersonMasterBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof linkUserToPersonMaster>>,
+  TError,
+  { id: string; data: BodyType<LinkUserToPersonMasterBody> },
+  TContext
+> => {
+  return useMutation(getLinkUserToPersonMasterMutationOptions(options));
+};
+
+/**
+ * @summary Assign a role to a person (globally or for a specific project)
+ */
+export const getAssignPersonMasterRoleUrl = (id: string) => {
+  return `/api/person-master/${id}/roles`;
+};
+
+export const assignPersonMasterRole = async (
+  id: string,
+  personRoleAssignmentInput: PersonRoleAssignmentInput,
+  options?: RequestInit,
+): Promise<PersonRoleAssignment> => {
+  return customFetch<PersonRoleAssignment>(getAssignPersonMasterRoleUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(personRoleAssignmentInput),
+  });
+};
+
+export const getAssignPersonMasterRoleMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof assignPersonMasterRole>>,
+    TError,
+    { id: string; data: BodyType<PersonRoleAssignmentInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof assignPersonMasterRole>>,
+  TError,
+  { id: string; data: BodyType<PersonRoleAssignmentInput> },
+  TContext
+> => {
+  const mutationKey = ["assignPersonMasterRole"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof assignPersonMasterRole>>,
+    { id: string; data: BodyType<PersonRoleAssignmentInput> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return assignPersonMasterRole(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AssignPersonMasterRoleMutationResult = NonNullable<
+  Awaited<ReturnType<typeof assignPersonMasterRole>>
+>;
+export type AssignPersonMasterRoleMutationBody =
+  BodyType<PersonRoleAssignmentInput>;
+export type AssignPersonMasterRoleMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Assign a role to a person (globally or for a specific project)
+ */
+export const useAssignPersonMasterRole = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof assignPersonMasterRole>>,
+    TError,
+    { id: string; data: BodyType<PersonRoleAssignmentInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof assignPersonMasterRole>>,
+  TError,
+  { id: string; data: BodyType<PersonRoleAssignmentInput> },
+  TContext
+> => {
+  return useMutation(getAssignPersonMasterRoleMutationOptions(options));
+};
+
+/**
+ * @summary Deactivate a role assignment
+ */
+export const getRemovePersonMasterRoleUrl = (id: string, roleId: string) => {
+  return `/api/person-master/${id}/roles/${roleId}`;
+};
+
+export const removePersonMasterRole = async (
+  id: string,
+  roleId: string,
+  options?: RequestInit,
+): Promise<RemovePersonMasterRole200> => {
+  return customFetch<RemovePersonMasterRole200>(
+    getRemovePersonMasterRoleUrl(id, roleId),
+    {
+      ...options,
+      method: "DELETE",
+    },
+  );
+};
+
+export const getRemovePersonMasterRoleMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof removePersonMasterRole>>,
+    TError,
+    { id: string; roleId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof removePersonMasterRole>>,
+  TError,
+  { id: string; roleId: string },
+  TContext
+> => {
+  const mutationKey = ["removePersonMasterRole"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof removePersonMasterRole>>,
+    { id: string; roleId: string }
+  > = (props) => {
+    const { id, roleId } = props ?? {};
+
+    return removePersonMasterRole(id, roleId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RemovePersonMasterRoleMutationResult = NonNullable<
+  Awaited<ReturnType<typeof removePersonMasterRole>>
+>;
+
+export type RemovePersonMasterRoleMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Deactivate a role assignment
+ */
+export const useRemovePersonMasterRole = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof removePersonMasterRole>>,
+    TError,
+    { id: string; roleId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof removePersonMasterRole>>,
+  TError,
+  { id: string; roleId: string },
+  TContext
+> => {
+  return useMutation(getRemovePersonMasterRoleMutationOptions(options));
+};
+
+/**
+ * @summary Get the immutable audit trail for a person master record
+ */
+export const getGetPersonMasterAuditUrl = (id: string) => {
+  return `/api/person-master/${id}/audit`;
+};
+
+export const getPersonMasterAudit = async (
+  id: string,
+  options?: RequestInit,
+): Promise<PersonMasterAuditEvent[]> => {
+  return customFetch<PersonMasterAuditEvent[]>(getGetPersonMasterAuditUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetPersonMasterAuditQueryKey = (id: string) => {
+  return [`/api/person-master/${id}/audit`] as const;
+};
+
+export const getGetPersonMasterAuditQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPersonMasterAudit>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPersonMasterAudit>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetPersonMasterAuditQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getPersonMasterAudit>>
+  > = ({ signal }) => getPersonMasterAudit(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPersonMasterAudit>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPersonMasterAuditQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPersonMasterAudit>>
+>;
+export type GetPersonMasterAuditQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get the immutable audit trail for a person master record
+ */
+
+export function useGetPersonMasterAudit<
+  TData = Awaited<ReturnType<typeof getPersonMasterAudit>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPersonMasterAudit>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPersonMasterAuditQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary List all partners

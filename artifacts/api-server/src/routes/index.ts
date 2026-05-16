@@ -89,6 +89,7 @@ import projectWitnessesRouter from "./project_witnesses";
 import projectOnboardingRouter from "./project_onboarding";
 import projectGovernanceRouter from "./project_governance";
 import adminGovernanceRouter from "./admin_governance";
+import personMasterRouter from "./person_master";
 
 const router: IRouter = Router();
 
@@ -193,5 +194,6 @@ router.use("/projects", projectWitnessesRouter);
 router.use("/projects", projectOnboardingRouter);
 router.use("/projects", projectGovernanceRouter);
 router.use("/admin/governance", adminGovernanceRouter);
+router.use("/person-master", personMasterRouter);
 
 export default router;

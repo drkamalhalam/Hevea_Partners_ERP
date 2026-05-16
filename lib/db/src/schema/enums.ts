@@ -1,5 +1,58 @@
 import { pgEnum } from "drizzle-orm/pg-core";
 
+// ── Person master enums ───────────────────────────────────────────────────
+
+/**
+ * KYC verification status for a person master record.
+ *   pending              — record created; no documents submitted yet
+ *   documents_submitted  — Aadhaar + supporting ID uploaded; awaiting admin review
+ *   verified             — admin-confirmed identity; eligible for all project roles
+ *   flagged              — identity discrepancy or duplicate alert raised
+ */
+export const personKycStatusEnum = pgEnum("person_kyc_status", [
+  "pending",
+  "documents_submitted",
+  "verified",
+  "flagged",
+]);
+
+/**
+ * Roles a person can hold across one or many projects simultaneously.
+ * A single person_master record may accumulate multiple role assignments.
+ */
+export const personRoleTypeEnum = pgEnum("person_role_type", [
+  "landowner",
+  "developer",
+  "investor",
+  "buyer",
+  "worker",
+  "manager",
+  "witness",
+  "nominee",
+  "economic_participant",
+  "store_keeper",
+  "collection_agent",
+  "project_admin",
+]);
+
+/**
+ * Immutable event types for the person master audit trail (write-once).
+ */
+export const personMasterAuditEventEnum = pgEnum("person_master_audit_event", [
+  "created",
+  "name_changed",
+  "aadhaar_changed",
+  "mobile_changed",
+  "kyc_status_changed",
+  "user_account_linked",
+  "user_account_unlinked",
+  "role_assigned",
+  "role_removed",
+  "project_linked",
+  "duplicate_merged",
+  "documents_uploaded",
+]);
+
 // ── User & access enums ───────────────────────────────────────────────────
 
 export const userRoleEnum = pgEnum("user_role", [

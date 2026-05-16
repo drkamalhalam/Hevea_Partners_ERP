@@ -1,0 +1,220 @@
+REBUILD LANDOWNER IDENTITY ARCHITECTURE USING A UNIFIED LANDOWNER MASTER SYSTEM.
+
+Current architecture is inconsistent.
+
+Right now there are two types of landowners:
+
+1. Registered system users who log in and become landowners
+2. Manual name entries created during project creation
+
+This is creating serious governance and identity problems:
+- duplicate landowners
+- duplicate Aadhaar entries
+- broken KYC linkage
+- OTP inconsistencies
+- split project ownership
+- reporting corruption
+- future inheritance/transfer conflicts
+
+==================================================
+IMPORTANT ARCHITECTURE PRINCIPLE
+==================================================
+
+A LANDOWNER is:
+- a legal/business identity,
+NOT:
+- merely a login account.
+
+Therefore:
+Landowner identity must be separated from user authentication.
+
+==================================================
+CREATE A UNIFIED LANDOWNER MASTER SYSTEM
+==================================================
+
+Implement:
+
+LANDOWNER_MASTER
+
+as the single authoritative identity entity.
+
+All projects must link only to:
+LANDOWNER_MASTER records.
+
+==================================================
+SEPARATE:
+==================================================
+
+1. LANDOWNER_MASTER
+2. USER_ACCOUNT
+
+--------------------------------------------------
+LANDOWNER_MASTER
+--------------------------------------------------
+
+Contains:
+- legal identity
+- Aadhaar
+- mobile
+- KYC
+- address
+- land linkage
+- agreement linkage
+- project linkage
+- nominee linkage
+- inheritance linkage
+
+--------------------------------------------------
+USER_ACCOUNT
+--------------------------------------------------
+
+Contains:
+- login credentials
+- password
+- OTP authentication
+- app access
+- permissions
+- session management
+
+USER_ACCOUNT should optionally link to:
+LANDOWNER_MASTER
+
+==================================================
+PROJECT CREATION REBUILD
+==================================================
+
+During project creation:
+
+DO NOT allow free unmanaged landowner text creation.
+
+Instead:
+
+--------------------------------------------------
+OPTION 1
+--------------------------------------------------
+
+Search existing LANDOWNER_MASTER using:
+- Aadhaar
+- mobile
+- name
+- landowner ID
+
+If found:
+LINK existing landowner.
+
+--------------------------------------------------
+OPTION 2
+--------------------------------------------------
+
+If not found:
+Create NEW LANDOWNER_MASTER record.
+
+NOT:
+temporary inline pseudo-landowner.
+
+==================================================
+MANDATORY DUPLICATE CHECKS
+==================================================
+
+Before creating landowner:
+check duplicates using:
+- Aadhaar
+- mobile
+- optional fuzzy name match
+
+Warn if potential duplicate exists.
+
+==================================================
+FUTURE LOGIN ACTIVATION
+==================================================
+
+If a manually created landowner later registers:
+
+DO NOT create new landowner identity.
+
+Instead:
+link new USER_ACCOUNT to existing LANDOWNER_MASTER.
+
+==================================================
+PROJECT LINKAGE RULE
+==================================================
+
+Projects must NEVER directly depend on:
+- raw text names,
+- temporary inline entries,
+- frontend-only objects.
+
+Projects must always reference:
+LANDOWNER_MASTER_ID
+
+==================================================
+KYC RULE
+==================================================
+
+KYC must belong to:
+LANDOWNER_MASTER
+
+NOT:
+project-specific temporary forms.
+
+==================================================
+OTP RULE
+==================================================
+
+OTP verification must link to:
+LANDOWNER_MASTER identity.
+
+==================================================
+AUDIT REQUIREMENTS
+==================================================
+
+Track:
+- landowner creation
+- duplicate merge
+- account linkage
+- Aadhaar changes
+- mobile changes
+- KYC updates
+- project linkage
+
+with permanent audit logs.
+
+==================================================
+EXISTING DATA REMEDIATION
+==================================================
+
+Scan existing projects for:
+- duplicate landowners
+- inline text-only landowners
+- repeated Aadhaar entries
+- orphaned identities
+
+Provide remediation workflow:
+- merge identities
+- attach to master records
+- repair project linkage
+
+==================================================
+IMPORTANT GOVERNANCE RULE
+==================================================
+
+There must NEVER be:
+- multiple identities for same landowner,
+- project-specific pseudo-landowners,
+- disconnected KYC identities.
+
+ALL landowners must exist inside a unified governance identity registry.
+
+==================================================
+DO NOT BREAK:
+==================================================
+
+- existing projects
+- agreements
+- OTP logs
+- KYC records
+- ownership records
+- reimbursement logic
+- audit history
+
+while migrating to unified landowner identity architecture.

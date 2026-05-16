@@ -1952,6 +1952,367 @@ export const AcknowledgeProjectClosureResponse = zod.object({
 });
 
 /**
+ * @summary Search the person master registry
+ */
+export const listPersonMasterQueryLimitDefault = 50;
+export const listPersonMasterQueryOffsetDefault = 0;
+
+export const ListPersonMasterQueryParams = zod.object({
+  q: zod.coerce.string().optional().describe("Name search (partial match)"),
+  aadhaar: zod.coerce
+    .string()
+    .optional()
+    .describe("Search by Aadhaar last-4 or full number"),
+  mobile: zod.coerce.string().optional().describe("Search by mobile number"),
+  kyc_status: zod
+    .enum(["pending", "documents_submitted", "verified", "flagged"])
+    .optional(),
+  limit: zod.coerce.number().default(listPersonMasterQueryLimitDefault),
+  offset: zod.coerce.number().default(listPersonMasterQueryOffsetDefault),
+});
+
+export const ListPersonMasterResponseItem = zod.object({
+  id: zod.string().uuid(),
+  fullName: zod.string(),
+  sOnCOn: zod.string().nullish(),
+  fatherGuardianName: zod.string().nullish(),
+  aadhaarLast4: zod.string().nullish(),
+  mobile: zod.string().nullish(),
+  email: zod.string().nullish(),
+  district: zod.string().nullish(),
+  state: zod.string().nullish(),
+  kycStatus: zod.enum([
+    "pending",
+    "documents_submitted",
+    "verified",
+    "flagged",
+  ]),
+  aadhaarVerified: zod.string().nullish(),
+  otpVerified: zod.string().nullish(),
+  userId: zod.string().uuid().nullish(),
+  createdAt: zod.coerce.date(),
+});
+export const ListPersonMasterResponse = zod.array(ListPersonMasterResponseItem);
+
+/**
+ * @summary Create a new person master record
+ */
+export const createPersonMasterBodyAadhaarNumberMin = 12;
+export const createPersonMasterBodyAadhaarNumberMax = 12;
+
+export const CreatePersonMasterBody = zod.object({
+  fullName: zod.string(),
+  sOnCOn: zod.string().optional(),
+  fatherGuardianName: zod.string().optional(),
+  dateOfBirth: zod.string().optional(),
+  gender: zod.enum(["male", "female", "other"]).optional(),
+  aadhaarNumber: zod
+    .string()
+    .min(createPersonMasterBodyAadhaarNumberMin)
+    .max(createPersonMasterBodyAadhaarNumberMax)
+    .optional(),
+  mobile: zod.string().optional(),
+  alternateMobile: zod.string().optional(),
+  email: zod.string().email().optional(),
+  permanentAddress: zod.string().optional(),
+  currentAddress: zod.string().optional(),
+  village: zod.string().optional(),
+  district: zod.string().optional(),
+  state: zod.string().optional(),
+  country: zod.string().optional(),
+  remarks: zod.string().optional(),
+});
+
+/**
+ * @summary Scan for unlinked participants, unlinked partners, and duplicate identities
+ */
+export const GetPersonMasterRemediationScanResponse = zod.object({
+  unlinkedParticipants: zod
+    .array(
+      zod.object({
+        id: zod.string().uuid().optional(),
+        projectId: zod.string().uuid().optional(),
+        role: zod.string().optional(),
+        fullName: zod.string().optional(),
+        aadhaarNumber: zod.string().nullish(),
+        mobile: zod.string().nullish(),
+      }),
+    )
+    .optional(),
+  unlinkedPartners: zod
+    .array(
+      zod.object({
+        id: zod.string().uuid().optional(),
+        name: zod.string().optional(),
+        role: zod.string().optional(),
+        aadhaarLast4: zod.string().nullish(),
+      }),
+    )
+    .optional(),
+  aadhaarDuplicates: zod
+    .array(
+      zod.object({
+        aadhaar_last4: zod.string().optional(),
+        count: zod.number().optional(),
+      }),
+    )
+    .optional(),
+  mobileDuplicates: zod
+    .array(
+      zod.object({
+        mobile: zod.string().optional(),
+        count: zod.number().optional(),
+      }),
+    )
+    .optional(),
+  summary: zod
+    .object({
+      unlinkedParticipantCount: zod.number().optional(),
+      unlinkedPartnerCount: zod.number().optional(),
+      aadhaarDuplicateGroups: zod.number().optional(),
+      mobileDuplicateGroups: zod.number().optional(),
+    })
+    .optional(),
+});
+
+/**
+ * @summary Merge a duplicate person master record into a target record (admin only)
+ */
+export const mergePersonMasterBodyReasonMin = 10;
+
+export const MergePersonMasterBody = zod.object({
+  sourceId: zod.string().uuid(),
+  targetId: zod.string().uuid(),
+  reason: zod.string().min(mergePersonMasterBodyReasonMin),
+});
+
+export const MergePersonMasterResponse = zod.object({
+  success: zod.boolean().optional(),
+  targetId: zod.string().uuid().optional(),
+  sourceId: zod.string().uuid().optional(),
+  message: zod.string().optional(),
+});
+
+/**
+ * @summary Get full person profile including roles and project links
+ */
+export const GetPersonMasterParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const GetPersonMasterResponse = zod
+  .object({
+    id: zod.string().uuid(),
+    fullName: zod.string(),
+    sOnCOn: zod.string().nullish(),
+    fatherGuardianName: zod.string().nullish(),
+    aadhaarLast4: zod.string().nullish(),
+    mobile: zod.string().nullish(),
+    email: zod.string().nullish(),
+    district: zod.string().nullish(),
+    state: zod.string().nullish(),
+    kycStatus: zod.enum([
+      "pending",
+      "documents_submitted",
+      "verified",
+      "flagged",
+    ]),
+    aadhaarVerified: zod.string().nullish(),
+    otpVerified: zod.string().nullish(),
+    userId: zod.string().uuid().nullish(),
+    createdAt: zod.coerce.date(),
+  })
+  .and(
+    zod.object({
+      dateOfBirth: zod.string().nullish(),
+      gender: zod.string().nullish(),
+      alternateMobile: zod.string().nullish(),
+      permanentAddress: zod.string().nullish(),
+      currentAddress: zod.string().nullish(),
+      village: zod.string().nullish(),
+      country: zod.string().nullish(),
+      aadhaarObjectPath: zod.string().nullish(),
+      supportingIdObjectPath: zod.string().nullish(),
+      profilePhotoObjectPath: zod.string().nullish(),
+      remarks: zod.string().nullish(),
+      roles: zod
+        .array(
+          zod.object({
+            id: zod.string().uuid(),
+            personMasterId: zod.string().uuid(),
+            role: zod.enum([
+              "landowner",
+              "developer",
+              "investor",
+              "buyer",
+              "worker",
+              "manager",
+              "witness",
+              "nominee",
+              "economic_participant",
+              "store_keeper",
+              "collection_agent",
+              "project_admin",
+            ]),
+            projectId: zod.string().uuid().nullish(),
+            isActive: zod.boolean(),
+            notes: zod.string().nullish(),
+            createdAt: zod.coerce.date(),
+          }),
+        )
+        .optional(),
+      projectLinks: zod
+        .array(
+          zod.object({
+            participantId: zod.string().uuid().optional(),
+            projectId: zod.string().uuid().optional(),
+            role: zod.string().optional(),
+            projectName: zod.string().optional(),
+          }),
+        )
+        .optional(),
+    }),
+  );
+
+/**
+ * @summary Update non-sensitive fields on a person master record
+ */
+export const UpdatePersonMasterParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const UpdatePersonMasterBody = zod.object({
+  fullName: zod.string().optional(),
+  sOnCOn: zod.string().optional(),
+  fatherGuardianName: zod.string().optional(),
+  dateOfBirth: zod.string().optional(),
+  gender: zod.enum(["male", "female", "other"]).optional(),
+  alternateMobile: zod.string().optional(),
+  email: zod.string().email().optional(),
+  permanentAddress: zod.string().optional(),
+  currentAddress: zod.string().optional(),
+  village: zod.string().optional(),
+  district: zod.string().optional(),
+  state: zod.string().optional(),
+  country: zod.string().optional(),
+  kycStatus: zod
+    .enum(["pending", "documents_submitted", "verified", "flagged"])
+    .optional(),
+  aadhaarVerified: zod.enum(["yes", "no", "pending"]).optional(),
+  remarks: zod.string().optional(),
+});
+
+export const UpdatePersonMasterResponse = zod.object({
+  id: zod.string().uuid(),
+  fullName: zod.string(),
+  sOnCOn: zod.string().nullish(),
+  fatherGuardianName: zod.string().nullish(),
+  aadhaarLast4: zod.string().nullish(),
+  mobile: zod.string().nullish(),
+  email: zod.string().nullish(),
+  district: zod.string().nullish(),
+  state: zod.string().nullish(),
+  kycStatus: zod.enum([
+    "pending",
+    "documents_submitted",
+    "verified",
+    "flagged",
+  ]),
+  aadhaarVerified: zod.string().nullish(),
+  otpVerified: zod.string().nullish(),
+  userId: zod.string().uuid().nullish(),
+  createdAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Attach a system user account to an existing person master record
+ */
+export const LinkUserToPersonMasterParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const LinkUserToPersonMasterBody = zod.object({
+  userId: zod.string().uuid(),
+});
+
+export const LinkUserToPersonMasterResponse = zod.object({
+  success: zod.boolean().optional(),
+  personMasterId: zod.string().uuid().optional(),
+  userId: zod.string().uuid().optional(),
+});
+
+/**
+ * @summary Assign a role to a person (globally or for a specific project)
+ */
+export const AssignPersonMasterRoleParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const AssignPersonMasterRoleBody = zod.object({
+  role: zod.enum([
+    "landowner",
+    "developer",
+    "investor",
+    "buyer",
+    "worker",
+    "manager",
+    "witness",
+    "nominee",
+    "economic_participant",
+    "store_keeper",
+    "collection_agent",
+    "project_admin",
+  ]),
+  projectId: zod.string().uuid().optional(),
+  notes: zod.string().optional(),
+});
+
+/**
+ * @summary Deactivate a role assignment
+ */
+export const RemovePersonMasterRoleParams = zod.object({
+  id: zod.coerce.string().uuid(),
+  roleId: zod.coerce.string().uuid(),
+});
+
+export const RemovePersonMasterRoleResponse = zod.object({
+  success: zod.boolean().optional(),
+});
+
+/**
+ * @summary Get the immutable audit trail for a person master record
+ */
+export const GetPersonMasterAuditParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const GetPersonMasterAuditResponseItem = zod.object({
+  id: zod.string().uuid(),
+  personMasterId: zod.string().uuid(),
+  eventType: zod.enum([
+    "created",
+    "name_changed",
+    "aadhaar_changed",
+    "mobile_changed",
+    "kyc_status_changed",
+    "user_account_linked",
+    "user_account_unlinked",
+    "role_assigned",
+    "role_removed",
+    "project_linked",
+    "duplicate_merged",
+    "documents_uploaded",
+  ]),
+  description: zod.string().nullish(),
+  metadata: zod.record(zod.string(), zod.unknown()).nullish(),
+  performedBy: zod.string().uuid().nullish(),
+  createdAt: zod.coerce.date(),
+});
+export const GetPersonMasterAuditResponse = zod.array(
+  GetPersonMasterAuditResponseItem,
+);
+
+/**
  * @summary List all partners
  */
 export const ListPartnersResponseItem = zod.object({

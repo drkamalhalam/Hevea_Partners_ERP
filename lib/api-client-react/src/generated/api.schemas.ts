@@ -8988,8 +8988,323 @@ export interface ProjectCardSummary {
   latestAgreementStatus?: string | null;
 }
 
+export type PersonMasterSummaryKycStatus =
+  (typeof PersonMasterSummaryKycStatus)[keyof typeof PersonMasterSummaryKycStatus];
+
+export const PersonMasterSummaryKycStatus = {
+  pending: "pending",
+  documents_submitted: "documents_submitted",
+  verified: "verified",
+  flagged: "flagged",
+} as const;
+
+export interface PersonMasterSummary {
+  id: string;
+  fullName: string;
+  sOnCOn?: string | null;
+  fatherGuardianName?: string | null;
+  aadhaarLast4?: string | null;
+  mobile?: string | null;
+  email?: string | null;
+  district?: string | null;
+  state?: string | null;
+  kycStatus: PersonMasterSummaryKycStatus;
+  aadhaarVerified?: string | null;
+  otpVerified?: string | null;
+  userId?: string | null;
+  createdAt: string;
+}
+
+export type PersonMasterProfileProjectLinksItem = {
+  participantId?: string;
+  projectId?: string;
+  role?: string;
+  projectName?: string;
+};
+
+export type PersonRoleAssignmentRole =
+  (typeof PersonRoleAssignmentRole)[keyof typeof PersonRoleAssignmentRole];
+
+export const PersonRoleAssignmentRole = {
+  landowner: "landowner",
+  developer: "developer",
+  investor: "investor",
+  buyer: "buyer",
+  worker: "worker",
+  manager: "manager",
+  witness: "witness",
+  nominee: "nominee",
+  economic_participant: "economic_participant",
+  store_keeper: "store_keeper",
+  collection_agent: "collection_agent",
+  project_admin: "project_admin",
+} as const;
+
+export interface PersonRoleAssignment {
+  id: string;
+  personMasterId: string;
+  role: PersonRoleAssignmentRole;
+  projectId?: string | null;
+  isActive: boolean;
+  notes?: string | null;
+  createdAt: string;
+}
+
+export type PersonMasterProfile = PersonMasterSummary & {
+  dateOfBirth?: string | null;
+  gender?: string | null;
+  alternateMobile?: string | null;
+  permanentAddress?: string | null;
+  currentAddress?: string | null;
+  village?: string | null;
+  country?: string | null;
+  aadhaarObjectPath?: string | null;
+  supportingIdObjectPath?: string | null;
+  profilePhotoObjectPath?: string | null;
+  remarks?: string | null;
+  roles?: PersonRoleAssignment[];
+  projectLinks?: PersonMasterProfileProjectLinksItem[];
+};
+
+export type CreatePersonMasterGender =
+  (typeof CreatePersonMasterGender)[keyof typeof CreatePersonMasterGender];
+
+export const CreatePersonMasterGender = {
+  male: "male",
+  female: "female",
+  other: "other",
+} as const;
+
+export interface CreatePersonMaster {
+  fullName: string;
+  sOnCOn?: string;
+  fatherGuardianName?: string;
+  dateOfBirth?: string;
+  gender?: CreatePersonMasterGender;
+  /**
+   * @minLength 12
+   * @maxLength 12
+   */
+  aadhaarNumber?: string;
+  mobile?: string;
+  alternateMobile?: string;
+  email?: string;
+  permanentAddress?: string;
+  currentAddress?: string;
+  village?: string;
+  district?: string;
+  state?: string;
+  country?: string;
+  remarks?: string;
+}
+
+export type UpdatePersonMasterGender =
+  (typeof UpdatePersonMasterGender)[keyof typeof UpdatePersonMasterGender];
+
+export const UpdatePersonMasterGender = {
+  male: "male",
+  female: "female",
+  other: "other",
+} as const;
+
+export type UpdatePersonMasterKycStatus =
+  (typeof UpdatePersonMasterKycStatus)[keyof typeof UpdatePersonMasterKycStatus];
+
+export const UpdatePersonMasterKycStatus = {
+  pending: "pending",
+  documents_submitted: "documents_submitted",
+  verified: "verified",
+  flagged: "flagged",
+} as const;
+
+export type UpdatePersonMasterAadhaarVerified =
+  (typeof UpdatePersonMasterAadhaarVerified)[keyof typeof UpdatePersonMasterAadhaarVerified];
+
+export const UpdatePersonMasterAadhaarVerified = {
+  yes: "yes",
+  no: "no",
+  pending: "pending",
+} as const;
+
+export interface UpdatePersonMaster {
+  fullName?: string;
+  sOnCOn?: string;
+  fatherGuardianName?: string;
+  dateOfBirth?: string;
+  gender?: UpdatePersonMasterGender;
+  alternateMobile?: string;
+  email?: string;
+  permanentAddress?: string;
+  currentAddress?: string;
+  village?: string;
+  district?: string;
+  state?: string;
+  country?: string;
+  kycStatus?: UpdatePersonMasterKycStatus;
+  aadhaarVerified?: UpdatePersonMasterAadhaarVerified;
+  remarks?: string;
+}
+
+export type PersonRoleAssignmentInputRole =
+  (typeof PersonRoleAssignmentInputRole)[keyof typeof PersonRoleAssignmentInputRole];
+
+export const PersonRoleAssignmentInputRole = {
+  landowner: "landowner",
+  developer: "developer",
+  investor: "investor",
+  buyer: "buyer",
+  worker: "worker",
+  manager: "manager",
+  witness: "witness",
+  nominee: "nominee",
+  economic_participant: "economic_participant",
+  store_keeper: "store_keeper",
+  collection_agent: "collection_agent",
+  project_admin: "project_admin",
+} as const;
+
+export interface PersonRoleAssignmentInput {
+  role: PersonRoleAssignmentInputRole;
+  projectId?: string;
+  notes?: string;
+}
+
+export type PersonMasterAuditEventEventType =
+  (typeof PersonMasterAuditEventEventType)[keyof typeof PersonMasterAuditEventEventType];
+
+export const PersonMasterAuditEventEventType = {
+  created: "created",
+  name_changed: "name_changed",
+  aadhaar_changed: "aadhaar_changed",
+  mobile_changed: "mobile_changed",
+  kyc_status_changed: "kyc_status_changed",
+  user_account_linked: "user_account_linked",
+  user_account_unlinked: "user_account_unlinked",
+  role_assigned: "role_assigned",
+  role_removed: "role_removed",
+  project_linked: "project_linked",
+  duplicate_merged: "duplicate_merged",
+  documents_uploaded: "documents_uploaded",
+} as const;
+
+export type PersonMasterAuditEventMetadata = { [key: string]: unknown } | null;
+
+export interface PersonMasterAuditEvent {
+  id: string;
+  personMasterId: string;
+  eventType: PersonMasterAuditEventEventType;
+  description?: string | null;
+  metadata?: PersonMasterAuditEventMetadata;
+  performedBy?: string | null;
+  createdAt: string;
+}
+
+export interface PersonMasterDuplicateError {
+  error?: string;
+  message?: string;
+  existingId?: string;
+  existingName?: string;
+}
+
+export type PersonMasterRemediationResultUnlinkedParticipantsItem = {
+  id?: string;
+  projectId?: string;
+  role?: string;
+  fullName?: string;
+  aadhaarNumber?: string | null;
+  mobile?: string | null;
+};
+
+export type PersonMasterRemediationResultUnlinkedPartnersItem = {
+  id?: string;
+  name?: string;
+  role?: string;
+  aadhaarLast4?: string | null;
+};
+
+export type PersonMasterRemediationResultAadhaarDuplicatesItem = {
+  aadhaar_last4?: string;
+  count?: number;
+};
+
+export type PersonMasterRemediationResultMobileDuplicatesItem = {
+  mobile?: string;
+  count?: number;
+};
+
+export type PersonMasterRemediationResultSummary = {
+  unlinkedParticipantCount?: number;
+  unlinkedPartnerCount?: number;
+  aadhaarDuplicateGroups?: number;
+  mobileDuplicateGroups?: number;
+};
+
+export interface PersonMasterRemediationResult {
+  unlinkedParticipants?: PersonMasterRemediationResultUnlinkedParticipantsItem[];
+  unlinkedPartners?: PersonMasterRemediationResultUnlinkedPartnersItem[];
+  aadhaarDuplicates?: PersonMasterRemediationResultAadhaarDuplicatesItem[];
+  mobileDuplicates?: PersonMasterRemediationResultMobileDuplicatesItem[];
+  summary?: PersonMasterRemediationResultSummary;
+}
+
+export interface PersonMasterMergeInput {
+  sourceId: string;
+  targetId: string;
+  /** @minLength 10 */
+  reason: string;
+}
+
 export type GetUserActivityParams = {
   limit?: number;
+};
+
+export type ListPersonMasterParams = {
+  /**
+   * Name search (partial match)
+   */
+  q?: string;
+  /**
+   * Search by Aadhaar last-4 or full number
+   */
+  aadhaar?: string;
+  /**
+   * Search by mobile number
+   */
+  mobile?: string;
+  kyc_status?: ListPersonMasterKycStatus;
+  limit?: number;
+  offset?: number;
+};
+
+export type ListPersonMasterKycStatus =
+  (typeof ListPersonMasterKycStatus)[keyof typeof ListPersonMasterKycStatus];
+
+export const ListPersonMasterKycStatus = {
+  pending: "pending",
+  documents_submitted: "documents_submitted",
+  verified: "verified",
+  flagged: "flagged",
+} as const;
+
+export type MergePersonMaster200 = {
+  success?: boolean;
+  targetId?: string;
+  sourceId?: string;
+  message?: string;
+};
+
+export type LinkUserToPersonMasterBody = {
+  userId: string;
+};
+
+export type LinkUserToPersonMaster200 = {
+  success?: boolean;
+  personMasterId?: string;
+  userId?: string;
+};
+
+export type RemovePersonMasterRole200 = {
+  success?: boolean;
 };
 
 export type ListPartnerClaimantsParams = {

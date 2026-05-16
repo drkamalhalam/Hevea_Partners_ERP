@@ -89,3 +89,6 @@ export * from "./post_maturity_payments";
 export * from "./project_participants";
 export * from "./project_witnesses";
 export * from "./project_creation_otps";
+export * from "./person_master";
+export * from "./person_master_audit";
+export * from "./person_role_assignments";

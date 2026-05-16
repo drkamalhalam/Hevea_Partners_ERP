@@ -1,0 +1,366 @@
+EXPAND THE CURRENT LANDOWNER MASTER IMPLEMENTATION INTO A FULL UNIFIED PERSON MASTER IDENTITY ARCHITECTURE FOR THE ENTIRE ERP.
+
+The current implementation direction only covers:
+LANDOWNER_MASTER
+
+This is insufficient and architecturally incomplete.
+
+The ERP must NOT create separate identity systems for:
+- landowners
+- developers
+- investors
+- workers
+- witnesses
+- buyers
+- managers
+- nominees
+- economic participants
+
+All human/legal identities must be unified globally.
+
+==================================================
+IMPORTANT ARCHITECTURE PRINCIPLE
+==================================================
+
+Identity is permanent.
+Roles are dynamic.
+
+A person may simultaneously be:
+- landowner
+- developer
+- investor
+- witness
+- buyer
+- manager
+- nominee
+- worker
+
+across multiple projects.
+
+The ERP must model:
+ONE PERSON
+→ MANY ROLES
+→ MANY PROJECT RELATIONSHIPS
+
+==================================================
+REPLACE LANDOWNER_MASTER WITH:
+==================================================
+
+PERSON_MASTER
+
+as the single authoritative identity registry.
+
+==================================================
+PERSON_MASTER REQUIREMENTS
+==================================================
+
+PERSON_MASTER must contain:
+
+- person_id
+- full_name
+- father_or_guardian_name
+- aadhaar_number
+- mobile_number
+- alternate_mobile
+- email
+- date_of_birth
+- gender
+- permanent_address
+- current_address
+- district
+- state
+- country
+- kyc_status
+- aadhaar_verified
+- otp_verified
+- profile_photo
+- nominee_linkage
+- inheritance_linkage
+- remarks
+- created_by
+- created_at
+- updated_at
+
+==================================================
+UNIQUE CONSTRAINTS
+==================================================
+
+Prevent duplicate identity creation using:
+- Aadhaar
+- mobile number
+- optional fuzzy name checks
+
+Rule:
+One physical person = one PERSON_MASTER identity.
+
+==================================================
+SEPARATE:
+==================================================
+
+1. PERSON_MASTER
+2. USER_ACCOUNT
+3. ROLE_ASSIGNMENTS
+
+==================================================
+USER_ACCOUNT
+==================================================
+
+USER_ACCOUNT is optional.
+
+Contains:
+- login credentials
+- password
+- OTP authentication
+- app access
+- permissions
+- sessions
+
+USER_ACCOUNT must link to:
+PERSON_MASTER_ID
+
+NOT:
+create separate identities.
+
+==================================================
+ROLE ARCHITECTURE
+==================================================
+
+Create dynamic role assignment system.
+
+Supported roles include:
+
+- LANDOWNER
+- DEVELOPER
+- INVESTOR
+- BUYER
+- WORKER
+- MANAGER
+- WITNESS
+- NOMINEE
+- ECONOMIC_PARTICIPANT
+- STORE_KEEPER
+- COLLECTION_AGENT
+- PROJECT_ADMIN
+
+One PERSON_MASTER may hold multiple roles simultaneously.
+
+==================================================
+PROJECT LINKAGE RULE
+==================================================
+
+Projects must NEVER directly reference:
+- raw names
+- inline text entries
+- pseudo-users
+- temporary identities
+
+All project participant relationships must reference:
+PERSON_MASTER_ID
+
+==================================================
+REBUILD PROJECT CREATION FLOW
+==================================================
+
+During project creation:
+
+DO NOT allow:
+- unmanaged inline person creation
+- raw text-only participants
+
+Instead:
+1. Search PERSON_MASTER
+2. Link existing identity
+OR
+3. Create new PERSON_MASTER properly
+
+==================================================
+SEARCH REQUIREMENTS
+==================================================
+
+Allow searching by:
+- Aadhaar
+- mobile
+- full name
+- person ID
+
+==================================================
+CREATE PERSON FLOW
+==================================================
+
+If no person exists:
+Create:
+- proper PERSON_MASTER record
+- KYC linkage
+- role assignments
+- audit trail
+
+NOT:
+temporary project-only records.
+
+==================================================
+KYC ARCHITECTURE
+==================================================
+
+KYC belongs to:
+PERSON_MASTER
+
+NOT:
+project-specific temporary forms.
+
+All:
+- Aadhaar uploads
+- OTP verification
+- ID verification
+must link to:
+PERSON_MASTER_ID
+
+==================================================
+OTP ARCHITECTURE
+==================================================
+
+OTP verification must validate:
+PERSON_MASTER identity,
+NOT project-local pseudo-identities.
+
+==================================================
+ROLE ASSIGNMENT ENGINE
+==================================================
+
+Implement:
+PERSON_ROLE_ASSIGNMENTS
+
+Example:
+Kamal Halam:
+- DEVELOPER in Project A
+- LANDOWNER in Project B
+- INVESTOR in Project C
+- WITNESS in Project D
+
+Still:
+ONE PERSON_MASTER identity.
+
+==================================================
+BUYER ARCHITECTURE
+==================================================
+
+Buyers must also use:
+PERSON_MASTER
+
+or
+ORGANIZATION_MASTER
+if institutional buyers later supported.
+
+==================================================
+WORKER ARCHITECTURE
+==================================================
+
+Workers/collection agents/store keepers must also reference:
+PERSON_MASTER.
+
+==================================================
+NOMINEE & INHERITANCE
+==================================================
+
+Nominees and heirs must also reference:
+PERSON_MASTER.
+
+This is critical for:
+- inheritance
+- succession
+- ownership transfer
+- nominee settlement
+
+==================================================
+EXISTING DATA REMEDIATION
+==================================================
+
+Scan existing ERP data for:
+- duplicate Aadhaar
+- duplicate mobile numbers
+- repeated names
+- orphaned identities
+- inline text-only participants
+- duplicate landowners
+- disconnected KYC
+
+Provide remediation workflow:
+- merge identities
+- attach to PERSON_MASTER
+- repair project linkage
+- preserve audit continuity
+
+==================================================
+BACKWARD COMPATIBILITY
+==================================================
+
+DO NOT break:
+- existing projects
+- agreements
+- OTP logs
+- KYC records
+- ownership structures
+- reimbursement records
+- audit history
+- participant structures
+- project dashboards
+
+==================================================
+AUDIT REQUIREMENTS
+==================================================
+
+Track:
+- person creation
+- duplicate detection
+- identity merges
+- role assignments
+- KYC changes
+- Aadhaar changes
+- mobile changes
+- project linkage changes
+- account linkage
+
+with permanent audit logs.
+
+==================================================
+IMPORTANT GOVERNANCE RULE
+==================================================
+
+There must NEVER be:
+- duplicate identities for same person,
+- module-specific pseudo-identities,
+- project-specific duplicate participants,
+- raw unmanaged governance identities.
+
+ALL governance-critical human identities must originate from:
+PERSON_MASTER.
+
+==================================================
+IMPORTANT IMPLEMENTATION STRATEGY
+==================================================
+
+PHASE 1:
+- PERSON_MASTER
+- DB architecture
+- API layer
+- duplicate prevention
+- migration/remediation engine
+
+PHASE 2:
+- project creation rebuild
+- participant search/select UX
+- KYC integration
+- role assignment UI
+- governance onboarding improvements
+
+Implement incrementally and safely.
+
+==================================================
+FINAL ARCHITECTURE TARGET
+==================================================
+
+The ERP must evolve into:
+
+UNIFIED IDENTITY-CENTRIC GOVERNANCE ARCHITECTURE
+
+NOT:
+module-specific participant systems.

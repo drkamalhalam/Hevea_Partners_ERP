@@ -8,6 +8,7 @@ import {
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { usersTable } from "./users";
+import { personMasterTable } from "./person_master";
 
 /**
  * partners — external parties who are party to plantation agreements.
@@ -28,6 +29,11 @@ export const partnersTable = pgTable("partners", {
   userId: uuid("user_id").references(() => usersTable.id, { onDelete: "set null" }),
   notes: text("notes"),
   isActive: boolean("is_active").notNull().default(true),
+  /**
+   * FK to person_master — canonical identity for this partner.
+   * Nullable for legacy records; must be set for all new partner registrations.
+   */
+  personMasterId: uuid("person_master_id").references(() => personMasterTable.id, { onDelete: "set null" }),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().$onUpdate(() => new Date()),

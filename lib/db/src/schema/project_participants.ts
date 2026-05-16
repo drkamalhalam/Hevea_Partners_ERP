@@ -9,6 +9,7 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { projectsTable } from "./projects";
 import { usersTable } from "./users";
+import { personMasterTable } from "./person_master";
 
 /**
  * project_participants — KYC data for developer and landowner captured
@@ -39,6 +40,13 @@ export const projectParticipantsTable = pgTable("project_participants", {
   aadhaarObjectPath: text("aadhaar_object_path"),
   /** GCS object path for any supporting ID */
   supportingIdObjectPath: text("supporting_id_object_path"),
+
+  /**
+   * FK to person_master — the canonical identity this participant resolves to.
+   * Nullable during migration; new wizard submissions must set this.
+   * When set, this is the authoritative identity source for KYC, OTP, and audit.
+   */
+  personMasterId: uuid("person_master_id").references(() => personMasterTable.id, { onDelete: "set null" }),
 
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().$onUpdate(() => new Date()),
