@@ -1,0 +1,127 @@
+PHASE — Sales Order Integration & Unified Sales Fulfillment Engine
+
+Current problem: Sales Orders are still operating as a disconnected module instead of being part of the canonical project/inventory/financial workflow.
+
+This is causing:
+
+order state disconnected from inventory sales not reducing stock properly project cards not updating dispatch not synchronized duplicate sales logic revenue not properly linked buyer workflow fragmentation 
+
+TARGET ARCHITECTURE
+
+Sales Orders must become: the operational fulfillment layer inside the unified project-governed ERP.
+
+CORE SALES FLOW
+
+Inventory → Sales Order → Reservation → Dispatch → Pickup/Delivery → Sale Confirmation → Financial Posting → Revenue Distribution → Project State Update
+
+NOT: separate independent sales pages.
+
+IMPLEMENTATION RULES
+
+SALES ORDER MUST BE PROJECT-SCOPED 
+
+Every order must belong to:
+
+project inventory source store buyer lifecycle-valid inventory 
+
+No global/disconnected order creation.
+
+INVENTORY RESERVATION ENGINE 
+
+When sales order created: DO NOT immediately deduct stock.
+
+Instead:
+
+reserve inventory reduce available stock preserve physical balance prevent overselling 
+
+Track:
+
+ordered quantity reserved quantity dispatched quantity collected quantity remaining balance PARTIAL DISPATCH SUPPORT 
+
+Orders must support:
+
+partial fulfillment multi-dispatch remaining pickup balance staged collection 
+
+Each dispatch creates: inventory movement events.
+
+SALES ORDER STATUS ENGINE 
+
+Canonical statuses:
+
+Draft Pending Approval Approved Reserved Partially Dispatched Fully Dispatched Collected Completed Cancelled Expired 
+
+Statuses must drive: inventory and financial behavior automatically.
+
+DISPATCH ENGINE INTEGRATION 
+
+Dispatch must:
+
+validate inventory validate store validate reservation create inventory movements update project stock update store stock update project card SALE CONFIRMATION RULE 
+
+Revenue must NOT post at order creation.
+
+Revenue posts ONLY when:
+
+dispatch confirmed pickup completed sale confirmed 
+
+Then automatically:
+
+create financial event update revenue ledger update project card update settlement engine update buyer receivable PROJECT CARD SYNCHRONIZATION 
+
+Sales activity must immediately update:
+
+reserved stock available stock dispatched stock revenue totals buyer receivables sales trends pending pickup 
+
+Project cards must show: LIVE SALES STATE.
+
+INVENTORY ENGINE INTEGRATION 
+
+Sales Orders must fully integrate with: canonical inventory movement engine.
+
+No separate stock deduction logic allowed.
+
+BUYER WORKFLOW 
+
+Buyer actions must support:
+
+order tracking partial pickup visibility pending pickup pickup verification dispatch history payment tracking FINANCIAL ENGINE INTEGRATION 
+
+Sale completion must automatically:
+
+create financial ledger events apply project accounting model trigger settlement eligibility update operational burden calculations 50% REVENUE MODEL INTEGRATION 
+
+For 50% revenue projects: sale confirmation must automatically route revenue into:
+
+landowner side economic participant pool 
+
+according to project model logic.
+
+GOVERNANCE VALIDATION 
+
+Prevent:
+
+overselling dispatch without reservation invalid store dispatch cross-project inventory misuse sale from unavailable stock duplicate fulfillment LIVE EVENT SYNCHRONIZATION 
+
+Every sales event must immediately update:
+
+inventory project cards dashboards receivables revenue projections settlement readiness REPORTING PAGE DEMOTION 
+
+Existing sales pages become:
+
+views fulfillment dashboards analytics surfaces 
+
+NOT independent accounting/inventory authorities.
+
+TESTING REQUIREMENTS 
+
+Test:
+
+order reservation partial dispatch multiple pickups stock reservation release oversell prevention dispatch synchronization sale confirmation revenue posting project card updates buyer receivables inventory reconciliation 50% revenue routing contribution model settlement integration 
+
+FINAL TARGET
+
+Transform Sales Orders into:
+
+PROJECT-GOVERNED
+
+INVENTORY-LINKED EVENT-DRIVEN FINANCIALLY SYNCHRONIZED PARTIAL-FULFILLMENT READY LIVE PROJECT STATE CONNECTED FULFILLMENT INFRASTRUCTURE. 

@@ -65,6 +65,7 @@ import OperationalAnalytics from "./pages/OperationalAnalytics";
 import GovernanceAuditReports from "./pages/GovernanceAuditReports";
 import DataHealth from "./pages/DataHealth";
 import EnterpriseIntelligence from "./pages/EnterpriseIntelligence";
+import FieldOperations from "./pages/FieldOperations";
 import TemplateLibrary from "./pages/TemplateLibrary";
 
 // Pages — Operations
@@ -343,6 +344,7 @@ function AppRoutes() {
               <Route path="/templates"><ProtectedRoute component={TemplateLibrary} /></Route>
 
               {/* Operations — Production & Collection */}
+              <Route path="/field-ops"><ProtectedRoute component={FieldOperations} /></Route>
               <Route path="/collection-entry"><ProtectedRoute component={CollectionEntry} /></Route>
               <Route path="/store-entry"><ProtectedRoute component={StoreEntry} /></Route>
               <Route path="/worker-history"><ProtectedRoute component={WorkerHistory} /></Route>

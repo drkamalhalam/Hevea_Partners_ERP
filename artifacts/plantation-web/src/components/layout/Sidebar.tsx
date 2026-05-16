@@ -304,6 +304,12 @@ const navGroups: NavGroup[] = [
     label: "Operations",
     items: [
       {
+        name: "Field Ops",
+        href: "/field-ops",
+        icon: Activity,
+        roles: ["admin", "developer", "employee", "operational_staff"] as UserRole[],
+      },
+      {
         name: "Collection Entry",
         href: "/collection-entry",
         icon: Leaf,
