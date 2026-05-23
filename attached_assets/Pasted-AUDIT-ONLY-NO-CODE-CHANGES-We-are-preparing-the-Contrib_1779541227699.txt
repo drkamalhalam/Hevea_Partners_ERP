@@ -1,0 +1,90 @@
+AUDIT ONLY — NO CODE CHANGES.
+
+We are preparing the Contribution Ledger & Ownership Foundation implementation.
+
+Review the current system and answer ONLY the questions below with evidence from schema, routes, services, and UI.
+
+Return findings in COPY-FRIENDLY MARKDOWN.
+
+Use this exact structure:
+
+Q1 Current Ownership Sources List every source currently capable of affecting ownership. For each source: table route verification path ownership path whether currently active or dead code Q2 Partner Identity Model Determine the canonical ownership identity: person_master partners users Show every ownership-related table and FK. Recommend which identity is currently safest to standardize on without breaking existing data. Q3 Contribution Lifecycle 
+
+For each contribution-related table:
+
+creation verification approval rejection dispute reversal adjustment reimbursement maturity handling 
+
+Identify missing lifecycle states.
+
+Q4 Ownership Snapshot Architecture How ownership snapshots are generated. Whether snapshots are immutable. Whether recalculation can alter historical ownership. Existing freeze mechanisms. Existing audit trail. Q5 Verification Governance 
+
+For:
+
+contributions expenditures advances settlements 
+
+Show:
+
+who can create who can verify whether self-verification is possible OTP usage approval routing Q6 Contribution Import Capability 
+
+Check whether:
+
+CSV import exists Excel import exists bulk API exists migration tooling exists 
+
+Show exact routes and schemas if present.
+
+Q7 Withdrawal Capability 
+
+Check whether:
+
+ownership withdrawal capital withdrawal contribution reduction redemption buyout 
+
+exist anywhere.
+
+List all findings.
+
+Q8 Reimbursement Capability 
+
+Trace the full reimbursement path.
+
+Show:
+
+request approval payment ownership adjustment audit trail 
+
+If any stage is missing, identify exactly where the flow stops.
+
+Q9 Existing Financial Audit Trails 
+
+List every audit/event table touching:
+
+contributions expenditures burdens advances settlements ownership inheritance reimbursements 
+
+State whether each is write-once.
+
+Q10 Numeric Precision 
+
+List every money column in:
+
+contributions expenditures advances burdens settlements ownership LCA 
+
+Show actual DB type:
+
+real numeric decimal integer 
+
+Identify precision risks.
+
+Q11 Maturity Interaction 
+
+Identify every table, route, validation, or workflow that changes behavior after project maturity.
+
+Show exact effects.
+
+Q12 Conflict Analysis 
+
+Identify everything that would conflict with a future Single Contribution Ledger architecture.
+
+Separate findings into:
+
+Blockers Strong recommendations Nice-to-have corrections 
+
+Return concise evidence-backed findings only. No proposals. No code changes. No implementation. AUDIT ONLY.
+
