@@ -9142,6 +9142,16 @@ export const PersonMasterSummaryKycStatus = {
   flagged: "flagged",
 } as const;
 
+export type PersonMasterSummaryStatus =
+  (typeof PersonMasterSummaryStatus)[keyof typeof PersonMasterSummaryStatus];
+
+export const PersonMasterSummaryStatus = {
+  active: "active",
+  inactive: "inactive",
+  deceased: "deceased",
+  archived: "archived",
+} as const;
+
 export interface PersonMasterSummary {
   id: string;
   fullName: string;
@@ -9153,6 +9163,7 @@ export interface PersonMasterSummary {
   district?: string | null;
   state?: string | null;
   kycStatus: PersonMasterSummaryKycStatus;
+  status: PersonMasterSummaryStatus;
   aadhaarVerified?: string | null;
   otpVerified?: string | null;
   userId?: string | null;
@@ -9206,6 +9217,22 @@ export type PersonMasterProfile = PersonMasterSummary & {
   supportingIdObjectPath?: string | null;
   profilePhotoObjectPath?: string | null;
   remarks?: string | null;
+  panNumber?: string | null;
+  communicationPreference?: string | null;
+  archivedAt?: string | null;
+  dateOfDeath?: string | null;
+  deathRemarks?: string | null;
+  deathDocumentPath?: string | null;
+  bankAccountNumber?: string | null;
+  bankIfsc?: string | null;
+  bankName?: string | null;
+  bankBranch?: string | null;
+  bankAccountHolderName?: string | null;
+  bankAccountType?: string | null;
+  personNomineeName?: string | null;
+  personNomineeRelationship?: string | null;
+  personNomineeMobile?: string | null;
+  personNomineeAddress?: string | null;
   roles?: PersonRoleAssignment[];
   projectLinks?: PersonMasterProfileProjectLinksItem[];
 };
@@ -9217,6 +9244,15 @@ export const CreatePersonMasterGender = {
   male: "male",
   female: "female",
   other: "other",
+} as const;
+
+export type CreatePersonMasterCommunicationPreference =
+  (typeof CreatePersonMasterCommunicationPreference)[keyof typeof CreatePersonMasterCommunicationPreference];
+
+export const CreatePersonMasterCommunicationPreference = {
+  mobile: "mobile",
+  email: "email",
+  whatsapp: "whatsapp",
 } as const;
 
 export interface CreatePersonMaster {
@@ -9239,6 +9275,8 @@ export interface CreatePersonMaster {
   district?: string;
   state?: string;
   country?: string;
+  panNumber?: string;
+  communicationPreference?: CreatePersonMasterCommunicationPreference;
   remarks?: string;
 }
 
@@ -9270,6 +9308,23 @@ export const UpdatePersonMasterAadhaarVerified = {
   pending: "pending",
 } as const;
 
+export type UpdatePersonMasterCommunicationPreference =
+  (typeof UpdatePersonMasterCommunicationPreference)[keyof typeof UpdatePersonMasterCommunicationPreference];
+
+export const UpdatePersonMasterCommunicationPreference = {
+  mobile: "mobile",
+  email: "email",
+  whatsapp: "whatsapp",
+} as const;
+
+export type UpdatePersonMasterBankAccountType =
+  (typeof UpdatePersonMasterBankAccountType)[keyof typeof UpdatePersonMasterBankAccountType];
+
+export const UpdatePersonMasterBankAccountType = {
+  savings: "savings",
+  current: "current",
+} as const;
+
 export interface UpdatePersonMaster {
   fullName?: string;
   sOnCOn?: string;
@@ -9287,6 +9342,18 @@ export interface UpdatePersonMaster {
   kycStatus?: UpdatePersonMasterKycStatus;
   aadhaarVerified?: UpdatePersonMasterAadhaarVerified;
   remarks?: string;
+  panNumber?: string;
+  communicationPreference?: UpdatePersonMasterCommunicationPreference;
+  bankAccountNumber?: string;
+  bankIfsc?: string;
+  bankName?: string;
+  bankBranch?: string;
+  bankAccountHolderName?: string;
+  bankAccountType?: UpdatePersonMasterBankAccountType;
+  personNomineeName?: string;
+  personNomineeRelationship?: string;
+  personNomineeMobile?: string;
+  personNomineeAddress?: string;
 }
 
 export type PersonRoleAssignmentInputRole =
@@ -9329,6 +9396,14 @@ export const PersonMasterAuditEventEventType = {
   project_linked: "project_linked",
   duplicate_merged: "duplicate_merged",
   documents_uploaded: "documents_uploaded",
+  status_changed: "status_changed",
+  archived: "archived",
+  restored: "restored",
+  deceased_marked: "deceased_marked",
+  bank_updated: "bank_updated",
+  nominee_updated: "nominee_updated",
+  pan_updated: "pan_updated",
+  contact_updated: "contact_updated",
 } as const;
 
 export type PersonMasterAuditEventMetadata = { [key: string]: unknown } | null;
@@ -9341,6 +9416,131 @@ export interface PersonMasterAuditEvent {
   metadata?: PersonMasterAuditEventMetadata;
   performedBy?: string | null;
   createdAt: string;
+}
+
+export type PersonStatusChangeInputToStatus =
+  (typeof PersonStatusChangeInputToStatus)[keyof typeof PersonStatusChangeInputToStatus];
+
+export const PersonStatusChangeInputToStatus = {
+  active: "active",
+  inactive: "inactive",
+  deceased: "deceased",
+  archived: "archived",
+} as const;
+
+export interface PersonStatusChangeInput {
+  toStatus: PersonStatusChangeInputToStatus;
+  /** @minLength 5 */
+  reason: string;
+  notes?: string;
+  /** Required when toStatus is deceased */
+  dateOfDeath?: string;
+  deathRemarks?: string;
+}
+
+export type PersonStatusHistoryFromStatus =
+  | (typeof PersonStatusHistoryFromStatus)[keyof typeof PersonStatusHistoryFromStatus]
+  | null;
+
+export const PersonStatusHistoryFromStatus = {
+  active: "active",
+  inactive: "inactive",
+  deceased: "deceased",
+  archived: "archived",
+} as const;
+
+export type PersonStatusHistoryToStatus =
+  (typeof PersonStatusHistoryToStatus)[keyof typeof PersonStatusHistoryToStatus];
+
+export const PersonStatusHistoryToStatus = {
+  active: "active",
+  inactive: "inactive",
+  deceased: "deceased",
+  archived: "archived",
+} as const;
+
+export interface PersonStatusHistory {
+  id: string;
+  personMasterId: string;
+  fromStatus?: PersonStatusHistoryFromStatus;
+  toStatus: PersonStatusHistoryToStatus;
+  changedBy?: string | null;
+  changedByName?: string | null;
+  reason: string;
+  notes?: string | null;
+  createdAt: string;
+}
+
+export type PersonArchiveBlockedErrorBlockersItem = {
+  type?: string;
+  id?: string;
+  label?: string;
+};
+
+export interface PersonArchiveBlockedError {
+  error?: string;
+  message?: string;
+  blockers?: PersonArchiveBlockedErrorBlockersItem[];
+}
+
+export type PersonRelationshipsProjectParticipationsItem = {
+  id?: string;
+  projectId?: string;
+  projectName?: string;
+  role?: string;
+};
+
+export type PersonRelationshipsWorkforceAssignmentsItem = {
+  id?: string;
+  projectId?: string;
+  projectName?: string;
+  role?: string;
+  isActive?: boolean;
+};
+
+export type PersonRelationshipsNomineesItem = {
+  id?: string;
+  projectId?: string;
+  projectName?: string;
+  nomineeName?: string;
+  activationStatus?: string;
+};
+
+export type PersonRelationshipsClaimantsItem = {
+  id?: string;
+  projectId?: string;
+  projectName?: string;
+  claimantName?: string;
+  status?: string;
+};
+
+export type PersonRelationshipsBuyerLinksItem = {
+  id?: string;
+  name?: string;
+  buyerType?: string;
+};
+
+export type PersonRelationshipsPartnerLinksItem = {
+  id?: string;
+  name?: string;
+  role?: string;
+};
+
+export type PersonRelationshipsWitnessesItem = {
+  id?: string;
+  projectId?: string;
+  projectName?: string;
+  fullName?: string;
+};
+
+export interface PersonRelationships {
+  projectParticipations?: PersonRelationshipsProjectParticipationsItem[];
+  workforceAssignments?: PersonRelationshipsWorkforceAssignmentsItem[];
+  nominees?: PersonRelationshipsNomineesItem[];
+  claimants?: PersonRelationshipsClaimantsItem[];
+  buyerLinks?: PersonRelationshipsBuyerLinksItem[];
+  partnerLinks?: PersonRelationshipsPartnerLinksItem[];
+  witnesses?: PersonRelationshipsWitnessesItem[];
 }
 
 export interface PersonMasterDuplicateError {
@@ -9450,6 +9650,10 @@ export type ListPersonMasterParams = {
    */
   mobile?: string;
   kyc_status?: ListPersonMasterKycStatus;
+  /**
+   * Filter by person lifecycle status
+   */
+  status?: ListPersonMasterStatus;
   limit?: number;
   offset?: number;
 };
@@ -9462,6 +9666,16 @@ export const ListPersonMasterKycStatus = {
   documents_submitted: "documents_submitted",
   verified: "verified",
   flagged: "flagged",
+} as const;
+
+export type ListPersonMasterStatus =
+  (typeof ListPersonMasterStatus)[keyof typeof ListPersonMasterStatus];
+
+export const ListPersonMasterStatus = {
+  active: "active",
+  inactive: "inactive",
+  deceased: "deceased",
+  archived: "archived",
 } as const;
 
 export type MergePersonMaster200 = {

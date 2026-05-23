@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { ListPersonMasterKycStatus } from "./listPersonMasterKycStatus";
+import type { ListPersonMasterStatus } from "./listPersonMasterStatus";
 
 export type ListPersonMasterParams = {
   /**
@@ -21,6 +22,10 @@ export type ListPersonMasterParams = {
    */
   mobile?: string;
   kyc_status?: ListPersonMasterKycStatus;
+  /**
+   * Filter by person lifecycle status
+   */
+  status?: ListPersonMasterStatus;
   limit?: number;
   offset?: number;
 };

@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { PersonMasterSummaryKycStatus } from "./personMasterSummaryKycStatus";
+import type { PersonMasterSummaryStatus } from "./personMasterSummaryStatus";
 
 export interface PersonMasterSummary {
   id: string;
@@ -18,6 +19,7 @@ export interface PersonMasterSummary {
   district?: string | null;
   state?: string | null;
   kycStatus: PersonMasterSummaryKycStatus;
+  status: PersonMasterSummaryStatus;
   aadhaarVerified?: string | null;
   otpVerified?: string | null;
   userId?: string | null;

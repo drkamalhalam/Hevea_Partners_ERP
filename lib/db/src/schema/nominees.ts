@@ -20,6 +20,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { usersTable } from "./users";
 import { projectsTable } from "./projects";
+import { personMasterTable } from "./person_master";
 import { nomineeActivationStatusEnum } from "./enums";
 
 export const projectNomineesTable = pgTable("project_nominees", {
@@ -34,7 +35,11 @@ export const projectNomineesTable = pgTable("project_nominees", {
     onDelete: "set null",
   }),
 
-  // ── Nominee personal details ───────────────────────────────────────────
+  // Person Registry linkage (nullable — legacy records pre-date this field)
+  personMasterId: uuid("person_master_id")
+    .references(() => personMasterTable.id, { onDelete: "set null" }),
+
+  // ── Nominee personal details (kept for legacy records and document snapshots) ──
   nomineeName: text("nominee_name").notNull(),
   relationship: text("relationship").notNull(),
   phone: text("phone").notNull(),

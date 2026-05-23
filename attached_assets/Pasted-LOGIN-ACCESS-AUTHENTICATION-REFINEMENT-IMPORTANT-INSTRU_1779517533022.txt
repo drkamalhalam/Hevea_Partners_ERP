@@ -1,0 +1,483 @@
+LOGIN ACCESS & AUTHENTICATION REFINEMENT
+
+IMPORTANT INSTRUCTIONS
+
+This is an existing Plantation ERP.
+
+The architecture audit identified an existing authentication system:
+
+- Clerk Authentication
+- users table
+- role-based permissions
+- requireAuth middleware
+- canAccessProject authorization
+- operational access controls
+
+These assets are reusable.
+
+DO NOT rebuild authentication from scratch.
+
+Analyze existing implementation first.
+
+Reuse compatible components wherever possible.
+
+Architecture requirements take precedence over current implementation.
+
+--------------------------------------------------
+OBJECTIVE
+--------------------------------------------------
+
+Refine Login Access architecture to align with Person Registry.
+
+Implement:
+
+1. Login Access Management
+2. Person-to-Login Linking
+3. Authentication Hardening
+4. Authorization Refinement
+5. Account Lifecycle Controls
+6. Auditability
+
+--------------------------------------------------
+CORE PRINCIPLE
+--------------------------------------------------
+
+Person Registry remains the identity source.
+
+Login Access is optional.
+
+--------------------------------------------------
+
+One Person
+
+↓
+
+May Have
+
+↓
+
+No Login
+
+or
+
+One Login
+
+--------------------------------------------------
+
+Person and Login must remain separate concepts.
+
+--------------------------------------------------
+ACCOUNT TYPES
+--------------------------------------------------
+
+Only three account types exist:
+
+Admin
+
+Developer
+
+Normal User
+
+--------------------------------------------------
+
+Do NOT create account types such as:
+
+Collector
+
+Observer
+
+Store Operator
+
+Buyer
+
+Landowner
+
+Investor
+
+--------------------------------------------------
+
+Operational capability comes from:
+
+Assignments
+
+Project Relationships
+
+Ownership Relationships
+
+Entitlements
+
+--------------------------------------------------
+
+Not from login role.
+
+--------------------------------------------------
+PERSON LINKING
+--------------------------------------------------
+
+Every login account must link to:
+
+Person Registry Record
+
+--------------------------------------------------
+
+Prevent orphan logins.
+
+--------------------------------------------------
+
+Display linked person information.
+
+--------------------------------------------------
+LOGIN CREATION
+--------------------------------------------------
+
+Workflow:
+
+Select Existing Person
+
+↓
+
+Create Login Access
+
+↓
+
+Assign Account Type
+
+↓
+
+Activate
+
+--------------------------------------------------
+
+Do not allow free-text identity creation during login creation.
+
+--------------------------------------------------
+LOGIN STATUS
+--------------------------------------------------
+
+Supported statuses:
+
+Pending Activation
+
+Active
+
+Suspended
+
+Archived
+
+--------------------------------------------------
+
+Status history required.
+
+--------------------------------------------------
+AUTHENTICATION REVIEW
+--------------------------------------------------
+
+Analyze existing Clerk integration.
+
+Reuse where possible.
+
+--------------------------------------------------
+
+Verify:
+
+Login
+
+Logout
+
+Token Validation
+
+Session Validation
+
+User Mapping
+
+--------------------------------------------------
+
+Remove unsafe fallback behavior.
+
+--------------------------------------------------
+
+If user not properly provisioned:
+
+Return Unauthorized
+
+--------------------------------------------------
+
+Do not silently assign default operational access.
+
+--------------------------------------------------
+AUTHORIZATION PRINCIPLE
+--------------------------------------------------
+
+Authentication
+
+≠
+
+Authorization
+
+--------------------------------------------------
+
+Authentication proves identity.
+
+--------------------------------------------------
+
+Authorization derives from:
+
+Account Type
+
+Assignments
+
+Project Relationships
+
+Ownership Relationships
+
+Governance Permissions
+
+--------------------------------------------------
+PROJECT ACCESS
+--------------------------------------------------
+
+Project access determined by:
+
+Project Participation
+
+Assignments
+
+Ownership Relationships
+
+Admin Authority
+
+Developer Authority
+
+--------------------------------------------------
+
+Not by arbitrary role names.
+
+--------------------------------------------------
+ACCOUNT SUSPENSION
+--------------------------------------------------
+
+Support:
+
+Suspend Login
+
+Restore Login
+
+--------------------------------------------------
+
+Suspension must not remove:
+
+Person Record
+
+Ownership History
+
+Assignments
+
+Documents
+
+Audit Records
+
+--------------------------------------------------
+ACCOUNT ARCHIVE
+--------------------------------------------------
+
+No hard delete.
+
+--------------------------------------------------
+
+Archive only.
+
+--------------------------------------------------
+
+Preserve complete history.
+
+--------------------------------------------------
+PASSWORD / PROVIDER MANAGEMENT
+--------------------------------------------------
+
+Reuse Clerk capabilities.
+
+--------------------------------------------------
+
+Do not implement custom password storage.
+
+--------------------------------------------------
+
+Continue using secure provider architecture.
+
+--------------------------------------------------
+SESSION REVIEW
+--------------------------------------------------
+
+Review existing session handling.
+
+--------------------------------------------------
+
+Verify:
+
+Expiration
+
+Invalidation
+
+Revocation
+
+Logout Behavior
+
+--------------------------------------------------
+
+Document findings.
+
+--------------------------------------------------
+AUDIT REQUIREMENTS
+--------------------------------------------------
+
+Track:
+
+Login Creation
+
+Activation
+
+Suspension
+
+Restore
+
+Archive
+
+Role Change
+
+Person Link Change
+
+Authentication Events
+
+--------------------------------------------------
+
+Store:
+
+User
+
+Timestamp
+
+Action
+
+Reason
+
+--------------------------------------------------
+SECURITY HARDENING
+--------------------------------------------------
+
+Review:
+
+Privilege Escalation Risks
+
+Default Access Risks
+
+Inactive User Access
+
+Project Access Controls
+
+--------------------------------------------------
+
+Remove unsafe defaults.
+
+--------------------------------------------------
+
+Follow least-privilege principle.
+
+--------------------------------------------------
+ADMIN UI
+--------------------------------------------------
+
+Provide:
+
+Create Login
+
+Activate
+
+Suspend
+
+Restore
+
+Archive
+
+View Login History
+
+View Linked Person
+
+--------------------------------------------------
+PERSON PROFILE INTEGRATION
+--------------------------------------------------
+
+Person Profile should display:
+
+Login Status
+
+Account Type
+
+Last Login
+
+Linked Account
+
+--------------------------------------------------
+
+Without duplicating identity data.
+
+--------------------------------------------------
+MIGRATION REQUIREMENTS
+--------------------------------------------------
+
+Analyze:
+
+users
+
+authentication middleware
+
+role system
+
+permission system
+
+session handling
+
+--------------------------------------------------
+
+Classify:
+
+Reuse
+
+Refactor
+
+Archive
+
+--------------------------------------------------
+
+Eliminate unsafe authentication behavior.
+
+--------------------------------------------------
+DELIVERABLES
+--------------------------------------------------
+
+Implement:
+
+1. Login Access Management
+2. Person-Link Enforcement
+3. Authentication Hardening
+4. Authorization Refinement
+5. Suspension Workflow
+6. Archive Workflow
+7. Audit History
+8. Admin Management UI
+
+After implementation provide:
+
+- files modified
+- database changes
+- APIs created
+- migration actions
+- reused structures
+- refactored structures
+- archived structures
+- security issues fixed
+- conflicts discovered
+- recommendations before Prompt 4
+
+Do not implement Assignment System yet.
+
+Only complete Login Access and Authentication refinement.

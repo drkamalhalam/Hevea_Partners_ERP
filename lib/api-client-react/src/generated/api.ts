@@ -541,14 +541,18 @@ import type {
   PaymentReceiverAccount,
   PaymentSettingsAuditEntry,
   PaymentTransaction,
+  PersonArchiveBlockedError,
   PersonMasterAuditEvent,
   PersonMasterDuplicateError,
   PersonMasterMergeInput,
   PersonMasterProfile,
   PersonMasterRemediationResult,
   PersonMasterSummary,
+  PersonRelationships,
   PersonRoleAssignment,
   PersonRoleAssignmentInput,
+  PersonStatusChangeInput,
+  PersonStatusHistory,
   PostMaturityPaymentInput,
   PrematuritySuccessionDashboard,
   ProductionAssignment,
@@ -6142,6 +6146,279 @@ export function useGetPersonMasterAudit<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetPersonMasterAuditQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Change the lifecycle status of a person master record (admin only)
+ */
+export const getChangePersonMasterStatusUrl = (id: string) => {
+  return `/api/person-master/${id}/status`;
+};
+
+export const changePersonMasterStatus = async (
+  id: string,
+  personStatusChangeInput: PersonStatusChangeInput,
+  options?: RequestInit,
+): Promise<PersonStatusHistory> => {
+  return customFetch<PersonStatusHistory>(getChangePersonMasterStatusUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(personStatusChangeInput),
+  });
+};
+
+export const getChangePersonMasterStatusMutationOptions = <
+  TError = ErrorType<void | PersonArchiveBlockedError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof changePersonMasterStatus>>,
+    TError,
+    { id: string; data: BodyType<PersonStatusChangeInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof changePersonMasterStatus>>,
+  TError,
+  { id: string; data: BodyType<PersonStatusChangeInput> },
+  TContext
+> => {
+  const mutationKey = ["changePersonMasterStatus"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof changePersonMasterStatus>>,
+    { id: string; data: BodyType<PersonStatusChangeInput> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return changePersonMasterStatus(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ChangePersonMasterStatusMutationResult = NonNullable<
+  Awaited<ReturnType<typeof changePersonMasterStatus>>
+>;
+export type ChangePersonMasterStatusMutationBody =
+  BodyType<PersonStatusChangeInput>;
+export type ChangePersonMasterStatusMutationError =
+  ErrorType<void | PersonArchiveBlockedError>;
+
+/**
+ * @summary Change the lifecycle status of a person master record (admin only)
+ */
+export const useChangePersonMasterStatus = <
+  TError = ErrorType<void | PersonArchiveBlockedError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof changePersonMasterStatus>>,
+    TError,
+    { id: string; data: BodyType<PersonStatusChangeInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof changePersonMasterStatus>>,
+  TError,
+  { id: string; data: BodyType<PersonStatusChangeInput> },
+  TContext
+> => {
+  return useMutation(getChangePersonMasterStatusMutationOptions(options));
+};
+
+/**
+ * @summary Get the full status change history for a person master record
+ */
+export const getGetPersonMasterStatusHistoryUrl = (id: string) => {
+  return `/api/person-master/${id}/status-history`;
+};
+
+export const getPersonMasterStatusHistory = async (
+  id: string,
+  options?: RequestInit,
+): Promise<PersonStatusHistory[]> => {
+  return customFetch<PersonStatusHistory[]>(
+    getGetPersonMasterStatusHistoryUrl(id),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetPersonMasterStatusHistoryQueryKey = (id: string) => {
+  return [`/api/person-master/${id}/status-history`] as const;
+};
+
+export const getGetPersonMasterStatusHistoryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPersonMasterStatusHistory>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPersonMasterStatusHistory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetPersonMasterStatusHistoryQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getPersonMasterStatusHistory>>
+  > = ({ signal }) =>
+    getPersonMasterStatusHistory(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPersonMasterStatusHistory>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPersonMasterStatusHistoryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPersonMasterStatusHistory>>
+>;
+export type GetPersonMasterStatusHistoryQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get the full status change history for a person master record
+ */
+
+export function useGetPersonMasterStatusHistory<
+  TData = Awaited<ReturnType<typeof getPersonMasterStatusHistory>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPersonMasterStatusHistory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPersonMasterStatusHistoryQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get all records across all ERP modules that reference this person
+ */
+export const getGetPersonMasterRelationshipsUrl = (id: string) => {
+  return `/api/person-master/${id}/relationships`;
+};
+
+export const getPersonMasterRelationships = async (
+  id: string,
+  options?: RequestInit,
+): Promise<PersonRelationships> => {
+  return customFetch<PersonRelationships>(
+    getGetPersonMasterRelationshipsUrl(id),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetPersonMasterRelationshipsQueryKey = (id: string) => {
+  return [`/api/person-master/${id}/relationships`] as const;
+};
+
+export const getGetPersonMasterRelationshipsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPersonMasterRelationships>>,
+  TError = ErrorType<void>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPersonMasterRelationships>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetPersonMasterRelationshipsQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getPersonMasterRelationships>>
+  > = ({ signal }) =>
+    getPersonMasterRelationships(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPersonMasterRelationships>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPersonMasterRelationshipsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPersonMasterRelationships>>
+>;
+export type GetPersonMasterRelationshipsQueryError = ErrorType<void>;
+
+/**
+ * @summary Get all records across all ERP modules that reference this person
+ */
+
+export function useGetPersonMasterRelationships<
+  TData = Awaited<ReturnType<typeof getPersonMasterRelationships>>,
+  TError = ErrorType<void>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPersonMasterRelationships>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPersonMasterRelationshipsQueryOptions(id, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

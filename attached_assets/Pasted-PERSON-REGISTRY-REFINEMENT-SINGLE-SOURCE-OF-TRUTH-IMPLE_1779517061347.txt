@@ -1,0 +1,555 @@
+PERSON REGISTRY REFINEMENT & SINGLE SOURCE OF TRUTH IMPLEMENTATION
+
+IMPORTANT INSTRUCTIONS
+
+This is an existing Plantation ERP.
+
+The architecture audit identified an existing Person Registry implementation:
+
+- person_master
+- person_master_audit
+- person_role_assignments
+- claimants
+- nominees
+- project_participants
+- project_witnesses
+
+These assets are reusable.
+
+DO NOT rebuild Person Registry from scratch.
+
+FIRST analyze existing implementation.
+
+Reuse compatible structures wherever possible.
+
+Architecture requirements take precedence over current implementation.
+
+--------------------------------------------------
+OBJECTIVE
+--------------------------------------------------
+
+Refine Person Registry into the single source of truth for all individuals.
+
+Every human being in the ERP must originate from Person Registry.
+
+No duplicate person records should exist in other modules.
+
+--------------------------------------------------
+PERSON REGISTRY PRINCIPLE
+--------------------------------------------------
+
+One Person
+
+Many Relationships
+
+--------------------------------------------------
+
+A person may simultaneously be:
+
+Landowner
+
+Developer
+
+Investor
+
+Partner
+
+Witness
+
+Nominee
+
+Claimant
+
+Beneficiary
+
+Heir
+
+Buyer
+
+Collector
+
+Store Operator
+
+Observer
+
+Employee
+
+Login Holder
+
+--------------------------------------------------
+
+All modules must reference Person Registry.
+
+--------------------------------------------------
+PERSON MASTER RECORD
+--------------------------------------------------
+
+Review and refine existing structure.
+
+Support:
+
+Legal Name
+
+Father/Guardian Name
+
+Date of Birth
+
+Gender
+
+Mobile Number
+
+Email
+
+Address
+
+Profile Image
+
+Government ID Information
+
+Bank Information
+
+Nominee Information
+
+Communication Preference
+
+Status
+
+--------------------------------------------------
+
+Person Registry remains the master identity source.
+
+--------------------------------------------------
+SINGLE SOURCE OF TRUTH
+--------------------------------------------------
+
+The following modules must reference Person Registry:
+
+Projects
+
+Assignments
+
+Witnesses
+
+Nominees
+
+Inheritance
+
+Ownership Transfer
+
+Buyers
+
+Login Access
+
+Documents
+
+Approvals
+
+Notifications
+
+--------------------------------------------------
+
+Prevent duplicate storage of person information.
+
+--------------------------------------------------
+PERSON STATUS
+--------------------------------------------------
+
+Supported statuses:
+
+Active
+
+Inactive
+
+Deceased
+
+Archived
+
+--------------------------------------------------
+
+Status history must be preserved.
+
+--------------------------------------------------
+ARCHIVE RULE
+--------------------------------------------------
+
+No hard delete allowed.
+
+--------------------------------------------------
+
+Only archive.
+
+--------------------------------------------------
+
+Archive blocked if person remains linked to:
+
+Active Project
+
+Active Assignment
+
+Pending Ownership Transfer
+
+Pending Inheritance Case
+
+Pending Governance Action
+
+--------------------------------------------------
+
+Display blocking relationships.
+
+--------------------------------------------------
+SENSITIVE DATA GOVERNANCE
+--------------------------------------------------
+
+Sensitive fields:
+
+Legal Name
+
+Government IDs
+
+Bank Details
+
+Nominee Information
+
+Inheritance Information
+
+--------------------------------------------------
+
+Every change requires audit history.
+
+--------------------------------------------------
+
+Store:
+
+Old Value
+
+New Value
+
+Changed By
+
+Timestamp
+
+Reason
+
+--------------------------------------------------
+EDITABLE FIELDS
+--------------------------------------------------
+
+Normal edits allowed:
+
+Phone
+
+Email
+
+Address
+
+Profile Image
+
+Communication Preference
+
+--------------------------------------------------
+
+Maintain modification history.
+
+--------------------------------------------------
+PERSON RELATIONSHIPS
+--------------------------------------------------
+
+Display all relationships.
+
+Examples:
+
+Project Participant
+
+Nominee
+
+Claimant
+
+Witness
+
+Buyer
+
+Assignment Holder
+
+Login Holder
+
+--------------------------------------------------
+
+Allow navigation to related records.
+
+--------------------------------------------------
+PERSON PROFILE
+--------------------------------------------------
+
+Display:
+
+Identity Information
+
+Contact Information
+
+Bank Information
+
+Nominee Information
+
+Project Participation
+
+Assignments
+
+Ownership Relationships
+
+Documents
+
+Audit History
+
+--------------------------------------------------
+
+Use tabs where appropriate.
+
+--------------------------------------------------
+DOCUMENT INTEGRATION
+--------------------------------------------------
+
+Support document attachment.
+
+Examples:
+
+Aadhaar
+
+PAN
+
+Bank Proof
+
+Photograph
+
+Death Certificate
+
+Succession Documents
+
+--------------------------------------------------
+
+Reuse existing document infrastructure.
+
+--------------------------------------------------
+DECEASED PERSON SUPPORT
+--------------------------------------------------
+
+Support status:
+
+Deceased
+
+--------------------------------------------------
+
+Store:
+
+Date of Death
+
+Remarks
+
+Supporting Documents
+
+--------------------------------------------------
+
+Do not automatically alter ownership.
+
+--------------------------------------------------
+
+Future inheritance workflows will consume this status.
+
+--------------------------------------------------
+PERSON SEARCH
+--------------------------------------------------
+
+Provide fast search.
+
+Support:
+
+Name
+
+Phone
+
+Government ID
+
+Email
+
+Project Association
+
+--------------------------------------------------
+
+Prevent accidental duplicate creation.
+
+--------------------------------------------------
+DUPLICATE DETECTION
+--------------------------------------------------
+
+Before creating person:
+
+Check:
+
+Mobile Number
+
+Government ID
+
+Email
+
+--------------------------------------------------
+
+Warn user about possible duplicates.
+
+--------------------------------------------------
+
+Do not automatically merge.
+
+--------------------------------------------------
+PERSON REGISTRY SELECTION
+--------------------------------------------------
+
+All modules must use Person Registry selectors.
+
+--------------------------------------------------
+
+Do not allow free-text participant creation.
+
+--------------------------------------------------
+
+Project Creation
+
+Witness Selection
+
+Nominee Selection
+
+Assignment Creation
+
+Ownership Transfer
+
+Inheritance
+
+Buyer Creation
+
+Login Creation
+
+--------------------------------------------------
+
+Must use Person Registry records.
+
+--------------------------------------------------
+LOGIN INTEGRATION
+--------------------------------------------------
+
+Person Registry remains separate from Login Access.
+
+--------------------------------------------------
+
+One person may have:
+
+No Login
+
+One Login
+
+--------------------------------------------------
+
+Login access handled later.
+
+--------------------------------------------------
+BUYER INTEGRATION
+--------------------------------------------------
+
+Buyers should originate from Person Registry.
+
+--------------------------------------------------
+
+Reuse person records where possible.
+
+--------------------------------------------------
+AUDIT REQUIREMENTS
+--------------------------------------------------
+
+Track:
+
+Create
+
+Edit
+
+Archive
+
+Restore
+
+Status Change
+
+Document Upload
+
+Relationship Change
+
+--------------------------------------------------
+
+Store:
+
+User
+
+Timestamp
+
+Action
+
+Reason
+
+--------------------------------------------------
+MIGRATION REQUIREMENTS
+--------------------------------------------------
+
+Analyze:
+
+person_master
+
+claimants
+
+nominees
+
+project_participants
+
+project_witnesses
+
+buyers
+
+--------------------------------------------------
+
+Classify:
+
+Reuse
+
+Refactor
+
+Archive
+
+--------------------------------------------------
+
+Eliminate duplicate identity storage where feasible.
+
+--------------------------------------------------
+DELIVERABLES
+--------------------------------------------------
+
+Implement:
+
+1. Refined Person Registry
+2. Person Profile
+3. Relationship Viewer
+4. Duplicate Detection
+5. Archive Controls
+6. Deceased Status Support
+7. Document Integration
+8. Audit History
+9. Registry Selectors
+
+After implementation provide:
+
+- files modified
+- database changes
+- APIs created
+- migration actions
+- reused structures
+- refactored structures
+- archived structures
+- conflicts discovered
+- recommendations before Prompt 3
+
+Do not implement Login Access yet.
+
+Only complete Person Registry refinement and single source of truth enforcement.

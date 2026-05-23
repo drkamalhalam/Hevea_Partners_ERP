@@ -22,4 +22,12 @@ export const PersonMasterAuditEventEventType = {
   project_linked: "project_linked",
   duplicate_merged: "duplicate_merged",
   documents_uploaded: "documents_uploaded",
+  status_changed: "status_changed",
+  archived: "archived",
+  restored: "restored",
+  deceased_marked: "deceased_marked",
+  bank_updated: "bank_updated",
+  nominee_updated: "nominee_updated",
+  pan_updated: "pan_updated",
+  contact_updated: "contact_updated",
 } as const;

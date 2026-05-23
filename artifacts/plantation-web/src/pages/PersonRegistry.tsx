@@ -4,6 +4,7 @@ import {
   useListPersonMaster,
   useCreatePersonMaster,
   getListPersonMasterQueryKey,
+  ListPersonMasterStatus,
   type PersonMasterSummary,
   type ListPersonMasterParams,
 } from "@workspace/api-client-react";
@@ -55,6 +56,9 @@ import {
   CheckCircle2,
   UserCheck,
   Fingerprint,
+  SkullIcon,
+  Archive,
+  Filter,
 } from "lucide-react";
 import { useDebounce } from "@/hooks/use-debounce";
 
@@ -122,23 +126,44 @@ interface WizardState {
   matches: PersonMasterSummary[];
 }
 
+// ── Status config ──────────────────────────────────────────────────────────
+
+const STATUS_CFG: Record<string, { label: string; classes: string; icon: React.ElementType }> = {
+  active: { label: "Active", classes: "bg-emerald-100 text-emerald-800 border-emerald-200", icon: CheckCircle2 },
+  inactive: { label: "Inactive", classes: "bg-gray-100 text-gray-700 border-gray-200", icon: Clock },
+  deceased: { label: "Deceased", classes: "bg-slate-200 text-slate-700 border-slate-300", icon: SkullIcon },
+  archived: { label: "Archived", classes: "bg-orange-100 text-orange-800 border-orange-200", icon: Archive },
+};
+
 // ── Person card ────────────────────────────────────────────────────────────
 
 function PersonCard({ person }: { person: PersonMasterSummary }) {
   const pid = derivePersonId(person.id, person.createdAt);
+  const statusCfg = STATUS_CFG[person.status] ?? STATUS_CFG.active;
+  const StatusIcon = statusCfg.icon;
+  const isDeceased = person.status === "deceased";
+  const isArchived = person.status === "archived";
   return (
-    <Card className="hover:shadow-md transition-shadow">
+    <Card className={`hover:shadow-md transition-shadow ${isDeceased || isArchived ? "opacity-75 border-dashed" : ""}`}>
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between gap-2">
-          <div>
-            <CardTitle className="font-serif text-base leading-tight">
+          <div className="min-w-0">
+            <CardTitle className={`font-serif text-base leading-tight ${isDeceased ? "line-through text-muted-foreground" : ""}`}>
               {person.fullName}
             </CardTitle>
             {person.sOnCOn && (
-              <p className="text-xs text-muted-foreground mt-0.5">{person.sOnCOn}</p>
+              <p className="text-xs text-muted-foreground mt-0.5 truncate">{person.sOnCOn}</p>
             )}
           </div>
-          <KycBadge status={person.kycStatus} />
+          <div className="flex flex-col items-end gap-1 shrink-0">
+            <KycBadge status={person.kycStatus} />
+            {person.status !== "active" && (
+              <span className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-medium border ${statusCfg.classes}`}>
+                <StatusIcon className="w-2.5 h-2.5" />
+                {statusCfg.label}
+              </span>
+            )}
+          </div>
         </div>
         <p className="text-[10px] font-mono text-muted-foreground/60">{pid}</p>
       </CardHeader>
@@ -229,13 +254,15 @@ export default function PersonRegistry() {
   const queryClient = useQueryClient();
 
   const [listSearch, setListSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const debouncedListSearch = useDebounce(listSearch, 400);
 
-  const { data: persons = [], isLoading } = useListPersonMaster(
-    debouncedListSearch
-      ? { q: debouncedListSearch }
-      : {},
-  );
+  const listParams: ListPersonMasterParams = {
+    ...(debouncedListSearch ? { q: debouncedListSearch } : {}),
+    ...(statusFilter !== "all" ? { status: statusFilter as ListPersonMasterStatus } : {}),
+  };
+
+  const { data: persons = [], isLoading } = useListPersonMaster(listParams);
 
   const createPerson = useCreatePersonMaster();
 
@@ -361,6 +388,9 @@ export default function PersonRegistry() {
   const pendingCount = persons.filter((p) => p.kycStatus === "pending").length;
   const verifiedCount = persons.filter((p) => p.kycStatus === "verified").length;
   const flaggedCount = persons.filter((p) => p.kycStatus === "flagged").length;
+  const deceasedCount = persons.filter((p) => p.status === "deceased").length;
+  const archivedCount = persons.filter((p) => p.status === "archived").length;
+  const inactiveCount = persons.filter((p) => p.status === "inactive").length;
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -410,19 +440,54 @@ export default function PersonRegistry() {
               {flaggedCount} flagged
             </Badge>
           )}
+          {deceasedCount > 0 && (
+            <Badge variant="outline" className="gap-1 border-slate-300 text-slate-600">
+              <SkullIcon className="w-3 h-3" />
+              {deceasedCount} deceased
+            </Badge>
+          )}
+          {archivedCount > 0 && (
+            <Badge variant="outline" className="gap-1 border-orange-300 text-orange-700">
+              <Archive className="w-3 h-3" />
+              {archivedCount} archived
+            </Badge>
+          )}
+          {inactiveCount > 0 && (
+            <Badge variant="outline" className="gap-1 border-gray-300 text-gray-600">
+              <Clock className="w-3 h-3" />
+              {inactiveCount} inactive
+            </Badge>
+          )}
         </div>
       )}
 
-      {/* Search bar */}
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input
-          className="pl-9"
-          placeholder="Search by name, Aadhaar, or mobile…"
-          value={listSearch}
-          onChange={(e) => setListSearch(e.target.value)}
-          data-testid="input-registry-search"
-        />
+      {/* Search bar + status filter */}
+      <div className="flex gap-2 flex-wrap">
+        <div className="relative flex-1 min-w-48 max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            className="pl-9"
+            placeholder="Search by name, Aadhaar, or mobile…"
+            value={listSearch}
+            onChange={(e) => setListSearch(e.target.value)}
+            data-testid="input-registry-search"
+          />
+        </div>
+        <div className="flex items-center gap-1.5">
+          <Filter className="w-4 h-4 text-muted-foreground" />
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-36 h-9 text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All statuses</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="inactive">Inactive</SelectItem>
+              <SelectItem value="deceased">Deceased</SelectItem>
+              <SelectItem value="archived">Archived</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* List */}

@@ -1316,6 +1316,10 @@ paths:
         - name: kyc_status
           in: query
           schema: { type: string, enum: [pending, documents_submitted, verified, flagged] }
+        - name: status
+          in: query
+          schema: { type: string, enum: [active, inactive, deceased, archived] }
+          description: Filter by person lifecycle status
         - name: limit
           in: query
           schema: { type: integer, default: 50 }
@@ -1532,6 +1536,78 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/PersonMasterAuditEvent"
+
+  /person-master/{id}/status:
+    post:
+      operationId: changePersonMasterStatus
+      tags: [person-master]
+      summary: Change the lifecycle status of a person master record (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PersonStatusChangeInput"
+      responses:
+        "200":
+          description: Status changed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PersonStatusHistory"
+        "409":
+          description: Archive blocked — person is linked to active records
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PersonArchiveBlockedError"
+        "404":
+          description: Not found
+
+  /person-master/{id}/status-history:
+    get:
+      operationId: getPersonMasterStatusHistory
+      tags: [person-master]
+      summary: Get the full status change history for a person master record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Status history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PersonStatusHistory"
+
+  /person-master/{id}/relationships:
+    get:
+      operationId: getPersonMasterRelationships
+      tags: [person-master]
+      summary: Get all records across all ERP modules that reference this person
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: All relationships
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PersonRelationships"
+        "404":
+          description: Not found
 
   /partners:
     get:
@@ -21320,7 +21396,7 @@ components:
 
     PersonMasterSummary:
       type: object
-      required: [id, fullName, kycStatus, createdAt]
+      required: [id, fullName, kycStatus, status, createdAt]
       properties:
         id: { type: string, format: uuid }
         fullName: { type: string }
@@ -21334,6 +21410,9 @@ components:
         kycStatus:
           type: string
           enum: [pending, documents_submitted, verified, flagged]
+        status:
+          type: string
+          enum: [active, inactive, deceased, archived]
         aadhaarVerified: { type: string, nullable: true }
         otpVerified: { type: string, nullable: true }
         userId: { type: string, format: uuid, nullable: true }
@@ -21355,6 +21434,22 @@ components:
             supportingIdObjectPath: { type: string, nullable: true }
             profilePhotoObjectPath: { type: string, nullable: true }
             remarks: { type: string, nullable: true }
+            panNumber: { type: string, nullable: true }
+            communicationPreference: { type: string, nullable: true }
+            archivedAt: { type: string, format: date-time, nullable: true }
+            dateOfDeath: { type: string, nullable: true }
+            deathRemarks: { type: string, nullable: true }
+            deathDocumentPath: { type: string, nullable: true }
+            bankAccountNumber: { type: string, nullable: true }
+            bankIfsc: { type: string, nullable: true }
+            bankName: { type: string, nullable: true }
+            bankBranch: { type: string, nullable: true }
+            bankAccountHolderName: { type: string, nullable: true }
+            bankAccountType: { type: string, nullable: true }
+            personNomineeName: { type: string, nullable: true }
+            personNomineeRelationship: { type: string, nullable: true }
+            personNomineeMobile: { type: string, nullable: true }
+            personNomineeAddress: { type: string, nullable: true }
             roles:
               type: array
               items:
@@ -21388,6 +21483,8 @@ components:
         district: { type: string }
         state: { type: string }
         country: { type: string }
+        panNumber: { type: string }
+        communicationPreference: { type: string, enum: [mobile, email, whatsapp] }
         remarks: { type: string }
 
     UpdatePersonMaster:
@@ -21409,6 +21506,18 @@ components:
         kycStatus: { type: string, enum: [pending, documents_submitted, verified, flagged] }
         aadhaarVerified: { type: string, enum: [yes, no, pending] }
         remarks: { type: string }
+        panNumber: { type: string }
+        communicationPreference: { type: string, enum: [mobile, email, whatsapp] }
+        bankAccountNumber: { type: string }
+        bankIfsc: { type: string }
+        bankName: { type: string }
+        bankBranch: { type: string }
+        bankAccountHolderName: { type: string }
+        bankAccountType: { type: string, enum: [savings, current] }
+        personNomineeName: { type: string }
+        personNomineeRelationship: { type: string }
+        personNomineeMobile: { type: string }
+        personNomineeAddress: { type: string }
 
     PersonRoleAssignment:
       type: object
@@ -21442,11 +21551,119 @@ components:
         personMasterId: { type: string, format: uuid }
         eventType:
           type: string
-          enum: [created, name_changed, aadhaar_changed, mobile_changed, kyc_status_changed, user_account_linked, user_account_unlinked, role_assigned, role_removed, project_linked, duplicate_merged, documents_uploaded]
+          enum: [created, name_changed, aadhaar_changed, mobile_changed, kyc_status_changed, user_account_linked, user_account_unlinked, role_assigned, role_removed, project_linked, duplicate_merged, documents_uploaded, status_changed, archived, restored, deceased_marked, bank_updated, nominee_updated, pan_updated, contact_updated]
         description: { type: string, nullable: true }
         metadata: { type: object, nullable: true, additionalProperties: true }
         performedBy: { type: string, format: uuid, nullable: true }
         createdAt: { type: string, format: date-time }
+
+    PersonStatusChangeInput:
+      type: object
+      required: [toStatus, reason]
+      properties:
+        toStatus:
+          type: string
+          enum: [active, inactive, deceased, archived]
+        reason: { type: string, minLength: 5 }
+        notes: { type: string }
+        dateOfDeath: { type: string, description: Required when toStatus is deceased }
+        deathRemarks: { type: string }
+
+    PersonStatusHistory:
+      type: object
+      required: [id, personMasterId, toStatus, reason, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        personMasterId: { type: string, format: uuid }
+        fromStatus: { type: string, enum: [active, inactive, deceased, archived], nullable: true }
+        toStatus: { type: string, enum: [active, inactive, deceased, archived] }
+        changedBy: { type: string, format: uuid, nullable: true }
+        changedByName: { type: string, nullable: true }
+        reason: { type: string }
+        notes: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+
+    PersonArchiveBlockedError:
+      type: object
+      properties:
+        error: { type: string }
+        message: { type: string }
+        blockers:
+          type: array
+          items:
+            type: object
+            properties:
+              type: { type: string }
+              id: { type: string, format: uuid }
+              label: { type: string }
+
+    PersonRelationships:
+      type: object
+      properties:
+        projectParticipations:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string, format: uuid }
+              projectId: { type: string, format: uuid }
+              projectName: { type: string }
+              role: { type: string }
+        workforceAssignments:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string, format: uuid }
+              projectId: { type: string, format: uuid }
+              projectName: { type: string }
+              role: { type: string }
+              isActive: { type: boolean }
+        nominees:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string, format: uuid }
+              projectId: { type: string, format: uuid }
+              projectName: { type: string }
+              nomineeName: { type: string }
+              activationStatus: { type: string }
+        claimants:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string, format: uuid }
+              projectId: { type: string, format: uuid }
+              projectName: { type: string }
+              claimantName: { type: string }
+              status: { type: string }
+        buyerLinks:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string, format: uuid }
+              name: { type: string }
+              buyerType: { type: string }
+        partnerLinks:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string, format: uuid }
+              name: { type: string }
+              role: { type: string }
+        witnesses:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string, format: uuid }
+              projectId: { type: string, format: uuid }
+              projectName: { type: string }
+              fullName: { type: string }
 
     PersonMasterDuplicateError:
       type: object

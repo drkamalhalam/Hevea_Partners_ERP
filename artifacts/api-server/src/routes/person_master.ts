@@ -4,9 +4,15 @@ import {
   personMasterTable,
   personMasterAuditTable,
   personRoleAssignmentsTable,
+  personStatusHistoryTable,
   projectParticipantsTable,
+  projectWitnessesTable,
+  projectNomineesTable,
+  partnerClaimantsTable,
+  buyersTable,
   partnersTable,
   projectsTable,
+  usersTable,
 } from "@workspace/db";
 import { eq, or, ilike, and, isNull, sql } from "drizzle-orm";
 import { requireRole } from "../middlewares/auth";
@@ -33,11 +39,10 @@ async function writeAudit(
 
 // ── GET /person-master — search / list ────────────────────────────────────
 router.get("/", requireRole("admin", "developer"), async (req, res) => {
-  const { q, aadhaar, mobile, kyc_status, limit = "50", offset = "0" } =
+  const { q, aadhaar, mobile, kyc_status, status, limit = "50", offset = "0" } =
     req.query as Record<string, string>;
 
   try {
-    // Build filter conditions
     const conditions = [];
     if (q) conditions.push(ilike(personMasterTable.fullName, `%${q}%`));
     if (aadhaar) {
@@ -64,6 +69,14 @@ router.get("/", requireRole("admin", "developer"), async (req, res) => {
         ),
       );
     }
+    if (status) {
+      conditions.push(
+        eq(
+          personMasterTable.status,
+          status as typeof personMasterTable.$inferSelect["status"],
+        ),
+      );
+    }
 
     const rows = await db
       .select({
@@ -77,6 +90,7 @@ router.get("/", requireRole("admin", "developer"), async (req, res) => {
         district: personMasterTable.district,
         state: personMasterTable.state,
         kycStatus: personMasterTable.kycStatus,
+        status: personMasterTable.status,
         aadhaarVerified: personMasterTable.aadhaarVerified,
         otpVerified: personMasterTable.otpVerified,
         userId: personMasterTable.userId,
@@ -266,6 +280,8 @@ const createPersonSchema = z.object({
   district: z.string().optional(),
   state: z.string().optional(),
   country: z.string().optional(),
+  panNumber: z.string().optional(),
+  communicationPreference: z.enum(["mobile", "email", "whatsapp"]).optional(),
   remarks: z.string().optional(),
 });
 
@@ -356,6 +372,18 @@ const updatePersonSchema = z.object({
   kycStatus: z.enum(["pending", "documents_submitted", "verified", "flagged"]).optional(),
   aadhaarVerified: z.enum(["yes", "no", "pending"]).optional(),
   remarks: z.string().optional(),
+  panNumber: z.string().optional(),
+  communicationPreference: z.enum(["mobile", "email", "whatsapp"]).optional(),
+  bankAccountNumber: z.string().optional(),
+  bankIfsc: z.string().optional(),
+  bankName: z.string().optional(),
+  bankBranch: z.string().optional(),
+  bankAccountHolderName: z.string().optional(),
+  bankAccountType: z.enum(["savings", "current"]).optional(),
+  personNomineeName: z.string().optional(),
+  personNomineeRelationship: z.string().optional(),
+  personNomineeMobile: z.string().optional(),
+  personNomineeAddress: z.string().optional(),
 });
 
 router.patch("/:id", requireRole("admin", "developer"), async (req, res) => {
@@ -384,11 +412,30 @@ router.patch("/:id", requireRole("admin", "developer"), async (req, res) => {
       .where(eq(personMasterTable.id, id))
       .returning();
 
+    // Audit sensitive field changes
     if (parsed.data.fullName && parsed.data.fullName !== before.fullName) {
       await writeAudit(id, "name_changed", `Name changed from "${before.fullName}" to "${parsed.data.fullName}"`, req.dbUserId, { before: before.fullName, after: parsed.data.fullName });
     }
     if (parsed.data.kycStatus && parsed.data.kycStatus !== before.kycStatus) {
       await writeAudit(id, "kyc_status_changed", `KYC status: ${before.kycStatus} → ${parsed.data.kycStatus}`, req.dbUserId, { before: before.kycStatus, after: parsed.data.kycStatus });
+    }
+    const bankFields = ["bankAccountNumber", "bankIfsc", "bankName", "bankBranch", "bankAccountHolderName", "bankAccountType"] as const;
+    const bankChanged = bankFields.some((f) => parsed.data[f] !== undefined);
+    if (bankChanged) {
+      await writeAudit(id, "bank_updated", `Bank information updated`, req.dbUserId);
+    }
+    const nomineeFields = ["personNomineeName", "personNomineeRelationship", "personNomineeMobile", "personNomineeAddress"] as const;
+    const nomineeChanged = nomineeFields.some((f) => parsed.data[f] !== undefined);
+    if (nomineeChanged) {
+      await writeAudit(id, "nominee_updated", `Person nominee information updated`, req.dbUserId);
+    }
+    if (parsed.data.panNumber !== undefined && parsed.data.panNumber !== before.panNumber) {
+      await writeAudit(id, "pan_updated", `PAN number updated`, req.dbUserId);
+    }
+    const contactFields = ["email", "alternateMobile", "communicationPreference"] as const;
+    const contactChanged = contactFields.some((f) => parsed.data[f] !== undefined && parsed.data[f] !== before[f]);
+    if (contactChanged) {
+      await writeAudit(id, "contact_updated", `Contact information updated`, req.dbUserId);
     }
 
     const { aadhaarNumber: _redacted, ...safeFields } = updated;
@@ -462,7 +509,6 @@ router.post("/:id/roles", requireRole("admin", "developer"), async (req, res) =>
       return;
     }
 
-    // Use upsert via raw SQL for the nullable projectId composite unique
     const [assignment] = await db
       .insert(personRoleAssignmentsTable)
       .values({
@@ -534,6 +580,303 @@ router.get("/:id/audit", requireRole("admin", "developer"), async (req, res) => 
     res.json(events);
   } catch (err) {
     req.log.error({ err }, "Failed to fetch person_master audit trail");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ── POST /person-master/:id/status ───────────────────────────────────────
+const statusChangeSchema = z.object({
+  toStatus: z.enum(["active", "inactive", "deceased", "archived"]),
+  reason: z.string().min(5),
+  notes: z.string().optional(),
+  dateOfDeath: z.string().optional(),
+  deathRemarks: z.string().optional(),
+});
+
+router.post("/:id/status", requireRole("admin"), async (req, res) => {
+  const id = String(req.params.id);
+  const parsed = statusChangeSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  const { toStatus, reason, notes, dateOfDeath, deathRemarks } = parsed.data;
+
+  try {
+    const [person] = await db
+      .select()
+      .from(personMasterTable)
+      .where(eq(personMasterTable.id, id))
+      .limit(1);
+
+    if (!person) {
+      res.status(404).json({ error: "Person not found" });
+      return;
+    }
+
+    // Deceased requires a date of death
+    if (toStatus === "deceased" && !dateOfDeath) {
+      res.status(400).json({ error: "dateOfDeath is required when marking a person as deceased" });
+      return;
+    }
+
+    // Archive blocker check
+    if (toStatus === "archived") {
+      const blockers: { type: string; id: string; label: string }[] = [];
+
+      // Check active project participants
+      const activeParticipants = await db
+        .select({
+          id: projectParticipantsTable.id,
+          projectName: projectsTable.name,
+        })
+        .from(projectParticipantsTable)
+        .innerJoin(projectsTable, eq(projectsTable.id, projectParticipantsTable.projectId))
+        .where(eq(projectParticipantsTable.personMasterId, id));
+
+      for (const p of activeParticipants) {
+        blockers.push({ type: "project_participant", id: p.id, label: `Project: ${p.projectName}` });
+      }
+
+      // Check active workforce assignments
+      const activeAssignments = await db.execute(sql`
+        SELECT wa.id, p.name AS project_name, wa.role
+        FROM project_workforce_assignments wa
+        JOIN projects p ON p.id = wa.project_id
+        WHERE wa.person_id = ${id} AND wa.is_active = true
+      `);
+      for (const a of activeAssignments.rows as { id: string; project_name: string; role: string }[]) {
+        blockers.push({ type: "workforce_assignment", id: a.id, label: `Assignment: ${a.role} — ${a.project_name}` });
+      }
+
+      // Check pending inheritance claims
+      const pendingClaims = await db.execute(sql`
+        SELECT pc.id, p.name AS project_name
+        FROM partner_claimants pc
+        JOIN projects p ON p.id = pc.project_id
+        WHERE pc.person_master_id = ${id} AND pc.status NOT IN ('settled', 'rejected', 'withdrawn')
+      `);
+      for (const c of pendingClaims.rows as { id: string; project_name: string }[]) {
+        blockers.push({ type: "inheritance_claim", id: c.id, label: `Inheritance claim — ${c.project_name}` });
+      }
+
+      // Check active nominees
+      const activeNominees = await db.execute(sql`
+        SELECT pn.id, p.name AS project_name
+        FROM project_nominees pn
+        JOIN projects p ON p.id = pn.project_id
+        WHERE pn.person_master_id = ${id} AND pn.is_active = true
+      `);
+      for (const n of activeNominees.rows as { id: string; project_name: string }[]) {
+        blockers.push({ type: "active_nominee", id: n.id, label: `Active nominee — ${n.project_name}` });
+      }
+
+      if (blockers.length > 0) {
+        res.status(409).json({
+          error: "archive_blocked",
+          message: `This person cannot be archived because they are linked to ${blockers.length} active record(s). Resolve all active relationships first.`,
+          blockers,
+        });
+        return;
+      }
+    }
+
+    // Resolve actor name for snapshot
+    let changedByName: string | undefined;
+    if (req.dbUserId) {
+      const [actor] = await db
+        .select({ displayName: usersTable.displayName })
+        .from(usersTable)
+        .where(eq(usersTable.id, req.dbUserId))
+        .limit(1);
+      changedByName = actor?.displayName ?? undefined;
+    }
+
+    // Build update payload
+    const updatePayload: Partial<typeof personMasterTable.$inferInsert> = { status: toStatus };
+    if (toStatus === "archived") {
+      updatePayload.archivedAt = new Date();
+      updatePayload.archivedBy = req.dbUserId ?? undefined;
+    }
+    if (toStatus === "deceased" && dateOfDeath) {
+      updatePayload.dateOfDeath = dateOfDeath;
+      if (deathRemarks) updatePayload.deathRemarks = deathRemarks;
+    }
+    // Restore: clear archived fields when moving back to active/inactive
+    if (toStatus === "active" || toStatus === "inactive") {
+      updatePayload.archivedAt = null as unknown as Date;
+      updatePayload.archivedBy = null as unknown as string;
+    }
+
+    await db.update(personMasterTable).set(updatePayload).where(eq(personMasterTable.id, id));
+
+    // Write status history (write-once)
+    const [historyRow] = await db
+      .insert(personStatusHistoryTable)
+      .values({
+        personMasterId: id,
+        fromStatus: person.status,
+        toStatus,
+        changedBy: req.dbUserId ?? undefined,
+        changedByName,
+        reason,
+        notes,
+      })
+      .returning();
+
+    // Write audit event
+    const auditType = toStatus === "archived" ? "archived"
+      : toStatus === "deceased" ? "deceased_marked"
+      : person.status === "archived" ? "restored"
+      : "status_changed";
+
+    await writeAudit(
+      id,
+      auditType,
+      `Status changed: ${person.status} → ${toStatus}. Reason: ${reason}`,
+      req.dbUserId,
+      { fromStatus: person.status, toStatus, reason },
+    );
+
+    res.json(historyRow);
+  } catch (err) {
+    req.log.error({ err }, "Failed to change person_master status");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ── GET /person-master/:id/status-history ────────────────────────────────
+router.get("/:id/status-history", requireRole("admin", "developer"), async (req, res) => {
+  const id = String(req.params.id);
+
+  try {
+    const history = await db
+      .select()
+      .from(personStatusHistoryTable)
+      .where(eq(personStatusHistoryTable.personMasterId, id))
+      .orderBy(personStatusHistoryTable.createdAt);
+
+    res.json(history);
+  } catch (err) {
+    req.log.error({ err }, "Failed to fetch person_master status history");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ── GET /person-master/:id/relationships ─────────────────────────────────
+router.get("/:id/relationships", requireRole("admin", "developer"), async (req, res) => {
+  const id = String(req.params.id);
+
+  try {
+    const [person] = await db
+      .select({ id: personMasterTable.id })
+      .from(personMasterTable)
+      .where(eq(personMasterTable.id, id))
+      .limit(1);
+
+    if (!person) {
+      res.status(404).json({ error: "Person not found" });
+      return;
+    }
+
+    const [
+      projectParticipations,
+      partnerLinks,
+      witnesses,
+      nominees,
+      claimants,
+      buyerLinks,
+      workforceRaw,
+    ] = await Promise.all([
+      db
+        .select({
+          id: projectParticipantsTable.id,
+          projectId: projectParticipantsTable.projectId,
+          projectName: projectsTable.name,
+          role: projectParticipantsTable.role,
+        })
+        .from(projectParticipantsTable)
+        .innerJoin(projectsTable, eq(projectsTable.id, projectParticipantsTable.projectId))
+        .where(eq(projectParticipantsTable.personMasterId, id)),
+
+      db
+        .select({
+          id: partnersTable.id,
+          name: partnersTable.name,
+          role: partnersTable.role,
+        })
+        .from(partnersTable)
+        .where(eq(partnersTable.personMasterId, id)),
+
+      db
+        .select({
+          id: projectWitnessesTable.id,
+          projectId: projectWitnessesTable.projectId,
+          projectName: projectsTable.name,
+          fullName: projectWitnessesTable.fullName,
+        })
+        .from(projectWitnessesTable)
+        .innerJoin(projectsTable, eq(projectsTable.id, projectWitnessesTable.projectId))
+        .where(eq(projectWitnessesTable.personMasterId, id)),
+
+      db
+        .select({
+          id: projectNomineesTable.id,
+          projectId: projectNomineesTable.projectId,
+          projectName: projectsTable.name,
+          nomineeName: projectNomineesTable.nomineeName,
+          activationStatus: projectNomineesTable.activationStatus,
+        })
+        .from(projectNomineesTable)
+        .innerJoin(projectsTable, eq(projectsTable.id, projectNomineesTable.projectId))
+        .where(eq(projectNomineesTable.personMasterId, id)),
+
+      db
+        .select({
+          id: partnerClaimantsTable.id,
+          projectId: partnerClaimantsTable.projectId,
+          projectName: projectsTable.name,
+          claimantName: partnerClaimantsTable.claimantName,
+          status: partnerClaimantsTable.status,
+        })
+        .from(partnerClaimantsTable)
+        .innerJoin(projectsTable, eq(projectsTable.id, partnerClaimantsTable.projectId))
+        .where(eq(partnerClaimantsTable.personMasterId, id)),
+
+      db
+        .select({
+          id: buyersTable.id,
+          name: buyersTable.name,
+          buyerType: buyersTable.buyerType,
+        })
+        .from(buyersTable)
+        .where(eq(buyersTable.personMasterId, id)),
+
+      db.execute(sql`
+        SELECT wa.id, wa.project_id, p.name AS project_name, wa.role, wa.is_active
+        FROM project_workforce_assignments wa
+        JOIN projects p ON p.id = wa.project_id
+        WHERE wa.person_id = ${id}
+        ORDER BY wa.created_at DESC
+      `),
+    ]);
+
+    const workforceAssignments = (workforceRaw.rows as { id: string; project_id: string; project_name: string; role: string; is_active: boolean }[]).map(
+      (r) => ({ id: r.id, projectId: r.project_id, projectName: r.project_name, role: r.role, isActive: r.is_active }),
+    );
+
+    res.json({
+      projectParticipations,
+      workforceAssignments,
+      nominees,
+      claimants,
+      buyerLinks,
+      partnerLinks,
+      witnesses,
+    });
+  } catch (err) {
+    req.log.error({ err }, "Failed to fetch person_master relationships");
     res.status(500).json({ error: "Internal server error" });
   }
 });

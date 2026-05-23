@@ -2106,6 +2106,10 @@ export const ListPersonMasterQueryParams = zod.object({
   kyc_status: zod
     .enum(["pending", "documents_submitted", "verified", "flagged"])
     .optional(),
+  status: zod
+    .enum(["active", "inactive", "deceased", "archived"])
+    .optional()
+    .describe("Filter by person lifecycle status"),
   limit: zod.coerce.number().default(listPersonMasterQueryLimitDefault),
   offset: zod.coerce.number().default(listPersonMasterQueryOffsetDefault),
 });
@@ -2126,6 +2130,7 @@ export const ListPersonMasterResponseItem = zod.object({
     "verified",
     "flagged",
   ]),
+  status: zod.enum(["active", "inactive", "deceased", "archived"]),
   aadhaarVerified: zod.string().nullish(),
   otpVerified: zod.string().nullish(),
   userId: zod.string().uuid().nullish(),
@@ -2159,6 +2164,8 @@ export const CreatePersonMasterBody = zod.object({
   district: zod.string().optional(),
   state: zod.string().optional(),
   country: zod.string().optional(),
+  panNumber: zod.string().optional(),
+  communicationPreference: zod.enum(["mobile", "email", "whatsapp"]).optional(),
   remarks: zod.string().optional(),
 });
 
@@ -2256,6 +2263,7 @@ export const GetPersonMasterResponse = zod
       "verified",
       "flagged",
     ]),
+    status: zod.enum(["active", "inactive", "deceased", "archived"]),
     aadhaarVerified: zod.string().nullish(),
     otpVerified: zod.string().nullish(),
     userId: zod.string().uuid().nullish(),
@@ -2274,6 +2282,22 @@ export const GetPersonMasterResponse = zod
       supportingIdObjectPath: zod.string().nullish(),
       profilePhotoObjectPath: zod.string().nullish(),
       remarks: zod.string().nullish(),
+      panNumber: zod.string().nullish(),
+      communicationPreference: zod.string().nullish(),
+      archivedAt: zod.coerce.date().nullish(),
+      dateOfDeath: zod.string().nullish(),
+      deathRemarks: zod.string().nullish(),
+      deathDocumentPath: zod.string().nullish(),
+      bankAccountNumber: zod.string().nullish(),
+      bankIfsc: zod.string().nullish(),
+      bankName: zod.string().nullish(),
+      bankBranch: zod.string().nullish(),
+      bankAccountHolderName: zod.string().nullish(),
+      bankAccountType: zod.string().nullish(),
+      personNomineeName: zod.string().nullish(),
+      personNomineeRelationship: zod.string().nullish(),
+      personNomineeMobile: zod.string().nullish(),
+      personNomineeAddress: zod.string().nullish(),
       roles: zod
         .array(
           zod.object({
@@ -2339,6 +2363,18 @@ export const UpdatePersonMasterBody = zod.object({
     .optional(),
   aadhaarVerified: zod.enum(["yes", "no", "pending"]).optional(),
   remarks: zod.string().optional(),
+  panNumber: zod.string().optional(),
+  communicationPreference: zod.enum(["mobile", "email", "whatsapp"]).optional(),
+  bankAccountNumber: zod.string().optional(),
+  bankIfsc: zod.string().optional(),
+  bankName: zod.string().optional(),
+  bankBranch: zod.string().optional(),
+  bankAccountHolderName: zod.string().optional(),
+  bankAccountType: zod.enum(["savings", "current"]).optional(),
+  personNomineeName: zod.string().optional(),
+  personNomineeRelationship: zod.string().optional(),
+  personNomineeMobile: zod.string().optional(),
+  personNomineeAddress: zod.string().optional(),
 });
 
 export const UpdatePersonMasterResponse = zod.object({
@@ -2357,6 +2393,7 @@ export const UpdatePersonMasterResponse = zod.object({
     "verified",
     "flagged",
   ]),
+  status: zod.enum(["active", "inactive", "deceased", "archived"]),
   aadhaarVerified: zod.string().nullish(),
   otpVerified: zod.string().nullish(),
   userId: zod.string().uuid().nullish(),
@@ -2441,6 +2478,14 @@ export const GetPersonMasterAuditResponseItem = zod.object({
     "project_linked",
     "duplicate_merged",
     "documents_uploaded",
+    "status_changed",
+    "archived",
+    "restored",
+    "deceased_marked",
+    "bank_updated",
+    "nominee_updated",
+    "pan_updated",
+    "contact_updated",
   ]),
   description: zod.string().nullish(),
   metadata: zod.record(zod.string(), zod.unknown()).nullish(),
@@ -2450,6 +2495,145 @@ export const GetPersonMasterAuditResponseItem = zod.object({
 export const GetPersonMasterAuditResponse = zod.array(
   GetPersonMasterAuditResponseItem,
 );
+
+/**
+ * @summary Change the lifecycle status of a person master record (admin only)
+ */
+export const ChangePersonMasterStatusParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const changePersonMasterStatusBodyReasonMin = 5;
+
+export const ChangePersonMasterStatusBody = zod.object({
+  toStatus: zod.enum(["active", "inactive", "deceased", "archived"]),
+  reason: zod.string().min(changePersonMasterStatusBodyReasonMin),
+  notes: zod.string().optional(),
+  dateOfDeath: zod
+    .string()
+    .optional()
+    .describe("Required when toStatus is deceased"),
+  deathRemarks: zod.string().optional(),
+});
+
+export const ChangePersonMasterStatusResponse = zod.object({
+  id: zod.string().uuid(),
+  personMasterId: zod.string().uuid(),
+  fromStatus: zod
+    .enum(["active", "inactive", "deceased", "archived"])
+    .nullish(),
+  toStatus: zod.enum(["active", "inactive", "deceased", "archived"]),
+  changedBy: zod.string().uuid().nullish(),
+  changedByName: zod.string().nullish(),
+  reason: zod.string(),
+  notes: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Get the full status change history for a person master record
+ */
+export const GetPersonMasterStatusHistoryParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const GetPersonMasterStatusHistoryResponseItem = zod.object({
+  id: zod.string().uuid(),
+  personMasterId: zod.string().uuid(),
+  fromStatus: zod
+    .enum(["active", "inactive", "deceased", "archived"])
+    .nullish(),
+  toStatus: zod.enum(["active", "inactive", "deceased", "archived"]),
+  changedBy: zod.string().uuid().nullish(),
+  changedByName: zod.string().nullish(),
+  reason: zod.string(),
+  notes: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+});
+export const GetPersonMasterStatusHistoryResponse = zod.array(
+  GetPersonMasterStatusHistoryResponseItem,
+);
+
+/**
+ * @summary Get all records across all ERP modules that reference this person
+ */
+export const GetPersonMasterRelationshipsParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const GetPersonMasterRelationshipsResponse = zod.object({
+  projectParticipations: zod
+    .array(
+      zod.object({
+        id: zod.string().uuid().optional(),
+        projectId: zod.string().uuid().optional(),
+        projectName: zod.string().optional(),
+        role: zod.string().optional(),
+      }),
+    )
+    .optional(),
+  workforceAssignments: zod
+    .array(
+      zod.object({
+        id: zod.string().uuid().optional(),
+        projectId: zod.string().uuid().optional(),
+        projectName: zod.string().optional(),
+        role: zod.string().optional(),
+        isActive: zod.boolean().optional(),
+      }),
+    )
+    .optional(),
+  nominees: zod
+    .array(
+      zod.object({
+        id: zod.string().uuid().optional(),
+        projectId: zod.string().uuid().optional(),
+        projectName: zod.string().optional(),
+        nomineeName: zod.string().optional(),
+        activationStatus: zod.string().optional(),
+      }),
+    )
+    .optional(),
+  claimants: zod
+    .array(
+      zod.object({
+        id: zod.string().uuid().optional(),
+        projectId: zod.string().uuid().optional(),
+        projectName: zod.string().optional(),
+        claimantName: zod.string().optional(),
+        status: zod.string().optional(),
+      }),
+    )
+    .optional(),
+  buyerLinks: zod
+    .array(
+      zod.object({
+        id: zod.string().uuid().optional(),
+        name: zod.string().optional(),
+        buyerType: zod.string().optional(),
+      }),
+    )
+    .optional(),
+  partnerLinks: zod
+    .array(
+      zod.object({
+        id: zod.string().uuid().optional(),
+        name: zod.string().optional(),
+        role: zod.string().optional(),
+      }),
+    )
+    .optional(),
+  witnesses: zod
+    .array(
+      zod.object({
+        id: zod.string().uuid().optional(),
+        projectId: zod.string().uuid().optional(),
+        projectName: zod.string().optional(),
+        fullName: zod.string().optional(),
+      }),
+    )
+    .optional(),
+});
 
 /**
  * @summary List all partners

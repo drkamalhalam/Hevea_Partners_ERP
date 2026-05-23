@@ -6,6 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { UpdatePersonMasterAadhaarVerified } from "./updatePersonMasterAadhaarVerified";
+import type { UpdatePersonMasterBankAccountType } from "./updatePersonMasterBankAccountType";
+import type { UpdatePersonMasterCommunicationPreference } from "./updatePersonMasterCommunicationPreference";
 import type { UpdatePersonMasterGender } from "./updatePersonMasterGender";
 import type { UpdatePersonMasterKycStatus } from "./updatePersonMasterKycStatus";
 
@@ -26,4 +28,16 @@ export interface UpdatePersonMaster {
   kycStatus?: UpdatePersonMasterKycStatus;
   aadhaarVerified?: UpdatePersonMasterAadhaarVerified;
   remarks?: string;
+  panNumber?: string;
+  communicationPreference?: UpdatePersonMasterCommunicationPreference;
+  bankAccountNumber?: string;
+  bankIfsc?: string;
+  bankName?: string;
+  bankBranch?: string;
+  bankAccountHolderName?: string;
+  bankAccountType?: UpdatePersonMasterBankAccountType;
+  personNomineeName?: string;
+  personNomineeRelationship?: string;
+  personNomineeMobile?: string;
+  personNomineeAddress?: string;
 }

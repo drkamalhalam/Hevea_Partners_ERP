@@ -6,8 +6,14 @@ import {
   useAssignPersonMasterRole,
   useRemovePersonMasterRole,
   useUpdatePersonMaster,
+  useChangePersonMasterStatus,
+  useGetPersonMasterStatusHistory,
+  useGetPersonMasterRelationships,
   getGetPersonMasterQueryKey,
   getGetPersonMasterAuditQueryKey,
+  getGetPersonMasterStatusHistoryQueryKey,
+  getGetPersonMasterRelationshipsQueryKey,
+  type PersonStatusChangeInput,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,6 +36,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import {
   ArrowLeft,
@@ -49,6 +56,17 @@ import {
   History,
   Tag,
   Building2,
+  Banknote,
+  UserCheck,
+  Network,
+  AlertTriangle,
+  SkullIcon,
+  Archive,
+  RotateCcw,
+  RefreshCw,
+  CreditCard,
+  Briefcase,
+  Eye,
 } from "lucide-react";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -65,6 +83,13 @@ const KYC_CONFIG: Record<string, { label: string; icon: React.ElementType; class
   pending: { label: "KYC Pending", icon: Clock, classes: "bg-amber-100 text-amber-800 border-amber-200" },
   documents_submitted: { label: "Docs Submitted", icon: CheckCircle2, classes: "bg-blue-100 text-blue-800 border-blue-200" },
   flagged: { label: "Flagged", icon: ShieldAlert, classes: "bg-red-100 text-red-800 border-red-200" },
+};
+
+const STATUS_CONFIG: Record<string, { label: string; classes: string; icon: React.ElementType }> = {
+  active: { label: "Active", classes: "bg-emerald-100 text-emerald-800 border-emerald-200", icon: CheckCircle2 },
+  inactive: { label: "Inactive", classes: "bg-gray-100 text-gray-700 border-gray-200", icon: Clock },
+  deceased: { label: "Deceased", classes: "bg-slate-200 text-slate-700 border-slate-300", icon: SkullIcon },
+  archived: { label: "Archived", classes: "bg-orange-100 text-orange-800 border-orange-200", icon: Archive },
 };
 
 const ROLE_LABELS: Record<string, string> = {
@@ -118,24 +143,59 @@ function fmtDateTime(s?: string | null) {
 
 // ── Component ──────────────────────────────────────────────────────────────
 
+type TabKey = "details" | "bank" | "roles" | "projects" | "relationships" | "audit";
+
 export default function PersonProfile() {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const [activeTab, setActiveTab] = useState<"details" | "roles" | "projects" | "audit">("details");
+  const [activeTab, setActiveTab] = useState<TabKey>("details");
   const [addRoleOpen, setAddRoleOpen] = useState(false);
   const [selectedRole, setSelectedRole] = useState<string>("");
   const [roleNotes, setRoleNotes] = useState("");
+  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
+  const [editBankOpen, setEditBankOpen] = useState(false);
+  const [editNomineeOpen, setEditNomineeOpen] = useState(false);
+
+  // Status change form state
+  const [statusTarget, setStatusTarget] = useState<string>("");
+  const [statusReason, setStatusReason] = useState("");
+  const [statusNotes, setStatusNotes] = useState("");
+  const [dodValue, setDodValue] = useState("");
+  const [deathRemarks, setDeathRemarks] = useState("");
+
+  // Bank edit form state
+  const [bankForm, setBankForm] = useState({
+    bankAccountNumber: "", bankIfsc: "", bankName: "",
+    bankBranch: "", bankAccountHolderName: "", bankAccountType: "savings",
+  });
+
+  // Nominee edit form state
+  const [nomineeForm, setNomineeForm] = useState({
+    personNomineeName: "", personNomineeRelationship: "",
+    personNomineeMobile: "", personNomineeAddress: "",
+  });
 
   const { data: person, isLoading } = useGetPersonMaster(id!);
   const { data: auditEvents = [] } = useGetPersonMasterAudit(id!, {
     query: { enabled: activeTab === "audit", queryKey: getGetPersonMasterAuditQueryKey(id!) },
   });
+  const { data: statusHistory = [] } = useGetPersonMasterStatusHistory(id!, {
+    query: { enabled: activeTab === "audit", queryKey: getGetPersonMasterStatusHistoryQueryKey(id!) },
+  });
+  const { data: relationships } = useGetPersonMasterRelationships(id!, {
+    query: { enabled: activeTab === "relationships", queryKey: getGetPersonMasterRelationshipsQueryKey(id!) },
+  });
 
   const assignRole = useAssignPersonMasterRole();
   const removeRole = useRemovePersonMasterRole();
   const updatePerson = useUpdatePersonMaster();
+  const changeStatus = useChangePersonMasterStatus();
+
+  function invalidatePerson() {
+    queryClient.invalidateQueries({ queryKey: getGetPersonMasterQueryKey(id!) });
+  }
 
   function handleAssignRole() {
     if (!selectedRole) return;
@@ -143,7 +203,7 @@ export default function PersonProfile() {
       { id: id!, data: { role: selectedRole as any, notes: roleNotes || undefined } },
       {
         onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: getGetPersonMasterQueryKey(id!) });
+          invalidatePerson();
           toast({ title: "Role assigned" });
           setAddRoleOpen(false);
           setSelectedRole("");
@@ -158,10 +218,7 @@ export default function PersonProfile() {
     removeRole.mutate(
       { id: id!, roleId },
       {
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: getGetPersonMasterQueryKey(id!) });
-          toast({ title: "Role deactivated" });
-        },
+        onSuccess: () => { invalidatePerson(); toast({ title: "Role deactivated" }); },
         onError: () => toast({ title: "Failed to remove role", variant: "destructive" }),
       },
     );
@@ -171,13 +228,99 @@ export default function PersonProfile() {
     updatePerson.mutate(
       { id: id!, data: { kycStatus: newStatus as any } },
       {
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: getGetPersonMasterQueryKey(id!) });
-          toast({ title: `KYC status updated to ${newStatus.replace(/_/g, " ")}` });
-        },
+        onSuccess: () => { invalidatePerson(); toast({ title: `KYC status updated` }); },
         onError: () => toast({ title: "Failed to update KYC status", variant: "destructive" }),
       },
     );
+  }
+
+  function handleStatusChange() {
+    if (!statusTarget || !statusReason) return;
+    const payload: PersonStatusChangeInput = {
+      toStatus: statusTarget as any,
+      reason: statusReason,
+      notes: statusNotes || undefined,
+    };
+    if (statusTarget === "deceased") {
+      (payload as any).dateOfDeath = dodValue || undefined;
+      (payload as any).deathRemarks = deathRemarks || undefined;
+    }
+    changeStatus.mutate(
+      { id: id!, data: payload },
+      {
+        onSuccess: () => {
+          invalidatePerson();
+          queryClient.invalidateQueries({ queryKey: getGetPersonMasterStatusHistoryQueryKey(id!) });
+          toast({ title: `Status updated to ${statusTarget}` });
+          setStatusDialogOpen(false);
+          setStatusTarget("");
+          setStatusReason("");
+          setStatusNotes("");
+          setDodValue("");
+          setDeathRemarks("");
+        },
+        onError: (err: any) => {
+          const msg = err?.response?.data?.message ?? "Failed to change status";
+          toast({ title: msg, variant: "destructive" });
+        },
+      },
+    );
+  }
+
+  function handleSaveBank() {
+    const payload = Object.fromEntries(
+      Object.entries(bankForm).filter(([, v]) => v !== ""),
+    );
+    updatePerson.mutate(
+      { id: id!, data: payload as any },
+      {
+        onSuccess: () => {
+          invalidatePerson();
+          toast({ title: "Bank information saved" });
+          setEditBankOpen(false);
+        },
+        onError: () => toast({ title: "Failed to save bank information", variant: "destructive" }),
+      },
+    );
+  }
+
+  function handleSaveNominee() {
+    const payload = Object.fromEntries(
+      Object.entries(nomineeForm).filter(([, v]) => v !== ""),
+    );
+    updatePerson.mutate(
+      { id: id!, data: payload as any },
+      {
+        onSuccess: () => {
+          invalidatePerson();
+          toast({ title: "Nominee information saved" });
+          setEditNomineeOpen(false);
+        },
+        onError: () => toast({ title: "Failed to save nominee information", variant: "destructive" }),
+      },
+    );
+  }
+
+  function openBankEdit() {
+    setBankForm({
+      bankAccountNumber: person?.bankAccountNumber ?? "",
+      bankIfsc: person?.bankIfsc ?? "",
+      bankName: person?.bankName ?? "",
+      bankBranch: person?.bankBranch ?? "",
+      bankAccountHolderName: person?.bankAccountHolderName ?? "",
+      bankAccountType: person?.bankAccountType ?? "savings",
+    });
+    setEditBankOpen(true);
+  }
+
+  function openNomineeEdit() {
+    setNomineeForm({
+      personNomineeName: person?.personNomineeName ?? "",
+      personNomineeRelationship: person?.personNomineeRelationship ?? "",
+      personNomineeMobile: person?.personNomineeMobile ?? "",
+      personNomineeAddress: person?.personNomineeAddress ?? "",
+    });
+    setEditNomineeOpen(true);
   }
 
   if (isLoading) {
@@ -204,13 +347,20 @@ export default function PersonProfile() {
   const pid = derivePersonId(person.id, person.createdAt);
   const kycCfg = KYC_CONFIG[person.kycStatus] ?? KYC_CONFIG.pending;
   const KycIcon = kycCfg.icon;
+  const statusCfg = STATUS_CONFIG[person.status] ?? STATUS_CONFIG.active;
+  const StatusIcon = statusCfg.icon;
   const activeRoles = (person.roles ?? []).filter((r) => r.isActive);
   const projectLinks = person.projectLinks ?? [];
 
-  const tabs: { key: typeof activeTab; label: string; icon: React.ElementType }[] = [
+  const isDeceased = person.status === "deceased";
+  const isArchived = person.status === "archived";
+
+  const tabs: { key: TabKey; label: string; icon: React.ElementType }[] = [
     { key: "details", label: "Details", icon: User2 },
+    { key: "bank", label: "Bank & Nominee", icon: Banknote },
     { key: "roles", label: `Roles (${activeRoles.length})`, icon: Tag },
     { key: "projects", label: `Projects (${projectLinks.length})`, icon: FolderKanban },
+    { key: "relationships", label: "Relationships", icon: Network },
     { key: "audit", label: "Audit Trail", icon: History },
   ];
 
@@ -223,16 +373,35 @@ export default function PersonProfile() {
         </Button>
       </Link>
 
+      {/* Deceased / Archived banner */}
+      {(isDeceased || isArchived) && (
+        <div className={`flex items-center gap-2 px-4 py-3 rounded-lg border text-sm font-medium ${isDeceased ? "bg-slate-100 border-slate-300 text-slate-700" : "bg-orange-50 border-orange-200 text-orange-800"}`}>
+          <StatusIcon className="w-4 h-4 flex-shrink-0" />
+          {isDeceased && (
+            <span>
+              This person is recorded as deceased
+              {person.dateOfDeath ? ` — Date of Death: ${fmtDate(person.dateOfDeath)}` : ""}.
+              Ownership records are not altered automatically.
+            </span>
+          )}
+          {isArchived && (
+            <span>This record is archived. No active operations can be performed.</span>
+          )}
+        </div>
+      )}
+
       {/* Profile header */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
-            <span className="text-2xl font-bold text-emerald-700">
+          <div className={`w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0 ${isDeceased ? "bg-slate-200" : isArchived ? "bg-orange-100" : "bg-emerald-100"}`}>
+            <span className={`text-2xl font-bold ${isDeceased ? "text-slate-500" : isArchived ? "text-orange-700" : "text-emerald-700"}`}>
               {person.fullName.charAt(0).toUpperCase()}
             </span>
           </div>
           <div>
-            <h1 className="text-2xl font-serif font-bold">{person.fullName}</h1>
+            <h1 className={`text-2xl font-serif font-bold ${isDeceased ? "line-through text-muted-foreground" : ""}`}>
+              {person.fullName}
+            </h1>
             {person.sOnCOn && (
               <p className="text-sm text-muted-foreground">{person.sOnCOn}</p>
             )}
@@ -240,9 +409,13 @@ export default function PersonProfile() {
           </div>
         </div>
         <div className="flex flex-col items-end gap-2">
-          <span
-            className={`inline-flex items-center gap-1.5 text-xs px-3 py-1 rounded-full font-medium border ${kycCfg.classes}`}
-          >
+          {/* Lifecycle status badge */}
+          <span className={`inline-flex items-center gap-1.5 text-xs px-3 py-1 rounded-full font-medium border ${statusCfg.classes}`}>
+            <StatusIcon className="w-3.5 h-3.5" />
+            {statusCfg.label}
+          </span>
+          {/* KYC badge */}
+          <span className={`inline-flex items-center gap-1.5 text-xs px-3 py-1 rounded-full font-medium border ${kycCfg.classes}`}>
             <KycIcon className="w-3.5 h-3.5" />
             {kycCfg.label}
           </span>
@@ -251,6 +424,15 @@ export default function PersonProfile() {
               <Fingerprint className="w-3 h-3" /> Aadhaar Verified
             </span>
           )}
+          {/* Admin status actions */}
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1 text-xs h-7"
+            onClick={() => setStatusDialogOpen(true)}
+          >
+            <RefreshCw className="w-3 h-3" /> Change Status
+          </Button>
         </div>
       </div>
 
@@ -269,7 +451,7 @@ export default function PersonProfile() {
       )}
 
       {/* Tabs */}
-      <div className="flex border-b gap-1">
+      <div className="flex border-b gap-1 flex-wrap">
         {tabs.map(({ key, label, icon: Icon }) => (
           <button
             key={key}
@@ -299,11 +481,10 @@ export default function PersonProfile() {
               <Row label="Father / Guardian" value={fmt(person.fatherGuardianName)} />
               <Row label="Date of Birth" value={fmtDate(person.dateOfBirth)} />
               <Row label="Gender" value={fmt(person.gender)} />
+              <Row label="PAN Number" value={fmt(person.panNumber)} />
+              <Row label="Communication" value={fmt(person.communicationPreference)} />
               <Separator />
-              <Row
-                label="Aadhaar"
-                value={person.aadhaarLast4 ? `XXXX-XXXX-${person.aadhaarLast4}` : "—"}
-              />
+              <Row label="Aadhaar" value={person.aadhaarLast4 ? `XXXX-XXXX-${person.aadhaarLast4}` : "—"} />
               <Row
                 label="Aadhaar Verified"
                 value={
@@ -347,6 +528,24 @@ export default function PersonProfile() {
             </CardContent>
           </Card>
 
+          {/* Deceased info (only shown if deceased) */}
+          {isDeceased && (
+            <Card className="sm:col-span-2 border-slate-200 bg-slate-50">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2 text-slate-700">
+                  <SkullIcon className="w-4 h-4" /> Deceased Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2 text-sm">
+                <Row label="Date of Death" value={fmtDate(person.dateOfDeath)} />
+                <Row label="Remarks" value={fmt(person.deathRemarks)} />
+                {person.deathDocumentPath && (
+                  <Row label="Death Document" value={<span className="text-xs text-blue-600">Uploaded</span>} />
+                )}
+              </CardContent>
+            </Card>
+          )}
+
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
@@ -382,6 +581,17 @@ export default function PersonProfile() {
               <Row label="Person ID" value={<span className="font-mono">{pid}</span>} />
               <Row label="UUID" value={<span className="font-mono text-xs break-all">{person.id}</span>} />
               <Row label="Registered" value={fmtDateTime(person.createdAt)} />
+              <Row
+                label="Lifecycle Status"
+                value={
+                  <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium border ${statusCfg.classes}`}>
+                    <StatusIcon className="w-3 h-3" />{statusCfg.label}
+                  </span>
+                }
+              />
+              {isArchived && (
+                <Row label="Archived At" value={fmtDateTime(person.archivedAt)} />
+              )}
               {person.userId && (
                 <Row label="Linked User" value={<Badge variant="outline" className="text-xs">Account Linked</Badge>} />
               )}
@@ -390,6 +600,63 @@ export default function PersonProfile() {
                   <Separator />
                   <Row label="Remarks" value={person.remarks} />
                 </>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* ── Bank & Nominee tab ── */}
+      {activeTab === "bank" && (
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Card>
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <CreditCard className="w-4 h-4 text-muted-foreground" /> Bank Information
+                </CardTitle>
+                <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={openBankEdit}>
+                  Edit
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm">
+              {person.bankAccountNumber ? (
+                <>
+                  <Row label="Account Number" value={`XXXXXXXX${person.bankAccountNumber.slice(-4)}`} />
+                  <Row label="IFSC Code" value={fmt(person.bankIfsc)} />
+                  <Row label="Bank Name" value={fmt(person.bankName)} />
+                  <Row label="Branch" value={fmt(person.bankBranch)} />
+                  <Row label="Account Holder" value={fmt(person.bankAccountHolderName)} />
+                  <Row label="Account Type" value={fmt(person.bankAccountType)} />
+                </>
+              ) : (
+                <p className="text-muted-foreground text-xs py-4 text-center">No bank information recorded.</p>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <UserCheck className="w-4 h-4 text-muted-foreground" /> Person Nominee
+                </CardTitle>
+                <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={openNomineeEdit}>
+                  Edit
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm">
+              {person.personNomineeName ? (
+                <>
+                  <Row label="Nominee Name" value={fmt(person.personNomineeName)} />
+                  <Row label="Relationship" value={fmt(person.personNomineeRelationship)} />
+                  <Row label="Mobile" value={fmt(person.personNomineeMobile)} />
+                  <Row label="Address" value={fmt(person.personNomineeAddress)} />
+                </>
+              ) : (
+                <p className="text-muted-foreground text-xs py-4 text-center">No nominee information recorded.</p>
               )}
             </CardContent>
           </Card>
@@ -421,11 +688,7 @@ export default function PersonProfile() {
                   className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/20"
                 >
                   <div className="flex items-center gap-3">
-                    <span
-                      className={`text-xs px-2.5 py-1 rounded-full font-medium ${
-                        ROLE_COLORS[r.role] ?? "bg-gray-100 text-gray-800"
-                      }`}
-                    >
+                    <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${ROLE_COLORS[r.role] ?? "bg-gray-100 text-gray-800"}`}>
                       {ROLE_LABELS[r.role] ?? r.role}
                     </span>
                     {r.projectId ? (
@@ -435,9 +698,7 @@ export default function PersonProfile() {
                     ) : (
                       <span className="text-xs text-muted-foreground">Global role</span>
                     )}
-                    {r.notes && (
-                      <span className="text-xs text-muted-foreground italic">{r.notes}</span>
-                    )}
+                    {r.notes && <span className="text-xs text-muted-foreground italic">{r.notes}</span>}
                   </div>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <span>{fmtDate(r.createdAt)}</span>
@@ -457,22 +718,19 @@ export default function PersonProfile() {
             </div>
           )}
 
-          {/* Deactivated roles */}
           {(person.roles ?? []).filter((r) => !r.isActive).length > 0 && (
             <details className="mt-2">
               <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground">
                 Show {(person.roles ?? []).filter((r) => !r.isActive).length} deactivated role(s)
               </summary>
               <div className="mt-2 space-y-1 opacity-50">
-                {(person.roles ?? [])
-                  .filter((r) => !r.isActive)
-                  .map((r) => (
-                    <div key={r.id} className="flex items-center gap-3 p-2 border rounded text-xs line-through">
-                      <span className={`px-2 py-0.5 rounded-full font-medium ${ROLE_COLORS[r.role] ?? "bg-gray-100 text-gray-800"}`}>
-                        {ROLE_LABELS[r.role] ?? r.role}
-                      </span>
-                    </div>
-                  ))}
+                {(person.roles ?? []).filter((r) => !r.isActive).map((r) => (
+                  <div key={r.id} className="flex items-center gap-3 p-2 border rounded text-xs line-through">
+                    <span className={`px-2 py-0.5 rounded-full font-medium ${ROLE_COLORS[r.role] ?? "bg-gray-100 text-gray-800"}`}>
+                      {ROLE_LABELS[r.role] ?? r.role}
+                    </span>
+                  </div>
+                ))}
               </div>
             </details>
           )}
@@ -485,21 +743,14 @@ export default function PersonProfile() {
           {projectLinks.length === 0 ? (
             <Card className="py-12 text-center">
               <FolderKanban className="w-8 h-8 mx-auto text-muted-foreground/40 mb-2" />
-              <p className="text-sm text-muted-foreground">
-                This person is not linked to any project yet.
-              </p>
+              <p className="text-sm text-muted-foreground">This person is not linked to any project yet.</p>
             </Card>
           ) : (
             projectLinks.map((link) => (
-              <div
-                key={link.participantId}
-                className="flex items-center justify-between p-3 border rounded-lg"
-              >
+              <div key={link.participantId} className="flex items-center justify-between p-3 border rounded-lg">
                 <div>
                   <p className="font-medium text-sm">{link.projectName}</p>
-                  <p className="text-xs text-muted-foreground capitalize">
-                    Role: {link.role?.replace(/_/g, " ")}
-                  </p>
+                  <p className="text-xs text-muted-foreground capitalize">Role: {link.role?.replace(/_/g, " ")}</p>
                 </div>
                 <Link href={`/projects/${link.projectId}`}>
                   <Button variant="outline" size="sm" className="text-xs gap-1">
@@ -512,41 +763,303 @@ export default function PersonProfile() {
         </div>
       )}
 
+      {/* ── Relationships tab ── */}
+      {activeTab === "relationships" && (
+        <div className="space-y-4">
+          {!relationships ? (
+            <div className="space-y-2">
+              <Skeleton className="h-24 w-full" />
+              <Skeleton className="h-24 w-full" />
+            </div>
+          ) : (
+            <>
+              <RelationshipSection
+                title="Project Participation"
+                icon={FolderKanban}
+                count={(relationships.projectParticipations ?? []).length}
+                empty="No project participations"
+              >
+                {(relationships.projectParticipations ?? []).map((p) => (
+                  <RelationRow key={p.id} label={p.projectName ?? ""} sub={`Role: ${p.role}`}>
+                    <Link href={`/projects/${p.projectId}`}>
+                      <Button variant="ghost" size="icon" className="h-6 w-6"><Eye className="w-3 h-3" /></Button>
+                    </Link>
+                  </RelationRow>
+                ))}
+              </RelationshipSection>
+
+              <RelationshipSection
+                title="Workforce Assignments"
+                icon={Briefcase}
+                count={(relationships.workforceAssignments ?? []).length}
+                empty="No workforce assignments"
+              >
+                {(relationships.workforceAssignments ?? []).map((a) => (
+                  <RelationRow key={a.id} label={a.projectName ?? ""} sub={`${a.role} · ${a.isActive ? "Active" : "Inactive"}`} />
+                ))}
+              </RelationshipSection>
+
+              <RelationshipSection
+                title="Partner Records"
+                icon={User2}
+                count={(relationships.partnerLinks ?? []).length}
+                empty="No partner records"
+              >
+                {(relationships.partnerLinks ?? []).map((p) => (
+                  <RelationRow key={p.id} label={p.name ?? ""} sub={`Role: ${p.role}`} />
+                ))}
+              </RelationshipSection>
+
+              <RelationshipSection
+                title="Nominees"
+                icon={UserCheck}
+                count={(relationships.nominees ?? []).length}
+                empty="No nominee records"
+              >
+                {(relationships.nominees ?? []).map((n) => (
+                  <RelationRow key={n.id} label={n.projectName ?? ""} sub={`Nominee: ${n.nomineeName} · ${n.activationStatus}`} />
+                ))}
+              </RelationshipSection>
+
+              <RelationshipSection
+                title="Inheritance Claimants"
+                icon={AlertTriangle}
+                count={(relationships.claimants ?? []).length}
+                empty="No inheritance claims"
+              >
+                {(relationships.claimants ?? []).map((c) => (
+                  <RelationRow key={c.id} label={c.projectName ?? ""} sub={`Claimant: ${c.claimantName} · ${c.status}`} />
+                ))}
+              </RelationshipSection>
+
+              <RelationshipSection
+                title="Buyer Records"
+                icon={Tag}
+                count={(relationships.buyerLinks ?? []).length}
+                empty="No buyer records"
+              >
+                {(relationships.buyerLinks ?? []).map((b) => (
+                  <RelationRow key={b.id} label={b.name ?? ""} sub={`Type: ${b.buyerType}`} />
+                ))}
+              </RelationshipSection>
+
+              <RelationshipSection
+                title="Witnesses"
+                icon={Eye}
+                count={(relationships.witnesses ?? []).length}
+                empty="No witness records"
+              >
+                {(relationships.witnesses ?? []).map((w) => (
+                  <RelationRow key={w.id} label={w.projectName ?? ""} sub={`Witness: ${w.fullName}`} />
+                ))}
+              </RelationshipSection>
+            </>
+          )}
+        </div>
+      )}
+
       {/* ── Audit tab ── */}
       {activeTab === "audit" && (
-        <div className="space-y-2">
-          {auditEvents.length === 0 ? (
-            <Card className="py-12 text-center">
-              <History className="w-8 h-8 mx-auto text-muted-foreground/40 mb-2" />
-              <p className="text-sm text-muted-foreground">No audit events recorded.</p>
-            </Card>
-          ) : (
-            <div className="relative">
-              <div className="absolute left-[19px] top-0 bottom-0 w-px bg-border" />
-              <div className="space-y-3">
-                {auditEvents.map((e) => (
-                  <div key={e.id} className="flex gap-4">
-                    <div className="w-10 h-10 rounded-full bg-muted border flex items-center justify-center flex-shrink-0 z-10">
-                      <History className="w-4 h-4 text-muted-foreground" />
+        <div className="space-y-6">
+          {/* Status history */}
+          {statusHistory.length > 0 && (
+            <div>
+              <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                <RefreshCw className="w-4 h-4 text-muted-foreground" /> Status History
+              </h3>
+              <div className="space-y-2">
+                {statusHistory.map((h) => (
+                  <div key={h.id} className="p-3 border rounded-lg text-sm">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        {h.fromStatus && (
+                          <>
+                            <StatusPill status={h.fromStatus} />
+                            <span className="text-muted-foreground">→</span>
+                          </>
+                        )}
+                        <StatusPill status={h.toStatus} />
+                      </div>
+                      <span className="text-xs text-muted-foreground">{fmtDateTime(h.createdAt)}</span>
                     </div>
-                    <div className="flex-1 pb-2">
-                      <p className="text-sm font-medium capitalize">
-                        {e.eventType?.replace(/_/g, " ")}
-                      </p>
-                      {e.description && (
-                        <p className="text-xs text-muted-foreground mt-0.5">{e.description}</p>
-                      )}
-                      <p className="text-xs text-muted-foreground/60 mt-1">
-                        {fmtDateTime(e.createdAt)}
-                      </p>
-                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">{h.reason}</p>
+                    {h.changedByName && <p className="text-xs text-muted-foreground/60">By: {h.changedByName}</p>}
                   </div>
                 ))}
               </div>
             </div>
           )}
+
+          {/* Audit timeline */}
+          <div>
+            <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+              <History className="w-4 h-4 text-muted-foreground" /> Activity Log
+            </h3>
+            {auditEvents.length === 0 ? (
+              <Card className="py-12 text-center">
+                <History className="w-8 h-8 mx-auto text-muted-foreground/40 mb-2" />
+                <p className="text-sm text-muted-foreground">No audit events recorded.</p>
+              </Card>
+            ) : (
+              <div className="relative">
+                <div className="absolute left-[19px] top-0 bottom-0 w-px bg-border" />
+                <div className="space-y-3">
+                  {auditEvents.map((e) => (
+                    <div key={e.id} className="flex gap-4">
+                      <div className="w-10 h-10 rounded-full bg-muted border flex items-center justify-center flex-shrink-0 z-10">
+                        <History className="w-4 h-4 text-muted-foreground" />
+                      </div>
+                      <div className="flex-1 pb-2">
+                        <p className="text-sm font-medium capitalize">{e.eventType?.replace(/_/g, " ")}</p>
+                        {e.description && <p className="text-xs text-muted-foreground mt-0.5">{e.description}</p>}
+                        <p className="text-xs text-muted-foreground/60 mt-1">{fmtDateTime(e.createdAt)}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
+
+      {/* ── Status Change Dialog ── */}
+      <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-serif">Change Person Status</DialogTitle>
+            <DialogDescription className="text-xs">
+              Current status: <strong>{person.status}</strong>. Archive is blocked if active relationships exist.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-1 block">New Status</label>
+              <Select value={statusTarget} onValueChange={setStatusTarget}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select status…" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="deceased">Deceased</SelectItem>
+                  <SelectItem value="archived">Archived</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {statusTarget === "deceased" && (
+              <>
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Date of Death</label>
+                  <Input type="date" value={dodValue} onChange={(e) => setDodValue(e.target.value)} />
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Death Remarks (optional)</label>
+                  <Input placeholder="e.g. Hospital, cause…" value={deathRemarks} onChange={(e) => setDeathRemarks(e.target.value)} />
+                </div>
+              </>
+            )}
+            <div>
+              <label className="text-sm font-medium mb-1 block">Reason <span className="text-red-500">*</span></label>
+              <Textarea
+                placeholder="Reason for this status change…"
+                value={statusReason}
+                onChange={(e) => setStatusReason(e.target.value)}
+                rows={3}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">Notes (optional)</label>
+              <Input placeholder="Any supporting notes…" value={statusNotes} onChange={(e) => setStatusNotes(e.target.value)} />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setStatusDialogOpen(false)}>Cancel</Button>
+              <Button
+                onClick={handleStatusChange}
+                disabled={!statusTarget || statusReason.length < 5 || changeStatus.isPending}
+                variant={statusTarget === "archived" ? "destructive" : "default"}
+              >
+                {changeStatus.isPending ? "Saving…" : "Confirm"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Edit Bank Dialog ── */}
+      <Dialog open={editBankOpen} onOpenChange={setEditBankOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-serif">Bank Information</DialogTitle>
+            <DialogDescription className="text-xs">
+              This information is stored securely and audited on every change.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            {(["bankAccountNumber", "bankIfsc", "bankName", "bankBranch", "bankAccountHolderName"] as const).map((field) => (
+              <div key={field}>
+                <label className="text-sm font-medium mb-1 block capitalize">{field.replace(/([A-Z])/g, " $1").replace("bank ", "").trim()}</label>
+                <Input
+                  value={bankForm[field]}
+                  onChange={(e) => setBankForm((prev) => ({ ...prev, [field]: e.target.value }))}
+                />
+              </div>
+            ))}
+            <div>
+              <label className="text-sm font-medium mb-1 block">Account Type</label>
+              <Select value={bankForm.bankAccountType} onValueChange={(v) => setBankForm((prev) => ({ ...prev, bankAccountType: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="savings">Savings</SelectItem>
+                  <SelectItem value="current">Current</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setEditBankOpen(false)}>Cancel</Button>
+              <Button onClick={handleSaveBank} disabled={updatePerson.isPending}>
+                {updatePerson.isPending ? "Saving…" : "Save Bank Info"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Edit Nominee Dialog ── */}
+      <Dialog open={editNomineeOpen} onOpenChange={setEditNomineeOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-serif">Person Nominee</DialogTitle>
+            <DialogDescription className="text-xs">
+              The person nominated by {person.fullName} for their personal accounts and assets.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <label className="text-sm font-medium mb-1 block">Nominee Name</label>
+              <Input value={nomineeForm.personNomineeName} onChange={(e) => setNomineeForm((p) => ({ ...p, personNomineeName: e.target.value }))} />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">Relationship</label>
+              <Input value={nomineeForm.personNomineeRelationship} onChange={(e) => setNomineeForm((p) => ({ ...p, personNomineeRelationship: e.target.value }))} />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">Mobile</label>
+              <Input value={nomineeForm.personNomineeMobile} onChange={(e) => setNomineeForm((p) => ({ ...p, personNomineeMobile: e.target.value }))} />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">Address</label>
+              <Input value={nomineeForm.personNomineeAddress} onChange={(e) => setNomineeForm((p) => ({ ...p, personNomineeAddress: e.target.value }))} />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setEditNomineeOpen(false)}>Cancel</Button>
+              <Button onClick={handleSaveNominee} disabled={updatePerson.isPending}>
+                {updatePerson.isPending ? "Saving…" : "Save Nominee"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* ── Add Role Dialog ── */}
       <Dialog open={addRoleOpen} onOpenChange={setAddRoleOpen}>
@@ -561,14 +1074,10 @@ export default function PersonProfile() {
             <div>
               <label className="text-sm font-medium mb-1 block">Role</label>
               <Select value={selectedRole} onValueChange={setSelectedRole}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select role…" />
-                </SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Select role…" /></SelectTrigger>
                 <SelectContent>
                   {ALL_ROLES.map((r) => (
-                    <SelectItem key={r} value={r}>
-                      {ROLE_LABELS[r]}
-                    </SelectItem>
+                    <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -582,13 +1091,8 @@ export default function PersonProfile() {
               />
             </div>
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setAddRoleOpen(false)}>
-                Cancel
-              </Button>
-              <Button
-                onClick={handleAssignRole}
-                disabled={!selectedRole || assignRole.isPending}
-              >
+              <Button variant="outline" onClick={() => setAddRoleOpen(false)}>Cancel</Button>
+              <Button onClick={handleAssignRole} disabled={!selectedRole || assignRole.isPending}>
                 {assignRole.isPending ? "Assigning…" : "Assign Role"}
               </Button>
             </div>
@@ -604,8 +1108,8 @@ export default function PersonProfile() {
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-start gap-2">
-      <span className="text-muted-foreground min-w-[130px] shrink-0">{label}</span>
-      <span className="font-medium text-right flex-1">{value}</span>
+      <span className="text-muted-foreground min-w-[140px] shrink-0">{label}</span>
+      <span className="font-medium flex-1">{value}</span>
     </div>
   );
 }
@@ -618,5 +1122,68 @@ function KycBadge({ status }: { status: string }) {
       <Icon className="w-3 h-3" />
       {cfg.label}
     </span>
+  );
+}
+
+function StatusPill({ status }: { status: string }) {
+  const cfg = STATUS_CONFIG[status] ?? STATUS_CONFIG.active;
+  return (
+    <span className={`inline-flex items-center text-xs px-2 py-0.5 rounded-full font-medium border ${cfg.classes}`}>
+      {cfg.label}
+    </span>
+  );
+}
+
+function RelationshipSection({
+  title,
+  icon: Icon,
+  count,
+  empty,
+  children,
+}: {
+  title: string;
+  icon: React.ElementType;
+  count: number;
+  empty: string;
+  children?: React.ReactNode;
+}) {
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-semibold flex items-center justify-between gap-2">
+          <span className="flex items-center gap-2">
+            <Icon className="w-4 h-4 text-muted-foreground" /> {title}
+          </span>
+          <Badge variant="secondary" className="text-xs">{count}</Badge>
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {count === 0 ? (
+          <p className="text-xs text-muted-foreground py-2 text-center">{empty}</p>
+        ) : (
+          <div className="space-y-2">{children}</div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function RelationRow({
+  label,
+  sub,
+  children,
+}: {
+  label: string;
+  sub: string;
+  children?: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-center justify-between py-1 border-b last:border-0 text-sm gap-2">
+      <div>
+        <p className="font-medium">{label}</p>
+        <p className="text-xs text-muted-foreground">{sub}</p>
+      </div>
+      {children}
+    </div>
   );
 }

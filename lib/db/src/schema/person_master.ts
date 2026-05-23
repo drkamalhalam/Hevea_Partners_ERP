@@ -9,7 +9,7 @@ import {
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { usersTable } from "./users";
-import { personKycStatusEnum } from "./enums";
+import { personKycStatusEnum, personStatusEnum } from "./enums";
 
 /**
  * person_master — single authoritative identity registry for every human/legal
@@ -74,6 +74,46 @@ export const personMasterTable = pgTable("person_master", {
   aadhaarObjectPath: text("aadhaar_object_path"),
   supportingIdObjectPath: text("supporting_id_object_path"),
   profilePhotoObjectPath: text("profile_photo_object_path"),
+
+  // ── Government IDs ───────────────────────────────────────────────────────
+  panNumber: text("pan_number"),
+
+  // ── Person lifecycle status ──────────────────────────────────────────────
+  /**
+   * active   — normal operating status
+   * inactive — temporarily deactivated
+   * deceased — person confirmed deceased; dateOfDeath should be set
+   * archived — soft-deleted; blocked if linked to active project/assignment/case
+   */
+  status: personStatusEnum("status").notNull().default("active"),
+  archivedAt: timestamp("archived_at", { withTimezone: true }),
+  archivedBy: uuid("archived_by").references(() => usersTable.id, { onDelete: "set null" }),
+
+  // ── Deceased support ─────────────────────────────────────────────────────
+  dateOfDeath: date("date_of_death"),
+  deathRemarks: text("death_remarks"),
+  /** GCS path for uploaded death certificate or supporting document */
+  deathDocumentPath: text("death_document_path"),
+
+  // ── Bank information ─────────────────────────────────────────────────────
+  bankAccountNumber: text("bank_account_number"),
+  bankIfsc: text("bank_ifsc"),
+  bankName: text("bank_name"),
+  bankBranch: text("bank_branch"),
+  bankAccountHolderName: text("bank_account_holder_name"),
+  /** "savings" | "current" */
+  bankAccountType: text("bank_account_type"),
+
+  // ── Person-level nominee information ────────────────────────────────────
+  /** Name of the nominee nominated by this person for their own accounts/assets */
+  personNomineeName: text("person_nominee_name"),
+  personNomineeRelationship: text("person_nominee_relationship"),
+  personNomineeMobile: text("person_nominee_mobile"),
+  personNomineeAddress: text("person_nominee_address"),
+
+  // ── Communication preference ─────────────────────────────────────────────
+  /** "mobile" | "email" | "whatsapp" */
+  communicationPreference: text("communication_preference").default("mobile"),
 
   // ── Optional system account linkage ────────────────────────────────────
   /**

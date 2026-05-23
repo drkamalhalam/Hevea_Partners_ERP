@@ -5,6 +5,7 @@
  * Rubber Plantation Partnership API
  * OpenAPI spec version: 0.1.0
  */
+import type { CreatePersonMasterCommunicationPreference } from "./createPersonMasterCommunicationPreference";
 import type { CreatePersonMasterGender } from "./createPersonMasterGender";
 
 export interface CreatePersonMaster {
@@ -27,5 +28,7 @@ export interface CreatePersonMaster {
   district?: string;
   state?: string;
   country?: string;
+  panNumber?: string;
+  communicationPreference?: CreatePersonMasterCommunicationPreference;
   remarks?: string;
 }

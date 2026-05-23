@@ -17,6 +17,20 @@ export const personKycStatusEnum = pgEnum("person_kyc_status", [
 ]);
 
 /**
+ * Lifecycle status of a person master record.
+ *   active   — normal operating status
+ *   inactive — temporarily deactivated; not deleted
+ *   deceased — person is confirmed deceased; date_of_death must be set
+ *   archived — soft-deleted; blocked if linked to active project/assignment/case
+ */
+export const personStatusEnum = pgEnum("person_status", [
+  "active",
+  "inactive",
+  "deceased",
+  "archived",
+]);
+
+/**
  * Roles a person can hold across one or many projects simultaneously.
  * A single person_master record may accumulate multiple role assignments.
  */
@@ -51,6 +65,14 @@ export const personMasterAuditEventEnum = pgEnum("person_master_audit_event", [
   "project_linked",
   "duplicate_merged",
   "documents_uploaded",
+  "status_changed",
+  "archived",
+  "restored",
+  "deceased_marked",
+  "bank_updated",
+  "nominee_updated",
+  "pan_updated",
+  "contact_updated",
 ]);
 
 // ── User & access enums ───────────────────────────────────────────────────

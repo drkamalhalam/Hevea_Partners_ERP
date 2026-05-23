@@ -8,6 +8,7 @@ import {
 import { usersTable } from "./users";
 import { partnersTable } from "./partners";
 import { projectsTable } from "./projects";
+import { personMasterTable } from "./person_master";
 import { claimantStatusEnum } from "./enums";
 
 /**
@@ -32,7 +33,11 @@ export const partnerClaimantsTable = pgTable("partner_claimants", {
     .notNull()
     .references(() => projectsTable.id, { onDelete: "cascade" }),
 
-  // Claimant details
+  // Person Registry linkage (nullable — legacy records pre-date this field)
+  personMasterId: uuid("person_master_id")
+    .references(() => personMasterTable.id, { onDelete: "set null" }),
+
+  // Claimant details (kept for legacy records and document-generation snapshots)
   claimantName: text("claimant_name").notNull(),
   relationship: text("relationship").notNull(),
   phone: text("phone").notNull(),
