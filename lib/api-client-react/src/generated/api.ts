@@ -23,6 +23,7 @@ import type {
   AcknowledgeAdvanceBody,
   AcknowledgeClosureBody,
   ActivateProjectViaOnboarding200,
+  ActivateWorkAssignmentBody,
   ActivityItem,
   AddDisputeEvent200,
   AddDisputeEventBody,
@@ -60,6 +61,7 @@ import type {
   ArchiveDistributionRecordBody,
   ArchiveFiftyPctSession200,
   ArchiveSettlementRecord200,
+  ArchiveWorkAssignmentBody,
   AssignProjectInput,
   AutoGenerateLcaLedgerBody,
   AutoGenerateLcaResult,
@@ -92,6 +94,7 @@ import type {
   CollectionEntry,
   CollectionSummary,
   CompleteStockTransfer200,
+  CompleteWorkAssignmentBody,
   ComputePayableParams,
   ComputeTransferValueToPercentage200,
   ComputeTransferValueToPercentageBody,
@@ -192,6 +195,7 @@ import type {
   CreateValuationProfitRecordBody,
   CreateValuationRun201,
   CreateValuationRunBody,
+  CreateWorkAssignmentBody,
   CreateWorkforceAssignmentBody,
   CustodyHolderSummary,
   DashboardSummary,
@@ -228,6 +232,7 @@ import type {
   DocumentAccessLogEntry,
   EditCollectionEntryBody,
   EditStoreEntryBody,
+  EditWorkAssignmentBody,
   EppEntriesResult,
   ErrorResponse,
   EvidenceStats,
@@ -316,6 +321,7 @@ import type {
   GetPartnerDistributionHistoryParams,
   GetPartnerStatementReportParams,
   GetPayableSnapshot200,
+  GetPersonWorkAssignmentsParams,
   GetPostMaturityPayment200,
   GetPostMaturityPaymentBalance200,
   GetPostMaturityPaymentBalanceParams,
@@ -492,6 +498,7 @@ import type {
   ListTransferRofrOffers200,
   ListValuationProfitRecordsParams,
   ListValuationRunsParams,
+  ListWorkAssignmentsParams,
   ListWorkforceAssignmentsParams,
   LockOwnershipPercentageBody,
   LoginStatusChangeInput,
@@ -612,6 +619,7 @@ import type {
   ResolveContributionDisputeBody,
   ResolveOwnershipDisputeBody,
   RespondToRofrOfferBody,
+  RestoreWorkAssignmentBody,
   RevenueLookupResult,
   RevenueStats,
   RevenueTrend,
@@ -757,6 +765,8 @@ import type {
   VerifyTransferOtp200,
   VerifyTransferOtpBody,
   WaiveBurdenRecordBody,
+  WorkAssignment,
+  WorkAssignmentAuditEvent,
   WorkforceAssignment,
   WriteOffAdvanceBody,
 } from "./api.schemas";
@@ -45569,6 +45579,934 @@ export const useDeactivateWorkforceAssignment = <
 > => {
   return useMutation(getDeactivateWorkforceAssignmentMutationOptions(options));
 };
+
+/**
+ * @summary List unified work assignments with optional filters
+ */
+export const getListWorkAssignmentsUrl = (
+  params?: ListWorkAssignmentsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/work-assignments?${stringifiedParams}`
+    : `/api/work-assignments`;
+};
+
+export const listWorkAssignments = async (
+  params?: ListWorkAssignmentsParams,
+  options?: RequestInit,
+): Promise<WorkAssignment[]> => {
+  return customFetch<WorkAssignment[]>(getListWorkAssignmentsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListWorkAssignmentsQueryKey = (
+  params?: ListWorkAssignmentsParams,
+) => {
+  return [`/api/work-assignments`, ...(params ? [params] : [])] as const;
+};
+
+export const getListWorkAssignmentsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listWorkAssignments>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListWorkAssignmentsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listWorkAssignments>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListWorkAssignmentsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listWorkAssignments>>
+  > = ({ signal }) =>
+    listWorkAssignments(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listWorkAssignments>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListWorkAssignmentsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listWorkAssignments>>
+>;
+export type ListWorkAssignmentsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List unified work assignments with optional filters
+ */
+
+export function useListWorkAssignments<
+  TData = Awaited<ReturnType<typeof listWorkAssignments>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListWorkAssignmentsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listWorkAssignments>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListWorkAssignmentsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a unified work assignment
+ */
+export const getCreateWorkAssignmentUrl = () => {
+  return `/api/work-assignments`;
+};
+
+export const createWorkAssignment = async (
+  createWorkAssignmentBody: CreateWorkAssignmentBody,
+  options?: RequestInit,
+): Promise<WorkAssignment> => {
+  return customFetch<WorkAssignment>(getCreateWorkAssignmentUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createWorkAssignmentBody),
+  });
+};
+
+export const getCreateWorkAssignmentMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createWorkAssignment>>,
+    TError,
+    { data: BodyType<CreateWorkAssignmentBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createWorkAssignment>>,
+  TError,
+  { data: BodyType<CreateWorkAssignmentBody> },
+  TContext
+> => {
+  const mutationKey = ["createWorkAssignment"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createWorkAssignment>>,
+    { data: BodyType<CreateWorkAssignmentBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createWorkAssignment(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateWorkAssignmentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createWorkAssignment>>
+>;
+export type CreateWorkAssignmentMutationBody =
+  BodyType<CreateWorkAssignmentBody>;
+export type CreateWorkAssignmentMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create a unified work assignment
+ */
+export const useCreateWorkAssignment = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createWorkAssignment>>,
+    TError,
+    { data: BodyType<CreateWorkAssignmentBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createWorkAssignment>>,
+  TError,
+  { data: BodyType<CreateWorkAssignmentBody> },
+  TContext
+> => {
+  return useMutation(getCreateWorkAssignmentMutationOptions(options));
+};
+
+/**
+ * @summary Get a single work assignment
+ */
+export const getGetWorkAssignmentUrl = (id: string) => {
+  return `/api/work-assignments/${id}`;
+};
+
+export const getWorkAssignment = async (
+  id: string,
+  options?: RequestInit,
+): Promise<WorkAssignment> => {
+  return customFetch<WorkAssignment>(getGetWorkAssignmentUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetWorkAssignmentQueryKey = (id: string) => {
+  return [`/api/work-assignments/${id}`] as const;
+};
+
+export const getGetWorkAssignmentQueryOptions = <
+  TData = Awaited<ReturnType<typeof getWorkAssignment>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getWorkAssignment>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetWorkAssignmentQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getWorkAssignment>>
+  > = ({ signal }) => getWorkAssignment(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getWorkAssignment>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetWorkAssignmentQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getWorkAssignment>>
+>;
+export type GetWorkAssignmentQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get a single work assignment
+ */
+
+export function useGetWorkAssignment<
+  TData = Awaited<ReturnType<typeof getWorkAssignment>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getWorkAssignment>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetWorkAssignmentQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Edit a work assignment
+ */
+export const getEditWorkAssignmentUrl = (id: string) => {
+  return `/api/work-assignments/${id}`;
+};
+
+export const editWorkAssignment = async (
+  id: string,
+  editWorkAssignmentBody: EditWorkAssignmentBody,
+  options?: RequestInit,
+): Promise<WorkAssignment> => {
+  return customFetch<WorkAssignment>(getEditWorkAssignmentUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(editWorkAssignmentBody),
+  });
+};
+
+export const getEditWorkAssignmentMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof editWorkAssignment>>,
+    TError,
+    { id: string; data: BodyType<EditWorkAssignmentBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof editWorkAssignment>>,
+  TError,
+  { id: string; data: BodyType<EditWorkAssignmentBody> },
+  TContext
+> => {
+  const mutationKey = ["editWorkAssignment"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof editWorkAssignment>>,
+    { id: string; data: BodyType<EditWorkAssignmentBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return editWorkAssignment(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type EditWorkAssignmentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof editWorkAssignment>>
+>;
+export type EditWorkAssignmentMutationBody = BodyType<EditWorkAssignmentBody>;
+export type EditWorkAssignmentMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Edit a work assignment
+ */
+export const useEditWorkAssignment = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof editWorkAssignment>>,
+    TError,
+    { id: string; data: BodyType<EditWorkAssignmentBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof editWorkAssignment>>,
+  TError,
+  { id: string; data: BodyType<EditWorkAssignmentBody> },
+  TContext
+> => {
+  return useMutation(getEditWorkAssignmentMutationOptions(options));
+};
+
+/**
+ * @summary Transition assignment from pending to active
+ */
+export const getActivateWorkAssignmentUrl = (id: string) => {
+  return `/api/work-assignments/${id}/activate`;
+};
+
+export const activateWorkAssignment = async (
+  id: string,
+  activateWorkAssignmentBody: ActivateWorkAssignmentBody,
+  options?: RequestInit,
+): Promise<WorkAssignment> => {
+  return customFetch<WorkAssignment>(getActivateWorkAssignmentUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(activateWorkAssignmentBody),
+  });
+};
+
+export const getActivateWorkAssignmentMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof activateWorkAssignment>>,
+    TError,
+    { id: string; data: BodyType<ActivateWorkAssignmentBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof activateWorkAssignment>>,
+  TError,
+  { id: string; data: BodyType<ActivateWorkAssignmentBody> },
+  TContext
+> => {
+  const mutationKey = ["activateWorkAssignment"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof activateWorkAssignment>>,
+    { id: string; data: BodyType<ActivateWorkAssignmentBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return activateWorkAssignment(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ActivateWorkAssignmentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof activateWorkAssignment>>
+>;
+export type ActivateWorkAssignmentMutationBody =
+  BodyType<ActivateWorkAssignmentBody>;
+export type ActivateWorkAssignmentMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Transition assignment from pending to active
+ */
+export const useActivateWorkAssignment = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof activateWorkAssignment>>,
+    TError,
+    { id: string; data: BodyType<ActivateWorkAssignmentBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof activateWorkAssignment>>,
+  TError,
+  { id: string; data: BodyType<ActivateWorkAssignmentBody> },
+  TContext
+> => {
+  return useMutation(getActivateWorkAssignmentMutationOptions(options));
+};
+
+/**
+ * @summary Mark assignment as completed
+ */
+export const getCompleteWorkAssignmentUrl = (id: string) => {
+  return `/api/work-assignments/${id}/complete`;
+};
+
+export const completeWorkAssignment = async (
+  id: string,
+  completeWorkAssignmentBody: CompleteWorkAssignmentBody,
+  options?: RequestInit,
+): Promise<WorkAssignment> => {
+  return customFetch<WorkAssignment>(getCompleteWorkAssignmentUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(completeWorkAssignmentBody),
+  });
+};
+
+export const getCompleteWorkAssignmentMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof completeWorkAssignment>>,
+    TError,
+    { id: string; data: BodyType<CompleteWorkAssignmentBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof completeWorkAssignment>>,
+  TError,
+  { id: string; data: BodyType<CompleteWorkAssignmentBody> },
+  TContext
+> => {
+  const mutationKey = ["completeWorkAssignment"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof completeWorkAssignment>>,
+    { id: string; data: BodyType<CompleteWorkAssignmentBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return completeWorkAssignment(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CompleteWorkAssignmentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof completeWorkAssignment>>
+>;
+export type CompleteWorkAssignmentMutationBody =
+  BodyType<CompleteWorkAssignmentBody>;
+export type CompleteWorkAssignmentMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Mark assignment as completed
+ */
+export const useCompleteWorkAssignment = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof completeWorkAssignment>>,
+    TError,
+    { id: string; data: BodyType<CompleteWorkAssignmentBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof completeWorkAssignment>>,
+  TError,
+  { id: string; data: BodyType<CompleteWorkAssignmentBody> },
+  TContext
+> => {
+  return useMutation(getCompleteWorkAssignmentMutationOptions(options));
+};
+
+/**
+ * @summary Archive a work assignment (soft delete)
+ */
+export const getArchiveWorkAssignmentUrl = (id: string) => {
+  return `/api/work-assignments/${id}/archive`;
+};
+
+export const archiveWorkAssignment = async (
+  id: string,
+  archiveWorkAssignmentBody: ArchiveWorkAssignmentBody,
+  options?: RequestInit,
+): Promise<WorkAssignment> => {
+  return customFetch<WorkAssignment>(getArchiveWorkAssignmentUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(archiveWorkAssignmentBody),
+  });
+};
+
+export const getArchiveWorkAssignmentMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof archiveWorkAssignment>>,
+    TError,
+    { id: string; data: BodyType<ArchiveWorkAssignmentBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof archiveWorkAssignment>>,
+  TError,
+  { id: string; data: BodyType<ArchiveWorkAssignmentBody> },
+  TContext
+> => {
+  const mutationKey = ["archiveWorkAssignment"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof archiveWorkAssignment>>,
+    { id: string; data: BodyType<ArchiveWorkAssignmentBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return archiveWorkAssignment(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ArchiveWorkAssignmentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof archiveWorkAssignment>>
+>;
+export type ArchiveWorkAssignmentMutationBody =
+  BodyType<ArchiveWorkAssignmentBody>;
+export type ArchiveWorkAssignmentMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Archive a work assignment (soft delete)
+ */
+export const useArchiveWorkAssignment = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof archiveWorkAssignment>>,
+    TError,
+    { id: string; data: BodyType<ArchiveWorkAssignmentBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof archiveWorkAssignment>>,
+  TError,
+  { id: string; data: BodyType<ArchiveWorkAssignmentBody> },
+  TContext
+> => {
+  return useMutation(getArchiveWorkAssignmentMutationOptions(options));
+};
+
+/**
+ * @summary Restore an archived assignment to active
+ */
+export const getRestoreWorkAssignmentUrl = (id: string) => {
+  return `/api/work-assignments/${id}/restore`;
+};
+
+export const restoreWorkAssignment = async (
+  id: string,
+  restoreWorkAssignmentBody: RestoreWorkAssignmentBody,
+  options?: RequestInit,
+): Promise<WorkAssignment> => {
+  return customFetch<WorkAssignment>(getRestoreWorkAssignmentUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(restoreWorkAssignmentBody),
+  });
+};
+
+export const getRestoreWorkAssignmentMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof restoreWorkAssignment>>,
+    TError,
+    { id: string; data: BodyType<RestoreWorkAssignmentBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof restoreWorkAssignment>>,
+  TError,
+  { id: string; data: BodyType<RestoreWorkAssignmentBody> },
+  TContext
+> => {
+  const mutationKey = ["restoreWorkAssignment"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof restoreWorkAssignment>>,
+    { id: string; data: BodyType<RestoreWorkAssignmentBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return restoreWorkAssignment(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RestoreWorkAssignmentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof restoreWorkAssignment>>
+>;
+export type RestoreWorkAssignmentMutationBody =
+  BodyType<RestoreWorkAssignmentBody>;
+export type RestoreWorkAssignmentMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Restore an archived assignment to active
+ */
+export const useRestoreWorkAssignment = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof restoreWorkAssignment>>,
+    TError,
+    { id: string; data: BodyType<RestoreWorkAssignmentBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof restoreWorkAssignment>>,
+  TError,
+  { id: string; data: BodyType<RestoreWorkAssignmentBody> },
+  TContext
+> => {
+  return useMutation(getRestoreWorkAssignmentMutationOptions(options));
+};
+
+/**
+ * @summary Get audit history for a work assignment
+ */
+export const getGetWorkAssignmentAuditUrl = (id: string) => {
+  return `/api/work-assignments/${id}/audit`;
+};
+
+export const getWorkAssignmentAudit = async (
+  id: string,
+  options?: RequestInit,
+): Promise<WorkAssignmentAuditEvent[]> => {
+  return customFetch<WorkAssignmentAuditEvent[]>(
+    getGetWorkAssignmentAuditUrl(id),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetWorkAssignmentAuditQueryKey = (id: string) => {
+  return [`/api/work-assignments/${id}/audit`] as const;
+};
+
+export const getGetWorkAssignmentAuditQueryOptions = <
+  TData = Awaited<ReturnType<typeof getWorkAssignmentAudit>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getWorkAssignmentAudit>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetWorkAssignmentAuditQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getWorkAssignmentAudit>>
+  > = ({ signal }) => getWorkAssignmentAudit(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getWorkAssignmentAudit>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetWorkAssignmentAuditQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getWorkAssignmentAudit>>
+>;
+export type GetWorkAssignmentAuditQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get audit history for a work assignment
+ */
+
+export function useGetWorkAssignmentAudit<
+  TData = Awaited<ReturnType<typeof getWorkAssignmentAudit>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getWorkAssignmentAudit>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetWorkAssignmentAuditQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get all work assignments for a person
+ */
+export const getGetPersonWorkAssignmentsUrl = (
+  personMasterId: string,
+  params?: GetPersonWorkAssignmentsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/work-assignments/person/${personMasterId}?${stringifiedParams}`
+    : `/api/work-assignments/person/${personMasterId}`;
+};
+
+export const getPersonWorkAssignments = async (
+  personMasterId: string,
+  params?: GetPersonWorkAssignmentsParams,
+  options?: RequestInit,
+): Promise<WorkAssignment[]> => {
+  return customFetch<WorkAssignment[]>(
+    getGetPersonWorkAssignmentsUrl(personMasterId, params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetPersonWorkAssignmentsQueryKey = (
+  personMasterId: string,
+  params?: GetPersonWorkAssignmentsParams,
+) => {
+  return [
+    `/api/work-assignments/person/${personMasterId}`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetPersonWorkAssignmentsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPersonWorkAssignments>>,
+  TError = ErrorType<unknown>,
+>(
+  personMasterId: string,
+  params?: GetPersonWorkAssignmentsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPersonWorkAssignments>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getGetPersonWorkAssignmentsQueryKey(personMasterId, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getPersonWorkAssignments>>
+  > = ({ signal }) =>
+    getPersonWorkAssignments(personMasterId, params, {
+      signal,
+      ...requestOptions,
+    });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!personMasterId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPersonWorkAssignments>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPersonWorkAssignmentsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPersonWorkAssignments>>
+>;
+export type GetPersonWorkAssignmentsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get all work assignments for a person
+ */
+
+export function useGetPersonWorkAssignments<
+  TData = Awaited<ReturnType<typeof getPersonWorkAssignments>>,
+  TError = ErrorType<unknown>,
+>(
+  personMasterId: string,
+  params?: GetPersonWorkAssignmentsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPersonWorkAssignments>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPersonWorkAssignmentsQueryOptions(
+    personMasterId,
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary List sales orders

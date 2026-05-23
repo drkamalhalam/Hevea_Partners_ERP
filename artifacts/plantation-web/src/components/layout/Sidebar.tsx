@@ -335,8 +335,8 @@ const navGroups: NavGroup[] = [
         roles: ["admin", "developer"] as UserRole[],
       },
       {
-        name: "Employee Assignments",
-        href: "/employee-assignments",
+        name: "Assign Work",
+        href: "/assign-work",
         icon: UserCog,
         roles: ["admin", "developer"] as UserRole[],
       },

@@ -18999,6 +18999,364 @@ export const DeactivateWorkforceAssignmentResponse = zod.object({
 });
 
 /**
+ * @summary List unified work assignments with optional filters
+ */
+export const ListWorkAssignmentsQueryParams = zod.object({
+  assignmentType: zod.coerce.string().optional(),
+  status: zod.coerce.string().optional(),
+  projectId: zod.coerce.string().optional(),
+  personMasterId: zod.coerce.string().optional(),
+  storeId: zod.coerce.string().optional(),
+  activeOnly: zod.coerce.string().optional(),
+});
+
+export const ListWorkAssignmentsResponseItem = zod.object({
+  id: zod.string().optional(),
+  assignmentType: zod.string().optional(),
+  status: zod.string().optional(),
+  statusChangedAt: zod.string().nullish(),
+  statusReason: zod.string().nullish(),
+  personMasterId: zod.string().optional(),
+  personNameSnapshot: zod.string().nullish(),
+  personMobile: zod.string().nullish(),
+  projectId: zod.string().nullish(),
+  projectNameSnapshot: zod.string().nullish(),
+  projectCoverage: zod.string().nullish(),
+  storeId: zod.string().nullish(),
+  storeNameSnapshot: zod.string().nullish(),
+  place: zod.string().nullish(),
+  expenditurePermission: zod.boolean().optional(),
+  title: zod.string().nullish(),
+  description: zod.string().nullish(),
+  startDate: zod.string().nullish(),
+  endDate: zod.string().nullish(),
+  assignedBy: zod.string().nullish(),
+  assignedByName: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  createdAt: zod.string().optional(),
+  updatedAt: zod.string().optional(),
+});
+export const ListWorkAssignmentsResponse = zod.array(
+  ListWorkAssignmentsResponseItem,
+);
+
+/**
+ * @summary Create a unified work assignment
+ */
+export const CreateWorkAssignmentBody = zod.object({
+  assignmentType: zod.string(),
+  personMasterId: zod.string(),
+  projectId: zod.string().optional(),
+  projectCoverage: zod.string().optional(),
+  storeId: zod.string().optional(),
+  place: zod.string().optional(),
+  expenditurePermission: zod.boolean().optional(),
+  title: zod.string().optional(),
+  description: zod.string().optional(),
+  startDate: zod.string().optional(),
+  endDate: zod.string().optional(),
+  notes: zod.string().optional(),
+  status: zod.string().optional(),
+});
+
+/**
+ * @summary Get a single work assignment
+ */
+export const GetWorkAssignmentParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const GetWorkAssignmentResponse = zod.object({
+  id: zod.string().optional(),
+  assignmentType: zod.string().optional(),
+  status: zod.string().optional(),
+  statusChangedAt: zod.string().nullish(),
+  statusReason: zod.string().nullish(),
+  personMasterId: zod.string().optional(),
+  personNameSnapshot: zod.string().nullish(),
+  personMobile: zod.string().nullish(),
+  projectId: zod.string().nullish(),
+  projectNameSnapshot: zod.string().nullish(),
+  projectCoverage: zod.string().nullish(),
+  storeId: zod.string().nullish(),
+  storeNameSnapshot: zod.string().nullish(),
+  place: zod.string().nullish(),
+  expenditurePermission: zod.boolean().optional(),
+  title: zod.string().nullish(),
+  description: zod.string().nullish(),
+  startDate: zod.string().nullish(),
+  endDate: zod.string().nullish(),
+  assignedBy: zod.string().nullish(),
+  assignedByName: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  createdAt: zod.string().optional(),
+  updatedAt: zod.string().optional(),
+});
+
+/**
+ * @summary Edit a work assignment
+ */
+export const EditWorkAssignmentParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const EditWorkAssignmentBody = zod.object({
+  projectId: zod.string().optional(),
+  projectCoverage: zod.string().optional(),
+  storeId: zod.string().optional(),
+  place: zod.string().optional(),
+  expenditurePermission: zod.boolean().optional(),
+  title: zod.string().optional(),
+  description: zod.string().optional(),
+  startDate: zod.string().optional(),
+  endDate: zod.string().optional(),
+  notes: zod.string().optional(),
+});
+
+export const EditWorkAssignmentResponse = zod.object({
+  id: zod.string().optional(),
+  assignmentType: zod.string().optional(),
+  status: zod.string().optional(),
+  statusChangedAt: zod.string().nullish(),
+  statusReason: zod.string().nullish(),
+  personMasterId: zod.string().optional(),
+  personNameSnapshot: zod.string().nullish(),
+  personMobile: zod.string().nullish(),
+  projectId: zod.string().nullish(),
+  projectNameSnapshot: zod.string().nullish(),
+  projectCoverage: zod.string().nullish(),
+  storeId: zod.string().nullish(),
+  storeNameSnapshot: zod.string().nullish(),
+  place: zod.string().nullish(),
+  expenditurePermission: zod.boolean().optional(),
+  title: zod.string().nullish(),
+  description: zod.string().nullish(),
+  startDate: zod.string().nullish(),
+  endDate: zod.string().nullish(),
+  assignedBy: zod.string().nullish(),
+  assignedByName: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  createdAt: zod.string().optional(),
+  updatedAt: zod.string().optional(),
+});
+
+/**
+ * @summary Transition assignment from pending to active
+ */
+export const ActivateWorkAssignmentParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const ActivateWorkAssignmentBody = zod.object({
+  reason: zod.string().optional(),
+});
+
+export const ActivateWorkAssignmentResponse = zod.object({
+  id: zod.string().optional(),
+  assignmentType: zod.string().optional(),
+  status: zod.string().optional(),
+  statusChangedAt: zod.string().nullish(),
+  statusReason: zod.string().nullish(),
+  personMasterId: zod.string().optional(),
+  personNameSnapshot: zod.string().nullish(),
+  personMobile: zod.string().nullish(),
+  projectId: zod.string().nullish(),
+  projectNameSnapshot: zod.string().nullish(),
+  projectCoverage: zod.string().nullish(),
+  storeId: zod.string().nullish(),
+  storeNameSnapshot: zod.string().nullish(),
+  place: zod.string().nullish(),
+  expenditurePermission: zod.boolean().optional(),
+  title: zod.string().nullish(),
+  description: zod.string().nullish(),
+  startDate: zod.string().nullish(),
+  endDate: zod.string().nullish(),
+  assignedBy: zod.string().nullish(),
+  assignedByName: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  createdAt: zod.string().optional(),
+  updatedAt: zod.string().optional(),
+});
+
+/**
+ * @summary Mark assignment as completed
+ */
+export const CompleteWorkAssignmentParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const CompleteWorkAssignmentBody = zod.object({
+  reason: zod.string().optional(),
+});
+
+export const CompleteWorkAssignmentResponse = zod.object({
+  id: zod.string().optional(),
+  assignmentType: zod.string().optional(),
+  status: zod.string().optional(),
+  statusChangedAt: zod.string().nullish(),
+  statusReason: zod.string().nullish(),
+  personMasterId: zod.string().optional(),
+  personNameSnapshot: zod.string().nullish(),
+  personMobile: zod.string().nullish(),
+  projectId: zod.string().nullish(),
+  projectNameSnapshot: zod.string().nullish(),
+  projectCoverage: zod.string().nullish(),
+  storeId: zod.string().nullish(),
+  storeNameSnapshot: zod.string().nullish(),
+  place: zod.string().nullish(),
+  expenditurePermission: zod.boolean().optional(),
+  title: zod.string().nullish(),
+  description: zod.string().nullish(),
+  startDate: zod.string().nullish(),
+  endDate: zod.string().nullish(),
+  assignedBy: zod.string().nullish(),
+  assignedByName: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  createdAt: zod.string().optional(),
+  updatedAt: zod.string().optional(),
+});
+
+/**
+ * @summary Archive a work assignment (soft delete)
+ */
+export const ArchiveWorkAssignmentParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const ArchiveWorkAssignmentBody = zod.object({
+  reason: zod.string().optional(),
+});
+
+export const ArchiveWorkAssignmentResponse = zod.object({
+  id: zod.string().optional(),
+  assignmentType: zod.string().optional(),
+  status: zod.string().optional(),
+  statusChangedAt: zod.string().nullish(),
+  statusReason: zod.string().nullish(),
+  personMasterId: zod.string().optional(),
+  personNameSnapshot: zod.string().nullish(),
+  personMobile: zod.string().nullish(),
+  projectId: zod.string().nullish(),
+  projectNameSnapshot: zod.string().nullish(),
+  projectCoverage: zod.string().nullish(),
+  storeId: zod.string().nullish(),
+  storeNameSnapshot: zod.string().nullish(),
+  place: zod.string().nullish(),
+  expenditurePermission: zod.boolean().optional(),
+  title: zod.string().nullish(),
+  description: zod.string().nullish(),
+  startDate: zod.string().nullish(),
+  endDate: zod.string().nullish(),
+  assignedBy: zod.string().nullish(),
+  assignedByName: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  createdAt: zod.string().optional(),
+  updatedAt: zod.string().optional(),
+});
+
+/**
+ * @summary Restore an archived assignment to active
+ */
+export const RestoreWorkAssignmentParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const RestoreWorkAssignmentBody = zod.object({
+  reason: zod.string().optional(),
+});
+
+export const RestoreWorkAssignmentResponse = zod.object({
+  id: zod.string().optional(),
+  assignmentType: zod.string().optional(),
+  status: zod.string().optional(),
+  statusChangedAt: zod.string().nullish(),
+  statusReason: zod.string().nullish(),
+  personMasterId: zod.string().optional(),
+  personNameSnapshot: zod.string().nullish(),
+  personMobile: zod.string().nullish(),
+  projectId: zod.string().nullish(),
+  projectNameSnapshot: zod.string().nullish(),
+  projectCoverage: zod.string().nullish(),
+  storeId: zod.string().nullish(),
+  storeNameSnapshot: zod.string().nullish(),
+  place: zod.string().nullish(),
+  expenditurePermission: zod.boolean().optional(),
+  title: zod.string().nullish(),
+  description: zod.string().nullish(),
+  startDate: zod.string().nullish(),
+  endDate: zod.string().nullish(),
+  assignedBy: zod.string().nullish(),
+  assignedByName: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  createdAt: zod.string().optional(),
+  updatedAt: zod.string().optional(),
+});
+
+/**
+ * @summary Get audit history for a work assignment
+ */
+export const GetWorkAssignmentAuditParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const GetWorkAssignmentAuditResponseItem = zod.object({
+  id: zod.string().optional(),
+  assignmentId: zod.string().optional(),
+  eventType: zod.string().optional(),
+  performedBy: zod.string().nullish(),
+  performedByName: zod.string().nullish(),
+  reason: zod.string().nullish(),
+  oldStatus: zod.string().nullish(),
+  newStatus: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  createdAt: zod.string().optional(),
+});
+export const GetWorkAssignmentAuditResponse = zod.array(
+  GetWorkAssignmentAuditResponseItem,
+);
+
+/**
+ * @summary Get all work assignments for a person
+ */
+export const GetPersonWorkAssignmentsParams = zod.object({
+  personMasterId: zod.coerce.string(),
+});
+
+export const GetPersonWorkAssignmentsQueryParams = zod.object({
+  includeArchived: zod.coerce.string().optional(),
+});
+
+export const GetPersonWorkAssignmentsResponseItem = zod.object({
+  id: zod.string().optional(),
+  assignmentType: zod.string().optional(),
+  status: zod.string().optional(),
+  statusChangedAt: zod.string().nullish(),
+  statusReason: zod.string().nullish(),
+  personMasterId: zod.string().optional(),
+  personNameSnapshot: zod.string().nullish(),
+  personMobile: zod.string().nullish(),
+  projectId: zod.string().nullish(),
+  projectNameSnapshot: zod.string().nullish(),
+  projectCoverage: zod.string().nullish(),
+  storeId: zod.string().nullish(),
+  storeNameSnapshot: zod.string().nullish(),
+  place: zod.string().nullish(),
+  expenditurePermission: zod.boolean().optional(),
+  title: zod.string().nullish(),
+  description: zod.string().nullish(),
+  startDate: zod.string().nullish(),
+  endDate: zod.string().nullish(),
+  assignedBy: zod.string().nullish(),
+  assignedByName: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  createdAt: zod.string().optional(),
+  updatedAt: zod.string().optional(),
+});
+export const GetPersonWorkAssignmentsResponse = zod.array(
+  GetPersonWorkAssignmentsResponseItem,
+);
+
+/**
  * @summary List sales orders
  */
 export const ListSalesOrdersQueryParams = zod.object({

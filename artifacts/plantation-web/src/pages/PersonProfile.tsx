@@ -9,6 +9,7 @@ import {
   useChangePersonMasterStatus,
   useGetPersonMasterStatusHistory,
   useGetPersonMasterRelationships,
+  useGetPersonWorkAssignments,
   getGetPersonMasterQueryKey,
   getGetPersonMasterAuditQueryKey,
   getGetPersonMasterStatusHistoryQueryKey,
@@ -67,6 +68,10 @@ import {
   CreditCard,
   Briefcase,
   Eye,
+  Loader2,
+  Plus,
+  Receipt,
+  ShoppingCart,
 } from "lucide-react";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -141,9 +146,76 @@ function fmtDateTime(s?: string | null) {
   });
 }
 
+// ── Assignment card (used in Assignments tab) ──────────────────────────────
+
+const WORK_TYPE_CONFIG: Record<string, { label: string; icon: React.ElementType; color: string }> = {
+  store_entry: { label: "Store Entry", icon: Building2, color: "text-amber-600" },
+  observer: { label: "Observer", icon: Eye, color: "text-purple-600" },
+  store_sale_operator: { label: "Store Sale Operator", icon: ShoppingCart, color: "text-emerald-600" },
+  general_responsibility: { label: "General Responsibility", icon: Briefcase, color: "text-blue-600" },
+  collection_entry: { label: "Collection Entry", icon: UserCheck, color: "text-cyan-600" },
+};
+
+const WORK_STATUS_CONFIG: Record<string, { label: string; classes: string }> = {
+  pending: { label: "Pending", classes: "bg-yellow-100 text-yellow-800 border-yellow-200" },
+  active: { label: "Active", classes: "bg-emerald-100 text-emerald-800 border-emerald-200" },
+  completed: { label: "Completed", classes: "bg-slate-100 text-slate-700 border-slate-200" },
+  expired: { label: "Expired", classes: "bg-red-100 text-red-700 border-red-200" },
+  archived: { label: "Archived", classes: "bg-orange-100 text-orange-700 border-orange-200" },
+};
+
+function AssignmentCard({ a, faded }: { a: any; faded?: boolean }) {
+  const typeCfg = WORK_TYPE_CONFIG[a.assignmentType] ?? WORK_TYPE_CONFIG.general_responsibility;
+  const statusCfg = WORK_STATUS_CONFIG[a.status] ?? WORK_STATUS_CONFIG.active;
+  const Icon = typeCfg.icon;
+
+  function fmtD(s?: string | null) {
+    if (!s) return null;
+    return new Date(s).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+  }
+
+  return (
+    <div className={`flex items-start justify-between p-3 border rounded-lg gap-3 ${faded ? "opacity-55" : ""}`}>
+      <div className="flex items-start gap-2.5 flex-1 min-w-0">
+        <Icon className={`w-4 h-4 ${typeCfg.color} mt-0.5 shrink-0`} />
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="text-sm font-medium">{typeCfg.label}</p>
+            {a.title && <span className="text-xs text-muted-foreground">— {a.title}</span>}
+          </div>
+          <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5 text-xs text-muted-foreground">
+            {a.projectNameSnapshot && <span>{a.projectNameSnapshot}</span>}
+            {a.storeNameSnapshot && (
+              <span className="flex items-center gap-0.5">
+                <Building2 className="w-2.5 h-2.5" /> {a.storeNameSnapshot}
+              </span>
+            )}
+            {a.place && (
+              <span className="flex items-center gap-0.5">
+                <MapPin className="w-2.5 h-2.5" /> {a.place}
+              </span>
+            )}
+            {a.expenditurePermission && (
+              <span className="flex items-center gap-0.5 text-orange-600">
+                <Receipt className="w-2.5 h-2.5" /> Expenditure
+              </span>
+            )}
+            {(a.startDate || a.endDate) && (
+              <span>{fmtD(a.startDate)} → {a.endDate ? fmtD(a.endDate) : "open"}</span>
+            )}
+          </div>
+        </div>
+      </div>
+      <Badge variant="outline" className={`text-[10px] shrink-0 ${statusCfg.classes}`}>
+        {statusCfg.label}
+      </Badge>
+    </div>
+  );
+}
+
 // ── Component ──────────────────────────────────────────────────────────────
 
-type TabKey = "details" | "bank" | "roles" | "projects" | "relationships" | "audit";
+type TabKey = "details" | "bank" | "roles" | "projects" | "assignments" | "relationships" | "audit";
 
 export default function PersonProfile() {
   const { id } = useParams<{ id: string }>();
@@ -187,6 +259,10 @@ export default function PersonProfile() {
   const { data: relationships } = useGetPersonMasterRelationships(id!, {
     query: { enabled: activeTab === "relationships", queryKey: getGetPersonMasterRelationshipsQueryKey(id!) },
   });
+  const { data: workAssignmentsRaw, isLoading: assignmentsLoading } = useGetPersonWorkAssignments(id!, {}, {
+    query: { enabled: activeTab === "assignments", queryKey: ["work-assignments-person", id!] },
+  });
+  const workAssignments: any[] = (workAssignmentsRaw as any) ?? [];
 
   const assignRole = useAssignPersonMasterRole();
   const removeRole = useRemovePersonMasterRole();
@@ -355,11 +431,16 @@ export default function PersonProfile() {
   const isDeceased = person.status === "deceased";
   const isArchived = person.status === "archived";
 
+  const activeWorkAssignments = workAssignments.filter(
+    (a: any) => a.status === "active" || a.status === "pending",
+  );
+
   const tabs: { key: TabKey; label: string; icon: React.ElementType }[] = [
     { key: "details", label: "Details", icon: User2 },
     { key: "bank", label: "Bank & Nominee", icon: Banknote },
     { key: "roles", label: `Roles (${activeRoles.length})`, icon: Tag },
     { key: "projects", label: `Projects (${projectLinks.length})`, icon: FolderKanban },
+    { key: "assignments", label: "Assignments", icon: Briefcase },
     { key: "relationships", label: "Relationships", icon: Network },
     { key: "audit", label: "Audit Trail", icon: History },
   ];
@@ -759,6 +840,59 @@ export default function PersonProfile() {
                 </Link>
               </div>
             ))
+          )}
+        </div>
+      )}
+
+      {/* ── Assignments tab ── */}
+      {activeTab === "assignments" && (
+        <div className="space-y-4">
+          {assignmentsLoading ? (
+            <div className="flex items-center gap-2 py-8 text-muted-foreground text-sm">
+              <Loader2 className="w-4 h-4 animate-spin" /> Loading assignments…
+            </div>
+          ) : workAssignments.length === 0 ? (
+            <Card className="py-12 text-center">
+              <Briefcase className="w-8 h-8 mx-auto text-muted-foreground/40 mb-2" />
+              <p className="text-sm text-muted-foreground">No work assignments for this person.</p>
+              <Link href="/assign-work">
+                <Button variant="outline" size="sm" className="mt-3 gap-1.5 text-xs">
+                  <Plus className="w-3 h-3" /> Go to Assign Work
+                </Button>
+              </Link>
+            </Card>
+          ) : (
+            <>
+              {/* Current / active */}
+              {activeWorkAssignments.length > 0 && (
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">
+                    Current ({activeWorkAssignments.length})
+                  </p>
+                  <div className="space-y-2">
+                    {activeWorkAssignments.map((a: any) => (
+                      <AssignmentCard key={a.id} a={a} />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Historical */}
+              {workAssignments.filter((a: any) => !["active", "pending"].includes(a.status)).length > 0 && (
+                <details className="group">
+                  <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground select-none transition-colors">
+                    {workAssignments.filter((a: any) => !["active", "pending"].includes(a.status)).length} historical assignment(s)
+                  </summary>
+                  <div className="space-y-2 mt-2">
+                    {workAssignments
+                      .filter((a: any) => !["active", "pending"].includes(a.status))
+                      .map((a: any) => (
+                        <AssignmentCard key={a.id} a={a} faded />
+                      ))}
+                  </div>
+                </details>
+              )}
+            </>
           )}
         </div>
       )}

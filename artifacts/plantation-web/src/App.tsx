@@ -124,6 +124,7 @@ import StoreEntry from "./pages/StoreEntry";
 import WorkerHistory from "./pages/WorkerHistory";
 import ProductionDashboard from "./pages/ProductionDashboard";
 import EmployeeAssignments from "./pages/EmployeeAssignments";
+import AssignWork from "./pages/AssignWork";
 import InheritanceClaims from "./pages/InheritanceClaims";
 import NomineeSuccessionDashboard from "./pages/NomineeSuccessionDashboard";
 import PrematuritySuccession from "./pages/PrematuritySuccession";
@@ -351,6 +352,7 @@ function AppRoutes() {
               <Route path="/worker-history"><ProtectedRoute component={WorkerHistory} /></Route>
               <Route path="/production-dashboard"><ProtectedRoute component={ProductionDashboard} /></Route>
               <Route path="/employee-assignments"><ProtectedRoute component={EmployeeAssignments} /></Route>
+              <Route path="/assign-work"><ProtectedRoute component={AssignWork} /></Route>
 
               {/* Operations */}
               <Route path="/production"><ProtectedRoute component={Production} /></Route>

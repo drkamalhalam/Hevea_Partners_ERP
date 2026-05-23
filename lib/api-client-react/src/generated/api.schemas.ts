@@ -8508,6 +8508,75 @@ export interface CreateWorkforceAssignmentBody {
   observationType?: string;
 }
 
+export interface WorkAssignment {
+  id?: string;
+  assignmentType?: string;
+  status?: string;
+  statusChangedAt?: string | null;
+  statusReason?: string | null;
+  personMasterId?: string;
+  personNameSnapshot?: string | null;
+  personMobile?: string | null;
+  projectId?: string | null;
+  projectNameSnapshot?: string | null;
+  projectCoverage?: string | null;
+  storeId?: string | null;
+  storeNameSnapshot?: string | null;
+  place?: string | null;
+  expenditurePermission?: boolean;
+  title?: string | null;
+  description?: string | null;
+  startDate?: string | null;
+  endDate?: string | null;
+  assignedBy?: string | null;
+  assignedByName?: string | null;
+  notes?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CreateWorkAssignmentBody {
+  assignmentType: string;
+  personMasterId: string;
+  projectId?: string;
+  projectCoverage?: string;
+  storeId?: string;
+  place?: string;
+  expenditurePermission?: boolean;
+  title?: string;
+  description?: string;
+  startDate?: string;
+  endDate?: string;
+  notes?: string;
+  status?: string;
+}
+
+export interface EditWorkAssignmentBody {
+  projectId?: string;
+  projectCoverage?: string;
+  storeId?: string;
+  place?: string;
+  expenditurePermission?: boolean;
+  title?: string;
+  description?: string;
+  startDate?: string;
+  endDate?: string;
+  notes?: string;
+}
+
+export interface WorkAssignmentAuditEvent {
+  id?: string;
+  assignmentId?: string;
+  eventType?: string;
+  performedBy?: string | null;
+  performedByName?: string | null;
+  reason?: string | null;
+  oldStatus?: string | null;
+  newStatus?: string | null;
+  notes?: string | null;
+  createdAt?: string;
+}
+
 export interface SalesOrder {
   id?: string;
   salesCode?: string;
@@ -11731,6 +11800,35 @@ export type ListWorkforceAssignmentsParams = {
   projectId?: string;
   assignmentType?: string;
   activeOnly?: string;
+};
+
+export type ListWorkAssignmentsParams = {
+  assignmentType?: string;
+  status?: string;
+  projectId?: string;
+  personMasterId?: string;
+  storeId?: string;
+  activeOnly?: string;
+};
+
+export type ActivateWorkAssignmentBody = {
+  reason?: string;
+};
+
+export type CompleteWorkAssignmentBody = {
+  reason?: string;
+};
+
+export type ArchiveWorkAssignmentBody = {
+  reason?: string;
+};
+
+export type RestoreWorkAssignmentBody = {
+  reason?: string;
+};
+
+export type GetPersonWorkAssignmentsParams = {
+  includeArchived?: string;
 };
 
 export type ListSalesOrdersParams = {

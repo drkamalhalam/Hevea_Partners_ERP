@@ -1,0 +1,494 @@
+UNIFIED ASSIGNMENT SYSTEM REFINEMENT
+
+IMPORTANT INSTRUCTIONS
+
+This is an existing Plantation ERP.
+
+Architecture audit identified:
+
+- workforce assignments
+- employee assignments
+- project assignments
+- user assignments
+- role assignments
+
+Existing structures may be reused where compatible.
+
+DO NOT create a new parallel assignment architecture.
+
+DO NOT create generic role-based operational modules.
+
+DO NOT create a separate task-management system.
+
+Refactor toward one unified assignment architecture.
+
+--------------------------------------------------
+OBJECTIVE
+--------------------------------------------------
+
+Implement a single Assign Work architecture.
+
+Assignments determine:
+
+Operational responsibilities
+
+Dashboard visibility
+
+Available actions
+
+Workflow permissions
+
+Context availability
+
+--------------------------------------------------
+CORE PRINCIPLE
+--------------------------------------------------
+
+Login type is NOT operational role.
+
+Operational capability comes from assignments.
+
+--------------------------------------------------
+
+Account Types:
+
+Admin
+
+Developer
+
+Normal User
+
+--------------------------------------------------
+
+Operational capability determined by:
+
+Assignments
+
+Project relationships
+
+Ownership relationships
+
+--------------------------------------------------
+ASSIGN WORK SCREEN
+--------------------------------------------------
+
+Create one unified:
+
+Assign Work
+
+screen.
+
+--------------------------------------------------
+
+Admin
+
+Developer
+
+may create assignments.
+
+--------------------------------------------------
+
+Support:
+
+Create
+
+Edit
+
+Archive
+
+Restore
+
+Assignment History
+
+--------------------------------------------------
+ASSIGNMENT TYPES
+--------------------------------------------------
+
+Support multiple assignment types.
+
+A person may hold multiple assignments simultaneously.
+
+--------------------------------------------------
+
+Assignment Types:
+
+Collection Entry
+
+Store Entry
+
+Observer
+
+Store Sale Operator
+
+General Responsibility
+
+--------------------------------------------------
+
+Multi-select supported.
+
+--------------------------------------------------
+COLLECTION ENTRY ASSIGNMENT
+--------------------------------------------------
+
+Fields:
+
+Project
+
+Optional expenditure permission
+
+--------------------------------------------------
+
+Collector may only see assigned projects.
+
+--------------------------------------------------
+
+If only one project assigned:
+
+Auto-select project.
+
+--------------------------------------------------
+STORE ENTRY ASSIGNMENT
+--------------------------------------------------
+
+Fields:
+
+Project
+
+Store
+
+Place
+
+Optional expenditure permission
+
+--------------------------------------------------
+
+Store Entry user may only access assigned locations.
+
+--------------------------------------------------
+
+If one assignment exists:
+
+Auto-select.
+
+--------------------------------------------------
+OBSERVER ASSIGNMENT
+--------------------------------------------------
+
+Fields:
+
+Project Coverage
+
+Date Range
+
+--------------------------------------------------
+
+Coverage options:
+
+All Projects
+
+Selected Projects
+
+--------------------------------------------------
+
+Observer access automatically expires after end date.
+
+--------------------------------------------------
+STORE SALE OPERATOR ASSIGNMENT
+--------------------------------------------------
+
+Fields:
+
+Store
+
+Date Range (optional)
+
+--------------------------------------------------
+
+Operator may only perform sales within assigned store context.
+
+--------------------------------------------------
+
+If one store assigned:
+
+Auto-select store.
+
+--------------------------------------------------
+GENERAL RESPONSIBILITY
+--------------------------------------------------
+
+Used for operational accountability only.
+
+--------------------------------------------------
+
+Does NOT create generic task management.
+
+--------------------------------------------------
+
+Fields:
+
+Title
+
+Description
+
+Project (optional)
+
+Start Date
+
+End Date
+
+--------------------------------------------------
+
+Used for:
+
+accountability
+
+tracking
+
+contact visibility
+
+alerts
+
+--------------------------------------------------
+ASSIGNMENT STATUS
+--------------------------------------------------
+
+Statuses:
+
+Pending
+
+Active
+
+Completed
+
+Expired
+
+Archived
+
+--------------------------------------------------
+
+Status history required.
+
+--------------------------------------------------
+ASSIGNMENT SUMMARY
+--------------------------------------------------
+
+Display contextual information.
+
+Examples:
+
+Collection Entry
+Project A
+
+Store Entry
+Project A
+Store B
+Place C
+
+Observer
+All Projects
+01-Jan-2026 to 31-Jan-2026
+
+Store Sale Operator
+Store B
+
+--------------------------------------------------
+PERSON PROFILE INTEGRATION
+--------------------------------------------------
+
+Display:
+
+Current Assignments
+
+Historical Assignments
+
+Assignment Status
+
+Assignment History
+
+--------------------------------------------------
+DASHBOARD GENERATION
+--------------------------------------------------
+
+Assignments automatically generate dashboard entries.
+
+Examples:
+
+Collection Assignment
+→ Collection Entry card
+
+Store Entry Assignment
+→ Store Entry card
+
+Observer Assignment
+→ Observer card
+
+Store Sale Assignment
+→ Sale card
+
+--------------------------------------------------
+
+No manual dashboard configuration.
+
+--------------------------------------------------
+WORKFLOW INTEGRATION
+--------------------------------------------------
+
+Submitted operational data must automatically update:
+
+Inventory
+
+Analytics
+
+Observer Analytics
+
+Sales
+
+Entitlements
+
+Ownership-related analytics
+
+Financial reports
+
+--------------------------------------------------
+
+No duplicate entry.
+
+--------------------------------------------------
+CONTACT VISIBILITY
+--------------------------------------------------
+
+Whenever operational issue is detected:
+
+Display assigned person's:
+
+Name
+
+Phone Number
+
+Assignment Type
+
+Assignment Status
+
+--------------------------------------------------
+
+Must work for all assignment types.
+
+--------------------------------------------------
+ISSUE LINKING
+--------------------------------------------------
+
+Allow navigation from issue panel directly to:
+
+Person Profile
+
+Assignment Details
+
+--------------------------------------------------
+
+Do not require searching manually.
+
+--------------------------------------------------
+ARCHIVE RULES
+--------------------------------------------------
+
+Assignments never hard deleted.
+
+--------------------------------------------------
+
+Archive only.
+
+--------------------------------------------------
+
+Preserve history.
+
+--------------------------------------------------
+AUDIT REQUIREMENTS
+--------------------------------------------------
+
+Track:
+
+Assignment Creation
+
+Assignment Edit
+
+Activation
+
+Expiration
+
+Archive
+
+Restore
+
+Status Changes
+
+--------------------------------------------------
+
+Store:
+
+User
+
+Timestamp
+
+Action
+
+Reason
+
+--------------------------------------------------
+MIGRATION REQUIREMENTS
+--------------------------------------------------
+
+Analyze existing:
+
+workforce
+
+employee assignments
+
+project assignments
+
+operational permissions
+
+--------------------------------------------------
+
+Classify:
+
+Reuse
+
+Refactor
+
+Archive
+
+--------------------------------------------------
+
+Consolidate duplicate assignment logic.
+
+--------------------------------------------------
+DELIVERABLES
+--------------------------------------------------
+
+Implement:
+
+1. Unified Assign Work UI
+2. Multi-assignment support
+3. Assignment lifecycle
+4. Dashboard generation
+5. Person Profile integration
+6. Contact visibility integration
+7. Issue linking
+8. Audit history
+9. Assignment summary views
+
+After implementation provide:
+
+- files modified
+- database changes
+- APIs created
+- migration actions
+- reused structures
+- refactored structures
+- archived structures
+- conflicts discovered
+- recommendations before Prompt 5
+
+Do not implement Collection Entry yet.
+
+Only complete Assignment System refinement.

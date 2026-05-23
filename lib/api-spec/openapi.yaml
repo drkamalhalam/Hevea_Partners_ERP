@@ -11208,6 +11208,192 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/WorkforceAssignment' }
 
+  # ── Unified Work Assignments ─────────────────────────────────────────────────
+
+  /work-assignments:
+    get:
+      operationId: listWorkAssignments
+      tags: [workAssignments]
+      summary: List unified work assignments with optional filters
+      parameters:
+        - { name: assignmentType, in: query, schema: { type: string } }
+        - { name: status, in: query, schema: { type: string } }
+        - { name: projectId, in: query, schema: { type: string } }
+        - { name: personMasterId, in: query, schema: { type: string } }
+        - { name: storeId, in: query, schema: { type: string } }
+        - { name: activeOnly, in: query, schema: { type: string } }
+      responses:
+        '200':
+          description: Work assignments list
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/WorkAssignment' }
+    post:
+      operationId: createWorkAssignment
+      tags: [workAssignments]
+      summary: Create a unified work assignment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateWorkAssignmentBody' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WorkAssignment' }
+
+  /work-assignments/{id}:
+    get:
+      operationId: getWorkAssignment
+      tags: [workAssignments]
+      summary: Get a single work assignment
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Work assignment
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WorkAssignment' }
+    patch:
+      operationId: editWorkAssignment
+      tags: [workAssignments]
+      summary: Edit a work assignment
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EditWorkAssignmentBody' }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WorkAssignment' }
+
+  /work-assignments/{id}/activate:
+    post:
+      operationId: activateWorkAssignment
+      tags: [workAssignments]
+      summary: Transition assignment from pending to active
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: string }
+      responses:
+        '200':
+          description: Activated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WorkAssignment' }
+
+  /work-assignments/{id}/complete:
+    post:
+      operationId: completeWorkAssignment
+      tags: [workAssignments]
+      summary: Mark assignment as completed
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: string }
+      responses:
+        '200':
+          description: Completed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WorkAssignment' }
+
+  /work-assignments/{id}/archive:
+    post:
+      operationId: archiveWorkAssignment
+      tags: [workAssignments]
+      summary: Archive a work assignment (soft delete)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: string }
+      responses:
+        '200':
+          description: Archived
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WorkAssignment' }
+
+  /work-assignments/{id}/restore:
+    post:
+      operationId: restoreWorkAssignment
+      tags: [workAssignments]
+      summary: Restore an archived assignment to active
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: string }
+      responses:
+        '200':
+          description: Restored
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WorkAssignment' }
+
+  /work-assignments/{id}/audit:
+    get:
+      operationId: getWorkAssignmentAudit
+      tags: [workAssignments]
+      summary: Get audit history for a work assignment
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Audit events
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/WorkAssignmentAuditEvent' }
+
+  /work-assignments/person/{personMasterId}:
+    get:
+      operationId: getPersonWorkAssignments
+      tags: [workAssignments]
+      summary: Get all work assignments for a person
+      parameters:
+        - { name: personMasterId, in: path, required: true, schema: { type: string } }
+        - { name: includeArchived, in: query, schema: { type: string } }
+      responses:
+        '200':
+          description: Person work assignments
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/WorkAssignment' }
+
   # ── Sales Orders v2 ─────────────────────────────────────────────────────────
 
   /sales-orders:
@@ -20877,6 +21063,82 @@ components:
         endDate: { type: string }
         notes: { type: string }
         observationType: { type: string }
+
+    # ── Unified Work Assignments ─────────────────────────────────────────────
+
+    WorkAssignment:
+      type: object
+      properties:
+        id: { type: string }
+        assignmentType: { type: string }
+        status: { type: string }
+        statusChangedAt: { type: string, nullable: true }
+        statusReason: { type: string, nullable: true }
+        personMasterId: { type: string }
+        personNameSnapshot: { type: string, nullable: true }
+        personMobile: { type: string, nullable: true }
+        projectId: { type: string, nullable: true }
+        projectNameSnapshot: { type: string, nullable: true }
+        projectCoverage: { type: string, nullable: true }
+        storeId: { type: string, nullable: true }
+        storeNameSnapshot: { type: string, nullable: true }
+        place: { type: string, nullable: true }
+        expenditurePermission: { type: boolean }
+        title: { type: string, nullable: true }
+        description: { type: string, nullable: true }
+        startDate: { type: string, nullable: true }
+        endDate: { type: string, nullable: true }
+        assignedBy: { type: string, nullable: true }
+        assignedByName: { type: string, nullable: true }
+        notes: { type: string, nullable: true }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+
+    CreateWorkAssignmentBody:
+      type: object
+      required: [assignmentType, personMasterId]
+      properties:
+        assignmentType: { type: string }
+        personMasterId: { type: string }
+        projectId: { type: string }
+        projectCoverage: { type: string }
+        storeId: { type: string }
+        place: { type: string }
+        expenditurePermission: { type: boolean }
+        title: { type: string }
+        description: { type: string }
+        startDate: { type: string }
+        endDate: { type: string }
+        notes: { type: string }
+        status: { type: string }
+
+    EditWorkAssignmentBody:
+      type: object
+      properties:
+        projectId: { type: string }
+        projectCoverage: { type: string }
+        storeId: { type: string }
+        place: { type: string }
+        expenditurePermission: { type: boolean }
+        title: { type: string }
+        description: { type: string }
+        startDate: { type: string }
+        endDate: { type: string }
+        notes: { type: string }
+
+    WorkAssignmentAuditEvent:
+      type: object
+      properties:
+        id: { type: string }
+        assignmentId: { type: string }
+        eventType: { type: string }
+        performedBy: { type: string, nullable: true }
+        performedByName: { type: string, nullable: true }
+        reason: { type: string, nullable: true }
+        oldStatus: { type: string, nullable: true }
+        newStatus: { type: string, nullable: true }
+        notes: { type: string, nullable: true }
+        createdAt: { type: string }
 
     # ── Sales Orders v2 ──────────────────────────────────────────────────────
 

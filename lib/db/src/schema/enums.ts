@@ -981,3 +981,52 @@ export const inheritanceDocumentVerificationEnum = pgEnum(
   "inheritance_document_verification",
   ["pending", "verified", "rejected"],
 );
+
+// ── Unified Work Assignment System ────────────────────────────────────────────
+
+/**
+ * Operational assignment types supported by the Assign Work system.
+ *
+ *   collection_entry      — person is authorised to submit collection entries for a project
+ *   store_entry           — person is authorised to submit store-in entries at a specific store/place
+ *   observer              — person observes project operations over a date range
+ *   store_sale_operator   — person is authorised to perform sales within a specific store
+ *   general_responsibility — accountability/tracking assignment; no system permissions granted
+ */
+export const workAssignmentTypeEnum = pgEnum("work_assignment_type", [
+  "collection_entry",
+  "store_entry",
+  "observer",
+  "store_sale_operator",
+  "general_responsibility",
+]);
+
+/**
+ * Lifecycle status of a work assignment.
+ *
+ *   pending   — created but not yet activated
+ *   active    — currently in effect
+ *   completed — assignment ended by admin/developer
+ *   expired   — end date passed and system auto-expired the assignment
+ *   archived  — soft-deleted; preserved for audit
+ */
+export const workAssignmentStatusEnum = pgEnum("work_assignment_status", [
+  "pending",
+  "active",
+  "completed",
+  "expired",
+  "archived",
+]);
+
+/**
+ * Audit event types for work assignment lifecycle history.
+ */
+export const workAssignmentAuditEventEnum = pgEnum("work_assignment_audit_event", [
+  "created",
+  "activated",
+  "edited",
+  "completed",
+  "expired",
+  "archived",
+  "restored",
+]);

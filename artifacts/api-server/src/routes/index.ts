@@ -67,6 +67,7 @@ import storeEntriesRouter from "./store_entries";
 import productionAssignmentsRouter from "./production_employee_assignments";
 import observationAssignmentsRouter from "./observation_assignments";
 import workforceAssignmentsRouter from "./workforce_assignments";
+import workAssignmentsRouter from "./work_assignments";
 import salesOrdersV2Router from "./sales_orders_v2";
 import paymentReceiversRouter from "./payment_receivers";
 import salesPermissionsRouter from "./sales_permissions";
@@ -223,5 +224,6 @@ router.use("/report-exports", reportExportsRouter);
 router.use("/report-access-audit", reportAccessAuditRouter);
 router.use("/analytics-hub", analyticsHubRouter);
 router.use("/workforce-assignments", workforceAssignmentsRouter);
+router.use("/work-assignments", workAssignmentsRouter);
 
 export default router;
