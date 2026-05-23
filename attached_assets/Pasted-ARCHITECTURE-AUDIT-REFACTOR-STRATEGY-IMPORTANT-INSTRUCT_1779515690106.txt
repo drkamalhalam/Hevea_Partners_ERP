@@ -1,0 +1,524 @@
+ARCHITECTURE AUDIT & REFACTOR STRATEGY
+
+IMPORTANT INSTRUCTIONS
+
+This is an existing Plantation ERP project that already contains implemented code.
+
+DO NOT immediately begin feature implementation.
+
+FIRST perform a complete architecture audit of the current codebase.
+
+The purpose of this phase is to understand:
+
+- what already exists
+- what can be reused
+- what must be refactored
+- what must be archived
+- what conflicts with the target architecture
+
+No major feature implementation should occur in this phase.
+
+--------------------------------------------------
+PRIMARY OBJECTIVE
+--------------------------------------------------
+
+Produce a complete architectural assessment of the existing ERP.
+
+Identify:
+
+1. Existing modules
+2. Existing database structure
+3. Existing workflows
+4. Existing business rules
+5. Existing UI structures
+6. Existing APIs
+7. Existing reports
+8. Existing permissions
+9. Existing document systems
+10. Existing inventory systems
+
+--------------------------------------------------
+REQUIRED ANALYSIS
+--------------------------------------------------
+
+Analyze all source code.
+
+Identify:
+
+Frontend structure
+
+Backend structure
+
+Database structure
+
+Authentication structure
+
+Authorization structure
+
+Navigation structure
+
+State management
+
+API architecture
+
+File storage architecture
+
+Document generation architecture
+
+Reporting architecture
+
+--------------------------------------------------
+DATABASE AUDIT
+--------------------------------------------------
+
+Provide inventory of:
+
+Tables
+
+Views
+
+Indexes
+
+Relationships
+
+Constraints
+
+Triggers
+
+Stored procedures
+
+Enums
+
+--------------------------------------------------
+
+For every table identify:
+
+Purpose
+
+Dependencies
+
+Usage status
+
+--------------------------------------------------
+
+Classify:
+
+Reusable
+
+Needs Refactor
+
+Deprecated
+
+Unknown
+
+--------------------------------------------------
+MODULE INVENTORY
+--------------------------------------------------
+
+List every detected module.
+
+Examples:
+
+Authentication
+
+Projects
+
+Inventory
+
+Collection
+
+Sales
+
+Transfers
+
+Reports
+
+Documents
+
+Assignments
+
+Users
+
+Payments
+
+Notifications
+
+etc.
+
+--------------------------------------------------
+
+For each module provide:
+
+Purpose
+
+Current functionality
+
+Dependencies
+
+Completeness
+
+Reuse potential
+
+--------------------------------------------------
+AUTHENTICATION AUDIT
+--------------------------------------------------
+
+Review:
+
+Login
+
+Registration
+
+Permissions
+
+Role structure
+
+Session handling
+
+OTP handling
+
+--------------------------------------------------
+
+Identify:
+
+Hard-coded permissions
+
+Duplicate permission models
+
+Role conflicts
+
+--------------------------------------------------
+PROJECT STRUCTURE AUDIT
+--------------------------------------------------
+
+Review all project-related functionality.
+
+Identify:
+
+Project lifecycle states
+
+Project creation workflows
+
+Ownership tracking
+
+Contribution tracking
+
+Document generation
+
+--------------------------------------------------
+
+Document current behavior.
+
+--------------------------------------------------
+DOCUMENT SYSTEM AUDIT
+--------------------------------------------------
+
+Review:
+
+Template storage
+
+Placeholder handling
+
+Document generation
+
+PDF generation
+
+DOCX generation
+
+Versioning
+
+File uploads
+
+--------------------------------------------------
+
+Identify reusable components.
+
+--------------------------------------------------
+PERSON / USER AUDIT
+--------------------------------------------------
+
+Review:
+
+User records
+
+Person records
+
+Contact storage
+
+Identity records
+
+Participant records
+
+--------------------------------------------------
+
+Identify whether:
+
+Person and User are currently separated
+
+or mixed together.
+
+--------------------------------------------------
+ASSIGNMENT / RESPONSIBILITY AUDIT
+--------------------------------------------------
+
+Review any existing:
+
+Assignments
+
+Task systems
+
+Responsibilities
+
+Operational permissions
+
+--------------------------------------------------
+
+Document current structure.
+
+--------------------------------------------------
+OWNERSHIP AUDIT
+--------------------------------------------------
+
+Review all ownership logic.
+
+Identify:
+
+Ownership calculations
+
+Ownership storage
+
+Ownership modification workflows
+
+Contribution tracking
+
+--------------------------------------------------
+
+Document:
+
+Current formulas
+
+Current update logic
+
+Current risks
+
+--------------------------------------------------
+FINANCIAL AUDIT
+--------------------------------------------------
+
+Review:
+
+Payments
+
+Expenses
+
+Contributions
+
+Accounting
+
+Ledgers
+
+Balances
+
+--------------------------------------------------
+
+Document:
+
+Financial data model
+
+Calculation model
+
+Dependencies
+
+--------------------------------------------------
+INVENTORY AUDIT
+--------------------------------------------------
+
+Review:
+
+Stock tables
+
+Store tables
+
+Warehouse logic
+
+Transfer logic
+
+Sales deduction logic
+
+--------------------------------------------------
+
+Document:
+
+Inventory creation points
+
+Inventory movement points
+
+Inventory reduction points
+
+--------------------------------------------------
+UI AUDIT
+--------------------------------------------------
+
+Review:
+
+Navigation
+
+Menus
+
+Dashboards
+
+Forms
+
+Data entry workflows
+
+--------------------------------------------------
+
+Identify:
+
+Duplicate screens
+
+Unused screens
+
+Conflicting workflows
+
+--------------------------------------------------
+API AUDIT
+--------------------------------------------------
+
+Document:
+
+Existing endpoints
+
+Purpose
+
+Dependencies
+
+Consumers
+
+--------------------------------------------------
+
+Identify:
+
+Unused endpoints
+
+Duplicate endpoints
+
+Legacy endpoints
+
+--------------------------------------------------
+SECURITY AUDIT
+--------------------------------------------------
+
+Review:
+
+Authentication
+
+Authorization
+
+Sensitive data handling
+
+File access
+
+Admin permissions
+
+--------------------------------------------------
+
+Identify security risks.
+
+--------------------------------------------------
+TECHNICAL DEBT REVIEW
+--------------------------------------------------
+
+Identify:
+
+Dead code
+
+Unused components
+
+Duplicate logic
+
+Hard-coded values
+
+Temporary workarounds
+
+Incomplete implementations
+
+--------------------------------------------------
+MIGRATION STRATEGY
+--------------------------------------------------
+
+For every module classify:
+
+REUSE
+
+REFACTOR
+
+ARCHIVE
+
+REMOVE
+
+--------------------------------------------------
+
+Provide justification.
+
+--------------------------------------------------
+OUTPUT FORMAT
+--------------------------------------------------
+
+Generate a complete audit report.
+
+Include:
+
+1. System Overview
+2. Database Assessment
+3. Module Inventory
+4. Authentication Assessment
+5. Project Architecture Assessment
+6. Document System Assessment
+7. Ownership Assessment
+8. Financial Assessment
+9. Inventory Assessment
+10. UI Assessment
+11. Security Assessment
+12. Technical Debt Assessment
+13. Reuse Candidates
+14. Refactor Candidates
+15. Archive Candidates
+16. High Risk Areas
+17. Migration Recommendations
+
+--------------------------------------------------
+FINAL DELIVERABLE
+--------------------------------------------------
+
+DO NOT IMPLEMENT NEW FEATURES.
+
+ONLY:
+
+Audit
+
+Analyze
+
+Document
+
+Classify
+
+Recommend
+
+At the end provide:
+
+A. Files reviewed
+
+B. Database structures discovered
+
+C. Modules discovered
+
+D. Reuse list
+
+E. Refactor list
+
+F. Archive list
+
+G. Critical risks
+
+H. Recommended next steps before Prompt 2

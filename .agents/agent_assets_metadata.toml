@@ -1,8 +1,13 @@
 uploads = []
-outputs = []
 
 [[generated]]
 id = "Y38caah-XoNVWUSXetqQU"
 uri = "file://artifacts/plantation-web/public/hero-rubber-plantation.png"
 type = "image"
 title = "Rubber plantation hero image"
+
+[[outputs]]
+id = "wPCU32LAzustZa3Iz18yb"
+uri = "file://ARCHITECTURE_AUDIT.md"
+type = "text"
+title = "Hevea Partners ERP — Architecture Audit Report"
