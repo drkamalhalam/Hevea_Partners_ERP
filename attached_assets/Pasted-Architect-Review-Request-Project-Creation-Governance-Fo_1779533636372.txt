@@ -1,0 +1,102 @@
+Architect Review Request — Project Creation & Governance Foundation
+
+Do not modify code. Analysis only.
+
+Provide a detailed implementation audit for Prompt 6 covering the following points.
+
+PARTICIPANT IMPLEMENTATION 
+
+Show exactly what participant roles were implemented.
+
+Provide:
+
+Enum values Tables storing participant roles API payload structure Validation rules 
+
+Confirm whether the following exist as project participant roles:
+
+landowner developer investor partner nominee claimant witness other WITNESS STORAGE ARCHITECTURE 
+
+Show exactly how witnesses are stored.
+
+Confirm whether witnesses are: A. Stored only in a dedicated witness structure or B. Stored both as project participants and witnesses
+
+Provide:
+
+Tables involved API payload examples Wizard save model AGREEMENT TEMPLATE INTEGRATION 
+
+Show the exact implementation.
+
+Confirm:
+
+Was a project-level agreement_template_id column created? Is it nullable? Is it mandatory? Is it required for activation? Is it exposed in project creation UI? 
+
+Provide schema and API details.
+
+TEMPLATE RESOLUTION FLOW 
+
+Explain exactly how agreement generation now works.
+
+Is the flow:
+
+Project → selected template id → generate document
+
+or
+
+Project type
+
+document category active template → automatic template resolution → generate document 
+
+Provide actual implementation details.
+
+ACTIVATION VALIDATION RULES 
+
+Provide the exact activation checklist implemented in code.
+
+List every condition that blocks activation.
+
+Examples:
+
+missing landowner missing developer missing parcel missing witness missing agreement template missing commercial model etc. PROJECT PARTICIPANT DATA MODEL 
+
+Show:
+
+New tables Modified tables Foreign keys Person Registry linkage 
+
+Explain how duplication between participants, nominees, claimants, inheritance, and succession records is prevented.
+
+PROJECT AUDIT TRAIL 
+
+Show:
+
+Schema Event types Write protections APIs writing audit records 
+
+List every action that generates an audit event.
+
+PROJECT PARCEL ARCHITECTURE 
+
+Show:
+
+project_parcels schema Foreign keys Relationships 
+
+Confirm whether parcel landowners create or influence ownership calculations in any way.
+
+If yes, explain. If no, confirm ownership remains completely separate.
+
+ARCHITECT REVIEW FINDINGS 
+
+Provide all findings from the implementation review including:
+
+Architectural concerns Compromises Technical debt Temporary decisions Future correction recommendations LEGACY PROJECT MIGRATION 
+
+Explain exactly how existing projects were migrated.
+
+Show:
+
+Parcel backfill logic Witness handling Agreement handling Participant handling DIFFERENCE FROM APPROVED ERP ARCHITECTURE 
+
+List every area where implementation differs from the approved architecture, even if intentionally.
+
+Do not suggest new features.
+
+Analysis only. No code changes. No fixes. No implementation.
+
