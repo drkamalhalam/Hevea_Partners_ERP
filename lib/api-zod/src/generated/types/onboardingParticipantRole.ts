@@ -10,6 +10,9 @@ export type OnboardingParticipantRole =
   (typeof OnboardingParticipantRole)[keyof typeof OnboardingParticipantRole];
 
 export const OnboardingParticipantRole = {
-  developer: "developer",
   landowner: "landowner",
+  developer: "developer",
+  investor: "investor",
+  partner: "partner",
+  other: "other",
 } as const;

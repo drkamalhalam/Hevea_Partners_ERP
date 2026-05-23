@@ -28,10 +28,13 @@ import {
   useUpdateProjectParcel,
   useDeleteProjectParcel,
   getListProjectParcelsQueryKey,
-  useGetProjectAgreementTemplate,
-  useSetProjectAgreementTemplate,
-  useListTemplates,
-  getGetProjectAgreementTemplateQueryKey,
+  // Architecture Correction Pass (May 2026): Agreement template selection
+  // was removed from the wizard. Templates are now auto-resolved at
+  // document-generation time by the API. The hooks below remain available
+  // for the Administration → Document Templates surface but are no longer
+  // imported here.
+  // useGetProjectAgreementTemplate, useSetProjectAgreementTemplate,
+  // useListTemplates, getGetProjectAgreementTemplateQueryKey
   getGetProjectQueryKey,
 } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -53,18 +56,23 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { PersonMasterSelector, type PersonSummary } from "@/components/PersonMasterSelector";
 
-// ── Wizard steps (Prompt 6 refactor) ─────────────────────────────────────────
-// 8 steps: Project Details → Participants → Commercial Terms → Schedule A →
-//          Witnesses → Agreement → Project Type → Review & Submit
+// ── Wizard steps (Architecture Correction Pass, May 2026) ───────────────────
+// 7 steps: Project Details → Participants → Commercial Terms → Schedule A →
+//          Witnesses → Project Type → Review & Submit
+//
+// The "Agreement Template" step was removed. End users never select document
+// templates during project creation — templates are managed exclusively in
+// Administration → Document Templates and auto-resolved at document-
+// generation time. The underlying projects.agreementTemplateId column,
+// document template registry APIs, and audit trail are preserved unchanged.
 const STEPS = [
   { id: 1, label: "Project Details", icon: FileText },
   { id: 2, label: "Participants", icon: Users },
   { id: 3, label: "Commercial Terms", icon: Banknote },
   { id: 4, label: "Schedule A (Parcels)", icon: MapPin },
   { id: 5, label: "Witnesses", icon: Users },
-  { id: 6, label: "Agreement Template", icon: BookOpen },
-  { id: 7, label: "Project Type", icon: Gavel },
-  { id: 8, label: "Review & Submit", icon: CheckCircle2 },
+  { id: 6, label: "Project Type", icon: Gavel },
+  { id: 7, label: "Review & Submit", icon: CheckCircle2 },
 ];
 
 // ── Step 1: Project Basics ────────────────────────────────────────────────────
@@ -2177,10 +2185,15 @@ function Step10ReviewActivate({
   const project = state?.project;
   const rawChecks = state?.completionChecks ?? {};
   const { data: parcelData } = useListProjectParcels(projectId);
-  const { data: templateLink } = useGetProjectAgreementTemplate(projectId);
 
   // ── Activation gate criteria (must mirror server side in
   // project_onboarding.ts → POST /:id/onboarding/activate)
+  //
+  // Architecture Correction Pass (May 2026): the agreementTemplate check
+  // was removed. Templates are auto-resolved at document-generation time
+  // and are not selected during project creation. If a template *is* linked
+  // (legacy data), the server-side gate re-validates that it is still
+  // category='agreement' AND status='active'.
   const checks: Record<string, boolean> = {
     basicInfo: !!rawChecks.basicInfo,
     developerInfo: !!rawChecks.developerInfo,
@@ -2188,7 +2201,6 @@ function Step10ReviewActivate({
     financialConfig: !!rawChecks.financialConfig,
     scheduleA: ((parcelData as any)?.parcels?.length ?? 0) >= 1,
     witnessDetails: !!rawChecks.witnessDetails,
-    agreementTemplate: !!(templateLink as any)?.template?.id || !!(project as any)?.agreementTemplateId,
     projectType: !!(project as any)?.projectType,
     developerOtpVerified: !!rawChecks.developerOtpVerified,
     landownerOtpVerified: !!rawChecks.landownerOtpVerified,
@@ -2221,7 +2233,6 @@ function Step10ReviewActivate({
     financialConfig: "Commercial terms",
     scheduleA: "Schedule A (≥1 parcel)",
     witnessDetails: "Witnesses (min. 1)",
-    agreementTemplate: "Agreement template linked",
     projectType: "Project type selected",
     developerOtpVerified: "Developer OTP verified",
     landownerOtpVerified: "Landowner OTP verified",
@@ -2405,12 +2416,9 @@ export default function ProjectCreationWizard() {
                 <Step7Witnesses projectId={projectId} onNext={goNext} onBack={goBack} />
               )}
               {currentStep === 6 && projectId && (
-                <StepAgreementTemplate projectId={projectId} onNext={goNext} onBack={goBack} />
-              )}
-              {currentStep === 7 && projectId && (
                 <StepProjectType projectId={projectId} onNext={goNext} onBack={goBack} />
               )}
-              {currentStep === 8 && projectId && (
+              {currentStep === 7 && projectId && (
                 <div className="space-y-6">
                   <Step9OtpVerification projectId={projectId} onNext={() => { /* stay on this step */ }} onBack={goBack} />
                   <Separator />
@@ -2433,12 +2441,14 @@ export default function ProjectCreationWizard() {
 
 // ── Step 2: Participants (collapsed dev + landowner KYC) ────────────────────
 
+// Architecture Correction Pass (May 2026): canonical participant roles in
+// project onboarding are landowner / developer / investor / partner / other.
+// Nominee → Nominee Management; Claimant → Inheritance & Succession;
+// Witness → project_witnesses (Witnesses wizard step). Adding any of those
+// here would create duplicate records in the wrong system.
 const ADDITIONAL_PARTICIPANT_ROLES = [
   { value: "investor", label: "Investor" },
   { value: "partner", label: "Partner" },
-  { value: "nominee", label: "Nominee" },
-  { value: "claimant", label: "Claimant" },
-  { value: "witness", label: "Witness (additional)" },
   { value: "other", label: "Other" },
 ] as const;
 
@@ -2973,99 +2983,10 @@ function StepScheduleA({
   );
 }
 
-// ── Step 6: Agreement Template selector ─────────────────────────────────────
-
-function StepAgreementTemplate({
-  projectId,
-  onNext,
-  onBack,
-}: {
-  projectId: string;
-  onNext: () => void;
-  onBack: () => void;
-}) {
-  const qc = useQueryClient();
-  const { toast } = useToast();
-  const { data: linkData, isLoading: linkLoading } = useGetProjectAgreementTemplate(projectId);
-  const { data: templates, isLoading: tplLoading } = useListTemplates();
-  const setLink = useSetProjectAgreementTemplate();
-
-  const currentId = (linkData as any)?.template?.id ?? null;
-  const [selected, setSelected] = useState<string | "">("");
-
-  useEffect(() => {
-    if (currentId) setSelected(currentId);
-  }, [currentId]);
-
-  const eligible = useMemo(
-    () => (templates ?? []).filter((t: any) => t.category === "agreement" && t.status === "active"),
-    [templates],
-  );
-
-  const handleSave = async () => {
-    if (!selected) {
-      toast({ title: "Pick a template", variant: "destructive" });
-      return;
-    }
-    try {
-      await setLink.mutateAsync({ id: projectId, data: { agreementTemplateId: selected } });
-      await qc.invalidateQueries({ queryKey: getGetProjectAgreementTemplateQueryKey(projectId) });
-      await qc.invalidateQueries({ queryKey: getGetProjectQueryKey(projectId) });
-      toast({ title: "Agreement template linked" });
-      onNext();
-    } catch (err: any) {
-      toast({ title: "Failed", description: err?.message ?? "Could not link template", variant: "destructive" });
-    }
-  };
-
-  return (
-    <div className="space-y-5">
-      <div className="bg-muted/30 border rounded-md p-3 text-xs text-muted-foreground">
-        Link this project to an active agreement template from the Document
-        Template Registry. The template will be used when generating the
-        partnership deed.
-      </div>
-
-      {tplLoading || linkLoading ? (
-        <p className="text-sm text-muted-foreground">Loading templates…</p>
-      ) : eligible.length === 0 ? (
-        <div className="border border-amber-200 bg-amber-50 rounded-md p-3 text-sm text-amber-800 flex gap-2">
-          <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
-          <div>
-            No active agreement templates available. Ask an admin to create
-            one in the Templates module before continuing.
-          </div>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          <Label>Active Agreement Templates</Label>
-          <Select value={selected} onValueChange={setSelected}>
-            <SelectTrigger><SelectValue placeholder="Select an agreement template…" /></SelectTrigger>
-            <SelectContent>
-              {eligible.map((t: any) => (
-                <SelectItem key={t.id} value={t.id}>
-                  {t.name} {t.version ? `· v${t.version}` : ""}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
-
-      <div className="flex justify-between pt-2">
-        <Button type="button" variant="outline" onClick={onBack}>
-          <ChevronLeft className="h-4 w-4 mr-1" /> Back
-        </Button>
-        <Button onClick={handleSave} disabled={!selected || setLink.isPending}>
-          {setLink.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-          Save & Continue <ChevronRight className="h-4 w-4 ml-1" />
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-// ── Step 7: Project Type ────────────────────────────────────────────────────
+// ── Step 6: Project Type ────────────────────────────────────────────────────
+// (Architecture Correction Pass, May 2026: Agreement Template selector step
+// removed — templates are now auto-resolved at document-generation time from
+// the Document Template Registry.)
 
 const PROJECT_TYPES: Array<{ value: string; label: string; description: string }> = [
   { value: "recorded", label: "Recorded", description: "All Schedule A parcels are recorded land (khatian + plot identifiers)." },

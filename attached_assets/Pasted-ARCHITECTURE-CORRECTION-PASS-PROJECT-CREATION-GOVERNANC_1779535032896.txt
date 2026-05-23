@@ -1,0 +1,182 @@
+ARCHITECTURE CORRECTION PASS — PROJECT CREATION & GOVERNANCE FOUNDATION
+
+This is a corrective refinement of Prompt #2. Do not rebuild the module. Refactor the existing implementation to align with the approved ERP architecture.
+
+GOAL
+
+Preserve all completed work where possible.
+
+Correct architectural deviations only.
+
+No ownership, contribution, maturity, collection, store, sales, inheritance, nominee activation, settlement, or financial logic changes.
+
+──────────────────────────────
+
+REMOVE TEMPLATE SELECTION FROM PROJECT CREATION 
+
+Current implementation exposes an Agreement Template selection step.
+
+This conflicts with the approved architecture.
+
+Required:
+
+End users must never manually select document templates during project creation. Template management belongs exclusively to Administration → Document Templates. Remove template selector UI from the wizard. Remove user-facing template selection controls. Remove agreement-template selection validation from activation workflow. 
+
+Keep:
+
+projects.agreementTemplateId column document template registry agreement template APIs audit trail 
+
+Do not delete existing infrastructure.
+
+──────────────────────────────
+
+IMPLEMENT AUTOMATIC TEMPLATE RESOLUTION 
+
+The system must determine the correct template automatically.
+
+Required resolution order:
+
+Project → Project Type → Document Category → Active Template → Document Generation
+
+Generation should automatically use the appropriate active agreement template.
+
+If exactly one valid active agreement template exists:
+
+auto-resolve no user interaction 
+
+If multiple valid active agreement templates exist:
+
+use system default template if no default exists, raise administrative configuration error 
+
+Do not expose template choice during project creation.
+
+──────────────────────────────
+
+REMOVE NOMINEE FROM PROJECT PARTICIPANT ROLES 
+
+Nominee is not a project participant.
+
+Nominee data already belongs to:
+
+Person Registry Nominee Management Nominee Activation workflows 
+
+Required:
+
+Remove nominee from:
+
+participant role whitelist participant selector UI onboarding participant forms onboarding participant validations 
+
+Do not delete existing nominee tables or nominee records.
+
+──────────────────────────────
+
+REMOVE CLAIMANT FROM PROJECT PARTICIPANT ROLES 
+
+Claimants belong to:
+
+inheritance workflows succession workflows 
+
+They are not onboarding participants.
+
+Required:
+
+Remove claimant from:
+
+participant role whitelist participant selector UI onboarding participant validations 
+
+Keep all inheritance and succession modules unchanged.
+
+──────────────────────────────
+
+REMOVE WITNESS FROM PARTICIPANT ROLE MODEL 
+
+Witnesses already have:
+
+project_witnesses
+
+Witnesses must exist in exactly one architecture path.
+
+Required:
+
+Remove witness from:
+
+participant role whitelist participant selector UI participant validation logic 
+
+Witnesses remain exclusively managed through:
+
+Project Wizard → Witness Step → project_witnesses
+
+No duplicate witness records in project_participants.
+
+──────────────────────────────
+
+HARDEN ACTIVATION VALIDATION 
+
+Current validation checks only:
+
+agreementTemplateId IS NOT NULL
+
+Required:
+
+If a linked template exists:
+
+verify:
+
+category='agreement' AND status='active'
+
+Activation must fail if:
+
+template archived template inactive template deleted template category mismatch 
+
+Provide user-friendly validation message.
+
+──────────────────────────────
+
+FIX ONBOARDING STEP ACCESS CONTROL 
+
+Audit identified:
+
+PATCH /projects/:id/onboarding/step
+
+missing canAccessProject validation.
+
+Required:
+
+Apply the same project access enforcement used by sibling onboarding endpoints.
+
+Prevent unauthorized draft manipulation.
+
+──────────────────────────────
+
+CANONICAL PARTICIPANT ROLE SET 
+
+After correction, participant roles become:
+
+landowner developer investor partner other
+
+Only these five roles belong in project onboarding.
+
+Nominee, claimant, and witness remain separate systems.
+
+──────────────────────────────
+
+BACKWARD COMPATIBILITY 
+
+Do not break existing projects.
+
+Existing participant rows using removed roles may remain historically visible.
+
+Do not delete historical data.
+
+Prevent creation of new nominee/claimant/witness participant entries going forward.
+
+──────────────────────────────
+
+ARCHITECT REVIEW REQUIRED 
+
+After implementation perform architect review covering:
+
+template auto-resolution correctness activation validation correctness participant role consistency witness duplication removal nominee separation claimant separation access-control coverage backward compatibility 
+
+Provide full implementation summary and architect review findings.
+

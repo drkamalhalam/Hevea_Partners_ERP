@@ -11,15 +11,28 @@ const router = Router();
 // personMasterId is required — every participant must be linked to a
 // Person Registry entry. Identity is sourced from there; the local fields
 // below are denormalised copies kept for backward-compat.
+//
+// CANONICAL PARTICIPANT ROLE SET (Architecture Correction Pass, May 2026):
+// Only these five roles belong in project onboarding. Nominees, claimants,
+// and witnesses are managed by their dedicated systems:
+//   - nominee  → Person Registry / Nominee Management / Nominee Activation
+//   - claimant → Inheritance & Succession workflows
+//   - witness  → project_witnesses table (Witnesses wizard step)
+// Historical rows containing the removed roles remain visible via GET, but
+// new writes via PUT will be rejected by the Zod enum below.
 export const PARTICIPANT_ROLES = [
   "landowner",
   "developer",
   "investor",
   "partner",
+  "other",
+] as const;
+
+/** Legacy roles that may still exist on old rows but cannot be created. */
+export const LEGACY_DISALLOWED_PARTICIPANT_ROLES = [
   "nominee",
   "claimant",
   "witness",
-  "other",
 ] as const;
 
 const participantSchema = z.object({

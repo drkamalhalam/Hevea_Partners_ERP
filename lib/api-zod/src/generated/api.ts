@@ -4248,7 +4248,10 @@ export const GenerateAgreementDocumentBody = zod.object({
   templateId: zod
     .string()
     .uuid()
-    .describe("ID of the agreement template to use for generation"),
+    .optional()
+    .describe(
+      "Optional explicit agreement template id. When omitted, the server\nauto-resolves the unique active agreement template from the\nDocument Template Registry (Architecture Correction Pass, May 2026).\n",
+    ),
 });
 
 /**
@@ -22986,7 +22989,13 @@ export const ListOnboardingParticipantsResponse = zod.object({
     zod.object({
       id: zod.string().uuid(),
       projectId: zod.string().uuid(),
-      role: zod.enum(["developer", "landowner"]),
+      role: zod.enum([
+        "landowner",
+        "developer",
+        "investor",
+        "partner",
+        "other",
+      ]),
       fullName: zod.string(),
       sOnCOn: zod.string().nullish(),
       fatherGuardianName: zod.string().nullish(),
@@ -23008,16 +23017,7 @@ export const ListOnboardingParticipantsResponse = zod.object({
  */
 export const UpsertOnboardingParticipantParams = zod.object({
   projectId: zod.coerce.string().uuid(),
-  role: zod.enum([
-    "landowner",
-    "developer",
-    "investor",
-    "partner",
-    "nominee",
-    "claimant",
-    "witness",
-    "other",
-  ]),
+  role: zod.enum(["landowner", "developer", "investor", "partner", "other"]),
 });
 
 export const UpsertOnboardingParticipantBody = zod.object({
@@ -23037,7 +23037,7 @@ export const UpsertOnboardingParticipantResponse = zod.object({
   participant: zod.object({
     id: zod.string().uuid(),
     projectId: zod.string().uuid(),
-    role: zod.enum(["developer", "landowner"]),
+    role: zod.enum(["landowner", "developer", "investor", "partner", "other"]),
     fullName: zod.string(),
     sOnCOn: zod.string().nullish(),
     fatherGuardianName: zod.string().nullish(),
@@ -23058,16 +23058,7 @@ export const UpsertOnboardingParticipantResponse = zod.object({
  */
 export const DeleteOnboardingParticipantParams = zod.object({
   projectId: zod.coerce.string().uuid(),
-  role: zod.enum([
-    "landowner",
-    "developer",
-    "investor",
-    "partner",
-    "nominee",
-    "claimant",
-    "witness",
-    "other",
-  ]),
+  role: zod.enum(["landowner", "developer", "investor", "partner", "other"]),
 });
 
 export const DeleteOnboardingParticipantQueryParams = zod.object({
@@ -23279,7 +23270,13 @@ export const GetProjectOnboardingStateResponse = zod.object({
       zod.object({
         id: zod.string().uuid(),
         projectId: zod.string().uuid(),
-        role: zod.enum(["developer", "landowner"]),
+        role: zod.enum([
+          "landowner",
+          "developer",
+          "investor",
+          "partner",
+          "other",
+        ]),
         fullName: zod.string(),
         sOnCOn: zod.string().nullish(),
         fatherGuardianName: zod.string().nullish(),

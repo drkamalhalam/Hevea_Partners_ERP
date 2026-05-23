@@ -1326,8 +1326,11 @@ export interface CreateGenerationBody {
 }
 
 export interface GenerateDocumentRequest {
-  /** ID of the agreement template to use for generation */
-  templateId: string;
+  /** Optional explicit agreement template id. When omitted, the server
+auto-resolves the unique active agreement template from the
+Document Template Registry (Architecture Correction Pass, May 2026).
+ */
+  templateId?: string;
 }
 
 export type UpdateAgreementVariablesBodyOverridesItem = {
@@ -9558,8 +9561,11 @@ export type OnboardingParticipantRole =
   (typeof OnboardingParticipantRole)[keyof typeof OnboardingParticipantRole];
 
 export const OnboardingParticipantRole = {
-  developer: "developer",
   landowner: "landowner",
+  developer: "developer",
+  investor: "investor",
+  partner: "partner",
+  other: "other",
 } as const;
 
 export interface OnboardingParticipant {

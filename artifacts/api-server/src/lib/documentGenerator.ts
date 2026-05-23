@@ -21,7 +21,7 @@ import {
   agreementTemplatesTable,
   agreementVariableValuesTable,
 } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 
 const objectStorageService = new ObjectStorageService();
@@ -30,7 +30,21 @@ const objectStorageService = new ObjectStorageService();
 
 export interface GenerateDocumentOptions {
   agreementId: string;
-  templateId: string;
+  /**
+   * Optional explicit template id. When omitted, the generator auto-resolves
+   * the unique active agreement template from the Document Template Registry
+   * (Architecture Correction Pass, May 2026).
+   *
+   * Resolution order (when templateId is not supplied):
+   *   project → document category ('agreement') → unique active template
+   *
+   * The `agreement_templates_one_active_per_category` partial unique index
+   * already guarantees AT MOST one active template per category at the DB
+   * layer, so resolution is deterministic without a per-project default.
+   * If zero active agreement templates exist, an administrative
+   * configuration error is raised.
+   */
+  templateId?: string;
 }
 
 export interface GenerateDocumentResult {
@@ -115,14 +129,46 @@ export async function generateDocument({
     throw new DocumentGenerationError("Agreement not found", 404);
   }
 
-  // 2. Load template record.
-  const [template] = await db
-    .select()
-    .from(agreementTemplatesTable)
-    .where(eq(agreementTemplatesTable.id, templateId));
+  // 2. Resolve the template:
+  //    - Explicit templateId: load by id (legacy path, kept for callers that
+  //      still pass one).
+  //    - Otherwise: auto-resolve the unique active 'agreement' template from
+  //      the Document Template Registry. The single-active-per-category DB
+  //      index guarantees ≤1 row; we defensively order by activatedAt DESC
+  //      and pick the most recent so the system degrades gracefully if the
+  //      index is ever loosened.
+  let template:
+    | typeof agreementTemplatesTable.$inferSelect
+    | undefined;
 
-  if (!template) {
-    throw new DocumentGenerationError("Template not found", 404);
+  if (templateId) {
+    [template] = await db
+      .select()
+      .from(agreementTemplatesTable)
+      .where(eq(agreementTemplatesTable.id, templateId));
+
+    if (!template) {
+      throw new DocumentGenerationError("Template not found", 404);
+    }
+  } else {
+    const activeRows = await db
+      .select()
+      .from(agreementTemplatesTable)
+      .where(
+        and(
+          eq(agreementTemplatesTable.category, "agreement"),
+          eq(agreementTemplatesTable.status, "active"),
+        ),
+      )
+      .orderBy(desc(agreementTemplatesTable.activatedAt));
+
+    if (activeRows.length === 0) {
+      throw new DocumentGenerationError(
+        "No active agreement template is configured. Ask an administrator to activate one in Administration → Document Templates before generating documents.",
+        409,
+      );
+    }
+    template = activeRows[0];
   }
   if (!template.isActive) {
     throw new DocumentGenerationError(

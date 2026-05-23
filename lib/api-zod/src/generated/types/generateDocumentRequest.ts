@@ -7,6 +7,9 @@
  */
 
 export interface GenerateDocumentRequest {
-  /** ID of the agreement template to use for generation */
-  templateId: string;
+  /** Optional explicit agreement template id. When omitted, the server
+auto-resolves the unique active agreement template from the
+Document Template Registry (Architecture Correction Pass, May 2026).
+ */
+  templateId?: string;
 }

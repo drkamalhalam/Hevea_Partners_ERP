@@ -54152,30 +54152,14 @@ export function useListOnboardingParticipants<
  */
 export const getUpsertOnboardingParticipantUrl = (
   projectId: string,
-  role:
-    | "landowner"
-    | "developer"
-    | "investor"
-    | "partner"
-    | "nominee"
-    | "claimant"
-    | "witness"
-    | "other",
+  role: "landowner" | "developer" | "investor" | "partner" | "other",
 ) => {
   return `/api/projects/${projectId}/onboarding/participants/${role}`;
 };
 
 export const upsertOnboardingParticipant = async (
   projectId: string,
-  role:
-    | "landowner"
-    | "developer"
-    | "investor"
-    | "partner"
-    | "nominee"
-    | "claimant"
-    | "witness"
-    | "other",
+  role: "landowner" | "developer" | "investor" | "partner" | "other",
   onboardingParticipantInput: OnboardingParticipantInput,
   options?: RequestInit,
 ): Promise<UpsertOnboardingParticipant200> => {
@@ -54199,15 +54183,7 @@ export const getUpsertOnboardingParticipantMutationOptions = <
     TError,
     {
       projectId: string;
-      role:
-        | "landowner"
-        | "developer"
-        | "investor"
-        | "partner"
-        | "nominee"
-        | "claimant"
-        | "witness"
-        | "other";
+      role: "landowner" | "developer" | "investor" | "partner" | "other";
       data: BodyType<OnboardingParticipantInput>;
     },
     TContext
@@ -54218,15 +54194,7 @@ export const getUpsertOnboardingParticipantMutationOptions = <
   TError,
   {
     projectId: string;
-    role:
-      | "landowner"
-      | "developer"
-      | "investor"
-      | "partner"
-      | "nominee"
-      | "claimant"
-      | "witness"
-      | "other";
+    role: "landowner" | "developer" | "investor" | "partner" | "other";
     data: BodyType<OnboardingParticipantInput>;
   },
   TContext
@@ -54244,15 +54212,7 @@ export const getUpsertOnboardingParticipantMutationOptions = <
     Awaited<ReturnType<typeof upsertOnboardingParticipant>>,
     {
       projectId: string;
-      role:
-        | "landowner"
-        | "developer"
-        | "investor"
-        | "partner"
-        | "nominee"
-        | "claimant"
-        | "witness"
-        | "other";
+      role: "landowner" | "developer" | "investor" | "partner" | "other";
       data: BodyType<OnboardingParticipantInput>;
     }
   > = (props) => {
@@ -54283,15 +54243,7 @@ export const useUpsertOnboardingParticipant = <
     TError,
     {
       projectId: string;
-      role:
-        | "landowner"
-        | "developer"
-        | "investor"
-        | "partner"
-        | "nominee"
-        | "claimant"
-        | "witness"
-        | "other";
+      role: "landowner" | "developer" | "investor" | "partner" | "other";
       data: BodyType<OnboardingParticipantInput>;
     },
     TContext
@@ -54302,15 +54254,7 @@ export const useUpsertOnboardingParticipant = <
   TError,
   {
     projectId: string;
-    role:
-      | "landowner"
-      | "developer"
-      | "investor"
-      | "partner"
-      | "nominee"
-      | "claimant"
-      | "witness"
-      | "other";
+    role: "landowner" | "developer" | "investor" | "partner" | "other";
     data: BodyType<OnboardingParticipantInput>;
   },
   TContext
@@ -54323,15 +54267,7 @@ export const useUpsertOnboardingParticipant = <
  */
 export const getDeleteOnboardingParticipantUrl = (
   projectId: string,
-  role:
-    | "landowner"
-    | "developer"
-    | "investor"
-    | "partner"
-    | "nominee"
-    | "claimant"
-    | "witness"
-    | "other",
+  role: "landowner" | "developer" | "investor" | "partner" | "other",
   params?: DeleteOnboardingParticipantParams,
 ) => {
   const normalizedParams = new URLSearchParams();
@@ -54351,15 +54287,7 @@ export const getDeleteOnboardingParticipantUrl = (
 
 export const deleteOnboardingParticipant = async (
   projectId: string,
-  role:
-    | "landowner"
-    | "developer"
-    | "investor"
-    | "partner"
-    | "nominee"
-    | "claimant"
-    | "witness"
-    | "other",
+  role: "landowner" | "developer" | "investor" | "partner" | "other",
   params?: DeleteOnboardingParticipantParams,
   options?: RequestInit,
 ): Promise<DeleteOnboardingParticipant200> => {
@@ -54381,15 +54309,7 @@ export const getDeleteOnboardingParticipantMutationOptions = <
     TError,
     {
       projectId: string;
-      role:
-        | "landowner"
-        | "developer"
-        | "investor"
-        | "partner"
-        | "nominee"
-        | "claimant"
-        | "witness"
-        | "other";
+      role: "landowner" | "developer" | "investor" | "partner" | "other";
       params?: DeleteOnboardingParticipantParams;
     },
     TContext
@@ -54400,15 +54320,7 @@ export const getDeleteOnboardingParticipantMutationOptions = <
   TError,
   {
     projectId: string;
-    role:
-      | "landowner"
-      | "developer"
-      | "investor"
-      | "partner"
-      | "nominee"
-      | "claimant"
-      | "witness"
-      | "other";
+    role: "landowner" | "developer" | "investor" | "partner" | "other";
     params?: DeleteOnboardingParticipantParams;
   },
   TContext
@@ -54426,15 +54338,7 @@ export const getDeleteOnboardingParticipantMutationOptions = <
     Awaited<ReturnType<typeof deleteOnboardingParticipant>>,
     {
       projectId: string;
-      role:
-        | "landowner"
-        | "developer"
-        | "investor"
-        | "partner"
-        | "nominee"
-        | "claimant"
-        | "witness"
-        | "other";
+      role: "landowner" | "developer" | "investor" | "partner" | "other";
       params?: DeleteOnboardingParticipantParams;
     }
   > = (props) => {
@@ -54464,15 +54368,7 @@ export const useDeleteOnboardingParticipant = <
     TError,
     {
       projectId: string;
-      role:
-        | "landowner"
-        | "developer"
-        | "investor"
-        | "partner"
-        | "nominee"
-        | "claimant"
-        | "witness"
-        | "other";
+      role: "landowner" | "developer" | "investor" | "partner" | "other";
       params?: DeleteOnboardingParticipantParams;
     },
     TContext
@@ -54483,15 +54379,7 @@ export const useDeleteOnboardingParticipant = <
   TError,
   {
     projectId: string;
-    role:
-      | "landowner"
-      | "developer"
-      | "investor"
-      | "partner"
-      | "nominee"
-      | "claimant"
-      | "witness"
-      | "other";
+    role: "landowner" | "developer" | "investor" | "partner" | "other";
     params?: DeleteOnboardingParticipantParams;
   },
   TContext

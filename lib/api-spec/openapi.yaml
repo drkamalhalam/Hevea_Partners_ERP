@@ -13076,7 +13076,7 @@ paths:
         - name: role
           in: path
           required: true
-          schema: { type: string, enum: [landowner, developer, investor, partner, nominee, claimant, witness, other] }
+          schema: { type: string, enum: [landowner, developer, investor, partner, other] }
       requestBody:
         required: true
         content:
@@ -13104,7 +13104,7 @@ paths:
         - name: role
           in: path
           required: true
-          schema: { type: string, enum: [landowner, developer, investor, partner, nominee, claimant, witness, other] }
+          schema: { type: string, enum: [landowner, developer, investor, partner, other] }
         - name: personMasterId
           in: query
           required: false
@@ -14553,14 +14553,19 @@ components:
         notes:
           type: string
 
+    # templateId is optional. When omitted, the API auto-resolves the unique
+    # active agreement template from the Document Template Registry
+    # (Architecture Correction Pass, May 2026).
     GenerateDocumentRequest:
       type: object
-      required: [templateId]
       properties:
         templateId:
           type: string
           format: uuid
-          description: ID of the agreement template to use for generation
+          description: |
+            Optional explicit agreement template id. When omitted, the server
+            auto-resolves the unique active agreement template from the
+            Document Template Registry (Architecture Correction Pass, May 2026).
 
     UpdateAgreementVariablesBody:
       type: object
@@ -22325,7 +22330,11 @@ components:
       properties:
         id: { type: string, format: uuid }
         projectId: { type: string, format: uuid }
-        role: { type: string, enum: [developer, landowner] }
+        # Canonical onboarding role set (Architecture Correction Pass, May 2026).
+        # Historical rows may carry legacy roles (nominee/claimant/witness) —
+        # those are returned by GET but rejected by PUT, so consumers should
+        # treat the field as a tolerant string.
+        role: { type: string, enum: [landowner, developer, investor, partner, other] }
         fullName: { type: string }
         sOnCOn: { type: ["string", "null"] }
         fatherGuardianName: { type: ["string", "null"] }

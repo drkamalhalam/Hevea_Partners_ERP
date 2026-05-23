@@ -306,12 +306,11 @@ router.post("/:id/variables/resolve", requireRole("admin", "developer"), async (
 // POST /agreements/:id/generate-document — fill a DOCX template with resolved variables
 router.post("/:id/generate-document", requireRole("admin", "developer"), async (req, res) => {
   const id = String(req.params.id);
-  const { templateId } = req.body as { templateId?: string };
-
-  if (!templateId) {
-    res.status(400).json({ error: "templateId is required" });
-    return;
-  }
+  // Architecture Correction Pass (May 2026):
+  // `templateId` is now optional. When omitted, the generator auto-resolves
+  // the unique active agreement template from the Document Template Registry.
+  // Callers that already pass an explicit id continue to work unchanged.
+  const { templateId } = (req.body ?? {}) as { templateId?: string };
 
   try {
     const result = await generateDocument({ agreementId: id, templateId });

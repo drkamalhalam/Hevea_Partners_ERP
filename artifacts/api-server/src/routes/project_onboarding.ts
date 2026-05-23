@@ -6,6 +6,7 @@ import {
   projectWitnessesTable,
   projectCreationOtpsTable,
   projectParcelsTable,
+  agreementTemplatesTable,
 } from "@workspace/db";
 import { and, eq, desc } from "drizzle-orm";
 import { z } from "zod/v4";
@@ -308,11 +309,43 @@ router.post("/:id/onboarding/activate", requireRole("admin", "developer"), async
     return;
   }
 
-  if (!project.agreementTemplateId) {
-    res.status(422).json({
-      error: "An agreement template must be linked to the project before activation.",
-    });
-    return;
+  // Agreement template is now auto-resolved at document-generation time from
+  // the Document Template Registry (Architecture Correction Pass, May 2026).
+  // Activation no longer REQUIRES `projects.agreementTemplateId` to be set —
+  // template selection has been removed from the wizard. However, if a
+  // template was explicitly linked, it must still be valid: category must be
+  // "agreement" and status must be "active".
+  if (project.agreementTemplateId) {
+    const [linkedTpl] = await db
+      .select({
+        id: agreementTemplatesTable.id,
+        name: agreementTemplatesTable.name,
+        category: agreementTemplatesTable.category,
+        status: agreementTemplatesTable.status,
+      })
+      .from(agreementTemplatesTable)
+      .where(eq(agreementTemplatesTable.id, project.agreementTemplateId))
+      .limit(1);
+
+    if (!linkedTpl) {
+      res.status(422).json({
+        error:
+          "The agreement template linked to this project no longer exists. Ask an administrator to relink or clear it before activating.",
+      });
+      return;
+    }
+    if (linkedTpl.category !== "agreement") {
+      res.status(422).json({
+        error: `The linked template "${linkedTpl.name}" has category "${linkedTpl.category}" — only agreement templates can be linked to a project.`,
+      });
+      return;
+    }
+    if (linkedTpl.status !== "active") {
+      res.status(422).json({
+        error: `The linked template "${linkedTpl.name}" is "${linkedTpl.status}" — only active templates may be used. Ask an administrator to activate or replace it.`,
+      });
+      return;
+    }
   }
 
   const [updated] = await db
@@ -342,9 +375,16 @@ router.post("/:id/onboarding/activate", requireRole("admin", "developer"), async
 // PATCH /:id/onboarding/step — advance/save wizard step
 router.patch("/:id/onboarding/step", requireRole("admin", "developer"), async (req, res) => {
   const id = String(req.params.id);
+  // Architecture Correction Pass: enforce per-project access control so
+  // unauthorised users cannot manipulate another project's draft state.
+  if (!canAccessProject(req, id)) {
+    res.status(403).json({ error: "Forbidden: no access to this project" });
+    return;
+  }
   const parsed = z.object({ step: z.number().int().min(1).max(10) }).safeParse(req.body);
   // NB: max is 10 for backward compatibility with persisted drafts created
-  // against the legacy 10-step wizard. Current UI tops out at 8.
+  // against legacy wizard versions. Current UI tops out at 7 (Architecture
+  // Correction Pass: removed the Agreement Template selection step).
   if (!parsed.success) {
     res.status(422).json({ error: "Invalid step" });
     return;
