@@ -15,6 +15,22 @@ import { VARIABLE_REGISTRY } from "./variableRegistry";
 
 const PLACEHOLDER_REGEX = /\{\{([A-Z][A-Z0-9_]*)\}\}/g;
 
+/**
+ * Strip XML tags so that placeholders Word has split across multiple
+ * <w:t>…</w:t> runs are recombined before regex matching. Without this,
+ * `{{` may live in one run and `PROJECT_NAME}}` in another, making the
+ * placeholder invisible to the simple regex above.
+ */
+export function flattenDocxXml(xml: string): string {
+  return xml
+    .replace(/<[^>]+>/g, "")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'");
+}
+
 export interface ParseResult {
   all: string[];
   known: string[];

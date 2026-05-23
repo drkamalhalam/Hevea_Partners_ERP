@@ -10,6 +10,8 @@ export type AgreementTemplateStatus =
   (typeof AgreementTemplateStatus)[keyof typeof AgreementTemplateStatus];
 
 export const AgreementTemplateStatus = {
+  draft: "draft",
   active: "active",
+  superseded: "superseded",
   archived: "archived",
 } as const;

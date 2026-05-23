@@ -2943,7 +2943,11 @@ paths:
           in: query
           schema:
             type: string
-            enum: [active, archived]
+            enum: [draft, active, superseded, archived]
+        - name: category
+          in: query
+          schema:
+            type: string
       responses:
         "200":
           description: List of templates
@@ -3054,6 +3058,176 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AgreementTemplate"
+
+  /templates/{id}/parse:
+    post:
+      tags: [templates]
+      operationId: parseTemplate
+      summary: Parse the DOCX file for placeholders and rebuild the mapping table
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Parsed mapping
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TemplateVariableMappingResponse" }
+        "409":
+          description: Template is not DOCX
+        "404":
+          description: Template not found
+
+  /templates/{id}/variables:
+    get:
+      tags: [templates]
+      operationId: getTemplateVariables
+      summary: List placeholder mappings for a template
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Mapping list
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TemplateVariableMappingResponse" }
+
+  /templates/{id}/activate:
+    post:
+      tags: [templates]
+      operationId: activateTemplate
+      summary: Activate a draft or superseded template (validates mapping, supersedes prior active in category)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ActivateTemplateBody" }
+      responses:
+        "200":
+          description: Activated template
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AgreementTemplate" }
+        "409":
+          description: Validation failed — required variables unresolved or invalid
+
+  /templates/{id}/supersede:
+    post:
+      tags: [templates]
+      operationId: supersedeTemplate
+      summary: Mark an active template as superseded
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SupersedeTemplateBody" }
+      responses:
+        "200":
+          description: Superseded template
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AgreementTemplate" }
+
+  /templates/{id}/audit:
+    get:
+      tags: [templates]
+      operationId: getTemplateAudit
+      summary: Lifecycle audit history for a template
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Audit events (newest first)
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/DocumentTemplateAuditEvent" }
+
+  /document-variables:
+    get:
+      tags: [templates]
+      operationId: listDocumentVariables
+      summary: List entries in the Document Variable Registry
+      parameters:
+        - name: sourceType
+          in: query
+          schema:
+            type: string
+            enum: [project_field, person_field, schedule_a_field, agreement_field, calculated, system_generated]
+        - name: isActive
+          in: query
+          schema: { type: boolean }
+      responses:
+        "200":
+          description: Registry entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/DocumentVariableRegistryEntry" }
+    post:
+      tags: [templates]
+      operationId: createDocumentVariable
+      summary: Create a new Document Variable Registry entry (admin/developer)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateDocumentVariableBody" }
+      responses:
+        "201":
+          description: Created entry
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DocumentVariableRegistryEntry" }
+        "409":
+          description: variableKey already exists
+
+  /document-variables/{id}:
+    get:
+      tags: [templates]
+      operationId: getDocumentVariable
+      summary: Get a single registry entry
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Entry
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DocumentVariableRegistryEntry" }
+        "404":
+          description: Not found
+    patch:
+      tags: [templates]
+      operationId: updateDocumentVariable
+      summary: Update a registry entry (admin/developer)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateDocumentVariableBody" }
+      responses:
+        "200":
+          description: Updated entry
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DocumentVariableRegistryEntry" }
+    delete:
+      tags: [templates]
+      operationId: deleteDocumentVariable
+      summary: Soft-deactivate a registry entry (admin only)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "204":
+          description: Deactivated
 
 
 
@@ -15502,7 +15676,7 @@ components:
 
     AgreementTemplate:
       type: object
-      required: [id, name, version, fileObjectPath, fileFormat, mimeType, status, isActive, createdAt]
+      required: [id, name, version, category, fileObjectPath, fileFormat, mimeType, status, isActive, createdAt]
       properties:
         id:
           type: string
@@ -15511,8 +15685,15 @@ components:
           type: string
         description:
           type: ["string", "null"]
+        documentDescription:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
         version:
           type: string
+        category:
+          type: string
+          enum: [agreement, ownership_record, transfer_document, succession_document, inheritance_document, governance_document, notice, declaration, certificate, other]
         fileObjectPath:
           type: string
         fileFormat:
@@ -15524,7 +15705,7 @@ components:
           type: ["integer", "null"]
         status:
           type: string
-          enum: [active, archived]
+          enum: [draft, active, superseded, archived]
         isActive:
           type: boolean
         uploadedBy:
@@ -15532,6 +15713,21 @@ components:
           format: uuid
         uploadedByName:
           type: ["string", "null"]
+        activatedAt:
+          type: ["string", "null"]
+          format: date-time
+        activatedBy:
+          type: ["string", "null"]
+          format: uuid
+        supersededAt:
+          type: ["string", "null"]
+          format: date-time
+        supersededBy:
+          type: ["string", "null"]
+          format: uuid
+        supersededTemplateId:
+          type: ["string", "null"]
+          format: uuid
         archivedAt:
           type: ["string", "null"]
           format: date-time
@@ -15553,8 +15749,16 @@ components:
           type: string
         description:
           type: string
+        documentDescription:
+          type: string
+        notes:
+          type: string
         version:
           type: string
+        category:
+          type: string
+          enum: [agreement, ownership_record, transfer_document, succession_document, inheritance_document, governance_document, notice, declaration, certificate, other]
+          default: agreement
         fileObjectPath:
           type: string
         fileFormat:
@@ -15572,8 +15776,137 @@ components:
           type: string
         description:
           type: string
+        documentDescription:
+          type: string
+        notes:
+          type: string
         version:
           type: string
+        category:
+          type: string
+          enum: [agreement, ownership_record, transfer_document, succession_document, inheritance_document, governance_document, notice, declaration, certificate, other]
+
+    DocumentVariableRegistryEntry:
+      type: object
+      required: [id, variableKey, label, sourceType, dataType, isRequired, isActive, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        variableKey: { type: string }
+        label: { type: string }
+        description: { type: ["string", "null"] }
+        sourceType:
+          type: string
+          enum: [project_field, person_field, schedule_a_field, agreement_field, calculated, system_generated]
+        sourceField: { type: ["string", "null"] }
+        dataType: { type: string }
+        isRequired: { type: boolean }
+        exampleValue: { type: ["string", "null"] }
+        groupName: { type: ["string", "null"] }
+        isActive: { type: boolean }
+        createdBy: { type: ["string", "null"], format: uuid }
+        createdByName: { type: ["string", "null"] }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    CreateDocumentVariableBody:
+      type: object
+      required: [variableKey, label, sourceType]
+      properties:
+        variableKey: { type: string, pattern: "^[A-Z][A-Z0-9_]*$" }
+        label: { type: string }
+        description: { type: string }
+        sourceType:
+          type: string
+          enum: [project_field, person_field, schedule_a_field, agreement_field, calculated, system_generated]
+        sourceField: { type: string }
+        dataType: { type: string, default: "string" }
+        isRequired: { type: boolean, default: false }
+        exampleValue: { type: string }
+        groupName: { type: string }
+
+    UpdateDocumentVariableBody:
+      type: object
+      properties:
+        label: { type: string }
+        description: { type: string }
+        sourceType:
+          type: string
+          enum: [project_field, person_field, schedule_a_field, agreement_field, calculated, system_generated]
+        sourceField: { type: string }
+        dataType: { type: string }
+        isRequired: { type: boolean }
+        exampleValue: { type: string }
+        groupName: { type: string }
+        isActive: { type: boolean }
+
+    DocumentTemplateVariable:
+      type: object
+      required: [id, templateId, variableKey, status, detectedAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        templateId: { type: string, format: uuid }
+        variableKey: { type: string }
+        status:
+          type: string
+          enum: [mapped, missing, invalid, unused]
+        detectedAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        registryEntry:
+          oneOf:
+            - $ref: "#/components/schemas/DocumentVariableRegistryEntry"
+            - type: "null"
+
+    TemplateVariableMappingResponse:
+      type: object
+      required: [templateId, items, summary]
+      properties:
+        templateId: { type: string, format: uuid }
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/DocumentTemplateVariable" }
+        summary:
+          type: object
+          required: [total, mapped, missing, invalid, unused, canActivate]
+          properties:
+            total: { type: integer }
+            mapped: { type: integer }
+            missing: { type: integer }
+            invalid: { type: integer }
+            unused: { type: integer }
+            canActivate: { type: boolean }
+            blockers:
+              type: array
+              items: { type: string }
+
+    DocumentTemplateAuditEvent:
+      type: object
+      required: [id, templateId, eventType, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        templateId: { type: string, format: uuid }
+        eventType:
+          type: string
+          enum: [uploaded, parsed, mapping_updated, metadata_updated, activated, superseded, archived, restored, downloaded, generated]
+        performedById: { type: ["string", "null"], format: uuid }
+        performedByName: { type: ["string", "null"] }
+        reason: { type: ["string", "null"] }
+        payload:
+          oneOf:
+            - type: object
+              additionalProperties: true
+            - type: "null"
+        createdAt: { type: string, format: date-time }
+
+    ActivateTemplateBody:
+      type: object
+      properties:
+        reason: { type: string }
+
+    SupersedeTemplateBody:
+      type: object
+      properties:
+        replacementTemplateId: { type: string, format: uuid }
+        reason: { type: string }
 
     # ── Documents ─────────────────────────────────────────────────────────────
 

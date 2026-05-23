@@ -5,9 +5,13 @@
  * Rubber Plantation Partnership API
  * OpenAPI spec version: 0.1.0
  */
+import type { UpdateTemplateBodyCategory } from "./updateTemplateBodyCategory";
 
 export interface UpdateTemplateBody {
   name?: string;
   description?: string;
+  documentDescription?: string;
+  notes?: string;
   version?: string;
+  category?: UpdateTemplateBodyCategory;
 }

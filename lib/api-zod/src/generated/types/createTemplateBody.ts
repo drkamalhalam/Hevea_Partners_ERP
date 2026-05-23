@@ -5,12 +5,16 @@
  * Rubber Plantation Partnership API
  * OpenAPI spec version: 0.1.0
  */
+import type { CreateTemplateBodyCategory } from "./createTemplateBodyCategory";
 import type { CreateTemplateBodyFileFormat } from "./createTemplateBodyFileFormat";
 
 export interface CreateTemplateBody {
   name: string;
   description?: string;
+  documentDescription?: string;
+  notes?: string;
   version?: string;
+  category?: CreateTemplateBodyCategory;
   fileObjectPath: string;
   fileFormat: CreateTemplateBodyFileFormat;
   mimeType: string;

@@ -2381,6 +2381,22 @@ export interface RequestUploadUrlResponse {
   objectPath: string;
 }
 
+export type AgreementTemplateCategory =
+  (typeof AgreementTemplateCategory)[keyof typeof AgreementTemplateCategory];
+
+export const AgreementTemplateCategory = {
+  agreement: "agreement",
+  ownership_record: "ownership_record",
+  transfer_document: "transfer_document",
+  succession_document: "succession_document",
+  inheritance_document: "inheritance_document",
+  governance_document: "governance_document",
+  notice: "notice",
+  declaration: "declaration",
+  certificate: "certificate",
+  other: "other",
+} as const;
+
 export type AgreementTemplateFileFormat =
   (typeof AgreementTemplateFileFormat)[keyof typeof AgreementTemplateFileFormat];
 
@@ -2393,7 +2409,9 @@ export type AgreementTemplateStatus =
   (typeof AgreementTemplateStatus)[keyof typeof AgreementTemplateStatus];
 
 export const AgreementTemplateStatus = {
+  draft: "draft",
   active: "active",
+  superseded: "superseded",
   archived: "archived",
 } as const;
 
@@ -2402,7 +2420,12 @@ export interface AgreementTemplate {
   name: string;
   /** @nullable */
   description?: string | null;
+  /** @nullable */
+  documentDescription?: string | null;
+  /** @nullable */
+  notes?: string | null;
   version: string;
+  category: AgreementTemplateCategory;
   fileObjectPath: string;
   fileFormat: AgreementTemplateFileFormat;
   mimeType: string;
@@ -2415,6 +2438,16 @@ export interface AgreementTemplate {
   /** @nullable */
   uploadedByName?: string | null;
   /** @nullable */
+  activatedAt?: string | null;
+  /** @nullable */
+  activatedBy?: string | null;
+  /** @nullable */
+  supersededAt?: string | null;
+  /** @nullable */
+  supersededBy?: string | null;
+  /** @nullable */
+  supersededTemplateId?: string | null;
+  /** @nullable */
   archivedAt?: string | null;
   /** @nullable */
   archivedBy?: string | null;
@@ -2422,6 +2455,22 @@ export interface AgreementTemplate {
   /** @nullable */
   updatedAt?: string | null;
 }
+
+export type CreateTemplateBodyCategory =
+  (typeof CreateTemplateBodyCategory)[keyof typeof CreateTemplateBodyCategory];
+
+export const CreateTemplateBodyCategory = {
+  agreement: "agreement",
+  ownership_record: "ownership_record",
+  transfer_document: "transfer_document",
+  succession_document: "succession_document",
+  inheritance_document: "inheritance_document",
+  governance_document: "governance_document",
+  notice: "notice",
+  declaration: "declaration",
+  certificate: "certificate",
+  other: "other",
+} as const;
 
 export type CreateTemplateBodyFileFormat =
   (typeof CreateTemplateBodyFileFormat)[keyof typeof CreateTemplateBodyFileFormat];
@@ -2434,17 +2483,203 @@ export const CreateTemplateBodyFileFormat = {
 export interface CreateTemplateBody {
   name: string;
   description?: string;
+  documentDescription?: string;
+  notes?: string;
   version?: string;
+  category?: CreateTemplateBodyCategory;
   fileObjectPath: string;
   fileFormat: CreateTemplateBodyFileFormat;
   mimeType: string;
   fileSizeBytes?: number;
 }
 
+export type UpdateTemplateBodyCategory =
+  (typeof UpdateTemplateBodyCategory)[keyof typeof UpdateTemplateBodyCategory];
+
+export const UpdateTemplateBodyCategory = {
+  agreement: "agreement",
+  ownership_record: "ownership_record",
+  transfer_document: "transfer_document",
+  succession_document: "succession_document",
+  inheritance_document: "inheritance_document",
+  governance_document: "governance_document",
+  notice: "notice",
+  declaration: "declaration",
+  certificate: "certificate",
+  other: "other",
+} as const;
+
 export interface UpdateTemplateBody {
   name?: string;
   description?: string;
+  documentDescription?: string;
+  notes?: string;
   version?: string;
+  category?: UpdateTemplateBodyCategory;
+}
+
+export type DocumentVariableRegistryEntrySourceType =
+  (typeof DocumentVariableRegistryEntrySourceType)[keyof typeof DocumentVariableRegistryEntrySourceType];
+
+export const DocumentVariableRegistryEntrySourceType = {
+  project_field: "project_field",
+  person_field: "person_field",
+  schedule_a_field: "schedule_a_field",
+  agreement_field: "agreement_field",
+  calculated: "calculated",
+  system_generated: "system_generated",
+} as const;
+
+export interface DocumentVariableRegistryEntry {
+  id: string;
+  variableKey: string;
+  label: string;
+  /** @nullable */
+  description?: string | null;
+  sourceType: DocumentVariableRegistryEntrySourceType;
+  /** @nullable */
+  sourceField?: string | null;
+  dataType: string;
+  isRequired: boolean;
+  /** @nullable */
+  exampleValue?: string | null;
+  /** @nullable */
+  groupName?: string | null;
+  isActive: boolean;
+  /** @nullable */
+  createdBy?: string | null;
+  /** @nullable */
+  createdByName?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CreateDocumentVariableBodySourceType =
+  (typeof CreateDocumentVariableBodySourceType)[keyof typeof CreateDocumentVariableBodySourceType];
+
+export const CreateDocumentVariableBodySourceType = {
+  project_field: "project_field",
+  person_field: "person_field",
+  schedule_a_field: "schedule_a_field",
+  agreement_field: "agreement_field",
+  calculated: "calculated",
+  system_generated: "system_generated",
+} as const;
+
+export interface CreateDocumentVariableBody {
+  /** @pattern ^[A-Z][A-Z0-9_]*$ */
+  variableKey: string;
+  label: string;
+  description?: string;
+  sourceType: CreateDocumentVariableBodySourceType;
+  sourceField?: string;
+  dataType?: string;
+  isRequired?: boolean;
+  exampleValue?: string;
+  groupName?: string;
+}
+
+export type UpdateDocumentVariableBodySourceType =
+  (typeof UpdateDocumentVariableBodySourceType)[keyof typeof UpdateDocumentVariableBodySourceType];
+
+export const UpdateDocumentVariableBodySourceType = {
+  project_field: "project_field",
+  person_field: "person_field",
+  schedule_a_field: "schedule_a_field",
+  agreement_field: "agreement_field",
+  calculated: "calculated",
+  system_generated: "system_generated",
+} as const;
+
+export interface UpdateDocumentVariableBody {
+  label?: string;
+  description?: string;
+  sourceType?: UpdateDocumentVariableBodySourceType;
+  sourceField?: string;
+  dataType?: string;
+  isRequired?: boolean;
+  exampleValue?: string;
+  groupName?: string;
+  isActive?: boolean;
+}
+
+export type DocumentTemplateVariableStatus =
+  (typeof DocumentTemplateVariableStatus)[keyof typeof DocumentTemplateVariableStatus];
+
+export const DocumentTemplateVariableStatus = {
+  mapped: "mapped",
+  missing: "missing",
+  invalid: "invalid",
+  unused: "unused",
+} as const;
+
+export interface DocumentTemplateVariable {
+  id: string;
+  templateId: string;
+  variableKey: string;
+  status: DocumentTemplateVariableStatus;
+  detectedAt: string;
+  updatedAt: string;
+  registryEntry?: DocumentVariableRegistryEntry | null;
+}
+
+export type TemplateVariableMappingResponseSummary = {
+  total: number;
+  mapped: number;
+  missing: number;
+  invalid: number;
+  unused: number;
+  canActivate: boolean;
+  blockers?: string[];
+};
+
+export interface TemplateVariableMappingResponse {
+  templateId: string;
+  items: DocumentTemplateVariable[];
+  summary: TemplateVariableMappingResponseSummary;
+}
+
+export type DocumentTemplateAuditEventEventType =
+  (typeof DocumentTemplateAuditEventEventType)[keyof typeof DocumentTemplateAuditEventEventType];
+
+export const DocumentTemplateAuditEventEventType = {
+  uploaded: "uploaded",
+  parsed: "parsed",
+  mapping_updated: "mapping_updated",
+  metadata_updated: "metadata_updated",
+  activated: "activated",
+  superseded: "superseded",
+  archived: "archived",
+  restored: "restored",
+  downloaded: "downloaded",
+  generated: "generated",
+} as const;
+
+export type DocumentTemplateAuditEventPayload = {
+  [key: string]: unknown;
+} | null;
+
+export interface DocumentTemplateAuditEvent {
+  id: string;
+  templateId: string;
+  eventType: DocumentTemplateAuditEventEventType;
+  /** @nullable */
+  performedById?: string | null;
+  /** @nullable */
+  performedByName?: string | null;
+  /** @nullable */
+  reason?: string | null;
+  payload?: DocumentTemplateAuditEventPayload;
+  createdAt: string;
+}
+
+export interface ActivateTemplateBody {
+  reason?: string;
+}
+
+export interface SupersedeTemplateBody {
+  replacementTemplateId?: string;
+  reason?: string;
 }
 
 export type DocumentCategory =
@@ -9943,14 +10178,34 @@ export type ListDocumentAccessLogParams = {
 
 export type ListTemplatesParams = {
   status?: ListTemplatesStatus;
+  category?: string;
 };
 
 export type ListTemplatesStatus =
   (typeof ListTemplatesStatus)[keyof typeof ListTemplatesStatus];
 
 export const ListTemplatesStatus = {
+  draft: "draft",
   active: "active",
+  superseded: "superseded",
   archived: "archived",
+} as const;
+
+export type ListDocumentVariablesParams = {
+  sourceType?: ListDocumentVariablesSourceType;
+  isActive?: boolean;
+};
+
+export type ListDocumentVariablesSourceType =
+  (typeof ListDocumentVariablesSourceType)[keyof typeof ListDocumentVariablesSourceType];
+
+export const ListDocumentVariablesSourceType = {
+  project_field: "project_field",
+  person_field: "person_field",
+  schedule_a_field: "schedule_a_field",
+  agreement_field: "agreement_field",
+  calculated: "calculated",
+  system_generated: "system_generated",
 } as const;
 
 export type ListPendingVerificationContributionsParams = {

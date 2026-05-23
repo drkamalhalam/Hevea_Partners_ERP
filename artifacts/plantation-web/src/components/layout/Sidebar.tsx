@@ -120,12 +120,6 @@ const navGroups: NavGroup[] = [
         roles: ["admin", "developer", "landowner", "investor"],
       },
       {
-        name: "Templates",
-        href: "/templates",
-        icon: LibraryBig,
-        roles: ["admin", "developer"],
-      },
-      {
         name: "Activation Tasks",
         href: "/activation",
         icon: ShieldCheck,
@@ -585,6 +579,18 @@ const navGroups: NavGroup[] = [
     label: "System",
     items: [
       { name: "Admin", href: "/admin", icon: ShieldCheck, roles: ["admin"] },
+      {
+        name: "Document Templates",
+        href: "/document-templates",
+        icon: LibraryBig,
+        roles: ["admin", "developer"] as UserRole[],
+      },
+      {
+        name: "Variable Registry",
+        href: "/document-variables",
+        icon: LibraryBig,
+        roles: ["admin", "developer"] as UserRole[],
+      },
       { name: "Login Access", href: "/login-access", icon: KeyRound, roles: ["admin"] as UserRole[] },
       {
         name: "Timeline",

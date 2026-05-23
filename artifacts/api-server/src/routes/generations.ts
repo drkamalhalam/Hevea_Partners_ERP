@@ -94,6 +94,13 @@ router.post("/:id/generations", requireRole("admin", "developer"), async (req, r
     res.status(422).json({ error: "Only DOCX templates support variable substitution." });
     return;
   }
+  if (template.category !== "agreement") {
+    res.status(422).json({
+      error:
+        "Only templates in the 'agreement' category can be used to generate agreements.",
+    });
+    return;
+  }
 
   // Capture point-in-time project lifecycle status
   const [project] = await db

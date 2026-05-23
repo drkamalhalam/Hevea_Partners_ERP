@@ -1,15 +1,23 @@
 import { useState, useRef } from "react";
+import { Link } from "wouter";
 import { useAuth } from "@clerk/react";
 import {
   useListTemplates,
   useCreateTemplate,
-  useGetTemplate,
   useUpdateTemplate,
   useArchiveTemplate,
   useRestoreTemplate,
   getListTemplatesQueryKey,
 } from "@workspace/api-client-react";
 import type { AgreementTemplate } from "@workspace/api-client-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Settings2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRole } from "@/contexts/RoleContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -64,7 +72,38 @@ import { format } from "date-fns";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
-type StatusFilter = "active" | "archived";
+type StatusFilter = "draft" | "active" | "superseded" | "archived";
+type DocumentCategory =
+  | "agreement"
+  | "ownership_record"
+  | "transfer_document"
+  | "succession_document"
+  | "inheritance_document"
+  | "governance_document"
+  | "notice"
+  | "declaration"
+  | "certificate"
+  | "other";
+
+const CATEGORY_LABELS: Record<DocumentCategory, string> = {
+  agreement: "Agreement",
+  ownership_record: "Ownership Record",
+  transfer_document: "Transfer Document",
+  succession_document: "Succession Document",
+  inheritance_document: "Inheritance Document",
+  governance_document: "Governance Document",
+  notice: "Notice",
+  declaration: "Declaration",
+  certificate: "Certificate",
+  other: "Other",
+};
+
+const STATUS_BADGE: Record<string, string> = {
+  draft: "bg-slate-100 text-slate-700 border-slate-300",
+  active: "bg-emerald-100 text-emerald-800 border-emerald-300",
+  superseded: "bg-amber-100 text-amber-800 border-amber-300",
+  archived: "bg-zinc-100 text-zinc-600 border-zinc-300",
+};
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -104,7 +143,10 @@ function UploadDialog({ open, onClose, onSuccess }: UploadDialogProps) {
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [documentDescription, setDocumentDescription] = useState("");
+  const [notes, setNotes] = useState("");
   const [version, setVersion] = useState("1.0");
+  const [category, setCategory] = useState<DocumentCategory>("agreement");
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
@@ -160,7 +202,10 @@ function UploadDialog({ open, onClose, onSuccess }: UploadDialogProps) {
         data: {
           name: name.trim(),
           description: description.trim() || undefined,
+          documentDescription: documentDescription.trim() || undefined,
+          notes: notes.trim() || undefined,
           version: version.trim() || "1.0",
+          category,
           fileObjectPath: objectPath,
           fileFormat: fmt,
           mimeType: file.type,
@@ -179,7 +224,8 @@ function UploadDialog({ open, onClose, onSuccess }: UploadDialogProps) {
   }
 
   function handleClose() {
-    setName(""); setDescription(""); setVersion("1.0"); setFile(null); setUploading(false);
+    setName(""); setDescription(""); setDocumentDescription(""); setNotes("");
+    setVersion("1.0"); setCategory("agreement"); setFile(null); setUploading(false);
     onClose();
   }
 
@@ -239,16 +285,36 @@ function UploadDialog({ open, onClose, onSuccess }: UploadDialogProps) {
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
+              <Label htmlFor="tpl-category">Category <span className="text-destructive">*</span></Label>
+              <Select value={category} onValueChange={(v) => setCategory(v as DocumentCategory)}>
+                <SelectTrigger id="tpl-category">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {(Object.keys(CATEGORY_LABELS) as DocumentCategory[]).map((c) => (
+                    <SelectItem key={c} value={c}>{CATEGORY_LABELS[c]}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
               <Label htmlFor="tpl-version">Version</Label>
               <Input id="tpl-version" value={version} onChange={(e) => setVersion(e.target.value)} placeholder="1.0" />
             </div>
           </div>
 
           <div className="space-y-1">
-            <Label htmlFor="tpl-desc">Description</Label>
-            <Textarea id="tpl-desc" value={description} onChange={(e) => setDescription(e.target.value)}
-              placeholder="Optional notes about this template (clauses, use-case, legal references…)"
-              rows={3} />
+            <Label htmlFor="tpl-desc">Document Description</Label>
+            <Textarea id="tpl-desc" value={documentDescription} onChange={(e) => setDocumentDescription(e.target.value)}
+              placeholder="What this document is used for"
+              rows={2} />
+          </div>
+
+          <div className="space-y-1">
+            <Label htmlFor="tpl-notes">Internal Notes</Label>
+            <Textarea id="tpl-notes" value={notes} onChange={(e) => setNotes(e.target.value)}
+              placeholder="Admin-only notes (clauses, use-case, legal references…)"
+              rows={2} />
           </div>
 
           <div className="flex items-start gap-2 rounded-md bg-amber-50 border border-amber-200 p-3">
@@ -441,12 +507,13 @@ interface TemplateRowProps {
 
 function TemplateRow({ template, isSelected, canManage, onSelect, onEdit, onArchive, onRestore }: TemplateRowProps) {
   const isArchived = template.status === "archived";
+  const isDimmed = isArchived || template.status === "superseded";
 
   return (
     <div
       className={`flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-accent/50 transition-colors border-b last:border-0 ${
         isSelected ? "bg-accent" : ""
-      } ${isArchived ? "opacity-60" : ""}`}
+      } ${isDimmed ? "opacity-60" : ""}`}
       onClick={onSelect}
     >
       {/* Icon */}
@@ -456,12 +523,15 @@ function TemplateRow({ template, isSelected, canManage, onSelect, onEdit, onArch
 
       {/* Name + meta */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <span className="font-medium text-sm truncate">{template.name}</span>
           {fileFormatBadge(template.fileFormat)}
-          {isArchived && (
-            <Badge variant="outline" className="text-xs text-muted-foreground border-dashed">Archived</Badge>
-          )}
+          <Badge variant="outline" className={`text-xs ${STATUS_BADGE[template.status] ?? ""}`}>
+            {template.status}
+          </Badge>
+          <Badge variant="outline" className="text-[10px] font-mono uppercase">
+            {CATEGORY_LABELS[template.category as DocumentCategory] ?? template.category}
+          </Badge>
         </div>
         <div className="flex items-center gap-3 mt-0.5 text-xs text-muted-foreground">
           <span>v{template.version}</span>
@@ -469,8 +539,8 @@ function TemplateRow({ template, isSelected, canManage, onSelect, onEdit, onArch
           <span>{format(new Date(template.createdAt), "dd MMM yyyy")}</span>
           {template.uploadedByName && <span>by {template.uploadedByName}</span>}
         </div>
-        {template.description && (
-          <p className="text-xs text-muted-foreground mt-0.5 truncate">{template.description}</p>
+        {template.documentDescription && (
+          <p className="text-xs text-muted-foreground mt-0.5 truncate">{template.documentDescription}</p>
         )}
       </div>
 
@@ -482,10 +552,17 @@ function TemplateRow({ template, isSelected, canManage, onSelect, onEdit, onArch
               <MoreVertical className="h-3.5 w-3.5" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-40">
+          <DropdownMenuContent align="end" className="w-48">
             <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onSelect(); }}>
               <Eye className="h-4 w-4 mr-2" />Preview
             </DropdownMenuItem>
+            {template.fileFormat === "docx" && (
+              <DropdownMenuItem asChild>
+                <Link href={`/document-templates/${template.id}/variables`} onClick={(e) => e.stopPropagation()}>
+                  <Settings2 className="h-4 w-4 mr-2" />Variables &amp; Activation
+                </Link>
+              </DropdownMenuItem>
+            )}
             {!isArchived && (
               <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit(); }}>
                 <Pencil className="h-4 w-4 mr-2" />Edit
@@ -520,6 +597,7 @@ export default function TemplateLibrary() {
   const canManage = role === "admin" || role === "developer";
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("active");
+  const [categoryFilter, setCategoryFilter] = useState<DocumentCategory | "all">("all");
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [uploadOpen, setUploadOpen] = useState(false);
@@ -530,7 +608,10 @@ export default function TemplateLibrary() {
   const restoreTemplate = useRestoreTemplate();
 
   const { data: templates, isLoading } = useListTemplates(
-    { status: statusFilter }
+    {
+      status: statusFilter,
+      ...(categoryFilter !== "all" ? { category: categoryFilter } : {}),
+    }
   );
 
   const filtered = (templates ?? []).filter((t) =>
@@ -544,8 +625,6 @@ export default function TemplateLibrary() {
 
   function invalidate() {
     queryClient.invalidateQueries({ queryKey: getListTemplatesQueryKey() });
-    queryClient.invalidateQueries({ queryKey: getListTemplatesQueryKey({ status: "active" }) });
-    queryClient.invalidateQueries({ queryKey: getListTemplatesQueryKey({ status: "archived" }) });
   }
 
   async function handleArchive(template: AgreementTemplate) {
@@ -579,9 +658,9 @@ export default function TemplateLibrary() {
       <div className="shrink-0 px-6 py-5 border-b bg-background">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold">Agreement Templates</h1>
+            <h1 className="text-2xl font-bold">Document Templates</h1>
             <p className="text-sm text-muted-foreground mt-0.5">
-              Master template library — exact legal formatting is preserved
+              Central registry for all document categories — exact legal formatting is preserved
             </p>
           </div>
           {canManage && (
@@ -599,15 +678,17 @@ export default function TemplateLibrary() {
         <div className={`flex flex-col ${selected ? "w-[420px] shrink-0" : "flex-1"} overflow-hidden border-r`}>
           {/* Toolbar */}
           <div className="shrink-0 px-4 py-3 border-b space-y-3">
-            {/* Tabs */}
+            {/* Status Tabs */}
             <Tabs value={statusFilter} onValueChange={(v) => { setStatusFilter(v as StatusFilter); setSelectedId(null); }}>
               <TabsList className="h-8">
+                <TabsTrigger value="draft" className="text-xs h-7 px-3">Draft</TabsTrigger>
                 <TabsTrigger value="active" className="text-xs h-7 px-3">
                   Active
                   {statusFilter !== "active" && activeCnt > 0 && (
                     <span className="ml-1.5 rounded-full bg-primary/10 px-1.5 text-[10px] text-primary">{activeCnt}</span>
                   )}
                 </TabsTrigger>
+                <TabsTrigger value="superseded" className="text-xs h-7 px-3">Superseded</TabsTrigger>
                 <TabsTrigger value="archived" className="text-xs h-7 px-3">
                   Archived
                   {statusFilter !== "archived" && archivedCnt > 0 && (
@@ -616,6 +697,18 @@ export default function TemplateLibrary() {
                 </TabsTrigger>
               </TabsList>
             </Tabs>
+            {/* Category filter */}
+            <Select value={categoryFilter} onValueChange={(v) => { setCategoryFilter(v as DocumentCategory | "all"); setSelectedId(null); }}>
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue placeholder="All categories" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {(Object.keys(CATEGORY_LABELS) as DocumentCategory[]).map((c) => (
+                  <SelectItem key={c} value={c}>{CATEGORY_LABELS[c]}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             {/* Search */}
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />

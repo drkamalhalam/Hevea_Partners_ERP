@@ -68,6 +68,8 @@ import DataHealth from "./pages/DataHealth";
 import EnterpriseIntelligence from "./pages/EnterpriseIntelligence";
 import FieldOperations from "./pages/FieldOperations";
 import TemplateLibrary from "./pages/TemplateLibrary";
+import DocumentVariableRegistry from "./pages/DocumentVariableRegistry";
+import TemplateVariableMapping from "./pages/TemplateVariableMapping";
 
 // Pages — Operations
 import Production from "./pages/Production";
@@ -344,6 +346,9 @@ function AppRoutes() {
               <Route path="/landowner-account"><ProtectedRoute component={LandownerAccount} /></Route>
               <Route path="/burden-recovery"><ProtectedRoute component={BurdenRecovery} /></Route>
               <Route path="/templates"><ProtectedRoute component={TemplateLibrary} /></Route>
+              <Route path="/document-templates"><ProtectedRoute component={TemplateLibrary} /></Route>
+              <Route path="/document-templates/:id/variables"><ProtectedRoute component={TemplateVariableMapping} /></Route>
+              <Route path="/document-variables"><ProtectedRoute component={DocumentVariableRegistry} /></Route>
 
               {/* Operations — Production & Collection */}
               <Route path="/field-ops"><ProtectedRoute component={FieldOperations} /></Route>

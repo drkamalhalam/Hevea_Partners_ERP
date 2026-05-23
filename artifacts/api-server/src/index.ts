@@ -1,5 +1,6 @@
 import app from "./app";
 import { logger } from "./lib/logger";
+import { seedDocumentVariableRegistry } from "./lib/seedVariableRegistry";
 
 const rawPort = process.env["PORT"];
 
@@ -22,4 +23,7 @@ app.listen(port, (err) => {
   }
 
   logger.info({ port }, "Server listening");
+  seedDocumentVariableRegistry().catch((seedErr) => {
+    logger.warn({ err: seedErr }, "Document variable registry seed failed");
+  });
 });

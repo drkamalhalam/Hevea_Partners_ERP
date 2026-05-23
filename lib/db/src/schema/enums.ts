@@ -341,9 +341,87 @@ export const templateFileFormatEnum = pgEnum("template_file_format", [
  *   archived — removed from active library; retained for audit
  */
 export const templateStatusEnum = pgEnum("template_status", [
+  "draft",
   "active",
+  "superseded",
   "archived",
 ]);
+
+/**
+ * Document Template Categories — generic registry for all governance, legal,
+ * partnership, and operational document types. Drives single-active-per-category
+ * enforcement on activation.
+ */
+export const documentTemplateCategoryEnum = pgEnum(
+  "document_template_category",
+  [
+    "agreement",
+    "ownership_record",
+    "transfer_document",
+    "succession_document",
+    "inheritance_document",
+    "governance_document",
+    "notice",
+    "declaration",
+    "certificate",
+    "other",
+  ],
+);
+
+/**
+ * Source type for a placeholder in the central Document Variable Registry.
+ * Every {{TOKEN}} used by any template must resolve to exactly one of these.
+ *   project_field    — value comes from projectsTable
+ *   person_field     — value comes from personMasterTable (Person Registry)
+ *   schedule_a_field — value comes from the project's Schedule A record
+ *   agreement_field  — value comes from the linked agreementsTable row
+ *   calculated       — value is derived by a formula (e.g. amount-in-words)
+ *   system_generated — system-supplied value (current_date, system constants)
+ */
+export const documentVariableSourceTypeEnum = pgEnum(
+  "document_variable_source_type",
+  [
+    "project_field",
+    "person_field",
+    "schedule_a_field",
+    "agreement_field",
+    "calculated",
+    "system_generated",
+  ],
+);
+
+/**
+ * Per-template placeholder mapping status. Computed by comparing detected
+ * placeholders against the central Document Variable Registry.
+ *   mapped  — placeholder exists in template AND in registry
+ *   missing — placeholder is registered as required for this category but
+ *             is NOT present in template
+ *   invalid — placeholder syntax is malformed
+ *   unused  — placeholder is present in template but not registered
+ */
+export const documentTemplateVariableStatusEnum = pgEnum(
+  "document_template_variable_status",
+  ["mapped", "missing", "invalid", "unused"],
+);
+
+/**
+ * Audit event types for the Document Template lifecycle.
+ */
+export const documentTemplateAuditEventEnum = pgEnum(
+  "document_template_audit_event",
+  [
+    "uploaded",
+    "parsed",
+    "mapping_updated",
+    "metadata_updated",
+    "activated",
+    "superseded",
+    "archived",
+    "restored",
+    "downloaded",
+    "generated",
+  ],
+);
 
 // ── Agreement activation workflow enums ──────────────────────────────────
 

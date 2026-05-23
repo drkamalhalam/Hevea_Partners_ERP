@@ -10,6 +10,8 @@ export type ListTemplatesStatus =
   (typeof ListTemplatesStatus)[keyof typeof ListTemplatesStatus];
 
 export const ListTemplatesStatus = {
+  draft: "draft",
   active: "active",
+  superseded: "superseded",
   archived: "archived",
 } as const;

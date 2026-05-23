@@ -180,8 +180,15 @@ function StepSelectTemplate({
   onSelect: (id: string) => void;
 }) {
   const { data: templates, isLoading } = useListTemplates(
-    { status: "active" },
-    { query: { queryKey: getListTemplatesQueryKey({ status: "active" }) } },
+    { status: "active", category: "agreement" },
+    {
+      query: {
+        queryKey: getListTemplatesQueryKey({
+          status: "active",
+          category: "agreement",
+        }),
+      },
+    },
   );
 
   const docxTemplates = (templates ?? []).filter((t) => t.fileFormat === "docx");
@@ -683,8 +690,15 @@ export default function GenerateAgreement() {
     query: { queryKey: getListAgreementsQueryKey() },
   });
   const { data: templates } = useListTemplates(
-    { status: "active" },
-    { query: { queryKey: getListTemplatesQueryKey({ status: "active" }) } },
+    { status: "active", category: "agreement" },
+    {
+      query: {
+        queryKey: getListTemplatesQueryKey({
+          status: "active",
+          category: "agreement",
+        }),
+      },
+    },
   );
   const { data: varsData } = useListAgreementVariables(agreementId, {
     query: {

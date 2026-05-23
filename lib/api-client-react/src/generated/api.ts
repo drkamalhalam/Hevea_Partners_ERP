@@ -23,6 +23,7 @@ import type {
   AcknowledgeAdvanceBody,
   AcknowledgeClosureBody,
   ActivateProjectViaOnboarding200,
+  ActivateTemplateBody,
   ActivateWorkAssignmentBody,
   ActivityItem,
   AddDisputeEvent200,
@@ -130,6 +131,7 @@ import type {
   CreateDistributionRecord201,
   CreateDistributionRecordBody,
   CreateDocumentBody,
+  CreateDocumentVariableBody,
   CreateEppEntry201,
   CreateEppEntryBody,
   CreateEvidence201,
@@ -230,6 +232,8 @@ import type {
   DistributionSummary,
   Document,
   DocumentAccessLogEntry,
+  DocumentTemplateAuditEvent,
+  DocumentVariableRegistryEntry,
   EditCollectionEntryBody,
   EditStoreEntryBody,
   EditWorkAssignmentBody,
@@ -413,6 +417,7 @@ import type {
   ListDistributionRecords200,
   ListDistributionRecordsParams,
   ListDocumentAccessLogParams,
+  ListDocumentVariablesParams,
   ListDocumentsParams,
   ListEvidence200,
   ListEvidenceParams,
@@ -661,7 +666,9 @@ import type {
   StoreEntry,
   SubmitOwnershipTransferBody,
   SuccessResponse,
+  SupersedeTemplateBody,
   TaskSummary,
+  TemplateVariableMappingResponse,
   ToggleStoreActive200,
   TransferOtpEvent,
   TransferRofrDashboard,
@@ -690,6 +697,7 @@ import type {
   UpdateDistributionRecord200,
   UpdateDistributionRecordBody,
   UpdateDocumentBody,
+  UpdateDocumentVariableBody,
   UpdateEppEntry200,
   UpdateEppEntryBody,
   UpdateEvidenceStatus200,
@@ -11893,6 +11901,900 @@ export const useRestoreTemplate = <
   TContext
 > => {
   return useMutation(getRestoreTemplateMutationOptions(options));
+};
+
+/**
+ * @summary Parse the DOCX file for placeholders and rebuild the mapping table
+ */
+export const getParseTemplateUrl = (id: string) => {
+  return `/api/templates/${id}/parse`;
+};
+
+export const parseTemplate = async (
+  id: string,
+  options?: RequestInit,
+): Promise<TemplateVariableMappingResponse> => {
+  return customFetch<TemplateVariableMappingResponse>(getParseTemplateUrl(id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getParseTemplateMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof parseTemplate>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof parseTemplate>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["parseTemplate"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof parseTemplate>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return parseTemplate(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ParseTemplateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof parseTemplate>>
+>;
+
+export type ParseTemplateMutationError = ErrorType<void>;
+
+/**
+ * @summary Parse the DOCX file for placeholders and rebuild the mapping table
+ */
+export const useParseTemplate = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof parseTemplate>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof parseTemplate>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getParseTemplateMutationOptions(options));
+};
+
+/**
+ * @summary List placeholder mappings for a template
+ */
+export const getGetTemplateVariablesUrl = (id: string) => {
+  return `/api/templates/${id}/variables`;
+};
+
+export const getTemplateVariables = async (
+  id: string,
+  options?: RequestInit,
+): Promise<TemplateVariableMappingResponse> => {
+  return customFetch<TemplateVariableMappingResponse>(
+    getGetTemplateVariablesUrl(id),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetTemplateVariablesQueryKey = (id: string) => {
+  return [`/api/templates/${id}/variables`] as const;
+};
+
+export const getGetTemplateVariablesQueryOptions = <
+  TData = Awaited<ReturnType<typeof getTemplateVariables>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getTemplateVariables>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetTemplateVariablesQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getTemplateVariables>>
+  > = ({ signal }) => getTemplateVariables(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getTemplateVariables>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetTemplateVariablesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getTemplateVariables>>
+>;
+export type GetTemplateVariablesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List placeholder mappings for a template
+ */
+
+export function useGetTemplateVariables<
+  TData = Awaited<ReturnType<typeof getTemplateVariables>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getTemplateVariables>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetTemplateVariablesQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Activate a draft or superseded template (validates mapping, supersedes prior active in category)
+ */
+export const getActivateTemplateUrl = (id: string) => {
+  return `/api/templates/${id}/activate`;
+};
+
+export const activateTemplate = async (
+  id: string,
+  activateTemplateBody?: ActivateTemplateBody,
+  options?: RequestInit,
+): Promise<AgreementTemplate> => {
+  return customFetch<AgreementTemplate>(getActivateTemplateUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(activateTemplateBody),
+  });
+};
+
+export const getActivateTemplateMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof activateTemplate>>,
+    TError,
+    { id: string; data: BodyType<ActivateTemplateBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof activateTemplate>>,
+  TError,
+  { id: string; data: BodyType<ActivateTemplateBody> },
+  TContext
+> => {
+  const mutationKey = ["activateTemplate"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof activateTemplate>>,
+    { id: string; data: BodyType<ActivateTemplateBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return activateTemplate(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ActivateTemplateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof activateTemplate>>
+>;
+export type ActivateTemplateMutationBody = BodyType<ActivateTemplateBody>;
+export type ActivateTemplateMutationError = ErrorType<void>;
+
+/**
+ * @summary Activate a draft or superseded template (validates mapping, supersedes prior active in category)
+ */
+export const useActivateTemplate = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof activateTemplate>>,
+    TError,
+    { id: string; data: BodyType<ActivateTemplateBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof activateTemplate>>,
+  TError,
+  { id: string; data: BodyType<ActivateTemplateBody> },
+  TContext
+> => {
+  return useMutation(getActivateTemplateMutationOptions(options));
+};
+
+/**
+ * @summary Mark an active template as superseded
+ */
+export const getSupersedeTemplateUrl = (id: string) => {
+  return `/api/templates/${id}/supersede`;
+};
+
+export const supersedeTemplate = async (
+  id: string,
+  supersedeTemplateBody?: SupersedeTemplateBody,
+  options?: RequestInit,
+): Promise<AgreementTemplate> => {
+  return customFetch<AgreementTemplate>(getSupersedeTemplateUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(supersedeTemplateBody),
+  });
+};
+
+export const getSupersedeTemplateMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof supersedeTemplate>>,
+    TError,
+    { id: string; data: BodyType<SupersedeTemplateBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof supersedeTemplate>>,
+  TError,
+  { id: string; data: BodyType<SupersedeTemplateBody> },
+  TContext
+> => {
+  const mutationKey = ["supersedeTemplate"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof supersedeTemplate>>,
+    { id: string; data: BodyType<SupersedeTemplateBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return supersedeTemplate(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SupersedeTemplateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof supersedeTemplate>>
+>;
+export type SupersedeTemplateMutationBody = BodyType<SupersedeTemplateBody>;
+export type SupersedeTemplateMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Mark an active template as superseded
+ */
+export const useSupersedeTemplate = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof supersedeTemplate>>,
+    TError,
+    { id: string; data: BodyType<SupersedeTemplateBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof supersedeTemplate>>,
+  TError,
+  { id: string; data: BodyType<SupersedeTemplateBody> },
+  TContext
+> => {
+  return useMutation(getSupersedeTemplateMutationOptions(options));
+};
+
+/**
+ * @summary Lifecycle audit history for a template
+ */
+export const getGetTemplateAuditUrl = (id: string) => {
+  return `/api/templates/${id}/audit`;
+};
+
+export const getTemplateAudit = async (
+  id: string,
+  options?: RequestInit,
+): Promise<DocumentTemplateAuditEvent[]> => {
+  return customFetch<DocumentTemplateAuditEvent[]>(getGetTemplateAuditUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetTemplateAuditQueryKey = (id: string) => {
+  return [`/api/templates/${id}/audit`] as const;
+};
+
+export const getGetTemplateAuditQueryOptions = <
+  TData = Awaited<ReturnType<typeof getTemplateAudit>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getTemplateAudit>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetTemplateAuditQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getTemplateAudit>>
+  > = ({ signal }) => getTemplateAudit(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getTemplateAudit>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetTemplateAuditQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getTemplateAudit>>
+>;
+export type GetTemplateAuditQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Lifecycle audit history for a template
+ */
+
+export function useGetTemplateAudit<
+  TData = Awaited<ReturnType<typeof getTemplateAudit>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getTemplateAudit>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetTemplateAuditQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List entries in the Document Variable Registry
+ */
+export const getListDocumentVariablesUrl = (
+  params?: ListDocumentVariablesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/document-variables?${stringifiedParams}`
+    : `/api/document-variables`;
+};
+
+export const listDocumentVariables = async (
+  params?: ListDocumentVariablesParams,
+  options?: RequestInit,
+): Promise<DocumentVariableRegistryEntry[]> => {
+  return customFetch<DocumentVariableRegistryEntry[]>(
+    getListDocumentVariablesUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListDocumentVariablesQueryKey = (
+  params?: ListDocumentVariablesParams,
+) => {
+  return [`/api/document-variables`, ...(params ? [params] : [])] as const;
+};
+
+export const getListDocumentVariablesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listDocumentVariables>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListDocumentVariablesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listDocumentVariables>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListDocumentVariablesQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listDocumentVariables>>
+  > = ({ signal }) =>
+    listDocumentVariables(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listDocumentVariables>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListDocumentVariablesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listDocumentVariables>>
+>;
+export type ListDocumentVariablesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List entries in the Document Variable Registry
+ */
+
+export function useListDocumentVariables<
+  TData = Awaited<ReturnType<typeof listDocumentVariables>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListDocumentVariablesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listDocumentVariables>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListDocumentVariablesQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a new Document Variable Registry entry (admin/developer)
+ */
+export const getCreateDocumentVariableUrl = () => {
+  return `/api/document-variables`;
+};
+
+export const createDocumentVariable = async (
+  createDocumentVariableBody: CreateDocumentVariableBody,
+  options?: RequestInit,
+): Promise<DocumentVariableRegistryEntry> => {
+  return customFetch<DocumentVariableRegistryEntry>(
+    getCreateDocumentVariableUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(createDocumentVariableBody),
+    },
+  );
+};
+
+export const getCreateDocumentVariableMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createDocumentVariable>>,
+    TError,
+    { data: BodyType<CreateDocumentVariableBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createDocumentVariable>>,
+  TError,
+  { data: BodyType<CreateDocumentVariableBody> },
+  TContext
+> => {
+  const mutationKey = ["createDocumentVariable"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createDocumentVariable>>,
+    { data: BodyType<CreateDocumentVariableBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createDocumentVariable(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateDocumentVariableMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createDocumentVariable>>
+>;
+export type CreateDocumentVariableMutationBody =
+  BodyType<CreateDocumentVariableBody>;
+export type CreateDocumentVariableMutationError = ErrorType<void>;
+
+/**
+ * @summary Create a new Document Variable Registry entry (admin/developer)
+ */
+export const useCreateDocumentVariable = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createDocumentVariable>>,
+    TError,
+    { data: BodyType<CreateDocumentVariableBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createDocumentVariable>>,
+  TError,
+  { data: BodyType<CreateDocumentVariableBody> },
+  TContext
+> => {
+  return useMutation(getCreateDocumentVariableMutationOptions(options));
+};
+
+/**
+ * @summary Get a single registry entry
+ */
+export const getGetDocumentVariableUrl = (id: string) => {
+  return `/api/document-variables/${id}`;
+};
+
+export const getDocumentVariable = async (
+  id: string,
+  options?: RequestInit,
+): Promise<DocumentVariableRegistryEntry> => {
+  return customFetch<DocumentVariableRegistryEntry>(
+    getGetDocumentVariableUrl(id),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetDocumentVariableQueryKey = (id: string) => {
+  return [`/api/document-variables/${id}`] as const;
+};
+
+export const getGetDocumentVariableQueryOptions = <
+  TData = Awaited<ReturnType<typeof getDocumentVariable>>,
+  TError = ErrorType<void>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getDocumentVariable>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetDocumentVariableQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getDocumentVariable>>
+  > = ({ signal }) => getDocumentVariable(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getDocumentVariable>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetDocumentVariableQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getDocumentVariable>>
+>;
+export type GetDocumentVariableQueryError = ErrorType<void>;
+
+/**
+ * @summary Get a single registry entry
+ */
+
+export function useGetDocumentVariable<
+  TData = Awaited<ReturnType<typeof getDocumentVariable>>,
+  TError = ErrorType<void>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getDocumentVariable>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetDocumentVariableQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Update a registry entry (admin/developer)
+ */
+export const getUpdateDocumentVariableUrl = (id: string) => {
+  return `/api/document-variables/${id}`;
+};
+
+export const updateDocumentVariable = async (
+  id: string,
+  updateDocumentVariableBody: UpdateDocumentVariableBody,
+  options?: RequestInit,
+): Promise<DocumentVariableRegistryEntry> => {
+  return customFetch<DocumentVariableRegistryEntry>(
+    getUpdateDocumentVariableUrl(id),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(updateDocumentVariableBody),
+    },
+  );
+};
+
+export const getUpdateDocumentVariableMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateDocumentVariable>>,
+    TError,
+    { id: string; data: BodyType<UpdateDocumentVariableBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateDocumentVariable>>,
+  TError,
+  { id: string; data: BodyType<UpdateDocumentVariableBody> },
+  TContext
+> => {
+  const mutationKey = ["updateDocumentVariable"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateDocumentVariable>>,
+    { id: string; data: BodyType<UpdateDocumentVariableBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateDocumentVariable(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateDocumentVariableMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateDocumentVariable>>
+>;
+export type UpdateDocumentVariableMutationBody =
+  BodyType<UpdateDocumentVariableBody>;
+export type UpdateDocumentVariableMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update a registry entry (admin/developer)
+ */
+export const useUpdateDocumentVariable = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateDocumentVariable>>,
+    TError,
+    { id: string; data: BodyType<UpdateDocumentVariableBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateDocumentVariable>>,
+  TError,
+  { id: string; data: BodyType<UpdateDocumentVariableBody> },
+  TContext
+> => {
+  return useMutation(getUpdateDocumentVariableMutationOptions(options));
+};
+
+/**
+ * @summary Soft-deactivate a registry entry (admin only)
+ */
+export const getDeleteDocumentVariableUrl = (id: string) => {
+  return `/api/document-variables/${id}`;
+};
+
+export const deleteDocumentVariable = async (
+  id: string,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteDocumentVariableUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteDocumentVariableMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteDocumentVariable>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteDocumentVariable>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["deleteDocumentVariable"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteDocumentVariable>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteDocumentVariable(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteDocumentVariableMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteDocumentVariable>>
+>;
+
+export type DeleteDocumentVariableMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Soft-deactivate a registry entry (admin only)
+ */
+export const useDeleteDocumentVariable = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteDocumentVariable>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteDocumentVariable>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getDeleteDocumentVariableMutationOptions(options));
 };
 
 /**

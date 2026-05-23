@@ -9,4 +9,5 @@ import type { ListTemplatesStatus } from "./listTemplatesStatus";
 
 export type ListTemplatesParams = {
   status?: ListTemplatesStatus;
+  category?: string;
 };

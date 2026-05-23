@@ -5,6 +5,7 @@
  * Rubber Plantation Partnership API
  * OpenAPI spec version: 0.1.0
  */
+import type { AgreementTemplateCategory } from "./agreementTemplateCategory";
 import type { AgreementTemplateFileFormat } from "./agreementTemplateFileFormat";
 import type { AgreementTemplateStatus } from "./agreementTemplateStatus";
 
@@ -13,7 +14,12 @@ export interface AgreementTemplate {
   name: string;
   /** @nullable */
   description?: string | null;
+  /** @nullable */
+  documentDescription?: string | null;
+  /** @nullable */
+  notes?: string | null;
   version: string;
+  category: AgreementTemplateCategory;
   fileObjectPath: string;
   fileFormat: AgreementTemplateFileFormat;
   mimeType: string;
@@ -25,6 +31,16 @@ export interface AgreementTemplate {
   uploadedBy?: string | null;
   /** @nullable */
   uploadedByName?: string | null;
+  /** @nullable */
+  activatedAt?: Date | null;
+  /** @nullable */
+  activatedBy?: string | null;
+  /** @nullable */
+  supersededAt?: Date | null;
+  /** @nullable */
+  supersededBy?: string | null;
+  /** @nullable */
+  supersededTemplateId?: string | null;
   /** @nullable */
   archivedAt?: Date | null;
   /** @nullable */

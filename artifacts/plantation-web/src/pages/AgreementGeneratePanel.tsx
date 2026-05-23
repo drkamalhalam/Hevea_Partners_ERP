@@ -45,8 +45,16 @@ export default function AgreementGeneratePanel({ agreementId }: Props) {
   const canGenerate = isAdmin || isDeveloper;
 
   const { data: templates } = useListTemplates(
-    { status: "active" },
-    { query: { enabled: canGenerate, queryKey: getListTemplatesQueryKey({ status: "active" }) } },
+    { status: "active", category: "agreement" },
+    {
+      query: {
+        enabled: canGenerate,
+        queryKey: getListTemplatesQueryKey({
+          status: "active",
+          category: "agreement",
+        }),
+      },
+    },
   );
 
   const { data: variablesData } = useListAgreementVariables(agreementId, {

@@ -4872,22 +4872,42 @@ export const DownloadDocumentParams = zod.object({
  * @summary List agreement templates
  */
 export const ListTemplatesQueryParams = zod.object({
-  status: zod.enum(["active", "archived"]).optional(),
+  status: zod.enum(["draft", "active", "superseded", "archived"]).optional(),
+  category: zod.coerce.string().optional(),
 });
 
 export const ListTemplatesResponseItem = zod.object({
   id: zod.string().uuid(),
   name: zod.string(),
   description: zod.string().nullish(),
+  documentDescription: zod.string().nullish(),
+  notes: zod.string().nullish(),
   version: zod.string(),
+  category: zod.enum([
+    "agreement",
+    "ownership_record",
+    "transfer_document",
+    "succession_document",
+    "inheritance_document",
+    "governance_document",
+    "notice",
+    "declaration",
+    "certificate",
+    "other",
+  ]),
   fileObjectPath: zod.string(),
   fileFormat: zod.enum(["docx", "pdf"]),
   mimeType: zod.string(),
   fileSizeBytes: zod.number().nullish(),
-  status: zod.enum(["active", "archived"]),
+  status: zod.enum(["draft", "active", "superseded", "archived"]),
   isActive: zod.boolean(),
   uploadedBy: zod.string().uuid().nullish(),
   uploadedByName: zod.string().nullish(),
+  activatedAt: zod.coerce.date().nullish(),
+  activatedBy: zod.string().uuid().nullish(),
+  supersededAt: zod.coerce.date().nullish(),
+  supersededBy: zod.string().uuid().nullish(),
+  supersededTemplateId: zod.string().uuid().nullish(),
   archivedAt: zod.coerce.date().nullish(),
   archivedBy: zod.string().uuid().nullish(),
   createdAt: zod.coerce.date(),
@@ -4898,10 +4918,28 @@ export const ListTemplatesResponse = zod.array(ListTemplatesResponseItem);
 /**
  * @summary Create a new template record (after file upload)
  */
+export const createTemplateBodyCategoryDefault = `agreement`;
+
 export const CreateTemplateBody = zod.object({
   name: zod.string(),
   description: zod.string().optional(),
+  documentDescription: zod.string().optional(),
+  notes: zod.string().optional(),
   version: zod.string().optional(),
+  category: zod
+    .enum([
+      "agreement",
+      "ownership_record",
+      "transfer_document",
+      "succession_document",
+      "inheritance_document",
+      "governance_document",
+      "notice",
+      "declaration",
+      "certificate",
+      "other",
+    ])
+    .default(createTemplateBodyCategoryDefault),
   fileObjectPath: zod.string(),
   fileFormat: zod.enum(["docx", "pdf"]),
   mimeType: zod.string(),
@@ -4919,15 +4957,34 @@ export const GetTemplateResponse = zod.object({
   id: zod.string().uuid(),
   name: zod.string(),
   description: zod.string().nullish(),
+  documentDescription: zod.string().nullish(),
+  notes: zod.string().nullish(),
   version: zod.string(),
+  category: zod.enum([
+    "agreement",
+    "ownership_record",
+    "transfer_document",
+    "succession_document",
+    "inheritance_document",
+    "governance_document",
+    "notice",
+    "declaration",
+    "certificate",
+    "other",
+  ]),
   fileObjectPath: zod.string(),
   fileFormat: zod.enum(["docx", "pdf"]),
   mimeType: zod.string(),
   fileSizeBytes: zod.number().nullish(),
-  status: zod.enum(["active", "archived"]),
+  status: zod.enum(["draft", "active", "superseded", "archived"]),
   isActive: zod.boolean(),
   uploadedBy: zod.string().uuid().nullish(),
   uploadedByName: zod.string().nullish(),
+  activatedAt: zod.coerce.date().nullish(),
+  activatedBy: zod.string().uuid().nullish(),
+  supersededAt: zod.coerce.date().nullish(),
+  supersededBy: zod.string().uuid().nullish(),
+  supersededTemplateId: zod.string().uuid().nullish(),
   archivedAt: zod.coerce.date().nullish(),
   archivedBy: zod.string().uuid().nullish(),
   createdAt: zod.coerce.date(),
@@ -4944,22 +5001,57 @@ export const UpdateTemplateParams = zod.object({
 export const UpdateTemplateBody = zod.object({
   name: zod.string().optional(),
   description: zod.string().optional(),
+  documentDescription: zod.string().optional(),
+  notes: zod.string().optional(),
   version: zod.string().optional(),
+  category: zod
+    .enum([
+      "agreement",
+      "ownership_record",
+      "transfer_document",
+      "succession_document",
+      "inheritance_document",
+      "governance_document",
+      "notice",
+      "declaration",
+      "certificate",
+      "other",
+    ])
+    .optional(),
 });
 
 export const UpdateTemplateResponse = zod.object({
   id: zod.string().uuid(),
   name: zod.string(),
   description: zod.string().nullish(),
+  documentDescription: zod.string().nullish(),
+  notes: zod.string().nullish(),
   version: zod.string(),
+  category: zod.enum([
+    "agreement",
+    "ownership_record",
+    "transfer_document",
+    "succession_document",
+    "inheritance_document",
+    "governance_document",
+    "notice",
+    "declaration",
+    "certificate",
+    "other",
+  ]),
   fileObjectPath: zod.string(),
   fileFormat: zod.enum(["docx", "pdf"]),
   mimeType: zod.string(),
   fileSizeBytes: zod.number().nullish(),
-  status: zod.enum(["active", "archived"]),
+  status: zod.enum(["draft", "active", "superseded", "archived"]),
   isActive: zod.boolean(),
   uploadedBy: zod.string().uuid().nullish(),
   uploadedByName: zod.string().nullish(),
+  activatedAt: zod.coerce.date().nullish(),
+  activatedBy: zod.string().uuid().nullish(),
+  supersededAt: zod.coerce.date().nullish(),
+  supersededBy: zod.string().uuid().nullish(),
+  supersededTemplateId: zod.string().uuid().nullish(),
   archivedAt: zod.coerce.date().nullish(),
   archivedBy: zod.string().uuid().nullish(),
   createdAt: zod.coerce.date(),
@@ -4977,15 +5069,34 @@ export const ArchiveTemplateResponse = zod.object({
   id: zod.string().uuid(),
   name: zod.string(),
   description: zod.string().nullish(),
+  documentDescription: zod.string().nullish(),
+  notes: zod.string().nullish(),
   version: zod.string(),
+  category: zod.enum([
+    "agreement",
+    "ownership_record",
+    "transfer_document",
+    "succession_document",
+    "inheritance_document",
+    "governance_document",
+    "notice",
+    "declaration",
+    "certificate",
+    "other",
+  ]),
   fileObjectPath: zod.string(),
   fileFormat: zod.enum(["docx", "pdf"]),
   mimeType: zod.string(),
   fileSizeBytes: zod.number().nullish(),
-  status: zod.enum(["active", "archived"]),
+  status: zod.enum(["draft", "active", "superseded", "archived"]),
   isActive: zod.boolean(),
   uploadedBy: zod.string().uuid().nullish(),
   uploadedByName: zod.string().nullish(),
+  activatedAt: zod.coerce.date().nullish(),
+  activatedBy: zod.string().uuid().nullish(),
+  supersededAt: zod.coerce.date().nullish(),
+  supersededBy: zod.string().uuid().nullish(),
+  supersededTemplateId: zod.string().uuid().nullish(),
   archivedAt: zod.coerce.date().nullish(),
   archivedBy: zod.string().uuid().nullish(),
   createdAt: zod.coerce.date(),
@@ -5003,19 +5114,454 @@ export const RestoreTemplateResponse = zod.object({
   id: zod.string().uuid(),
   name: zod.string(),
   description: zod.string().nullish(),
+  documentDescription: zod.string().nullish(),
+  notes: zod.string().nullish(),
   version: zod.string(),
+  category: zod.enum([
+    "agreement",
+    "ownership_record",
+    "transfer_document",
+    "succession_document",
+    "inheritance_document",
+    "governance_document",
+    "notice",
+    "declaration",
+    "certificate",
+    "other",
+  ]),
   fileObjectPath: zod.string(),
   fileFormat: zod.enum(["docx", "pdf"]),
   mimeType: zod.string(),
   fileSizeBytes: zod.number().nullish(),
-  status: zod.enum(["active", "archived"]),
+  status: zod.enum(["draft", "active", "superseded", "archived"]),
   isActive: zod.boolean(),
   uploadedBy: zod.string().uuid().nullish(),
   uploadedByName: zod.string().nullish(),
+  activatedAt: zod.coerce.date().nullish(),
+  activatedBy: zod.string().uuid().nullish(),
+  supersededAt: zod.coerce.date().nullish(),
+  supersededBy: zod.string().uuid().nullish(),
+  supersededTemplateId: zod.string().uuid().nullish(),
   archivedAt: zod.coerce.date().nullish(),
   archivedBy: zod.string().uuid().nullish(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date().nullish(),
+});
+
+/**
+ * @summary Parse the DOCX file for placeholders and rebuild the mapping table
+ */
+export const ParseTemplateParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const ParseTemplateResponse = zod.object({
+  templateId: zod.string().uuid(),
+  items: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      templateId: zod.string().uuid(),
+      variableKey: zod.string(),
+      status: zod.enum(["mapped", "missing", "invalid", "unused"]),
+      detectedAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+      registryEntry: zod
+        .union([
+          zod.object({
+            id: zod.string().uuid(),
+            variableKey: zod.string(),
+            label: zod.string(),
+            description: zod.string().nullish(),
+            sourceType: zod.enum([
+              "project_field",
+              "person_field",
+              "schedule_a_field",
+              "agreement_field",
+              "calculated",
+              "system_generated",
+            ]),
+            sourceField: zod.string().nullish(),
+            dataType: zod.string(),
+            isRequired: zod.boolean(),
+            exampleValue: zod.string().nullish(),
+            groupName: zod.string().nullish(),
+            isActive: zod.boolean(),
+            createdBy: zod.string().uuid().nullish(),
+            createdByName: zod.string().nullish(),
+            createdAt: zod.coerce.date(),
+            updatedAt: zod.coerce.date(),
+          }),
+          zod.null(),
+        ])
+        .optional(),
+    }),
+  ),
+  summary: zod.object({
+    total: zod.number(),
+    mapped: zod.number(),
+    missing: zod.number(),
+    invalid: zod.number(),
+    unused: zod.number(),
+    canActivate: zod.boolean(),
+    blockers: zod.array(zod.string()).optional(),
+  }),
+});
+
+/**
+ * @summary List placeholder mappings for a template
+ */
+export const GetTemplateVariablesParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const GetTemplateVariablesResponse = zod.object({
+  templateId: zod.string().uuid(),
+  items: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      templateId: zod.string().uuid(),
+      variableKey: zod.string(),
+      status: zod.enum(["mapped", "missing", "invalid", "unused"]),
+      detectedAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+      registryEntry: zod
+        .union([
+          zod.object({
+            id: zod.string().uuid(),
+            variableKey: zod.string(),
+            label: zod.string(),
+            description: zod.string().nullish(),
+            sourceType: zod.enum([
+              "project_field",
+              "person_field",
+              "schedule_a_field",
+              "agreement_field",
+              "calculated",
+              "system_generated",
+            ]),
+            sourceField: zod.string().nullish(),
+            dataType: zod.string(),
+            isRequired: zod.boolean(),
+            exampleValue: zod.string().nullish(),
+            groupName: zod.string().nullish(),
+            isActive: zod.boolean(),
+            createdBy: zod.string().uuid().nullish(),
+            createdByName: zod.string().nullish(),
+            createdAt: zod.coerce.date(),
+            updatedAt: zod.coerce.date(),
+          }),
+          zod.null(),
+        ])
+        .optional(),
+    }),
+  ),
+  summary: zod.object({
+    total: zod.number(),
+    mapped: zod.number(),
+    missing: zod.number(),
+    invalid: zod.number(),
+    unused: zod.number(),
+    canActivate: zod.boolean(),
+    blockers: zod.array(zod.string()).optional(),
+  }),
+});
+
+/**
+ * @summary Activate a draft or superseded template (validates mapping, supersedes prior active in category)
+ */
+export const ActivateTemplateParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const ActivateTemplateBody = zod.object({
+  reason: zod.string().optional(),
+});
+
+export const ActivateTemplateResponse = zod.object({
+  id: zod.string().uuid(),
+  name: zod.string(),
+  description: zod.string().nullish(),
+  documentDescription: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  version: zod.string(),
+  category: zod.enum([
+    "agreement",
+    "ownership_record",
+    "transfer_document",
+    "succession_document",
+    "inheritance_document",
+    "governance_document",
+    "notice",
+    "declaration",
+    "certificate",
+    "other",
+  ]),
+  fileObjectPath: zod.string(),
+  fileFormat: zod.enum(["docx", "pdf"]),
+  mimeType: zod.string(),
+  fileSizeBytes: zod.number().nullish(),
+  status: zod.enum(["draft", "active", "superseded", "archived"]),
+  isActive: zod.boolean(),
+  uploadedBy: zod.string().uuid().nullish(),
+  uploadedByName: zod.string().nullish(),
+  activatedAt: zod.coerce.date().nullish(),
+  activatedBy: zod.string().uuid().nullish(),
+  supersededAt: zod.coerce.date().nullish(),
+  supersededBy: zod.string().uuid().nullish(),
+  supersededTemplateId: zod.string().uuid().nullish(),
+  archivedAt: zod.coerce.date().nullish(),
+  archivedBy: zod.string().uuid().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date().nullish(),
+});
+
+/**
+ * @summary Mark an active template as superseded
+ */
+export const SupersedeTemplateParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const SupersedeTemplateBody = zod.object({
+  replacementTemplateId: zod.string().uuid().optional(),
+  reason: zod.string().optional(),
+});
+
+export const SupersedeTemplateResponse = zod.object({
+  id: zod.string().uuid(),
+  name: zod.string(),
+  description: zod.string().nullish(),
+  documentDescription: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  version: zod.string(),
+  category: zod.enum([
+    "agreement",
+    "ownership_record",
+    "transfer_document",
+    "succession_document",
+    "inheritance_document",
+    "governance_document",
+    "notice",
+    "declaration",
+    "certificate",
+    "other",
+  ]),
+  fileObjectPath: zod.string(),
+  fileFormat: zod.enum(["docx", "pdf"]),
+  mimeType: zod.string(),
+  fileSizeBytes: zod.number().nullish(),
+  status: zod.enum(["draft", "active", "superseded", "archived"]),
+  isActive: zod.boolean(),
+  uploadedBy: zod.string().uuid().nullish(),
+  uploadedByName: zod.string().nullish(),
+  activatedAt: zod.coerce.date().nullish(),
+  activatedBy: zod.string().uuid().nullish(),
+  supersededAt: zod.coerce.date().nullish(),
+  supersededBy: zod.string().uuid().nullish(),
+  supersededTemplateId: zod.string().uuid().nullish(),
+  archivedAt: zod.coerce.date().nullish(),
+  archivedBy: zod.string().uuid().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date().nullish(),
+});
+
+/**
+ * @summary Lifecycle audit history for a template
+ */
+export const GetTemplateAuditParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const GetTemplateAuditResponseItem = zod.object({
+  id: zod.string().uuid(),
+  templateId: zod.string().uuid(),
+  eventType: zod.enum([
+    "uploaded",
+    "parsed",
+    "mapping_updated",
+    "metadata_updated",
+    "activated",
+    "superseded",
+    "archived",
+    "restored",
+    "downloaded",
+    "generated",
+  ]),
+  performedById: zod.string().uuid().nullish(),
+  performedByName: zod.string().nullish(),
+  reason: zod.string().nullish(),
+  payload: zod
+    .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+    .optional(),
+  createdAt: zod.coerce.date(),
+});
+export const GetTemplateAuditResponse = zod.array(GetTemplateAuditResponseItem);
+
+/**
+ * @summary List entries in the Document Variable Registry
+ */
+export const ListDocumentVariablesQueryParams = zod.object({
+  sourceType: zod
+    .enum([
+      "project_field",
+      "person_field",
+      "schedule_a_field",
+      "agreement_field",
+      "calculated",
+      "system_generated",
+    ])
+    .optional(),
+  isActive: zod.coerce.boolean().optional(),
+});
+
+export const ListDocumentVariablesResponseItem = zod.object({
+  id: zod.string().uuid(),
+  variableKey: zod.string(),
+  label: zod.string(),
+  description: zod.string().nullish(),
+  sourceType: zod.enum([
+    "project_field",
+    "person_field",
+    "schedule_a_field",
+    "agreement_field",
+    "calculated",
+    "system_generated",
+  ]),
+  sourceField: zod.string().nullish(),
+  dataType: zod.string(),
+  isRequired: zod.boolean(),
+  exampleValue: zod.string().nullish(),
+  groupName: zod.string().nullish(),
+  isActive: zod.boolean(),
+  createdBy: zod.string().uuid().nullish(),
+  createdByName: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const ListDocumentVariablesResponse = zod.array(
+  ListDocumentVariablesResponseItem,
+);
+
+/**
+ * @summary Create a new Document Variable Registry entry (admin/developer)
+ */
+export const createDocumentVariableBodyVariableKeyRegExp = new RegExp(
+  "^[A-Z][A-Z0-9_]\*$",
+);
+export const createDocumentVariableBodyDataTypeDefault = `string`;
+export const createDocumentVariableBodyIsRequiredDefault = false;
+
+export const CreateDocumentVariableBody = zod.object({
+  variableKey: zod.string().regex(createDocumentVariableBodyVariableKeyRegExp),
+  label: zod.string(),
+  description: zod.string().optional(),
+  sourceType: zod.enum([
+    "project_field",
+    "person_field",
+    "schedule_a_field",
+    "agreement_field",
+    "calculated",
+    "system_generated",
+  ]),
+  sourceField: zod.string().optional(),
+  dataType: zod.string().default(createDocumentVariableBodyDataTypeDefault),
+  isRequired: zod
+    .boolean()
+    .default(createDocumentVariableBodyIsRequiredDefault),
+  exampleValue: zod.string().optional(),
+  groupName: zod.string().optional(),
+});
+
+/**
+ * @summary Get a single registry entry
+ */
+export const GetDocumentVariableParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const GetDocumentVariableResponse = zod.object({
+  id: zod.string().uuid(),
+  variableKey: zod.string(),
+  label: zod.string(),
+  description: zod.string().nullish(),
+  sourceType: zod.enum([
+    "project_field",
+    "person_field",
+    "schedule_a_field",
+    "agreement_field",
+    "calculated",
+    "system_generated",
+  ]),
+  sourceField: zod.string().nullish(),
+  dataType: zod.string(),
+  isRequired: zod.boolean(),
+  exampleValue: zod.string().nullish(),
+  groupName: zod.string().nullish(),
+  isActive: zod.boolean(),
+  createdBy: zod.string().uuid().nullish(),
+  createdByName: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Update a registry entry (admin/developer)
+ */
+export const UpdateDocumentVariableParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const UpdateDocumentVariableBody = zod.object({
+  label: zod.string().optional(),
+  description: zod.string().optional(),
+  sourceType: zod
+    .enum([
+      "project_field",
+      "person_field",
+      "schedule_a_field",
+      "agreement_field",
+      "calculated",
+      "system_generated",
+    ])
+    .optional(),
+  sourceField: zod.string().optional(),
+  dataType: zod.string().optional(),
+  isRequired: zod.boolean().optional(),
+  exampleValue: zod.string().optional(),
+  groupName: zod.string().optional(),
+  isActive: zod.boolean().optional(),
+});
+
+export const UpdateDocumentVariableResponse = zod.object({
+  id: zod.string().uuid(),
+  variableKey: zod.string(),
+  label: zod.string(),
+  description: zod.string().nullish(),
+  sourceType: zod.enum([
+    "project_field",
+    "person_field",
+    "schedule_a_field",
+    "agreement_field",
+    "calculated",
+    "system_generated",
+  ]),
+  sourceField: zod.string().nullish(),
+  dataType: zod.string(),
+  isRequired: zod.boolean(),
+  exampleValue: zod.string().nullish(),
+  groupName: zod.string().nullish(),
+  isActive: zod.boolean(),
+  createdBy: zod.string().uuid().nullish(),
+  createdByName: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Soft-deactivate a registry entry (admin only)
+ */
+export const DeleteDocumentVariableParams = zod.object({
+  id: zod.coerce.string().uuid(),
 });
 
 /**
