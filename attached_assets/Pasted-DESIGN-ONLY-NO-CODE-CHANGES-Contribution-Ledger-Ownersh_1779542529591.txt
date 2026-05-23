@@ -1,0 +1,146 @@
+DESIGN ONLY. NO CODE CHANGES.
+
+Contribution Ledger & Ownership Foundation Design Review
+
+Before implementation, design the architecture for a SINGLE ownership contribution ledger and answer how each rule will be implemented.
+
+Use the approved ERP rules below.
+
+Ownership Sources 
+
+Ownership may arise only from:
+
+Land Notional Contribution Financial Inputs Task Expenditures Imported Contributions Withdrawal Adjustments Reimbursement Adjustments 
+
+No other source may directly affect ownership.
+
+Show exactly how each source enters the ledger.
+
+Economic Bearer Principle 
+
+Ownership belongs to the current economic bearer.
+
+Example:
+
+Partner A pays ₹100,000 reimbursable expense.
+
+Before reimbursement:
+
+Partner A receives provisional contribution credit. 
+
+If Partner B reimburses:
+
+Contribution credit transfers from A to B. 
+
+If reimbursement never occurs before maturity:
+
+Contribution credit finalizes to A. 
+
+Show lifecycle and data model.
+
+Financial Inputs 
+
+Financial Input UI must support:
+
+contributor amount date project reimbursable yes/no description evidence 
+
+Rules:
+
+If reimbursable = No:
+
+immediate ownership contribution 
+
+If reimbursable = Yes:
+
+provisional contribution ownership follows current bearer 
+
+Show workflow.
+
+Task Expenditures 
+
+Rules:
+
+If assignee is NOT a project partner:
+
+reimbursement required before maturity no ownership created 
+
+If assignee IS a project partner:
+
+Reimbursable = No:
+
+immediate ownership contribution 
+
+Reimbursable = Yes:
+
+provisional ownership follows bearer 
+
+Show implementation.
+
+Imported Contributions 
+
+Must support:
+
+migration imports historical contributions legacy ownership imports 
+
+Show audit model and verification requirements.
+
+Withdrawal Adjustments 
+
+Rules:
+
+Prematurity only.
+
+Withdrawal:
+
+reduces contribution balance reduces ownership ownership recalculates immediately 
+
+OTP from withdrawer required.
+
+Show workflow.
+
+Verification 
+
+Design cross-role verification.
+
+Can contributor verify own contribution?
+
+Can admin override?
+
+Should OTP exist?
+
+Show recommendation.
+
+Freeze 
+
+Ownership freeze requirements:
+
+When frozen:
+
+no contribution verification no ownership-affecting edits no withdrawals no reimbursements 
+
+Show exact blocked actions.
+
+Maturity 
+
+At maturity:
+
+ownership snapshot generated ownership locked unresolved reimbursable contributions finalize to current bearer withdrawal prohibited 
+
+Show sequence.
+
+Existing System Migration 
+
+Show how current:
+
+contributions advances expenditures burden records ownership snapshots 
+
+map into the new ledger.
+
+Return:
+
+Proposed schema Event flow diagrams Migration strategy Governance rules Risks 
+
+DO NOT IMPLEMENT.
+
+DESIGN REVIEW ONLY.
+
