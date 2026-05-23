@@ -22,6 +22,16 @@ import {
   useSaveProjectOnboardingStep,
   getListProjectsQueryKey,
   getListOnboardingParticipantsQueryKey,
+  useListProjectParcels,
+  useCreateProjectParcel,
+  useUpdateProjectParcel,
+  useDeleteProjectParcel,
+  getListProjectParcelsQueryKey,
+  useGetProjectAgreementTemplate,
+  useSetProjectAgreementTemplate,
+  useListTemplates,
+  getGetProjectAgreementTemplateQueryKey,
+  getGetProjectQueryKey,
 } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -42,17 +52,18 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { PersonMasterSelector, type PersonSummary } from "@/components/PersonMasterSelector";
 
+// ── Wizard steps (Prompt 6 refactor) ─────────────────────────────────────────
+// 8 steps: Project Details → Participants → Commercial Terms → Schedule A →
+//          Witnesses → Agreement → Project Type → Review & Submit
 const STEPS = [
-  { id: 1, label: "Project Basics", icon: FileText },
-  { id: 2, label: "Developer KYC", icon: Users },
-  { id: 3, label: "Landowner KYC", icon: Users },
-  { id: 4, label: "Land Details", icon: MapPin },
-  { id: 5, label: "Capacity & Finance", icon: Leaf },
-  { id: 6, label: "Agreement Terms", icon: FileText },
-  { id: 7, label: "Witnesses", icon: Users },
-  { id: 8, label: "Documents", icon: Shield },
-  { id: 9, label: "OTP Verification", icon: KeyRound },
-  { id: 10, label: "Review & Activate", icon: CheckCircle2 },
+  { id: 1, label: "Project Details", icon: FileText },
+  { id: 2, label: "Participants", icon: Users },
+  { id: 3, label: "Commercial Terms", icon: Banknote },
+  { id: 4, label: "Schedule A (Parcels)", icon: MapPin },
+  { id: 5, label: "Witnesses", icon: Users },
+  { id: 6, label: "Agreement Template", icon: BookOpen },
+  { id: 7, label: "Project Type", icon: Gavel },
+  { id: 8, label: "Review & Submit", icon: CheckCircle2 },
 ];
 
 // ── Step 1: Project Basics ────────────────────────────────────────────────────
@@ -2130,8 +2141,25 @@ function Step10ReviewActivate({
 
   const state = stateData as any;
   const project = state?.project;
-  const checks = state?.completionChecks ?? {};
-  const allPassed = checks && Object.values(checks).every(Boolean);
+  const rawChecks = state?.completionChecks ?? {};
+  const { data: parcelData } = useListProjectParcels(projectId);
+  const { data: templateLink } = useGetProjectAgreementTemplate(projectId);
+
+  // ── Activation gate criteria (must mirror server side in
+  // project_onboarding.ts → POST /:id/onboarding/activate)
+  const checks: Record<string, boolean> = {
+    basicInfo: !!rawChecks.basicInfo,
+    developerInfo: !!rawChecks.developerInfo,
+    landownerInfo: !!rawChecks.landownerInfo,
+    financialConfig: !!rawChecks.financialConfig,
+    scheduleA: ((parcelData as any)?.parcels?.length ?? 0) >= 1,
+    witnessDetails: !!rawChecks.witnessDetails,
+    agreementTemplate: !!(templateLink as any)?.template?.id || !!(project as any)?.agreementTemplateId,
+    projectType: !!(project as any)?.projectType,
+    developerOtpVerified: !!rawChecks.developerOtpVerified,
+    landownerOtpVerified: !!rawChecks.landownerOtpVerified,
+  };
+  const allPassed = Object.values(checks).every(Boolean);
 
   const handleActivate = () => {
     activateProject.mutate(
@@ -2156,11 +2184,11 @@ function Step10ReviewActivate({
     basicInfo: "Basic project info",
     developerInfo: "Developer KYC",
     landownerInfo: "Landowner KYC",
-    landDetails: "Land details",
-    financialConfig: "Financial configuration",
-    agreementDetails: "Agreement terms",
+    financialConfig: "Commercial terms",
+    scheduleA: "Schedule A (≥1 parcel)",
     witnessDetails: "Witnesses (min. 2)",
-    documentsUploaded: "Documents uploaded",
+    agreementTemplate: "Agreement template linked",
+    projectType: "Project type selected",
     developerOtpVerified: "Developer OTP verified",
     landownerOtpVerified: "Landowner OTP verified",
   };
@@ -2327,47 +2355,571 @@ export default function ProjectCreationWizard() {
             <CardContent className="pt-5">
               {currentStep === 1 && <Step1BasicInfo onNext={handleStep1Success} />}
               {currentStep === 2 && projectId && (
-                <StepParticipantKYC
-                  projectId={projectId}
-                  role="developer"
-                  roleLabel="Developer (Project Developer)"
-                  onNext={goNext}
-                  onBack={goBack}
-                />
+                <StepParticipants projectId={projectId} onNext={goNext} onBack={goBack} />
               )}
               {currentStep === 3 && projectId && (
-                <StepParticipantKYC
-                  projectId={projectId}
-                  role="landowner"
-                  roleLabel="Landowner"
-                  onNext={goNext}
-                  onBack={goBack}
-                />
-              )}
-              {currentStep === 4 && projectId && (
-                <Step4LandDetails projectId={projectId} onNext={goNext} onBack={goBack} />
-              )}
-              {currentStep === 5 && projectId && (
                 <Step5CapacityFinancial projectId={projectId} onNext={goNext} onBack={goBack} />
               )}
-              {currentStep === 6 && projectId && (
-                <Step6AgreementDetails projectId={projectId} onNext={goNext} onBack={goBack} />
+              {currentStep === 4 && projectId && (
+                <StepScheduleA projectId={projectId} onNext={goNext} onBack={goBack} />
               )}
-              {currentStep === 7 && projectId && (
+              {currentStep === 5 && projectId && (
                 <Step7Witnesses projectId={projectId} onNext={goNext} onBack={goBack} />
               )}
+              {currentStep === 6 && projectId && (
+                <StepAgreementTemplate projectId={projectId} onNext={goNext} onBack={goBack} />
+              )}
+              {currentStep === 7 && projectId && (
+                <StepProjectType projectId={projectId} onNext={goNext} onBack={goBack} />
+              )}
               {currentStep === 8 && projectId && (
-                <Step8Documents projectId={projectId} onNext={goNext} onBack={goBack} />
-              )}
-              {currentStep === 9 && projectId && (
-                <Step9OtpVerification projectId={projectId} onNext={goNext} onBack={goBack} />
-              )}
-              {currentStep === 10 && projectId && (
-                <Step10ReviewActivate projectId={projectId} onBack={goBack} />
+                <div className="space-y-6">
+                  <Step9OtpVerification projectId={projectId} onNext={() => { /* stay on this step */ }} onBack={goBack} />
+                  <Separator />
+                  <Step10ReviewActivate projectId={projectId} onBack={goBack} />
+                </div>
               )}
             </CardContent>
           </Card>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// Prompt 6 — New step components (Participants list, Schedule A, Agreement
+// Template selector, Project Type). Appended at end of file; JS hoisting
+// makes them visible to the orchestrator above.
+// ════════════════════════════════════════════════════════════════════════════
+
+// ── Step 2: Participants (collapsed dev + landowner KYC) ────────────────────
+
+function StepParticipants({
+  projectId,
+  onNext,
+  onBack,
+}: {
+  projectId: string;
+  onNext: () => void;
+  onBack: () => void;
+}) {
+  const { data } = useListOnboardingParticipants(projectId);
+  const hasDev = !!data?.participants?.find((p) => p.role === "developer");
+  const hasLandowner = !!data?.participants?.find((p) => p.role === "landowner");
+  const canProceed = hasDev && hasLandowner;
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-muted/30 border rounded-md p-3 text-xs text-muted-foreground">
+        Capture KYC for the two legally-required participants — Project
+        Developer and Landowner. Additional participants (investors,
+        employees, operational staff) can be added from the project page
+        after creation.
+      </div>
+
+      <Card className="border-primary/20">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Users className="h-4 w-4" /> Project Developer
+            {hasDev && <Badge variant="outline" className="ml-2 text-[10px] bg-green-50 text-green-700 border-green-200">Captured</Badge>}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <StepParticipantKYC
+            projectId={projectId}
+            role="developer"
+            roleLabel="Developer"
+            onNext={() => { /* stay on combined screen */ }}
+            onBack={onBack}
+          />
+        </CardContent>
+      </Card>
+
+      <Card className="border-primary/20">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Users className="h-4 w-4" /> Landowner
+            {hasLandowner && <Badge variant="outline" className="ml-2 text-[10px] bg-green-50 text-green-700 border-green-200">Captured</Badge>}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <StepParticipantKYC
+            projectId={projectId}
+            role="landowner"
+            roleLabel="Landowner"
+            onNext={() => { /* stay on combined screen */ }}
+            onBack={onBack}
+          />
+        </CardContent>
+      </Card>
+
+      <div className="flex justify-between pt-2">
+        <Button type="button" variant="outline" onClick={onBack}>
+          <ChevronLeft className="h-4 w-4 mr-1" /> Back
+        </Button>
+        <Button onClick={onNext} disabled={!canProceed}>
+          Continue <ChevronRight className="h-4 w-4 ml-1" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// ── Step 4: Schedule A (multi-parcel CRUD) ──────────────────────────────────
+
+const parcelFormSchema = z.object({
+  landType: z.enum(["recorded", "non_recorded"]),
+  khatianNumber: z.string().optional(),
+  plotNumber: z.string().optional(),
+  mouja: z.string().optional(),
+  tahsil: z.string().optional(),
+  revenueCircle: z.string().optional(),
+  subDivision: z.string().optional(),
+  landAreaName: z.string().optional(),
+  postOffice: z.string().optional(),
+  policeStation: z.string().optional(),
+  village: z.string().optional(),
+  district: z.string().optional(),
+  state: z.string().optional(),
+  landBoundaryDescription: z.string().optional(),
+  gpsCoordinates: z.string().optional(),
+  landArea: z.coerce.number().nonnegative(),
+  landAreaUnit: z.string().default("kani"),
+  notes: z.string().optional(),
+});
+type ParcelFormValues = z.infer<typeof parcelFormSchema>;
+
+function StepScheduleA({
+  projectId,
+  onNext,
+  onBack,
+}: {
+  projectId: string;
+  onNext: () => void;
+  onBack: () => void;
+}) {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const { data, isLoading } = useListProjectParcels(projectId);
+  const createParcel = useCreateProjectParcel();
+  const updateParcel = useUpdateProjectParcel();
+  const deleteParcel = useDeleteProjectParcel();
+
+  const parcels = data?.parcels ?? [];
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
+
+  const form = useForm<ParcelFormValues>({
+    resolver: zodResolver(parcelFormSchema),
+    defaultValues: { landType: "recorded", landArea: 0, landAreaUnit: "kani" },
+  });
+
+  const startEdit = (parcelId: string) => {
+    const p = parcels.find((x: any) => x.id === parcelId);
+    if (!p) return;
+    setEditingId(parcelId);
+    form.reset({
+      landType: (p.landType as "recorded" | "non_recorded") ?? "recorded",
+      khatianNumber: p.khatianNumber ?? "",
+      plotNumber: p.plotNumber ?? "",
+      mouja: p.mouja ?? "",
+      tahsil: p.tahsil ?? "",
+      revenueCircle: p.revenueCircle ?? "",
+      subDivision: p.subDivision ?? "",
+      landAreaName: p.landAreaName ?? "",
+      postOffice: p.postOffice ?? "",
+      policeStation: p.policeStation ?? "",
+      village: p.village ?? "",
+      district: p.district ?? "",
+      state: p.state ?? "",
+      landBoundaryDescription: p.landBoundaryDescription ?? "",
+      gpsCoordinates: p.gpsCoordinates ?? "",
+      landArea: Number(p.landArea) || 0,
+      landAreaUnit: p.landAreaUnit ?? "kani",
+      notes: (p as any).notes ?? "",
+    });
+    setShowForm(true);
+  };
+
+  const startAdd = () => {
+    setEditingId(null);
+    form.reset({ landType: "recorded", landArea: 0, landAreaUnit: "kani" });
+    setShowForm(true);
+  };
+
+  const onSubmit = async (values: ParcelFormValues) => {
+    try {
+      if (editingId) {
+        await updateParcel.mutateAsync({ id: projectId, parcelId: editingId, data: values });
+        toast({ title: "Parcel updated" });
+      } else {
+        await createParcel.mutateAsync({ id: projectId, data: values });
+        toast({ title: "Parcel added" });
+      }
+      await qc.invalidateQueries({ queryKey: getListProjectParcelsQueryKey(projectId) });
+      setShowForm(false);
+      setEditingId(null);
+    } catch (err: any) {
+      toast({ title: "Failed", description: err?.message ?? "Could not save parcel", variant: "destructive" });
+    }
+  };
+
+  const onDelete = async (id: string) => {
+    if (!window.confirm("Remove this parcel from Schedule A?")) return;
+    try {
+      await deleteParcel.mutateAsync({ id: projectId, parcelId: id });
+      await qc.invalidateQueries({ queryKey: getListProjectParcelsQueryKey(projectId) });
+      toast({ title: "Parcel removed" });
+    } catch (err: any) {
+      toast({ title: "Failed", description: err?.message ?? "Could not remove parcel", variant: "destructive" });
+    }
+  };
+
+  const isRecorded = form.watch("landType") === "recorded";
+
+  return (
+    <div className="space-y-5">
+      <div className="bg-muted/30 border rounded-md p-3 text-xs text-muted-foreground">
+        Schedule A lists every parcel covered by the project. You must record
+        at least one parcel before the project can be activated. Each parcel
+        is independently audited.
+      </div>
+
+      {/* List of existing parcels */}
+      {isLoading ? (
+        <p className="text-sm text-muted-foreground py-4 text-center">Loading…</p>
+      ) : parcels.length === 0 ? (
+        <p className="text-sm text-muted-foreground py-4 text-center border rounded-md">
+          No parcels yet — add the first one below.
+        </p>
+      ) : (
+        <div className="space-y-2">
+          {parcels.map((p: any) => (
+            <div key={p.id} className="flex items-start justify-between border rounded-md p-3 bg-muted/20">
+              <div className="text-sm">
+                <div className="font-medium">
+                  Parcel #{p.position} · {p.landArea} {p.landAreaUnit} · {p.landType === "recorded" ? "Recorded" : "Non-Recorded"}
+                </div>
+                <div className="text-xs text-muted-foreground mt-0.5">
+                  {p.landType === "recorded"
+                    ? [p.mouja, p.khatianNumber && `Khatian ${p.khatianNumber}`, p.plotNumber && `Plot ${p.plotNumber}`].filter(Boolean).join(" · ")
+                    : [p.landAreaName, p.postOffice, p.policeStation].filter(Boolean).join(" · ")}
+                </div>
+              </div>
+              <div className="flex gap-1">
+                <Button type="button" variant="ghost" size="sm" onClick={() => startEdit(p.id)}>Edit</Button>
+                <Button type="button" variant="ghost" size="sm" onClick={() => onDelete(p.id)}>
+                  <Trash2 className="h-4 w-4 text-red-600" />
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {!showForm && (
+        <Button type="button" variant="outline" onClick={startAdd}>
+          <Plus className="h-4 w-4 mr-1" /> Add Parcel
+        </Button>
+      )}
+
+      {/* Add / edit form */}
+      {showForm && (
+        <Card className="border-primary/30">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm">{editingId ? "Edit Parcel" : "New Parcel"}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField control={form.control} name="landType" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Land Type</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                      <SelectContent>
+                        <SelectItem value="recorded">Recorded</SelectItem>
+                        <SelectItem value="non_recorded">Non-Recorded</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )} />
+
+                {isRecorded ? (
+                  <div className="grid grid-cols-2 gap-3">
+                    <FormField control={form.control} name="khatianNumber" render={({ field }) => (
+                      <FormItem><FormLabel>Khatian Number</FormLabel><FormControl><Input {...field} value={field.value ?? ""} /></FormControl></FormItem>
+                    )} />
+                    <FormField control={form.control} name="plotNumber" render={({ field }) => (
+                      <FormItem><FormLabel>Plot Number</FormLabel><FormControl><Input {...field} value={field.value ?? ""} /></FormControl></FormItem>
+                    )} />
+                    <FormField control={form.control} name="mouja" render={({ field }) => (
+                      <FormItem><FormLabel>Mouja</FormLabel><FormControl><Input {...field} value={field.value ?? ""} /></FormControl></FormItem>
+                    )} />
+                    <FormField control={form.control} name="tahsil" render={({ field }) => (
+                      <FormItem><FormLabel>Tahsil</FormLabel><FormControl><Input {...field} value={field.value ?? ""} /></FormControl></FormItem>
+                    )} />
+                    <FormField control={form.control} name="revenueCircle" render={({ field }) => (
+                      <FormItem><FormLabel>Revenue Circle</FormLabel><FormControl><Input {...field} value={field.value ?? ""} /></FormControl></FormItem>
+                    )} />
+                    <FormField control={form.control} name="subDivision" render={({ field }) => (
+                      <FormItem><FormLabel>Sub-Division</FormLabel><FormControl><Input {...field} value={field.value ?? ""} /></FormControl></FormItem>
+                    )} />
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-3">
+                    <FormField control={form.control} name="landAreaName" render={({ field }) => (
+                      <FormItem className="col-span-2"><FormLabel>Land / Area Name</FormLabel><FormControl><Input {...field} value={field.value ?? ""} /></FormControl></FormItem>
+                    )} />
+                    <FormField control={form.control} name="postOffice" render={({ field }) => (
+                      <FormItem><FormLabel>Post Office</FormLabel><FormControl><Input {...field} value={field.value ?? ""} /></FormControl></FormItem>
+                    )} />
+                    <FormField control={form.control} name="policeStation" render={({ field }) => (
+                      <FormItem><FormLabel>Police Station</FormLabel><FormControl><Input {...field} value={field.value ?? ""} /></FormControl></FormItem>
+                    )} />
+                  </div>
+                )}
+
+                <div className="grid grid-cols-3 gap-3">
+                  <FormField control={form.control} name="village" render={({ field }) => (
+                    <FormItem><FormLabel>Village</FormLabel><FormControl><Input {...field} value={field.value ?? ""} /></FormControl></FormItem>
+                  )} />
+                  <FormField control={form.control} name="district" render={({ field }) => (
+                    <FormItem><FormLabel>District</FormLabel><FormControl><Input {...field} value={field.value ?? ""} /></FormControl></FormItem>
+                  )} />
+                  <FormField control={form.control} name="state" render={({ field }) => (
+                    <FormItem><FormLabel>State</FormLabel><FormControl><Input {...field} value={field.value ?? ""} /></FormControl></FormItem>
+                  )} />
+                </div>
+
+                <FormField control={form.control} name="landBoundaryDescription" render={({ field }) => (
+                  <FormItem><FormLabel>Boundary Description</FormLabel><FormControl><Textarea rows={2} {...field} value={field.value ?? ""} /></FormControl></FormItem>
+                )} />
+
+                <div className="grid grid-cols-3 gap-3">
+                  <FormField control={form.control} name="landArea" render={({ field }) => (
+                    <FormItem><FormLabel>Area</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>
+                  )} />
+                  <FormField control={form.control} name="landAreaUnit" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Unit</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value ?? "kani"}>
+                        <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                        <SelectContent>
+                          <SelectItem value="kani">Kani</SelectItem>
+                          <SelectItem value="acres">Acres</SelectItem>
+                          <SelectItem value="hectares">Hectares</SelectItem>
+                          <SelectItem value="bigha">Bigha</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="gpsCoordinates" render={({ field }) => (
+                    <FormItem><FormLabel>GPS</FormLabel><FormControl><Input placeholder="lat, lng" {...field} value={field.value ?? ""} /></FormControl></FormItem>
+                  )} />
+                </div>
+
+                <FormField control={form.control} name="notes" render={({ field }) => (
+                  <FormItem><FormLabel>Notes</FormLabel><FormControl><Textarea rows={2} {...field} value={field.value ?? ""} /></FormControl></FormItem>
+                )} />
+
+                <div className="flex justify-end gap-2">
+                  <Button type="button" variant="ghost" onClick={() => { setShowForm(false); setEditingId(null); }}>Cancel</Button>
+                  <Button type="submit" disabled={createParcel.isPending || updateParcel.isPending}>
+                    {(createParcel.isPending || updateParcel.isPending) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                    {editingId ? "Save Changes" : "Add Parcel"}
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="flex justify-between pt-2">
+        <Button type="button" variant="outline" onClick={onBack}>
+          <ChevronLeft className="h-4 w-4 mr-1" /> Back
+        </Button>
+        <Button onClick={onNext} disabled={parcels.length < 1}>
+          Continue <ChevronRight className="h-4 w-4 ml-1" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// ── Step 6: Agreement Template selector ─────────────────────────────────────
+
+function StepAgreementTemplate({
+  projectId,
+  onNext,
+  onBack,
+}: {
+  projectId: string;
+  onNext: () => void;
+  onBack: () => void;
+}) {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const { data: linkData, isLoading: linkLoading } = useGetProjectAgreementTemplate(projectId);
+  const { data: templates, isLoading: tplLoading } = useListTemplates();
+  const setLink = useSetProjectAgreementTemplate();
+
+  const currentId = (linkData as any)?.template?.id ?? null;
+  const [selected, setSelected] = useState<string | "">("");
+
+  useEffect(() => {
+    if (currentId) setSelected(currentId);
+  }, [currentId]);
+
+  const eligible = useMemo(
+    () => (templates ?? []).filter((t: any) => t.category === "agreement" && t.status === "active"),
+    [templates],
+  );
+
+  const handleSave = async () => {
+    if (!selected) {
+      toast({ title: "Pick a template", variant: "destructive" });
+      return;
+    }
+    try {
+      await setLink.mutateAsync({ id: projectId, data: { agreementTemplateId: selected } });
+      await qc.invalidateQueries({ queryKey: getGetProjectAgreementTemplateQueryKey(projectId) });
+      await qc.invalidateQueries({ queryKey: getGetProjectQueryKey(projectId) });
+      toast({ title: "Agreement template linked" });
+      onNext();
+    } catch (err: any) {
+      toast({ title: "Failed", description: err?.message ?? "Could not link template", variant: "destructive" });
+    }
+  };
+
+  return (
+    <div className="space-y-5">
+      <div className="bg-muted/30 border rounded-md p-3 text-xs text-muted-foreground">
+        Link this project to an active agreement template from the Document
+        Template Registry. The template will be used when generating the
+        partnership deed.
+      </div>
+
+      {tplLoading || linkLoading ? (
+        <p className="text-sm text-muted-foreground">Loading templates…</p>
+      ) : eligible.length === 0 ? (
+        <div className="border border-amber-200 bg-amber-50 rounded-md p-3 text-sm text-amber-800 flex gap-2">
+          <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+          <div>
+            No active agreement templates available. Ask an admin to create
+            one in the Templates module before continuing.
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <Label>Active Agreement Templates</Label>
+          <Select value={selected} onValueChange={setSelected}>
+            <SelectTrigger><SelectValue placeholder="Select an agreement template…" /></SelectTrigger>
+            <SelectContent>
+              {eligible.map((t: any) => (
+                <SelectItem key={t.id} value={t.id}>
+                  {t.name} {t.version ? `· v${t.version}` : ""}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      <div className="flex justify-between pt-2">
+        <Button type="button" variant="outline" onClick={onBack}>
+          <ChevronLeft className="h-4 w-4 mr-1" /> Back
+        </Button>
+        <Button onClick={handleSave} disabled={!selected || setLink.isPending}>
+          {setLink.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+          Save & Continue <ChevronRight className="h-4 w-4 ml-1" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// ── Step 7: Project Type ────────────────────────────────────────────────────
+
+const PROJECT_TYPES: Array<{ value: string; label: string; description: string }> = [
+  { value: "joint_venture", label: "Joint Venture", description: "Single landowner + single developer JV (typical)." },
+  { value: "community_partnership", label: "Community Partnership", description: "Multi-landowner pooled with one developer." },
+  { value: "sole_developer", label: "Sole Developer", description: "Developer-owned land — no separate landowner." },
+  { value: "lease_based", label: "Lease-Based", description: "Developer leases land for a fixed term." },
+  { value: "other", label: "Other", description: "Fallback — requires a governance note." },
+];
+
+function StepProjectType({
+  projectId,
+  onNext,
+  onBack,
+}: {
+  projectId: string;
+  onNext: () => void;
+  onBack: () => void;
+}) {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const { data: project } = useGetProject(projectId);
+  const updateProject = useUpdateProject();
+  const [selected, setSelected] = useState<string>((project as any)?.projectType ?? "joint_venture");
+
+  useEffect(() => {
+    if ((project as any)?.projectType) setSelected((project as any).projectType);
+  }, [(project as any)?.projectType]);
+
+  const handleSave = async () => {
+    try {
+      await updateProject.mutateAsync({ id: projectId, data: { projectType: selected } as any });
+      await qc.invalidateQueries({ queryKey: getGetProjectQueryKey(projectId) });
+      toast({ title: "Project type saved" });
+      onNext();
+    } catch (err: any) {
+      toast({ title: "Failed", description: err?.message ?? "Could not save project type", variant: "destructive" });
+    }
+  };
+
+  return (
+    <div className="space-y-5">
+      <div className="bg-muted/30 border rounded-md p-3 text-xs text-muted-foreground">
+        Classify the structural shape of this project. Drives deed template
+        selection, governance expectations, and dashboard filtering. Cannot
+        be changed on an active project without a governance override.
+      </div>
+
+      <div className="space-y-2">
+        {PROJECT_TYPES.map((t) => (
+          <label
+            key={t.value}
+            className={`flex items-start gap-3 border rounded-md p-3 cursor-pointer transition-colors
+              ${selected === t.value ? "border-primary bg-primary/5" : "border-border hover:bg-muted/30"}`}
+          >
+            <input
+              type="radio"
+              name="projectType"
+              className="mt-1"
+              value={t.value}
+              checked={selected === t.value}
+              onChange={() => setSelected(t.value)}
+            />
+            <div>
+              <div className="text-sm font-medium">{t.label}</div>
+              <div className="text-xs text-muted-foreground mt-0.5">{t.description}</div>
+            </div>
+          </label>
+        ))}
+      </div>
+
+      <div className="flex justify-between pt-2">
+        <Button type="button" variant="outline" onClick={onBack}>
+          <ChevronLeft className="h-4 w-4 mr-1" /> Back
+        </Button>
+        <Button onClick={handleSave} disabled={updateProject.isPending}>
+          {updateProject.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+          Save & Continue <ChevronRight className="h-4 w-4 ml-1" />
+        </Button>
       </div>
     </div>
   );

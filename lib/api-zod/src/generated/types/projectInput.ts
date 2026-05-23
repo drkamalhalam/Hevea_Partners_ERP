@@ -7,6 +7,7 @@
  */
 import type { ProjectInputActivationStatus } from "./projectInputActivationStatus";
 import type { ProjectInputCommercialModel } from "./projectInputCommercialModel";
+import type { ProjectInputProjectType } from "./projectInputProjectType";
 import type { ProjectInputStatus } from "./projectInputStatus";
 import type { ProjectInputValuationMethod } from "./projectInputValuationMethod";
 
@@ -32,4 +33,6 @@ export interface ProjectInput {
   expectedMaturityDate?: string;
   termYears: number;
   notes?: string;
+  projectType?: ProjectInputProjectType;
+  agreementTemplateId?: string;
 }

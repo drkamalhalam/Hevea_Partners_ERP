@@ -10,6 +10,7 @@ import type { ProjectCommercialModel } from "./projectCommercialModel";
 import type { ProjectConfigurationStatus } from "./projectConfigurationStatus";
 import type { ProjectLandownerValidationStatus } from "./projectLandownerValidationStatus";
 import type { ProjectLifecycleStatus } from "./projectLifecycleStatus";
+import type { ProjectProjectType } from "./projectProjectType";
 import type { ProjectStatus } from "./projectStatus";
 import type { ProjectValuationMethod } from "./projectValuationMethod";
 
@@ -103,4 +104,7 @@ export interface Project {
   governanceLocked?: boolean;
   remediationRequired?: boolean;
   landownerValidationStatus?: ProjectLandownerValidationStatus;
+  projectType?: ProjectProjectType;
+  /** @nullable */
+  agreementTemplateId?: string | null;
 }

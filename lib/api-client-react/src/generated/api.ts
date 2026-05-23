@@ -45,6 +45,8 @@ import type {
   AgreementGeneration,
   AgreementInput,
   AgreementTemplate,
+  AgreementTemplateAssignmentInput,
+  AgreementTemplateLink,
   AgreementUpdate,
   AgreementVariablesResponse,
   AlertGenerationResult,
@@ -177,6 +179,7 @@ import type {
   CreateProductionAssignmentBody,
   CreateProductionBatchBody,
   CreateProductionEntryBody,
+  CreateProjectParcel201,
   CreateSaleBody,
   CreateSaleDeductionBody,
   CreateSaleDocumentBody,
@@ -332,6 +335,7 @@ import type {
   GetPrematuritySuccessionDashboardParams,
   GetProductionLogSummaryParams,
   GetProductionReportParams,
+  GetProjectAuditTrailParams,
   GetProjectCardSummaries200,
   GetProjectProfitabilityParams,
   GetRecordAuditTimeline200,
@@ -580,6 +584,7 @@ import type {
   ProductionRecord,
   ProductionReport,
   Project,
+  ProjectAuditTrailResponse,
   ProjectClosureWorkflow,
   ProjectInput,
   ProjectLifecycle,
@@ -587,6 +592,8 @@ import type {
   ProjectNominee,
   ProjectOnboardingState,
   ProjectOwnershipDetail,
+  ProjectParcelInput,
+  ProjectParcelListResponse,
   ProjectParticipant,
   ProjectProfitabilityReport,
   ProjectTimelineEvent,
@@ -650,6 +657,7 @@ import type {
   SendOnboardingOtpRequest,
   SendProjectOnboardingOtp200,
   SendRofrOfferBody,
+  SetProjectAgreementTemplate200,
   SetSettlementRecommendation200,
   SetSettlementRecommendationBody,
   SetUserRoleInput,
@@ -738,6 +746,7 @@ import type {
   UpdatePersonMaster,
   UpdateProductionEntryBody,
   UpdateProfileInput,
+  UpdateProjectParcel200,
   UpdateSaleBody,
   UpdateSaleDocumentBody,
   UpdateSaleLineItemBody,
@@ -2991,6 +3000,655 @@ export const useDeleteProject = <
   TContext
 > => {
   return useMutation(getDeleteProjectMutationOptions(options));
+};
+
+/**
+ * @summary List Schedule A parcels for a project
+ */
+export const getListProjectParcelsUrl = (id: string) => {
+  return `/api/projects/${id}/parcels`;
+};
+
+export const listProjectParcels = async (
+  id: string,
+  options?: RequestInit,
+): Promise<ProjectParcelListResponse> => {
+  return customFetch<ProjectParcelListResponse>(getListProjectParcelsUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListProjectParcelsQueryKey = (id: string) => {
+  return [`/api/projects/${id}/parcels`] as const;
+};
+
+export const getListProjectParcelsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listProjectParcels>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listProjectParcels>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListProjectParcelsQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listProjectParcels>>
+  > = ({ signal }) => listProjectParcels(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listProjectParcels>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListProjectParcelsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listProjectParcels>>
+>;
+export type ListProjectParcelsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List Schedule A parcels for a project
+ */
+
+export function useListProjectParcels<
+  TData = Awaited<ReturnType<typeof listProjectParcels>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listProjectParcels>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListProjectParcelsQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Add a Schedule A parcel
+ */
+export const getCreateProjectParcelUrl = (id: string) => {
+  return `/api/projects/${id}/parcels`;
+};
+
+export const createProjectParcel = async (
+  id: string,
+  projectParcelInput: ProjectParcelInput,
+  options?: RequestInit,
+): Promise<CreateProjectParcel201> => {
+  return customFetch<CreateProjectParcel201>(getCreateProjectParcelUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(projectParcelInput),
+  });
+};
+
+export const getCreateProjectParcelMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createProjectParcel>>,
+    TError,
+    { id: string; data: BodyType<ProjectParcelInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createProjectParcel>>,
+  TError,
+  { id: string; data: BodyType<ProjectParcelInput> },
+  TContext
+> => {
+  const mutationKey = ["createProjectParcel"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createProjectParcel>>,
+    { id: string; data: BodyType<ProjectParcelInput> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return createProjectParcel(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateProjectParcelMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createProjectParcel>>
+>;
+export type CreateProjectParcelMutationBody = BodyType<ProjectParcelInput>;
+export type CreateProjectParcelMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Add a Schedule A parcel
+ */
+export const useCreateProjectParcel = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createProjectParcel>>,
+    TError,
+    { id: string; data: BodyType<ProjectParcelInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createProjectParcel>>,
+  TError,
+  { id: string; data: BodyType<ProjectParcelInput> },
+  TContext
+> => {
+  return useMutation(getCreateProjectParcelMutationOptions(options));
+};
+
+/**
+ * @summary Update a Schedule A parcel
+ */
+export const getUpdateProjectParcelUrl = (id: string, parcelId: string) => {
+  return `/api/projects/${id}/parcels/${parcelId}`;
+};
+
+export const updateProjectParcel = async (
+  id: string,
+  parcelId: string,
+  projectParcelInput: ProjectParcelInput,
+  options?: RequestInit,
+): Promise<UpdateProjectParcel200> => {
+  return customFetch<UpdateProjectParcel200>(
+    getUpdateProjectParcelUrl(id, parcelId),
+    {
+      ...options,
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(projectParcelInput),
+    },
+  );
+};
+
+export const getUpdateProjectParcelMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateProjectParcel>>,
+    TError,
+    { id: string; parcelId: string; data: BodyType<ProjectParcelInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateProjectParcel>>,
+  TError,
+  { id: string; parcelId: string; data: BodyType<ProjectParcelInput> },
+  TContext
+> => {
+  const mutationKey = ["updateProjectParcel"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateProjectParcel>>,
+    { id: string; parcelId: string; data: BodyType<ProjectParcelInput> }
+  > = (props) => {
+    const { id, parcelId, data } = props ?? {};
+
+    return updateProjectParcel(id, parcelId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateProjectParcelMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateProjectParcel>>
+>;
+export type UpdateProjectParcelMutationBody = BodyType<ProjectParcelInput>;
+export type UpdateProjectParcelMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update a Schedule A parcel
+ */
+export const useUpdateProjectParcel = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateProjectParcel>>,
+    TError,
+    { id: string; parcelId: string; data: BodyType<ProjectParcelInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateProjectParcel>>,
+  TError,
+  { id: string; parcelId: string; data: BodyType<ProjectParcelInput> },
+  TContext
+> => {
+  return useMutation(getUpdateProjectParcelMutationOptions(options));
+};
+
+/**
+ * @summary Remove a Schedule A parcel
+ */
+export const getDeleteProjectParcelUrl = (id: string, parcelId: string) => {
+  return `/api/projects/${id}/parcels/${parcelId}`;
+};
+
+export const deleteProjectParcel = async (
+  id: string,
+  parcelId: string,
+  options?: RequestInit,
+): Promise<OkResponse> => {
+  return customFetch<OkResponse>(getDeleteProjectParcelUrl(id, parcelId), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteProjectParcelMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteProjectParcel>>,
+    TError,
+    { id: string; parcelId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteProjectParcel>>,
+  TError,
+  { id: string; parcelId: string },
+  TContext
+> => {
+  const mutationKey = ["deleteProjectParcel"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteProjectParcel>>,
+    { id: string; parcelId: string }
+  > = (props) => {
+    const { id, parcelId } = props ?? {};
+
+    return deleteProjectParcel(id, parcelId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteProjectParcelMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteProjectParcel>>
+>;
+
+export type DeleteProjectParcelMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Remove a Schedule A parcel
+ */
+export const useDeleteProjectParcel = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteProjectParcel>>,
+    TError,
+    { id: string; parcelId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteProjectParcel>>,
+  TError,
+  { id: string; parcelId: string },
+  TContext
+> => {
+  return useMutation(getDeleteProjectParcelMutationOptions(options));
+};
+
+/**
+ * @summary Unified project audit timeline (structural + lifecycle + governance)
+ */
+export const getGetProjectAuditTrailUrl = (
+  id: string,
+  params?: GetProjectAuditTrailParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/projects/${id}/audit-trail?${stringifiedParams}`
+    : `/api/projects/${id}/audit-trail`;
+};
+
+export const getProjectAuditTrail = async (
+  id: string,
+  params?: GetProjectAuditTrailParams,
+  options?: RequestInit,
+): Promise<ProjectAuditTrailResponse> => {
+  return customFetch<ProjectAuditTrailResponse>(
+    getGetProjectAuditTrailUrl(id, params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetProjectAuditTrailQueryKey = (
+  id: string,
+  params?: GetProjectAuditTrailParams,
+) => {
+  return [
+    `/api/projects/${id}/audit-trail`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetProjectAuditTrailQueryOptions = <
+  TData = Awaited<ReturnType<typeof getProjectAuditTrail>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  params?: GetProjectAuditTrailParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getProjectAuditTrail>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetProjectAuditTrailQueryKey(id, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getProjectAuditTrail>>
+  > = ({ signal }) =>
+    getProjectAuditTrail(id, params, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getProjectAuditTrail>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetProjectAuditTrailQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getProjectAuditTrail>>
+>;
+export type GetProjectAuditTrailQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Unified project audit timeline (structural + lifecycle + governance)
+ */
+
+export function useGetProjectAuditTrail<
+  TData = Awaited<ReturnType<typeof getProjectAuditTrail>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  params?: GetProjectAuditTrailParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getProjectAuditTrail>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetProjectAuditTrailQueryOptions(id, params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get the agreement template linked to a project
+ */
+export const getGetProjectAgreementTemplateUrl = (id: string) => {
+  return `/api/projects/${id}/agreement-template`;
+};
+
+export const getProjectAgreementTemplate = async (
+  id: string,
+  options?: RequestInit,
+): Promise<AgreementTemplateLink> => {
+  return customFetch<AgreementTemplateLink>(
+    getGetProjectAgreementTemplateUrl(id),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetProjectAgreementTemplateQueryKey = (id: string) => {
+  return [`/api/projects/${id}/agreement-template`] as const;
+};
+
+export const getGetProjectAgreementTemplateQueryOptions = <
+  TData = Awaited<ReturnType<typeof getProjectAgreementTemplate>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getProjectAgreementTemplate>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetProjectAgreementTemplateQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getProjectAgreementTemplate>>
+  > = ({ signal }) =>
+    getProjectAgreementTemplate(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getProjectAgreementTemplate>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetProjectAgreementTemplateQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getProjectAgreementTemplate>>
+>;
+export type GetProjectAgreementTemplateQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get the agreement template linked to a project
+ */
+
+export function useGetProjectAgreementTemplate<
+  TData = Awaited<ReturnType<typeof getProjectAgreementTemplate>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getProjectAgreementTemplate>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetProjectAgreementTemplateQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Link or clear a project's agreement template (must be category=agreement, status=active)
+ */
+export const getSetProjectAgreementTemplateUrl = (id: string) => {
+  return `/api/projects/${id}/agreement-template`;
+};
+
+export const setProjectAgreementTemplate = async (
+  id: string,
+  agreementTemplateAssignmentInput: AgreementTemplateAssignmentInput,
+  options?: RequestInit,
+): Promise<SetProjectAgreementTemplate200> => {
+  return customFetch<SetProjectAgreementTemplate200>(
+    getSetProjectAgreementTemplateUrl(id),
+    {
+      ...options,
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(agreementTemplateAssignmentInput),
+    },
+  );
+};
+
+export const getSetProjectAgreementTemplateMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof setProjectAgreementTemplate>>,
+    TError,
+    { id: string; data: BodyType<AgreementTemplateAssignmentInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof setProjectAgreementTemplate>>,
+  TError,
+  { id: string; data: BodyType<AgreementTemplateAssignmentInput> },
+  TContext
+> => {
+  const mutationKey = ["setProjectAgreementTemplate"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof setProjectAgreementTemplate>>,
+    { id: string; data: BodyType<AgreementTemplateAssignmentInput> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return setProjectAgreementTemplate(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SetProjectAgreementTemplateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof setProjectAgreementTemplate>>
+>;
+export type SetProjectAgreementTemplateMutationBody =
+  BodyType<AgreementTemplateAssignmentInput>;
+export type SetProjectAgreementTemplateMutationError = ErrorType<void>;
+
+/**
+ * @summary Link or clear a project's agreement template (must be category=agreement, status=active)
+ */
+export const useSetProjectAgreementTemplate = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof setProjectAgreementTemplate>>,
+    TError,
+    { id: string; data: BodyType<AgreementTemplateAssignmentInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof setProjectAgreementTemplate>>,
+  TError,
+  { id: string; data: BodyType<AgreementTemplateAssignmentInput> },
+  TContext
+> => {
+  return useMutation(getSetProjectAgreementTemplateMutationOptions(options));
 };
 
 /**

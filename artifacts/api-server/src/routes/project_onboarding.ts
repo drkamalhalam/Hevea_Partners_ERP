@@ -5,10 +5,12 @@ import {
   projectParticipantsTable,
   projectWitnessesTable,
   projectCreationOtpsTable,
+  projectParcelsTable,
 } from "@workspace/db";
 import { and, eq, desc } from "drizzle-orm";
 import { z } from "zod/v4";
-import { requireRole } from "../middlewares/auth";
+import { requireRole, canAccessProject } from "../middlewares/auth";
+import { writeProjectAudit } from "../lib/projectAuditLogger";
 
 const router = Router();
 
@@ -19,6 +21,11 @@ function generateOtp(): string {
 // GET /:id/onboarding/state
 router.get("/:id/onboarding/state", requireRole("admin", "developer", "landowner"), async (req, res) => {
   const id = String(req.params.id);
+
+  if (!canAccessProject(req, id)) {
+    res.status(403).json({ error: "Forbidden" });
+    return;
+  }
 
   const [project] = await db
     .select()
@@ -242,6 +249,26 @@ router.post("/:id/onboarding/activate", requireRole("admin", "developer"), async
     return;
   }
 
+  // ── Prompt 6 gates: at least one Schedule A parcel and a linked agreement template
+  const parcelRows = await db
+    .select({ id: projectParcelsTable.id })
+    .from(projectParcelsTable)
+    .where(eq(projectParcelsTable.projectId, id));
+
+  if (parcelRows.length < 1) {
+    res.status(422).json({
+      error: "Schedule A is empty — at least one parcel is required before activation.",
+    });
+    return;
+  }
+
+  if (!project.agreementTemplateId) {
+    res.status(422).json({
+      error: "An agreement template must be linked to the project before activation.",
+    });
+    return;
+  }
+
   const [updated] = await db
     .update(projectsTable)
     .set({
@@ -254,6 +281,15 @@ router.post("/:id/onboarding/activate", requireRole("admin", "developer"), async
 
   req.log.info({ projectId: id }, "project activated via onboarding wizard");
 
+  await writeProjectAudit(req, {
+    projectId: id,
+    eventType: "activated",
+    entityType: "project",
+    entityId: id,
+    title: `Project activated`,
+    afterData: { activationStatus: "active" },
+  });
+
   res.json({ project: updated });
 });
 
@@ -261,6 +297,8 @@ router.post("/:id/onboarding/activate", requireRole("admin", "developer"), async
 router.patch("/:id/onboarding/step", requireRole("admin", "developer"), async (req, res) => {
   const id = String(req.params.id);
   const parsed = z.object({ step: z.number().int().min(1).max(10) }).safeParse(req.body);
+  // NB: max is 10 for backward compatibility with persisted drafts created
+  // against the legacy 10-step wizard. Current UI tops out at 8.
   if (!parsed.success) {
     res.status(422).json({ error: "Invalid step" });
     return;

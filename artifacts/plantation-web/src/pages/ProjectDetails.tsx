@@ -7,6 +7,7 @@ import { ArrowLeft, MapPin, ChevronRight, Lock, Archive, Layers, Hash, ShieldChe
 import ProjectParticipants from "./ProjectParticipants";
 import ProjectNomineeSection from "./ProjectNominee";
 import ProjectLifecycleSection from "./ProjectLifecycleSection";
+import ProjectAuditTrailCard from "@/components/project/ProjectAuditTrailCard";
 import { OwnershipFreezePanel } from "@/components/ownership/OwnershipFreezePanel";
 import MissingDeveloperPanel from "./MissingDeveloperPanel";
 import WorkforceTab from "./WorkforceTab";
@@ -293,6 +294,8 @@ export default function ProjectDetails() {
       </div>
 
       <ProjectNomineeSection projectId={id} />
+
+      <ProjectAuditTrailCard projectId={id} />
     </div>
   );
 }

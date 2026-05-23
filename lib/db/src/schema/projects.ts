@@ -7,7 +7,9 @@ import {
   boolean,
   timestamp,
   decimal,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import {
@@ -17,17 +19,41 @@ import {
   projectActivationStatusEnum,
   projectConfigurationStatusEnum,
   projectLandownerValidationStatusEnum,
+  projectTypeEnum,
 } from "./enums";
 import { usersTable } from "./users";
+import { agreementTemplatesTable } from "./templates";
 
 export const projectsTable = pgTable("projects", {
   id: uuid("id").defaultRandom().primaryKey(),
 
   // ── Identity ────────────────────────────────────────────────────────
   name: text("name").notNull(),
-  /** Short unique code (e.g. "HP-001"). Immutable after project activation. */
-  projectCode: text("project_code").unique(),
+  /**
+   * Short unique code (e.g. "HP-001"). Immutable once assigned.
+   * Uniqueness is enforced by a partial unique index further down so that
+   * NULL / unassigned codes do not collide.
+   */
+  projectCode: text("project_code"),
   description: text("description"),
+
+  /**
+   * Classification — drives deed template selection, governance expectations,
+   * and dashboard filtering. Captured during the creation wizard.
+   */
+  projectType: projectTypeEnum("project_type")
+    .notNull()
+    .default("joint_venture"),
+
+  /**
+   * FK to the Document Template Registry row that will be used to generate
+   * the project's agreement. Must point to a template with category =
+   * 'agreement' and status = 'active' at the time of assignment.
+   */
+  agreementTemplateId: uuid("agreement_template_id").references(
+    () => agreementTemplatesTable.id,
+    { onDelete: "set null" },
+  ),
 
   // ── Location ────────────────────────────────────────────────────────
   location: text("location").notNull(),
@@ -164,7 +190,13 @@ export const projectsTable = pgTable("projects", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().$onUpdate(() => new Date()),
   createdBy: uuid("created_by").references(() => usersTable.id, { onDelete: "set null" }),
-});
+}, (t) => [
+  // Partial unique on project_code so multiple drafts with no code can coexist
+  // while still preventing duplicate assigned codes.
+  uniqueIndex("projects_project_code_uq")
+    .on(t.projectCode)
+    .where(sql`${t.projectCode} IS NOT NULL`),
+]);
 
 export const insertProjectSchema = createInsertSchema(projectsTable).omit({
   id: true,

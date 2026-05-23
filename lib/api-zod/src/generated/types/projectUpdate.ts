@@ -7,6 +7,7 @@
  */
 import type { ProjectUpdateActivationStatus } from "./projectUpdateActivationStatus";
 import type { ProjectUpdateCommercialModel } from "./projectUpdateCommercialModel";
+import type { ProjectUpdateProjectType } from "./projectUpdateProjectType";
 import type { ProjectUpdateStatus } from "./projectUpdateStatus";
 import type { ProjectUpdateValuationMethod } from "./projectUpdateValuationMethod";
 
@@ -26,6 +27,11 @@ export interface ProjectUpdate {
   perTreeValue?: number;
   landNotionalValueRemarks?: string;
   commercialModel?: ProjectUpdateCommercialModel;
+  projectType?: ProjectUpdateProjectType;
+  /** Required when changing commercialModel or projectType on an active project. */
+  governanceOverrideId?: string;
+  /** Optional human-readable rationale for the change (recorded in audit trail). */
+  reason?: string;
   activationStatus?: ProjectUpdateActivationStatus;
   status?: ProjectUpdateStatus;
   startDate?: string;

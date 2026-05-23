@@ -1108,3 +1108,52 @@ export const workAssignmentAuditEventEnum = pgEnum("work_assignment_audit_event"
   "archived",
   "restored",
 ]);
+
+// ── Project type & audit trail enums ─────────────────────────────────────────
+
+/**
+ * Plantation project type — captured during creation, controls deed template
+ * selection and downstream governance expectations.
+ *
+ *   joint_venture       — single landowner + single developer JV (typical)
+ *   community_partnership — multi-landowner pooled with one developer
+ *   sole_developer      — developer-owned land (no separate landowner)
+ *   lease_based         — developer leases land for fixed term
+ *   other               — fallback; requires governance note
+ */
+export const projectTypeEnum = pgEnum("project_type", [
+  "joint_venture",
+  "community_partnership",
+  "sole_developer",
+  "lease_based",
+  "other",
+]);
+
+/**
+ * Event types written to the unified project_audit_trail (write-once).
+ */
+export const projectAuditTrailEventEnum = pgEnum("project_audit_trail_event", [
+  "project_created",
+  "project_field_changed",
+  "commercial_model_changed",
+  "project_type_changed",
+  "project_code_assigned",
+  "agreement_template_assigned",
+  "agreement_template_changed",
+  "agreement_template_cleared",
+  "parcel_added",
+  "parcel_updated",
+  "parcel_removed",
+  "participant_added",
+  "participant_role_changed",
+  "participant_removed",
+  "witness_added",
+  "witness_updated",
+  "witness_removed",
+  "activation_requested",
+  "ready_for_activation",
+  "activated",
+  "suspended",
+  "closed",
+  "note",
+]);

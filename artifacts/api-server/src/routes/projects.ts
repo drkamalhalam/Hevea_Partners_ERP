@@ -38,6 +38,8 @@ import {
 } from "@workspace/api-zod";
 import { requireRole, canAccessProject } from "../middlewares/auth";
 import { writeTimeline, TL } from "../lib/timelineLogger";
+import { writeProjectAudit, diffFields } from "../lib/projectAuditLogger";
+import { z } from "zod/v4";
 
 const router = Router();
 
@@ -122,6 +124,20 @@ router.post("/", requireRole("admin", "developer"), async (req, res) => {
       entityId: project.id,
       entityType: "project",
     });
+    await writeProjectAudit(req, {
+      projectId: project.id,
+      eventType: "project_created",
+      entityType: "project",
+      entityId: project.id,
+      title: `Project "${project.name}" created (${projectCode})`,
+      afterData: {
+        name: project.name,
+        projectCode: project.projectCode,
+        commercialModel: project.commercialModel,
+        projectType: project.projectType,
+        activationStatus: project.activationStatus,
+      },
+    });
     res.status(201).json(formatProject(project));
   } catch (err) {
     req.log.error({ err }, "Failed to create project");
@@ -184,18 +200,38 @@ router.patch("/:id", requireRole("admin", "developer"), async (req, res) => {
       return;
     }
 
+    // Read optional governance-override reference from the body (separate from
+    // the generated schema). When supplied, the caller has authorised an
+    // otherwise-blocked change such as flipping commercialModel on an active
+    // project.
+    const overrideParsed = z
+      .object({
+        governanceOverrideId: z.string().uuid().optional(),
+        reason: z.string().optional(),
+      })
+      .safeParse(req.body ?? {});
+    const governanceOverrideId = overrideParsed.success
+      ? overrideParsed.data.governanceOverrideId
+      : undefined;
+    const overrideReason = overrideParsed.success
+      ? overrideParsed.data.reason
+      : undefined;
+
     // commercialModel is immutable on ACTIVE projects — requires governance override
     if (
       bodyParsed.data.commercialModel !== undefined &&
       bodyParsed.data.commercialModel !== existing.commercialModel &&
       existing.activationStatus === "active"
     ) {
-      res.status(409).json({
-        error:
-          "Commercial model cannot be changed on an active project. " +
-          "Raise a governance override request to change it.",
-      });
-      return;
+      if (!governanceOverrideId) {
+        res.status(409).json({
+          error:
+            "Commercial model cannot be changed on an active project. " +
+            "Raise a governance override request and resubmit with governanceOverrideId.",
+          code: "GOVERNANCE_OVERRIDE_REQUIRED",
+        });
+        return;
+      }
     }
 
     // projectCode is immutable once set (even on inactive projects)
@@ -211,9 +247,50 @@ router.patch("/:id", requireRole("admin", "developer"), async (req, res) => {
       return;
     }
 
+    // projectType is immutable once project is ACTIVE — requires governance override.
+    // Validate via the enum so invalid values 422 deterministically.
+    const projectTypeSchema = z
+      .enum([
+        "joint_venture",
+        "community_partnership",
+        "sole_developer",
+        "lease_based",
+        "other",
+      ])
+      .optional();
+    const rawProjectType = (req.body as Record<string, unknown> | undefined)
+      ?.projectType;
+    const ptParsed = projectTypeSchema.safeParse(rawProjectType);
+    if (!ptParsed.success) {
+      res.status(422).json({
+        error: "Invalid projectType",
+        details: ptParsed.error.issues,
+      });
+      return;
+    }
+    const incomingProjectType = ptParsed.data;
+    if (
+      incomingProjectType !== undefined &&
+      incomingProjectType !== existing.projectType &&
+      existing.activationStatus === "active" &&
+      !governanceOverrideId
+    ) {
+      res.status(409).json({
+        error:
+          "Project type cannot be changed on an active project without a governance override.",
+        code: "GOVERNANCE_OVERRIDE_REQUIRED",
+      });
+      return;
+    }
+
+    const updateSet: Record<string, unknown> = { ...bodyParsed.data };
+    if (incomingProjectType !== undefined) {
+      updateSet.projectType = incomingProjectType;
+    }
+
     const [project] = await db
       .update(projectsTable)
-      .set(bodyParsed.data)
+      .set(updateSet)
       .where(eq(projectsTable.id, paramsParsed.data.id))
       .returning();
     if (!project) {
@@ -226,6 +303,88 @@ router.patch("/:id", requireRole("admin", "developer"), async (req, res) => {
       entityId: project.id,
       entityType: "project",
     });
+
+    // ── Audit trail ─────────────────────────────────────────────────────
+    const diff = diffFields(
+      existing as unknown as Record<string, unknown>,
+      updateSet,
+    );
+    if (diff.changedKeys.length > 0) {
+      // Specialised event types for the high-signal field changes; everything
+      // else lumps into the generic `project_field_changed`.
+      const specialEvents: Array<{
+        key: string;
+        eventType:
+          | "commercial_model_changed"
+          | "project_type_changed"
+          | "project_code_assigned";
+        title: string;
+      }> = [];
+      if (diff.changedKeys.includes("commercialModel")) {
+        specialEvents.push({
+          key: "commercialModel",
+          eventType: "commercial_model_changed",
+          title: `Commercial model: ${existing.commercialModel} → ${project.commercialModel}`,
+        });
+      }
+      if (diff.changedKeys.includes("projectType")) {
+        specialEvents.push({
+          key: "projectType",
+          eventType: "project_type_changed",
+          title: `Project type: ${existing.projectType} → ${project.projectType}`,
+        });
+      }
+      if (
+        diff.changedKeys.includes("projectCode") &&
+        !existing.projectCode &&
+        project.projectCode
+      ) {
+        specialEvents.push({
+          key: "projectCode",
+          eventType: "project_code_assigned",
+          title: `Project code assigned: ${project.projectCode}`,
+        });
+      }
+
+      for (const ev of specialEvents) {
+        await writeProjectAudit(req, {
+          projectId: project.id,
+          eventType: ev.eventType,
+          entityType: "project",
+          entityId: project.id,
+          title: ev.title,
+          beforeData: { [ev.key]: (diff.before as Record<string, unknown>)[ev.key] },
+          afterData: { [ev.key]: (diff.after as Record<string, unknown>)[ev.key] },
+          reason: overrideReason ?? null,
+          governanceOverrideId: governanceOverrideId ?? null,
+        });
+      }
+
+      const otherKeys = diff.changedKeys.filter(
+        (k) => !specialEvents.some((e) => e.key === k),
+      );
+      if (otherKeys.length > 0) {
+        const beforeOther = Object.fromEntries(
+          otherKeys.map((k) => [k, (diff.before as Record<string, unknown>)[k]]),
+        );
+        const afterOther = Object.fromEntries(
+          otherKeys.map((k) => [k, (diff.after as Record<string, unknown>)[k]]),
+        );
+        await writeProjectAudit(req, {
+          projectId: project.id,
+          eventType: "project_field_changed",
+          entityType: "project",
+          entityId: project.id,
+          title: `Project fields updated (${otherKeys.join(", ")})`,
+          beforeData: beforeOther,
+          afterData: afterOther,
+          reason: overrideReason ?? null,
+          governanceOverrideId: governanceOverrideId ?? null,
+          metadata: { changedKeys: otherKeys },
+        });
+      }
+    }
+
     res.json(formatProject(project));
   } catch (err) {
     req.log.error({ err }, "Failed to update project");

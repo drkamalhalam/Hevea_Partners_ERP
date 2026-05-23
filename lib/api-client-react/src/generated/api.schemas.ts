@@ -459,6 +459,17 @@ export const ProjectLandownerValidationStatus = {
   INVALID: "INVALID",
 } as const;
 
+export type ProjectProjectType =
+  (typeof ProjectProjectType)[keyof typeof ProjectProjectType];
+
+export const ProjectProjectType = {
+  joint_venture: "joint_venture",
+  community_partnership: "community_partnership",
+  sole_developer: "sole_developer",
+  lease_based: "lease_based",
+  other: "other",
+} as const;
+
 export interface Project {
   id: string;
   name: string;
@@ -549,6 +560,9 @@ export interface Project {
   governanceLocked?: boolean;
   remediationRequired?: boolean;
   landownerValidationStatus?: ProjectLandownerValidationStatus;
+  projectType?: ProjectProjectType;
+  /** @nullable */
+  agreementTemplateId?: string | null;
 }
 
 export type ProjectInputValuationMethod =
@@ -596,6 +610,17 @@ export const ProjectInputStatus = {
   missing_developer: "missing_developer",
 } as const;
 
+export type ProjectInputProjectType =
+  (typeof ProjectInputProjectType)[keyof typeof ProjectInputProjectType];
+
+export const ProjectInputProjectType = {
+  joint_venture: "joint_venture",
+  community_partnership: "community_partnership",
+  sole_developer: "sole_developer",
+  lease_based: "lease_based",
+  other: "other",
+} as const;
+
 export interface ProjectInput {
   name: string;
   projectCode?: string;
@@ -618,6 +643,8 @@ export interface ProjectInput {
   expectedMaturityDate?: string;
   termYears: number;
   notes?: string;
+  projectType?: ProjectInputProjectType;
+  agreementTemplateId?: string;
 }
 
 export type ProjectUpdateValuationMethod =
@@ -635,6 +662,17 @@ export type ProjectUpdateCommercialModel =
 export const ProjectUpdateCommercialModel = {
   ownership_contribution: "ownership_contribution",
   fifty_percent_revenue: "fifty_percent_revenue",
+} as const;
+
+export type ProjectUpdateProjectType =
+  (typeof ProjectUpdateProjectType)[keyof typeof ProjectUpdateProjectType];
+
+export const ProjectUpdateProjectType = {
+  joint_venture: "joint_venture",
+  community_partnership: "community_partnership",
+  sole_developer: "sole_developer",
+  lease_based: "lease_based",
+  other: "other",
 } as const;
 
 export type ProjectUpdateActivationStatus =
@@ -681,6 +719,11 @@ export interface ProjectUpdate {
   perTreeValue?: number;
   landNotionalValueRemarks?: string;
   commercialModel?: ProjectUpdateCommercialModel;
+  projectType?: ProjectUpdateProjectType;
+  /** Required when changing commercialModel or projectType on an active project. */
+  governanceOverrideId?: string;
+  /** Optional human-readable rationale for the change (recorded in audit trail). */
+  reason?: string;
   activationStatus?: ProjectUpdateActivationStatus;
   status?: ProjectUpdateStatus;
   startDate?: string;
@@ -708,6 +751,232 @@ export interface ProjectUpdate {
   agreementDurationYears?: number;
   agreementSpecialTerms?: string;
   onboardingStep?: number;
+}
+
+export type ProjectParcelLandType =
+  (typeof ProjectParcelLandType)[keyof typeof ProjectParcelLandType];
+
+export const ProjectParcelLandType = {
+  recorded: "recorded",
+  non_recorded: "non_recorded",
+} as const;
+
+export interface ProjectParcel {
+  id: string;
+  projectId: string;
+  position: number;
+  landType: ProjectParcelLandType;
+  /** @nullable */
+  khatianNumber?: string | null;
+  /** @nullable */
+  plotNumber?: string | null;
+  /** @nullable */
+  mouja?: string | null;
+  /** @nullable */
+  tahsil?: string | null;
+  /** @nullable */
+  revenueCircle?: string | null;
+  /** @nullable */
+  subDivision?: string | null;
+  /** @nullable */
+  landAreaName?: string | null;
+  /** @nullable */
+  postOffice?: string | null;
+  /** @nullable */
+  policeStation?: string | null;
+  /** @nullable */
+  village?: string | null;
+  /** @nullable */
+  district?: string | null;
+  /** @nullable */
+  state?: string | null;
+  /** @nullable */
+  landBoundaryDescription?: string | null;
+  /** @nullable */
+  gpsCoordinates?: string | null;
+  landArea: number;
+  landAreaUnit: string;
+  /** @nullable */
+  notes?: string | null;
+  createdAt: string;
+  /** @nullable */
+  updatedAt?: string | null;
+}
+
+export type ProjectParcelInputLandType =
+  (typeof ProjectParcelInputLandType)[keyof typeof ProjectParcelInputLandType];
+
+export const ProjectParcelInputLandType = {
+  recorded: "recorded",
+  non_recorded: "non_recorded",
+} as const;
+
+export interface ProjectParcelInput {
+  landType: ProjectParcelInputLandType;
+  khatianNumber?: string;
+  plotNumber?: string;
+  mouja?: string;
+  tahsil?: string;
+  revenueCircle?: string;
+  subDivision?: string;
+  landAreaName?: string;
+  postOffice?: string;
+  policeStation?: string;
+  village?: string;
+  district?: string;
+  state?: string;
+  landBoundaryDescription?: string;
+  gpsCoordinates?: string;
+  landArea: number;
+  landAreaUnit?: string;
+  notes?: string;
+}
+
+export interface ProjectParcelListResponse {
+  parcels: ProjectParcel[];
+}
+
+export type ProjectAuditEventSource =
+  (typeof ProjectAuditEventSource)[keyof typeof ProjectAuditEventSource];
+
+export const ProjectAuditEventSource = {
+  project_audit_trail: "project_audit_trail",
+  project_lifecycle_history: "project_lifecycle_history",
+  governance_overrides: "governance_overrides",
+} as const;
+
+/**
+ * @nullable
+ */
+export type ProjectAuditEventBeforeData = { [key: string]: unknown } | null;
+
+/**
+ * @nullable
+ */
+export type ProjectAuditEventAfterData = { [key: string]: unknown } | null;
+
+/**
+ * @nullable
+ */
+export type ProjectAuditEventMetadata = { [key: string]: unknown } | null;
+
+export interface ProjectAuditEvent {
+  id: string;
+  source: ProjectAuditEventSource;
+  occurredAt: string;
+  eventType: string;
+  entityType: string;
+  /** @nullable */
+  entityId?: string | null;
+  title: string;
+  /** @nullable */
+  description?: string | null;
+  /** @nullable */
+  beforeData?: ProjectAuditEventBeforeData;
+  /** @nullable */
+  afterData?: ProjectAuditEventAfterData;
+  /** @nullable */
+  reason?: string | null;
+  /** @nullable */
+  governanceOverrideId?: string | null;
+  /** @nullable */
+  actorId?: string | null;
+  /** @nullable */
+  actorName?: string | null;
+  /** @nullable */
+  actorRole?: string | null;
+  /** @nullable */
+  metadata?: ProjectAuditEventMetadata;
+}
+
+export interface ProjectAuditTrailResponse {
+  events: ProjectAuditEvent[];
+  total: number;
+}
+
+export interface AgreementTemplateAssignmentInput {
+  /** @nullable */
+  agreementTemplateId: string | null;
+  reason?: string;
+}
+
+export type AgreementTemplateCategory =
+  (typeof AgreementTemplateCategory)[keyof typeof AgreementTemplateCategory];
+
+export const AgreementTemplateCategory = {
+  agreement: "agreement",
+  ownership_record: "ownership_record",
+  transfer_document: "transfer_document",
+  succession_document: "succession_document",
+  inheritance_document: "inheritance_document",
+  governance_document: "governance_document",
+  notice: "notice",
+  declaration: "declaration",
+  certificate: "certificate",
+  other: "other",
+} as const;
+
+export type AgreementTemplateFileFormat =
+  (typeof AgreementTemplateFileFormat)[keyof typeof AgreementTemplateFileFormat];
+
+export const AgreementTemplateFileFormat = {
+  docx: "docx",
+  pdf: "pdf",
+} as const;
+
+export type AgreementTemplateStatus =
+  (typeof AgreementTemplateStatus)[keyof typeof AgreementTemplateStatus];
+
+export const AgreementTemplateStatus = {
+  draft: "draft",
+  active: "active",
+  superseded: "superseded",
+  archived: "archived",
+} as const;
+
+export interface AgreementTemplate {
+  id: string;
+  name: string;
+  /** @nullable */
+  description?: string | null;
+  /** @nullable */
+  documentDescription?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  version: string;
+  category: AgreementTemplateCategory;
+  fileObjectPath: string;
+  fileFormat: AgreementTemplateFileFormat;
+  mimeType: string;
+  /** @nullable */
+  fileSizeBytes?: number | null;
+  status: AgreementTemplateStatus;
+  isActive: boolean;
+  /** @nullable */
+  uploadedBy?: string | null;
+  /** @nullable */
+  uploadedByName?: string | null;
+  /** @nullable */
+  activatedAt?: string | null;
+  /** @nullable */
+  activatedBy?: string | null;
+  /** @nullable */
+  supersededAt?: string | null;
+  /** @nullable */
+  supersededBy?: string | null;
+  /** @nullable */
+  supersededTemplateId?: string | null;
+  /** @nullable */
+  archivedAt?: string | null;
+  /** @nullable */
+  archivedBy?: string | null;
+  createdAt: string;
+  /** @nullable */
+  updatedAt?: string | null;
+}
+
+export interface AgreementTemplateLink {
+  template?: AgreementTemplate | null;
 }
 
 export type PartnerRole = (typeof PartnerRole)[keyof typeof PartnerRole];
@@ -2379,81 +2648,6 @@ export interface RequestUploadUrlBody {
 export interface RequestUploadUrlResponse {
   uploadURL: string;
   objectPath: string;
-}
-
-export type AgreementTemplateCategory =
-  (typeof AgreementTemplateCategory)[keyof typeof AgreementTemplateCategory];
-
-export const AgreementTemplateCategory = {
-  agreement: "agreement",
-  ownership_record: "ownership_record",
-  transfer_document: "transfer_document",
-  succession_document: "succession_document",
-  inheritance_document: "inheritance_document",
-  governance_document: "governance_document",
-  notice: "notice",
-  declaration: "declaration",
-  certificate: "certificate",
-  other: "other",
-} as const;
-
-export type AgreementTemplateFileFormat =
-  (typeof AgreementTemplateFileFormat)[keyof typeof AgreementTemplateFileFormat];
-
-export const AgreementTemplateFileFormat = {
-  docx: "docx",
-  pdf: "pdf",
-} as const;
-
-export type AgreementTemplateStatus =
-  (typeof AgreementTemplateStatus)[keyof typeof AgreementTemplateStatus];
-
-export const AgreementTemplateStatus = {
-  draft: "draft",
-  active: "active",
-  superseded: "superseded",
-  archived: "archived",
-} as const;
-
-export interface AgreementTemplate {
-  id: string;
-  name: string;
-  /** @nullable */
-  description?: string | null;
-  /** @nullable */
-  documentDescription?: string | null;
-  /** @nullable */
-  notes?: string | null;
-  version: string;
-  category: AgreementTemplateCategory;
-  fileObjectPath: string;
-  fileFormat: AgreementTemplateFileFormat;
-  mimeType: string;
-  /** @nullable */
-  fileSizeBytes?: number | null;
-  status: AgreementTemplateStatus;
-  isActive: boolean;
-  /** @nullable */
-  uploadedBy?: string | null;
-  /** @nullable */
-  uploadedByName?: string | null;
-  /** @nullable */
-  activatedAt?: string | null;
-  /** @nullable */
-  activatedBy?: string | null;
-  /** @nullable */
-  supersededAt?: string | null;
-  /** @nullable */
-  supersededBy?: string | null;
-  /** @nullable */
-  supersededTemplateId?: string | null;
-  /** @nullable */
-  archivedAt?: string | null;
-  /** @nullable */
-  archivedBy?: string | null;
-  createdAt: string;
-  /** @nullable */
-  updatedAt?: string | null;
 }
 
 export type CreateTemplateBodyCategory =
@@ -10047,6 +10241,24 @@ export type GetUserActivityParams = {
 
 export type GetUserLoginAuditParams = {
   limit?: number;
+};
+
+export type CreateProjectParcel201 = {
+  parcel?: ProjectParcel;
+};
+
+export type UpdateProjectParcel200 = {
+  parcel?: ProjectParcel;
+};
+
+export type GetProjectAuditTrailParams = {
+  limit?: number;
+  offset?: number;
+};
+
+export type SetProjectAgreementTemplate200 = {
+  project?: Project;
+  changed?: boolean;
 };
 
 export type ListPersonMasterParams = {

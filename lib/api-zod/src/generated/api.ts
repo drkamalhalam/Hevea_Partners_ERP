@@ -1325,6 +1325,16 @@ export const ListProjectsResponseItem = zod.object({
   landownerValidationStatus: zod
     .enum(["PENDING", "VALIDATED", "MISSING", "BROKEN_LINKAGE", "INVALID"])
     .optional(),
+  projectType: zod
+    .enum([
+      "joint_venture",
+      "community_partnership",
+      "sole_developer",
+      "lease_based",
+      "other",
+    ])
+    .optional(),
+  agreementTemplateId: zod.string().uuid().nullish(),
 });
 export const ListProjectsResponse = zod.array(ListProjectsResponseItem);
 
@@ -1378,6 +1388,16 @@ export const CreateProjectBody = zod.object({
   expectedMaturityDate: zod.string().optional(),
   termYears: zod.number(),
   notes: zod.string().optional(),
+  projectType: zod
+    .enum([
+      "joint_venture",
+      "community_partnership",
+      "sole_developer",
+      "lease_based",
+      "other",
+    ])
+    .optional(),
+  agreementTemplateId: zod.string().uuid().optional(),
 });
 
 /**
@@ -1474,6 +1494,16 @@ export const GetProjectResponse = zod.object({
   landownerValidationStatus: zod
     .enum(["PENDING", "VALIDATED", "MISSING", "BROKEN_LINKAGE", "INVALID"])
     .optional(),
+  projectType: zod
+    .enum([
+      "joint_venture",
+      "community_partnership",
+      "sole_developer",
+      "lease_based",
+      "other",
+    ])
+    .optional(),
+  agreementTemplateId: zod.string().uuid().nullish(),
 });
 
 /**
@@ -1503,6 +1533,28 @@ export const UpdateProjectBody = zod.object({
   commercialModel: zod
     .enum(["ownership_contribution", "fifty_percent_revenue"])
     .optional(),
+  projectType: zod
+    .enum([
+      "joint_venture",
+      "community_partnership",
+      "sole_developer",
+      "lease_based",
+      "other",
+    ])
+    .optional(),
+  governanceOverrideId: zod
+    .string()
+    .uuid()
+    .optional()
+    .describe(
+      "Required when changing commercialModel or projectType on an active project.",
+    ),
+  reason: zod
+    .string()
+    .optional()
+    .describe(
+      "Optional human-readable rationale for the change (recorded in audit trail).",
+    ),
   activationStatus: zod
     .enum([
       "draft",
@@ -1641,6 +1693,16 @@ export const UpdateProjectResponse = zod.object({
   landownerValidationStatus: zod
     .enum(["PENDING", "VALIDATED", "MISSING", "BROKEN_LINKAGE", "INVALID"])
     .optional(),
+  projectType: zod
+    .enum([
+      "joint_venture",
+      "community_partnership",
+      "sole_developer",
+      "lease_based",
+      "other",
+    ])
+    .optional(),
+  agreementTemplateId: zod.string().uuid().nullish(),
 });
 
 /**
@@ -1648,6 +1710,353 @@ export const UpdateProjectResponse = zod.object({
  */
 export const DeleteProjectParams = zod.object({
   id: zod.coerce.string().uuid(),
+});
+
+/**
+ * @summary List Schedule A parcels for a project
+ */
+export const ListProjectParcelsParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const ListProjectParcelsResponse = zod.object({
+  parcels: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      projectId: zod.string().uuid(),
+      position: zod.number(),
+      landType: zod.enum(["recorded", "non_recorded"]),
+      khatianNumber: zod.string().nullish(),
+      plotNumber: zod.string().nullish(),
+      mouja: zod.string().nullish(),
+      tahsil: zod.string().nullish(),
+      revenueCircle: zod.string().nullish(),
+      subDivision: zod.string().nullish(),
+      landAreaName: zod.string().nullish(),
+      postOffice: zod.string().nullish(),
+      policeStation: zod.string().nullish(),
+      village: zod.string().nullish(),
+      district: zod.string().nullish(),
+      state: zod.string().nullish(),
+      landBoundaryDescription: zod.string().nullish(),
+      gpsCoordinates: zod.string().nullish(),
+      landArea: zod.number(),
+      landAreaUnit: zod.string(),
+      notes: zod.string().nullish(),
+      createdAt: zod.string(),
+      updatedAt: zod.string().nullish(),
+    }),
+  ),
+});
+
+/**
+ * @summary Add a Schedule A parcel
+ */
+export const CreateProjectParcelParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const CreateProjectParcelBody = zod.object({
+  landType: zod.enum(["recorded", "non_recorded"]),
+  khatianNumber: zod.string().optional(),
+  plotNumber: zod.string().optional(),
+  mouja: zod.string().optional(),
+  tahsil: zod.string().optional(),
+  revenueCircle: zod.string().optional(),
+  subDivision: zod.string().optional(),
+  landAreaName: zod.string().optional(),
+  postOffice: zod.string().optional(),
+  policeStation: zod.string().optional(),
+  village: zod.string().optional(),
+  district: zod.string().optional(),
+  state: zod.string().optional(),
+  landBoundaryDescription: zod.string().optional(),
+  gpsCoordinates: zod.string().optional(),
+  landArea: zod.number(),
+  landAreaUnit: zod.string().optional(),
+  notes: zod.string().optional(),
+});
+
+/**
+ * @summary Update a Schedule A parcel
+ */
+export const UpdateProjectParcelParams = zod.object({
+  id: zod.coerce.string().uuid(),
+  parcelId: zod.coerce.string().uuid(),
+});
+
+export const UpdateProjectParcelBody = zod.object({
+  landType: zod.enum(["recorded", "non_recorded"]),
+  khatianNumber: zod.string().optional(),
+  plotNumber: zod.string().optional(),
+  mouja: zod.string().optional(),
+  tahsil: zod.string().optional(),
+  revenueCircle: zod.string().optional(),
+  subDivision: zod.string().optional(),
+  landAreaName: zod.string().optional(),
+  postOffice: zod.string().optional(),
+  policeStation: zod.string().optional(),
+  village: zod.string().optional(),
+  district: zod.string().optional(),
+  state: zod.string().optional(),
+  landBoundaryDescription: zod.string().optional(),
+  gpsCoordinates: zod.string().optional(),
+  landArea: zod.number(),
+  landAreaUnit: zod.string().optional(),
+  notes: zod.string().optional(),
+});
+
+export const UpdateProjectParcelResponse = zod.object({
+  parcel: zod
+    .object({
+      id: zod.string().uuid(),
+      projectId: zod.string().uuid(),
+      position: zod.number(),
+      landType: zod.enum(["recorded", "non_recorded"]),
+      khatianNumber: zod.string().nullish(),
+      plotNumber: zod.string().nullish(),
+      mouja: zod.string().nullish(),
+      tahsil: zod.string().nullish(),
+      revenueCircle: zod.string().nullish(),
+      subDivision: zod.string().nullish(),
+      landAreaName: zod.string().nullish(),
+      postOffice: zod.string().nullish(),
+      policeStation: zod.string().nullish(),
+      village: zod.string().nullish(),
+      district: zod.string().nullish(),
+      state: zod.string().nullish(),
+      landBoundaryDescription: zod.string().nullish(),
+      gpsCoordinates: zod.string().nullish(),
+      landArea: zod.number(),
+      landAreaUnit: zod.string(),
+      notes: zod.string().nullish(),
+      createdAt: zod.string(),
+      updatedAt: zod.string().nullish(),
+    })
+    .optional(),
+});
+
+/**
+ * @summary Remove a Schedule A parcel
+ */
+export const DeleteProjectParcelParams = zod.object({
+  id: zod.coerce.string().uuid(),
+  parcelId: zod.coerce.string().uuid(),
+});
+
+export const DeleteProjectParcelResponse = zod.object({
+  ok: zod.boolean().optional(),
+});
+
+/**
+ * @summary Unified project audit timeline (structural + lifecycle + governance)
+ */
+export const GetProjectAuditTrailParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const getProjectAuditTrailQueryLimitDefault = 100;
+export const getProjectAuditTrailQueryOffsetDefault = 0;
+
+export const GetProjectAuditTrailQueryParams = zod.object({
+  limit: zod.coerce.number().default(getProjectAuditTrailQueryLimitDefault),
+  offset: zod.coerce.number().default(getProjectAuditTrailQueryOffsetDefault),
+});
+
+export const GetProjectAuditTrailResponse = zod.object({
+  events: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      source: zod.enum([
+        "project_audit_trail",
+        "project_lifecycle_history",
+        "governance_overrides",
+      ]),
+      occurredAt: zod.string(),
+      eventType: zod.string(),
+      entityType: zod.string(),
+      entityId: zod.string().nullish(),
+      title: zod.string(),
+      description: zod.string().nullish(),
+      beforeData: zod.record(zod.string(), zod.unknown()).nullish(),
+      afterData: zod.record(zod.string(), zod.unknown()).nullish(),
+      reason: zod.string().nullish(),
+      governanceOverrideId: zod.string().nullish(),
+      actorId: zod.string().nullish(),
+      actorName: zod.string().nullish(),
+      actorRole: zod.string().nullish(),
+      metadata: zod.record(zod.string(), zod.unknown()).nullish(),
+    }),
+  ),
+  total: zod.number(),
+});
+
+/**
+ * @summary Get the agreement template linked to a project
+ */
+export const GetProjectAgreementTemplateParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const GetProjectAgreementTemplateResponse = zod.object({
+  template: zod
+    .union([
+      zod.object({
+        id: zod.string().uuid(),
+        name: zod.string(),
+        description: zod.string().nullish(),
+        documentDescription: zod.string().nullish(),
+        notes: zod.string().nullish(),
+        version: zod.string(),
+        category: zod.enum([
+          "agreement",
+          "ownership_record",
+          "transfer_document",
+          "succession_document",
+          "inheritance_document",
+          "governance_document",
+          "notice",
+          "declaration",
+          "certificate",
+          "other",
+        ]),
+        fileObjectPath: zod.string(),
+        fileFormat: zod.enum(["docx", "pdf"]),
+        mimeType: zod.string(),
+        fileSizeBytes: zod.number().nullish(),
+        status: zod.enum(["draft", "active", "superseded", "archived"]),
+        isActive: zod.boolean(),
+        uploadedBy: zod.string().uuid().nullish(),
+        uploadedByName: zod.string().nullish(),
+        activatedAt: zod.coerce.date().nullish(),
+        activatedBy: zod.string().uuid().nullish(),
+        supersededAt: zod.coerce.date().nullish(),
+        supersededBy: zod.string().uuid().nullish(),
+        supersededTemplateId: zod.string().uuid().nullish(),
+        archivedAt: zod.coerce.date().nullish(),
+        archivedBy: zod.string().uuid().nullish(),
+        createdAt: zod.coerce.date(),
+        updatedAt: zod.coerce.date().nullish(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+});
+
+/**
+ * @summary Link or clear a project's agreement template (must be category=agreement, status=active)
+ */
+export const SetProjectAgreementTemplateParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const SetProjectAgreementTemplateBody = zod.object({
+  agreementTemplateId: zod.string().uuid().nullable(),
+  reason: zod.string().optional(),
+});
+
+export const SetProjectAgreementTemplateResponse = zod.object({
+  project: zod
+    .object({
+      id: zod.string().uuid(),
+      name: zod.string(),
+      projectCode: zod.string().nullish(),
+      description: zod.string().nullish(),
+      location: zod.string(),
+      village: zod.string().nullish(),
+      district: zod.string(),
+      state: zod.string(),
+      landArea: zod.number(),
+      landAreaUnit: zod.string(),
+      landNotionalValue: zod.number().nullish(),
+      landValuePerUnit: zod.number().nullish(),
+      valuationMethod: zod
+        .enum(["by_tree_capacity", "by_land_area_kani", "manual"])
+        .nullish(),
+      perTreeValue: zod.number().nullish(),
+      landNotionalValueRemarks: zod.string().nullish(),
+      commercialModel: zod.enum([
+        "ownership_contribution",
+        "fifty_percent_revenue",
+      ]),
+      activationStatus: zod.enum([
+        "draft",
+        "pending_verification",
+        "pending_agreement",
+        "pending_participant_confirmation",
+        "pending_land_verification",
+        "ready_for_activation",
+        "active",
+        "suspended",
+        "closed",
+      ]),
+      status: zod.enum([
+        "planning",
+        "developing",
+        "maturing",
+        "tapping",
+        "completed",
+        "suspended",
+        "missing_developer",
+      ]),
+      lifecycleStatus: zod.enum(["prematurity", "mature_production", "closed"]),
+      startDate: zod.string(),
+      expectedMaturityDate: zod.string().nullish(),
+      termYears: zod.number(),
+      notes: zod.string().nullish(),
+      isActive: zod.boolean(),
+      createdAt: zod.string(),
+      updatedAt: zod.string().nullish(),
+      ownershipFrozenAt: zod.string().nullish(),
+      landType: zod.string().nullish(),
+      khatianNumber: zod.string().nullish(),
+      plotNumber: zod.string().nullish(),
+      mouja: zod.string().nullish(),
+      tahsil: zod.string().nullish(),
+      revenueCircle: zod.string().nullish(),
+      subDivision: zod.string().nullish(),
+      landAreaName: zod.string().nullish(),
+      postOffice: zod.string().nullish(),
+      policeStation: zod.string().nullish(),
+      landBoundaryDescription: zod.string().nullish(),
+      gpsCoordinates: zod.string().nullish(),
+      rubberCapacity: zod.number().nullish(),
+      rubberCapacityUnit: zod.string().nullish(),
+      lcaBaseAmount: zod.string().nullish(),
+      lcaEscalationPct: zod.string().nullish(),
+      agreementType: zod.string().nullish(),
+      agreementEffectiveDate: zod.string().nullish(),
+      agreementDurationYears: zod.number().nullish(),
+      agreementSpecialTerms: zod.string().nullish(),
+      onboardingStep: zod.number().nullish(),
+      onboardingCompletedAt: zod.string().nullish(),
+      configurationStatus: zod
+        .enum([
+          "VALID",
+          "INVALID_PROJECT_CONFIGURATION",
+          "PENDING_REMEDIATION",
+          "UNDER_REVIEW",
+        ])
+        .optional(),
+      invalidReason: zod.string().nullish(),
+      governanceLocked: zod.boolean().optional(),
+      remediationRequired: zod.boolean().optional(),
+      landownerValidationStatus: zod
+        .enum(["PENDING", "VALIDATED", "MISSING", "BROKEN_LINKAGE", "INVALID"])
+        .optional(),
+      projectType: zod
+        .enum([
+          "joint_venture",
+          "community_partnership",
+          "sole_developer",
+          "lease_based",
+          "other",
+        ])
+        .optional(),
+      agreementTemplateId: zod.string().uuid().nullish(),
+    })
+    .optional(),
+  changed: zod.boolean().optional(),
 });
 
 /**
@@ -4556,6 +4965,16 @@ export const GetMyPortfolioResponse = zod.object({
       landownerValidationStatus: zod
         .enum(["PENDING", "VALIDATED", "MISSING", "BROKEN_LINKAGE", "INVALID"])
         .optional(),
+      projectType: zod
+        .enum([
+          "joint_venture",
+          "community_partnership",
+          "sole_developer",
+          "lease_based",
+          "other",
+        ])
+        .optional(),
+      agreementTemplateId: zod.string().uuid().nullish(),
     }),
   ),
 });
@@ -22848,6 +23267,16 @@ export const GetProjectOnboardingStateResponse = zod.object({
       landownerValidationStatus: zod
         .enum(["PENDING", "VALIDATED", "MISSING", "BROKEN_LINKAGE", "INVALID"])
         .optional(),
+      projectType: zod
+        .enum([
+          "joint_venture",
+          "community_partnership",
+          "sole_developer",
+          "lease_based",
+          "other",
+        ])
+        .optional(),
+      agreementTemplateId: zod.string().uuid().nullish(),
     })
     .optional(),
   participants: zod
@@ -23056,6 +23485,16 @@ export const ActivateProjectViaOnboardingResponse = zod.object({
     landownerValidationStatus: zod
       .enum(["PENDING", "VALIDATED", "MISSING", "BROKEN_LINKAGE", "INVALID"])
       .optional(),
+    projectType: zod
+      .enum([
+        "joint_venture",
+        "community_partnership",
+        "sole_developer",
+        "lease_based",
+        "other",
+      ])
+      .optional(),
+    agreementTemplateId: zod.string().uuid().nullish(),
   }),
 });
 

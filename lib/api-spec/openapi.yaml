@@ -607,6 +607,129 @@ paths:
         "204":
           description: Deleted
 
+  /projects/{id}/parcels:
+    get:
+      operationId: listProjectParcels
+      tags: [projects]
+      summary: List Schedule A parcels for a project
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: List of parcels
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProjectParcelListResponse" }
+    post:
+      operationId: createProjectParcel
+      tags: [projects]
+      summary: Add a Schedule A parcel
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProjectParcelInput" }
+      responses:
+        "201":
+          description: Parcel created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  parcel: { $ref: "#/components/schemas/ProjectParcel" }
+
+  /projects/{id}/parcels/{parcelId}:
+    put:
+      operationId: updateProjectParcel
+      tags: [projects]
+      summary: Update a Schedule A parcel
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: parcelId, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProjectParcelInput" }
+      responses:
+        "200":
+          description: Parcel updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  parcel: { $ref: "#/components/schemas/ProjectParcel" }
+    delete:
+      operationId: deleteProjectParcel
+      tags: [projects]
+      summary: Remove a Schedule A parcel
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: parcelId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Parcel removed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OkResponse" }
+
+  /projects/{id}/audit-trail:
+    get:
+      operationId: getProjectAuditTrail
+      tags: [projects]
+      summary: Unified project audit timeline (structural + lifecycle + governance)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: limit, in: query, required: false, schema: { type: integer, default: 100 } }
+        - { name: offset, in: query, required: false, schema: { type: integer, default: 0 } }
+      responses:
+        "200":
+          description: Unified audit events (newest first)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProjectAuditTrailResponse" }
+
+  /projects/{id}/agreement-template:
+    get:
+      operationId: getProjectAgreementTemplate
+      tags: [projects]
+      summary: Get the agreement template linked to a project
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Linked template (or null)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AgreementTemplateLink" }
+    put:
+      operationId: setProjectAgreementTemplate
+      tags: [projects]
+      summary: Link or clear a project's agreement template (must be category=agreement, status=active)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AgreementTemplateAssignmentInput" }
+      responses:
+        "200":
+          description: Updated project
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  project: { $ref: "#/components/schemas/Project" }
+                  changed: { type: boolean }
+        "409":
+          description: Template invalid (wrong category or not active)
+
   /projects/{id}/participants:
     get:
       operationId: listProjectParticipants
@@ -13761,6 +13884,12 @@ components:
         landownerValidationStatus:
           type: string
           enum: [PENDING, VALIDATED, MISSING, BROKEN_LINKAGE, INVALID]
+        projectType:
+          type: string
+          enum: [joint_venture, community_partnership, sole_developer, lease_based, other]
+        agreementTemplateId:
+          type: ["string", "null"]
+          format: uuid
 
     ProjectInput:
       type: object
@@ -13812,6 +13941,12 @@ components:
           type: integer
         notes:
           type: string
+        projectType:
+          type: string
+          enum: [joint_venture, community_partnership, sole_developer, lease_based, other]
+        agreementTemplateId:
+          type: string
+          format: uuid
 
     ProjectUpdate:
       type: object
@@ -13848,6 +13983,16 @@ components:
         commercialModel:
           type: string
           enum: [ownership_contribution, fifty_percent_revenue]
+        projectType:
+          type: string
+          enum: [joint_venture, community_partnership, sole_developer, lease_based, other]
+        governanceOverrideId:
+          type: string
+          format: uuid
+          description: Required when changing commercialModel or projectType on an active project.
+        reason:
+          type: string
+          description: Optional human-readable rationale for the change (recorded in audit trail).
         activationStatus:
           type: string
           enum: [draft, pending_verification, pending_agreement, pending_participant_confirmation, pending_land_verification, ready_for_activation, active, suspended, closed]
@@ -13904,6 +14049,118 @@ components:
           type: string
         onboardingStep:
           type: integer
+
+    ProjectParcel:
+      type: object
+      required: [id, projectId, position, landType, landArea, landAreaUnit, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        position: { type: integer }
+        landType:
+          type: string
+          enum: [recorded, non_recorded]
+        khatianNumber: { type: ["string", "null"] }
+        plotNumber: { type: ["string", "null"] }
+        mouja: { type: ["string", "null"] }
+        tahsil: { type: ["string", "null"] }
+        revenueCircle: { type: ["string", "null"] }
+        subDivision: { type: ["string", "null"] }
+        landAreaName: { type: ["string", "null"] }
+        postOffice: { type: ["string", "null"] }
+        policeStation: { type: ["string", "null"] }
+        village: { type: ["string", "null"] }
+        district: { type: ["string", "null"] }
+        state: { type: ["string", "null"] }
+        landBoundaryDescription: { type: ["string", "null"] }
+        gpsCoordinates: { type: ["string", "null"] }
+        landArea: { type: number }
+        landAreaUnit: { type: string }
+        notes: { type: ["string", "null"] }
+        createdAt: { type: string }
+        updatedAt: { type: ["string", "null"] }
+
+    ProjectParcelInput:
+      type: object
+      required: [landType, landArea]
+      properties:
+        landType:
+          type: string
+          enum: [recorded, non_recorded]
+        khatianNumber: { type: string }
+        plotNumber: { type: string }
+        mouja: { type: string }
+        tahsil: { type: string }
+        revenueCircle: { type: string }
+        subDivision: { type: string }
+        landAreaName: { type: string }
+        postOffice: { type: string }
+        policeStation: { type: string }
+        village: { type: string }
+        district: { type: string }
+        state: { type: string }
+        landBoundaryDescription: { type: string }
+        gpsCoordinates: { type: string }
+        landArea: { type: number }
+        landAreaUnit: { type: string }
+        notes: { type: string }
+
+    ProjectParcelListResponse:
+      type: object
+      required: [parcels]
+      properties:
+        parcels:
+          type: array
+          items: { $ref: "#/components/schemas/ProjectParcel" }
+
+    ProjectAuditEvent:
+      type: object
+      required: [id, source, occurredAt, eventType, entityType, title]
+      properties:
+        id: { type: string, format: uuid }
+        source:
+          type: string
+          enum: [project_audit_trail, project_lifecycle_history, governance_overrides]
+        occurredAt: { type: string }
+        eventType: { type: string }
+        entityType: { type: string }
+        entityId: { type: ["string", "null"] }
+        title: { type: string }
+        description: { type: ["string", "null"] }
+        beforeData: { type: ["object", "null"], additionalProperties: true }
+        afterData: { type: ["object", "null"], additionalProperties: true }
+        reason: { type: ["string", "null"] }
+        governanceOverrideId: { type: ["string", "null"] }
+        actorId: { type: ["string", "null"] }
+        actorName: { type: ["string", "null"] }
+        actorRole: { type: ["string", "null"] }
+        metadata: { type: ["object", "null"], additionalProperties: true }
+
+    ProjectAuditTrailResponse:
+      type: object
+      required: [events, total]
+      properties:
+        events:
+          type: array
+          items: { $ref: "#/components/schemas/ProjectAuditEvent" }
+        total: { type: integer }
+
+    AgreementTemplateAssignmentInput:
+      type: object
+      required: [agreementTemplateId]
+      properties:
+        agreementTemplateId:
+          type: ["string", "null"]
+          format: uuid
+        reason: { type: string }
+
+    AgreementTemplateLink:
+      type: object
+      properties:
+        template:
+          oneOf:
+            - $ref: "#/components/schemas/AgreementTemplate"
+            - type: "null"
 
     Partner:
       type: object
