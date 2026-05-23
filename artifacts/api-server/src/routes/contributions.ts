@@ -11,6 +11,7 @@ import {
   usersTable,
   userProjectAssignmentsTable,
 } from "@workspace/db";
+import { assertContributorIdentityValid } from "../lib/partnerIdentityGuard";
 import { requireRole } from "../middlewares/auth";
 import { writeAudit } from "../lib/auditLogger";
 import { writeTimeline, TL } from "../lib/timelineLogger";
@@ -523,6 +524,25 @@ router.post(
         code: "GOVERNANCE_LOCKED",
         configurationStatus: projectRows[0].configurationStatus,
       });
+    }
+
+    // ── Partner identity foundation ────────────────────────────────────────
+    // For ownership-affecting contributions, the contributor must resolve to
+    // a complete identity chain: participant → person_master (active) →
+    // active, non-deleted partner. Reject and audit otherwise.
+    if (affectsOwnership) {
+      const identityCheck = await assertContributorIdentityValid({
+        projectId: String(b.projectId),
+        participantId: resolvedParticipantId,
+        action: "contribution.create",
+        actor: { id: actor.id, name: actor.name, role: actor.role },
+        req,
+        targetTable: "contributions",
+        metadata: { contributionType: cType, partnerName: resolvedPartnerName },
+      });
+      if (!identityCheck.ok) {
+        return res.status(identityCheck.status).json(identityCheck.body);
+      }
     }
 
     // ── Commercial model guard (fifty_percent_revenue) ────────────────────────
@@ -1044,6 +1064,26 @@ router.post("/:id/verify", async (req, res) => {
   });
   if (!guardVerify.ok) return res.status(guardVerify.status).json(guardVerify.body);
 
+  // ── Partner identity foundation ──────────────────────────────────────────
+  // Re-validate contributor identity at verification time. Identity may have
+  // become invalid between creation and verification (partner deactivated,
+  // person archived, etc.). Reject and audit if so.
+  if (curr.affectsOwnership === true) {
+    const identityCheck = await assertContributorIdentityValid({
+      projectId: curr.projectId,
+      participantId: curr.partnerId,
+      action: "contribution.verify",
+      actor: { id: actor.id, name: actor.name, role: actor.role },
+      req,
+      targetTable: "contributions",
+      targetRecordId: id,
+      metadata: { contributionType: curr.contributionType, partnerName: curr.partnerName },
+    });
+    if (!identityCheck.ok) {
+      return res.status(identityCheck.status).json(identityCheck.body);
+    }
+  }
+
   const b = req.body as Record<string, unknown>;
   const wasRejected = curr.verificationStatus === "rejected";
 
@@ -1518,6 +1558,27 @@ router.post(
         targetRecordId: id,
       });
       if (!guardReVerify.ok) return res.status(guardReVerify.status).json(guardReVerify.body);
+
+      // ── Partner identity foundation ───────────────────────────────────────
+      // Re-verifying restores `verified` status on an ownership-affecting
+      // contribution, which reinjects equity into the project. Identity must
+      // still be valid at this moment — otherwise the dispute resolution
+      // would silently bypass the create/verify identity gate.
+      if (existing[0].affectsOwnership === true) {
+        const identityCheck = await assertContributorIdentityValid({
+          projectId: existing[0].projectId,
+          participantId: existing[0].partnerId,
+          action: "contribution.dispute_re_verify",
+          actor: { id: actor.id, name: actor.name, role: actor.role },
+          req,
+          targetTable: "contributions",
+          targetRecordId: id,
+          metadata: { contributionType: existing[0].contributionType, partnerName: existing[0].partnerName },
+        });
+        if (!identityCheck.ok) {
+          return res.status(identityCheck.status).json(identityCheck.body);
+        }
+      }
     }
 
     const newStatus = b.action === "re_verify" ? "verified" : "rejected";

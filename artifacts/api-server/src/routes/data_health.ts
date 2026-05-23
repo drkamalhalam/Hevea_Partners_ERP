@@ -24,6 +24,12 @@ import {
   projectOwnershipFreezesTable,
   ownershipSnapshotsTable,
   usersTable,
+  partnersTable,
+  personMasterTable,
+  projectParticipantsTable,
+  partnerClaimantsTable,
+  ownershipTransfersTable,
+  inheritanceClaimsTable,
   type OwnershipSnapshotEntry,
 } from "@workspace/db";
 import { eq, and, isNull, lt, gt, sql, inArray, not, isNotNull } from "drizzle-orm";
@@ -46,6 +52,14 @@ router.get("/summary", async (req, res) => {
     contributionsVerifiedAfterMaturityCount,
     draftsOnMaturedCount,
     closedProjectActivityCount,
+    // Partner identity foundation counters
+    partnersWithoutPersonMasterCount,
+    inactivePartnersWithOwnershipCount,
+    duplicatePartnersPerPersonCount,
+    participantsMissingPartnerCount,
+    snapshotUnknownPartnersCount,
+    transfersInvalidPartnerCount,
+    inheritanceInvalidPartnerCount,
   ] = await Promise.all([
     // Orphan contributors: contributions with no partnerId
     db
@@ -204,6 +218,143 @@ router.get("/summary", async (req, res) => {
         ),
       )
       .then(([r]) => Number(r?.count ?? 0)),
+
+    // ── Partner identity foundation ─────────────────────────────────────────
+    // 1. Partners with no person_master link.
+    db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(partnersTable)
+      .where(and(isNull(partnersTable.personMasterId), isNull(partnersTable.deletedAt)))
+      .then(([r]) => Number(r?.count ?? 0)),
+
+    // 2. Inactive or soft-deleted partners that still own at least one
+    // ownership-affecting, non-deleted contribution.
+    db
+      .select({ count: sql<number>`count(DISTINCT ${partnersTable.id})::int` })
+      .from(partnersTable)
+      .innerJoin(
+        contributionsTable,
+        eq(contributionsTable.partnerId, partnersTable.id),
+      )
+      .where(
+        and(
+          eq(contributionsTable.affectsOwnership, true),
+          isNull(contributionsTable.deletedAt),
+          eq(contributionsTable.isActive, true),
+          // Either inactive or soft-deleted
+          sql`(${partnersTable.isActive} = false OR ${partnersTable.deletedAt} IS NOT NULL)`,
+        ),
+      )
+      .then(([r]) => Number(r?.count ?? 0)),
+
+    // 3. Persons with >1 non-deleted partner row pointing at them.
+    db
+      .select({
+        personMasterId: partnersTable.personMasterId,
+        c: sql<number>`count(*)::int`,
+      })
+      .from(partnersTable)
+      .where(
+        and(
+          isNull(partnersTable.deletedAt),
+          // personMasterId not null
+          sql`${partnersTable.personMasterId} IS NOT NULL`,
+        ),
+      )
+      .groupBy(partnersTable.personMasterId)
+      .having(sql`count(*) > 1`)
+      .then((rows) => rows.length),
+
+    // 4. Project participants in ownership-bearing roles (landowner/investor)
+    // whose person has no active, non-deleted partner row.
+    db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(projectParticipantsTable)
+      .where(
+        and(
+          inArray(projectParticipantsTable.role, ["landowner", "investor"]),
+          sql`${projectParticipantsTable.personMasterId} IS NOT NULL`,
+          sql`NOT EXISTS (
+            SELECT 1 FROM ${partnersTable} p
+            WHERE p.person_master_id = ${projectParticipantsTable.personMasterId}
+              AND p.is_active = true
+              AND p.deleted_at IS NULL
+          )`,
+        ),
+      )
+      .then(([r]) => Number(r?.count ?? 0)),
+
+    // 5. Ownership snapshots that reference a partnerId that does not exist
+    // in the partners table (scans the JSON entries[] column).
+    // UUID-safe: only cast values matching the canonical UUID regex; values
+    // failing the pattern are surfaced as anomalies on their own (any
+    // non-null, non-UUID string is by definition unknown to partners).
+    db.execute(sql`
+      WITH raw AS (
+        SELECT DISTINCT (e->>'partnerId') AS pid_text
+        FROM ${ownershipSnapshotsTable},
+             jsonb_array_elements(${ownershipSnapshotsTable.entries}::jsonb) AS e
+        WHERE (e->>'partnerId') IS NOT NULL
+      )
+      SELECT count(*)::int AS c
+      FROM raw
+      WHERE pid_text !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+         OR NOT EXISTS (
+              SELECT 1 FROM ${partnersTable} p WHERE p.id = raw.pid_text::uuid
+            )
+    `).then((r: any) => Number(r?.rows?.[0]?.c ?? 0)),
+
+    // 6. Transfers (non-cancelled) referencing a partner whose identity is
+    // invalid: missing, inactive, soft-deleted, or missing person link.
+    db
+      .select({ count: sql<number>`count(DISTINCT ${ownershipTransfersTable.id})::int` })
+      .from(ownershipTransfersTable)
+      .where(
+        and(
+          sql`${ownershipTransfersTable.status} <> 'cancelled'`,
+          sql`(
+            NOT EXISTS (
+              SELECT 1 FROM ${partnersTable} p
+              WHERE p.id = ${ownershipTransfersTable.transferorPartnerId}
+                AND p.is_active = true
+                AND p.deleted_at IS NULL
+                AND p.person_master_id IS NOT NULL
+            )
+            OR (
+              ${ownershipTransfersTable.buyerPartnerId} IS NOT NULL
+              AND NOT EXISTS (
+                SELECT 1 FROM ${partnersTable} p
+                WHERE p.id = ${ownershipTransfersTable.buyerPartnerId}
+                  AND p.is_active = true
+                  AND p.deleted_at IS NULL
+                  AND p.person_master_id IS NOT NULL
+              )
+            )
+          )`,
+        ),
+      )
+      .then(([r]) => Number(r?.count ?? 0)),
+
+    // 7. Inheritance claims (non-rejected) referencing a partner whose
+    // identity is invalid: missing, inactive, soft-deleted, or missing
+    // person link.
+    db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(inheritanceClaimsTable)
+      .where(
+        and(
+          sql`${inheritanceClaimsTable.status} <> 'rejected'`,
+          eq(inheritanceClaimsTable.isActive, true),
+          sql`NOT EXISTS (
+            SELECT 1 FROM ${partnersTable} p
+            WHERE p.id = ${inheritanceClaimsTable.partnerId}
+              AND p.is_active = true
+              AND p.deleted_at IS NULL
+              AND p.person_master_id IS NOT NULL
+          )`,
+        ),
+      )
+      .then(([r]) => Number(r?.count ?? 0)),
   ]);
 
   req.log.info(
@@ -231,6 +382,13 @@ router.get("/summary", async (req, res) => {
     contributionsVerifiedAfterMaturity: contributionsVerifiedAfterMaturityCount,
     draftOwnershipContribsOnMatured: draftsOnMaturedCount,
     closedProjectOwnershipActivity: closedProjectActivityCount,
+    partnersWithoutPersonMaster: partnersWithoutPersonMasterCount,
+    inactivePartnersWithOwnership: inactivePartnersWithOwnershipCount,
+    duplicatePartnersPerPerson: duplicatePartnersPerPersonCount,
+    participantsMissingPartner: participantsMissingPartnerCount,
+    snapshotUnknownPartners: snapshotUnknownPartnersCount,
+    transfersInvalidPartner: transfersInvalidPartnerCount,
+    inheritanceInvalidPartner: inheritanceInvalidPartnerCount,
     totalIssues:
       orphanCount +
       violationCount +
@@ -240,7 +398,14 @@ router.get("/summary", async (req, res) => {
       contributionsAfterFreezeCount +
       contributionsVerifiedAfterMaturityCount +
       draftsOnMaturedCount +
-      closedProjectActivityCount,
+      closedProjectActivityCount +
+      partnersWithoutPersonMasterCount +
+      inactivePartnersWithOwnershipCount +
+      duplicatePartnersPerPersonCount +
+      participantsMissingPartnerCount +
+      snapshotUnknownPartnersCount +
+      transfersInvalidPartnerCount +
+      inheritanceInvalidPartnerCount,
     fetchedAt: new Date().toISOString(),
   });
 });
@@ -668,6 +833,223 @@ router.post("/backfill-crystallization", requireRole("admin"), async (req, res) 
     errors,
     results,
   });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Partner Identity Foundation — list endpoints (top 200)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// 1. Partners with no person_master link.
+router.get("/partners-without-person-master", async (_req, res) => {
+  const rows = await db
+    .select({
+      id: partnersTable.id,
+      name: partnersTable.name,
+      role: partnersTable.role,
+      isActive: partnersTable.isActive,
+      createdAt: partnersTable.createdAt,
+    })
+    .from(partnersTable)
+    .where(and(isNull(partnersTable.personMasterId), isNull(partnersTable.deletedAt)))
+    .orderBy(partnersTable.createdAt)
+    .limit(200);
+  return res.json({ items: rows, count: rows.length });
+});
+
+// 2. Inactive (or soft-deleted) partners that still hold ownership-affecting
+// contributions.
+router.get("/inactive-partners-with-ownership", async (_req, res) => {
+  const rows = await db
+    .select({
+      partnerId: partnersTable.id,
+      partnerName: partnersTable.name,
+      partnerIsActive: partnersTable.isActive,
+      partnerDeletedAt: partnersTable.deletedAt,
+      contributionCount: sql<number>`count(${contributionsTable.id})::int`,
+    })
+    .from(partnersTable)
+    .innerJoin(
+      contributionsTable,
+      eq(contributionsTable.partnerId, partnersTable.id),
+    )
+    .where(
+      and(
+        eq(contributionsTable.affectsOwnership, true),
+        isNull(contributionsTable.deletedAt),
+        eq(contributionsTable.isActive, true),
+        sql`(${partnersTable.isActive} = false OR ${partnersTable.deletedAt} IS NOT NULL)`,
+      ),
+    )
+    .groupBy(partnersTable.id, partnersTable.name, partnersTable.isActive, partnersTable.deletedAt)
+    .limit(200);
+  return res.json({ items: rows, count: rows.length });
+});
+
+// 3. Persons with multiple non-deleted partner rows.
+router.get("/duplicate-partners-per-person", async (_req, res) => {
+  const rows = await db
+    .select({
+      personMasterId: partnersTable.personMasterId,
+      partnerCount: sql<number>`count(*)::int`,
+      partnerIds: sql<string[]>`array_agg(${partnersTable.id}::text)`,
+      partnerNames: sql<string[]>`array_agg(${partnersTable.name})`,
+    })
+    .from(partnersTable)
+    .where(
+      and(
+        isNull(partnersTable.deletedAt),
+        sql`${partnersTable.personMasterId} IS NOT NULL`,
+      ),
+    )
+    .groupBy(partnersTable.personMasterId)
+    .having(sql`count(*) > 1`)
+    .limit(200);
+  return res.json({ items: rows, count: rows.length });
+});
+
+// 4. Landowner/investor participants whose person has no active partner row.
+router.get("/participants-missing-partner", async (_req, res) => {
+  const rows = await db.execute(sql`
+    SELECT
+      pp.id              AS "participantId",
+      pp.project_id      AS "projectId",
+      pp.role            AS "role",
+      pp.full_name       AS "fullName",
+      pp.person_master_id AS "personMasterId"
+    FROM ${projectParticipantsTable} pp
+    WHERE pp.role IN ('landowner', 'investor')
+      AND pp.person_master_id IS NOT NULL
+      AND NOT EXISTS (
+        SELECT 1 FROM ${partnersTable} p
+        WHERE p.person_master_id = pp.person_master_id
+          AND p.is_active = true
+          AND p.deleted_at IS NULL
+      )
+    ORDER BY pp.created_at
+    LIMIT 200
+  `);
+  const items = (rows as any).rows ?? [];
+  return res.json({ items, count: items.length });
+});
+
+// 5. Ownership snapshots whose entries[].partnerId is malformed or not in
+// partners. UUID-safe: only cast strings matching the canonical UUID regex.
+// Malformed (non-UUID, non-null) values are flagged as "malformed".
+router.get("/snapshot-unknown-partners", async (_req, res) => {
+  const result = await db.execute(sql`
+    WITH raw AS (
+      SELECT
+        s.id            AS snapshot_id,
+        s.project_id    AS project_id,
+        s.snapshot_type AS snapshot_type,
+        s.snapshot_at   AS snapshot_at,
+        e->>'partnerId' AS pid_text,
+        e->>'partnerName' AS partner_name,
+        e->>'percentage'  AS percentage
+      FROM ${ownershipSnapshotsTable} s,
+           jsonb_array_elements(s.entries::jsonb) AS e
+      WHERE (e->>'partnerId') IS NOT NULL
+    )
+    SELECT
+      snapshot_id    AS "snapshotId",
+      project_id     AS "projectId",
+      snapshot_type  AS "snapshotType",
+      snapshot_at    AS "snapshotAt",
+      pid_text       AS "unknownPartnerId",
+      partner_name   AS "partnerName",
+      percentage     AS "percentage",
+      CASE
+        WHEN pid_text !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+          THEN 'malformed'
+        ELSE 'not_in_partners'
+      END AS "reason"
+    FROM raw
+    WHERE pid_text !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+       OR NOT EXISTS (
+            SELECT 1 FROM ${partnersTable} p WHERE p.id = raw.pid_text::uuid
+          )
+    ORDER BY snapshot_at DESC
+    LIMIT 200
+  `);
+  const items = (result as any).rows ?? [];
+  return res.json({ items, count: items.length });
+});
+
+// 6. Transfers referencing an invalid partner (transferor or buyer).
+router.get("/transfers-invalid-partner", async (_req, res) => {
+  const rows = await db.execute(sql`
+    SELECT
+      t.id                       AS "transferId",
+      t.project_id               AS "projectId",
+      t.status                   AS "status",
+      t.transferor_partner_id    AS "transferorPartnerId",
+      t.buyer_partner_id         AS "buyerPartnerId",
+      CASE
+        WHEN NOT EXISTS (
+          SELECT 1 FROM ${partnersTable} p
+          WHERE p.id = t.transferor_partner_id
+            AND p.is_active = true
+            AND p.deleted_at IS NULL
+            AND p.person_master_id IS NOT NULL
+        ) THEN 'transferor'
+        ELSE 'buyer'
+      END AS "invalidSide"
+    FROM ${ownershipTransfersTable} t
+    WHERE t.status <> 'cancelled'
+      AND (
+        NOT EXISTS (
+          SELECT 1 FROM ${partnersTable} p
+          WHERE p.id = t.transferor_partner_id
+            AND p.is_active = true
+            AND p.deleted_at IS NULL
+            AND p.person_master_id IS NOT NULL
+        )
+        OR (
+          t.buyer_partner_id IS NOT NULL
+          AND NOT EXISTS (
+            SELECT 1 FROM ${partnersTable} p
+            WHERE p.id = t.buyer_partner_id
+              AND p.is_active = true
+              AND p.deleted_at IS NULL
+              AND p.person_master_id IS NOT NULL
+          )
+        )
+      )
+    ORDER BY t.created_at DESC
+    LIMIT 200
+  `);
+  const items = (rows as any).rows ?? [];
+  return res.json({ items, count: items.length });
+});
+
+// 7. Inheritance claims referencing an invalid source partner.
+router.get("/inheritance-invalid-partner", async (_req, res) => {
+  const rows = await db
+    .select({
+      claimId: inheritanceClaimsTable.id,
+      projectId: inheritanceClaimsTable.projectId,
+      partnerId: inheritanceClaimsTable.partnerId,
+      status: inheritanceClaimsTable.status,
+      claimType: inheritanceClaimsTable.claimType,
+      createdAt: inheritanceClaimsTable.createdAt,
+    })
+    .from(inheritanceClaimsTable)
+    .where(
+      and(
+        sql`${inheritanceClaimsTable.status} <> 'rejected'`,
+        eq(inheritanceClaimsTable.isActive, true),
+        sql`NOT EXISTS (
+          SELECT 1 FROM ${partnersTable} p
+          WHERE p.id = ${inheritanceClaimsTable.partnerId}
+            AND p.is_active = true
+            AND p.deleted_at IS NULL
+            AND p.person_master_id IS NOT NULL
+        )`,
+      ),
+    )
+    .orderBy(inheritanceClaimsTable.createdAt)
+    .limit(200);
+  return res.json({ items: rows, count: rows.length });
 });
 
 export default router;

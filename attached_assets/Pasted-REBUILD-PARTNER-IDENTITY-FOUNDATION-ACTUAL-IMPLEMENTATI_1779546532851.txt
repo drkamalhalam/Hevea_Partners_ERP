@@ -1,0 +1,198 @@
+REBUILD PARTNER IDENTITY FOUNDATION (ACTUAL IMPLEMENTATION REQUIRED)
+
+Previous attempt was not implemented. This task must produce real schema, validation, route, audit and data-health changes.
+
+Do NOT only create plans, notes, session documents or TODOs.
+
+Implement all requirements below and report exact files changed.
+
+Do NOT modify ownership percentages.
+Do NOT modify ownership calculations.
+Do NOT modify inheritance allocation formulas.
+Do NOT modify transfer valuation logic.
+Do NOT create Contribution Ledger.
+Do NOT create Financial Input module.
+
+====================================================
+OBJECTIVE
+====================================================
+
+Ownership attribution must never become orphaned.
+
+Current audit confirms:
+
+- partner can exist without person_master
+- multiple partners can point to same person
+- contributions can lose ownership attribution
+- transfer execution lacks identity validation
+- inheritance lacks identity validation
+- ownership snapshots can reference missing partners
+- ownership calculations can silently ignore orphaned ownership rows
+
+Implement protection, validation and monitoring.
+
+====================================================
+PARTNER VALIDATION SERVICE
+====================================================
+
+Create reusable identity validation service/helper.
+
+Capabilities:
+
+- partner exists
+- partner active
+- partner not soft deleted
+- partner linked to person_master
+- linked person_master exists
+- linked person_master active
+
+Single shared implementation.
+
+All ownership-sensitive routes must use it.
+
+====================================================
+PARTNER CREATION RULES
+====================================================
+
+For all NEW partner creation:
+
+Require:
+
+- valid personMasterId
+- referenced person_master exists
+- referenced person_master active
+
+Reject invalid linkage.
+
+Existing legacy rows remain untouched.
+
+====================================================
+CONTRIBUTION VALIDATION
+====================================================
+
+Before ownership-affecting contribution creation:
+
+Validate:
+
+- partner exists
+- partner active
+- partner linked to person_master
+- linked person active
+
+Reject if any validation fails.
+
+Before contribution verification:
+
+Repeat all identity checks.
+
+Verification must fail if contributor identity became invalid.
+
+====================================================
+TRANSFER VALIDATION
+====================================================
+
+Before transfer creation:
+
+Validate transferor and buyer:
+
+- exists
+- active
+- linked to person_master
+- linked person active
+
+Before transfer execution:
+
+Repeat all validations.
+
+Execution must fail if identity became invalid after approval.
+
+====================================================
+INHERITANCE VALIDATION
+====================================================
+
+Before inheritance approval/finalization:
+
+Validate:
+
+- source partner exists
+- source partner active
+- claimant linkage valid
+- claimant person exists
+- claimant active
+
+Reject finalization when validation fails.
+
+====================================================
+DATA HEALTH CHECKS
+====================================================
+
+Implement all missing checks:
+
+1. partner without person_master
+2. inactive partner referenced by contribution
+3. duplicate partners sharing same person_master
+4. participant missing ownership partner record
+5. ownership snapshot referencing missing partner
+6. ownership snapshot referencing inactive partner
+7. transfer referencing invalid partner
+8. inheritance referencing invalid partner
+
+Expose through existing data-health framework.
+
+====================================================
+OWNERSHIP ATTRIBUTION PROTECTION
+====================================================
+
+For ownership-affecting contributions:
+
+Reject:
+
+- null partnerId
+- inactive partner
+- deleted partner
+- missing person_master
+- inactive person_master
+
+Log validation failures.
+
+====================================================
+AUDIT LOGGING
+====================================================
+
+Record:
+
+- actor
+- route
+- project
+- partner
+- validation failure
+- timestamp
+
+Use existing audit infrastructure.
+
+====================================================
+LEGACY DATA POLICY
+====================================================
+
+Do not auto-correct.
+
+Do not auto-create partners.
+
+Do not auto-link person_master.
+
+Do not merge duplicates.
+
+Only report legacy violations through health checks.
+
+====================================================
+IMPLEMENTATION SUMMARY
+====================================================
+
+Return:
+
+- files modified
+- routes protected
+- helper/service created
+- health checks added
+- audit hooks added
+- remaining unresolved identity weaknesses

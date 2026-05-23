@@ -36,6 +36,7 @@ import { writeTimeline, TL } from "../lib/timelineLogger";
 import type { RofrResponse } from "@workspace/db";
 import { eq, and, desc, or, inArray, lt, lte, gte, isNull, ne, sql } from "drizzle-orm";
 import { getAuth } from "@clerk/express";
+import { assertPartnerIdentityValid } from "../lib/partnerIdentityGuard";
 import { requireRole } from "../middlewares/auth";
 import { z } from "zod/v4";
 
@@ -239,26 +240,36 @@ router.post("/", requireRole("admin", "developer", "landowner", "investor"), asy
     return res.status(422).json({ error: "Project ownership has not been frozen. Freeze ownership first via the maturity workflow." });
   }
 
-  // Validate transferor partner
-  const [transferor] = await db
-    .select({ id: partnersTable.id, name: partnersTable.name })
-    .from(partnersTable)
-    .where(eq(partnersTable.id, b.transferorPartnerId))
-    .limit(1);
+  // ── Partner identity foundation ────────────────────────────────────────
+  // Full identity check on transferor: exists, active, not deleted, linked
+  // to an active person_master entry. Replaces prior existence-only check.
+  const transferorCheck = await assertPartnerIdentityValid({
+    partnerId: b.transferorPartnerId,
+    action: "transfer.create",
+    actor: { id: actor.id, name: actor.displayName, role: actor.role },
+    projectId: b.projectId,
+    req,
+    targetTable: "ownership_transfers",
+    metadata: { side: "transferor", transferType: b.transferType },
+  });
+  if (!transferorCheck.ok) return res.status(transferorCheck.status).json(transferorCheck.body);
+  const transferor = { id: transferorCheck.partner.id, name: transferorCheck.partner.name };
 
-  if (!transferor) return res.status(404).json({ error: "Transferor partner not found" });
-
-  // Validate buyer partner if internal
+  // Validate buyer partner if internal — same full identity chain.
   if (b.transferType === "internal" && b.buyerPartnerId) {
-    const [buyer] = await db
-      .select({ id: partnersTable.id })
-      .from(partnersTable)
-      .where(eq(partnersTable.id, b.buyerPartnerId))
-      .limit(1);
-    if (!buyer) return res.status(404).json({ error: "Buyer partner not found" });
     if (b.buyerPartnerId === b.transferorPartnerId) {
       return res.status(422).json({ error: "Buyer and transferor cannot be the same partner" });
     }
+    const buyerCheck = await assertPartnerIdentityValid({
+      partnerId: b.buyerPartnerId,
+      action: "transfer.create",
+      actor: { id: actor.id, name: actor.displayName, role: actor.role },
+      projectId: b.projectId,
+      req,
+      targetTable: "ownership_transfers",
+      metadata: { side: "buyer", transferType: b.transferType },
+    });
+    if (!buyerCheck.ok) return res.status(buyerCheck.status).json(buyerCheck.body);
   }
 
   // Validate third_party minimum value
@@ -396,7 +407,41 @@ router.patch("/:id", async (req, res) => {
   if (existing.status === "draft") {
     if (b.offeredPercentage !== undefined) updateFields.offeredPercentage = String(b.offeredPercentage);
     if ("offeredValue" in b) updateFields.offeredValue = b.offeredValue != null ? String(b.offeredValue) : null;
-    if ("buyerPartnerId" in b) updateFields.buyerPartnerId = b.buyerPartnerId;
+    // ── Partner identity foundation ─────────────────────────────────────────
+    // If the patch sets/changes buyerPartnerId, validate full identity chain
+    // now — do not defer until execute. Prevents an identity-invalid buyer
+    // from being parked on a draft and surfacing late.
+    if ("buyerPartnerId" in b) {
+      if (b.buyerPartnerId) {
+        if (b.buyerPartnerId === existing.transferorPartnerId) {
+          return res.status(422).json({ error: "Buyer and transferor cannot be the same partner" });
+        }
+        const { userId: clerkUserId } = getAuth(req);
+        const [actorRow] = clerkUserId
+          ? await db
+              .select({ id: usersTable.id, displayName: usersTable.displayName, role: usersTable.role })
+              .from(usersTable)
+              .where(eq(usersTable.clerkUserId, clerkUserId))
+              .limit(1)
+          : [];
+        const patchBuyerCheck = await assertPartnerIdentityValid({
+          partnerId: b.buyerPartnerId,
+          action: "transfer.patch",
+          actor: {
+            id: actorRow?.id ?? null,
+            name: actorRow?.displayName ?? null,
+            role: actorRow?.role ?? null,
+          },
+          projectId: existing.projectId,
+          req,
+          targetTable: "ownership_transfers",
+          targetRecordId: id,
+          metadata: { side: "buyer", phase: "draft_patch" },
+        });
+        if (!patchBuyerCheck.ok) return res.status(patchBuyerCheck.status).json(patchBuyerCheck.body);
+      }
+      updateFields.buyerPartnerId = b.buyerPartnerId;
+    }
     if (b.buyerName !== undefined) updateFields.buyerName = b.buyerName;
     if ("buyerContact" in b) updateFields.buyerContact = b.buyerContact;
     if ("reason" in b) updateFields.reason = b.reason;
@@ -699,6 +744,36 @@ router.post("/:id/execute", requireRole("admin"), async (req, res) => {
   if (!existing) return res.status(404).json({ error: "Transfer not found" });
   if (existing.status !== "approved") {
     return res.status(422).json({ error: `Transfer must be in 'approved' status before execution (currently: '${existing.status}')` });
+  }
+
+  // ── Partner identity foundation ──────────────────────────────────────────
+  // Re-validate transferor and (when set) buyer at execute time. Identity
+  // may have lapsed between approval and execution (partner deactivated,
+  // person archived). Reject and audit if so.
+  const transferorCheckExec = await assertPartnerIdentityValid({
+    partnerId: existing.transferorPartnerId,
+    action: "transfer.execute",
+    actor: { id: actor.id, name: actor.displayName, role: actor.role },
+    projectId: existing.projectId,
+    req,
+    targetTable: "ownership_transfers",
+    targetRecordId: id,
+    metadata: { side: "transferor" },
+  });
+  if (!transferorCheckExec.ok) return res.status(transferorCheckExec.status).json(transferorCheckExec.body);
+
+  if (existing.buyerPartnerId) {
+    const buyerCheckExec = await assertPartnerIdentityValid({
+      partnerId: existing.buyerPartnerId,
+      action: "transfer.execute",
+      actor: { id: actor.id, name: actor.displayName, role: actor.role },
+      projectId: existing.projectId,
+      req,
+      targetTable: "ownership_transfers",
+      targetRecordId: id,
+      metadata: { side: "buyer" },
+    });
+    if (!buyerCheckExec.ok) return res.status(buyerCheckExec.status).json(buyerCheckExec.body);
   }
 
   const [updated] = await db

@@ -36,6 +36,12 @@ import {
 import { requireRole } from "../middlewares/auth";
 import { getAuth } from "@clerk/express";
 import { writeTimeline, TL } from "../lib/timelineLogger";
+import {
+  assertPartnerIdentityValid,
+  validatePersonMasterActive,
+  recordIdentityFailure,
+} from "../lib/partnerIdentityGuard";
+import { isNull } from "drizzle-orm";
 
 const router = Router();
 
@@ -366,6 +372,73 @@ router.patch("/:id/status", requireRole("admin", "developer"), async (req, res) 
         error: `Cannot transition from "${claim.status}" to "${toStatus}".`,
         allowedTransitions: allowed,
       });
+      return;
+    }
+
+    // ── Partner identity foundation ────────────────────────────────────────
+    // Finalization (approved | settled) requires:
+    //   1. source partner identity is fully valid;
+    //   2. every active claimant on the source partner has a person_master
+    //      link and the linked person is active.
+    if (toStatus === "approved" || toStatus === "settled") {
+      const actorCtx = {
+        id: actor?.id ?? null,
+        name: actor?.displayName ?? null,
+        role: null as string | null,
+      };
+      const sourceCheck = await assertPartnerIdentityValid({
+        partnerId: claim.partnerId,
+        action: "inheritance.finalize",
+        actor: actorCtx,
+        projectId: claim.projectId,
+        req,
+        targetTable: "inheritance_claims",
+        targetRecordId: id,
+        metadata: { toStatus, side: "source" },
+      });
+      if (!sourceCheck.ok) {
+        res.status(sourceCheck.status).json(sourceCheck.body);
+        return;
+      }
+
+      const activeClaimants = await db
+        .select({
+          id: partnerClaimantsTable.id,
+          personMasterId: partnerClaimantsTable.personMasterId,
+          isActive: partnerClaimantsTable.isActive,
+        })
+        .from(partnerClaimantsTable)
+        .where(
+          and(
+            eq(partnerClaimantsTable.partnerId, claim.partnerId),
+            eq(partnerClaimantsTable.isActive, true),
+          ),
+        );
+
+      for (const cl of activeClaimants) {
+        const personRes = await validatePersonMasterActive(cl.personMasterId);
+        if (!personRes.ok) {
+          await recordIdentityFailure({
+            action: "inheritance.finalize",
+            failure: personRes,
+            actor: actorCtx,
+            projectId: claim.projectId,
+            partnerId: claim.partnerId,
+            personMasterId: cl.personMasterId ?? null,
+            targetTable: "inheritance_claims",
+            targetRecordId: id,
+            metadata: { toStatus, side: "claimant", claimantId: cl.id },
+            req,
+          });
+          res.status(422).json({
+            error: `Claimant identity invalid: ${personRes.reason}`,
+            code: "IDENTITY_INVALID",
+            failureCode: personRes.code,
+            claimantId: cl.id,
+          });
+          return;
+        }
+      }
     }
 
     const now = new Date();

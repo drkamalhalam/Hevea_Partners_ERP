@@ -108,3 +108,4 @@ export * from "./workforce";
 export * from "./work_assignments";
 export * from "./work_assignment_audit";
 export * from "./ownership_lock_attempts";
+export * from "./identity_validation_failures";

@@ -22,8 +22,25 @@ import {
   RemovePartnerClaimantParams,
 } from "@workspace/api-zod";
 import { requireRole } from "../middlewares/auth";
+import { assertPersonMasterActive } from "../lib/partnerIdentityGuard";
+import { getAuth } from "@clerk/express";
 
 const router = Router();
+
+async function resolveActorForPartners(req: Parameters<Parameters<typeof router.post>[1]>[0]) {
+  try {
+    const { userId: clerkUserId } = getAuth(req as any);
+    if (!clerkUserId) return { id: null, name: null, role: null };
+    const [u] = await db
+      .select({ id: usersTable.id, name: usersTable.displayName, role: usersTable.role })
+      .from(usersTable)
+      .where(eq(usersTable.clerkUserId, clerkUserId))
+      .limit(1);
+    return u ? { id: u.id, name: u.name, role: u.role } : { id: null, name: null, role: null };
+  } catch {
+    return { id: null, name: null, role: null };
+  }
+}
 
 function formatPartner(p: typeof partnersTable.$inferSelect) {
   return {
@@ -114,7 +131,39 @@ router.post("/", requireRole("admin", "developer"), async (req, res) => {
     return;
   }
   try {
-    const [partner] = await db.insert(partnersTable).values(parsed.data).returning();
+    // ── Partner identity foundation ────────────────────────────────────────
+    // Every new partner MUST be linked to an active person_master row. The
+    // generated Zod schema does not (yet) include personMasterId, so we read
+    // it directly from the raw request body and enforce required-and-active
+    // here at the route layer.
+    const rawBody = req.body as Record<string, unknown>;
+    const personMasterId =
+      typeof rawBody.personMasterId === "string" ? rawBody.personMasterId : null;
+    if (!personMasterId) {
+      res.status(422).json({
+        error: "personMasterId is required: every new partner must be linked to a Person Registry entry.",
+        code: "IDENTITY_INVALID",
+        failureCode: "PERSON_MASTER_ID_MISSING",
+      });
+      return;
+    }
+    const actorCtx = await resolveActorForPartners(req);
+    const personCheck = await assertPersonMasterActive({
+      personMasterId,
+      action: "partner.create",
+      actor: actorCtx,
+      req,
+      targetTable: "partners",
+      metadata: { role: parsed.data.role, name: parsed.data.name },
+    });
+    if (!personCheck.ok) {
+      res.status(personCheck.status).json(personCheck.body);
+      return;
+    }
+    const [partner] = await db
+      .insert(partnersTable)
+      .values({ ...parsed.data, personMasterId })
+      .returning();
     await db.insert(activityTable).values({
       type: "partner_registered",
       description: `Partner "${partner.name}" (${partner.role}) registered`,
@@ -164,9 +213,41 @@ router.patch("/:id", requireRole("admin", "developer"), async (req, res) => {
     return;
   }
   try {
+    // ── Partner identity foundation ────────────────────────────────────────
+    // If the caller is changing the person_master link, validate the new
+    // person exists and is active before accepting the patch. personMasterId
+    // is not in the generated Zod schema, so we read it from the raw body.
+    const rawBody = req.body as Record<string, unknown>;
+    const updates: Record<string, unknown> = { ...bodyParsed.data };
+    if (rawBody.personMasterId !== undefined) {
+      const newPersonMasterId =
+        typeof rawBody.personMasterId === "string" ? rawBody.personMasterId : null;
+      if (!newPersonMasterId) {
+        res.status(422).json({
+          error: "personMasterId must be a valid Person Registry UUID — clearing it is not allowed.",
+          code: "IDENTITY_INVALID",
+          failureCode: "PERSON_MASTER_ID_MISSING",
+        });
+        return;
+      }
+      const actorCtx = await resolveActorForPartners(req);
+      const personCheck = await assertPersonMasterActive({
+        personMasterId: newPersonMasterId,
+        action: "partner.patch",
+        actor: actorCtx,
+        req,
+        targetTable: "partners",
+        targetRecordId: paramsParsed.data.id,
+      });
+      if (!personCheck.ok) {
+        res.status(personCheck.status).json(personCheck.body);
+        return;
+      }
+      updates.personMasterId = newPersonMasterId;
+    }
     const [partner] = await db
       .update(partnersTable)
-      .set(bodyParsed.data)
+      .set(updates)
       .where(eq(partnersTable.id, paramsParsed.data.id))
       .returning();
     if (!partner) {
