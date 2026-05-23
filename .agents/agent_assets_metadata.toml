@@ -11,3 +11,9 @@ id = "wPCU32LAzustZa3Iz18yb"
 uri = "file://ARCHITECTURE_AUDIT.md"
 type = "text"
 title = "Hevea Partners ERP — Architecture Audit Report"
+
+[[outputs]]
+id = "LWZhzA508Ymz024ZogHGC"
+uri = "file://OWNERSHIP_ARCHITECTURE_ASSESSMENT.md"
+type = "text"
+title = "Ownership Architecture Assessment"
