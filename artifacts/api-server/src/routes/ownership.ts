@@ -19,9 +19,10 @@ import { getAuth } from "@clerk/express";
 import { requireRole } from "../middlewares/auth";
 import type { OwnershipSnapshotEntry } from "@workspace/db";
 import {
-  partitionOwnershipRows,
+  filterAndAuditOwnershipRows,
   assertOwnershipAttributionValid,
 } from "../lib/ownershipAttributionGuard";
+import { toNum } from "../lib/numericSafe";
 
 const router = Router();
 
@@ -133,11 +134,19 @@ async function computeOwnership(projectId: string): Promise<{
 
   // Ownership Attribution Hardening — never silently aggregate orphan
   // ownership. Rows whose partner/person identity chain is broken are
-  // excluded from aggregation. Continuous monitoring of these exclusions
-  // is exposed via /api/admin/data-health/ownership-affecting-invalid-identity.
-  const { valid: rows, invalid: invalidRows } = await partitionOwnershipRows(
-    rawRows,
-  );
+  // excluded from aggregation AND each distinct (partnerId, failureCode)
+  // pair is recorded to identity_validation_failures so read-time exclusions
+  // are auditable, not just a count exposed via data-health.
+  // No request/actor context here (this is a service-layer function called
+  // from multiple read paths), so attribute the audit to system.compute.
+  const { valid: rows, invalid: invalidRows } = await filterAndAuditOwnershipRows({
+    rows: rawRows,
+    projectId,
+    action: "ownership.compute",
+    actor: { id: null, name: "system.compute", role: null },
+    targetTable: "contributions",
+    targetRecordId: null,
+  });
 
   // Aggregate by partnerKey (partnerId if available, else partnerName)
   const map = new Map<
@@ -148,7 +157,12 @@ async function computeOwnership(projectId: string): Promise<{
   for (const row of rows) {
     const key = row.partnerId ?? row.partnerName;
     const existing = map.get(key);
-    const add = row.amount ?? 0;
+    // toNum() tolerates Drizzle returning `real` columns as JS `number` AND
+    // `numeric(p,s)` columns as JS `string`. Required for the Numeric
+    // Precision Foundation Stage-2 migration of contributions.amount from
+    // `real` to `numeric(15,2)` — without this wrap, `+=` would silently
+    // perform string concatenation post-migration.
+    const add = toNum(row.amount);
     if (existing) {
       if (row.contributionType === "land_notional") existing.land += add;
       else existing.economic += add;
