@@ -23,6 +23,7 @@ type ProjectAuditEvent =
   | "parcel_updated"
   | "parcel_removed"
   | "participant_added"
+  | "participant_updated"
   | "participant_role_changed"
   | "participant_removed"
   | "witness_added"

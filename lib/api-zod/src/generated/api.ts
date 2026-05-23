@@ -1325,15 +1325,7 @@ export const ListProjectsResponseItem = zod.object({
   landownerValidationStatus: zod
     .enum(["PENDING", "VALIDATED", "MISSING", "BROKEN_LINKAGE", "INVALID"])
     .optional(),
-  projectType: zod
-    .enum([
-      "joint_venture",
-      "community_partnership",
-      "sole_developer",
-      "lease_based",
-      "other",
-    ])
-    .optional(),
+  projectType: zod.enum(["recorded", "unrecorded", "mixed"]).optional(),
   agreementTemplateId: zod.string().uuid().nullish(),
 });
 export const ListProjectsResponse = zod.array(ListProjectsResponseItem);
@@ -1388,15 +1380,7 @@ export const CreateProjectBody = zod.object({
   expectedMaturityDate: zod.string().optional(),
   termYears: zod.number(),
   notes: zod.string().optional(),
-  projectType: zod
-    .enum([
-      "joint_venture",
-      "community_partnership",
-      "sole_developer",
-      "lease_based",
-      "other",
-    ])
-    .optional(),
+  projectType: zod.enum(["recorded", "unrecorded", "mixed"]).optional(),
   agreementTemplateId: zod.string().uuid().optional(),
 });
 
@@ -1494,15 +1478,7 @@ export const GetProjectResponse = zod.object({
   landownerValidationStatus: zod
     .enum(["PENDING", "VALIDATED", "MISSING", "BROKEN_LINKAGE", "INVALID"])
     .optional(),
-  projectType: zod
-    .enum([
-      "joint_venture",
-      "community_partnership",
-      "sole_developer",
-      "lease_based",
-      "other",
-    ])
-    .optional(),
+  projectType: zod.enum(["recorded", "unrecorded", "mixed"]).optional(),
   agreementTemplateId: zod.string().uuid().nullish(),
 });
 
@@ -1533,15 +1509,7 @@ export const UpdateProjectBody = zod.object({
   commercialModel: zod
     .enum(["ownership_contribution", "fifty_percent_revenue"])
     .optional(),
-  projectType: zod
-    .enum([
-      "joint_venture",
-      "community_partnership",
-      "sole_developer",
-      "lease_based",
-      "other",
-    ])
-    .optional(),
+  projectType: zod.enum(["recorded", "unrecorded", "mixed"]).optional(),
   governanceOverrideId: zod
     .string()
     .uuid()
@@ -1693,15 +1661,7 @@ export const UpdateProjectResponse = zod.object({
   landownerValidationStatus: zod
     .enum(["PENDING", "VALIDATED", "MISSING", "BROKEN_LINKAGE", "INVALID"])
     .optional(),
-  projectType: zod
-    .enum([
-      "joint_venture",
-      "community_partnership",
-      "sole_developer",
-      "lease_based",
-      "other",
-    ])
-    .optional(),
+  projectType: zod.enum(["recorded", "unrecorded", "mixed"]).optional(),
   agreementTemplateId: zod.string().uuid().nullish(),
 });
 
@@ -1743,6 +1703,7 @@ export const ListProjectParcelsResponse = zod.object({
       landArea: zod.number(),
       landAreaUnit: zod.string(),
       notes: zod.string().nullish(),
+      landownerPersonId: zod.string().uuid().nullish(),
       createdAt: zod.string(),
       updatedAt: zod.string().nullish(),
     }),
@@ -1775,6 +1736,7 @@ export const CreateProjectParcelBody = zod.object({
   landArea: zod.number(),
   landAreaUnit: zod.string().optional(),
   notes: zod.string().optional(),
+  landownerPersonId: zod.string().uuid().nullish(),
 });
 
 /**
@@ -1804,6 +1766,7 @@ export const UpdateProjectParcelBody = zod.object({
   landArea: zod.number(),
   landAreaUnit: zod.string().optional(),
   notes: zod.string().optional(),
+  landownerPersonId: zod.string().uuid().nullish(),
 });
 
 export const UpdateProjectParcelResponse = zod.object({
@@ -1830,6 +1793,7 @@ export const UpdateProjectParcelResponse = zod.object({
       landArea: zod.number(),
       landAreaUnit: zod.string(),
       notes: zod.string().nullish(),
+      landownerPersonId: zod.string().uuid().nullish(),
       createdAt: zod.string(),
       updatedAt: zod.string().nullish(),
     })
@@ -2044,15 +2008,7 @@ export const SetProjectAgreementTemplateResponse = zod.object({
       landownerValidationStatus: zod
         .enum(["PENDING", "VALIDATED", "MISSING", "BROKEN_LINKAGE", "INVALID"])
         .optional(),
-      projectType: zod
-        .enum([
-          "joint_venture",
-          "community_partnership",
-          "sole_developer",
-          "lease_based",
-          "other",
-        ])
-        .optional(),
+      projectType: zod.enum(["recorded", "unrecorded", "mixed"]).optional(),
       agreementTemplateId: zod.string().uuid().nullish(),
     })
     .optional(),
@@ -4965,15 +4921,7 @@ export const GetMyPortfolioResponse = zod.object({
       landownerValidationStatus: zod
         .enum(["PENDING", "VALIDATED", "MISSING", "BROKEN_LINKAGE", "INVALID"])
         .optional(),
-      projectType: zod
-        .enum([
-          "joint_venture",
-          "community_partnership",
-          "sole_developer",
-          "lease_based",
-          "other",
-        ])
-        .optional(),
+      projectType: zod.enum(["recorded", "unrecorded", "mixed"]).optional(),
       agreementTemplateId: zod.string().uuid().nullish(),
     }),
   ),
@@ -23046,7 +22994,7 @@ export const UpsertOnboardingParticipantBody = zod.object({
   email: zod.string().optional(),
   aadhaarObjectPath: zod.string().optional(),
   supportingIdObjectPath: zod.string().optional(),
-  personMasterId: zod.string().uuid().optional(),
+  personMasterId: zod.string().uuid(),
 });
 
 export const UpsertOnboardingParticipantResponse = zod.object({
@@ -23118,10 +23066,10 @@ export const AddOnboardingWitnessBody = zod.object({
   fullName: zod.string(),
   sOnCOn: zod.string().optional(),
   fatherGuardianName: zod.string().optional(),
-  mobile: zod.string().optional(),
-  address: zod.string().optional(),
+  mobile: zod.string(),
+  address: zod.string(),
   aadhaarNumber: zod.string().optional(),
-  personMasterId: zod.string().uuid().optional(),
+  personMasterId: zod.string().uuid(),
 });
 
 /**
@@ -23136,10 +23084,10 @@ export const UpdateOnboardingWitnessBody = zod.object({
   fullName: zod.string(),
   sOnCOn: zod.string().optional(),
   fatherGuardianName: zod.string().optional(),
-  mobile: zod.string().optional(),
-  address: zod.string().optional(),
+  mobile: zod.string(),
+  address: zod.string(),
   aadhaarNumber: zod.string().optional(),
-  personMasterId: zod.string().uuid().optional(),
+  personMasterId: zod.string().uuid(),
 });
 
 export const UpdateOnboardingWitnessResponse = zod.object({
@@ -23267,15 +23215,7 @@ export const GetProjectOnboardingStateResponse = zod.object({
       landownerValidationStatus: zod
         .enum(["PENDING", "VALIDATED", "MISSING", "BROKEN_LINKAGE", "INVALID"])
         .optional(),
-      projectType: zod
-        .enum([
-          "joint_venture",
-          "community_partnership",
-          "sole_developer",
-          "lease_based",
-          "other",
-        ])
-        .optional(),
+      projectType: zod.enum(["recorded", "unrecorded", "mixed"]).optional(),
       agreementTemplateId: zod.string().uuid().nullish(),
     })
     .optional(),
@@ -23485,15 +23425,7 @@ export const ActivateProjectViaOnboardingResponse = zod.object({
     landownerValidationStatus: zod
       .enum(["PENDING", "VALIDATED", "MISSING", "BROKEN_LINKAGE", "INVALID"])
       .optional(),
-    projectType: zod
-      .enum([
-        "joint_venture",
-        "community_partnership",
-        "sole_developer",
-        "lease_based",
-        "other",
-      ])
-      .optional(),
+    projectType: zod.enum(["recorded", "unrecorded", "mixed"]).optional(),
     agreementTemplateId: zod.string().uuid().nullish(),
   }),
 });

@@ -1112,21 +1112,18 @@ export const workAssignmentAuditEventEnum = pgEnum("work_assignment_audit_event"
 // ── Project type & audit trail enums ─────────────────────────────────────────
 
 /**
- * Plantation project type — captured during creation, controls deed template
- * selection and downstream governance expectations.
+ * Plantation project type — drives deed-template selection and governance
+ * expectations. Classification is by the land's recording status because
+ * that determines which survey identifiers (khatian/plot) are required.
  *
- *   joint_venture       — single landowner + single developer JV (typical)
- *   community_partnership — multi-landowner pooled with one developer
- *   sole_developer      — developer-owned land (no separate landowner)
- *   lease_based         — developer leases land for fixed term
- *   other               — fallback; requires governance note
+ *   recorded   — all Schedule A parcels are recorded land
+ *   unrecorded — all Schedule A parcels are non-recorded land
+ *   mixed      — parcels span both recording statuses
  */
 export const projectTypeEnum = pgEnum("project_type", [
-  "joint_venture",
-  "community_partnership",
-  "sole_developer",
-  "lease_based",
-  "other",
+  "recorded",
+  "unrecorded",
+  "mixed",
 ]);
 
 /**
@@ -1145,6 +1142,7 @@ export const projectAuditTrailEventEnum = pgEnum("project_audit_trail_event", [
   "parcel_updated",
   "parcel_removed",
   "participant_added",
+  "participant_updated",
   "participant_role_changed",
   "participant_removed",
   "witness_added",

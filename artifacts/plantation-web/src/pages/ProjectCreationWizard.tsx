@@ -1544,19 +1544,20 @@ function Step7Witnesses({
     );
   };
 
-  const canProceed = witnesses.length >= 2;
+  const canProceed = witnesses.length >= 1;
 
   return (
     <div className="space-y-5">
       <p className="text-sm text-muted-foreground">
-        Minimum <strong>2 witnesses</strong> are required. They will be named in the partnership
-        deed. Search the Person Registry or register a new person for each witness.
+        Minimum <strong>1 witness</strong> is required (more may be added). Witnesses will be
+        named in the partnership deed. Search the Person Registry or register a new person for
+        each witness.
       </p>
 
       {witnesses.length === 0 && (
         <div className="flex items-center gap-2 text-amber-700 bg-amber-50 border border-amber-200 rounded-md p-3 text-sm">
           <AlertCircle className="h-4 w-4 shrink-0" />
-          No witnesses added yet. At least 2 required before proceeding.
+          No witnesses added yet. At least 1 required before proceeding.
         </div>
       )}
 
@@ -1726,7 +1727,7 @@ function Step7Witnesses({
         <Button
           onClick={onNext}
           disabled={!canProceed}
-          title={!canProceed ? "Add at least 2 witnesses" : ""}
+          title={!canProceed ? "Add at least 1 witness" : ""}
         >
           Save & Continue <ChevronRight className="h-4 w-4 ml-1" />
         </Button>
@@ -1813,10 +1814,20 @@ function Step8Documents({
       if (!putResp.ok) throw new Error("File upload to storage failed");
 
       // Step 3 — patch participant record with new object path
+      const existingPersonId = (participant as { personMasterId?: string | null })
+        .personMasterId;
+      if (!existingPersonId) {
+        toast({
+          title: "Link this participant to the Person Registry before uploading documents.",
+          variant: "destructive",
+        });
+        return;
+      }
       await upsertParticipant.mutateAsync({
         projectId,
         role,
         data: {
+          personMasterId: existingPersonId,
           fullName: participant.fullName,
           sOnCOn: participant.sOnCOn ?? undefined,
           fatherGuardianName: (participant as any).fatherGuardianName ?? undefined,
@@ -2186,7 +2197,7 @@ function Step10ReviewActivate({
     landownerInfo: "Landowner KYC",
     financialConfig: "Commercial terms",
     scheduleA: "Schedule A (≥1 parcel)",
-    witnessDetails: "Witnesses (min. 2)",
+    witnessDetails: "Witnesses (min. 1)",
     agreementTemplate: "Agreement template linked",
     projectType: "Project type selected",
     developerOtpVerified: "Developer OTP verified",
@@ -2844,11 +2855,9 @@ function StepAgreementTemplate({
 // ── Step 7: Project Type ────────────────────────────────────────────────────
 
 const PROJECT_TYPES: Array<{ value: string; label: string; description: string }> = [
-  { value: "joint_venture", label: "Joint Venture", description: "Single landowner + single developer JV (typical)." },
-  { value: "community_partnership", label: "Community Partnership", description: "Multi-landowner pooled with one developer." },
-  { value: "sole_developer", label: "Sole Developer", description: "Developer-owned land — no separate landowner." },
-  { value: "lease_based", label: "Lease-Based", description: "Developer leases land for a fixed term." },
-  { value: "other", label: "Other", description: "Fallback — requires a governance note." },
+  { value: "recorded", label: "Recorded", description: "All Schedule A parcels are recorded land (khatian + plot identifiers)." },
+  { value: "unrecorded", label: "Unrecorded", description: "All Schedule A parcels are non-recorded land (description-based)." },
+  { value: "mixed", label: "Mixed", description: "Project spans both recorded and non-recorded parcels." },
 ];
 
 function StepProjectType({
@@ -2864,7 +2873,7 @@ function StepProjectType({
   const { toast } = useToast();
   const { data: project } = useGetProject(projectId);
   const updateProject = useUpdateProject();
-  const [selected, setSelected] = useState<string>((project as any)?.projectType ?? "joint_venture");
+  const [selected, setSelected] = useState<string>((project as any)?.projectType ?? "recorded");
 
   useEffect(() => {
     if ((project as any)?.projectType) setSelected((project as any).projectType);

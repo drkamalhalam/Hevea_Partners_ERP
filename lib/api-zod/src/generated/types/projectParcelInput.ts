@@ -26,4 +26,5 @@ export interface ProjectParcelInput {
   landArea: number;
   landAreaUnit?: string;
   notes?: string;
+  landownerPersonId?: string | null;
 }

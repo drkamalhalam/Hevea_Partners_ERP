@@ -84,7 +84,7 @@ router.get("/:id/onboarding/state", requireRole("admin", "developer", "landowner
       landDetails: !!(project.landType && project.landArea),
       financialConfig: !!(project.landArea),
       agreementDetails: !!(project.agreementType || project.agreementEffectiveDate),
-      witnessDetails: witnesses.length >= 2,
+      witnessDetails: witnesses.length >= 1,
       documentsUploaded: !!(developerParticipant?.aadhaarObjectPath || landownerParticipant?.aadhaarObjectPath),
       developerOtpVerified: !!developerOtp?.verifiedAt,
       landownerOtpVerified: !!landownerOtp?.verifiedAt,
@@ -244,8 +244,8 @@ router.post("/:id/onboarding/activate", requireRole("admin", "developer"), async
     .from(projectWitnessesTable)
     .where(eq(projectWitnessesTable.projectId, id));
 
-  if (witnesses.length < 2) {
-    res.status(422).json({ error: "At least 2 witnesses are required before activation." });
+  if (witnesses.length < 1) {
+    res.status(422).json({ error: "At least 1 witness is required before activation." });
     return;
   }
 

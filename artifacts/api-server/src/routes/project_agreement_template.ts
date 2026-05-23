@@ -73,6 +73,10 @@ router.put(
   requireRole("admin", "developer"),
   async (req, res) => {
     const projectId = String(req.params.projectId);
+    if (!canAccessProject(req, projectId)) {
+      res.status(403).json({ error: "Forbidden: no access to this project" });
+      return;
+    }
     const parsed = AssignBody.safeParse(req.body);
     if (!parsed.success) {
       res

@@ -11,6 +11,7 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { projectsTable } from "./projects";
 import { usersTable } from "./users";
+import { personMasterTable } from "./person_master";
 
 /**
  * project_parcels — Schedule A: one row per land parcel making up a project.
@@ -32,6 +33,17 @@ export const projectParcelsTable = pgTable(
 
     /** 1-based display position within the project's Schedule A. */
     position: integer("position").notNull(),
+
+    /**
+     * Optional FK to the Person Registry — when a parcel is owned by a
+     * specific landowner (rather than the project as a whole), this links
+     * to that person's master record. Multi-landowner projects use one
+     * parcel row per landowner.
+     */
+    landownerPersonId: uuid("landowner_person_id").references(
+      () => personMasterTable.id,
+      { onDelete: "set null" },
+    ),
 
     /** recorded | non_recorded */
     landType: text("land_type").notNull(),

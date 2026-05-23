@@ -2,13 +2,20 @@ import { Router } from "express";
 import { db, projectParticipantsTable, projectsTable } from "@workspace/db";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod/v4";
-import { requireRole } from "../middlewares/auth";
+import { requireRole, canAccessProject } from "../middlewares/auth";
 import { applyGovernanceValidation } from "../lib/landownerGovernance";
+import { writeProjectAudit, diffFields } from "../lib/projectAuditLogger";
 
 const router = Router();
 
+// personMasterId is required — every participant must be linked to a
+// Person Registry entry. Identity is sourced from there; the local fields
+// below are denormalised copies kept for backward-compat.
 const participantSchema = z.object({
   role: z.enum(["developer", "landowner"]),
+  personMasterId: z.string().uuid({
+    error: "personMasterId is required — link the participant to a Person Registry entry first.",
+  }),
   fullName: z.string().min(1),
   sOnCOn: z.string().optional(),
   fatherGuardianName: z.string().optional(),
@@ -18,12 +25,15 @@ const participantSchema = z.object({
   email: z.string().email().optional().or(z.literal("")),
   aadhaarObjectPath: z.string().optional(),
   supportingIdObjectPath: z.string().optional(),
-  personMasterId: z.string().uuid().optional(),
 });
 
 // GET /:projectId/onboarding/participants
 router.get("/:projectId/onboarding/participants", requireRole("admin", "developer", "landowner", "investor", "employee", "operational_staff"), async (req, res) => {
   const projectId = String(req.params.projectId);
+  if (!canAccessProject(req, projectId)) {
+    res.status(403).json({ error: "Forbidden: no access to this project" });
+    return;
+  }
   const rows = await db
     .select()
     .from(projectParticipantsTable)
@@ -36,11 +46,26 @@ router.get("/:projectId/onboarding/participants", requireRole("admin", "develope
 // PUT /:projectId/onboarding/participants/:role — upsert
 router.put("/:projectId/onboarding/participants/:role", requireRole("admin", "developer"), async (req, res) => {
   const projectId = String(req.params.projectId);
+  if (!canAccessProject(req, projectId)) {
+    res.status(403).json({ error: "Forbidden: no access to this project" });
+    return;
+  }
   const role = String(req.params.role);
   if (role !== "developer" && role !== "landowner") {
     res.status(400).json({ error: "role must be developer or landowner" });
     return;
   }
+
+  const [existing] = await db
+    .select()
+    .from(projectParticipantsTable)
+    .where(
+      and(
+        eq(projectParticipantsTable.projectId, projectId),
+        eq(projectParticipantsTable.role, role),
+      ),
+    )
+    .limit(1);
 
   const project = await db
     .select({ id: projectsTable.id })
@@ -70,7 +95,7 @@ router.put("/:projectId/onboarding/participants/:role", requireRole("admin", "de
     email: parsed.data.email || null,
     aadhaarObjectPath: parsed.data.aadhaarObjectPath ?? null,
     supportingIdObjectPath: parsed.data.supportingIdObjectPath ?? null,
-    personMasterId: parsed.data.personMasterId ?? null,
+    personMasterId: parsed.data.personMasterId,
     createdBy: req.dbUserId ?? null,
   };
 
@@ -95,6 +120,35 @@ router.put("/:projectId/onboarding/participants/:role", requireRole("admin", "de
     })
     .returning();
 
+  // Audit trail
+  if (!existing) {
+    await writeProjectAudit(req, {
+      projectId,
+      eventType: "participant_added",
+      entityType: "project_participant",
+      entityId: row.id,
+      title: `Participant added: ${role} (${row.fullName})`,
+      afterData: row as unknown as Record<string, unknown>,
+    });
+  } else {
+    const diff = diffFields(
+      existing as unknown as Record<string, unknown>,
+      payload as unknown as Record<string, unknown>,
+    );
+    if (diff.changedKeys.length > 0) {
+      await writeProjectAudit(req, {
+        projectId,
+        eventType: "participant_updated",
+        entityType: "project_participant",
+        entityId: row.id,
+        title: `Participant updated: ${role} (${diff.changedKeys.join(", ")})`,
+        beforeData: diff.before,
+        afterData: diff.after,
+        metadata: { changedKeys: diff.changedKeys },
+      });
+    }
+  }
+
   // Landowner added/updated: re-validate project governance (may unlock a previously locked project)
   if (role === "landowner") {
     await applyGovernanceValidation(projectId, req.log);
@@ -106,7 +160,23 @@ router.put("/:projectId/onboarding/participants/:role", requireRole("admin", "de
 // DELETE /:projectId/onboarding/participants/:role
 router.delete("/:projectId/onboarding/participants/:role", requireRole("admin", "developer"), async (req, res) => {
   const projectId = String(req.params.projectId);
+  if (!canAccessProject(req, projectId)) {
+    res.status(403).json({ error: "Forbidden: no access to this project" });
+    return;
+  }
   const role = String(req.params.role);
+
+  const [existing] = await db
+    .select()
+    .from(projectParticipantsTable)
+    .where(
+      and(
+        eq(projectParticipantsTable.projectId, projectId),
+        eq(projectParticipantsTable.role, role),
+      ),
+    )
+    .limit(1);
+
   await db
     .delete(projectParticipantsTable)
     .where(
@@ -115,6 +185,17 @@ router.delete("/:projectId/onboarding/participants/:role", requireRole("admin", 
         eq(projectParticipantsTable.role, role),
       ),
     );
+
+  if (existing) {
+    await writeProjectAudit(req, {
+      projectId,
+      eventType: "participant_removed",
+      entityType: "project_participant",
+      entityId: existing.id,
+      title: `Participant removed: ${role} (${existing.fullName})`,
+      beforeData: existing as unknown as Record<string, unknown>,
+    });
+  }
 
   // Landowner removed: re-validate (will mark project governance-locked if no landowner remains)
   if (role === "landowner") {

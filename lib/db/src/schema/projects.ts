@@ -43,7 +43,7 @@ export const projectsTable = pgTable("projects", {
    */
   projectType: projectTypeEnum("project_type")
     .notNull()
-    .default("joint_venture"),
+    .default("recorded"),
 
   /**
    * FK to the Document Template Registry row that will be used to generate

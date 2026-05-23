@@ -41,6 +41,7 @@ const ParcelBody = z.object({
   landArea: z.number().nonnegative(),
   landAreaUnit: z.string().default("kani"),
   notes: z.string().optional().nullable(),
+  landownerPersonId: z.string().uuid().optional().nullable(),
 });
 
 router.get("/:projectId/parcels", async (req, res) => {
@@ -63,6 +64,10 @@ router.post(
   requireRole("admin", "developer"),
   async (req, res) => {
     const projectId = String(req.params.projectId);
+    if (!canAccessProject(req, projectId)) {
+      res.status(403).json({ error: "Forbidden: no access to this project" });
+      return;
+    }
     const [project] = await db
       .select({ id: projectsTable.id })
       .from(projectsTable)
@@ -115,6 +120,10 @@ router.put(
   requireRole("admin", "developer"),
   async (req, res) => {
     const projectId = String(req.params.projectId);
+    if (!canAccessProject(req, projectId)) {
+      res.status(403).json({ error: "Forbidden: no access to this project" });
+      return;
+    }
     const parcelId = String(req.params.parcelId);
 
     const parsed = ParcelBody.partial().safeParse(req.body);
@@ -173,6 +182,10 @@ router.delete(
   requireRole("admin", "developer"),
   async (req, res) => {
     const projectId = String(req.params.projectId);
+    if (!canAccessProject(req, projectId)) {
+      res.status(403).json({ error: "Forbidden: no access to this project" });
+      return;
+    }
     const parcelId = String(req.params.parcelId);
 
     const [existing] = await db

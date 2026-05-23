@@ -13886,7 +13886,7 @@ components:
           enum: [PENDING, VALIDATED, MISSING, BROKEN_LINKAGE, INVALID]
         projectType:
           type: string
-          enum: [joint_venture, community_partnership, sole_developer, lease_based, other]
+          enum: [recorded, unrecorded, mixed]
         agreementTemplateId:
           type: ["string", "null"]
           format: uuid
@@ -13943,7 +13943,7 @@ components:
           type: string
         projectType:
           type: string
-          enum: [joint_venture, community_partnership, sole_developer, lease_based, other]
+          enum: [recorded, unrecorded, mixed]
         agreementTemplateId:
           type: string
           format: uuid
@@ -13985,7 +13985,7 @@ components:
           enum: [ownership_contribution, fifty_percent_revenue]
         projectType:
           type: string
-          enum: [joint_venture, community_partnership, sole_developer, lease_based, other]
+          enum: [recorded, unrecorded, mixed]
         governanceOverrideId:
           type: string
           format: uuid
@@ -14077,6 +14077,7 @@ components:
         landArea: { type: number }
         landAreaUnit: { type: string }
         notes: { type: ["string", "null"] }
+        landownerPersonId: { type: ["string", "null"], format: uuid }
         createdAt: { type: string }
         updatedAt: { type: ["string", "null"] }
 
@@ -14104,6 +14105,7 @@ components:
         landArea: { type: number }
         landAreaUnit: { type: string }
         notes: { type: string }
+        landownerPersonId: { type: string, format: uuid, nullable: true }
 
     ProjectParcelListResponse:
       type: object
@@ -22334,7 +22336,7 @@ components:
 
     OnboardingParticipantInput:
       type: object
-      required: [fullName]
+      required: [fullName, personMasterId]
       properties:
         fullName: { type: string }
         sOnCOn: { type: string }
@@ -22366,7 +22368,7 @@ components:
 
     OnboardingWitnessInput:
       type: object
-      required: [fullName]
+      required: [fullName, mobile, address, personMasterId]
       properties:
         fullName: { type: string }
         sOnCOn: { type: string }

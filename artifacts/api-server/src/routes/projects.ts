@@ -250,13 +250,7 @@ router.patch("/:id", requireRole("admin", "developer"), async (req, res) => {
     // projectType is immutable once project is ACTIVE — requires governance override.
     // Validate via the enum so invalid values 422 deterministically.
     const projectTypeSchema = z
-      .enum([
-        "joint_venture",
-        "community_partnership",
-        "sole_developer",
-        "lease_based",
-        "other",
-      ])
+      .enum(["recorded", "unrecorded", "mixed"])
       .optional();
     const rawProjectType = (req.body as Record<string, unknown> | undefined)
       ?.projectType;

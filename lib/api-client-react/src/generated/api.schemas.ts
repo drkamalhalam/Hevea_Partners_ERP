@@ -463,11 +463,9 @@ export type ProjectProjectType =
   (typeof ProjectProjectType)[keyof typeof ProjectProjectType];
 
 export const ProjectProjectType = {
-  joint_venture: "joint_venture",
-  community_partnership: "community_partnership",
-  sole_developer: "sole_developer",
-  lease_based: "lease_based",
-  other: "other",
+  recorded: "recorded",
+  unrecorded: "unrecorded",
+  mixed: "mixed",
 } as const;
 
 export interface Project {
@@ -614,11 +612,9 @@ export type ProjectInputProjectType =
   (typeof ProjectInputProjectType)[keyof typeof ProjectInputProjectType];
 
 export const ProjectInputProjectType = {
-  joint_venture: "joint_venture",
-  community_partnership: "community_partnership",
-  sole_developer: "sole_developer",
-  lease_based: "lease_based",
-  other: "other",
+  recorded: "recorded",
+  unrecorded: "unrecorded",
+  mixed: "mixed",
 } as const;
 
 export interface ProjectInput {
@@ -668,11 +664,9 @@ export type ProjectUpdateProjectType =
   (typeof ProjectUpdateProjectType)[keyof typeof ProjectUpdateProjectType];
 
 export const ProjectUpdateProjectType = {
-  joint_venture: "joint_venture",
-  community_partnership: "community_partnership",
-  sole_developer: "sole_developer",
-  lease_based: "lease_based",
-  other: "other",
+  recorded: "recorded",
+  unrecorded: "unrecorded",
+  mixed: "mixed",
 } as const;
 
 export type ProjectUpdateActivationStatus =
@@ -798,6 +792,8 @@ export interface ProjectParcel {
   landAreaUnit: string;
   /** @nullable */
   notes?: string | null;
+  /** @nullable */
+  landownerPersonId?: string | null;
   createdAt: string;
   /** @nullable */
   updatedAt?: string | null;
@@ -830,6 +826,7 @@ export interface ProjectParcelInput {
   landArea: number;
   landAreaUnit?: string;
   notes?: string;
+  landownerPersonId?: string | null;
 }
 
 export interface ProjectParcelListResponse {
@@ -9597,7 +9594,7 @@ export interface OnboardingParticipantInput {
   email?: string;
   aadhaarObjectPath?: string;
   supportingIdObjectPath?: string;
-  personMasterId?: string;
+  personMasterId: string;
 }
 
 export interface OnboardingWitness {
@@ -9626,10 +9623,10 @@ export interface OnboardingWitnessInput {
   fullName: string;
   sOnCOn?: string;
   fatherGuardianName?: string;
-  mobile?: string;
-  address?: string;
+  mobile: string;
+  address: string;
   aadhaarNumber?: string;
-  personMasterId?: string;
+  personMasterId: string;
 }
 
 export interface OtpRoleStatus {

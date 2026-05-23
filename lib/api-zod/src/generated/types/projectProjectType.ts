@@ -10,9 +10,7 @@ export type ProjectProjectType =
   (typeof ProjectProjectType)[keyof typeof ProjectProjectType];
 
 export const ProjectProjectType = {
-  joint_venture: "joint_venture",
-  community_partnership: "community_partnership",
-  sole_developer: "sole_developer",
-  lease_based: "lease_based",
-  other: "other",
+  recorded: "recorded",
+  unrecorded: "unrecorded",
+  mixed: "mixed",
 } as const;

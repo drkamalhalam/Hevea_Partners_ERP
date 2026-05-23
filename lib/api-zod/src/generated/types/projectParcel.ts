@@ -44,6 +44,8 @@ export interface ProjectParcel {
   landAreaUnit: string;
   /** @nullable */
   notes?: string | null;
+  /** @nullable */
+  landownerPersonId?: string | null;
   createdAt: string;
   /** @nullable */
   updatedAt?: string | null;
