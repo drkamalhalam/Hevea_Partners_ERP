@@ -1,0 +1,44 @@
+Before implementing the Contribution Ledger & Ownership Foundation, perform a deep audit of all Financial Input, Capital Funding, Advance, Reimbursement, Contribution Verification, and Ownership-affecting funding workflows.
+
+Do not modify code.
+
+Use actual schema, routes, services, calculations, APIs, pages, validations, and workflows. Show evidence.
+
+Financial Input Architecture Is there a dedicated Financial Input module? What tables store financial inputs? What fields are captured? Who can create them? Who can verify them? Which pages and APIs use them? What statuses exist? Capital Contribution Architecture How are capital contributions currently recorded? Which contribution types represent direct financial investment? How are they verified? How are they linked to projects? How are they linked to people? How are they linked to ownership? Contributor Identity Does contribution ownership use: person_master users partners project participants names Identify every identity pathway. Identify inconsistencies. Identify places where names are still used instead of Person Registry identity. Financial Inputs and Ownership Which financial input types currently affect ownership? Which financial input types do not affect ownership? Show exact formulas. Show exact filters. Show all ownership-impact conditions. Recoverable Advances Audit all recoverable advance functionality. Which tables store them? Which routes create them? Which pages use them? Do they affect ownership? Do they create burden? Do they create reimbursement obligations? Are they settled anywhere? Reimbursement Architecture Audit every reimbursement-related field, route, table, status, page, workflow, and calculation. How does reimbursement currently work? What is only a flag? What actually changes financial records? What audit trails exist? What gaps exist? Verification Workflow Audit contribution verification architecture. Show tables. Show routes. Show state machines. Show event logs. Show snapshot triggers. Show governance involvement. Imported Contributions Is there any bulk import capability? CSV import? Excel import? Legacy migration tools? Import staging tables? Existing batch identifiers? Existing audit mechanisms? Financial Adjustments Audit: manual_adjustment correction entries reversals cancellations disputes rejected contributions Show how each behaves. Show ownership impact. Maturity Interaction What changes before maturity? What changes after maturity? Which financial inputs are blocked after maturity? Which ownership-affecting inputs are blocked after maturity? Which reimbursement rules change after maturity? Transfer & Inheritance Compatibility How do ownership transfers interact with financial contributions? How does inheritance interact with financial contributions? Are contribution records updated? Are ownership records updated? Identify architectural inconsistencies. Person Registry Compliance Review Using the approved ERP architecture where Person Registry is the single source of truth: 
+
+Audit every financial table and classify identity linkage as:
+
+Fully compliant Partially compliant Non-compliant 
+
+Provide table-by-table analysis.
+
+Architect Review Provide: 
+
+A. Financial Input architecture diagram
+
+B. Contribution architecture diagram
+
+C. Verification architecture diagram
+
+D. Reimbursement architecture diagram
+
+E. Identity architecture diagram
+
+F. Current ownership-input sources
+
+G. Gap analysis against approved ERP architecture:
+
+Approved ownership sources:
+
+Land Notional Contribution Financial Inputs Task Expenditures Imported Contributions Withdrawal Adjustments Reimbursement Adjustments 
+
+For each source classify:
+
+Fully implemented Partially implemented Missing 
+
+H. Recommended migration sequence
+
+I. Risks if Contribution Ledger implementation begins without correction
+
+Audit only. Do not implement. Do not modify code. Provide file names, table names, routes, formulas, workflows, validations, dependencies, and conflict analysis.
+
