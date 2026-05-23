@@ -57,7 +57,7 @@ const createSchema = z.object({
     "observer",
     "store_sale_operator",
     "general_responsibility",
-    // collection_entry intentionally omitted — not yet implemented
+    "collection_entry",
   ]),
   personMasterId: z.string().uuid(),
   projectId: z.string().uuid().optional(),

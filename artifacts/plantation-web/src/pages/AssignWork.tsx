@@ -33,6 +33,7 @@ import {
   Info,
   Filter,
   Building2,
+  Leaf,
   MapPin,
   Receipt,
   RefreshCw,
@@ -67,7 +68,8 @@ type AssignmentType =
   | "store_entry"
   | "observer"
   | "store_sale_operator"
-  | "general_responsibility";
+  | "general_responsibility"
+  | "collection_entry";
 
 type AssignmentStatus = "pending" | "active" | "completed" | "expired" | "archived";
 
@@ -110,6 +112,13 @@ const ASSIGNMENT_TYPE_CONFIG: Record<
     color: "text-blue-300",
     badgeColor: "bg-blue-900/30 text-blue-300 border-blue-800/50",
     description: "Accountability and tracking assignment",
+  },
+  collection_entry: {
+    label: "Collection Entry",
+    icon: Leaf,
+    color: "text-teal-300",
+    badgeColor: "bg-teal-900/30 text-teal-300 border-teal-800/50",
+    description: "Authorised to record collection entries for a project",
   },
 };
 
@@ -425,6 +434,10 @@ function CreateAssignmentDialog({
       setError("Title is required for General Responsibility assignments.");
       return;
     }
+    if (assignmentType === "collection_entry" && !projectId) {
+      setError("Project is required for Collection Entry assignments.");
+      return;
+    }
 
     setError("");
     setCreatePending(true);
@@ -541,9 +554,10 @@ function CreateAssignmentDialog({
               </div>
             )}
 
-            {/* Project (observer selected_projects, store_entry, general_responsibility) */}
+            {/* Project (observer selected_projects, store_entry, general_responsibility, collection_entry) */}
             {(assignmentType === "store_entry" ||
               assignmentType === "general_responsibility" ||
+              assignmentType === "collection_entry" ||
               (assignmentType === "observer" && projectCoverage === "selected_projects")) && (
               <div>
                 <Label className="text-slate-300 mb-1.5 block text-sm">
@@ -599,8 +613,8 @@ function CreateAssignmentDialog({
               </div>
             )}
 
-            {/* Expenditure permission (store_entry) */}
-            {assignmentType === "store_entry" && (
+            {/* Expenditure permission (store_entry, collection_entry) */}
+            {(assignmentType === "store_entry" || assignmentType === "collection_entry") && (
               <div className="flex items-center gap-2.5 bg-slate-900/40 border border-slate-700/50 rounded-lg px-3 py-2.5">
                 <Checkbox
                   id="expPerm"
