@@ -24,6 +24,7 @@ async function resolveActor(clerkUserId: string) {
       id: usersTable.id,
       role: usersTable.role,
       displayName: usersTable.displayName,
+      personMasterId: usersTable.personMasterId,
     })
     .from(usersTable)
     .where(and(eq(usersTable.clerkUserId, clerkUserId), eq(usersTable.isActive, true)))
@@ -169,6 +170,71 @@ router.get("/person/:personMasterId", async (req, res) => {
     .orderBy(desc(workAssignmentsTable.createdAt));
 
   return res.json(await enrichAssignments(rows));
+});
+
+// ── GET /work-assignments/my ──────────────────────────────────────────────────
+// Returns active + pending assignments for the currently authenticated user,
+// with auto-select context metadata for each assignment.
+
+router.get("/my", async (req, res) => {
+  const { userId: clerkUserId } = getAuth(req);
+  if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
+  const actor = await resolveActor(clerkUserId);
+  if (!actor) return res.status(403).json({ error: "Forbidden" });
+
+  // No personMasterId linked → user has no operational assignments
+  if (!actor.personMasterId) return res.json([]);
+
+  const rows = await db
+    .select()
+    .from(workAssignmentsTable)
+    .where(
+      and(
+        eq(workAssignmentsTable.personMasterId, actor.personMasterId),
+        inArray(workAssignmentsTable.status, ["active", "pending"]),
+      ),
+    )
+    .orderBy(desc(workAssignmentsTable.createdAt));
+
+  if (rows.length === 0) return res.json([]);
+
+  // Enrich with mobile / aadhaar
+  const [person] = await db
+    .select({ mobile: personMasterTable.mobile, aadhaarLast4: personMasterTable.aadhaarLast4 })
+    .from(personMasterTable)
+    .where(eq(personMasterTable.id, actor.personMasterId))
+    .limit(1);
+
+  // Build auto-select context per assignment.
+  // canAutoSelect* = true when this is the only active assignment of its type
+  // that carries a non-null value for the field (project, store, or place).
+  function buildAutoSelectContext(row: typeof workAssignmentsTable.$inferSelect) {
+    const sameType = rows.filter((r) => r.assignmentType === row.assignmentType);
+
+    const projectRows = sameType.filter((r) => r.projectId != null);
+    const storeRows = sameType.filter((r) => r.storeId != null);
+    const placeRows = sameType.filter((r) => r.place != null);
+
+    return {
+      canAutoSelectProject: projectRows.length === 1 && row.projectId != null,
+      canAutoSelectStore: storeRows.length === 1 && row.storeId != null,
+      canAutoSelectPlace: placeRows.length === 1 && row.place != null,
+      resolvedProjectId: row.projectId ?? null,
+      resolvedProjectName: row.projectNameSnapshot ?? null,
+      resolvedStoreId: row.storeId ?? null,
+      resolvedStoreName: row.storeNameSnapshot ?? null,
+      resolvedPlace: row.place ?? null,
+    };
+  }
+
+  const result = rows.map((r) => ({
+    ...r,
+    personMobile: person?.mobile ?? null,
+    personAadhaarLast4: person?.aadhaarLast4 ?? null,
+    autoSelectContext: buildAutoSelectContext(r),
+  }));
+
+  return res.json(result);
 });
 
 // ── GET /work-assignments/:id ─────────────────────────────────────────────────

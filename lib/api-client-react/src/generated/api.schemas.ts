@@ -8577,6 +8577,28 @@ export interface WorkAssignmentAuditEvent {
   createdAt?: string;
 }
 
+/**
+ * Per-assignment metadata that tells a consuming module whether it can automatically pre-fill a context field (project, store, place) without asking the user to choose. canAutoSelect* is true when the user has exactly one active assignment of this type that carries a value for that field.
+
+ */
+export interface WorkAssignmentAutoSelectContext {
+  /** True when this is the only active assignment with a projectId for this type */
+  canAutoSelectProject?: boolean;
+  /** True when this is the only active assignment with a storeId for this type */
+  canAutoSelectStore?: boolean;
+  /** True when this is the only active assignment with a place for this type */
+  canAutoSelectPlace?: boolean;
+  resolvedProjectId?: string | null;
+  resolvedProjectName?: string | null;
+  resolvedStoreId?: string | null;
+  resolvedStoreName?: string | null;
+  resolvedPlace?: string | null;
+}
+
+export type MyWorkAssignment = WorkAssignment & {
+  autoSelectContext?: WorkAssignmentAutoSelectContext;
+};
+
 export interface SalesOrder {
   id?: string;
   salesCode?: string;

@@ -522,6 +522,7 @@ import type {
   MissingDeveloperCaseItem,
   MoneyCustodyEntry,
   MultiStoreDashboard,
+  MyWorkAssignment,
   NomineeActivationWorkflow,
   NomineeAuthorityTransfer,
   NomineeSuccessionDashboard,
@@ -46376,6 +46377,83 @@ export function useGetWorkAssignmentAudit<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetWorkAssignmentAuditQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Returns all active and pending assignments linked to the user's person_master record. Each assignment includes autoSelectContext metadata indicating whether a module can automatically pre-fill project, store, or place fields without user interaction.
+
+ * @summary Get active work assignments for the currently authenticated user
+ */
+export const getGetMyWorkAssignmentsUrl = () => {
+  return `/api/work-assignments/my`;
+};
+
+export const getMyWorkAssignments = async (
+  options?: RequestInit,
+): Promise<MyWorkAssignment[]> => {
+  return customFetch<MyWorkAssignment[]>(getGetMyWorkAssignmentsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetMyWorkAssignmentsQueryKey = () => {
+  return [`/api/work-assignments/my`] as const;
+};
+
+export const getGetMyWorkAssignmentsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getMyWorkAssignments>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getMyWorkAssignments>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetMyWorkAssignmentsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getMyWorkAssignments>>
+  > = ({ signal }) => getMyWorkAssignments({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getMyWorkAssignments>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetMyWorkAssignmentsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getMyWorkAssignments>>
+>;
+export type GetMyWorkAssignmentsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get active work assignments for the currently authenticated user
+ */
+
+export function useGetMyWorkAssignments<
+  TData = Awaited<ReturnType<typeof getMyWorkAssignments>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getMyWorkAssignments>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetMyWorkAssignmentsQueryOptions(options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

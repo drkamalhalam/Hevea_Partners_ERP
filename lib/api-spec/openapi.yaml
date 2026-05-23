@@ -11377,6 +11377,24 @@ paths:
                 type: array
                 items: { $ref: '#/components/schemas/WorkAssignmentAuditEvent' }
 
+  /work-assignments/my:
+    get:
+      operationId: getMyWorkAssignments
+      tags: [workAssignments]
+      summary: Get active work assignments for the currently authenticated user
+      description: >
+        Returns all active and pending assignments linked to the user's person_master record.
+        Each assignment includes autoSelectContext metadata indicating whether a module can
+        automatically pre-fill project, store, or place fields without user interaction.
+      responses:
+        '200':
+          description: Current user work assignments with auto-select metadata
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/MyWorkAssignment' }
+
   /work-assignments/person/{personMasterId}:
     get:
       operationId: getPersonWorkAssignments
@@ -21139,6 +21157,37 @@ components:
         newStatus: { type: string, nullable: true }
         notes: { type: string, nullable: true }
         createdAt: { type: string }
+
+    WorkAssignmentAutoSelectContext:
+      type: object
+      description: >
+        Per-assignment metadata that tells a consuming module whether it can automatically
+        pre-fill a context field (project, store, place) without asking the user to choose.
+        canAutoSelect* is true when the user has exactly one active assignment of this type
+        that carries a value for that field.
+      properties:
+        canAutoSelectProject:
+          type: boolean
+          description: True when this is the only active assignment with a projectId for this type
+        canAutoSelectStore:
+          type: boolean
+          description: True when this is the only active assignment with a storeId for this type
+        canAutoSelectPlace:
+          type: boolean
+          description: True when this is the only active assignment with a place for this type
+        resolvedProjectId: { type: string, nullable: true }
+        resolvedProjectName: { type: string, nullable: true }
+        resolvedStoreId: { type: string, nullable: true }
+        resolvedStoreName: { type: string, nullable: true }
+        resolvedPlace: { type: string, nullable: true }
+
+    MyWorkAssignment:
+      allOf:
+        - $ref: '#/components/schemas/WorkAssignment'
+        - type: object
+          properties:
+            autoSelectContext:
+              $ref: '#/components/schemas/WorkAssignmentAutoSelectContext'
 
     # ── Sales Orders v2 ──────────────────────────────────────────────────────
 

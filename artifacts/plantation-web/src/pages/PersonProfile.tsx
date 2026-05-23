@@ -72,6 +72,7 @@ import {
   Plus,
   Receipt,
   ShoppingCart,
+  ExternalLink,
 } from "lucide-react";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -206,9 +207,16 @@ function AssignmentCard({ a, faded }: { a: any; faded?: boolean }) {
           </div>
         </div>
       </div>
-      <Badge variant="outline" className={`text-[10px] shrink-0 ${statusCfg.classes}`}>
-        {statusCfg.label}
-      </Badge>
+      <div className="flex flex-col items-end gap-1.5 shrink-0">
+        <Badge variant="outline" className={`text-[10px] ${statusCfg.classes}`}>
+          {statusCfg.label}
+        </Badge>
+        <Link href="/assign-work">
+          <span className="text-[10px] text-blue-600 hover:underline cursor-pointer flex items-center gap-0.5">
+            <ExternalLink className="w-2.5 h-2.5" /> View
+          </span>
+        </Link>
+      </div>
     </div>
   );
 }

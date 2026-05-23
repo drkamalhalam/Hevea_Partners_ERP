@@ -36,7 +36,9 @@ import {
   MapPin,
   Receipt,
   RefreshCw,
+  ExternalLink,
 } from "lucide-react";
+import { Link } from "wouter";
 import {
   Dialog,
   DialogContent,
@@ -782,7 +784,12 @@ function AssignmentRow({
 
         {/* Person */}
         <td className="px-4 py-3">
-          <p className="text-slate-100 text-sm font-medium">{a.personNameSnapshot ?? "—"}</p>
+          <Link href={`/people/${a.personMasterId}`}>
+            <span className="flex items-center gap-1 text-slate-100 text-sm font-medium hover:text-blue-400 cursor-pointer group">
+              {a.personNameSnapshot ?? "—"}
+              <ExternalLink className="w-2.5 h-2.5 opacity-0 group-hover:opacity-60 transition-opacity" />
+            </span>
+          </Link>
           <div className="flex items-center gap-2 mt-0.5">
             {a.personMobile && (
               <span className="text-slate-600 text-xs flex items-center gap-1">

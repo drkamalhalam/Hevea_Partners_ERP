@@ -40,6 +40,12 @@ import {
   UserCog,
   Leaf,
   RefreshCw,
+  Building2,
+  ShoppingCart,
+  Briefcase,
+  Loader2,
+  ExternalLink,
+  Eye,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -61,6 +67,7 @@ import {
   useListTasks,
   useGetTaskSummary,
   useGetProjectCardSummaries,
+  useGetMyWorkAssignments,
 } from "@workspace/api-client-react";
 import {
   AreaChart,
@@ -1917,6 +1924,9 @@ function EmployeeDashboard() {
     <div className="space-y-6 max-w-[1400px]">
       <WelcomeHeader />
 
+      {/* Assignment-driven cards — appear automatically from active assignments */}
+      <AssignmentDrivenCards />
+
       {/* KPI Cards */}
       <section>
         <div className="grid grid-cols-3 gap-3">
@@ -2038,6 +2048,121 @@ function EmployeeDashboard() {
   );
 }
 
+// ── Assignment-Driven Cards ───────────────────────────────────────────────
+// Renders one dashboard card per active work assignment belonging to the
+// currently signed-in user. Cards automatically appear / disappear as
+// assignments are created or archived.
+
+const ASSIGNMENT_TYPE_CONFIG: Record<
+  string,
+  { label: string; icon: React.ElementType; iconColor: string; route: string; comingSoon?: boolean }
+> = {
+  observer: {
+    label: "Observer",
+    icon: Eye,
+    iconColor: "bg-purple-50 text-purple-600",
+    route: "/projects",
+  },
+  general_responsibility: {
+    label: "Responsibility",
+    icon: Briefcase,
+    iconColor: "bg-blue-50 text-blue-600",
+    route: "/assign-work",
+  },
+  store_entry: {
+    label: "Store Entry",
+    icon: Building2,
+    iconColor: "bg-amber-50 text-amber-600",
+    route: "/assign-work",
+    comingSoon: true,
+  },
+  store_sale_operator: {
+    label: "Store Sale",
+    icon: ShoppingCart,
+    iconColor: "bg-emerald-50 text-emerald-600",
+    route: "/assign-work",
+    comingSoon: true,
+  },
+  collection_entry: {
+    label: "Collection Entry",
+    icon: Leaf,
+    iconColor: "bg-teal-50 text-teal-600",
+    route: "/assign-work",
+    comingSoon: true,
+  },
+};
+
+function AssignmentDrivenCards() {
+  const [, navigate] = useLocation();
+  const { data: assignments = [], isLoading } = useGetMyWorkAssignments();
+
+  if (isLoading) {
+    return (
+      <div className="flex gap-3">
+        {[...Array(2)].map((_, i) => (
+          <Skeleton key={i} className="h-24 w-48 rounded-xl shrink-0" />
+        ))}
+      </div>
+    );
+  }
+
+  if (assignments.length === 0) return null;
+
+  return (
+    <section>
+      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+        Your Assignments
+      </p>
+      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3">
+        {assignments.map((a: any) => {
+          const cfg = ASSIGNMENT_TYPE_CONFIG[a.assignmentType] ?? ASSIGNMENT_TYPE_CONFIG.general_responsibility;
+          const Icon = cfg.icon;
+          const contextLine = a.projectNameSnapshot ?? a.storeNameSnapshot ?? a.place ?? a.title ?? null;
+
+          return (
+            <Card
+              key={a.id}
+              className="border border-gray-200 shadow-none bg-white hover:shadow-md hover:border-gray-300 transition-shadow cursor-pointer"
+              onClick={() => navigate(cfg.route)}
+            >
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider truncate">
+                      {cfg.label}
+                    </p>
+                    <p className="text-sm font-bold text-foreground mt-1 truncate">
+                      {contextLine ?? "Active"}
+                    </p>
+                    <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                      <Badge
+                        variant="outline"
+                        className={`text-[9px] px-1.5 py-0 ${
+                          a.status === "active"
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                            : "bg-yellow-50 text-yellow-700 border-yellow-200"
+                        }`}
+                      >
+                        {a.status}
+                      </Badge>
+                      {cfg.comingSoon && (
+                        <span className="text-[9px] text-muted-foreground italic">module pending</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className={`p-2.5 rounded-xl flex-shrink-0 ${cfg.iconColor}`}>
+                    <Icon className="w-4 h-4" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 // ── Operational Staff Dashboard ───────────────────────────────────────────
 
 function StaffDashboard() {
@@ -2051,6 +2176,9 @@ function StaffDashboard() {
   return (
     <div className="space-y-6 max-w-[1400px]">
       <WelcomeHeader />
+
+      {/* Assignment-driven cards — appear automatically from active assignments */}
+      <AssignmentDrivenCards />
 
       {/* KPI Cards */}
       <section>

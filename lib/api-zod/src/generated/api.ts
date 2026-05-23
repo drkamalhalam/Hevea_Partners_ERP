@@ -19316,6 +19316,76 @@ export const GetWorkAssignmentAuditResponse = zod.array(
 );
 
 /**
+ * Returns all active and pending assignments linked to the user's person_master record. Each assignment includes autoSelectContext metadata indicating whether a module can automatically pre-fill project, store, or place fields without user interaction.
+
+ * @summary Get active work assignments for the currently authenticated user
+ */
+export const GetMyWorkAssignmentsResponseItem = zod
+  .object({
+    id: zod.string().optional(),
+    assignmentType: zod.string().optional(),
+    status: zod.string().optional(),
+    statusChangedAt: zod.string().nullish(),
+    statusReason: zod.string().nullish(),
+    personMasterId: zod.string().optional(),
+    personNameSnapshot: zod.string().nullish(),
+    personMobile: zod.string().nullish(),
+    projectId: zod.string().nullish(),
+    projectNameSnapshot: zod.string().nullish(),
+    projectCoverage: zod.string().nullish(),
+    storeId: zod.string().nullish(),
+    storeNameSnapshot: zod.string().nullish(),
+    place: zod.string().nullish(),
+    expenditurePermission: zod.boolean().optional(),
+    title: zod.string().nullish(),
+    description: zod.string().nullish(),
+    startDate: zod.string().nullish(),
+    endDate: zod.string().nullish(),
+    assignedBy: zod.string().nullish(),
+    assignedByName: zod.string().nullish(),
+    notes: zod.string().nullish(),
+    createdAt: zod.string().optional(),
+    updatedAt: zod.string().optional(),
+  })
+  .and(
+    zod.object({
+      autoSelectContext: zod
+        .object({
+          canAutoSelectProject: zod
+            .boolean()
+            .optional()
+            .describe(
+              "True when this is the only active assignment with a projectId for this type",
+            ),
+          canAutoSelectStore: zod
+            .boolean()
+            .optional()
+            .describe(
+              "True when this is the only active assignment with a storeId for this type",
+            ),
+          canAutoSelectPlace: zod
+            .boolean()
+            .optional()
+            .describe(
+              "True when this is the only active assignment with a place for this type",
+            ),
+          resolvedProjectId: zod.string().nullish(),
+          resolvedProjectName: zod.string().nullish(),
+          resolvedStoreId: zod.string().nullish(),
+          resolvedStoreName: zod.string().nullish(),
+          resolvedPlace: zod.string().nullish(),
+        })
+        .optional()
+        .describe(
+          "Per-assignment metadata that tells a consuming module whether it can automatically pre-fill a context field (project, store, place) without asking the user to choose. canAutoSelect\* is true when the user has exactly one active assignment of this type that carries a value for that field.\n",
+        ),
+    }),
+  );
+export const GetMyWorkAssignmentsResponse = zod.array(
+  GetMyWorkAssignmentsResponseItem,
+);
+
+/**
  * @summary Get all work assignments for a person
  */
 export const GetPersonWorkAssignmentsParams = zod.object({
