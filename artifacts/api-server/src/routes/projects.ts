@@ -10,6 +10,7 @@ import {
   contributionsTable,
   ownershipSnapshotsTable,
   projectOwnershipFreezesTable,
+  governanceOverridesTable,
   type OwnershipSnapshotEntry,
 } from "@workspace/db";
 import { eq, and, inArray, desc, isNull, count, sql } from "drizzle-orm";
@@ -217,6 +218,42 @@ router.patch("/:id", requireRole("admin", "developer"), async (req, res) => {
       ? overrideParsed.data.reason
       : undefined;
 
+    // Helper: validate that a supplied governanceOverrideId actually exists,
+    // is scoped to this project, and is tied to the right field. Bypassing
+    // the gate by passing a random UUID is a governance-integrity risk —
+    // reject anything we cannot verify.
+    const verifyOverride = async (
+      overrideId: string,
+      expectedField: "commercialModel" | "projectType" | "projectCode",
+    ): Promise<{ ok: boolean; reason?: string }> => {
+      const [row] = await db
+        .select()
+        .from(governanceOverridesTable)
+        .where(eq(governanceOverridesTable.id, overrideId))
+        .limit(1);
+      if (!row) return { ok: false, reason: "Governance override not found." };
+      if (row.projectId !== existing.id) {
+        return { ok: false, reason: "Governance override does not apply to this project." };
+      }
+      const meta = (row.metadata ?? {}) as Record<string, unknown>;
+      const scopedField =
+        typeof meta.field === "string" ? (meta.field as string) : undefined;
+      const isProjectFieldOverride =
+        row.module === "governance" &&
+        row.overrideType === "governance_manual_note" &&
+        scopedField === expectedField;
+      const isScopedOverride =
+        row.overrideType === `project_${expectedField}_override` ||
+        scopedField === expectedField;
+      if (!isScopedOverride && !isProjectFieldOverride) {
+        return {
+          ok: false,
+          reason: `Governance override is not scoped to '${expectedField}'.`,
+        };
+      }
+      return { ok: true };
+    };
+
     // commercialModel is immutable on ACTIVE projects — requires governance override
     if (
       bodyParsed.data.commercialModel !== undefined &&
@@ -229,6 +266,14 @@ router.patch("/:id", requireRole("admin", "developer"), async (req, res) => {
             "Commercial model cannot be changed on an active project. " +
             "Raise a governance override request and resubmit with governanceOverrideId.",
           code: "GOVERNANCE_OVERRIDE_REQUIRED",
+        });
+        return;
+      }
+      const check = await verifyOverride(governanceOverrideId, "commercialModel");
+      if (!check.ok) {
+        res.status(409).json({
+          error: check.reason ?? "Invalid governance override.",
+          code: "GOVERNANCE_OVERRIDE_INVALID",
         });
         return;
       }
@@ -271,20 +316,52 @@ router.patch("/:id", requireRole("admin", "developer"), async (req, res) => {
     if (
       incomingProjectType !== undefined &&
       incomingProjectType !== existing.projectType &&
-      existing.activationStatus === "active" &&
-      !governanceOverrideId
+      existing.activationStatus === "active"
     ) {
-      res.status(409).json({
-        error:
-          "Project type cannot be changed on an active project without a governance override.",
-        code: "GOVERNANCE_OVERRIDE_REQUIRED",
-      });
-      return;
+      if (!governanceOverrideId) {
+        res.status(409).json({
+          error:
+            "Project type cannot be changed on an active project without a governance override.",
+          code: "GOVERNANCE_OVERRIDE_REQUIRED",
+        });
+        return;
+      }
+      const check = await verifyOverride(governanceOverrideId, "projectType");
+      if (!check.ok) {
+        res.status(409).json({
+          error: check.reason ?? "Invalid governance override.",
+          code: "GOVERNANCE_OVERRIDE_INVALID",
+        });
+        return;
+      }
     }
 
+    // Strip non-column governance metadata fields before applying the update —
+    // governanceOverrideId / reason live on the audit row, not on `projects`.
     const updateSet: Record<string, unknown> = { ...bodyParsed.data };
+    delete (updateSet as Record<string, unknown>).governanceOverrideId;
+    delete (updateSet as Record<string, unknown>).reason;
     if (incomingProjectType !== undefined) {
       updateSet.projectType = incomingProjectType;
+    }
+
+    // If the caller supplied a governanceOverrideId but it was not consumed by
+    // any of the gated immutability checks above, verify it still references a
+    // real, project-scoped override row — never let bogus IDs flow into the
+    // audit trail.
+    if (governanceOverrideId) {
+      const [row] = await db
+        .select({ id: governanceOverridesTable.id, projectId: governanceOverridesTable.projectId })
+        .from(governanceOverridesTable)
+        .where(eq(governanceOverridesTable.id, governanceOverrideId))
+        .limit(1);
+      if (!row || row.projectId !== existing.id) {
+        res.status(409).json({
+          error: "Governance override not found or does not apply to this project.",
+          code: "GOVERNANCE_OVERRIDE_INVALID",
+        });
+        return;
+      }
     }
 
     const [project] = await db

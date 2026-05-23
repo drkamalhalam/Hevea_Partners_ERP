@@ -23070,6 +23070,16 @@ export const DeleteOnboardingParticipantParams = zod.object({
   ]),
 });
 
+export const DeleteOnboardingParticipantQueryParams = zod.object({
+  personMasterId: zod.coerce
+    .string()
+    .uuid()
+    .optional()
+    .describe(
+      "Disambiguate when multiple persons hold this role on the project.",
+    ),
+});
+
 export const DeleteOnboardingParticipantResponse = zod.object({
   ok: zod.boolean().optional(),
 });

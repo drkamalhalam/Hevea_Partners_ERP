@@ -10,6 +10,7 @@ import {
   useUpdateProject,
   useGetProject,
   useUpsertOnboardingParticipant,
+  useDeleteOnboardingParticipant,
   useListOnboardingParticipants,
   useListOnboardingWitnesses,
   useAddOnboardingWitness,
@@ -1510,12 +1511,21 @@ function Step7Witnesses({
   };
 
   const addNew = (values: WitnessValues) => {
+    if (!witnessPersonSel?.id) {
+      toast({
+        title: "Select a witness from the Person Registry first",
+        description:
+          "Free-text witness entry is not allowed — search the registry or register the person, then try again.",
+        variant: "destructive",
+      });
+      return;
+    }
     addWitness.mutate(
       {
         projectId,
         data: {
           ...values,
-          personMasterId: witnessPersonSel?.id ?? undefined,
+          personMasterId: witnessPersonSel.id,
         } as any,
       },
       {
@@ -1613,15 +1623,23 @@ function Step7Witnesses({
             <p className="text-sm font-semibold">Add Witness</p>
 
             <PersonMasterSelector
-              label="Search Registry (Optional)"
+              label="Witness Identity (Person Registry) *"
               selectedPerson={witnessPersonSel}
               onSelect={handleWitnessPersonSelect}
             />
 
+            {!witnessPersonSel && (
+              <div className="flex items-start gap-2 text-amber-700 bg-amber-50 border border-amber-200 rounded-md p-2 text-xs">
+                <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                Select an existing person from the registry, or register a new
+                one — free-text witness entry is disabled.
+              </div>
+            )}
+
             <div className="flex items-center gap-3">
               <div className="flex-1 border-t border-dashed" />
               <span className="text-xs text-muted-foreground shrink-0">
-                {witnessPersonSel ? "Auto-filled — review below" : "Fill in details"}
+                {witnessPersonSel ? "Identity auto-filled — review below" : "Awaiting registry selection"}
               </span>
               <div className="flex-1 border-t border-dashed" />
             </div>
@@ -1691,7 +1709,12 @@ function Step7Witnesses({
               )} />
             </div>
             <div className="flex gap-2">
-              <Button type="submit" size="sm" disabled={addWitness.isPending}>
+              <Button
+                type="submit"
+                size="sm"
+                disabled={addWitness.isPending || !witnessPersonSel}
+                title={!witnessPersonSel ? "Select a person from the registry first" : ""}
+              >
                 {addWitness.isPending ? (
                   <Loader2 className="h-4 w-4 mr-1 animate-spin" />
                 ) : (
@@ -2410,6 +2433,15 @@ export default function ProjectCreationWizard() {
 
 // ── Step 2: Participants (collapsed dev + landowner KYC) ────────────────────
 
+const ADDITIONAL_PARTICIPANT_ROLES = [
+  { value: "investor", label: "Investor" },
+  { value: "partner", label: "Partner" },
+  { value: "nominee", label: "Nominee" },
+  { value: "claimant", label: "Claimant" },
+  { value: "witness", label: "Witness (additional)" },
+  { value: "other", label: "Other" },
+] as const;
+
 function StepParticipants({
   projectId,
   onNext,
@@ -2419,10 +2451,77 @@ function StepParticipants({
   onNext: () => void;
   onBack: () => void;
 }) {
-  const { data } = useListOnboardingParticipants(projectId);
+  const { data, refetch } = useListOnboardingParticipants(projectId);
+  const { toast } = useToast();
+  const upsert = useUpsertOnboardingParticipant();
+  const remove = useDeleteOnboardingParticipant();
   const hasDev = !!data?.participants?.find((p) => p.role === "developer");
   const hasLandowner = !!data?.participants?.find((p) => p.role === "landowner");
   const canProceed = hasDev && hasLandowner;
+
+  const [addlPerson, setAddlPerson] = useState<PersonSummary | null>(null);
+  const [addlRole, setAddlRole] =
+    useState<(typeof ADDITIONAL_PARTICIPANT_ROLES)[number]["value"]>("investor");
+
+  const additional = (data?.participants ?? []).filter(
+    (p) => p.role !== "developer" && p.role !== "landowner",
+  );
+
+  const addAdditional = () => {
+    if (!addlPerson?.id) {
+      toast({
+        title: "Select a person from the registry first",
+        variant: "destructive",
+      });
+      return;
+    }
+    upsert.mutate(
+      {
+        projectId,
+        role: addlRole,
+        data: {
+          role: addlRole,
+          personMasterId: addlPerson.id,
+          fullName: addlPerson.fullName,
+          sOnCOn: addlPerson.sOnCOn ?? undefined,
+          fatherGuardianName: addlPerson.fatherGuardianName ?? undefined,
+          mobile: addlPerson.mobile ?? undefined,
+          email: addlPerson.email ?? undefined,
+        } as any,
+      },
+      {
+        onSuccess: () => {
+          setAddlPerson(null);
+          refetch();
+          toast({ title: `${addlRole} added` });
+        },
+        onError: (err: any) =>
+          toast({
+            title: "Failed to add participant",
+            description: err?.message ?? "",
+            variant: "destructive",
+          }),
+      },
+    );
+  };
+
+  const removeAdditional = (role: string, personMasterId?: string | null) => {
+    remove.mutate(
+      {
+        projectId,
+        role: role as any,
+        params: personMasterId ? { personMasterId } : undefined,
+      } as any,
+      {
+        onSuccess: () => {
+          refetch();
+          toast({ title: "Participant removed" });
+        },
+        onError: () =>
+          toast({ title: "Failed to remove participant", variant: "destructive" }),
+      },
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -2469,6 +2568,87 @@ function StepParticipants({
         </CardContent>
       </Card>
 
+      <Card className="border-dashed">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Users className="h-4 w-4" /> Additional Participants
+            <span className="text-[10px] font-normal text-muted-foreground">
+              (investor · partner · nominee · claimant · witness · other)
+            </span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {additional.length > 0 && (
+            <div className="space-y-2">
+              {additional.map((p) => (
+                <div
+                  key={p.id}
+                  className="flex items-start justify-between bg-muted/30 rounded-md p-2 border"
+                >
+                  <div className="text-sm">
+                    <span className="font-medium capitalize">{p.role}</span>
+                    <span className="text-muted-foreground"> · {p.fullName}</span>
+                    {(p as any).personMasterId && (
+                      <span className="text-[10px] bg-green-100 text-green-700 border border-green-200 rounded px-1.5 py-0.5 ml-2">
+                        Registry Linked
+                      </span>
+                    )}
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    className="text-destructive"
+                    onClick={() => removeAdditional(p.role, (p as any).personMasterId ?? null)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="grid grid-cols-[160px_1fr_auto] gap-2 items-end">
+            <div>
+              <Label className="text-xs">Role</Label>
+              <Select value={addlRole} onValueChange={(v) => setAddlRole(v as any)}>
+                <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {ADDITIONAL_PARTICIPANT_ROLES.map((r) => (
+                    <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <PersonMasterSelector
+                label="Person (Registry) *"
+                selectedPerson={addlPerson}
+                onSelect={setAddlPerson}
+              />
+            </div>
+            <Button
+              type="button"
+              size="sm"
+              onClick={addAdditional}
+              disabled={!addlPerson || upsert.isPending}
+              title={!addlPerson ? "Select a registry person first" : ""}
+            >
+              {upsert.isPending ? (
+                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+              ) : (
+                <Plus className="h-4 w-4 mr-1" />
+              )}
+              Add
+            </Button>
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            Free-text entry is not allowed — all participants must come from the
+            Person Registry. The same person may hold multiple roles.
+          </p>
+        </CardContent>
+      </Card>
+
       <div className="flex justify-between pt-2">
         <Button type="button" variant="outline" onClick={onBack}>
           <ChevronLeft className="h-4 w-4 mr-1" /> Back
@@ -2485,6 +2665,7 @@ function StepParticipants({
 
 const parcelFormSchema = z.object({
   landType: z.enum(["recorded", "non_recorded"]),
+  landownerPersonId: z.string().uuid({ message: "Select the parcel landowner from the Person Registry." }),
   khatianNumber: z.string().optional(),
   plotNumber: z.string().optional(),
   mouja: z.string().optional(),
@@ -2527,15 +2708,22 @@ function StepScheduleA({
 
   const form = useForm<ParcelFormValues>({
     resolver: zodResolver(parcelFormSchema),
-    defaultValues: { landType: "recorded", landArea: 0, landAreaUnit: "kani" },
+    defaultValues: { landType: "recorded", landArea: 0, landAreaUnit: "kani", landownerPersonId: "" as any },
   });
+  const [parcelLandownerSel, setParcelLandownerSel] = useState<PersonSummary | null>(null);
 
   const startEdit = (parcelId: string) => {
     const p = parcels.find((x: any) => x.id === parcelId);
     if (!p) return;
     setEditingId(parcelId);
+    setParcelLandownerSel(
+      (p as any).landownerPerson
+        ? ((p as any).landownerPerson as PersonSummary)
+        : null,
+    );
     form.reset({
       landType: (p.landType as "recorded" | "non_recorded") ?? "recorded",
+      landownerPersonId: (p as any).landownerPersonId ?? "",
       khatianNumber: p.khatianNumber ?? "",
       plotNumber: p.plotNumber ?? "",
       mouja: p.mouja ?? "",
@@ -2559,7 +2747,8 @@ function StepScheduleA({
 
   const startAdd = () => {
     setEditingId(null);
-    form.reset({ landType: "recorded", landArea: 0, landAreaUnit: "kani" });
+    setParcelLandownerSel(null);
+    form.reset({ landType: "recorded", landArea: 0, landAreaUnit: "kani", landownerPersonId: "" as any });
     setShowForm(true);
   };
 
@@ -2648,6 +2837,26 @@ function StepScheduleA({
           <CardContent>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <div className="space-y-2">
+                  <PersonMasterSelector
+                    label="Parcel Landowner (Person Registry) *"
+                    selectedPerson={parcelLandownerSel}
+                    onSelect={(person) => {
+                      setParcelLandownerSel(person);
+                      form.setValue(
+                        "landownerPersonId",
+                        (person?.id ?? "") as string,
+                        { shouldValidate: true },
+                      );
+                    }}
+                  />
+                  {form.formState.errors.landownerPersonId && (
+                    <p className="text-xs text-destructive">
+                      {String(form.formState.errors.landownerPersonId.message)}
+                    </p>
+                  )}
+                </div>
+
                 <FormField control={form.control} name="landType" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Land Type</FormLabel>

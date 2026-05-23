@@ -12754,6 +12754,13 @@ export type UpsertOnboardingParticipant200 = {
   participant: OnboardingParticipant;
 };
 
+export type DeleteOnboardingParticipantParams = {
+  /**
+   * Disambiguate when multiple persons hold this role on the project.
+   */
+  personMasterId?: string;
+};
+
 export type DeleteOnboardingParticipant200 = {
   ok?: boolean;
 };

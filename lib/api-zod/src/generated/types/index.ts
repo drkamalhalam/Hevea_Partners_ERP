@@ -337,6 +337,7 @@ export * from "./deleteInheritanceShare200";
 export * from "./deleteLossAbsorptionRecord200";
 export * from "./deleteNotification200";
 export * from "./deleteOnboardingParticipant200";
+export * from "./deleteOnboardingParticipantParams";
 export * from "./deleteOnboardingWitness200";
 export * from "./deletePayableAdjustment200";
 export * from "./deleteProductionEntry200";

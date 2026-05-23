@@ -189,26 +189,48 @@ router.delete("/:projectId/onboarding/participants/:role", requireRole("admin", 
     return;
   }
   const role = String(req.params.role);
+  // Optional disambiguator: when multiple persons hold the same role (e.g.
+  // several investors) the caller MUST scope the delete to a single
+  // personMasterId. Without it, we'd coarsely wipe every row for that role.
+  const personMasterIdRaw = req.query.personMasterId;
+  const personMasterId =
+    typeof personMasterIdRaw === "string" && personMasterIdRaw.length > 0
+      ? personMasterIdRaw
+      : undefined;
 
-  const [existing] = await db
+  const baseWhere = personMasterId
+    ? and(
+        eq(projectParticipantsTable.projectId, projectId),
+        eq(projectParticipantsTable.role, role),
+        eq(projectParticipantsTable.personMasterId, personMasterId),
+      )
+    : and(
+        eq(projectParticipantsTable.projectId, projectId),
+        eq(projectParticipantsTable.role, role),
+      );
+
+  const matches = await db
     .select()
     .from(projectParticipantsTable)
-    .where(
-      and(
-        eq(projectParticipantsTable.projectId, projectId),
-        eq(projectParticipantsTable.role, role),
-      ),
-    )
-    .limit(1);
+    .where(baseWhere);
 
-  await db
-    .delete(projectParticipantsTable)
-    .where(
-      and(
-        eq(projectParticipantsTable.projectId, projectId),
-        eq(projectParticipantsTable.role, role),
-      ),
-    );
+  if (matches.length > 1 && !personMasterId) {
+    res.status(409).json({
+      error:
+        "Multiple participants hold this role on this project. Supply ?personMasterId=… to target a specific row.",
+      code: "PARTICIPANT_AMBIGUOUS",
+      candidates: matches.map((m) => ({
+        id: m.id,
+        personMasterId: m.personMasterId,
+        fullName: m.fullName,
+      })),
+    });
+    return;
+  }
+
+  const existing = matches[0];
+
+  await db.delete(projectParticipantsTable).where(baseWhere);
 
   if (existing) {
     await writeProjectAudit(req, {

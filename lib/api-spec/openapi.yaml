@@ -13105,6 +13105,11 @@ paths:
           in: path
           required: true
           schema: { type: string, enum: [landowner, developer, investor, partner, nominee, claimant, witness, other] }
+        - name: personMasterId
+          in: query
+          required: false
+          description: Disambiguate when multiple persons hold this role on the project.
+          schema: { type: string, format: uuid }
       responses:
         "200":
           description: Deleted

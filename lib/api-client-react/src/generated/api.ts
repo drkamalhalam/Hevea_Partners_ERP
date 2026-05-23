@@ -215,6 +215,7 @@ import type {
   DeleteLossAbsorptionRecord200,
   DeleteNotification200,
   DeleteOnboardingParticipant200,
+  DeleteOnboardingParticipantParams,
   DeleteOnboardingWitness200,
   DeletePayableAdjustment200,
   DeleteProductionEntry200,
@@ -54331,8 +54332,21 @@ export const getDeleteOnboardingParticipantUrl = (
     | "claimant"
     | "witness"
     | "other",
+  params?: DeleteOnboardingParticipantParams,
 ) => {
-  return `/api/projects/${projectId}/onboarding/participants/${role}`;
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/projects/${projectId}/onboarding/participants/${role}?${stringifiedParams}`
+    : `/api/projects/${projectId}/onboarding/participants/${role}`;
 };
 
 export const deleteOnboardingParticipant = async (
@@ -54346,10 +54360,11 @@ export const deleteOnboardingParticipant = async (
     | "claimant"
     | "witness"
     | "other",
+  params?: DeleteOnboardingParticipantParams,
   options?: RequestInit,
 ): Promise<DeleteOnboardingParticipant200> => {
   return customFetch<DeleteOnboardingParticipant200>(
-    getDeleteOnboardingParticipantUrl(projectId, role),
+    getDeleteOnboardingParticipantUrl(projectId, role, params),
     {
       ...options,
       method: "DELETE",
@@ -54375,6 +54390,7 @@ export const getDeleteOnboardingParticipantMutationOptions = <
         | "claimant"
         | "witness"
         | "other";
+      params?: DeleteOnboardingParticipantParams;
     },
     TContext
   >;
@@ -54393,6 +54409,7 @@ export const getDeleteOnboardingParticipantMutationOptions = <
       | "claimant"
       | "witness"
       | "other";
+    params?: DeleteOnboardingParticipantParams;
   },
   TContext
 > => {
@@ -54418,11 +54435,12 @@ export const getDeleteOnboardingParticipantMutationOptions = <
         | "claimant"
         | "witness"
         | "other";
+      params?: DeleteOnboardingParticipantParams;
     }
   > = (props) => {
-    const { projectId, role } = props ?? {};
+    const { projectId, role, params } = props ?? {};
 
-    return deleteOnboardingParticipant(projectId, role, requestOptions);
+    return deleteOnboardingParticipant(projectId, role, params, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -54455,6 +54473,7 @@ export const useDeleteOnboardingParticipant = <
         | "claimant"
         | "witness"
         | "other";
+      params?: DeleteOnboardingParticipantParams;
     },
     TContext
   >;
@@ -54473,6 +54492,7 @@ export const useDeleteOnboardingParticipant = <
       | "claimant"
       | "witness"
       | "other";
+    params?: DeleteOnboardingParticipantParams;
   },
   TContext
 > => {
