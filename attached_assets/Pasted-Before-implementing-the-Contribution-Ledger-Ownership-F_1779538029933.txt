@@ -1,0 +1,10 @@
+Before implementing the Contribution Ledger & Ownership Foundation, perform a deep audit of the Expenditure, Cost, Burden, Reimbursement, Settlement, and Financial Input architecture.
+
+Do not modify code.
+
+Answer with evidence from schema, routes, pages, APIs, calculations, workflows, and validations.
+
+Expenditure Tables List every expenditure-related table. Explain relationships between expenditure, burden, settlement, reimbursement, contribution, project, assignment, person, partner, and user. Show exact schemas and important fields. Expenditure Entry Sources Which modules can currently create expenditures? Task system? Operational expenditure page? Project expenditure page? Collection? Store? Sale? Any other module? Expenditure Ownership When an expenditure is recorded, who is considered the payer? User? Person Registry record? Partner? Project? Explain exact logic. Burden Allocation How is burden currently assigned? Does burden affect ownership? Does burden affect accounting only? What formulas are used? Reimbursement Architecture Is reimbursement currently implemented? What tables and routes exist? Who reimburses whom? How are balances tracked? What calculations exist? Financial Input Architecture Audit all financial-input related modules. What fields are stored? How do they differ from expenditures? How do they affect ownership today? Assignment Integration Can a work assignment create expenditures? Is expenditure permission currently functional? Which assignment types support it? Person Registry Integration Are expenditures linked to Person Registry? User accounts? Partner records? Names? Identify inconsistencies. Maturity Interaction What changes before maturity vs after maturity? What reimbursement behavior changes? What ownership behavior changes? Architect Review Provide: Expenditure architecture diagram Financial input architecture diagram Burden architecture diagram Reimbursement architecture diagram Gaps against approved ERP architecture Recommended migration path Ownership risks Identity risks Auditability risks 
+
+Do not implement anything. Audit only.
+
