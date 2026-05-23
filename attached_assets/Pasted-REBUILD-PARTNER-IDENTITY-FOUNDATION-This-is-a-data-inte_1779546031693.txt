@@ -1,0 +1,154 @@
+REBUILD PARTNER IDENTITY FOUNDATION
+
+This is a data-integrity and ownership-foundation task.
+
+Do NOT modify ownership percentages.
+Do NOT modify contribution calculations.
+Do NOT modify inheritance allocation logic.
+Do NOT modify transfer valuation logic.
+Do NOT create Contribution Ledger yet.
+Do NOT create new ownership engine.
+
+OBJECTIVE
+
+Ownership attribution must become reliable.
+
+Current audit shows:
+
+- project participants can exist without partner records
+- partner records can exist without person registry linkage
+- ownership contributions depend on partners.id
+- contributions.partnerId is nullable
+- ownership attribution can become orphaned
+- multiple identity systems coexist
+
+This task must eliminate ownership-attribution gaps without changing ownership calculations.
+
+====================================================
+PARTNER REGISTRATION RULES
+====================================================
+
+For every new ownership-capable participant:
+
+Require:
+
+- person_master record exists
+- partner record exists
+- partner linked to person_master
+
+Prevent creation of ownership-capable participant without these links.
+
+====================================================
+CONTRIBUTION OWNERSHIP VALIDATION
+====================================================
+
+Before contribution creation:
+
+Validate:
+
+- project exists
+- contributor partner exists
+- contributor active
+- contributor linked to person_master
+
+Reject ownership-affecting contribution creation if validation fails.
+
+Provide clear error message.
+
+====================================================
+PARTNER HEALTH VALIDATION
+====================================================
+
+Create validation checks identifying:
+
+1. partner without person_master
+2. ownership contribution with null partnerId
+3. inactive partner with ownership contribution
+4. duplicate partner records linked to same person_master
+5. project participant missing required ownership partner record
+6. ownership snapshot containing partner id not found in registry
+7. transfer referencing invalid partner
+8. inheritance referencing invalid partner
+
+Expose through existing data-health framework.
+
+====================================================
+OWNERSHIP ATTRIBUTION PROTECTION
+====================================================
+
+Prevent ownership-affecting contribution verification if:
+
+- partnerId null
+- linked partner inactive
+- linked person registry record missing
+
+Verification must fail with explicit reason.
+
+====================================================
+TRANSFER VALIDATION
+====================================================
+
+Before ownership transfer execution validate:
+
+- transferor partner exists
+- buyer partner exists
+- both active
+- both linked to person_master
+
+Reject execution if validation fails.
+
+====================================================
+INHERITANCE VALIDATION
+====================================================
+
+Before inheritance allocation finalization validate:
+
+- source partner exists
+- claimant linkage valid
+- destination ownership holder resolvable
+
+Reject finalization if validation fails.
+
+====================================================
+AUDIT REQUIREMENTS
+====================================================
+
+Audit all identity-validation failures.
+
+Capture:
+
+- actor
+- project
+- partner
+- validation failed
+- timestamp
+- action attempted
+
+====================================================
+DATA SAFETY
+====================================================
+
+Do not alter ownership percentages.
+
+Do not modify snapshots.
+
+Do not create missing ownership automatically.
+
+Do not merge duplicate partners automatically.
+
+Do not delete records automatically.
+
+Only validate, protect and report.
+
+====================================================
+IMPLEMENTATION SUMMARY
+====================================================
+
+Provide:
+
+- routes updated
+- validations added
+- health checks added
+- audit hooks added
+- unresolved identity risks remaining
+- ownership attribution paths still capable of becoming orphaned
