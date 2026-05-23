@@ -1,0 +1,185 @@
+REBUILD NUMERIC PRECISION FOUNDATION
+
+This is a financial integrity task.
+
+Do NOT create Contribution Ledger.
+Do NOT create Financial Input module.
+Do NOT alter ownership percentages.
+Do NOT alter ownership formulas.
+Do NOT alter transfer calculations.
+Do NOT alter inheritance calculations.
+Do NOT alter settlement calculations.
+
+OBJECTIVE
+
+All financial calculations must operate on a single precision standard.
+
+Current audits identified mixed monetary storage:
+
+- real
+- numeric(14,2)
+- numeric(15,2)
+
+This creates reconciliation risk and floating-point drift.
+
+Establish one financial precision foundation.
+
+====================================================
+TARGET STANDARD
+====================================================
+
+Use:
+
+numeric(15,2)
+
+for every monetary amount in ownership,
+contribution,
+settlement,
+burden,
+reimbursement,
+advance,
+ledger,
+distribution,
+payment,
+LCA,
+and reporting domains.
+
+Do not use real for money.
+
+====================================================
+DISCOVERY PHASE
+====================================================
+
+Scan all schema files.
+
+Produce complete inventory of:
+
+- table
+- column
+- current type
+- ownership impact
+- financial impact
+- reporting impact
+
+Identify every remaining:
+
+- real
+- double precision
+- float
+- numeric with incompatible scale
+
+====================================================
+MIGRATION SAFETY
+====================================================
+
+Do not perform destructive conversion.
+
+Create safe migration strategy.
+
+Requirements:
+
+- preserve values
+- preserve precision
+- preserve audit history
+- preserve snapshots
+- preserve settlement history
+- preserve transfer history
+- preserve inheritance history
+
+No truncation.
+
+No silent rounding.
+
+====================================================
+APPLICATION LAYER REVIEW
+====================================================
+
+Audit all locations that:
+
+- parse money
+- sum money
+- divide money
+- compute percentages
+- compute ownership
+- compute settlement values
+- compute burden values
+- compute LCA values
+- compute transfer values
+
+Identify locations still relying on JS floating point behavior.
+
+====================================================
+CONSISTENCY ENFORCEMENT
+====================================================
+
+Introduce centralized money handling rules.
+
+Requirements:
+
+- consistent scale
+- consistent rounding policy
+- consistent serialization
+- consistent API responses
+- consistent database writes
+
+====================================================
+DATA HEALTH
+====================================================
+
+Create diagnostics that identify:
+
+1. mixed precision tables
+2. money columns still using real
+3. inconsistent numeric scales
+4. values exceeding target precision
+5. rounding drift between financial aggregates
+
+Expose through existing data-health framework.
+
+====================================================
+AUDIT LOGGING
+====================================================
+
+Record:
+
+- schema reviewed
+- column reviewed
+- conversion candidate
+- validation result
+- timestamp
+
+Append-only audit only.
+
+====================================================
+SAFETY REQUIREMENTS
+====================================================
+
+Do not change business rules.
+
+Do not modify ownership calculations.
+
+Do not modify contribution eligibility.
+
+Do not modify settlement eligibility.
+
+Do not modify reimbursement logic.
+
+Do not modify transfer logic.
+
+Do not modify inheritance logic.
+
+Only establish a unified numeric precision foundation.
+
+====================================================
+IMPLEMENTATION REPORT
+====================================================
+
+Provide:
+
+- all monetary columns discovered
+- incompatible columns discovered
+- migrations created
+- code paths updated
+- rounding standard adopted
+- diagnostics added
+- remaining precision risks if any

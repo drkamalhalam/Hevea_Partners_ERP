@@ -1,0 +1,62 @@
+STOP IMPLEMENTATION.
+
+Do NOT build. Do NOT modify code. Do NOT modify schema. Do NOT run db push. Do NOT create migrations.
+
+Audit only.
+
+==================================================== DECISIONS ownership_snapshots.economic_total ownership_snapshots.land_total ownership_snapshots.total_recognized_amount 
+
+ARE EXCLUDED FROM THIS TASK.
+
+They are frozen historical ownership records.
+
+Do not convert them. Do not round them. Do not recalculate them. Do not migrate them.
+
+The following percentage fields are also EXCLUDED:
+
+agreement_accounting_profiles.gross_split_pct_* agreements.ownership_share_* ownerships.share_percentage landowner_ledger_entries.ownership_pct any percentage or rate fields 
+
+This task concerns monetary precision only.
+
+==================================================== OWNERSHIP IMPACT AUDIT REQUIRED 
+
+The current audit states:
+
+Risk to ownership / transfer / inheritance formulas = None 
+
+but also states:
+
+Ownership calculation values may change after conversion of contributions.amount 
+
+These statements must be reconciled before implementation approval.
+
+==================================================== AUDIT SCOPE 
+
+For contributions.amount only:
+
+Trace the complete dependency chain and identify every direct and indirect usage.
+
+Provide:
+
+Every route reading contributions.amount Every service reading contributions.amount Every ownership calculation consuming contributions.amount Every maturity workflow consuming contributions.amount Every crystallization workflow consuming contributions.amount Every ownership snapshot generation workflow consuming contributions.amount Every entitlement calculation consuming contributions.amount Every reimbursement adjustment workflow consuming contributions.amount Every withdrawal adjustment workflow consuming contributions.amount Every transfer eligibility workflow consuming contributions.amount Every inheritance allocation workflow consuming contributions.amount Every report and analytics workflow consuming contributions.amount ==================================================== ROUNDING EFFECT ANALYSIS 
+
+If contributions.amount changes from:
+
+real -> numeric(15,2)
+
+determine whether it can alter:
+
+ownership percentages ownership ranking maturity ownership determination entitlement balances transfer eligibility inheritance allocation crystallized ownership ownership snapshots ownership records contribution ledger totals 
+
+For each item provide:
+
+YES / NO explanation theoretical maximum impact current live-data impact estimate ==================================================== RECOMMENDATION 
+
+Return only:
+
+Findings Dependency graph Ownership risks Current live-data impact Required safeguards Recommendation: Safe to convert Safe only with safeguards Do not convert 
+
+Audit only.
+
+No code changes. No schema changes. No migrations. No implementation.
+

@@ -1,0 +1,66 @@
+NUMERIC PRECISION FOUNDATION
+
+TYPE-CONVERSION READINESS AUDIT
+
+Audit only.
+
+Do NOT modify code. Do NOT modify schema. Do NOT create migrations. Do NOT run db push.
+
+==================================================== OBJECTIVE 
+
+The ownership-impact audit concluded that the primary risk is not mathematical drift.
+
+The primary risk is Drizzle return-type changes:
+
+real -> JS number
+
+numeric -> JS string
+
+We must identify every place where converting money columns to numeric(15,2) would create runtime failures or incorrect calculations.
+
+==================================================== AUDIT REQUIREMENTS 
+
+Search entire repository.
+
+Identify every occurrence of:
+
+row.amount + += Math.round Math.floor Math.ceil parseFloat Number(...) unary + reduce(...) SUM result arithmetic arithmetic on database-returned values 
+
+Determine whether the code assumes:
+
+number
+
+or safely handles:
+
+number | string
+
+==================================================== CLASSIFY RESULTS 
+
+Return results grouped as:
+
+CRITICAL Would break ownership, transfers, inheritance, settlement, LCA, burden, payable, crystallization, snapshots.
+
+HIGH Would produce incorrect totals or analytics.
+
+MEDIUM Display/report inconsistencies only.
+
+SAFE Already handles numeric strings correctly.
+
+==================================================== FOR EACH FINDING 
+
+Provide:
+
+file line expression current type assumption failure mode after conversion recommended fix pattern ==================================================== SPECIAL FOCUS 
+
+Audit these first:
+
+routes/ownership.ts routes/contributions.ts routes/projects.ts routes/project_card_summary.ts routes/project_analytics.ts routes/data_health.ts routes/analytics_hub.ts routes/financial_reports.ts routes/financial_analytics.ts routes/settlement_analytics.ts lib/distributionEngine.ts lib/reportDataService.ts ==================================================== OUTPUT 
+
+Return only:
+
+Critical findings High findings Medium findings Safe locations Estimated remediation count Recommendation Ready for conversion Ready after fixes Not ready 
+
+Audit only.
+
+No implementation. No code changes. No schema changes. No migrations.
+
