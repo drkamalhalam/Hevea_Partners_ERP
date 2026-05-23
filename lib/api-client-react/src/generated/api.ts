@@ -340,6 +340,7 @@ import type {
   GetTransferRofrDashboardParams,
   GetUnreadNotificationCount200,
   GetUserActivityParams,
+  GetUserLoginAuditParams,
   GetValuationPreviewParams,
   GovernanceHealthReport,
   GovernanceMonitoringAlert,
@@ -493,6 +494,7 @@ import type {
   ListValuationRunsParams,
   ListWorkforceAssignmentsParams,
   LockOwnershipPercentageBody,
+  LoginStatusChangeInput,
   LookupFiftyPctLcaParams,
   LookupFiftyPctPartnersParams,
   LookupFiftyPctRevenueParams,
@@ -554,6 +556,7 @@ import type {
   PersonStatusChangeInput,
   PersonStatusHistory,
   PostMaturityPaymentInput,
+  PreProvisionLoginInput,
   PrematuritySuccessionDashboard,
   ProductionAssignment,
   ProductionBatch,
@@ -735,6 +738,7 @@ import type {
   UpsertOnboardingParticipant200,
   UpsertPartnerOwnershipStateBody,
   UpsertUserInput,
+  UserLoginAuditEvent,
   UserProfile,
   ValidateProjectGovernance200,
   ValuationPreview,
@@ -1920,6 +1924,560 @@ export function useGetUserActivity<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Activate a pending or previously suspended login account (admin only)
+ */
+export const getActivateUserLoginUrl = (clerkUserId: string) => {
+  return `/api/users/${clerkUserId}/activate`;
+};
+
+export const activateUserLogin = async (
+  clerkUserId: string,
+  loginStatusChangeInput?: LoginStatusChangeInput,
+  options?: RequestInit,
+): Promise<UserProfile> => {
+  return customFetch<UserProfile>(getActivateUserLoginUrl(clerkUserId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(loginStatusChangeInput),
+  });
+};
+
+export const getActivateUserLoginMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof activateUserLogin>>,
+    TError,
+    { clerkUserId: string; data: BodyType<LoginStatusChangeInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof activateUserLogin>>,
+  TError,
+  { clerkUserId: string; data: BodyType<LoginStatusChangeInput> },
+  TContext
+> => {
+  const mutationKey = ["activateUserLogin"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof activateUserLogin>>,
+    { clerkUserId: string; data: BodyType<LoginStatusChangeInput> }
+  > = (props) => {
+    const { clerkUserId, data } = props ?? {};
+
+    return activateUserLogin(clerkUserId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ActivateUserLoginMutationResult = NonNullable<
+  Awaited<ReturnType<typeof activateUserLogin>>
+>;
+export type ActivateUserLoginMutationBody = BodyType<LoginStatusChangeInput>;
+export type ActivateUserLoginMutationError = ErrorType<void>;
+
+/**
+ * @summary Activate a pending or previously suspended login account (admin only)
+ */
+export const useActivateUserLogin = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof activateUserLogin>>,
+    TError,
+    { clerkUserId: string; data: BodyType<LoginStatusChangeInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof activateUserLogin>>,
+  TError,
+  { clerkUserId: string; data: BodyType<LoginStatusChangeInput> },
+  TContext
+> => {
+  return useMutation(getActivateUserLoginMutationOptions(options));
+};
+
+/**
+ * @summary Suspend an active login account (admin only)
+ */
+export const getSuspendUserLoginUrl = (clerkUserId: string) => {
+  return `/api/users/${clerkUserId}/suspend`;
+};
+
+export const suspendUserLogin = async (
+  clerkUserId: string,
+  loginStatusChangeInput?: LoginStatusChangeInput,
+  options?: RequestInit,
+): Promise<UserProfile> => {
+  return customFetch<UserProfile>(getSuspendUserLoginUrl(clerkUserId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(loginStatusChangeInput),
+  });
+};
+
+export const getSuspendUserLoginMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof suspendUserLogin>>,
+    TError,
+    { clerkUserId: string; data: BodyType<LoginStatusChangeInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof suspendUserLogin>>,
+  TError,
+  { clerkUserId: string; data: BodyType<LoginStatusChangeInput> },
+  TContext
+> => {
+  const mutationKey = ["suspendUserLogin"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof suspendUserLogin>>,
+    { clerkUserId: string; data: BodyType<LoginStatusChangeInput> }
+  > = (props) => {
+    const { clerkUserId, data } = props ?? {};
+
+    return suspendUserLogin(clerkUserId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SuspendUserLoginMutationResult = NonNullable<
+  Awaited<ReturnType<typeof suspendUserLogin>>
+>;
+export type SuspendUserLoginMutationBody = BodyType<LoginStatusChangeInput>;
+export type SuspendUserLoginMutationError = ErrorType<void>;
+
+/**
+ * @summary Suspend an active login account (admin only)
+ */
+export const useSuspendUserLogin = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof suspendUserLogin>>,
+    TError,
+    { clerkUserId: string; data: BodyType<LoginStatusChangeInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof suspendUserLogin>>,
+  TError,
+  { clerkUserId: string; data: BodyType<LoginStatusChangeInput> },
+  TContext
+> => {
+  return useMutation(getSuspendUserLoginMutationOptions(options));
+};
+
+/**
+ * @summary Restore a suspended login account (admin only)
+ */
+export const getRestoreUserLoginUrl = (clerkUserId: string) => {
+  return `/api/users/${clerkUserId}/restore`;
+};
+
+export const restoreUserLogin = async (
+  clerkUserId: string,
+  loginStatusChangeInput?: LoginStatusChangeInput,
+  options?: RequestInit,
+): Promise<UserProfile> => {
+  return customFetch<UserProfile>(getRestoreUserLoginUrl(clerkUserId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(loginStatusChangeInput),
+  });
+};
+
+export const getRestoreUserLoginMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof restoreUserLogin>>,
+    TError,
+    { clerkUserId: string; data: BodyType<LoginStatusChangeInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof restoreUserLogin>>,
+  TError,
+  { clerkUserId: string; data: BodyType<LoginStatusChangeInput> },
+  TContext
+> => {
+  const mutationKey = ["restoreUserLogin"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof restoreUserLogin>>,
+    { clerkUserId: string; data: BodyType<LoginStatusChangeInput> }
+  > = (props) => {
+    const { clerkUserId, data } = props ?? {};
+
+    return restoreUserLogin(clerkUserId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RestoreUserLoginMutationResult = NonNullable<
+  Awaited<ReturnType<typeof restoreUserLogin>>
+>;
+export type RestoreUserLoginMutationBody = BodyType<LoginStatusChangeInput>;
+export type RestoreUserLoginMutationError = ErrorType<void>;
+
+/**
+ * @summary Restore a suspended login account (admin only)
+ */
+export const useRestoreUserLogin = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof restoreUserLogin>>,
+    TError,
+    { clerkUserId: string; data: BodyType<LoginStatusChangeInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof restoreUserLogin>>,
+  TError,
+  { clerkUserId: string; data: BodyType<LoginStatusChangeInput> },
+  TContext
+> => {
+  return useMutation(getRestoreUserLoginMutationOptions(options));
+};
+
+/**
+ * @summary Archive a login account (soft-delete, admin only)
+ */
+export const getArchiveUserLoginUrl = (clerkUserId: string) => {
+  return `/api/users/${clerkUserId}/archive`;
+};
+
+export const archiveUserLogin = async (
+  clerkUserId: string,
+  loginStatusChangeInput?: LoginStatusChangeInput,
+  options?: RequestInit,
+): Promise<UserProfile> => {
+  return customFetch<UserProfile>(getArchiveUserLoginUrl(clerkUserId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(loginStatusChangeInput),
+  });
+};
+
+export const getArchiveUserLoginMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof archiveUserLogin>>,
+    TError,
+    { clerkUserId: string; data: BodyType<LoginStatusChangeInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof archiveUserLogin>>,
+  TError,
+  { clerkUserId: string; data: BodyType<LoginStatusChangeInput> },
+  TContext
+> => {
+  const mutationKey = ["archiveUserLogin"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof archiveUserLogin>>,
+    { clerkUserId: string; data: BodyType<LoginStatusChangeInput> }
+  > = (props) => {
+    const { clerkUserId, data } = props ?? {};
+
+    return archiveUserLogin(clerkUserId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ArchiveUserLoginMutationResult = NonNullable<
+  Awaited<ReturnType<typeof archiveUserLogin>>
+>;
+export type ArchiveUserLoginMutationBody = BodyType<LoginStatusChangeInput>;
+export type ArchiveUserLoginMutationError = ErrorType<void>;
+
+/**
+ * @summary Archive a login account (soft-delete, admin only)
+ */
+export const useArchiveUserLogin = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof archiveUserLogin>>,
+    TError,
+    { clerkUserId: string; data: BodyType<LoginStatusChangeInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof archiveUserLogin>>,
+  TError,
+  { clerkUserId: string; data: BodyType<LoginStatusChangeInput> },
+  TContext
+> => {
+  return useMutation(getArchiveUserLoginMutationOptions(options));
+};
+
+/**
+ * @summary Get login lifecycle audit history for a user (admin only)
+ */
+export const getGetUserLoginAuditUrl = (
+  clerkUserId: string,
+  params?: GetUserLoginAuditParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/users/${clerkUserId}/login-audit?${stringifiedParams}`
+    : `/api/users/${clerkUserId}/login-audit`;
+};
+
+export const getUserLoginAudit = async (
+  clerkUserId: string,
+  params?: GetUserLoginAuditParams,
+  options?: RequestInit,
+): Promise<UserLoginAuditEvent[]> => {
+  return customFetch<UserLoginAuditEvent[]>(
+    getGetUserLoginAuditUrl(clerkUserId, params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetUserLoginAuditQueryKey = (
+  clerkUserId: string,
+  params?: GetUserLoginAuditParams,
+) => {
+  return [
+    `/api/users/${clerkUserId}/login-audit`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetUserLoginAuditQueryOptions = <
+  TData = Awaited<ReturnType<typeof getUserLoginAudit>>,
+  TError = ErrorType<unknown>,
+>(
+  clerkUserId: string,
+  params?: GetUserLoginAuditParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getUserLoginAudit>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetUserLoginAuditQueryKey(clerkUserId, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getUserLoginAudit>>
+  > = ({ signal }) =>
+    getUserLoginAudit(clerkUserId, params, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!clerkUserId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getUserLoginAudit>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetUserLoginAuditQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getUserLoginAudit>>
+>;
+export type GetUserLoginAuditQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get login lifecycle audit history for a user (admin only)
+ */
+
+export function useGetUserLoginAudit<
+  TData = Awaited<ReturnType<typeof getUserLoginAudit>>,
+  TError = ErrorType<unknown>,
+>(
+  clerkUserId: string,
+  params?: GetUserLoginAuditParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getUserLoginAudit>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetUserLoginAuditQueryOptions(
+    clerkUserId,
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Pre-provision a login account linked to a person (admin only)
+ */
+export const getPreProvisionLoginUrl = () => {
+  return `/api/users/pre-provision`;
+};
+
+export const preProvisionLogin = async (
+  preProvisionLoginInput: PreProvisionLoginInput,
+  options?: RequestInit,
+): Promise<UserProfile> => {
+  return customFetch<UserProfile>(getPreProvisionLoginUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(preProvisionLoginInput),
+  });
+};
+
+export const getPreProvisionLoginMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof preProvisionLogin>>,
+    TError,
+    { data: BodyType<PreProvisionLoginInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof preProvisionLogin>>,
+  TError,
+  { data: BodyType<PreProvisionLoginInput> },
+  TContext
+> => {
+  const mutationKey = ["preProvisionLogin"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof preProvisionLogin>>,
+    { data: BodyType<PreProvisionLoginInput> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return preProvisionLogin(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PreProvisionLoginMutationResult = NonNullable<
+  Awaited<ReturnType<typeof preProvisionLogin>>
+>;
+export type PreProvisionLoginMutationBody = BodyType<PreProvisionLoginInput>;
+export type PreProvisionLoginMutationError = ErrorType<void>;
+
+/**
+ * @summary Pre-provision a login account linked to a person (admin only)
+ */
+export const usePreProvisionLogin = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof preProvisionLogin>>,
+    TError,
+    { data: BodyType<PreProvisionLoginInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof preProvisionLogin>>,
+  TError,
+  { data: BodyType<PreProvisionLoginInput> },
+  TContext
+> => {
+  return useMutation(getPreProvisionLoginMutationOptions(options));
+};
 
 /**
  * Returns server health status

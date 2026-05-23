@@ -76,6 +76,9 @@ interface RoleContextValue {
   canAccessProject: (projectId: string) => boolean;
   canAccessAllProjects: boolean;
   isLoading: boolean;
+  loginStatus: string;
+  isPendingActivation: boolean;
+  isSuspended: boolean;
 }
 
 const RoleContext = createContext<RoleContextValue>({
@@ -86,6 +89,9 @@ const RoleContext = createContext<RoleContextValue>({
   canAccessProject: () => false,
   canAccessAllProjects: false,
   isLoading: true,
+  loginStatus: "active",
+  isPendingActivation: false,
+  isSuspended: false,
 });
 
 export function RoleProvider({ children }: { children: ReactNode }) {
@@ -171,6 +177,9 @@ export function RoleProvider({ children }: { children: ReactNode }) {
   const isAdmin = role === "admin";
   const isDeveloper = role === "developer";
   const canAccessAllProjects = isAdmin || isDeveloper;
+  const loginStatus = profile?.loginStatus ?? "active";
+  const isPendingActivation = loginStatus === "pending_activation";
+  const isSuspended = loginStatus === "suspended";
 
   return (
     <RoleContext.Provider
@@ -183,6 +192,9 @@ export function RoleProvider({ children }: { children: ReactNode }) {
           canAccessAllProjects || assignedProjectIds.includes(id),
         canAccessAllProjects,
         isLoading: !isLoaded || isLoadingProfile,
+        loginStatus,
+        isPendingActivation,
+        isSuspended,
       }}
     >
       {children}

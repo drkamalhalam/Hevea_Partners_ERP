@@ -68,6 +68,10 @@ async function buildProfile(clerkUserId: string) {
     avatarUrl: userRow?.avatarUrl ?? null,
     idDocumentUrl: userRow?.idDocumentUrl ?? null,
     isActive: userRow?.isActive ?? true,
+    loginStatus: userRow?.loginStatus ?? "pending_activation",
+    loginStatusChangedAt: userRow?.loginStatusChangedAt?.toISOString() ?? null,
+    lastLoginAt: userRow?.lastLoginAt?.toISOString() ?? null,
+    personMasterId: userRow?.personMasterId ?? null,
     profileComplete,
     missingNomineeProjectIds,
     assignedProjectIds: activeAssignments.map((a) => a.projectId),
@@ -132,7 +136,15 @@ router.put("/", async (req, res) => {
 
     await db
       .insert(usersTable)
-      .values({ clerkUserId: req.userId!, displayName, email, phone, address })
+      .values({
+        clerkUserId: req.userId!,
+        displayName,
+        email,
+        phone,
+        address,
+        // Brand-new accounts start as pending_activation — admin must activate.
+        loginStatus: "pending_activation",
+      })
       .onConflictDoUpdate({
         target: usersTable.clerkUserId,
         set: {
@@ -141,6 +153,8 @@ router.put("/", async (req, res) => {
           ...(phone !== undefined && { phone }),
           ...(address !== undefined && { address }),
           updatedAt: new Date(),
+          // loginStatus intentionally NOT updated here.
+          // It is managed exclusively by admin lifecycle actions.
         },
       });
 

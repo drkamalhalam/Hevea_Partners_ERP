@@ -79,6 +79,18 @@ export const GetMeResponse = zod.object({
     .string()
     .nullish()
     .describe("KYC status from the linked person_master record"),
+  loginStatus: zod
+    .enum(["pending_activation", "active", "suspended", "archived"])
+    .optional()
+    .describe("Login access lifecycle status"),
+  loginStatusChangedAt: zod
+    .string()
+    .nullish()
+    .describe("ISO timestamp of last status change"),
+  lastLoginAt: zod
+    .string()
+    .nullish()
+    .describe("ISO timestamp of last authenticated session"),
 });
 
 /**
@@ -173,6 +185,18 @@ export const UpsertMeResponse = zod.object({
     .string()
     .nullish()
     .describe("KYC status from the linked person_master record"),
+  loginStatus: zod
+    .enum(["pending_activation", "active", "suspended", "archived"])
+    .optional()
+    .describe("Login access lifecycle status"),
+  loginStatusChangedAt: zod
+    .string()
+    .nullish()
+    .describe("ISO timestamp of last status change"),
+  lastLoginAt: zod
+    .string()
+    .nullish()
+    .describe("ISO timestamp of last authenticated session"),
 });
 
 /**
@@ -255,6 +279,18 @@ export const UpdateMyProfileResponse = zod.object({
     .string()
     .nullish()
     .describe("KYC status from the linked person_master record"),
+  loginStatus: zod
+    .enum(["pending_activation", "active", "suspended", "archived"])
+    .optional()
+    .describe("Login access lifecycle status"),
+  loginStatusChangedAt: zod
+    .string()
+    .nullish()
+    .describe("ISO timestamp of last status change"),
+  lastLoginAt: zod
+    .string()
+    .nullish()
+    .describe("ISO timestamp of last authenticated session"),
 });
 
 /**
@@ -329,6 +365,18 @@ export const ListUsersResponseItem = zod.object({
     .string()
     .nullish()
     .describe("KYC status from the linked person_master record"),
+  loginStatus: zod
+    .enum(["pending_activation", "active", "suspended", "archived"])
+    .optional()
+    .describe("Login access lifecycle status"),
+  loginStatusChangedAt: zod
+    .string()
+    .nullish()
+    .describe("ISO timestamp of last status change"),
+  lastLoginAt: zod
+    .string()
+    .nullish()
+    .describe("ISO timestamp of last authenticated session"),
 });
 export const ListUsersResponse = zod.array(ListUsersResponseItem);
 
@@ -408,6 +456,18 @@ export const GetUserProfileResponse = zod.object({
     .string()
     .nullish()
     .describe("KYC status from the linked person_master record"),
+  loginStatus: zod
+    .enum(["pending_activation", "active", "suspended", "archived"])
+    .optional()
+    .describe("Login access lifecycle status"),
+  loginStatusChangedAt: zod
+    .string()
+    .nullish()
+    .describe("ISO timestamp of last status change"),
+  lastLoginAt: zod
+    .string()
+    .nullish()
+    .describe("ISO timestamp of last authenticated session"),
 });
 
 /**
@@ -494,6 +554,18 @@ export const UpdateUserProfileResponse = zod.object({
     .string()
     .nullish()
     .describe("KYC status from the linked person_master record"),
+  loginStatus: zod
+    .enum(["pending_activation", "active", "suspended", "archived"])
+    .optional()
+    .describe("Login access lifecycle status"),
+  loginStatusChangedAt: zod
+    .string()
+    .nullish()
+    .describe("ISO timestamp of last status change"),
+  lastLoginAt: zod
+    .string()
+    .nullish()
+    .describe("ISO timestamp of last authenticated session"),
 });
 
 /**
@@ -583,6 +655,18 @@ export const UpdateUserRoleResponse = zod.object({
     .string()
     .nullish()
     .describe("KYC status from the linked person_master record"),
+  loginStatus: zod
+    .enum(["pending_activation", "active", "suspended", "archived"])
+    .optional()
+    .describe("Login access lifecycle status"),
+  loginStatusChangedAt: zod
+    .string()
+    .nullish()
+    .describe("ISO timestamp of last status change"),
+  lastLoginAt: zod
+    .string()
+    .nullish()
+    .describe("ISO timestamp of last authenticated session"),
 });
 
 /**
@@ -701,6 +785,447 @@ export const GetUserActivityResponseItem = zod.object({
   createdAt: zod.string(),
 });
 export const GetUserActivityResponse = zod.array(GetUserActivityResponseItem);
+
+/**
+ * @summary Activate a pending or previously suspended login account (admin only)
+ */
+export const ActivateUserLoginParams = zod.object({
+  clerkUserId: zod.coerce.string(),
+});
+
+export const ActivateUserLoginBody = zod.object({
+  reason: zod
+    .string()
+    .optional()
+    .describe("Optional reason for the status change (stored in audit trail)"),
+});
+
+export const ActivateUserLoginResponse = zod.object({
+  id: zod
+    .string()
+    .uuid()
+    .optional()
+    .describe(
+      "Internal DB UUID for this user (exposed for verifier designation etc.)",
+    ),
+  clerkUserId: zod.string(),
+  role: zod.enum([
+    "admin",
+    "developer",
+    "landowner",
+    "investor",
+    "employee",
+    "operational_staff",
+  ]),
+  displayName: zod.string().nullish(),
+  email: zod.string().nullish(),
+  phone: zod.string().nullish(),
+  address: zod.string().nullish(),
+  avatarUrl: zod.string().nullish(),
+  idDocumentUrl: zod.string().nullish(),
+  isActive: zod.boolean(),
+  profileComplete: zod
+    .boolean()
+    .describe(
+      "False if required actions are pending (e.g. developer missing nominee for one or more projects)",
+    ),
+  missingNomineeProjectIds: zod
+    .array(zod.string().uuid())
+    .optional()
+    .describe("Project IDs where this developer has no nominee registered"),
+  assignedProjectIds: zod.array(zod.string().uuid()),
+  projectAssignments: zod
+    .array(
+      zod.object({
+        assignmentId: zod.string().uuid(),
+        projectId: zod.string().uuid(),
+        projectRole: zod
+          .enum([
+            "admin",
+            "developer",
+            "landowner",
+            "investor",
+            "employee",
+            "operational_staff",
+            "null",
+          ])
+          .nullish(),
+      }),
+    )
+    .optional(),
+  createdAt: zod.string().optional(),
+  personMasterId: zod
+    .string()
+    .uuid()
+    .nullish()
+    .describe(
+      "Linked person_master identity record (null if not yet linked to the registry)",
+    ),
+  personMasterName: zod
+    .string()
+    .nullish()
+    .describe("Full name from the linked person_master record"),
+  personMasterKycStatus: zod
+    .string()
+    .nullish()
+    .describe("KYC status from the linked person_master record"),
+  loginStatus: zod
+    .enum(["pending_activation", "active", "suspended", "archived"])
+    .optional()
+    .describe("Login access lifecycle status"),
+  loginStatusChangedAt: zod
+    .string()
+    .nullish()
+    .describe("ISO timestamp of last status change"),
+  lastLoginAt: zod
+    .string()
+    .nullish()
+    .describe("ISO timestamp of last authenticated session"),
+});
+
+/**
+ * @summary Suspend an active login account (admin only)
+ */
+export const SuspendUserLoginParams = zod.object({
+  clerkUserId: zod.coerce.string(),
+});
+
+export const SuspendUserLoginBody = zod.object({
+  reason: zod
+    .string()
+    .optional()
+    .describe("Optional reason for the status change (stored in audit trail)"),
+});
+
+export const SuspendUserLoginResponse = zod.object({
+  id: zod
+    .string()
+    .uuid()
+    .optional()
+    .describe(
+      "Internal DB UUID for this user (exposed for verifier designation etc.)",
+    ),
+  clerkUserId: zod.string(),
+  role: zod.enum([
+    "admin",
+    "developer",
+    "landowner",
+    "investor",
+    "employee",
+    "operational_staff",
+  ]),
+  displayName: zod.string().nullish(),
+  email: zod.string().nullish(),
+  phone: zod.string().nullish(),
+  address: zod.string().nullish(),
+  avatarUrl: zod.string().nullish(),
+  idDocumentUrl: zod.string().nullish(),
+  isActive: zod.boolean(),
+  profileComplete: zod
+    .boolean()
+    .describe(
+      "False if required actions are pending (e.g. developer missing nominee for one or more projects)",
+    ),
+  missingNomineeProjectIds: zod
+    .array(zod.string().uuid())
+    .optional()
+    .describe("Project IDs where this developer has no nominee registered"),
+  assignedProjectIds: zod.array(zod.string().uuid()),
+  projectAssignments: zod
+    .array(
+      zod.object({
+        assignmentId: zod.string().uuid(),
+        projectId: zod.string().uuid(),
+        projectRole: zod
+          .enum([
+            "admin",
+            "developer",
+            "landowner",
+            "investor",
+            "employee",
+            "operational_staff",
+            "null",
+          ])
+          .nullish(),
+      }),
+    )
+    .optional(),
+  createdAt: zod.string().optional(),
+  personMasterId: zod
+    .string()
+    .uuid()
+    .nullish()
+    .describe(
+      "Linked person_master identity record (null if not yet linked to the registry)",
+    ),
+  personMasterName: zod
+    .string()
+    .nullish()
+    .describe("Full name from the linked person_master record"),
+  personMasterKycStatus: zod
+    .string()
+    .nullish()
+    .describe("KYC status from the linked person_master record"),
+  loginStatus: zod
+    .enum(["pending_activation", "active", "suspended", "archived"])
+    .optional()
+    .describe("Login access lifecycle status"),
+  loginStatusChangedAt: zod
+    .string()
+    .nullish()
+    .describe("ISO timestamp of last status change"),
+  lastLoginAt: zod
+    .string()
+    .nullish()
+    .describe("ISO timestamp of last authenticated session"),
+});
+
+/**
+ * @summary Restore a suspended login account (admin only)
+ */
+export const RestoreUserLoginParams = zod.object({
+  clerkUserId: zod.coerce.string(),
+});
+
+export const RestoreUserLoginBody = zod.object({
+  reason: zod
+    .string()
+    .optional()
+    .describe("Optional reason for the status change (stored in audit trail)"),
+});
+
+export const RestoreUserLoginResponse = zod.object({
+  id: zod
+    .string()
+    .uuid()
+    .optional()
+    .describe(
+      "Internal DB UUID for this user (exposed for verifier designation etc.)",
+    ),
+  clerkUserId: zod.string(),
+  role: zod.enum([
+    "admin",
+    "developer",
+    "landowner",
+    "investor",
+    "employee",
+    "operational_staff",
+  ]),
+  displayName: zod.string().nullish(),
+  email: zod.string().nullish(),
+  phone: zod.string().nullish(),
+  address: zod.string().nullish(),
+  avatarUrl: zod.string().nullish(),
+  idDocumentUrl: zod.string().nullish(),
+  isActive: zod.boolean(),
+  profileComplete: zod
+    .boolean()
+    .describe(
+      "False if required actions are pending (e.g. developer missing nominee for one or more projects)",
+    ),
+  missingNomineeProjectIds: zod
+    .array(zod.string().uuid())
+    .optional()
+    .describe("Project IDs where this developer has no nominee registered"),
+  assignedProjectIds: zod.array(zod.string().uuid()),
+  projectAssignments: zod
+    .array(
+      zod.object({
+        assignmentId: zod.string().uuid(),
+        projectId: zod.string().uuid(),
+        projectRole: zod
+          .enum([
+            "admin",
+            "developer",
+            "landowner",
+            "investor",
+            "employee",
+            "operational_staff",
+            "null",
+          ])
+          .nullish(),
+      }),
+    )
+    .optional(),
+  createdAt: zod.string().optional(),
+  personMasterId: zod
+    .string()
+    .uuid()
+    .nullish()
+    .describe(
+      "Linked person_master identity record (null if not yet linked to the registry)",
+    ),
+  personMasterName: zod
+    .string()
+    .nullish()
+    .describe("Full name from the linked person_master record"),
+  personMasterKycStatus: zod
+    .string()
+    .nullish()
+    .describe("KYC status from the linked person_master record"),
+  loginStatus: zod
+    .enum(["pending_activation", "active", "suspended", "archived"])
+    .optional()
+    .describe("Login access lifecycle status"),
+  loginStatusChangedAt: zod
+    .string()
+    .nullish()
+    .describe("ISO timestamp of last status change"),
+  lastLoginAt: zod
+    .string()
+    .nullish()
+    .describe("ISO timestamp of last authenticated session"),
+});
+
+/**
+ * @summary Archive a login account (soft-delete, admin only)
+ */
+export const ArchiveUserLoginParams = zod.object({
+  clerkUserId: zod.coerce.string(),
+});
+
+export const ArchiveUserLoginBody = zod.object({
+  reason: zod
+    .string()
+    .optional()
+    .describe("Optional reason for the status change (stored in audit trail)"),
+});
+
+export const ArchiveUserLoginResponse = zod.object({
+  id: zod
+    .string()
+    .uuid()
+    .optional()
+    .describe(
+      "Internal DB UUID for this user (exposed for verifier designation etc.)",
+    ),
+  clerkUserId: zod.string(),
+  role: zod.enum([
+    "admin",
+    "developer",
+    "landowner",
+    "investor",
+    "employee",
+    "operational_staff",
+  ]),
+  displayName: zod.string().nullish(),
+  email: zod.string().nullish(),
+  phone: zod.string().nullish(),
+  address: zod.string().nullish(),
+  avatarUrl: zod.string().nullish(),
+  idDocumentUrl: zod.string().nullish(),
+  isActive: zod.boolean(),
+  profileComplete: zod
+    .boolean()
+    .describe(
+      "False if required actions are pending (e.g. developer missing nominee for one or more projects)",
+    ),
+  missingNomineeProjectIds: zod
+    .array(zod.string().uuid())
+    .optional()
+    .describe("Project IDs where this developer has no nominee registered"),
+  assignedProjectIds: zod.array(zod.string().uuid()),
+  projectAssignments: zod
+    .array(
+      zod.object({
+        assignmentId: zod.string().uuid(),
+        projectId: zod.string().uuid(),
+        projectRole: zod
+          .enum([
+            "admin",
+            "developer",
+            "landowner",
+            "investor",
+            "employee",
+            "operational_staff",
+            "null",
+          ])
+          .nullish(),
+      }),
+    )
+    .optional(),
+  createdAt: zod.string().optional(),
+  personMasterId: zod
+    .string()
+    .uuid()
+    .nullish()
+    .describe(
+      "Linked person_master identity record (null if not yet linked to the registry)",
+    ),
+  personMasterName: zod
+    .string()
+    .nullish()
+    .describe("Full name from the linked person_master record"),
+  personMasterKycStatus: zod
+    .string()
+    .nullish()
+    .describe("KYC status from the linked person_master record"),
+  loginStatus: zod
+    .enum(["pending_activation", "active", "suspended", "archived"])
+    .optional()
+    .describe("Login access lifecycle status"),
+  loginStatusChangedAt: zod
+    .string()
+    .nullish()
+    .describe("ISO timestamp of last status change"),
+  lastLoginAt: zod
+    .string()
+    .nullish()
+    .describe("ISO timestamp of last authenticated session"),
+});
+
+/**
+ * @summary Get login lifecycle audit history for a user (admin only)
+ */
+export const GetUserLoginAuditParams = zod.object({
+  clerkUserId: zod.coerce.string(),
+});
+
+export const GetUserLoginAuditQueryParams = zod.object({
+  limit: zod.coerce.number().optional(),
+});
+
+export const GetUserLoginAuditResponseItem = zod.object({
+  id: zod.string().uuid(),
+  userId: zod.string().uuid(),
+  eventType: zod.enum([
+    "created",
+    "activated",
+    "suspended",
+    "restored",
+    "archived",
+    "account_type_changed",
+    "person_linked",
+    "person_unlinked",
+    "login_recorded",
+  ]),
+  performedBy: zod.string().uuid().nullish(),
+  performedByName: zod.string().nullish(),
+  reason: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  createdAt: zod.string(),
+});
+export const GetUserLoginAuditResponse = zod.array(
+  GetUserLoginAuditResponseItem,
+);
+
+/**
+ * @summary Pre-provision a login account linked to a person (admin only)
+ */
+export const PreProvisionLoginBody = zod.object({
+  personMasterId: zod
+    .string()
+    .uuid()
+    .describe("Must reference an existing person_master record"),
+  email: zod
+    .string()
+    .describe("Email used to match Clerk account on first sign-in"),
+  displayName: zod.string().optional(),
+  phone: zod.string().optional(),
+  accountType: zod
+    .enum(["admin", "developer", "normal_user"])
+    .describe("admin→admin, developer→developer, normal_user→employee"),
+});
 
 /**
  * Returns server health status

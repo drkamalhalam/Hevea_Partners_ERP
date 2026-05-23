@@ -23,6 +23,7 @@ import MyPortfolio from "./pages/MyPortfolio";
 import MyProfile from "./pages/MyProfile";
 import UserProfile from "./pages/UserProfile";
 import Admin from "./pages/Admin";
+import LoginAccessPage from "./pages/LoginAccessPage";
 
 // Pages — Finance
 import Agreements from "./pages/Agreements";
@@ -416,6 +417,7 @@ function AppRoutes() {
 
               {/* System */}
               <Route path="/admin"><AdminRoute component={Admin} /></Route>
+              <Route path="/login-access"><AdminRoute component={LoginAccessPage} /></Route>
               <Route path="/audit-log"><ProtectedRoute component={AuditLog} /></Route>
               <Route path="/governance-timeline"><ProtectedRoute component={GovernanceTimeline} /></Route>
               <Route path="/governance-overrides"><ProtectedRoute component={GovernanceOverrides} /></Route>

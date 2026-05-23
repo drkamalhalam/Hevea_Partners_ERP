@@ -346,6 +346,161 @@ paths:
                 items:
                   $ref: "#/components/schemas/ActivityItem"
 
+  /users/{clerkUserId}/activate:
+    post:
+      operationId: activateUserLogin
+      tags: [users]
+      summary: Activate a pending or previously suspended login account (admin only)
+      parameters:
+        - in: path
+          name: clerkUserId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginStatusChangeInput"
+      responses:
+        "200":
+          description: Activated user profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "404":
+          description: User not found
+
+  /users/{clerkUserId}/suspend:
+    post:
+      operationId: suspendUserLogin
+      tags: [users]
+      summary: Suspend an active login account (admin only)
+      parameters:
+        - in: path
+          name: clerkUserId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginStatusChangeInput"
+      responses:
+        "200":
+          description: Suspended user profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "404":
+          description: User not found
+
+  /users/{clerkUserId}/restore:
+    post:
+      operationId: restoreUserLogin
+      tags: [users]
+      summary: Restore a suspended login account (admin only)
+      parameters:
+        - in: path
+          name: clerkUserId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginStatusChangeInput"
+      responses:
+        "200":
+          description: Restored user profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "404":
+          description: User not found
+
+  /users/{clerkUserId}/archive:
+    post:
+      operationId: archiveUserLogin
+      tags: [users]
+      summary: Archive a login account (soft-delete, admin only)
+      parameters:
+        - in: path
+          name: clerkUserId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginStatusChangeInput"
+      responses:
+        "200":
+          description: Archived user profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "404":
+          description: User not found
+
+  /users/{clerkUserId}/login-audit:
+    get:
+      operationId: getUserLoginAudit
+      tags: [users]
+      summary: Get login lifecycle audit history for a user (admin only)
+      parameters:
+        - in: path
+          name: clerkUserId
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Audit history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UserLoginAuditEvent"
+
+  /users/pre-provision:
+    post:
+      operationId: preProvisionLogin
+      tags: [users]
+      summary: Pre-provision a login account linked to a person (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PreProvisionLoginInput"
+      responses:
+        "201":
+          description: Pre-provisioned user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "400":
+          description: Validation error or person already has a login
+
   /healthz:
     get:
       operationId: healthCheck
@@ -14010,6 +14165,68 @@ components:
         personMasterKycStatus:
           type: ["string", "null"]
           description: KYC status from the linked person_master record
+        loginStatus:
+          type: string
+          enum: [pending_activation, active, suspended, archived]
+          description: Login access lifecycle status
+        loginStatusChangedAt:
+          type: ["string", "null"]
+          description: ISO timestamp of last status change
+        lastLoginAt:
+          type: ["string", "null"]
+          description: ISO timestamp of last authenticated session
+
+    UserLoginAuditEvent:
+      type: object
+      required: [id, userId, eventType, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        eventType:
+          type: string
+          enum: [created, activated, suspended, restored, archived, account_type_changed, person_linked, person_unlinked, login_recorded]
+        performedBy:
+          type: ["string", "null"]
+          format: uuid
+        performedByName:
+          type: ["string", "null"]
+        reason:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    LoginStatusChangeInput:
+      type: object
+      properties:
+        reason:
+          type: string
+          description: Optional reason for the status change (stored in audit trail)
+
+    PreProvisionLoginInput:
+      type: object
+      required: [personMasterId, email, accountType]
+      properties:
+        personMasterId:
+          type: string
+          format: uuid
+          description: Must reference an existing person_master record
+        email:
+          type: string
+          description: Email used to match Clerk account on first sign-in
+        displayName:
+          type: string
+        phone:
+          type: string
+        accountType:
+          type: string
+          enum: [admin, developer, normal_user]
+          description: admin→admin, developer→developer, normal_user→employee
 
     UpsertUserInput:
       type: object

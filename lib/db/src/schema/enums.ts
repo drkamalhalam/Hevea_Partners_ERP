@@ -86,6 +86,35 @@ export const userRoleEnum = pgEnum("user_role", [
   "operational_staff",
 ]);
 
+/**
+ * Login access lifecycle status.
+ *   pending_activation — account pre-provisioned but not yet activated by admin
+ *   active             — account is operational; auth is permitted
+ *   suspended          — access revoked temporarily; person record preserved
+ *   archived           — soft-deleted; no login permitted; full history retained
+ */
+export const loginStatusEnum = pgEnum("login_status", [
+  "pending_activation",
+  "active",
+  "suspended",
+  "archived",
+]);
+
+/**
+ * Immutable event types for the login access audit trail (write-once).
+ */
+export const userLoginAuditEventEnum = pgEnum("user_login_audit_event", [
+  "created",
+  "activated",
+  "suspended",
+  "restored",
+  "archived",
+  "account_type_changed",
+  "person_linked",
+  "person_unlinked",
+  "login_recorded",
+]);
+
 // ── Project enums ─────────────────────────────────────────────────────────
 
 export const projectStatusEnum = pgEnum("project_status", [

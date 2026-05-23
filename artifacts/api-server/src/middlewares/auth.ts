@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { getAuth } from "@clerk/express";
-import { db, usersTable, userProjectAssignmentsTable, userSessionsTable } from "@workspace/db";
+import { db, usersTable, userProjectAssignmentsTable, userSessionsTable, userLoginAuditTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 
 // ── Session deduplication ──────────────────────────────────────────────────────
@@ -20,6 +20,7 @@ function _recordSession(
   if (last && now - last < 3_600_000) return; // already recorded within 1 h
   _sessionRecordedAt.set(dbUserId, now);
 
+  // Record session (fire-and-forget)
   db.insert(userSessionsTable)
     .values({
       userId: dbUserId,
@@ -29,7 +30,22 @@ function _recordSession(
       ipAddress: req.ip ?? null,
       userAgent: req.get("user-agent") ?? null,
     })
-    .catch(() => {}); // fire-and-forget — never blocks the request
+    .catch(() => {});
+
+  // Update lastLoginAt and write login_recorded audit event (fire-and-forget)
+  db.update(usersTable)
+    .set({ lastLoginAt: new Date() })
+    .where(eq(usersTable.id, dbUserId))
+    .catch(() => {});
+
+  db.insert(userLoginAuditTable)
+    .values({
+      userId: dbUserId,
+      eventType: "login_recorded",
+      performedBy: dbUserId,
+      notes: `Session from ${req.ip ?? "unknown IP"}`,
+    })
+    .catch(() => {});
 }
 
 export type UserRoleEnum =
@@ -45,6 +61,7 @@ export interface DbUser {
   displayName: string | null;
   email: string | null;
   role: string | null;
+  loginStatus: string | null;
 }
 
 declare global {
@@ -63,7 +80,10 @@ declare global {
 /**
  * requireAuth — verifies Clerk JWT, then loads role + project assignments from DB.
  * Attaches req.userId, req.userRole, req.userProjectIds, req.canAccessAllProjects.
- * Returns 401 if unauthenticated.
+ * Returns 401 if unauthenticated OR if the account is not provisioned/active.
+ *
+ * Security: removed the unsafe default 'employee' fallback. Any Clerk user
+ * without a properly provisioned and active DB record receives 401.
  *
  * Two-step project-assignment lookup:
  *   1. Resolve users.id (UUID) from clerkUserId
@@ -75,9 +95,6 @@ export async function requireAuth(
   next: NextFunction,
 ): Promise<void> {
   // If the global middleware already ran and set req.userId, skip re-verification.
-  // Calling getAuth(req) a second time inside an async context can return null in
-  // Clerk v5 when the AsyncLocalStorage context has shifted (e.g. inside a new
-  // Promise chain created by the route handler).
   if (req.userId) {
     next();
     return;
@@ -97,41 +114,77 @@ export async function requireAuth(
       .from(usersTable)
       .where(eq(usersTable.clerkUserId, userId))
       .limit(1);
-    if (userRow) {
-      const assignments = await db
-        .select()
-        .from(userProjectAssignmentsTable)
-        .where(eq(userProjectAssignmentsTable.userId, userRow.id));
 
-      req.dbUserId = userRow.id;
-      req.dbUser = {
-        id: userRow.id,
-        displayName: userRow.displayName,
-        email: userRow.email,
-        role: userRow.role,
-      };
-      req.userRole = (userRow.role ?? "employee") as UserRoleEnum;
-      req.userProjectIds = assignments
-        .filter((a) => !a.revokedAt)
-        .map((a) => a.projectId);
-
-      // Record login session (fire-and-forget, de-duped per hour)
-      _recordSession(req, userRow.id, userId, userRow.displayName ?? null, userRow.role ?? "employee");
-    } else {
-      req.userRole = "employee";
-      req.userProjectIds = [];
+    if (!userRow) {
+      // No DB record — account not provisioned. Fail secure.
+      res.status(401).json({
+        error: "Account not provisioned. Contact your administrator.",
+        loginStatus: "not_provisioned",
+      });
+      return;
     }
+
+    // ── Login status gate ────────────────────────────────────────────────
+    if (userRow.loginStatus !== "active") {
+      const messages: Record<string, string> = {
+        pending_activation: "Account pending activation. Contact your administrator.",
+        suspended: "Account suspended. Contact your administrator.",
+        archived: "Account has been archived.",
+      };
+      res.status(401).json({
+        error: messages[userRow.loginStatus] ?? "Account access restricted.",
+        loginStatus: userRow.loginStatus,
+      });
+      return;
+    }
+
+    // ── Legacy suspension check (backwards compatibility) ────────────────
+    if (!userRow.isActive) {
+      res.status(401).json({
+        error: "Account suspended. Contact your administrator.",
+        loginStatus: "suspended",
+      });
+      return;
+    }
+
+    if (userRow.deletedAt) {
+      res.status(401).json({
+        error: "Account has been archived.",
+        loginStatus: "archived",
+      });
+      return;
+    }
+
+    const assignments = await db
+      .select()
+      .from(userProjectAssignmentsTable)
+      .where(eq(userProjectAssignmentsTable.userId, userRow.id));
+
+    req.dbUserId = userRow.id;
+    req.dbUser = {
+      id: userRow.id,
+      displayName: userRow.displayName,
+      email: userRow.email,
+      role: userRow.role,
+      loginStatus: userRow.loginStatus,
+    };
+    req.userRole = (userRow.role ?? "employee") as UserRoleEnum;
+    req.userProjectIds = assignments
+      .filter((a) => !a.revokedAt)
+      .map((a) => a.projectId);
+
+    // Record login session (fire-and-forget, de-duped per hour)
+    _recordSession(req, userRow.id, userId, userRow.displayName ?? null, userRow.role ?? "employee");
 
     req.canAccessAllProjects =
       req.userRole === "admin" || req.userRole === "developer";
+
+    next();
   } catch (err) {
     req.log?.error({ err }, "Failed to load user profile in auth middleware");
-    req.userRole = "employee";
-    req.userProjectIds = [];
-    req.canAccessAllProjects = false;
+    // Fail secure — do NOT silently assign a default role on DB errors
+    res.status(401).json({ error: "Authentication error. Please try again." });
   }
-
-  next();
 }
 
 /**

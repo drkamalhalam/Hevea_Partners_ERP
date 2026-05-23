@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { ProjectAssignmentItem } from "./projectAssignmentItem";
+import type { UserProfileLoginStatus } from "./userProfileLoginStatus";
 import type { UserProfileRole } from "./userProfileRole";
 
 export interface UserProfile {
@@ -48,4 +49,16 @@ export interface UserProfile {
    * @nullable
    */
   personMasterKycStatus?: string | null;
+  /** Login access lifecycle status */
+  loginStatus?: UserProfileLoginStatus;
+  /**
+   * ISO timestamp of last status change
+   * @nullable
+   */
+  loginStatusChangedAt?: string | null;
+  /**
+   * ISO timestamp of last authenticated session
+   * @nullable
+   */
+  lastLoginAt?: string | null;
 }

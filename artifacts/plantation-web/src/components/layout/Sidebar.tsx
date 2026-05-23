@@ -49,6 +49,7 @@ import {
   Package,
   CalendarDays,
   UserCog,
+  KeyRound,
   CreditCard,
   Settings,
   Activity,
@@ -584,6 +585,7 @@ const navGroups: NavGroup[] = [
     label: "System",
     items: [
       { name: "Admin", href: "/admin", icon: ShieldCheck, roles: ["admin"] },
+      { name: "Login Access", href: "/login-access", icon: KeyRound, roles: ["admin"] as UserRole[] },
       {
         name: "Timeline",
         href: "/governance-timeline",

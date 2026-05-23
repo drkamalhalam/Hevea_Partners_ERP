@@ -1201,6 +1201,19 @@ export const UserProfileRole = {
   operational_staff: "operational_staff",
 } as const;
 
+/**
+ * Login access lifecycle status
+ */
+export type UserProfileLoginStatus =
+  (typeof UserProfileLoginStatus)[keyof typeof UserProfileLoginStatus];
+
+export const UserProfileLoginStatus = {
+  pending_activation: "pending_activation",
+  active: "active",
+  suspended: "suspended",
+  archived: "archived",
+} as const;
+
 export interface UserProfile {
   /** Internal DB UUID for this user (exposed for verifier designation etc.) */
   id?: string;
@@ -1241,6 +1254,76 @@ export interface UserProfile {
    * @nullable
    */
   personMasterKycStatus?: string | null;
+  /** Login access lifecycle status */
+  loginStatus?: UserProfileLoginStatus;
+  /**
+   * ISO timestamp of last status change
+   * @nullable
+   */
+  loginStatusChangedAt?: string | null;
+  /**
+   * ISO timestamp of last authenticated session
+   * @nullable
+   */
+  lastLoginAt?: string | null;
+}
+
+export type UserLoginAuditEventEventType =
+  (typeof UserLoginAuditEventEventType)[keyof typeof UserLoginAuditEventEventType];
+
+export const UserLoginAuditEventEventType = {
+  created: "created",
+  activated: "activated",
+  suspended: "suspended",
+  restored: "restored",
+  archived: "archived",
+  account_type_changed: "account_type_changed",
+  person_linked: "person_linked",
+  person_unlinked: "person_unlinked",
+  login_recorded: "login_recorded",
+} as const;
+
+export interface UserLoginAuditEvent {
+  id: string;
+  userId: string;
+  eventType: UserLoginAuditEventEventType;
+  /** @nullable */
+  performedBy?: string | null;
+  /** @nullable */
+  performedByName?: string | null;
+  /** @nullable */
+  reason?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  createdAt: string;
+}
+
+export interface LoginStatusChangeInput {
+  /** Optional reason for the status change (stored in audit trail) */
+  reason?: string;
+}
+
+/**
+ * admin→admin, developer→developer, normal_user→employee
+ */
+export type PreProvisionLoginInputAccountType =
+  (typeof PreProvisionLoginInputAccountType)[keyof typeof PreProvisionLoginInputAccountType];
+
+export const PreProvisionLoginInputAccountType = {
+  admin: "admin",
+  developer: "developer",
+  normal_user: "normal_user",
+} as const;
+
+export interface PreProvisionLoginInput {
+  /** Must reference an existing person_master record */
+  personMasterId: string;
+  /** Email used to match Clerk account on first sign-in */
+  email: string;
+  displayName?: string;
+  phone?: string;
+  /** admin→admin, developer→developer, normal_user→employee */
+  accountType: PreProvisionLoginInputAccountType;
 }
 
 /**
@@ -9633,6 +9716,10 @@ export type AutoLinkUserToPerson200 = {
 };
 
 export type GetUserActivityParams = {
+  limit?: number;
+};
+
+export type GetUserLoginAuditParams = {
   limit?: number;
 };
 
