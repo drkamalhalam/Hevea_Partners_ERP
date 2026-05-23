@@ -1,0 +1,172 @@
+CONTRIBUTION LEDGER & OWNERSHIP FOUNDATION — FINAL PRE-IMPLEMENTATION AUDIT
+
+Audit only. No code changes. No implementation. No recommendations unless explicitly requested. Return evidence-backed findings with file paths, route names, schema names, enums, constraints, and lifecycle logic.
+
+FORMAT RESPONSE EXACTLY UNDER THESE HEADINGS.
+
+1. Project Partner Architecture 
+
+List every table that represents a project participant, partner, contributor, collaborator, investor, landowner, developer, nominee, claimant, witness, heir, successor, or ownership holder.
+
+For each table provide:
+
+Table name Primary key Foreign keys Identity target (users / person_master / partners / other) Whether ownership engine reads it Whether inheritance engine reads it Whether transfer engine reads it Explain exact relationship between: person_master users partners project_participants 
+
+Can a project participant exist without a partner row?
+
+Can a partner row exist without person_master linkage?
+
+Which table should be considered current ownership-holder source today?
+
+Identify all inconsistencies.
+
+2. Ownership Freeze Deep Audit 
+
+Show every route checking project_ownership_freezes.
+
+Show every route that SHOULD be blocked by freeze but currently is not.
+
+Verify whether these remain possible while frozen:
+
+contribution create contribution edit contribution delete contribution verify advance create advance recovery inheritance claim ownership transfer project transfer reimbursement change maturity declaration 
+
+List all freeze statuses and lifecycle states.
+
+Explain exactly how frozen ownership is displayed versus live ownership.
+
+3. Ownership Snapshot Deep Audit 
+
+Show complete ownership_snapshots schema.
+
+Show every writer of ownership_snapshots.
+
+Show every snapshot type enum.
+
+Show exact maturity snapshot generation flow.
+
+Can historical snapshots ever become inconsistent with current computeOwnership output?
+
+Can snapshots be regenerated?
+
+Can snapshots be superseded?
+
+Can snapshots be manually edited?
+
+Explain current ownership history architecture.
+
+4. Maturity Architecture Audit 
+
+Show complete maturity transition workflow.
+
+Show all maturity blockers.
+
+Show all maturity validators.
+
+Show every table written during maturity.
+
+Show every automatic snapshot created during maturity.
+
+Show every post-maturity restriction currently enforced.
+
+Show every ownership-related action still allowed after maturity.
+
+Verify whether contribution edits, deletions, reversals, reimbursements, transfers, inheritance actions, and disputes are allowed after maturity.
+
+5. Inheritance Interaction Audit 
+
+Show complete inheritance ownership flow.
+
+Identify every inheritance-related table.
+
+Explain how inheritance currently changes ownership.
+
+Explain relationship between:
+
+nominees inheritance_claims succession transfer_audit ownership_snapshots 
+
+Can inheritance alter contributions?
+
+Can inheritance alter ownership without altering contributions?
+
+What tables would require integration if ownership becomes ledger-based?
+
+6. Ownership Transfer Audit 
+
+Show current ownership transfer architecture.
+
+Show transfer tables.
+
+Show transfer status lifecycle.
+
+Show transfer audit architecture.
+
+Explain whether ownership transfer changes:
+
+contributions ownership snapshots transfer audit partner records Explain how transfers would interact with a future contribution ledger. 7. Commercial Model Audit 
+
+List every commercial model enum.
+
+Show all places where commercial model affects ownership.
+
+Show all places where commercial model affects contributions.
+
+Show all places where commercial model affects maturity.
+
+Verify whether computeOwnership itself checks commercial model.
+
+Verify whether ownership can accidentally be created through alternate routes on fifty_percent_revenue projects.
+
+Identify all risks.
+
+8. Land Notional Contribution Audit 
+
+Show exact schema for land_notional contributions.
+
+Show all validations.
+
+Show all maturity restrictions.
+
+Show all edit restrictions.
+
+Show ownership impact.
+
+Show withdrawal interaction.
+
+Show inheritance interaction.
+
+Show whether land contribution can ever decrease today.
+
+Show every table referencing land_notional contribution.
+
+9. Governance Override Audit 
+
+Show governance_override schema.
+
+Show all routes that currently use governance overrides.
+
+Show OTP requirements.
+
+Show audit requirements.
+
+Show approval lifecycle.
+
+Explain whether governance override can bypass:
+
+verification maturity ownership freeze transfers inheritance reimbursement 10. Final Readiness Assessment 
+
+Provide only factual findings.
+
+Classify each area:
+
+Ready Partially Ready Not Ready 
+
+for:
+
+Financial Inputs Task Expenditures Imported Contributions Withdrawal Adjustments Reimbursement Adjustments Ownership Ledger Ownership Freeze Ownership Snapshots Inheritance Integration Transfer Integration Maturity Integration Governance Integration 
+
+End with:
+
+BLOCKERS PARTIALS READY COMPONENTS
+
+No design proposals. No code modifications.
+
