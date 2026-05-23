@@ -26,7 +26,7 @@ import {
   usersTable,
   type OwnershipSnapshotEntry,
 } from "@workspace/db";
-import { eq, and, isNull, lt, sql, inArray, not } from "drizzle-orm";
+import { eq, and, isNull, lt, gt, sql, inArray, not, isNotNull } from "drizzle-orm";
 import { getAuth } from "@clerk/express";
 
 const router = Router();
@@ -42,6 +42,10 @@ router.get("/summary", async (req, res) => {
     stockNegativeCount,
     ownershipGapCount,
     staleCount,
+    contributionsAfterFreezeCount,
+    contributionsVerifiedAfterMaturityCount,
+    draftsOnMaturedCount,
+    closedProjectActivityCount,
   ] = await Promise.all([
     // Orphan contributors: contributions with no partnerId
     db
@@ -129,10 +133,91 @@ router.get("/summary", async (req, res) => {
         ),
       )
       .then(([r]) => Number(r?.count ?? 0)),
+
+    // Ownership-affecting contributions created AFTER an active freeze.
+    db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(contributionsTable)
+      .innerJoin(
+        projectOwnershipFreezesTable,
+        eq(projectOwnershipFreezesTable.projectId, contributionsTable.projectId),
+      )
+      .where(
+        and(
+          eq(contributionsTable.affectsOwnership, true),
+          eq(contributionsTable.isActive, true),
+          isNull(contributionsTable.deletedAt),
+          gt(contributionsTable.createdAt, projectOwnershipFreezesTable.frozenAt),
+        ),
+      )
+      .then(([r]) => Number(r?.count ?? 0)),
+
+    // Ownership-affecting contributions verified after the project reached maturity.
+    db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(contributionsTable)
+      .innerJoin(
+        projectsTable,
+        eq(projectsTable.id, contributionsTable.projectId),
+      )
+      .where(
+        and(
+          eq(contributionsTable.affectsOwnership, true),
+          eq(contributionsTable.verificationStatus, "verified"),
+          eq(contributionsTable.isActive, true),
+          isNull(contributionsTable.deletedAt),
+          inArray(projectsTable.lifecycleStatus, ["mature_production", "closed"]),
+          isNotNull(projectsTable.ownershipFrozenAt),
+          isNotNull(contributionsTable.verifiedAt),
+          gt(contributionsTable.verifiedAt, projectsTable.ownershipFrozenAt),
+        ),
+      )
+      .then(([r]) => Number(r?.count ?? 0)),
+
+    // Ownership-affecting draft/pending contributions remaining on matured projects.
+    db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(contributionsTable)
+      .innerJoin(projectsTable, eq(projectsTable.id, contributionsTable.projectId))
+      .where(
+        and(
+          eq(contributionsTable.affectsOwnership, true),
+          inArray(contributionsTable.verificationStatus, ["draft", "pending_verification", "disputed"]),
+          eq(contributionsTable.isActive, true),
+          isNull(contributionsTable.deletedAt),
+          inArray(projectsTable.lifecycleStatus, ["mature_production", "closed"]),
+        ),
+      )
+      .then(([r]) => Number(r?.count ?? 0)),
+
+    // Closed projects with any ownership-affecting contribution activity.
+    db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(contributionsTable)
+      .innerJoin(projectsTable, eq(projectsTable.id, contributionsTable.projectId))
+      .where(
+        and(
+          eq(projectsTable.lifecycleStatus, "closed"),
+          eq(contributionsTable.affectsOwnership, true),
+          eq(contributionsTable.isActive, true),
+          isNull(contributionsTable.deletedAt),
+        ),
+      )
+      .then(([r]) => Number(r?.count ?? 0)),
   ]);
 
   req.log.info(
-    { orphanCount, violationCount, stockNegativeCount, ownershipGapCount, staleCount },
+    {
+      orphanCount,
+      violationCount,
+      stockNegativeCount,
+      ownershipGapCount,
+      staleCount,
+      contributionsAfterFreezeCount,
+      contributionsVerifiedAfterMaturityCount,
+      draftsOnMaturedCount,
+      closedProjectActivityCount,
+    },
     "data-health summary fetched",
   );
 
@@ -142,9 +227,143 @@ router.get("/summary", async (req, res) => {
     stockNegatives: stockNegativeCount,
     ownershipGaps: ownershipGapCount,
     staleContributions: staleCount,
-    totalIssues: orphanCount + violationCount + stockNegativeCount + ownershipGapCount + staleCount,
+    contributionsAfterFreeze: contributionsAfterFreezeCount,
+    contributionsVerifiedAfterMaturity: contributionsVerifiedAfterMaturityCount,
+    draftOwnershipContribsOnMatured: draftsOnMaturedCount,
+    closedProjectOwnershipActivity: closedProjectActivityCount,
+    totalIssues:
+      orphanCount +
+      violationCount +
+      stockNegativeCount +
+      ownershipGapCount +
+      staleCount +
+      contributionsAfterFreezeCount +
+      contributionsVerifiedAfterMaturityCount +
+      draftsOnMaturedCount +
+      closedProjectActivityCount,
     fetchedAt: new Date().toISOString(),
   });
+});
+
+// ── GET /contributions-after-freeze ──────────────────────────────────────────
+// Ownership-affecting contributions created after the project ownership freeze.
+router.get("/contributions-after-freeze", async (_req, res) => {
+  const rows = await db
+    .select({
+      id: contributionsTable.id,
+      projectId: contributionsTable.projectId,
+      partnerName: contributionsTable.partnerName,
+      contributionType: contributionsTable.contributionType,
+      amount: contributionsTable.amount,
+      verificationStatus: contributionsTable.verificationStatus,
+      contributionCreatedAt: contributionsTable.createdAt,
+      freezeFrozenAt: projectOwnershipFreezesTable.frozenAt,
+      freezeStatus: projectOwnershipFreezesTable.status,
+    })
+    .from(contributionsTable)
+    .innerJoin(
+      projectOwnershipFreezesTable,
+      eq(projectOwnershipFreezesTable.projectId, contributionsTable.projectId),
+    )
+    .where(
+      and(
+        eq(contributionsTable.affectsOwnership, true),
+        eq(contributionsTable.isActive, true),
+        isNull(contributionsTable.deletedAt),
+        gt(contributionsTable.createdAt, projectOwnershipFreezesTable.frozenAt),
+      ),
+    )
+    .orderBy(contributionsTable.createdAt)
+    .limit(200);
+  return res.json({ items: rows, count: rows.length });
+});
+
+// ── GET /verified-after-maturity ─────────────────────────────────────────────
+router.get("/verified-after-maturity", async (_req, res) => {
+  const rows = await db
+    .select({
+      id: contributionsTable.id,
+      projectId: contributionsTable.projectId,
+      partnerName: contributionsTable.partnerName,
+      contributionType: contributionsTable.contributionType,
+      amount: contributionsTable.amount,
+      verifiedAt: contributionsTable.verifiedAt,
+      lifecycleStatus: projectsTable.lifecycleStatus,
+      ownershipFrozenAt: projectsTable.ownershipFrozenAt,
+    })
+    .from(contributionsTable)
+    .innerJoin(projectsTable, eq(projectsTable.id, contributionsTable.projectId))
+    .where(
+      and(
+        eq(contributionsTable.affectsOwnership, true),
+        eq(contributionsTable.verificationStatus, "verified"),
+        eq(contributionsTable.isActive, true),
+        isNull(contributionsTable.deletedAt),
+        inArray(projectsTable.lifecycleStatus, ["mature_production", "closed"]),
+        isNotNull(projectsTable.ownershipFrozenAt),
+        isNotNull(contributionsTable.verifiedAt),
+        gt(contributionsTable.verifiedAt, projectsTable.ownershipFrozenAt),
+      ),
+    )
+    .orderBy(contributionsTable.verifiedAt)
+    .limit(200);
+  return res.json({ items: rows, count: rows.length });
+});
+
+// ── GET /drafts-on-matured ───────────────────────────────────────────────────
+router.get("/drafts-on-matured", async (_req, res) => {
+  const rows = await db
+    .select({
+      id: contributionsTable.id,
+      projectId: contributionsTable.projectId,
+      partnerName: contributionsTable.partnerName,
+      contributionType: contributionsTable.contributionType,
+      amount: contributionsTable.amount,
+      verificationStatus: contributionsTable.verificationStatus,
+      createdAt: contributionsTable.createdAt,
+      lifecycleStatus: projectsTable.lifecycleStatus,
+    })
+    .from(contributionsTable)
+    .innerJoin(projectsTable, eq(projectsTable.id, contributionsTable.projectId))
+    .where(
+      and(
+        eq(contributionsTable.affectsOwnership, true),
+        inArray(contributionsTable.verificationStatus, ["draft", "pending_verification", "disputed"]),
+        eq(contributionsTable.isActive, true),
+        isNull(contributionsTable.deletedAt),
+        inArray(projectsTable.lifecycleStatus, ["mature_production", "closed"]),
+      ),
+    )
+    .orderBy(contributionsTable.createdAt)
+    .limit(200);
+  return res.json({ items: rows, count: rows.length });
+});
+
+// ── GET /closed-project-activity ─────────────────────────────────────────────
+router.get("/closed-project-activity", async (_req, res) => {
+  const rows = await db
+    .select({
+      id: contributionsTable.id,
+      projectId: contributionsTable.projectId,
+      partnerName: contributionsTable.partnerName,
+      contributionType: contributionsTable.contributionType,
+      amount: contributionsTable.amount,
+      verificationStatus: contributionsTable.verificationStatus,
+      createdAt: contributionsTable.createdAt,
+    })
+    .from(contributionsTable)
+    .innerJoin(projectsTable, eq(projectsTable.id, contributionsTable.projectId))
+    .where(
+      and(
+        eq(projectsTable.lifecycleStatus, "closed"),
+        eq(contributionsTable.affectsOwnership, true),
+        eq(contributionsTable.isActive, true),
+        isNull(contributionsTable.deletedAt),
+      ),
+    )
+    .orderBy(contributionsTable.createdAt)
+    .limit(200);
+  return res.json({ items: rows, count: rows.length });
 });
 
 // ── GET /orphan-contributors ──────────────────────────────────────────────────

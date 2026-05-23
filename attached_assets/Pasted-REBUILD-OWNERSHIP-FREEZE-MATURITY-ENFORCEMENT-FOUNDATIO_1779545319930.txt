@@ -1,0 +1,135 @@
+REBUILD OWNERSHIP FREEZE & MATURITY ENFORCEMENT FOUNDATION
+
+This is a governance and data-integrity task.
+
+Do NOT create any new UI until backend rules are completed.
+Do NOT modify ownership percentages.
+Do NOT modify contribution calculations.
+Do NOT change inheritance or transfer logic.
+
+OBJECTIVE
+
+Ownership Freeze and Maturity must become true ownership locks.
+
+Current audit findings show ownership-affecting contribution actions are still possible after freeze or maturity. This must be corrected.
+
+====================================================
+FREEZE ENFORCEMENT
+====================================================
+
+When an active project_ownership_freezes record exists with status:
+
+- frozen
+- transfer_pending
+- inheritance_pending
+
+the following actions must be blocked:
+
+1. Create contribution
+2. Edit contribution
+3. Delete contribution
+4. Verify contribution
+5. Re-verify disputed contribution
+6. Create financial ownership-affecting entry
+7. Create ownership-affecting adjustment
+8. Create ownership-affecting import batch
+9. Create ownership-affecting reimbursement adjustment
+10. Create ownership-affecting withdrawal adjustment
+
+Return clear error:
+
+"Ownership is currently frozen. Ownership-affecting changes are not permitted."
+
+====================================================
+MATURITY ENFORCEMENT
+====================================================
+
+When lifecycleStatus = mature_production:
+
+Block creation of ownership-affecting contributions including:
+
+- land_notional
+- economic_investment
+- recoverable_advance
+- any future ownership-affecting contribution source
+
+Block:
+
+- contribution verification
+- contribution re-verification
+- ownership-affecting contribution edits
+- ownership-affecting contribution deletion
+
+Only allow:
+
+- inheritance workflows
+- ownership transfer workflows
+- post maturity payments
+- LCA workflows
+- settlement workflows
+
+====================================================
+CLOSED PROJECT ENFORCEMENT
+====================================================
+
+When lifecycleStatus = closed:
+
+Reject all ownership-affecting actions.
+
+No ownership changes permitted.
+
+Inheritance and transfer records remain viewable for audit only.
+
+====================================================
+AUDIT LOGGING
+====================================================
+
+Whenever a blocked action is attempted:
+
+Create audit log containing:
+
+- project id
+- actor
+- attempted action
+- lifecycle status
+- freeze status
+- timestamp
+- rejection reason
+
+====================================================
+DATA HEALTH VALIDATION
+====================================================
+
+Create validation checks that identify:
+
+1. Matured projects without ownership freeze
+2. Frozen projects with ownership-affecting contributions created after freeze
+3. Contributions verified after maturity
+4. Ownership-affecting draft contributions remaining on matured projects
+5. Closed projects with ownership-affecting activity
+
+Expose findings through existing data-health mechanisms.
+
+====================================================
+SAFETY REQUIREMENT
+====================================================
+
+Do not alter existing ownership percentages.
+
+Do not recalculate historical ownership.
+
+Do not change snapshots.
+
+Do not change transfer history.
+
+Do not change inheritance history.
+
+Only enforce governance and ownership immutability rules.
+
+Provide implementation summary listing:
+
+- routes updated
+- validations added
+- audit hooks added
+- data-health checks added
+- remaining ownership bypass paths if any exist

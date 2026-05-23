@@ -16,6 +16,7 @@ import { writeAudit } from "../lib/auditLogger";
 import { writeTimeline, TL } from "../lib/timelineLogger";
 import { writeOverride, OV } from "../lib/overrideLogger";
 import { logDispute, DT } from "../lib/disputeLogger";
+import { assertOwnershipMutationAllowed } from "../lib/ownershipGuard";
 
 const router = Router();
 
@@ -599,6 +600,21 @@ router.post(
     }
     // ─────────────────────────────────────────────────────────────────────────
 
+    // ── Ownership freeze / maturity / closed guard ───────────────────────────
+    // Blocks ownership-affecting creates when a freeze is active or the project
+    // is mature_production / closed. Non-ownership-affecting entries
+    // (operational_cost, reimbursable manual_adjustment) are unaffected.
+    const guardCreate = await assertOwnershipMutationAllowed({
+      projectId: String(b.projectId),
+      action: "contribution.create",
+      affectsOwnership,
+      actor: { id: actor.id, name: actor.name, role: actor.role },
+      req,
+      targetTable: "contributions",
+      metadata: { contributionType: cType, amount },
+    });
+    if (!guardCreate.ok) return res.status(guardCreate.status).json(guardCreate.body);
+
     const lifecyclePhaseSnapshot = cType === "land_notional"
       ? "prematurity"
       : (typeof b.lifecyclePhaseSnapshot === "string"
@@ -876,6 +892,28 @@ router.patch(
       return res.status(403).json({ error: "Cannot edit a verified contribution" });
     }
 
+    // ── Ownership freeze / maturity / closed guard ─────────────────────────
+    // Edits to ownership-affecting rows are blocked under any lock.
+    // We also block if the patch is attempting to FLIP affectsOwnership=true
+    // on a previously non-affecting row.
+    const bRaw = req.body as Record<string, unknown>;
+    const willAffectOwnership =
+      current.affectsOwnership ||
+      (typeof bRaw.affectsOwnership === "boolean" && bRaw.affectsOwnership === true) ||
+      (typeof bRaw.contributionType === "string" &&
+        OWNERSHIP_AFFECTING_TYPES.includes(bRaw.contributionType as ContributionType) &&
+        bRaw.contributionType !== "manual_adjustment");
+    const guardPatch = await assertOwnershipMutationAllowed({
+      projectId: current.projectId,
+      action: "contribution.patch",
+      affectsOwnership: willAffectOwnership,
+      actor: { id: actor.id, name: actor.name, role: actor.role },
+      req,
+      targetTable: "contributions",
+      targetRecordId: id,
+    });
+    if (!guardPatch.ok) return res.status(guardPatch.status).json(guardPatch.body);
+
     const b = req.body as Record<string, unknown>;
     const updates: Partial<typeof contributionsTable.$inferInsert> = {};
 
@@ -992,6 +1030,20 @@ router.post("/:id/verify", async (req, res) => {
     return res.status(403).json({ error: "Only the designated verifier or admin/developer can approve this contribution" });
   }
 
+  // ── Ownership freeze / maturity / closed guard ───────────────────────────
+  // Verifying an ownership-affecting contribution would inject equity into a
+  // locked project — block it.
+  const guardVerify = await assertOwnershipMutationAllowed({
+    projectId: curr.projectId,
+    action: "contribution.verify",
+    affectsOwnership: curr.affectsOwnership === true,
+    actor: { id: actor.id, name: actor.name, role: actor.role },
+    req,
+    targetTable: "contributions",
+    targetRecordId: id,
+  });
+  if (!guardVerify.ok) return res.status(guardVerify.status).json(guardVerify.body);
+
   const b = req.body as Record<string, unknown>;
   const wasRejected = curr.verificationStatus === "rejected";
 
@@ -1069,6 +1121,22 @@ router.post("/:id/reject", async (req, res) => {
   if (!isAdminOrDev && !isDesignatedVerifier) {
     return res.status(403).json({ error: "Only the designated verifier or admin/developer can reject this contribution" });
   }
+
+  // ── Ownership freeze / maturity / closed guard ───────────────────────────
+  // Rejecting a previously-verified ownership-affecting contribution removes
+  // it from ownership math (`computeOwnership` only includes verified rows),
+  // which constitutes an ownership mutation. Block under any lock.
+  const guardReject = await assertOwnershipMutationAllowed({
+    projectId: curr.projectId,
+    action: "contribution.reject",
+    affectsOwnership: curr.affectsOwnership === true,
+    actor: { id: actor.id, name: actor.name, role: actor.role },
+    req,
+    targetTable: "contributions",
+    targetRecordId: id,
+    metadata: { previousStatus: curr.verificationStatus },
+  });
+  if (!guardReject.ok) return res.status(guardReject.status).json(guardReject.body);
 
   const b = req.body as Record<string, unknown>;
   const [updated] = await db
@@ -1333,6 +1401,20 @@ router.post(
       });
     }
 
+    // ── Ownership freeze / maturity / closed guard ─────────────────────────
+    // A dispute flips verified → disputed, removing the row from ownership
+    // math. Block under any lock for ownership-affecting rows.
+    const guardDispute = await assertOwnershipMutationAllowed({
+      projectId: existing[0].projectId,
+      action: "contribution.dispute",
+      affectsOwnership: existing[0].affectsOwnership === true,
+      actor: { id: actor.id, name: actor.name, role: actor.role },
+      req,
+      targetTable: "contributions",
+      targetRecordId: id,
+    });
+    if (!guardDispute.ok) return res.status(guardDispute.status).json(guardDispute.body);
+
     const [updated] = await db
       .update(contributionsTable)
       .set({
@@ -1421,6 +1503,23 @@ router.post(
       });
     }
 
+    // ── Ownership freeze / maturity / closed guard ─────────────────────────
+    // Re-verifying a disputed ownership-affecting contribution would inject
+    // equity into a locked project — block it. A "reject" resolution is
+    // permitted because it does NOT create or restore equity.
+    if (b.action === "re_verify") {
+      const guardReVerify = await assertOwnershipMutationAllowed({
+        projectId: existing[0].projectId,
+        action: "contribution.dispute_re_verify",
+        affectsOwnership: existing[0].affectsOwnership === true,
+        actor: { id: actor.id, name: actor.name, role: actor.role },
+        req,
+        targetTable: "contributions",
+        targetRecordId: id,
+      });
+      if (!guardReVerify.ok) return res.status(guardReVerify.status).json(guardReVerify.body);
+    }
+
     const newStatus = b.action === "re_verify" ? "verified" : "rejected";
     const eventType = b.action === "re_verify" ? "dispute_resolved" : "dispute_overridden";
 
@@ -1482,6 +1581,11 @@ router.delete(
   "/:id",
   requireRole("admin"),
   async (req, res) => {
+    const { userId: clerkUserId } = getAuth(req);
+    if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
+    const actor = await resolveActingUser(clerkUserId);
+    if (!actor) return res.status(401).json({ error: "User not found" });
+
     const id = String(req.params.id);
     const existing = await db
       .select()
@@ -1490,10 +1594,41 @@ router.delete(
       .limit(1);
     if (!existing[0]) return res.status(404).json({ error: "Contribution not found" });
 
+    // ── Ownership freeze / maturity / closed guard ─────────────────────────
+    // Deleting an ownership-affecting contribution would mutate the equity
+    // base of a locked project — block it. Non-ownership-affecting entries
+    // (operational_cost, reimbursable manual_adjustment) remain deletable.
+    const guardDelete = await assertOwnershipMutationAllowed({
+      projectId: existing[0].projectId,
+      action: "contribution.delete",
+      affectsOwnership: existing[0].affectsOwnership === true,
+      actor: { id: actor.id, name: actor.name, role: actor.role },
+      req,
+      targetTable: "contributions",
+      targetRecordId: id,
+    });
+    if (!guardDelete.ok) return res.status(guardDelete.status).json(guardDelete.body);
+
     await db
       .update(contributionsTable)
       .set({ isActive: false, deletedAt: new Date() })
       .where(eq(contributionsTable.id, id));
+
+    writeAudit(req, {
+      tableName: "contributions",
+      recordId: id,
+      operation: "DELETE",
+      module: "contributions",
+      actionType: "contribution_deleted",
+      projectId: existing[0].projectId,
+      oldData: {
+        contributionType: existing[0].contributionType,
+        amount: existing[0].amount,
+        affectsOwnership: existing[0].affectsOwnership,
+        verificationStatus: existing[0].verificationStatus,
+      },
+      actor: { id: actor.id, name: actor.name, role: actor.role },
+    });
 
     return res.status(204).send();
   },

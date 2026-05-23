@@ -107,3 +107,4 @@ export * from "./field_event_queue";
 export * from "./workforce";
 export * from "./work_assignments";
 export * from "./work_assignment_audit";
+export * from "./ownership_lock_attempts";
