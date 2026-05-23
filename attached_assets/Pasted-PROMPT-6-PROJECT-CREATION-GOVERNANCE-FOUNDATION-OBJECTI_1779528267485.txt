@@ -1,0 +1,322 @@
+PROMPT 6 — PROJECT CREATION & GOVERNANCE FOUNDATION
+
+OBJECTIVE
+
+Refactor and standardize Project Creation to align with the approved ERP architecture.
+
+Do not implement ownership calculations.
+Do not implement maturity.
+Do not implement contribution engine logic.
+Do not implement collection/store workflows.
+
+Only establish the project structure, participant architecture, governance controls, and data model consistency.
+
+====================================================
+PROJECT CREATION WIZARD
+====================================================
+
+Project creation flow must follow:
+
+1. Project Details
+2. Participants
+3. Commercial Terms
+4. Schedule A
+5. Witnesses
+6. Agreement
+7. Project Type
+8. Review & Submit
+
+Maintain forward navigation.
+
+Allow draft save.
+
+Allow later continuation.
+
+====================================================
+PROJECT DETAILS
+====================================================
+
+Capture:
+
+Project Name
+
+Project Code
+
+Project Location
+
+Project Description
+
+Project Start Date
+
+Lifecycle Status
+
+Commercial Model
+
+Project Status
+
+Activation Status
+
+Notes
+
+Project Code:
+
+Unique
+
+Immutable after activation
+
+====================================================
+PARTICIPANTS
+====================================================
+
+All participants must originate from Person Registry.
+
+No manual participant creation inside Project Creation.
+
+Supported participant types:
+
+Landowner
+
+Developer
+
+Investor
+
+Partner
+
+Nominee
+
+Claimant
+
+Witness
+
+Other approved future roles
+
+A single Person Registry record may participate in multiple capacities.
+
+No duplicated person records.
+
+====================================================
+COMMERCIAL MODEL
+====================================================
+
+Supported models:
+
+Ownership Contribution Model
+
+50 Percent Revenue Model
+
+Commercial Model becomes immutable after activation.
+
+Changing commercial model after activation requires governance override.
+
+Permanent audit trail required.
+
+====================================================
+SCHEDULE A
+====================================================
+
+Support multiple land parcels.
+
+Store parcel-level information separately from project-level ownership information.
+
+Each parcel may contain:
+
+Parcel Reference
+
+Recorded / Unrecorded Status
+
+Area
+
+Location Description
+
+Boundary Information
+
+Landowner Link
+
+Notes
+
+Project may contain many parcels.
+
+====================================================
+WITNESS MANAGEMENT
+====================================================
+
+Witnesses must be selected from Person Registry.
+
+No manual witness entry.
+
+Witness data consumed directly from registry.
+
+====================================================
+AGREEMENT LINKAGE
+====================================================
+
+Project creation must link to document templates from the central Document Template Registry.
+
+Project creation must never upload templates.
+
+Only select approved active templates.
+
+Agreement generation remains separate.
+
+====================================================
+PROJECT TYPE
+====================================================
+
+Support:
+
+Recorded Land Project
+
+Unrecorded Land Project
+
+Mixed Project
+
+Future project types
+
+Architecture must remain extensible.
+
+====================================================
+GOVERNANCE CONTROLS
+====================================================
+
+Implement:
+
+Project Creation OTP
+
+Governance Override support
+
+Lifecycle History
+
+Project Timeline
+
+Project Audit Trail
+
+Status Transition History
+
+All changes auditable.
+
+====================================================
+PERSON REGISTRY INTEGRATION
+====================================================
+
+All people referenced by projects must originate from Person Registry.
+
+Includes:
+
+Participants
+
+Witnesses
+
+Nominees
+
+Claimants
+
+Developers
+
+Landowners
+
+Investors
+
+No duplicate storage of person identity data.
+
+====================================================
+DOCUMENT INTEGRATION
+====================================================
+
+Project creation consumes:
+
+Document Templates
+
+Variable Registry
+
+Template Versions
+
+from the central document architecture created in Prompt 5.
+
+No duplicate document systems.
+
+====================================================
+VALIDATION RULES
+====================================================
+
+Before activation:
+
+Project must have:
+
+Project Details
+
+Required Participants
+
+Commercial Model
+
+Schedule A
+
+Witnesses
+
+Required Agreement Selection
+
+Validation failures must be clearly shown.
+
+====================================================
+AUDIT REQUIREMENTS
+====================================================
+
+Audit:
+
+Project Creation
+
+Project Edit
+
+Participant Changes
+
+Commercial Model Changes
+
+Lifecycle Changes
+
+Activation
+
+Governance Overrides
+
+Witness Changes
+
+Schedule A Changes
+
+Agreement Selection Changes
+
+====================================================
+OUT OF SCOPE
+====================================================
+
+Do not implement:
+
+Ownership engine
+
+Contribution engine
+
+Maturity process
+
+Collection workflow
+
+Store workflow
+
+Sales workflow
+
+Settlement workflow
+
+Only implement the Project Creation & Governance foundation.
+
+====================================================
+DELIVERABLE
+====================================================
+
+Provide:
+
+1. Files created
+2. Files modified
+3. Database changes
+4. API changes
+5. UI changes
+6. Wizard flow summary
+7. Governance controls summary
+8. Validation rules implemented
+9. Person Registry integration details
+10. Document integration details
