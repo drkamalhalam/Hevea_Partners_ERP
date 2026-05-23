@@ -24,7 +24,7 @@ export const projectParticipantsTable = pgTable("project_participants", {
     .notNull()
     .references(() => projectsTable.id, { onDelete: "cascade" }),
 
-  /** developer | landowner */
+  /** landowner | developer | investor | partner | nominee | claimant | witness | other */
   role: text("role").notNull(),
 
   fullName: text("full_name").notNull(),
@@ -52,7 +52,7 @@ export const projectParticipantsTable = pgTable("project_participants", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().$onUpdate(() => new Date()),
   createdBy: uuid("created_by").references(() => usersTable.id, { onDelete: "set null" }),
 }, (t) => [
-  unique("project_participants_project_role_uq").on(t.projectId, t.role),
+  unique("project_participants_project_role_person_uq").on(t.projectId, t.role, t.personMasterId),
 ]);
 
 export const insertProjectParticipantSchema = createInsertSchema(projectParticipantsTable).omit({

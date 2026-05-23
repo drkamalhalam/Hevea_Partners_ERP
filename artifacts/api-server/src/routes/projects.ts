@@ -234,15 +234,20 @@ router.patch("/:id", requireRole("admin", "developer"), async (req, res) => {
       }
     }
 
-    // projectCode is immutable once set (even on inactive projects)
+    // projectCode is immutable once the project is ACTIVE. Pre-activation
+    // corrections are allowed (and audited via the generic field-changed
+    // event below).
     if (
       bodyParsed.data.projectCode !== undefined &&
       existing.projectCode !== null &&
       existing.projectCode !== "" &&
-      bodyParsed.data.projectCode !== existing.projectCode
+      bodyParsed.data.projectCode !== existing.projectCode &&
+      existing.activationStatus === "active"
     ) {
       res.status(409).json({
-        error: "Project code is immutable once assigned.",
+        error:
+          "Project code cannot be changed on an active project. Raise a governance override to amend.",
+        code: "GOVERNANCE_OVERRIDE_REQUIRED",
       });
       return;
     }

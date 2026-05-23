@@ -54147,18 +54147,34 @@ export function useListOnboardingParticipants<
 }
 
 /**
- * @summary Upsert KYC data for a participant role (developer or landowner)
+ * @summary Upsert KYC data for a participant role
  */
 export const getUpsertOnboardingParticipantUrl = (
   projectId: string,
-  role: "developer" | "landowner",
+  role:
+    | "landowner"
+    | "developer"
+    | "investor"
+    | "partner"
+    | "nominee"
+    | "claimant"
+    | "witness"
+    | "other",
 ) => {
   return `/api/projects/${projectId}/onboarding/participants/${role}`;
 };
 
 export const upsertOnboardingParticipant = async (
   projectId: string,
-  role: "developer" | "landowner",
+  role:
+    | "landowner"
+    | "developer"
+    | "investor"
+    | "partner"
+    | "nominee"
+    | "claimant"
+    | "witness"
+    | "other",
   onboardingParticipantInput: OnboardingParticipantInput,
   options?: RequestInit,
 ): Promise<UpsertOnboardingParticipant200> => {
@@ -54182,7 +54198,15 @@ export const getUpsertOnboardingParticipantMutationOptions = <
     TError,
     {
       projectId: string;
-      role: "developer" | "landowner";
+      role:
+        | "landowner"
+        | "developer"
+        | "investor"
+        | "partner"
+        | "nominee"
+        | "claimant"
+        | "witness"
+        | "other";
       data: BodyType<OnboardingParticipantInput>;
     },
     TContext
@@ -54193,7 +54217,15 @@ export const getUpsertOnboardingParticipantMutationOptions = <
   TError,
   {
     projectId: string;
-    role: "developer" | "landowner";
+    role:
+      | "landowner"
+      | "developer"
+      | "investor"
+      | "partner"
+      | "nominee"
+      | "claimant"
+      | "witness"
+      | "other";
     data: BodyType<OnboardingParticipantInput>;
   },
   TContext
@@ -54211,7 +54243,15 @@ export const getUpsertOnboardingParticipantMutationOptions = <
     Awaited<ReturnType<typeof upsertOnboardingParticipant>>,
     {
       projectId: string;
-      role: "developer" | "landowner";
+      role:
+        | "landowner"
+        | "developer"
+        | "investor"
+        | "partner"
+        | "nominee"
+        | "claimant"
+        | "witness"
+        | "other";
       data: BodyType<OnboardingParticipantInput>;
     }
   > = (props) => {
@@ -54231,7 +54271,7 @@ export type UpsertOnboardingParticipantMutationBody =
 export type UpsertOnboardingParticipantMutationError = ErrorType<unknown>;
 
 /**
- * @summary Upsert KYC data for a participant role (developer or landowner)
+ * @summary Upsert KYC data for a participant role
  */
 export const useUpsertOnboardingParticipant = <
   TError = ErrorType<unknown>,
@@ -54242,7 +54282,15 @@ export const useUpsertOnboardingParticipant = <
     TError,
     {
       projectId: string;
-      role: "developer" | "landowner";
+      role:
+        | "landowner"
+        | "developer"
+        | "investor"
+        | "partner"
+        | "nominee"
+        | "claimant"
+        | "witness"
+        | "other";
       data: BodyType<OnboardingParticipantInput>;
     },
     TContext
@@ -54253,7 +54301,15 @@ export const useUpsertOnboardingParticipant = <
   TError,
   {
     projectId: string;
-    role: "developer" | "landowner";
+    role:
+      | "landowner"
+      | "developer"
+      | "investor"
+      | "partner"
+      | "nominee"
+      | "claimant"
+      | "witness"
+      | "other";
     data: BodyType<OnboardingParticipantInput>;
   },
   TContext
@@ -54266,14 +54322,30 @@ export const useUpsertOnboardingParticipant = <
  */
 export const getDeleteOnboardingParticipantUrl = (
   projectId: string,
-  role: "developer" | "landowner",
+  role:
+    | "landowner"
+    | "developer"
+    | "investor"
+    | "partner"
+    | "nominee"
+    | "claimant"
+    | "witness"
+    | "other",
 ) => {
   return `/api/projects/${projectId}/onboarding/participants/${role}`;
 };
 
 export const deleteOnboardingParticipant = async (
   projectId: string,
-  role: "developer" | "landowner",
+  role:
+    | "landowner"
+    | "developer"
+    | "investor"
+    | "partner"
+    | "nominee"
+    | "claimant"
+    | "witness"
+    | "other",
   options?: RequestInit,
 ): Promise<DeleteOnboardingParticipant200> => {
   return customFetch<DeleteOnboardingParticipant200>(
@@ -54292,14 +54364,36 @@ export const getDeleteOnboardingParticipantMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof deleteOnboardingParticipant>>,
     TError,
-    { projectId: string; role: "developer" | "landowner" },
+    {
+      projectId: string;
+      role:
+        | "landowner"
+        | "developer"
+        | "investor"
+        | "partner"
+        | "nominee"
+        | "claimant"
+        | "witness"
+        | "other";
+    },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof deleteOnboardingParticipant>>,
   TError,
-  { projectId: string; role: "developer" | "landowner" },
+  {
+    projectId: string;
+    role:
+      | "landowner"
+      | "developer"
+      | "investor"
+      | "partner"
+      | "nominee"
+      | "claimant"
+      | "witness"
+      | "other";
+  },
   TContext
 > => {
   const mutationKey = ["deleteOnboardingParticipant"];
@@ -54313,7 +54407,18 @@ export const getDeleteOnboardingParticipantMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof deleteOnboardingParticipant>>,
-    { projectId: string; role: "developer" | "landowner" }
+    {
+      projectId: string;
+      role:
+        | "landowner"
+        | "developer"
+        | "investor"
+        | "partner"
+        | "nominee"
+        | "claimant"
+        | "witness"
+        | "other";
+    }
   > = (props) => {
     const { projectId, role } = props ?? {};
 
@@ -54339,14 +54444,36 @@ export const useDeleteOnboardingParticipant = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof deleteOnboardingParticipant>>,
     TError,
-    { projectId: string; role: "developer" | "landowner" },
+    {
+      projectId: string;
+      role:
+        | "landowner"
+        | "developer"
+        | "investor"
+        | "partner"
+        | "nominee"
+        | "claimant"
+        | "witness"
+        | "other";
+    },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationResult<
   Awaited<ReturnType<typeof deleteOnboardingParticipant>>,
   TError,
-  { projectId: string; role: "developer" | "landowner" },
+  {
+    projectId: string;
+    role:
+      | "landowner"
+      | "developer"
+      | "investor"
+      | "partner"
+      | "nominee"
+      | "claimant"
+      | "witness"
+      | "other";
+  },
   TContext
 > => {
   return useMutation(getDeleteOnboardingParticipantMutationOptions(options));

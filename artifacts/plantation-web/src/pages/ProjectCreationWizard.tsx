@@ -2283,7 +2283,11 @@ export default function ProjectCreationWizard() {
 
   useEffect(() => {
     if (project?.onboardingStep && project.onboardingStep > currentStep) {
-      setCurrentStep(project.onboardingStep);
+      // Legacy drafts may persist steps 9 or 10 from the old wizard; the
+      // refactored wizard has only STEPS.length steps. Clamp on resume so
+      // we never land on an undefined step component.
+      const resumeStep = Math.min(project.onboardingStep, STEPS.length);
+      setCurrentStep(resumeStep);
     }
   }, [project?.onboardingStep]);
 

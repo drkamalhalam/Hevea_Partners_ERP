@@ -2501,7 +2501,16 @@ export const GetProjectMaturityResponse = zod.object({
     zod.object({
       id: zod.string().uuid(),
       declarationId: zod.string().uuid(),
-      partyRole: zod.enum(["developer", "landowner"]),
+      partyRole: zod.enum([
+        "landowner",
+        "developer",
+        "investor",
+        "partner",
+        "nominee",
+        "claimant",
+        "witness",
+        "other",
+      ]),
       partyUserId: zod.string().uuid().nullish(),
       partyName: zod.string(),
       partyPhone: zod.string().nullish(),
@@ -2579,7 +2588,16 @@ export const SendMaturityOtpParams = zod.object({
 export const SendMaturityOtpResponse = zod.object({
   id: zod.string().uuid(),
   declarationId: zod.string().uuid(),
-  partyRole: zod.enum(["developer", "landowner"]),
+  partyRole: zod.enum([
+    "landowner",
+    "developer",
+    "investor",
+    "partner",
+    "nominee",
+    "claimant",
+    "witness",
+    "other",
+  ]),
   partyUserId: zod.string().uuid().nullish(),
   partyName: zod.string(),
   partyPhone: zod.string().nullish(),
@@ -2623,7 +2641,16 @@ export const VerifyMaturityOtpResponse = zod.object({
     zod.object({
       id: zod.string().uuid(),
       declarationId: zod.string().uuid(),
-      partyRole: zod.enum(["developer", "landowner"]),
+      partyRole: zod.enum([
+        "landowner",
+        "developer",
+        "investor",
+        "partner",
+        "nominee",
+        "claimant",
+        "witness",
+        "other",
+      ]),
       partyUserId: zod.string().uuid().nullish(),
       partyName: zod.string(),
       partyPhone: zod.string().nullish(),
@@ -22977,11 +23004,20 @@ export const ListOnboardingParticipantsResponse = zod.object({
 });
 
 /**
- * @summary Upsert KYC data for a participant role (developer or landowner)
+ * @summary Upsert KYC data for a participant role
  */
 export const UpsertOnboardingParticipantParams = zod.object({
   projectId: zod.coerce.string().uuid(),
-  role: zod.enum(["developer", "landowner"]),
+  role: zod.enum([
+    "landowner",
+    "developer",
+    "investor",
+    "partner",
+    "nominee",
+    "claimant",
+    "witness",
+    "other",
+  ]),
 });
 
 export const UpsertOnboardingParticipantBody = zod.object({
@@ -23022,7 +23058,16 @@ export const UpsertOnboardingParticipantResponse = zod.object({
  */
 export const DeleteOnboardingParticipantParams = zod.object({
   projectId: zod.coerce.string().uuid(),
-  role: zod.enum(["developer", "landowner"]),
+  role: zod.enum([
+    "landowner",
+    "developer",
+    "investor",
+    "partner",
+    "nominee",
+    "claimant",
+    "witness",
+    "other",
+  ]),
 });
 
 export const DeleteOnboardingParticipantResponse = zod.object({

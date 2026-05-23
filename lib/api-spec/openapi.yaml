@@ -13067,7 +13067,7 @@ paths:
     put:
       operationId: upsertOnboardingParticipant
       tags: [projects]
-      summary: Upsert KYC data for a participant role (developer or landowner)
+      summary: Upsert KYC data for a participant role
       parameters:
         - name: projectId
           in: path
@@ -13076,7 +13076,7 @@ paths:
         - name: role
           in: path
           required: true
-          schema: { type: string, enum: [developer, landowner] }
+          schema: { type: string, enum: [landowner, developer, investor, partner, nominee, claimant, witness, other] }
       requestBody:
         required: true
         content:
@@ -13104,7 +13104,7 @@ paths:
         - name: role
           in: path
           required: true
-          schema: { type: string, enum: [developer, landowner] }
+          schema: { type: string, enum: [landowner, developer, investor, partner, nominee, claimant, witness, other] }
       responses:
         "200":
           description: Deleted
@@ -15207,7 +15207,7 @@ components:
           format: uuid
         partyRole:
           type: string
-          enum: [developer, landowner]
+          enum: [landowner, developer, investor, partner, nominee, claimant, witness, other]
         partyUserId:
           type: ["string", "null"]
           format: uuid

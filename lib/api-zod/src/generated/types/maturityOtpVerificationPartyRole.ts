@@ -10,6 +10,12 @@ export type MaturityOtpVerificationPartyRole =
   (typeof MaturityOtpVerificationPartyRole)[keyof typeof MaturityOtpVerificationPartyRole];
 
 export const MaturityOtpVerificationPartyRole = {
-  developer: "developer",
   landowner: "landowner",
+  developer: "developer",
+  investor: "investor",
+  partner: "partner",
+  nominee: "nominee",
+  claimant: "claimant",
+  witness: "witness",
+  other: "other",
 } as const;

@@ -21,9 +21,8 @@ function generateOtp(): string {
 // GET /:id/onboarding/state
 router.get("/:id/onboarding/state", requireRole("admin", "developer", "landowner"), async (req, res) => {
   const id = String(req.params.id);
-
   if (!canAccessProject(req, id)) {
-    res.status(403).json({ error: "Forbidden" });
+    res.status(403).json({ error: "Forbidden: no access to this project" });
     return;
   }
 
@@ -95,6 +94,10 @@ router.get("/:id/onboarding/state", requireRole("admin", "developer", "landowner
 // POST /:id/onboarding/send-otp
 router.post("/:id/onboarding/send-otp", requireRole("admin", "developer"), async (req, res) => {
   const id = String(req.params.id);
+  if (!canAccessProject(req, id)) {
+    res.status(403).json({ error: "Forbidden: no access to this project" });
+    return;
+  }
   const parsed = z.object({
     role: z.enum(["developer", "landowner"]),
     phone: z.string().min(10),
@@ -142,6 +145,10 @@ router.post("/:id/onboarding/send-otp", requireRole("admin", "developer"), async
 // POST /:id/onboarding/verify-otp
 router.post("/:id/onboarding/verify-otp", requireRole("admin", "developer", "landowner"), async (req, res) => {
   const id = String(req.params.id);
+  if (!canAccessProject(req, id)) {
+    res.status(403).json({ error: "Forbidden: no access to this project" });
+    return;
+  }
   const parsed = z.object({
     role: z.enum(["developer", "landowner"]),
     otpCode: z.string().length(6),
@@ -204,6 +211,10 @@ router.post("/:id/onboarding/verify-otp", requireRole("admin", "developer", "lan
 // POST /:id/onboarding/activate — final activation after dual OTP
 router.post("/:id/onboarding/activate", requireRole("admin", "developer"), async (req, res) => {
   const id = String(req.params.id);
+  if (!canAccessProject(req, id)) {
+    res.status(403).json({ error: "Forbidden: no access to this project" });
+    return;
+  }
 
   const [project] = await db
     .select()
@@ -236,6 +247,41 @@ router.post("/:id/onboarding/activate", requireRole("admin", "developer"), async
   }
   if (!loOtp?.verifiedAt) {
     res.status(422).json({ error: "Landowner OTP not yet verified." });
+    return;
+  }
+
+  // Project must have core governance fields set before activation.
+  if (!project.commercialModel) {
+    res.status(422).json({
+      error: "Commercial model must be set before activation.",
+    });
+    return;
+  }
+  if (!project.projectType) {
+    res.status(422).json({
+      error: "Project type must be selected before activation.",
+    });
+    return;
+  }
+
+  // Participant gate: at least one landowner AND one developer participant
+  // row must exist (mirrors the wizard Review checklist 1:1).
+  const participantRows = await db
+    .select({ role: projectParticipantsTable.role })
+    .from(projectParticipantsTable)
+    .where(eq(projectParticipantsTable.projectId, id));
+  const hasLandowner = participantRows.some((p) => p.role === "landowner");
+  const hasDeveloper = participantRows.some((p) => p.role === "developer");
+  if (!hasLandowner) {
+    res.status(422).json({
+      error: "At least one landowner participant is required before activation.",
+    });
+    return;
+  }
+  if (!hasDeveloper) {
+    res.status(422).json({
+      error: "At least one developer participant is required before activation.",
+    });
     return;
   }
 

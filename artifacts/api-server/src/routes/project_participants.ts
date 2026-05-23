@@ -11,8 +11,19 @@ const router = Router();
 // personMasterId is required — every participant must be linked to a
 // Person Registry entry. Identity is sourced from there; the local fields
 // below are denormalised copies kept for backward-compat.
+export const PARTICIPANT_ROLES = [
+  "landowner",
+  "developer",
+  "investor",
+  "partner",
+  "nominee",
+  "claimant",
+  "witness",
+  "other",
+] as const;
+
 const participantSchema = z.object({
-  role: z.enum(["developer", "landowner"]),
+  role: z.enum(PARTICIPANT_ROLES),
   personMasterId: z.string().uuid({
     error: "personMasterId is required — link the participant to a Person Registry entry first.",
   }),
@@ -51,10 +62,16 @@ router.put("/:projectId/onboarding/participants/:role", requireRole("admin", "de
     return;
   }
   const role = String(req.params.role);
-  if (role !== "developer" && role !== "landowner") {
-    res.status(400).json({ error: "role must be developer or landowner" });
+  if (!(PARTICIPANT_ROLES as readonly string[]).includes(role)) {
+    res.status(400).json({
+      error: `role must be one of: ${PARTICIPANT_ROLES.join(", ")}`,
+    });
     return;
   }
+
+  const parsedEarly = participantSchema.safeParse({ ...req.body, role });
+  const incomingPersonId =
+    parsedEarly.success ? parsedEarly.data.personMasterId : null;
 
   const [existing] = await db
     .select()
@@ -63,6 +80,9 @@ router.put("/:projectId/onboarding/participants/:role", requireRole("admin", "de
       and(
         eq(projectParticipantsTable.projectId, projectId),
         eq(projectParticipantsTable.role, role),
+        ...(incomingPersonId
+          ? [eq(projectParticipantsTable.personMasterId, incomingPersonId)]
+          : []),
       ),
     )
     .limit(1);
@@ -103,7 +123,11 @@ router.put("/:projectId/onboarding/participants/:role", requireRole("admin", "de
     .insert(projectParticipantsTable)
     .values(payload)
     .onConflictDoUpdate({
-      target: [projectParticipantsTable.projectId, projectParticipantsTable.role],
+      target: [
+        projectParticipantsTable.projectId,
+        projectParticipantsTable.role,
+        projectParticipantsTable.personMasterId,
+      ],
       set: {
         fullName: payload.fullName,
         sOnCOn: payload.sOnCOn,
