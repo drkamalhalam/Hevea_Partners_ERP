@@ -1,0 +1,210 @@
+REBUILD OWNERSHIP ATTRIBUTION HARDENING
+
+This is a governance and data-integrity task.
+
+Do NOT create Contribution Ledger.
+Do NOT create Financial Inputs module.
+Do NOT modify ownership percentages.
+Do NOT modify ownership formulas.
+Do NOT modify inheritance allocation formulas.
+Do NOT modify transfer valuation logic.
+Do NOT alter historical ownership.
+
+OBJECTIVE
+
+Ownership calculations, snapshots and crystallization must never consume orphaned ownership identities.
+
+Current audit confirms:
+
+- ownership calculation attribution remains unprotected
+- contributions.partnerId remains nullable
+- crystallization/backfill bypasses identity validation
+- ownership snapshots may reference invalid partners
+- transfer and inheritance workflows still contain ungated intermediate stages
+
+Fix ownership attribution integrity.
+
+====================================================
+OWNERSHIP ATTRIBUTION RULE
+====================================================
+
+Ownership-affecting records must always resolve to:
+
+active partner
+→ active person_master
+
+If identity cannot be resolved:
+
+ownership attribution is invalid.
+
+====================================================
+CONTRIBUTION SCHEMA HARDENING
+====================================================
+
+Investigate every ownership-affecting contribution path.
+
+Implement enforcement that prevents creation of new ownership-affecting contributions without a valid ownership holder.
+
+Requirements:
+
+- ownership-affecting contribution cannot persist with null ownership attribution
+- ownership-affecting contribution cannot persist with inactive partner
+- ownership-affecting contribution cannot persist with deleted partner
+- ownership-affecting contribution cannot persist with missing person_master
+- ownership-affecting contribution cannot persist with inactive person_master
+
+Legacy rows remain unchanged.
+
+No migration.
+
+No automatic correction.
+
+====================================================
+OWNERSHIP CALCULATION HARDENING
+====================================================
+
+Before ownership aggregation:
+
+validate ownership attribution chain.
+
+If contribution ownership identity is invalid:
+
+exclude from ownership computation
+
+record validation finding
+
+record audit entry
+
+Do not silently aggregate orphan ownership.
+
+====================================================
+SNAPSHOT HARDENING
+====================================================
+
+Before any snapshot generation:
+
+validate every ownership holder.
+
+Reject snapshot creation when:
+
+- partner missing
+- partner inactive
+- person_master missing
+- person_master inactive
+
+Return explicit validation error.
+
+Apply to:
+
+- manual snapshots
+- maturity snapshots
+- crystallization snapshots
+- backfill snapshots
+- any future snapshot route
+
+====================================================
+CRYSTALLIZATION / BACKFILL HARDENING
+====================================================
+
+Current audit identifies bypass risk.
+
+All crystallization and ownership backfill tools must:
+
+validate ownership attribution
+
+reject invalid ownership identities
+
+produce audit record
+
+No bypass allowed.
+
+====================================================
+TRANSFER WORKFLOW HARDENING
+====================================================
+
+Identity validation must occur at every ownership-relevant stage:
+
+- submit
+- approve
+- execute
+
+Not only execute.
+
+Transferor and buyer must be revalidated each time.
+
+====================================================
+INHERITANCE WORKFLOW HARDENING
+====================================================
+
+Identity validation must occur at:
+
+- claimant creation
+- claimant update
+- share creation
+- share update
+- approval
+- settlement
+
+Not only finalization.
+
+====================================================
+DATA HEALTH EXPANSION
+====================================================
+
+Add ownership attribution integrity checks:
+
+1. ownership-affecting contribution with invalid identity chain
+2. ownership snapshot containing inactive partner
+3. ownership snapshot containing inactive person_master
+4. crystallization candidate containing invalid ownership identity
+5. transfer workflow referencing inactive identity
+6. inheritance workflow referencing inactive identity
+
+Expose through existing data-health framework.
+
+====================================================
+AUDIT LOGGING
+====================================================
+
+Record:
+
+- project
+- actor
+- route
+- partner
+- person_master
+- validation failure
+- timestamp
+
+Use append-only audit logging.
+
+====================================================
+SAFETY REQUIREMENTS
+====================================================
+
+Do not recalculate historical ownership.
+
+Do not alter ownership percentages.
+
+Do not modify transfer history.
+
+Do not modify inheritance history.
+
+Do not modify snapshots already stored.
+
+Only protect future ownership attribution processing.
+
+====================================================
+IMPLEMENTATION REPORT
+====================================================
+
+Provide:
+
+- files modified
+- routes protected
+- ownership calculation protections added
+- snapshot protections added
+- crystallization protections added
+- transfer protections added
+- inheritance protections added
+- remaining ownership attribution bypass paths if any

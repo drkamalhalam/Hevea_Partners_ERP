@@ -18,6 +18,10 @@ import {
 import { getAuth } from "@clerk/express";
 import { requireRole } from "../middlewares/auth";
 import type { OwnershipSnapshotEntry } from "@workspace/db";
+import {
+  partitionOwnershipRows,
+  assertOwnershipAttributionValid,
+} from "../lib/ownershipAttributionGuard";
 
 const router = Router();
 
@@ -104,8 +108,9 @@ async function computeOwnership(projectId: string): Promise<{
   landTotal: number;
   economicTotal: number;
   totalRecognizedAmount: number;
+  excludedInvalidCount: number;
 }> {
-  const rows = await db
+  const rawRows = await db
     .select({
       partnerId: contributionsTable.partnerId,
       partnerName: contributionsTable.partnerName,
@@ -125,6 +130,14 @@ async function computeOwnership(projectId: string): Promise<{
         isNull(contributionsTable.deletedAt),
       ),
     );
+
+  // Ownership Attribution Hardening — never silently aggregate orphan
+  // ownership. Rows whose partner/person identity chain is broken are
+  // excluded from aggregation. Continuous monitoring of these exclusions
+  // is exposed via /api/admin/data-health/ownership-affecting-invalid-identity.
+  const { valid: rows, invalid: invalidRows } = await partitionOwnershipRows(
+    rawRows,
+  );
 
   // Aggregate by partnerKey (partnerId if available, else partnerName)
   const map = new Map<
@@ -177,7 +190,13 @@ async function computeOwnership(projectId: string): Promise<{
   // Sort by percentage descending
   entries.sort((a, b) => b.percentage - a.percentage);
 
-  return { entries, landTotal, economicTotal, totalRecognizedAmount };
+  return {
+    entries,
+    landTotal,
+    economicTotal,
+    totalRecognizedAmount,
+    excludedInvalidCount: invalidRows.length,
+  };
 }
 
 /** Returns true if this project has had its ownership frozen via the maturity workflow. */
@@ -439,6 +458,39 @@ router.post(
       .where(and(eq(projectsTable.id, projectId), eq(projectsTable.isActive, true)))
       .limit(1);
     if (!project) return res.status(404).json({ error: "Project not found" });
+
+    // Ownership attribution gate — fetch the source rows that WOULD compose
+    // the snapshot and reject if any reference an invalid identity chain.
+    const sourceRows = await db
+      .select({
+        partnerId: contributionsTable.partnerId,
+        partnerName: contributionsTable.partnerName,
+      })
+      .from(contributionsTable)
+      .where(
+        and(
+          eq(contributionsTable.projectId, projectId),
+          inArray(contributionsTable.contributionType, [
+            "land_notional",
+            "economic_investment",
+          ]),
+          eq(contributionsTable.verificationStatus, "verified"),
+          eq(contributionsTable.affectsOwnership, true),
+          isNull(contributionsTable.deletedAt),
+        ),
+      );
+
+    const gate = await assertOwnershipAttributionValid({
+      rows: sourceRows,
+      projectId,
+      action: "ownership.snapshot.manual",
+      actor: { id: actor.id, name: actor.displayName, role: actor.role },
+      req,
+      targetTable: "ownership_snapshots",
+    });
+    if (!gate.ok) {
+      return res.status(gate.status).json(gate.body);
+    }
 
     const computed = await computeOwnership(projectId);
 

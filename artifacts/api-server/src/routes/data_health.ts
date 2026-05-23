@@ -32,8 +32,9 @@ import {
   inheritanceClaimsTable,
   type OwnershipSnapshotEntry,
 } from "@workspace/db";
-import { eq, and, isNull, lt, gt, sql, inArray, not, isNotNull } from "drizzle-orm";
+import { eq, and, isNull, lt, gt, sql, inArray, not, isNotNull, or } from "drizzle-orm";
 import { getAuth } from "@clerk/express";
+import { assertOwnershipAttributionValid } from "../lib/ownershipAttributionGuard";
 
 const router = Router();
 
@@ -60,6 +61,13 @@ router.get("/summary", async (req, res) => {
     snapshotUnknownPartnersCount,
     transfersInvalidPartnerCount,
     inheritanceInvalidPartnerCount,
+    // Ownership attribution hardening — continuous integrity counters
+    ownershipAffectingInvalidIdentityCount,
+    snapshotsWithInactivePartnerCount,
+    snapshotsWithInactivePersonCount,
+    crystallizationCandidatesInvalidCount,
+    transferWorkflowInactiveIdentityCount,
+    inheritanceWorkflowInactiveIdentityCount,
   ] = await Promise.all([
     // Orphan contributors: contributions with no partnerId
     db
@@ -355,6 +363,122 @@ router.get("/summary", async (req, res) => {
         ),
       )
       .then(([r]) => Number(r?.count ?? 0)),
+
+    // 8. Ownership-affecting contributions whose partner identity chain is
+    // invalid (missing/inactive partner, missing person link, or person inactive).
+    db.execute(sql`
+      SELECT COUNT(*)::int AS count FROM contributions c
+      LEFT JOIN partners p ON p.id = c.partner_id
+      LEFT JOIN person_master pm ON pm.id = p.person_master_id
+      WHERE c.affects_ownership = true
+        AND c.is_active = true
+        AND c.deleted_at IS NULL
+        AND (
+          c.partner_id IS NULL
+          OR p.id IS NULL
+          OR p.deleted_at IS NOT NULL
+          OR p.is_active = false
+          OR p.person_master_id IS NULL
+          OR pm.id IS NULL
+          OR pm.status <> 'active'
+        )
+    `).then((r) => Number((r.rows?.[0] as { count?: number } | undefined)?.count ?? 0)),
+
+    // 9. Stored snapshots whose entries reference a partner now inactive/deleted/missing.
+    db.execute(sql`
+      SELECT COUNT(DISTINCT s.id)::int AS count
+      FROM ownership_snapshots s
+      CROSS JOIN LATERAL jsonb_array_elements(s.entries) AS entry
+      LEFT JOIN partners p ON p.id = NULLIF(entry->>'partnerId', '')::uuid
+      WHERE (entry->>'partnerId') IS NOT NULL AND (entry->>'partnerId') <> ''
+        AND (p.id IS NULL OR p.deleted_at IS NOT NULL OR p.is_active = false)
+    `).then((r) => Number((r.rows?.[0] as { count?: number } | undefined)?.count ?? 0)),
+
+    // 10. Stored snapshots whose partner's person_master is now missing/inactive.
+    db.execute(sql`
+      SELECT COUNT(DISTINCT s.id)::int AS count
+      FROM ownership_snapshots s
+      CROSS JOIN LATERAL jsonb_array_elements(s.entries) AS entry
+      LEFT JOIN partners p ON p.id = NULLIF(entry->>'partnerId', '')::uuid
+      LEFT JOIN person_master pm ON pm.id = p.person_master_id
+      WHERE (entry->>'partnerId') IS NOT NULL AND (entry->>'partnerId') <> ''
+        AND p.id IS NOT NULL
+        AND (p.person_master_id IS NULL OR pm.id IS NULL OR pm.status <> 'active')
+    `).then((r) => Number((r.rows?.[0] as { count?: number } | undefined)?.count ?? 0)),
+
+    // 11. Projects awaiting crystallization (mature/closed + not yet frozen)
+    // whose verified contributions reference invalid identities — backfill
+    // candidates that will be skipped by the attribution gate.
+    db.execute(sql`
+      SELECT COUNT(DISTINCT pr.id)::int AS count
+      FROM projects pr
+      JOIN contributions c ON c.project_id = pr.id
+        AND c.is_active = true AND c.deleted_at IS NULL
+        AND c.verification_status = 'verified'
+        AND c.affects_ownership = true
+      LEFT JOIN partners p ON p.id = c.partner_id
+      LEFT JOIN person_master pm ON pm.id = p.person_master_id
+      WHERE pr.lifecycle_status IN ('mature_production', 'closed')
+        AND pr.ownership_frozen_at IS NULL
+        AND (
+          c.partner_id IS NULL
+          OR p.id IS NULL
+          OR p.deleted_at IS NOT NULL
+          OR p.is_active = false
+          OR p.person_master_id IS NULL
+          OR pm.id IS NULL
+          OR pm.status <> 'active'
+        )
+    `).then((r) => Number((r.rows?.[0] as { count?: number } | undefined)?.count ?? 0)),
+
+    // 12. In-flight transfers (not yet executed/rejected/cancelled) whose
+    // transferor or buyer identity is currently invalid.
+    db.execute(sql`
+      SELECT COUNT(DISTINCT t.id)::int AS count
+      FROM ownership_transfers t
+      LEFT JOIN partners tp ON tp.id = t.transferor_partner_id
+      LEFT JOIN person_master tpm ON tpm.id = tp.person_master_id
+      LEFT JOIN partners bp ON bp.id = t.buyer_partner_id
+      LEFT JOIN person_master bpm ON bpm.id = bp.person_master_id
+      WHERE t.status NOT IN ('executed', 'cancelled', 'expired')
+        AND (
+          tp.id IS NULL
+          OR tp.deleted_at IS NOT NULL
+          OR tp.is_active = false
+          OR tp.person_master_id IS NULL
+          OR tpm.id IS NULL
+          OR tpm.status <> 'active'
+          OR (
+            t.buyer_partner_id IS NOT NULL
+            AND (
+              bp.id IS NULL
+              OR bp.deleted_at IS NOT NULL
+              OR bp.is_active = false
+              OR bp.person_master_id IS NULL
+              OR bpm.id IS NULL
+              OR bpm.status <> 'active'
+            )
+          )
+        )
+    `).then((r) => Number((r.rows?.[0] as { count?: number } | undefined)?.count ?? 0)),
+
+    // 13. Active inheritance claims (not yet settled/rejected) blocked by
+    // identity issues — source partner or any active claimant identity broken.
+    db.execute(sql`
+      SELECT COUNT(DISTINCT ic.id)::int AS count
+      FROM inheritance_claims ic
+      LEFT JOIN partners sp ON sp.id = ic.partner_id
+      LEFT JOIN person_master spm ON spm.id = sp.person_master_id
+      LEFT JOIN partner_claimants pc ON pc.partner_id = ic.partner_id AND pc.is_active = true
+      LEFT JOIN person_master cpm ON cpm.id = pc.person_master_id
+      WHERE ic.is_active = true
+        AND ic.status NOT IN ('settled', 'rejected')
+        AND (
+          sp.id IS NULL OR sp.deleted_at IS NOT NULL OR sp.is_active = false
+          OR sp.person_master_id IS NULL OR spm.id IS NULL OR spm.status <> 'active'
+          OR (pc.id IS NOT NULL AND (pc.person_master_id IS NULL OR cpm.id IS NULL OR cpm.status <> 'active'))
+        )
+    `).then((r) => Number((r.rows?.[0] as { count?: number } | undefined)?.count ?? 0)),
   ]);
 
   req.log.info(
@@ -389,6 +513,12 @@ router.get("/summary", async (req, res) => {
     snapshotUnknownPartners: snapshotUnknownPartnersCount,
     transfersInvalidPartner: transfersInvalidPartnerCount,
     inheritanceInvalidPartner: inheritanceInvalidPartnerCount,
+    ownershipAffectingInvalidIdentity: ownershipAffectingInvalidIdentityCount,
+    snapshotsWithInactivePartner: snapshotsWithInactivePartnerCount,
+    snapshotsWithInactivePerson: snapshotsWithInactivePersonCount,
+    crystallizationCandidatesInvalid: crystallizationCandidatesInvalidCount,
+    transferWorkflowInactiveIdentity: transferWorkflowInactiveIdentityCount,
+    inheritanceWorkflowInactiveIdentity: inheritanceWorkflowInactiveIdentityCount,
     totalIssues:
       orphanCount +
       violationCount +
@@ -405,7 +535,13 @@ router.get("/summary", async (req, res) => {
       participantsMissingPartnerCount +
       snapshotUnknownPartnersCount +
       transfersInvalidPartnerCount +
-      inheritanceInvalidPartnerCount,
+      inheritanceInvalidPartnerCount +
+      ownershipAffectingInvalidIdentityCount +
+      snapshotsWithInactivePartnerCount +
+      snapshotsWithInactivePersonCount +
+      crystallizationCandidatesInvalidCount +
+      transferWorkflowInactiveIdentityCount +
+      inheritanceWorkflowInactiveIdentityCount,
     fetchedAt: new Date().toISOString(),
   });
 });
@@ -750,6 +886,38 @@ router.post("/backfill-crystallization", requireRole("admin"), async (req, res) 
           sql`COALESCE(SUM(${contributionsTable.amount}) FILTER (WHERE ${contributionsTable.affectsOwnership} = true), 0) > 0`,
         );
 
+      // Ownership attribution gate — reject backfill for projects whose
+      // contributions still reference invalid identities. Audits each
+      // invalid partner once.
+      const attribGate = await assertOwnershipAttributionValid({
+        rows: crystalRows.map((r) => ({
+          partnerId: r.partnerId,
+          partnerName: r.partnerName,
+        })),
+        projectId: project.id,
+        action: "ownership.crystallization.backfill",
+        actor: {
+          id: actingUserId ?? null,
+          name: actingUserName,
+          role: null,
+        },
+        req,
+        targetTable: "ownership_snapshots",
+      });
+      if (!attribGate.ok) {
+        results.push({
+          projectId: project.id,
+          projectName: project.name,
+          status: "skipped",
+          error: `Invalid ownership attribution: ${attribGate.body.invalid.length} partner(s) — ${attribGate.body.invalid.map((i) => i.failureCode).join(", ")}`,
+        });
+        req.log.warn(
+          { projectId: project.id, invalidCount: attribGate.body.invalid.length },
+          "backfill: skipped — invalid ownership attribution",
+        );
+        continue;
+      }
+
       const grandTotal = crystalRows.reduce((acc, r) => acc + Number(r.totalAmount), 0);
       const landTotal = crystalRows.reduce((acc, r) => acc + Number(r.landAmount), 0);
       const economicTotal = crystalRows.reduce((acc, r) => acc + Number(r.economicAmount), 0);
@@ -1050,6 +1218,200 @@ router.get("/inheritance-invalid-partner", async (_req, res) => {
     .orderBy(inheritanceClaimsTable.createdAt)
     .limit(200);
   return res.json({ items: rows, count: rows.length });
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Ownership Attribution Hardening — diagnostic endpoints
+// ──────────────────────────────────────────────────────────────────────────────
+
+// 1. Ownership-affecting contributions whose partner identity chain is broken.
+router.get("/ownership-affecting-invalid-identity", async (_req, res) => {
+  const r = await db.execute(sql`
+    SELECT
+      c.id, c.project_id AS "projectId", c.partner_id AS "partnerId",
+      c.partner_name AS "partnerName", c.contribution_type AS "contributionType",
+      c.amount, c.verification_status AS "verificationStatus", c.created_at AS "createdAt",
+      CASE
+        WHEN c.partner_id IS NULL THEN 'PARTNER_ID_MISSING'
+        WHEN p.id IS NULL THEN 'PARTNER_NOT_FOUND'
+        WHEN p.deleted_at IS NOT NULL THEN 'PARTNER_DELETED'
+        WHEN p.is_active = false THEN 'PARTNER_INACTIVE'
+        WHEN p.person_master_id IS NULL THEN 'PARTNER_PERSON_LINK_MISSING'
+        WHEN pm.id IS NULL THEN 'PERSON_MASTER_NOT_FOUND'
+        WHEN pm.status <> 'active' THEN 'PERSON_MASTER_INACTIVE'
+      END AS "failureCode"
+    FROM contributions c
+    LEFT JOIN partners p ON p.id = c.partner_id
+    LEFT JOIN person_master pm ON pm.id = p.person_master_id
+    WHERE c.affects_ownership = true AND c.is_active = true AND c.deleted_at IS NULL
+      AND (
+        c.partner_id IS NULL OR p.id IS NULL OR p.deleted_at IS NOT NULL
+        OR p.is_active = false OR p.person_master_id IS NULL
+        OR pm.id IS NULL OR pm.status <> 'active'
+      )
+    ORDER BY c.created_at DESC
+    LIMIT 200
+  `);
+  return res.json({ items: r.rows, count: r.rows.length });
+});
+
+// 2. Stored ownership snapshots whose entries reference an inactive/missing partner.
+router.get("/snapshots-with-inactive-partner", async (_req, res) => {
+  const r = await db.execute(sql`
+    SELECT DISTINCT
+      s.id AS "snapshotId", s.project_id AS "projectId",
+      s.snapshot_type AS "snapshotType", s.snapshot_at AS "snapshotAt",
+      entry->>'partnerId' AS "partnerId", entry->>'partnerName' AS "partnerName",
+      CASE
+        WHEN p.id IS NULL THEN 'PARTNER_NOT_FOUND'
+        WHEN p.deleted_at IS NOT NULL THEN 'PARTNER_DELETED'
+        WHEN p.is_active = false THEN 'PARTNER_INACTIVE'
+      END AS "failureCode"
+    FROM ownership_snapshots s
+    CROSS JOIN LATERAL jsonb_array_elements(s.entries) AS entry
+    LEFT JOIN partners p ON p.id = NULLIF(entry->>'partnerId', '')::uuid
+    WHERE (entry->>'partnerId') IS NOT NULL AND (entry->>'partnerId') <> ''
+      AND (p.id IS NULL OR p.deleted_at IS NOT NULL OR p.is_active = false)
+    ORDER BY s.snapshot_at DESC
+    LIMIT 200
+  `);
+  return res.json({ items: r.rows, count: r.rows.length });
+});
+
+// 3. Stored ownership snapshots whose partner's person_master is now invalid.
+router.get("/snapshots-with-inactive-person", async (_req, res) => {
+  const r = await db.execute(sql`
+    SELECT DISTINCT
+      s.id AS "snapshotId", s.project_id AS "projectId",
+      s.snapshot_type AS "snapshotType", s.snapshot_at AS "snapshotAt",
+      entry->>'partnerId' AS "partnerId", entry->>'partnerName' AS "partnerName",
+      p.person_master_id AS "personMasterId",
+      CASE
+        WHEN p.person_master_id IS NULL THEN 'PARTNER_PERSON_LINK_MISSING'
+        WHEN pm.id IS NULL THEN 'PERSON_MASTER_NOT_FOUND'
+        WHEN pm.status <> 'active' THEN 'PERSON_MASTER_INACTIVE'
+      END AS "failureCode"
+    FROM ownership_snapshots s
+    CROSS JOIN LATERAL jsonb_array_elements(s.entries) AS entry
+    LEFT JOIN partners p ON p.id = NULLIF(entry->>'partnerId', '')::uuid
+    LEFT JOIN person_master pm ON pm.id = p.person_master_id
+    WHERE (entry->>'partnerId') IS NOT NULL AND (entry->>'partnerId') <> ''
+      AND p.id IS NOT NULL
+      AND (p.person_master_id IS NULL OR pm.id IS NULL OR pm.status <> 'active')
+    ORDER BY s.snapshot_at DESC
+    LIMIT 200
+  `);
+  return res.json({ items: r.rows, count: r.rows.length });
+});
+
+// 4. Crystallization-backfill candidates that will be skipped by the gate.
+router.get("/crystallization-candidates-invalid", async (_req, res) => {
+  const r = await db.execute(sql`
+    SELECT
+      pr.id AS "projectId", pr.name AS "projectName",
+      pr.lifecycle_status AS "lifecycleStatus",
+      COUNT(DISTINCT c.id)::int AS "invalidContributionCount",
+      COUNT(DISTINCT c.partner_id)::int AS "invalidPartnerCount"
+    FROM projects pr
+    JOIN contributions c ON c.project_id = pr.id
+      AND c.is_active = true AND c.deleted_at IS NULL
+      AND c.verification_status = 'verified'
+      AND c.affects_ownership = true
+    LEFT JOIN partners p ON p.id = c.partner_id
+    LEFT JOIN person_master pm ON pm.id = p.person_master_id
+    WHERE pr.lifecycle_status IN ('mature_production', 'closed')
+      AND pr.ownership_frozen_at IS NULL
+      AND (
+        c.partner_id IS NULL OR p.id IS NULL OR p.deleted_at IS NOT NULL
+        OR p.is_active = false OR p.person_master_id IS NULL
+        OR pm.id IS NULL OR pm.status <> 'active'
+      )
+    GROUP BY pr.id, pr.name, pr.lifecycle_status
+    ORDER BY pr.name
+    LIMIT 200
+  `);
+  return res.json({ items: r.rows, count: r.rows.length });
+});
+
+// 5. In-flight transfers (not yet executed/rejected/cancelled) whose transferor
+// or buyer identity is currently invalid. Broader than -invalid-partner — covers
+// person-master state, soft-deletion, etc.
+router.get("/transfer-workflow-inactive-identity", async (_req, res) => {
+  const r = await db.execute(sql`
+    SELECT
+      t.id AS "transferId", t.project_id AS "projectId",
+      t.transferor_partner_id AS "transferorPartnerId",
+      t.buyer_partner_id AS "buyerPartnerId",
+      t.status, t.transfer_type AS "transferType", t.created_at AS "createdAt",
+      CASE
+        WHEN tp.id IS NULL THEN 'TRANSFEROR_PARTNER_NOT_FOUND'
+        WHEN tp.deleted_at IS NOT NULL THEN 'TRANSFEROR_PARTNER_DELETED'
+        WHEN tp.is_active = false THEN 'TRANSFEROR_PARTNER_INACTIVE'
+        WHEN tp.person_master_id IS NULL THEN 'TRANSFEROR_PERSON_LINK_MISSING'
+        WHEN tpm.id IS NULL THEN 'TRANSFEROR_PERSON_NOT_FOUND'
+        WHEN tpm.status <> 'active' THEN 'TRANSFEROR_PERSON_INACTIVE'
+        WHEN t.buyer_partner_id IS NOT NULL AND bp.id IS NULL THEN 'BUYER_PARTNER_NOT_FOUND'
+        WHEN t.buyer_partner_id IS NOT NULL AND bp.deleted_at IS NOT NULL THEN 'BUYER_PARTNER_DELETED'
+        WHEN t.buyer_partner_id IS NOT NULL AND bp.is_active = false THEN 'BUYER_PARTNER_INACTIVE'
+        WHEN t.buyer_partner_id IS NOT NULL AND bp.person_master_id IS NULL THEN 'BUYER_PERSON_LINK_MISSING'
+        WHEN t.buyer_partner_id IS NOT NULL AND bpm.id IS NULL THEN 'BUYER_PERSON_NOT_FOUND'
+        WHEN t.buyer_partner_id IS NOT NULL AND bpm.status <> 'active' THEN 'BUYER_PERSON_INACTIVE'
+      END AS "failureCode"
+    FROM ownership_transfers t
+    LEFT JOIN partners tp ON tp.id = t.transferor_partner_id
+    LEFT JOIN person_master tpm ON tpm.id = tp.person_master_id
+    LEFT JOIN partners bp ON bp.id = t.buyer_partner_id
+    LEFT JOIN person_master bpm ON bpm.id = bp.person_master_id
+    WHERE t.status NOT IN ('executed', 'cancelled', 'expired')
+      AND (
+        tp.id IS NULL OR tp.deleted_at IS NOT NULL OR tp.is_active = false
+        OR tp.person_master_id IS NULL OR tpm.id IS NULL OR tpm.status <> 'active'
+        OR (t.buyer_partner_id IS NOT NULL AND (
+          bp.id IS NULL OR bp.deleted_at IS NOT NULL OR bp.is_active = false
+          OR bp.person_master_id IS NULL OR bpm.id IS NULL OR bpm.status <> 'active'
+        ))
+      )
+    ORDER BY t.created_at DESC
+    LIMIT 200
+  `);
+  return res.json({ items: r.rows, count: r.rows.length });
+});
+
+// 6. Active inheritance claims (or any of their active claimants) currently
+// blocked by identity issues — source partner OR claimant person chain broken.
+router.get("/inheritance-workflow-inactive-identity", async (_req, res) => {
+  const r = await db.execute(sql`
+    SELECT DISTINCT
+      ic.id AS "claimId", ic.project_id AS "projectId",
+      ic.partner_id AS "partnerId", ic.status, ic.claim_type AS "claimType",
+      ic.created_at AS "createdAt",
+      CASE
+        WHEN sp.id IS NULL THEN 'SOURCE_PARTNER_NOT_FOUND'
+        WHEN sp.deleted_at IS NOT NULL THEN 'SOURCE_PARTNER_DELETED'
+        WHEN sp.is_active = false THEN 'SOURCE_PARTNER_INACTIVE'
+        WHEN sp.person_master_id IS NULL THEN 'SOURCE_PERSON_LINK_MISSING'
+        WHEN spm.id IS NULL THEN 'SOURCE_PERSON_NOT_FOUND'
+        WHEN spm.status <> 'active' THEN 'SOURCE_PERSON_INACTIVE'
+        WHEN pc.id IS NOT NULL AND pc.person_master_id IS NULL THEN 'CLAIMANT_PERSON_LINK_MISSING'
+        WHEN pc.id IS NOT NULL AND cpm.id IS NULL THEN 'CLAIMANT_PERSON_NOT_FOUND'
+        WHEN pc.id IS NOT NULL AND cpm.status <> 'active' THEN 'CLAIMANT_PERSON_INACTIVE'
+      END AS "failureCode"
+    FROM inheritance_claims ic
+    LEFT JOIN partners sp ON sp.id = ic.partner_id
+    LEFT JOIN person_master spm ON spm.id = sp.person_master_id
+    LEFT JOIN partner_claimants pc ON pc.partner_id = ic.partner_id AND pc.is_active = true
+    LEFT JOIN person_master cpm ON cpm.id = pc.person_master_id
+    WHERE ic.is_active = true
+      AND ic.status NOT IN ('settled', 'rejected')
+      AND (
+        sp.id IS NULL OR sp.deleted_at IS NOT NULL OR sp.is_active = false
+        OR sp.person_master_id IS NULL OR spm.id IS NULL OR spm.status <> 'active'
+        OR (pc.id IS NOT NULL AND (pc.person_master_id IS NULL OR cpm.id IS NULL OR cpm.status <> 'active'))
+      )
+    ORDER BY ic.created_at DESC
+    LIMIT 200
+  `);
+  return res.json({ items: r.rows, count: r.rows.length });
 });
 
 export default router;

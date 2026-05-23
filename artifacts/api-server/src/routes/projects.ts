@@ -40,6 +40,7 @@ import {
 import { requireRole, canAccessProject } from "../middlewares/auth";
 import { writeTimeline, TL } from "../lib/timelineLogger";
 import { writeProjectAudit, diffFields } from "../lib/projectAuditLogger";
+import { assertOwnershipAttributionValid } from "../lib/ownershipAttributionGuard";
 import { z } from "zod/v4";
 
 const router = Router();
@@ -1312,6 +1313,40 @@ router.post(
             )
             .groupBy(contributionsTable.partnerId)
             .having(sql`COALESCE(SUM(${contributionsTable.amount}) FILTER (WHERE ${contributionsTable.affectsOwnership} = true), 0) > 0`);
+
+          // Ownership attribution gate — refuse to crystallize when any
+          // contributing partner identity is invalid. Audit each invalid
+          // partner once. Lifecycle transition is preserved (logged), but
+          // the snapshot + freeze are deferred until identities are repaired.
+          const attribGate = await assertOwnershipAttributionValid({
+            rows: crystalRows.map((r) => ({
+              partnerId: r.partnerId,
+              partnerName: r.partnerName,
+            })),
+            projectId,
+            action: "ownership.snapshot.maturity",
+            actor: {
+              id: actingUserId ?? null,
+              name: actingUserName ?? null,
+              role: null,
+            },
+            req,
+            targetTable: "ownership_snapshots",
+          });
+          if (!attribGate.ok) {
+            req.log.warn(
+              {
+                projectId,
+                invalidCount: attribGate.body.invalid.length,
+              },
+              "Maturity crystallization blocked: invalid ownership attribution",
+            );
+            // Skip snapshot + freeze. The transition itself stands; the
+            // operator must resolve identities and run backfill afterwards.
+            throw new Error(
+              "OWNERSHIP_ATTRIBUTION_INVALID:maturity",
+            );
+          }
 
           const grandTotal = crystalRows.reduce((acc, r) => acc + Number(r.totalAmount), 0);
           const landTotal = crystalRows.reduce((acc, r) => acc + Number(r.landAmount), 0);

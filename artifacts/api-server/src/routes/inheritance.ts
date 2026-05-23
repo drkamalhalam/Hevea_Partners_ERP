@@ -568,9 +568,91 @@ router.post("/:id/shares", requireRole("admin", "developer"), async (req, res) =
 
     if (!claimantId || proposedSharePct == null) {
       res.status(400).json({ error: "claimantId and proposedSharePct are required." });
+      return;
     }
     if (proposedSharePct <= 0 || proposedSharePct > 100) {
       res.status(400).json({ error: "proposedSharePct must be between 0.0001 and 100." });
+      return;
+    }
+
+    // Ownership Attribution Hardening — every share mutation must validate
+    // both the source partner identity and the claimant's person identity.
+    const [claim] = await db
+      .select({
+        id: inheritanceClaimsTable.id,
+        projectId: inheritanceClaimsTable.projectId,
+        partnerId: inheritanceClaimsTable.partnerId,
+      })
+      .from(inheritanceClaimsTable)
+      .where(eq(inheritanceClaimsTable.id, claimId))
+      .limit(1);
+    if (!claim) {
+      res.status(404).json({ error: "Claim not found." });
+      return;
+    }
+    const actorCtx = {
+      id: actor?.id ?? null,
+      name: actor?.displayName ?? null,
+      role: null as string | null,
+    };
+    const sourceCheck = await assertPartnerIdentityValid({
+      partnerId: claim.partnerId,
+      action: "inheritance.share.create",
+      actor: actorCtx,
+      projectId: claim.projectId,
+      req,
+      targetTable: "inheritance_claimant_shares",
+      targetRecordId: claimId,
+      metadata: { side: "source_partner" },
+    });
+    if (!sourceCheck.ok) {
+      res.status(sourceCheck.status).json(sourceCheck.body);
+      return;
+    }
+    const [claimantRow] = await db
+      .select({
+        id: partnerClaimantsTable.id,
+        personMasterId: partnerClaimantsTable.personMasterId,
+        isActive: partnerClaimantsTable.isActive,
+      })
+      .from(partnerClaimantsTable)
+      .where(eq(partnerClaimantsTable.id, claimantId))
+      .limit(1);
+    if (!claimantRow) {
+      res.status(404).json({ error: "Claimant not found." });
+      return;
+    }
+    if (!claimantRow.isActive) {
+      res.status(422).json({
+        error: "Cannot create share for an archived/inactive claimant.",
+        code: "IDENTITY_INVALID",
+        failureCode: "PARTNER_INACTIVE",
+      });
+      return;
+    }
+    const claimantPersonRes = await validatePersonMasterActive(
+      claimantRow.personMasterId,
+    );
+    if (!claimantPersonRes.ok) {
+      await recordIdentityFailure({
+        action: "inheritance.share.create",
+        failure: claimantPersonRes,
+        actor: actorCtx,
+        projectId: claim.projectId,
+        partnerId: claim.partnerId,
+        personMasterId: claimantRow.personMasterId ?? null,
+        targetTable: "inheritance_claimant_shares",
+        targetRecordId: claimId,
+        metadata: { side: "claimant", claimantId },
+        req,
+      });
+      res.status(422).json({
+        error: claimantPersonRes.reason,
+        code: "IDENTITY_INVALID",
+        failureCode: claimantPersonRes.code,
+        claimantId,
+      });
+      return;
     }
 
     // Guard: total proposed shares (excluding disputed) must not exceed 100%
@@ -598,6 +680,7 @@ router.post("/:id/shares", requireRole("admin", "developer"), async (req, res) =
       res.status(400).json({
         error: `Adding this share would exceed 100%. Current total: ${(currentTotal + approvedSum).toFixed(4)}%.`,
       });
+      return;
     }
 
     const [share] = await db
@@ -625,6 +708,7 @@ router.post("/:id/shares", requireRole("admin", "developer"), async (req, res) =
 // PATCH /:id/shares/:shareId
 router.patch("/:id/shares/:shareId", requireRole("admin", "developer"), async (req, res) => {
   try {
+    const claimId = req.params.id as string;
     const shareId = req.params.shareId as string;
     const { userId: clerkUserId } = getAuth(req);
     const actor = clerkUserId ? await resolveUser(clerkUserId) : null;
@@ -635,6 +719,95 @@ router.patch("/:id/shares/:shareId", requireRole("admin", "developer"), async (r
       status?: string;
       disputeNotes?: string;
     };
+
+    // Ownership Attribution Hardening — share updates revalidate the source
+    // partner AND the underlying claimant identity (including approve transitions).
+    const [share] = await db
+      .select({
+        id: inheritanceClaimantSharesTable.id,
+        claimId: inheritanceClaimantSharesTable.claimId,
+        claimantId: inheritanceClaimantSharesTable.claimantId,
+      })
+      .from(inheritanceClaimantSharesTable)
+      .where(eq(inheritanceClaimantSharesTable.id, shareId))
+      .limit(1);
+    if (!share) {
+      res.status(404).json({ error: "Share not found." });
+      return;
+    }
+    const [claim] = await db
+      .select({
+        id: inheritanceClaimsTable.id,
+        projectId: inheritanceClaimsTable.projectId,
+        partnerId: inheritanceClaimsTable.partnerId,
+      })
+      .from(inheritanceClaimsTable)
+      .where(eq(inheritanceClaimsTable.id, share.claimId))
+      .limit(1);
+    if (!claim) {
+      res.status(404).json({ error: "Parent claim not found." });
+      return;
+    }
+    const actorCtx = {
+      id: actor?.id ?? null,
+      name: actor?.displayName ?? null,
+      role: null as string | null,
+    };
+    const sourceCheck = await assertPartnerIdentityValid({
+      partnerId: claim.partnerId,
+      action: "inheritance.share.update",
+      actor: actorCtx,
+      projectId: claim.projectId,
+      req,
+      targetTable: "inheritance_claimant_shares",
+      targetRecordId: shareId,
+      metadata: { side: "source_partner", toStatus: status ?? null },
+    });
+    if (!sourceCheck.ok) {
+      res.status(sourceCheck.status).json(sourceCheck.body);
+      return;
+    }
+    const [claimantRow] = await db
+      .select({
+        id: partnerClaimantsTable.id,
+        personMasterId: partnerClaimantsTable.personMasterId,
+        isActive: partnerClaimantsTable.isActive,
+      })
+      .from(partnerClaimantsTable)
+      .where(eq(partnerClaimantsTable.id, share.claimantId))
+      .limit(1);
+    if (!claimantRow || !claimantRow.isActive) {
+      res.status(422).json({
+        error: "Underlying claimant is missing or inactive.",
+        code: "IDENTITY_INVALID",
+        failureCode: "PARTNER_INACTIVE",
+      });
+      return;
+    }
+    const claimantPersonRes = await validatePersonMasterActive(
+      claimantRow.personMasterId,
+    );
+    if (!claimantPersonRes.ok) {
+      await recordIdentityFailure({
+        action: "inheritance.share.update",
+        failure: claimantPersonRes,
+        actor: actorCtx,
+        projectId: claim.projectId,
+        partnerId: claim.partnerId,
+        personMasterId: claimantRow.personMasterId ?? null,
+        targetTable: "inheritance_claimant_shares",
+        targetRecordId: shareId,
+        metadata: { side: "claimant", claimantId: share.claimantId, toStatus: status ?? null },
+        req,
+      });
+      res.status(422).json({
+        error: claimantPersonRes.reason,
+        code: "IDENTITY_INVALID",
+        failureCode: claimantPersonRes.code,
+        claimantId: share.claimantId,
+      });
+      return;
+    }
 
     const updates: Record<string, unknown> = {};
     if (proposedSharePct !== undefined) updates.proposedSharePct = String(proposedSharePct);

@@ -1,0 +1,248 @@
+AUDIT ONLY — NO CODE CHANGES
+
+Verify actual implementation on disk.
+
+Do not describe intended design.
+Do not describe session plans.
+Do not describe assumptions.
+
+Report only what is implemented in the repository.
+
+====================================================
+OWNERSHIP ATTRIBUTION HARDENING AUDIT
+====================================================
+
+1. CONTRIBUTION ATTRIBUTION PROTECTION
+
+For every ownership-affecting contribution route:
+
+- POST /contributions
+- contribution verification
+- contribution re-verification
+- contribution dispute resolution
+
+Report:
+
+- exact file
+- exact line numbers
+- validation functions executed
+- rejection conditions
+- returned status codes
+
+Confirm whether the following are blocked:
+
+- null partner
+- inactive partner
+- deleted partner
+- missing person_master
+- inactive person_master
+
+State YES or NO for each.
+
+====================================================
+OWNERSHIP CALCULATION AUDIT
+====================================================
+
+Inspect computeOwnership and every ownership aggregation path.
+
+Report:
+
+- exact source files
+- exact functions
+- exact validation logic
+
+Determine:
+
+Does ownership computation validate identity before aggregation?
+
+If invalid ownership identity exists:
+
+- excluded from calculation?
+- included in calculation?
+- logged?
+- audited?
+
+Provide exact evidence.
+
+====================================================
+SNAPSHOT PROTECTION AUDIT
+====================================================
+
+Inspect every ownership snapshot writer.
+
+Include:
+
+- manual snapshot
+- maturity snapshot
+- crystallization snapshot
+- backfill snapshot
+- any other snapshot creation route
+
+For each route report:
+
+- file
+- line
+- identity validation present?
+- identity validation absent?
+
+State whether snapshot creation is rejected when:
+
+- partner missing
+- partner inactive
+- person missing
+- person inactive
+
+====================================================
+CRYSTALLIZATION / BACKFILL AUDIT
+====================================================
+
+Inspect all crystallization and ownership backfill tools.
+
+Report:
+
+- routes
+- files
+- functions
+
+Confirm whether ownership identity validation executes before:
+
+- crystallization
+- ownership rebuild
+- ownership backfill
+- ownership regeneration
+
+State exact bypasses if any remain.
+
+====================================================
+TRANSFER WORKFLOW AUDIT
+====================================================
+
+Inspect every transfer stage:
+
+- create
+- submit
+- ROFR
+- approval
+- OTP generation
+- OTP verification
+- execute
+
+For each stage report:
+
+- identity validation present?
+- transferor validated?
+- buyer validated?
+- active partner required?
+- active person_master required?
+
+Provide line references.
+
+====================================================
+INHERITANCE WORKFLOW AUDIT
+====================================================
+
+Inspect:
+
+- claimant creation
+- claimant update
+- share creation
+- share update
+- approval
+- settlement
+
+For each stage report:
+
+- identity validation present?
+- claimant person validated?
+- partner validated?
+- active status validated?
+
+Provide exact file and line references.
+
+====================================================
+DATA HEALTH AUDIT
+====================================================
+
+List all ownership-attribution health endpoints.
+
+For each endpoint provide:
+
+- route
+- file
+- purpose
+
+Confirm existence of checks for:
+
+1. invalid ownership identity chain
+2. inactive partner in ownership contribution
+3. inactive person_master in ownership contribution
+4. invalid ownership snapshot holder
+5. invalid transfer participant
+6. invalid inheritance participant
+7. crystallization candidate with invalid identity
+
+State implemented or missing.
+
+====================================================
+AUDIT TABLE AUDIT
+====================================================
+
+Inspect identity_validation_failures table.
+
+Report:
+
+- schema
+- columns
+- indexes
+- append-only protections
+
+List every route writing to it.
+
+====================================================
+REMAINING BYPASS ANALYSIS
+====================================================
+
+List every route still capable of:
+
+- creating orphan ownership attribution
+- creating invalid ownership snapshots
+- bypassing identity validation
+- aggregating invalid ownership holders
+
+Provide exact file and line references.
+
+====================================================
+COMPLIANCE VERDICT
+====================================================
+
+Classify each area:
+
+- Fully Protected
+- Partially Protected
+- Unprotected
+
+Areas:
+
+1. Contribution Attribution
+2. Ownership Calculation
+3. Snapshot Generation
+4. Crystallization / Backfill
+5. Transfers
+6. Inheritance
+7. Data Health Coverage
+
+====================================================
+FINAL ANSWER
+====================================================
+
+Provide:
+
+- files modified
+- protections confirmed
+- protections missing
+- remaining bypass paths
+- whether Ownership Attribution Hardening is COMPLETE or NOT COMPLETE
+
+AUDIT ONLY.
+NO CODE CHANGES.
+NO DESIGN PROPOSALS.

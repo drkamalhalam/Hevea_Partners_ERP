@@ -503,6 +503,37 @@ router.post("/:id/submit", requireRole("admin", "developer"), async (req, res) =
     return res.status(422).json({ error: `Cannot submit: transfer is already in '${existing.status}' status` });
   }
 
+  // Ownership Attribution Hardening — revalidate identities at each
+  // workflow stage (submit), not only at execute.
+  const submitTransferorCheck = await assertPartnerIdentityValid({
+    partnerId: existing.transferorPartnerId,
+    action: "transfer.submit",
+    actor: { id: actor.id, name: actor.displayName, role: actor.role },
+    projectId: existing.projectId,
+    req,
+    targetTable: "ownership_transfers",
+    targetRecordId: id,
+    metadata: { side: "transferor", stage: "submit" },
+  });
+  if (!submitTransferorCheck.ok) {
+    return res.status(submitTransferorCheck.status).json(submitTransferorCheck.body);
+  }
+  if (existing.buyerPartnerId) {
+    const submitBuyerCheck = await assertPartnerIdentityValid({
+      partnerId: existing.buyerPartnerId,
+      action: "transfer.submit",
+      actor: { id: actor.id, name: actor.displayName, role: actor.role },
+      projectId: existing.projectId,
+      req,
+      targetTable: "ownership_transfers",
+      targetRecordId: id,
+      metadata: { side: "buyer", stage: "submit" },
+    });
+    if (!submitBuyerCheck.ok) {
+      return res.status(submitBuyerCheck.status).json(submitBuyerCheck.body);
+    }
+  }
+
   // For third_party: must always go through ROFR
   if (existing.transferType === "third_party" && skipRofr) {
     return res.status(422).json({ error: "Third-party transfers must go through the right of first refusal process" });
@@ -685,6 +716,37 @@ router.post("/:id/approve", requireRole("admin", "developer"), async (req, res) 
   // third_party transfers must have gone through ROFR rejection before approval
   if (existing.transferType === "third_party" && existing.status === "pending_rofr") {
     return res.status(422).json({ error: "Third-party transfer must complete the ROFR process before approval" });
+  }
+
+  // Ownership Attribution Hardening — revalidate transferor and buyer
+  // identities at approval, before the irrevocable execute step.
+  const approveTransferorCheck = await assertPartnerIdentityValid({
+    partnerId: existing.transferorPartnerId,
+    action: "transfer.approve",
+    actor: { id: actor.id, name: actor.displayName, role: actor.role },
+    projectId: existing.projectId,
+    req,
+    targetTable: "ownership_transfers",
+    targetRecordId: id,
+    metadata: { side: "transferor", stage: "approve" },
+  });
+  if (!approveTransferorCheck.ok) {
+    return res.status(approveTransferorCheck.status).json(approveTransferorCheck.body);
+  }
+  if (existing.buyerPartnerId) {
+    const approveBuyerCheck = await assertPartnerIdentityValid({
+      partnerId: existing.buyerPartnerId,
+      action: "transfer.approve",
+      actor: { id: actor.id, name: actor.displayName, role: actor.role },
+      projectId: existing.projectId,
+      req,
+      targetTable: "ownership_transfers",
+      targetRecordId: id,
+      metadata: { side: "buyer", stage: "approve" },
+    });
+    if (!approveBuyerCheck.ok) {
+      return res.status(approveBuyerCheck.status).json(approveBuyerCheck.body);
+    }
   }
 
   const b = parsed.data;

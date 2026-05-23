@@ -36,9 +36,19 @@ export type PartnerIdentityAction =
   | "contribution.verify"
   | "transfer.create"
   | "transfer.patch"
+  | "transfer.submit"
+  | "transfer.approve"
   | "transfer.execute"
   | "contribution.dispute_re_verify"
-  | "inheritance.finalize";
+  | "inheritance.finalize"
+  | "inheritance.share.create"
+  | "inheritance.share.update"
+  | "partner.claimant.create"
+  | "partner.claimant.patch"
+  | "ownership.snapshot.manual"
+  | "ownership.snapshot.maturity"
+  | "ownership.crystallization.backfill"
+  | "ownership.compute";
 
 export type PartnerIdentityFailureCode =
   // partner-side failures

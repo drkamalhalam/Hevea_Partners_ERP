@@ -22,7 +22,10 @@ import {
   RemovePartnerClaimantParams,
 } from "@workspace/api-zod";
 import { requireRole } from "../middlewares/auth";
-import { assertPersonMasterActive } from "../lib/partnerIdentityGuard";
+import {
+  assertPersonMasterActive,
+  assertPartnerIdentityValid,
+} from "../lib/partnerIdentityGuard";
 import { getAuth } from "@clerk/express";
 
 const router = Router();
@@ -331,15 +334,65 @@ router.post("/:id/claimants", requireRole("admin", "developer"), async (req, res
     res.status(400).json({ error: bodyParsed.error.message });
     return;
   }
+  // Ownership Attribution Hardening — claimant identity must resolve to an
+  // active person_master entry. The OpenAPI body schema does not yet declare
+  // personMasterId; we enforce server-side via raw body for backwards-compat.
+  const rawBody = req.body as Record<string, unknown>;
+  const claimantPersonMasterId =
+    typeof rawBody.personMasterId === "string" && rawBody.personMasterId.trim()
+      ? rawBody.personMasterId.trim()
+      : null;
+  if (!claimantPersonMasterId) {
+    res.status(422).json({
+      error:
+        "A personMasterId is required when adding a claimant — identity must resolve to the Person Registry.",
+      code: "IDENTITY_INVALID",
+      failureCode: "PERSON_MASTER_ID_MISSING",
+    });
+    return;
+  }
   try {
     let createdById: string | undefined;
+    let actorRole: string | null = null;
+    let actorName: string | null = null;
     if (req.userId) {
       const [row] = await db
-        .select({ id: usersTable.id })
+        .select({ id: usersTable.id, role: usersTable.role, displayName: usersTable.displayName })
         .from(usersTable)
         .where(eq(usersTable.clerkUserId, req.userId))
         .limit(1);
       createdById = row?.id;
+      actorRole = row?.role ?? null;
+      actorName = row?.displayName ?? null;
+    }
+
+    // Source partner must itself have a valid identity chain.
+    const sourcePartnerCheck = await assertPartnerIdentityValid({
+      partnerId: paramsParsed.data.id,
+      action: "partner.claimant.create",
+      actor: { id: createdById ?? null, name: actorName, role: actorRole },
+      projectId: bodyParsed.data.projectId,
+      req,
+      targetTable: "partner_claimants",
+      metadata: { side: "source_partner" },
+    });
+    if (!sourcePartnerCheck.ok) {
+      res.status(sourcePartnerCheck.status).json(sourcePartnerCheck.body);
+      return;
+    }
+
+    // Claimant's own person_master must be active.
+    const claimantPersonCheck = await assertPersonMasterActive({
+      personMasterId: claimantPersonMasterId,
+      action: "partner.claimant.create",
+      actor: { id: createdById ?? null, name: actorName, role: actorRole },
+      req,
+      targetTable: "partner_claimants",
+      metadata: { side: "claimant", projectId: bodyParsed.data.projectId },
+    });
+    if (!claimantPersonCheck.ok) {
+      res.status(claimantPersonCheck.status).json(claimantPersonCheck.body);
+      return;
     }
 
     const [claimant] = await db
@@ -347,6 +400,7 @@ router.post("/:id/claimants", requireRole("admin", "developer"), async (req, res
       .values({
         partnerId: paramsParsed.data.id,
         projectId: bodyParsed.data.projectId,
+        personMasterId: claimantPersonMasterId,
         claimantName: bodyParsed.data.claimantName,
         relationship: bodyParsed.data.relationship,
         phone: bodyParsed.data.phone,
@@ -381,9 +435,91 @@ router.patch("/:id/claimants/:claimantId", requireRole("admin", "developer"), as
     return;
   }
   try {
-    const updates = Object.fromEntries(
+    let actorId: string | null = null;
+    let actorRole: string | null = null;
+    let actorName: string | null = null;
+    if (req.userId) {
+      const [row] = await db
+        .select({ id: usersTable.id, role: usersTable.role, displayName: usersTable.displayName })
+        .from(usersTable)
+        .where(eq(usersTable.clerkUserId, req.userId))
+        .limit(1);
+      actorId = row?.id ?? null;
+      actorRole = row?.role ?? null;
+      actorName = row?.displayName ?? null;
+    }
+
+    // Look up existing claimant for project context and to revalidate identity.
+    const [existingClaimant] = await db
+      .select()
+      .from(partnerClaimantsTable)
+      .where(
+        and(
+          eq(partnerClaimantsTable.id, paramsParsed.data.claimantId),
+          eq(partnerClaimantsTable.partnerId, paramsParsed.data.id),
+        ),
+      )
+      .limit(1);
+    if (!existingClaimant) {
+      res.status(404).json({ error: "Claimant not found" });
+      return;
+    }
+
+    // Ownership Attribution Hardening — identity revalidated on every update.
+    // Source partner identity chain must still be valid.
+    const sourcePartnerCheck = await assertPartnerIdentityValid({
+      partnerId: paramsParsed.data.id,
+      action: "partner.claimant.patch",
+      actor: { id: actorId, name: actorName, role: actorRole },
+      projectId: existingClaimant.projectId,
+      req,
+      targetTable: "partner_claimants",
+      targetRecordId: paramsParsed.data.claimantId,
+      metadata: { side: "source_partner" },
+    });
+    if (!sourcePartnerCheck.ok) {
+      res.status(sourcePartnerCheck.status).json(sourcePartnerCheck.body);
+      return;
+    }
+
+    // If body changes personMasterId, validate new value; otherwise revalidate existing.
+    const rawBody = req.body as Record<string, unknown>;
+    const nextPersonMasterId =
+      "personMasterId" in rawBody
+        ? typeof rawBody.personMasterId === "string" && rawBody.personMasterId.trim()
+          ? rawBody.personMasterId.trim()
+          : null
+        : existingClaimant.personMasterId;
+
+    if (!nextPersonMasterId) {
+      res.status(422).json({
+        error:
+          "Claimant must remain linked to a Person Registry entry (personMasterId).",
+        code: "IDENTITY_INVALID",
+        failureCode: "PERSON_MASTER_ID_MISSING",
+      });
+      return;
+    }
+    const claimantPersonCheck = await assertPersonMasterActive({
+      personMasterId: nextPersonMasterId,
+      action: "partner.claimant.patch",
+      actor: { id: actorId, name: actorName, role: actorRole },
+      req,
+      targetTable: "partner_claimants",
+      targetRecordId: paramsParsed.data.claimantId,
+      metadata: { side: "claimant", projectId: existingClaimant.projectId },
+    });
+    if (!claimantPersonCheck.ok) {
+      res.status(claimantPersonCheck.status).json(claimantPersonCheck.body);
+      return;
+    }
+
+    const updates: Record<string, unknown> = Object.fromEntries(
       Object.entries(bodyParsed.data).filter(([, v]) => v !== undefined),
     );
+    if ("personMasterId" in rawBody) {
+      updates.personMasterId = nextPersonMasterId;
+    }
     const [claimant] = await db
       .update(partnerClaimantsTable)
       .set({ ...updates, updatedAt: new Date() })

@@ -138,6 +138,15 @@ export const contributionsTable = pgTable("contributions", {
     .$onUpdate(() => new Date()),
 });
 
+// NOTE: Ownership-attribution integrity is enforced by the PostgreSQL CHECK
+// constraint `contributions_ownership_attribution_not_null`, which is applied
+// out-of-band as `NOT VALID` so that legacy rows remain untouched but every
+// new INSERT and every UPDATE re-evaluating the column is rejected when:
+//   affectsOwnership=true AND isActive=true AND deletedAt IS NULL AND partnerId IS NULL.
+// Drizzle-kit cannot emit `NOT VALID`, so the constraint is created by the
+// API server at boot via ensureOwnershipAttributionConstraint() in
+// artifacts/api-server/src/lib/ownershipAttributionGuard.ts.
+
 // ── Zod schemas ───────────────────────────────────────────────────────────
 
 export const insertContributionSchema = createInsertSchema(
