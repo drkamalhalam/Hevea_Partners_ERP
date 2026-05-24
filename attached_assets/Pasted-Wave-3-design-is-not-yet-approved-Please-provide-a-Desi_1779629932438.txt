@@ -1,0 +1,58 @@
+Wave 3 design is not yet approved.
+
+Please provide a Design Revision addressing the following items before implementation begins.
+
+Entitlement attribution clarification (required) 
+
+The current design appears to derive revenue shares directly from ownership snapshots:
+
+grossRevenueShare = lineItem.grossAmount × ownershipPct
+
+Please explain in detail how attribution is derived from entitlement ownership rather than ownership percentage.
+
+Specifically address:
+
+entitlement ownership at sale time entitlement transfers inheritance transfers internal entitlement purchases blocked entitlement enabled entitlement consumed entitlement line determination 
+
+Provide a worked example proving attribution follows entitlement ownership and not merely ownership percentages.
+
+Internal partner purchase accounting neutrality 
+
+Current design credits sellers immediately but defers buyer-side treatment to a later wave.
+
+Please demonstrate that no temporary inflation of balances or project financial position occurs and explain the accounting model.
+
+Money utility alignment 
+
+Wave 3 introduces revenueHandler/money.ts.
+
+Explain why this does not conflict with the approved centralized money-handling architecture and prior audit findings.
+
+Processing model justification 
+
+Please justify the need for both:
+
+inline processing manual sweep processing 
+
+Describe race-condition prevention and explain why a sweep-only model is insufficient during rollout.
+
+Rollback governance 
+
+Rollback instructions currently include deleting financial records.
+
+Provide an audit-preserving rollback strategy consistent with append-only financial governance.
+
+Event semantics 
+
+Adopt Option B.
+
+One sale should produce one attribution-driving event:
+
+SaleFinanciallyRecognized for external sales InternalPartnerPurchaseCompleted for internal sales 
+
+Please update the design accordingly and remove the dual-event ambiguity.
+
+Return a revised Wave 3 Design Confirmation Report after these items are addressed.
+
+Do not begin implementation until the revised design is reviewed and approved.
+
