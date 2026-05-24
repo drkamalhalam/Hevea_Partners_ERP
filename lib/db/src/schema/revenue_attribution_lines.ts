@@ -19,6 +19,7 @@ import {
   text,
   timestamp,
   index,
+  uniqueIndex,
   check,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
@@ -100,6 +101,20 @@ export const revenueAttributionLinesTable = pgTable(
     byProjectPartner: index("ral_project_partner_idx").on(
       t.projectId,
       t.partnerId,
+    ),
+    /**
+     * Wave-3 idempotency guard. One attribution row per
+     * (sale_reference_type, sale_reference_id, partner_id, revenue_category).
+     * Partial: applies only to rows where revenue_category is non-null (always
+     * true in V3 — included for future schema evolution).
+     */
+    uniqueSalePartnerCategory: uniqueIndex(
+      "ral_sale_partner_category_uq",
+    ).on(
+      t.saleReferenceType,
+      t.saleReferenceId,
+      t.partnerId,
+      t.revenueCategory,
     ),
     amountsNonNegative: check(
       "ral_amounts_chk",

@@ -118,6 +118,16 @@ export const partnerFinancialLedgerTable = pgTable(
       .on(t.reversesEntryId)
       .where(sql`${t.reversesEntryId} IS NOT NULL`),
 
+    /**
+     * Wave-3 idempotency guard. One revenue_credit per
+     * (reference_type, reference_id, partner_id). Prevents double-credit on
+     * retried sale-event processing. Partial: scoped to revenue_credit rows
+     * only — all other entry types remain unconstrained on this tuple.
+     */
+    uniqueRevenueCredit: uniqueIndex("pfl_revenue_credit_uq")
+      .on(t.referenceType, t.referenceId, t.partnerId)
+      .where(sql`${t.entryType} = 'revenue_credit' AND ${t.referenceId} IS NOT NULL`),
+
     amountPositive: check("pfl_amount_positive_chk", sql`${t.amount} > 0`),
     directionValid: check(
       "pfl_direction_chk",
