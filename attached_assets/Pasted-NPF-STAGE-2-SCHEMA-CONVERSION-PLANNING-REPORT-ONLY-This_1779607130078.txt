@@ -1,0 +1,150 @@
+NPF STAGE 2 — SCHEMA CONVERSION PLANNING REPORT ONLY
+
+This task is READ-ONLY.
+
+DO NOT:
+
+modify code modify schema generate migrations run drizzle push run db push modify OpenAPI regenerate clients install packages alter database tables create pull requests 
+
+Purpose: Produce the complete Stage 2 migration plan for Numeric Precision Foundation.
+
+==================================================== OUTPUT REQUIRED 
+
+SECTION 1 — COLUMN INVENTORY
+
+List every remaining REAL/FLOAT column in production schema.
+
+For each column provide:
+
+table column current type proposed type classification: money percentage quantity/weight geographic measurement other 
+
+====================================================
+
+SECTION 2 — CONVERSION MATRIX
+
+For every column specify target type.
+
+Examples:
+
+Money: numeric(15,2)
+
+Weight: numeric(12,3)
+
+Percent: numeric(7,4) or justified alternative
+
+GPS: leave unchanged unless strong justification exists
+
+Explain rationale for every category.
+
+====================================================
+
+SECTION 3 — DRIZZLE FILE IMPACT
+
+List:
+
+every schema file requiring edits exact columns affected estimated lines changed 
+
+====================================================
+
+SECTION 4 — API CONTRACT IMPACT
+
+Identify:
+
+every endpoint returning affected fields every endpoint accepting affected fields 
+
+For each endpoint specify:
+
+Current wire type: number
+
+Future wire type: string decimal
+
+or
+
+unchanged
+
+====================================================
+
+SECTION 5 — OPENAPI IMPACT
+
+List:
+
+schemas requiring updates DTOs affected request payloads affected response payloads affected 
+
+Estimate regeneration impact.
+
+====================================================
+
+SECTION 6 — FRONTEND IMPACT
+
+Identify:
+
+pages hooks utilities analytics screens 
+
+that currently assume numeric values.
+
+Highlight any location that may break after numeric-string migration.
+
+====================================================
+
+SECTION 7 — DATABASE MIGRATION PLAN
+
+Produce exact execution sequence.
+
+Include:
+
+Phase A schema preparation
+
+Phase B migration
+
+Phase C validation
+
+Phase D cutover
+
+Phase E rollback
+
+No SQL execution.
+
+Planning only.
+
+====================================================
+
+SECTION 8 — VALIDATION CHECKLIST
+
+After migration verify:
+
+ownership calculations contribution calculations burden calculations reimbursement calculations LCA calculations distribution previews fifty percent model calculations landowner accounting dashboards analytics financial reports 
+
+Specify exact validation points.
+
+====================================================
+
+SECTION 9 — RISK ANALYSIS
+
+Identify:
+
+highest risk files highest risk calculations highest risk endpoints expected type conversion failures expected client regeneration failures 
+
+====================================================
+
+SECTION 10 — EXECUTION RECOMMENDATION
+
+Recommend:
+
+migration order deployment order rollback order estimated implementation effort 
+
+====================================================
+
+FINAL VERDICT
+
+Return one of:
+
+READY FOR STAGE 2 IMPLEMENTATION
+
+or
+
+NOT READY FOR STAGE 2 IMPLEMENTATION
+
+with justification.
+
+No implementation. No schema changes. No migrations. Planning report only.
+
