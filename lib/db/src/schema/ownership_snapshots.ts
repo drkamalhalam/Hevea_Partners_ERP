@@ -1,5 +1,4 @@
-import { pgTable, uuid, text, timestamp, jsonb } from "drizzle-orm/pg-core";
-import { numericFlex } from "../numericFlex";
+import { pgTable, uuid, text, timestamp, jsonb, real } from "drizzle-orm/pg-core";
 import { projectsTable } from "./projects";
 import { usersTable } from "./users";
 import { ownershipSnapshotTypeEnum } from "./enums";
@@ -35,18 +34,16 @@ export const ownershipSnapshotsTable = pgTable("ownership_snapshots", {
 
   lifecycleStatus: text("lifecycle_status").notNull().default("prematurity"),
 
-  /** Sum of all partner amounts — denominator for % calculations. */
-  totalRecognizedAmount: numericFlex("total_recognized_amount", { precision: 15, scale: 2 })
-    .notNull()
-    .default(0),
+  /** Sum of all partner amounts — denominator for % calculations.
+   *  Historical/snapshot table — type preserved as real per NPF Stage 2 scope
+   *  (table not enumerated in spec conversion list). */
+  totalRecognizedAmount: real("total_recognized_amount").notNull().default(0),
 
   /** Sum of land_notional contributions at snapshot time. */
-  landTotal: numericFlex("land_total", { precision: 15, scale: 2 }).notNull().default(0),
+  landTotal: real("land_total").notNull().default(0),
 
   /** Sum of economic_investment contributions at snapshot time. */
-  economicTotal: numericFlex("economic_total", { precision: 15, scale: 2 })
-    .notNull()
-    .default(0),
+  economicTotal: real("economic_total").notNull().default(0),
 
   /** Full breakdown array (see type comment above). */
   entries: jsonb("entries").$type<OwnershipSnapshotEntry[]>().notNull().default([]),
