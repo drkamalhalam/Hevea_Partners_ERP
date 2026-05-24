@@ -51,24 +51,27 @@ import {
 } from "lucide-react";
 
 // ── Formatters ────────────────────────────────────────────────────────────────
+// NPF Stage 2 — accept string|number from server (numeric(15,2) columns).
+import { parseNumeric } from "@/lib/numeric";
 
-function fmt(n: number): string {
+function fmt(raw: number | string | null | undefined): string {
+  const n = parseNumeric(raw);
   const abs = Math.abs(n);
   if (abs >= 10_00_000) return `₹${(n / 10_00_000).toFixed(2)}L`;
   if (abs >= 1_000) return `₹${(n / 1_000).toFixed(1)}K`;
   return `₹${n.toFixed(0)}`;
 }
 
-function fmtFull(n: number): string {
+function fmtFull(raw: number | string | null | undefined): string {
   return new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",
     maximumFractionDigits: 0,
-  }).format(n);
+  }).format(parseNumeric(raw));
 }
 
-function pct(n: number): string {
-  return `${n.toFixed(1)}%`;
+function pct(raw: number | string | null | undefined): string {
+  return `${parseNumeric(raw).toFixed(1)}%`;
 }
 
 // ── Rating helpers ─────────────────────────────────────────────────────────────

@@ -1,5 +1,6 @@
 import { useRoute, Link } from "wouter";
 import { useGetProject, useListAgreements, getGetProjectQueryKey } from "@workspace/api-client-react";
+import { parseNumeric } from "@/lib/numeric";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -156,7 +157,7 @@ export default function ProjectDetails() {
         {!isFiftyPercent && (
           <Card>
             <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Land Notional Value</CardTitle></CardHeader>
-            <CardContent><p className="text-2xl font-bold">{project.landNotionalValue ? `₹${project.landNotionalValue.toLocaleString("en-IN")}` : "—"}</p></CardContent>
+            <CardContent><p className="text-2xl font-bold">{project.landNotionalValue ? `₹${parseNumeric(project.landNotionalValue).toLocaleString("en-IN")}` : "—"}</p></CardContent>
           </Card>
         )}
         {isFiftyPercent && (
@@ -174,7 +175,7 @@ export default function ProjectDetails() {
             <div><dt className="text-muted-foreground mb-1">Start Date</dt><dd className="font-medium">{project.startDate}</dd></div>
             {project.expectedMaturityDate && <div><dt className="text-muted-foreground mb-1">Expected Maturity</dt><dd className="font-medium">{project.expectedMaturityDate}</dd></div>}
             {!isFiftyPercent && project.landValuePerUnit && (
-              <div><dt className="text-muted-foreground mb-1">Value Per {project.landAreaUnit}</dt><dd className="font-medium">₹{project.landValuePerUnit.toLocaleString("en-IN")}</dd></div>
+              <div><dt className="text-muted-foreground mb-1">Value Per {project.landAreaUnit}</dt><dd className="font-medium">₹{parseNumeric(project.landValuePerUnit).toLocaleString("en-IN")}</dd></div>
             )}
             <div><dt className="text-muted-foreground mb-1">District</dt><dd className="font-medium">{project.district}</dd></div>
             <div><dt className="text-muted-foreground mb-1">State</dt><dd className="font-medium">{project.state}</dd></div>
@@ -213,7 +214,7 @@ export default function ProjectDetails() {
                 <div key={a.id} className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
                   <div>
                     <p className="font-medium text-sm">{a.landOwnerName} (Landowner)</p>
-                    <p className="text-xs text-muted-foreground">{a.landArea} {a.landAreaUnit} · ₹{a.landNotionalValue.toLocaleString("en-IN")} notional value</p>
+                    <p className="text-xs text-muted-foreground">{a.landArea} {a.landAreaUnit} · ₹{parseNumeric(a.landNotionalValue).toLocaleString("en-IN")} notional value</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className={`text-xs px-2 py-0.5 rounded-full capitalize font-medium ${a.status === "active" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}`}>{a.status}</span>

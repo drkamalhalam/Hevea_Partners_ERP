@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1779613581,
+      "tag": "0001_npf_stage2_money_precision",
+      "breakpoints": false
+    }
+  ]
+}

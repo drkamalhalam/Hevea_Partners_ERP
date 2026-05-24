@@ -36,6 +36,10 @@ import {
 } from "lucide-react";
 
 // ── Formatters ─────────────────────────────────────────────────────────────
+// NPF Stage 2 — `parseFloat(String(...))` is functionally equivalent to
+// the shared `parseNumeric` helper for these formatters; kept as-is to
+// avoid churn. The pct helper is hardened below.
+import { parseNumeric } from "@/lib/numeric";
 
 const fmtINR = (v: unknown, compact = false) => {
   const n = parseFloat(String(v ?? "0")) || 0;
@@ -48,7 +52,7 @@ const fmtINR = (v: unknown, compact = false) => {
   return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);
 };
 
-const fmtPct = (v: number) => `${v.toFixed(1)}%`;
+const fmtPct = (v: number | string | null | undefined) => `${parseNumeric(v).toFixed(1)}%`;
 
 // ── Colour palette ─────────────────────────────────────────────────────────
 

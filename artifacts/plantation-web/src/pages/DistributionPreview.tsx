@@ -53,13 +53,16 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 
 // ── Formatting helpers ────────────────────────────────────────────────────
+// NPF Stage 2 — accept string|number from server (numeric(15,2) columns).
+import { parseNumeric } from "@/lib/numeric";
 
-function fmt(n: number): string {
-  return `₹${n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+function fmt(n: number | string | null | undefined): string {
+  const v = parseNumeric(n);
+  return `₹${v.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
-function pct(n: number): string {
-  return `${n.toFixed(2)}%`;
+function pct(n: number | string | null | undefined): string {
+  return `${parseNumeric(n).toFixed(2)}%`;
 }
 
 // ── Model badge ───────────────────────────────────────────────────────────

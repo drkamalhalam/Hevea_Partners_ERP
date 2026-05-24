@@ -1,0 +1,174 @@
+HEVEA PARTNERS ERP — NPF STAGE 2 CLOSURE WAVE
+
+IMPORTANT
+
+This is a closure and validation wave only.
+
+Do NOT start Stage 3.
+
+Do NOT introduce Decimal.js rewrites.
+
+Do NOT redesign financial architecture.
+
+Do NOT modify ownership formulas.
+
+Do NOT modify contribution formulas.
+
+Do NOT modify reimbursement formulas.
+
+Do NOT modify entitlement logic.
+
+Do NOT modify sale allocation logic.
+
+Do NOT modify lifecycle logic.
+
+Do NOT modify OTP logic.
+
+Do NOT modify payment workflows.
+
+Do NOT modify approval workflows.
+
+Goal is to close all remaining NPF Stage 2 gaps and produce a final sign-off report.
+
+================================================== TASK 1 — FRONTEND NUMERIC HARDENING 
+
+A parseNumeric helper already exists:
+
+src/lib/numeric.ts
+
+Audit and wire it into all remaining affected pages.
+
+Verify and fix all server-derived values used in:
+
+toFixed() toLocaleString() Math.* / 
+
+< 
+
+=
+
+<= 
+
+Target pages include:
+
+DistributionPreview LandownerProfitability Expenditure SalesOrderDetail FinancialAnalytics Inventory Production LCA Ledger LCA Projections BurdenRecovery Ownership OwnershipDetails Crystallization ProjectDetails ProjectParcels AgreementDetail 
+
+Goal:
+
+No page should assume server money/percentage/quantity fields are guaranteed JS numbers.
+
+Wrap at the read boundary.
+
+Do not change UI behavior.
+
+Do not change calculations.
+
+================================================== TASK 2 — VALIDATION OF PREVIOUSLY UNVERIFIED MODULES 
+
+Perform actual verification and provide evidence.
+
+A. Burden Recovery
+
+Validate:
+
+totalRecoverable totalRecovered totalRemaining 
+
+Confirm:
+
+recoveredAmount <= recoverableAmount
+
+Confirm no regression from schema conversion.
+
+Status required:
+
+PASS or FAIL
+
+B. Landowner Accounting
+
+Validate:
+
+ledger balances revenue totals recovery totals ownership percentage handling 
+
+Confirm:
+
+Net position calculations still behave correctly.
+
+Status required:
+
+PASS or FAIL
+
+C. Project Card Summary
+
+Validate:
+
+aggregate balances financial totals ownership totals dashboard values 
+
+Confirm:
+
+No NaN No string concatenation No formatting regressions
+
+Status required:
+
+PASS or FAIL
+
+================================================== TASK 3 — FORMAL MIGRATION ARTIFACT 
+
+Current implementation used:
+
+drizzle push migration helper script 
+
+Create a formal migration artifact suitable for governance review.
+
+Requirements:
+
+committed migration reviewable SQL clearly documents all ALTER COLUMN conversions 
+
+No new schema changes.
+
+No new column changes.
+
+No recalculation logic.
+
+Migration artifact should simply represent the already-approved NPF Stage 2 conversion.
+
+================================================== TASK 4 — DATA HEALTH VALIDATION 
+
+Verify money precision diagnostics.
+
+Confirm:
+
+summary counters function drill-down endpoints function no runtime failures no type issues 
+
+Provide endpoint list.
+
+================================================== TASK 5 — TYPECHECK AND BUILD 
+
+Run:
+
+pnpm run typecheck
+
+Required:
+
+PASS:
+
+api-server plantation-web workspace libraries scripts 
+
+Verify application boot.
+
+================================================== TASK 6 — FINAL NPF STAGE 2 SIGN-OFF REPORT 
+
+Provide:
+
+Files changed Frontend pages hardened Validation results Migration artifact summary Data-health verification Typecheck results Build results Remaining risks Production-readiness verdict 
+
+Use only:
+
+READY FOR REVIEW READY FOR DEPLOYMENT NOT READY
+
+================================================== EXPLICITLY OUT OF SCOPE 
+
+DO NOT start:
+
+NPF Stage 3 Decimal.js rollout Payment Collection Workflow Partner Financial Ledger Profit Ledger Distributable Balance Engine Approval Framework Consolidation Settlement redesign Entitlement redesign Revenue distribution redesign 
+
+This task is only the closure and final validation of NPF Stage 2.
+
