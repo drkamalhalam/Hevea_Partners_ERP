@@ -1,0 +1,70 @@
+WAVE 3 DESIGN REVIEW — FINAL DECISION
+
+Revision 4 satisfactorily addresses the remaining open items.
+
+Accepted:
+
+R1 Entitlement-based attribution (not ownership-percentage attribution) R2 Internal partner purchase neutrality model R3 Centralized money utility reuse R4 Inline + sweep processing model R5 Audit-preserving rollback model R6 Single-event attribution semantics R7 Blocked entitlement preserved through held_distribution_ledger R8 Entitlement engine reuse boundary R9 Held-revenue release accounting contract R10 Multi-transfer chronological entitlement-chain resolution 
+
+APPROVED FOR WAVE 3 IMPLEMENTATION
+
+Implementation may proceed subject to the following recorded notes.
+
+IMPLEMENTATION NOTE 1 — revenue_attribution_lines mutability exception
+
+Wave 1 established write-once evidence tables.
+
+Revision 4 introduces two explicit exceptions:
+
+ledger_entry_id back-fill after held-amount release forfeiture token append in notes 
+
+These are approved exceptions and must be documented in:
+
+WAVE3_CLOSURE_REPORT.md replit.md architecture notes revenue_attribution_lines schema documentation 
+
+No other post-create updates are permitted.
+
+Any future update path beyond these two exceptions requires separate review.
+
+IMPLEMENTATION NOTE 2 — partial retained-kg transfer support
+
+Revision 4 correctly documents:
+
+stockEntitlementRetainedKg stockEntitlementTransferredKg
+
+as future refinement behavior.
+
+Wave 3 implementation may initially support the binary cases:
+
+retain_with_seller transfer_to_buyer 
+
+provided that:
+
+unsupported partial-split records are detected warning is logged attribution remains deterministic no silent approximation is performed 
+
+Closure report must explicitly state whether partial retained/transferred KG logic was:
+
+A. fully implemented
+
+or
+
+B. documented and deferred
+
+No ambiguity.
+
+APPROVAL CONDITIONS
+
+Wave 3 scope remains limited to:
+
+revenue attribution infrastructure entitlement resolution sale revenue handler revenue_attribution_lines population revenue_credit ledger generation held entitlement creation admin processing endpoints event publication call-site integration 
+
+Wave 3 must not introduce:
+
+dashboard/report rewiring cost allocation logic reimbursement logic distribution payment logic partner balance view consumption closure snapshot functionality new entitlement tables alternative hold mechanisms 
+
+Required closure verification:
+
+typecheck clean schema push clean architect review clean flag-off behavior verified attribution reconciliation verified blocked-entitlement hold path verified idempotency verified isolation grep re-run closure report produced 
+
+Subject to the notes above, Wave 3 is approved and implementation may begin.
+
