@@ -1,0 +1,126 @@
+BEGIN NPF PARTNER FINANCIAL LEDGER V3
+
+IMPLEMENTATION WAVE 1 — SCHEMA FOUNDATION ONLY
+
+This task is implementation, not architecture review.
+
+Use:
+
+Partner Financial Ledger V3 Final Freeze Implementation Readiness Report Sections 1–10 Existing project architecture Existing NPF precision framework 
+
+STRICT RULES
+
+DO NOT:
+
+implement business logic implement revenue handlers implement cost allocation handlers implement reimbursement handlers implement dashboard rewiring implement closure logic implement validators activate feature flags remove existing code paths modify commercial model rules change ownership logic change entitlement logic 
+
+Wave 1 scope is DATABASE FOUNDATION ONLY.
+
+REQUIRED WORK
+
+Create all approved V3 tables 
+
+Create:
+
+partner_financial_ledger partner_balance_snapshots revenue_attribution_lines cost_allocation_lines reimbursement_allocation_lines project_closure_partner_snapshots sale_event_journal processed_sale_events 
+
+Use existing codebase conventions.
+
+Use text + CHECK constraints for enum-like values if that matches existing patterns.
+
+Add approved columns 
+
+sales_transactions
+
+payment_status recognized_at 
+
+sales_deductions
+
+allocation_basis 
+
+distribution_payment_events
+
+balance_before_payment balance_after_payment available_balance_before_payment available_balance_after_payment balance_snapshot_max_ledger_id balance_snapshot_max_hold_id is_override override_reason override_acknowledged_by 
+
+project_closure_workflows
+
+closure_explanation closure_ownership_snapshot_reference closure_ledger_max_id closure_holds_max_id 
+
+partner_financial_ledger
+
+created_by_handler Create approved indexes 
+
+Implement all indexes documented in Section 10.
+
+Use production-safe migration strategy.
+
+Create approved constraints 
+
+Implement:
+
+amount > 0 direction consistency reversal requirements allocation percentage checks reimbursement self-transfer prohibition override field requirements snapshot arithmetic checks FK integrity UNIQUE constraints Create partner_financial_position_v 
+
+Create the approved view.
+
+No dashboard integration yet.
+
+No route integration yet.
+
+No read-source replacement yet.
+
+Feature Flag Registration 
+
+Register only.
+
+All flags default OFF.
+
+Create:
+
+FIN_LEDGER_ENABLED FIN_SALE_EVENT_EMISSION_ENABLED FIN_REVENUE_ATTRIBUTION_ENABLED FIN_COST_ALLOCATION_ENABLED FIN_REIMBURSEMENT_ENABLED FIN_DISTRIBUTION_LEDGER_ENABLED FIN_CLOSURE_SNAPSHOT_ENABLED FIN_LANDOWNER_WRITES_DEPRECATED FIN_LEDGER_BACKFILL_LEGACY_LANDOWNER FIN_DASHBOARD_USE_V3_VIEW
+
+No behavior behind flags yet.
+
+Migration Safety 
+
+Requirements:
+
+additive only no destructive migrations no table removals no column removals no data rewrites no ownership recalculation no financial recalculation Deliverables 
+
+Produce a Wave 1 Closure Report containing:
+
+A. Files created
+
+B. Files modified
+
+C. New tables created
+
+D. New columns added
+
+E. Constraints created
+
+F. Indexes created
+
+G. View definition summary
+
+H. Feature flags registered
+
+I. Migration files generated
+
+J. Typecheck results
+
+K. Build results
+
+L. Runtime startup results
+
+M. Any blockers discovered
+
+N. Any deviations from V3 design
+
+O. Production readiness assessment for Wave 1 only
+
+STOP AFTER WAVE 1.
+
+Do not begin Wave 2.
+
+Wait for review and approval before implementing sale event infrastructure.
+

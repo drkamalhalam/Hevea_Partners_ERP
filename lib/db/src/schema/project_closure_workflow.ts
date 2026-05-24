@@ -67,6 +67,16 @@ export const projectClosureWorkflowsTable = pgTable("project_closure_workflows",
   cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
   cancellationReason: text("cancellation_reason"),
 
+  // ── V3 Wave 1: closure snapshot frontier refs (no behavior yet) ─────────
+  /** Free-text closure rationale captured at snapshot time. */
+  closureExplanation: text("closure_explanation"),
+  /** FK-by-id to the ownership snapshot used at closure (FK left soft to avoid cycles). */
+  closureOwnershipSnapshotReference: uuid("closure_ownership_snapshot_reference"),
+  /** Max partner_financial_ledger.id frozen at closure (replay frontier). */
+  closureLedgerMaxId: uuid("closure_ledger_max_id"),
+  /** Max held_distribution_ledger.id frozen at closure (held frontier). */
+  closureHoldsMaxId: uuid("closure_holds_max_id"),
+
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .defaultNow()

@@ -109,3 +109,16 @@ export * from "./work_assignment_audit";
 export * from "./ownership_lock_attempts";
 export * from "./identity_validation_failures";
 export * from "./precision_conversion_audit";
+
+// ── V3 Partner Financial Ledger (Wave 1) ─────────────────────────────────
+export * from "./partner_financial_ledger";
+export * from "./partner_balance_snapshots";
+export * from "./revenue_attribution_lines";
+export * from "./cost_allocation_lines";
+export * from "./reimbursement_allocation_lines";
+export * from "./project_closure_partner_snapshots";
+export * from "./sale_event_journal";
+export * from "./processed_sale_events";
+// partner_financial_position_v is created via raw SQL post-push
+// (see scripts/src/createPartnerFinancialPositionView.ts) because
+// drizzle-kit 0.31 cannot emit raw-SQL pgView definitions reliably.

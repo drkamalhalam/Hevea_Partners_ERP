@@ -24,6 +24,11 @@ export const salesTransactionsTable = pgTable("sales_transactions", {
   totalDeductions: numeric("total_deductions", { precision: 15, scale: 2 }).notNull().default("0"),
   totalNetRevenue: numeric("total_net_revenue", { precision: 15, scale: 2 }).notNull().default("0"),
   distributionId: uuid("distribution_id"),
+  // ── V3 Wave 1: payment recognition state (no behavior yet) ───────────────
+  /** pending | partial | paid | refunded — drives V3 recognition trigger */
+  paymentStatus: text("payment_status").notNull().default("pending"),
+  /** Set by V3 sale event emitter when revenue is financially recognized */
+  recognizedAt: timestamp("recognized_at", { withTimezone: true }),
   confirmedAt: timestamp("confirmed_at", { withTimezone: true }),
   confirmedById: uuid("confirmed_by_id").references(() => usersTable.id, { onDelete: "set null" }),
   confirmedByName: text("confirmed_by_name"),
@@ -66,5 +71,8 @@ export const salesDeductionsTable = pgTable("sales_deductions", {
   deductionType: text("deduction_type").notNull().default("other"),
   description: text("description"),
   amount: numeric("amount", { precision: 15, scale: 2 }).notNull(),
+  // ── V3 Wave 1: per-deduction allocation basis (no behavior yet) ─────────
+  /** pro_rata_kg | pro_rata_revenue | flat_split — used by revenue handler */
+  allocationBasis: text("allocation_basis").notNull().default("pro_rata_kg"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

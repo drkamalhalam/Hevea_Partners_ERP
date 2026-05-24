@@ -122,6 +122,26 @@ export const distributionPaymentEventsTable = pgTable("distribution_payment_even
   performedByName: text("performed_by_name"),
   performedByRole: text("performed_by_role"),
 
+  // ── V3 Wave 1: balance snapshot + override fields (no behavior yet) ─────
+  /** Partner's distributable balance immediately before this payment was applied. */
+  balanceBeforePayment: numeric("balance_before_payment", { precision: 15, scale: 2 }),
+  /** Partner's distributable balance immediately after this payment was applied. */
+  balanceAfterPayment: numeric("balance_after_payment", { precision: 15, scale: 2 }),
+  /** Available balance (distributable − held) immediately before this payment. */
+  availableBalanceBeforePayment: numeric("available_balance_before_payment", { precision: 15, scale: 2 }),
+  /** Available balance immediately after this payment. */
+  availableBalanceAfterPayment: numeric("available_balance_after_payment", { precision: 15, scale: 2 }),
+  /** Frontier: max partner_financial_ledger.id used to compute the balance snapshot. */
+  balanceSnapshotMaxLedgerId: uuid("balance_snapshot_max_ledger_id"),
+  /** Frontier: max held_distribution_ledger.id used to compute the available balance. */
+  balanceSnapshotMaxHoldId: uuid("balance_snapshot_max_hold_id"),
+  /** True when an admin/dev bypassed the over-distribution guard. */
+  isOverride: boolean("is_override").notNull().default(false),
+  /** Required when is_override = true. */
+  overrideReason: text("override_reason"),
+  /** Required when is_override = true. */
+  overrideAcknowledgedBy: uuid("override_acknowledged_by").references(() => usersTable.id, { onDelete: "set null" }),
+
   // Immutable
   performedAt: timestamp("performed_at", { withTimezone: true }).notNull().defaultNow(),
 });
