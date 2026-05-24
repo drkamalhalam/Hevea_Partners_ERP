@@ -1,0 +1,166 @@
+PARTNER FINANCIAL LEDGER – V3 FINAL FREEZE REVISION
+
+This is the FINAL architecture refinement before implementation.
+
+Do NOT redesign the system.
+
+Do NOT remove any approved functionality.
+
+Preserve all approved rules from:
+
+Financial Ledger Architecture v1 Architecture Revision v2 Existing Sale Rubber architecture Existing Entitlement architecture Existing Ownership architecture Existing Inheritance architecture Existing Project Closure architecture Existing NPF money utility architecture 
+
+Goal: Incorporate the six remaining corrections below and then freeze the design for implementation.
+
+==================================================
+
+STORE SALE REVENUE ATTRIBUTION REFINEMENT ================================================== 
+
+Current revenue attribution uses:
+
+revenue = kg_consumed × sale_price
+
+This is insufficient for future accounting.
+
+Revise revenue attribution lines so they support:
+
+gross_revenue_amount cost_deduction_amount net_revenue_amount recognized_partner_revenue
+
+Revenue ledger credits must use the approved recognized revenue amount.
+
+Design must support future deductions such as:
+
+transport commission market charges loading/unloading future sale-related deductions 
+
+without requiring architecture changes.
+
+Do not alter current business behaviour.
+
+This is a structural enhancement only.
+
+================================================== 2. DISTRIBUTION PAYMENT SNAPSHOT 
+
+Every distribution payment record must preserve:
+
+balance_before_payment balance_after_payment available_balance_before_payment available_balance_after_payment
+
+These values must be captured inside the same transaction that creates the payment ledger entry.
+
+Historical balances must remain reconstructable even if future entries occur.
+
+Document:
+
+storage location validation rules audit behaviour ================================================== 3. INTERNAL PARTNER PURCHASE REPORTING EXPANSION 
+
+Current categories:
+
+external_sale internal_transfer
+
+Replace with richer reporting categories:
+
+individual_partner_sale store_sale internal_partner_purchase admin_override_sale developer_override_sale future_sale_type
+
+Revenue ledger architecture remains unchanged.
+
+Only reporting and attribution classification expands.
+
+Project profit calculations must continue excluding internal partner purchase revenue.
+
+Partner revenue calculations continue including internal partner purchase revenue.
+
+Document exact reporting behaviour.
+
+================================================== 4. HELD BALANCE RULE REVISION 
+
+Current rule:
+
+held_balance ≤ MAX(distributable_balance,0)
+
+Review and revise.
+
+Requirements:
+
+disputes may exist even when balances are negative court orders may exist even when balances are negative governance holds may exist independently of current balance sign 
+
+Design a hold framework that:
+
+supports positive balances supports negative balances remains auditable does not distort revenue history does not distort profit history 
+
+Document:
+
+held amount available amount net position interaction
+
+================================================== 5. PROJECT CLOSURE OWNERSHIP TRACEABILITY 
+
+Extend project closure financial snapshots.
+
+Add ownership reconstruction support.
+
+Include:
+
+ownership_snapshot_reference or equivalent ownership traceability structure
+
+The closure package must allow future auditors to determine:
+
+ownership state entitlement state financial state 
+
+at closure time.
+
+No ownership recalculation occurs during closure.
+
+Ownership data is reference-only.
+
+================================================== 6. SALE EVENT OWNERSHIP OF REVENUE CREATION 
+
+Formalize event authority.
+
+Sale Rubber module becomes the ONLY domain source allowed to emit:
+
+SaleFinanciallyRecognized SaleCancelled InternalPartnerPurchaseCompleted
+
+Revenue handlers must refuse events originating from any other source.
+
+No module may directly create:
+
+revenue_credit sale_reversal_debit sale_reversal_credit
+
+without a valid sale-domain event.
+
+Document:
+
+event contracts producer ownership consumer ownership validation rules audit requirements
+
+================================================== 7. FINAL CONSISTENCY REVIEW 
+
+Perform a consistency review against all previously approved business rules including:
+
+entitlement consumption ownership proportional store-sale allocation blocked stock rules admin/developer override sale rules inheritance workflow project closure workflow contribution model 50% revenue model reimbursement workflow distribution workflow negative balance support audit immutability requirements 
+
+Identify any remaining contradictions.
+
+If contradictions exist:
+
+list them propose resolution 
+
+If none exist: state explicitly that the architecture is implementation-ready.
+
+================================================== 8. FINAL DELIVERABLE 
+
+Return a complete V3 Architecture Freeze document containing:
+
+revised data model revised event model revised reporting model revised validation rules revised audit rules revised closure snapshot design revised held-balance design revised sale attribution design 
+
+After completing V3:
+
+mark architecture status as:
+
+IMPLEMENTATION READY or IMPLEMENTATION READY WITH EXPLICIT OPEN ISSUES
+
+Do NOT generate code.
+
+Do NOT generate migrations.
+
+Do NOT generate API implementation.
+
+Architecture review and freeze only.
+
