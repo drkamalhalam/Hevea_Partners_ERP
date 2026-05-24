@@ -40,6 +40,7 @@ import {
 } from "drizzle-orm";
 import { getAuth } from "@clerk/express";
 import { requireRole } from "../middlewares/auth";
+import { toNum } from "../lib/numericSafe.js";
 import {
   calculateContributionDistribution,
   calculateFiftyPercentDistribution,
@@ -355,7 +356,9 @@ router.get("/lca-lookup", async (req, res) => {
     .where(and(...conditions))
     .orderBy(lcaLedgerTable.year);
 
-  const totalBalance = entries.reduce((s, e) => s + e.balance, 0);
+  // NPF Stage-2 readiness: wrap raw DB balance in toNum() to prevent string
+  // concatenation once lca_ledger.balance becomes a numeric string post-migration.
+  const totalBalance = entries.reduce((s, e) => s + toNum(e.balance), 0);
   return res.json({ projectId, entries, totalBalance: Math.round(totalBalance * 100) / 100 });
 });
 

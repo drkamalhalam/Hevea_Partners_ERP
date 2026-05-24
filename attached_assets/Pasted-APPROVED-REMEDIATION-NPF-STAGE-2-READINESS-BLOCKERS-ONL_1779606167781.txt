@@ -1,0 +1,98 @@
+APPROVED REMEDIATION — NPF STAGE 2 READINESS BLOCKERS ONLY
+
+Execute ONLY the three confirmed Stage-2 blockers identified by the readiness audit.
+
+DO NOT:
+
+modify schema create migrations run db push modify OpenAPI regenerate clients introduce Decimal.js perform Stage 2 conversion perform Stage 3 rewrites standardize Number(...) usage refactor unrelated arithmetic change business rules change ownership calculations change contribution calculations change reimbursement calculations change distribution formulas ==================================================== REMEDIATION SCOPE 
+
+File: artifacts/api-server/src/routes/burden_recovery.ts
+
+Fix 1
+
+Current pattern:
+
+reduce((s, a) => s + a.recoverableAmount, 0)
+
+Replace amount operand with numeric-safe conversion using existing NPF helper.
+
+Use:
+
+toNum(a.recoverableAmount)
+
+inside the reduction.
+
+Fix 2
+
+Current pattern:
+
+adj.recoveredAmount + amountRecovered
+
+Convert adj.recoveredAmount through existing numeric-safe helper before arithmetic.
+
+Use:
+
+toNum(adj.recoveredAmount)
+
+before addition.
+
+====================================================
+
+File: artifacts/api-server/src/routes/distribution_previews.ts
+
+Fix 3
+
+Current pattern:
+
+entries.reduce((s, e) => s + e.balance, 0)
+
+Convert balance through existing numeric-safe helper.
+
+Use:
+
+toNum(e.balance)
+
+inside the reduction.
+
+==================================================== VALIDATION 
+
+After changes:
+
+Typecheck api-server
+
+Typecheck plantation-web
+
+Confirm zero remaining unsafe arithmetic sites from the Stage-2 Readiness Audit
+
+Specifically re-audit:
+
+burden_recovery.ts distribution_previews.ts 
+
+Confirm:
+
+No remaining string-concatenation risks caused by numeric-string database values.
+
+==================================================== REPORT 
+
+Return only:
+
+Files modified
+
+Exact lines changed
+
+Before/after snippets
+
+Typecheck results
+
+Remaining unsafe arithmetic sites count
+
+Updated verdict:
+
+READY FOR STAGE 2
+
+or
+
+NOT READY FOR STAGE 2
+
+No additional work outside this scope.
+

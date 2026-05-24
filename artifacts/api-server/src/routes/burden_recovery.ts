@@ -11,6 +11,7 @@ import {
   userProjectAssignmentsTable,
 } from "@workspace/db";
 import { requireRole } from "../middlewares/auth";
+import { toNum } from "../lib/numericSafe.js";
 
 const router = Router();
 
@@ -143,9 +144,11 @@ router.get("/summary", async (req, res) => {
     }),
   );
 
-  const totalRecoverable = adjustments.reduce((s, a) => s + a.recoverableAmount, 0);
-  const totalRecovered = adjustments.reduce((s, a) => s + a.recoveredAmount, 0);
-  const totalRemaining = adjustments.reduce((s, a) => s + a.remainingAmount, 0);
+  // NPF Stage-2 readiness: wrap raw DB values in toNum() to prevent string
+  // concatenation once these columns become numeric strings post-migration.
+  const totalRecoverable = adjustments.reduce((s, a) => s + toNum(a.recoverableAmount), 0);
+  const totalRecovered = adjustments.reduce((s, a) => s + toNum(a.recoveredAmount), 0);
+  const totalRemaining = adjustments.reduce((s, a) => s + toNum(a.remainingAmount), 0);
 
   return res.json({
     totalRecoverable,
@@ -470,7 +473,9 @@ router.post("/adjustments/:id/events", requireRole("admin", "developer"), async 
     .returning();
 
   // Atomically update the adjustment
-  const newRecovered = adj.recoveredAmount + amountRecovered;
+  // NPF Stage-2 readiness: toNum() guards against string concatenation once
+  // recoveredAmount becomes a numeric string post-migration.
+  const newRecovered = toNum(adj.recoveredAmount) + amountRecovered;
   const newStatus =
     newRecovered >= adj.recoverableAmount - 0.01
       ? "recovered"
