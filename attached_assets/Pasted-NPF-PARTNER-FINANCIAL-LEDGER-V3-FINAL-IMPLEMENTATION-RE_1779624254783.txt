@@ -1,0 +1,174 @@
+NPF PARTNER FINANCIAL LEDGER V3 — FINAL IMPLEMENTATION READINESS REVIEW
+
+IMPORTANT: This is a review and mapping task only.
+
+DO NOT implement code. DO NOT create migrations. DO NOT modify existing business rules. DO NOT introduce alternative architecture.
+
+The approved architecture is Partner Financial Ledger V3 Final Freeze.
+
+Your task is to verify implementation readiness and identify integration issues before development begins.
+
+SECTION 1 — EXISTING SYSTEM MAPPING 
+
+For every V3 component below, determine whether it:
+
+A. Already exists B. Partially exists and requires extension C. Is completely new D. Duplicates an existing capability
+
+Review:
+
+partner_financial_ledger partner_balance_snapshots partner_financial_position_v revenue_attribution_lines sale_deduction_lines cost_allocation_lines reimbursement_allocation_lines held_balances distribution_payments financial_adjustments project_closure_partner_snapshots sale_event_journal processed_sale_events 
+
+For each item provide:
+
+Existing implementation found Recommended action: Reuse Extend Merge Create New Risk level Migration impact 
+
+Goal: No duplicate systems.
+
+SECTION 2 — WORKFLOW INTEGRATION REVIEW 
+
+Review integration with:
+
+Sale Rubber Entitlement Engine Ownership Engine Reimbursement Engine Distribution Workflow Inheritance Workflow Project Closure Workflow OTP Framework Data Health Framework 
+
+For each workflow document:
+
+Event producer Event consumer Tables written Tables read Validation authority Potential conflict Missing dependency 
+
+Goal: Complete end-to-end event flow visibility.
+
+SECTION 3 — ROLE AND PERMISSION MATRIX 
+
+Review permissions for:
+
+Partner Landowner Investor Admin Developer Store Operator Observer 
+
+For each role determine access to:
+
+View ledger View project balances View attribution audit Create distribution payments Reverse distributions Create adjustments Create manual overrides Create holds Release holds View closure snapshots Run rebuild/recompute jobs 
+
+Identify:
+
+Missing permissions Excess permissions Ambiguous permissions 
+
+Goal: Complete permission matrix with no uncertainty.
+
+SECTION 4 — DATABASE CHANGE REVIEW 
+
+List all schema changes required by V3.
+
+Classify:
+
+NEW TABLES NEW COLUMNS NEW ENUM VALUES NEW INDEXES NEW VIEWS NEW CONSTRAINTS
+
+For every change identify:
+
+Nullable? Default? Backfill required? Production-safe? Rollback strategy? 
+
+Goal: Zero migration ambiguity.
+
+SECTION 5 — DASHBOARD OWNERSHIP REVIEW 
+
+Confirm data ownership for:
+
+PARTNER DASHBOARD
+
+Own entitlement Own gross revenue Own allocated costs Own net profit Own distributed amount Own distributable balance Own held balance Own available distributable balance 
+
+PROJECT DASHBOARD
+
+Project gross external revenue Project internal transfer revenue Project costs Project net profit Total distributed Total held Total available balance 
+
+GLOBAL DASHBOARD
+
+Financial summaries Outstanding holds Distribution totals Profit summaries 
+
+Identify duplicated calculations.
+
+Goal: Single source of truth for every metric.
+
+SECTION 6 — PROJECT CLOSURE REVIEW 
+
+Verify closure package contains:
+
+FINANCIAL
+
+Gross revenue Costs Net profit Distributions Distributable balance Held balance Available balance 
+
+OWNERSHIP
+
+Ownership snapshot reference Ownership percentage 
+
+ENTITLEMENT
+
+Sheet entitlement Scrap entitlement 
+
+GOVERNANCE
+
+Closure explanation Closure actor Closure timestamp 
+
+RECONSTRUCTION
+
+closure_ledger_max_id closure_holds_max_id ownership snapshot reference entitlement snapshot reference 
+
+Confirm closure remains fully reconstructable.
+
+SECTION 7 — PERFORMANCE REVIEW 
+
+Review:
+
+Ledger growth Revenue attribution growth Cost allocation growth Reimbursement allocation growth Hold growth Closure snapshot growth 
+
+For each determine:
+
+Required indexes Pagination requirements Snapshot requirements Materialized views required? Expected bottlenecks 
+
+Review specifically:
+
+Partner Ledger screen Revenue Attribution Audit Cost Allocation Audit Reimbursement Audit Project Profit View Closure Snapshot View 
+
+Goal: No foreseeable performance blocker.
+
+SECTION 8 — DATA HEALTH VALIDATORS 
+
+Review required validators:
+
+Financial ledger integrity Revenue attribution integrity Cost allocation integrity Reimbursement integrity Distribution snapshot integrity Closure snapshot integrity Sale recognition integrity Held balance integrity 
+
+For each validator specify:
+
+Validation logic Source tables Failure conditions Expected output 
+
+Goal: Complete operational monitoring coverage.
+
+SECTION 9 — IMPLEMENTATION READINESS DECISION 
+
+Provide final decision:
+
+READY FOR IMPLEMENTATION or NOT READY FOR IMPLEMENTATION
+
+If NOT READY:
+
+List every blocker.
+
+If READY:
+
+Provide:
+
+Required implementation order Recommended migration order Recommended testing order Recommended rollout order FINAL REQUIREMENT 
+
+Do not redesign business rules.
+
+Do not propose alternative financial models.
+
+Do not alter entitlement-based revenue attribution.
+
+Do not alter ownership-based cost allocation.
+
+Do not alter 50% revenue model rules.
+
+Do not alter inheritance, closure, hold, reversal, or audit rules.
+
+Review only for implementation readiness, integration completeness, migration safety, permission completeness, performance readiness, and operational integrity.
+
+Return a comprehensive implementation readiness report with actionable findings.
+
