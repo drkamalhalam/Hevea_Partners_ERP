@@ -519,6 +519,8 @@ router.get("/summary", async (req, res) => {
     crystallizationCandidatesInvalid: crystallizationCandidatesInvalidCount,
     transferWorkflowInactiveIdentity: transferWorkflowInactiveIdentityCount,
     inheritanceWorkflowInactiveIdentity: inheritanceWorkflowInactiveIdentityCount,
+    // NPF Stage 2 — money-precision counters (introspective, live).
+    moneyPrecision: await getMoneyPrecisionCounters(),
     totalIssues:
       orphanCount +
       violationCount +
@@ -1417,6 +1419,69 @@ router.get("/inheritance-workflow-inactive-identity", async (_req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // NPF Stage 2 — Money Precision Diagnostics
 // ─────────────────────────────────────────────────────────────────────────────
+
+async function getMoneyPrecisionCounters(): Promise<{
+  moneyColumnsUsingReal: number;
+  moneyColumnsWithWrongScale: number;
+  valuesExceedingTargetPrecision: number;
+  aggregateDriftBurden: number;
+  aggregateDriftDistribution: number;
+}> {
+  const safeExec = async (q: ReturnType<typeof sql>) => {
+    try {
+      const r = await db.execute(q);
+      return Number((r.rows?.[0] as { n: number } | undefined)?.n ?? 0);
+    } catch {
+      return 0;
+    }
+  };
+
+  const [usingReal, wrongScale, exceeding, burdenDrift, distDrift] = await Promise.all([
+    safeExec(sql`
+      SELECT count(*)::int AS n
+      FROM information_schema.columns c
+      WHERE c.table_schema = 'public'
+        AND c.data_type = 'real'
+        AND (${MONEY_COLUMN_FILTER_SQL})
+        AND ${SNAPSHOT_TABLE_EXCLUDE}
+    `),
+    safeExec(sql`
+      SELECT count(*)::int AS n
+      FROM information_schema.columns c
+      WHERE c.table_schema = 'public'
+        AND c.data_type = 'numeric'
+        AND (${MONEY_COLUMN_FILTER_SQL})
+        AND ${SNAPSHOT_TABLE_EXCLUDE}
+        AND (c.numeric_precision <> 15 OR c.numeric_scale <> 2)
+    `),
+    safeExec(sql`
+      SELECT count(*)::int AS n FROM precision_conversion_audit WHERE delta <> 0
+    `),
+    safeExec(sql`
+      SELECT count(*)::int AS n FROM burden_records br
+      WHERE ABS(
+        COALESCE(br.total_amount, 0) -
+        COALESCE((SELECT SUM(c.amount) FROM burden_components c WHERE c.burden_record_id = br.id), 0)
+      ) > 0.01
+    `),
+    safeExec(sql`
+      SELECT count(*)::int AS n FROM distribution_previews dp
+      WHERE ABS(
+        COALESCE(dp.gross_revenue, 0) -
+        (COALESCE(dp.epp_total, 0) + COALESCE(dp.landowner_total, 0))
+      ) > 0.01
+    `),
+  ]);
+
+  return {
+    moneyColumnsUsingReal: usingReal,
+    moneyColumnsWithWrongScale: wrongScale,
+    valuesExceedingTargetPrecision: exceeding,
+    aggregateDriftBurden: burdenDrift,
+    aggregateDriftDistribution: distDrift,
+  };
+}
+
 // All endpoints introspect live storage via information_schema. Target money
 // shape: numeric(15, 2). Aggregate-drift endpoints compute "component sum vs
 // stored total" deltas for the two highest-impact tables (burden, distribution).

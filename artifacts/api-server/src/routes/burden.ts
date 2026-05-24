@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { getAuth } from "@clerk/express";
+import { subMoney } from "../lib/money";
 import { eq, and, inArray, desc, isNull, or } from "drizzle-orm";
 import { createImbalanceLedgerPair } from "./burden_imbalances";
 import {
@@ -221,10 +222,21 @@ function computeImbalance(
   actualDeveloperAmount: number,
   actualLandownerAmount: number,
 ) {
-  const developerImbalanceAmount =
-    Math.round((actualDeveloperAmount - expectedDeveloperAmount) * 100) / 100;
-  const landownerImbalanceAmount =
-    Math.round((actualLandownerAmount - expectedLandownerAmount) * 100) / 100;
+  // NPF Stage 2 — decimal-safe imbalance computation via centralized
+  // money utility (HALF_UP @ 2 dp). Replaces float subtraction +
+  // Math.round-and-divide, which drifted on long-fraction inputs.
+  const developerImbalanceAmount = subMoney(
+    actualDeveloperAmount,
+    expectedDeveloperAmount,
+  )
+    .toDecimalPlaces(2)
+    .toNumber();
+  const landownerImbalanceAmount = subMoney(
+    actualLandownerAmount,
+    expectedLandownerAmount,
+  )
+    .toDecimalPlaces(2)
+    .toNumber();
 
   let adjustmentStatus: "balanced" | "developer_advance" | "landowner_advance" | "waived" = "balanced";
   let recoverableAmount = 0;

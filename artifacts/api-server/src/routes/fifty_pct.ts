@@ -17,6 +17,7 @@
  */
 
 import { Router } from "express";
+import { sumMoney } from "../lib/money";
 import {
   db,
   fiftyPctSessionsTable,
@@ -184,10 +185,8 @@ router.get("/revenue-lookup", async (req, res) => {
     .where(and(...conditions))
     .orderBy(desc(salesTransactionsTable.saleDate));
 
-  const totalGrossRevenue = sales.reduce(
-    (s, r) => s + parseFloat(String(r.grossRevenue)),
-    0,
-  );
+  // NPF Stage 2 — decimal-safe aggregation via centralized money utility.
+  const totalGrossRevenue = sumMoney(sales.map((r) => r.grossRevenue)).toNumber();
 
   return res.json({ sales, totalGrossRevenue: Math.round(totalGrossRevenue * 100) / 100 });
 });
@@ -209,10 +208,8 @@ router.get("/lca-lookup", async (req, res) => {
     )
     .orderBy(lcaLedgerTable.year);
 
-  const totalBalance = entries.reduce(
-    (s, e) => s + parseFloat(String(e.balance ?? "0")),
-    0,
-  );
+  // NPF Stage 2 — decimal-safe aggregation via centralized money utility.
+  const totalBalance = sumMoney(entries.map((e) => e.balance)).toNumber();
 
   return res.json({
     entries,

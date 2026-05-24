@@ -6,6 +6,7 @@
   "scripts": {
     "hello": "tsx ./src/hello.ts",
     "backfill:parcels": "tsx ./src/backfill_project_parcels.ts",
+    "npf:stage2:migrate-money": "tsx ./src/npf_stage2_migrate_money.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
