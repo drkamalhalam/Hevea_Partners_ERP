@@ -2,6 +2,7 @@ import app from "./app";
 import { logger } from "./lib/logger";
 import { seedDocumentVariableRegistry } from "./lib/seedVariableRegistry";
 import { ensureOwnershipAttributionConstraint } from "./lib/ownershipAttributionGuard";
+import { validateOtpTransportConfig } from "./lib/otp";
 
 const rawPort = process.env["PORT"];
 
@@ -16,6 +17,10 @@ const port = Number(rawPort);
 if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
+
+// Fail fast at boot if OTP transport is misconfigured. In production this
+// refuses stdout and requires the provider env vars for the selected channel.
+validateOtpTransportConfig();
 
 app.listen(port, (err) => {
   if (err) {

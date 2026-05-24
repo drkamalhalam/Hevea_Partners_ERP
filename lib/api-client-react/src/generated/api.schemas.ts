@@ -10500,6 +10500,23 @@ export type VerifyContributionBody = {
   notes?: string;
 };
 
+export type RequestContributionVerificationOtp200 = {
+  /** Raw OTP — populated only in development with EXPOSE_OTP=true. */
+  otpCode?: string | null;
+  expiresAt?: string;
+  message?: string;
+};
+
+export type ConfirmContributionVerificationOtpBody = {
+  /** @minLength 4 */
+  otpCode: string;
+};
+
+export type ConfirmContributionVerificationOtp200 = {
+  message?: string;
+  verifiedAt?: string;
+};
+
 export type RejectContributionBody = {
   notes?: string;
 };

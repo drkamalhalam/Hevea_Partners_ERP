@@ -101,6 +101,8 @@ import type {
   ComputePayableParams,
   ComputeTransferValueToPercentage200,
   ComputeTransferValueToPercentageBody,
+  ConfirmContributionVerificationOtp200,
+  ConfirmContributionVerificationOtpBody,
   ConfirmExpenditureVerificationOtp200,
   ConfirmExpenditureVerificationOtpBody,
   ConfirmFiftyPctSession200,
@@ -627,6 +629,7 @@ import type {
   ReportSummary,
   RequestContributionOtp200,
   RequestContributionVerificationBody,
+  RequestContributionVerificationOtp200,
   RequestExpenditureVerificationOtp200,
   RequestUploadUrlBody,
   RequestUploadUrlResponse,
@@ -14689,6 +14692,199 @@ export const useVerifyContribution = <
   TContext
 > => {
   return useMutation(getVerifyContributionMutationOptions(options));
+};
+
+/**
+ * Generates a one-time passcode and dispatches it via the configured OTP
+transport (SMS, email, webhook, or stdout in dev). The raw OTP value is
+only returned in the response when both NODE_ENV != "production" AND
+EXPOSE_OTP === "true"; otherwise the code is null and the caller must
+retrieve it via the transport.
+
+ * @summary Issue a fresh OTP to the designated verifier for an ownership-affecting contribution
+ */
+export const getRequestContributionVerificationOtpUrl = (id: string) => {
+  return `/api/contributions/${id}/verify/otp/request`;
+};
+
+export const requestContributionVerificationOtp = async (
+  id: string,
+  options?: RequestInit,
+): Promise<RequestContributionVerificationOtp200> => {
+  return customFetch<RequestContributionVerificationOtp200>(
+    getRequestContributionVerificationOtpUrl(id),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getRequestContributionVerificationOtpMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof requestContributionVerificationOtp>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof requestContributionVerificationOtp>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["requestContributionVerificationOtp"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof requestContributionVerificationOtp>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return requestContributionVerificationOtp(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RequestContributionVerificationOtpMutationResult = NonNullable<
+  Awaited<ReturnType<typeof requestContributionVerificationOtp>>
+>;
+
+export type RequestContributionVerificationOtpMutationError = ErrorType<void>;
+
+/**
+ * @summary Issue a fresh OTP to the designated verifier for an ownership-affecting contribution
+ */
+export const useRequestContributionVerificationOtp = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof requestContributionVerificationOtp>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof requestContributionVerificationOtp>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(
+    getRequestContributionVerificationOtpMutationOptions(options),
+  );
+};
+
+/**
+ * Validates the submitted OTP against the stored hash using a constant-time
+comparison. On success, writes an otp_verified event consumed by
+POST /contributions/{id}/verify to satisfy the OTP gate for
+ownership-affecting contributions.
+
+ * @summary Confirm OTP receipt for a contribution (designated verifier or admin only)
+ */
+export const getConfirmContributionVerificationOtpUrl = (id: string) => {
+  return `/api/contributions/${id}/verify/otp/confirm`;
+};
+
+export const confirmContributionVerificationOtp = async (
+  id: string,
+  confirmContributionVerificationOtpBody: ConfirmContributionVerificationOtpBody,
+  options?: RequestInit,
+): Promise<ConfirmContributionVerificationOtp200> => {
+  return customFetch<ConfirmContributionVerificationOtp200>(
+    getConfirmContributionVerificationOtpUrl(id),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(confirmContributionVerificationOtpBody),
+    },
+  );
+};
+
+export const getConfirmContributionVerificationOtpMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof confirmContributionVerificationOtp>>,
+    TError,
+    { id: string; data: BodyType<ConfirmContributionVerificationOtpBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof confirmContributionVerificationOtp>>,
+  TError,
+  { id: string; data: BodyType<ConfirmContributionVerificationOtpBody> },
+  TContext
+> => {
+  const mutationKey = ["confirmContributionVerificationOtp"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof confirmContributionVerificationOtp>>,
+    { id: string; data: BodyType<ConfirmContributionVerificationOtpBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return confirmContributionVerificationOtp(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ConfirmContributionVerificationOtpMutationResult = NonNullable<
+  Awaited<ReturnType<typeof confirmContributionVerificationOtp>>
+>;
+export type ConfirmContributionVerificationOtpMutationBody =
+  BodyType<ConfirmContributionVerificationOtpBody>;
+export type ConfirmContributionVerificationOtpMutationError = ErrorType<void>;
+
+/**
+ * @summary Confirm OTP receipt for a contribution (designated verifier or admin only)
+ */
+export const useConfirmContributionVerificationOtp = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof confirmContributionVerificationOtp>>,
+    TError,
+    { id: string; data: BodyType<ConfirmContributionVerificationOtpBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof confirmContributionVerificationOtp>>,
+  TError,
+  { id: string; data: BodyType<ConfirmContributionVerificationOtpBody> },
+  TContext
+> => {
+  return useMutation(
+    getConfirmContributionVerificationOtpMutationOptions(options),
+  );
 };
 
 /**

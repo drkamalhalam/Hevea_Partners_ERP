@@ -6850,6 +6850,51 @@ export const VerifyContributionResponse = zod.object({
 });
 
 /**
+ * Generates a one-time passcode and dispatches it via the configured OTP
+transport (SMS, email, webhook, or stdout in dev). The raw OTP value is
+only returned in the response when both NODE_ENV != "production" AND
+EXPOSE_OTP === "true"; otherwise the code is null and the caller must
+retrieve it via the transport.
+
+ * @summary Issue a fresh OTP to the designated verifier for an ownership-affecting contribution
+ */
+export const RequestContributionVerificationOtpParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const RequestContributionVerificationOtpResponse = zod.object({
+  otpCode: zod
+    .string()
+    .nullish()
+    .describe("Raw OTP — populated only in development with EXPOSE_OTP=true."),
+  expiresAt: zod.coerce.date().optional(),
+  message: zod.string().optional(),
+});
+
+/**
+ * Validates the submitted OTP against the stored hash using a constant-time
+comparison. On success, writes an otp_verified event consumed by
+POST /contributions/{id}/verify to satisfy the OTP gate for
+ownership-affecting contributions.
+
+ * @summary Confirm OTP receipt for a contribution (designated verifier or admin only)
+ */
+export const ConfirmContributionVerificationOtpParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const confirmContributionVerificationOtpBodyOtpCodeMin = 4;
+
+export const ConfirmContributionVerificationOtpBody = zod.object({
+  otpCode: zod.string().min(confirmContributionVerificationOtpBodyOtpCodeMin),
+});
+
+export const ConfirmContributionVerificationOtpResponse = zod.object({
+  message: zod.string().optional(),
+  verifiedAt: zod.coerce.date().optional(),
+});
+
+/**
  * @summary Reject a contribution entry (admin only)
  */
 export const RejectContributionParams = zod.object({

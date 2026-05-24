@@ -3680,6 +3680,85 @@ paths:
         "403": { description: Forbidden }
         "404": { description: Not found }
 
+  /contributions/{id}/verify/otp/request:
+    post:
+      operationId: requestContributionVerificationOtp
+      summary: Issue a fresh OTP to the designated verifier for an ownership-affecting contribution
+      description: |
+        Generates a one-time passcode and dispatches it via the configured OTP
+        transport (SMS, email, webhook, or stdout in dev). The raw OTP value is
+        only returned in the response when both NODE_ENV != "production" AND
+        EXPOSE_OTP === "true"; otherwise the code is null and the caller must
+        retrieve it via the transport.
+      tags: [Contributions]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: OTP issued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  otpCode:
+                    type: string
+                    nullable: true
+                    description: Raw OTP — populated only in development with EXPOSE_OTP=true.
+                  expiresAt:
+                    type: string
+                    format: date-time
+                  message:
+                    type: string
+        "400": { description: Contribution does not require OTP or is in an invalid state }
+        "401": { description: Unauthorized }
+        "403": { description: Caller is not authorized to issue an OTP for this contribution }
+        "404": { description: Contribution not found }
+
+  /contributions/{id}/verify/otp/confirm:
+    post:
+      operationId: confirmContributionVerificationOtp
+      summary: Confirm OTP receipt for a contribution (designated verifier or admin only)
+      description: |
+        Validates the submitted OTP against the stored hash using a constant-time
+        comparison. On success, writes an otp_verified event consumed by
+        POST /contributions/{id}/verify to satisfy the OTP gate for
+        ownership-affecting contributions.
+      tags: [Contributions]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [otpCode]
+              properties:
+                otpCode:
+                  type: string
+                  minLength: 4
+      responses:
+        "200":
+          description: OTP confirmed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string }
+                  verifiedAt: { type: string, format: date-time }
+        "400": { description: "No OTP issued, expired OTP, or incorrect OTP" }
+        "401": { description: Unauthorized }
+        "403": { description: Only the designated verifier or admin/developer may confirm }
+        "404": { description: Contribution not found }
+
   /contributions/{id}/reject:
     post:
       operationId: rejectContribution

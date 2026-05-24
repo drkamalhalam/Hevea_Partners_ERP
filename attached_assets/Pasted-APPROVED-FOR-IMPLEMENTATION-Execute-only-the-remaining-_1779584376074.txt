@@ -1,0 +1,64 @@
+APPROVED FOR IMPLEMENTATION
+
+Execute only the remaining release blockers identified in the Architect Audit.
+
+Scope is strictly limited to:
+
+OTP transport completion OpenAPI/client regeneration for contribution OTP routes Audit housekeeping cleanup 
+
+DO NOT:
+
+modify ownership logic modify contribution formulas modify reimbursement formulas modify observer workflow modify project lifecycle modify closure logic modify dashboard logic modify approval framework perform numeric precision migration modify database money types ==================================================== TASK 1 — OTP TRANSPORT COMPLETION 
+
+Current status:
+
+OTP infrastructure exists OTP middleware exists OTP exposure gating exists OTP verification exists 
+
+Problem:
+
+sms transport stub throws email transport stub throws 
+
+Implement:
+
+production-ready transport adapter provider abstraction environment configuration validation graceful startup validation 
+
+Requirements:
+
+development mode continues using stdout transport production mode must fail fast if provider configuration is missing transport must support: maturity OTP contribution verification OTP expenditure verification OTP 
+
+Return exact environment variables required.
+
+==================================================== TASK 2 — OPENAPI + CLIENT REGEN 
+
+Current defect:
+
+Contribution OTP routes exist but generated client does not expose them.
+
+Implement:
+
+OpenAPI specification updates regenerate client artifacts regenerate typed hooks ensure frontend can consume: 
+
+POST /contributions/:id/verify/otp/request
+
+POST /contributions/:id/verify/otp/confirm
+
+Verify generated client builds successfully.
+
+==================================================== TASK 3 — HOUSEKEEPING 
+
+Remove or relocate:
+
+audit transcript txt files temporary review artifacts non-source audit scratch files 
+
+Move to .local if retention required.
+
+Do not remove source documentation.
+
+==================================================== AFTER IMPLEMENTATION 
+
+Return:
+
+Files changed Exact locations modified OTP transport verification Required production environment variables OpenAPI verification Client generation verification Build verification Remaining risks READY FOR PRODUCTION REVIEW or NOT READY 
+
+No additional work.
+

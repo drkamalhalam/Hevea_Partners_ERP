@@ -2,6 +2,7 @@ export { mayExposeOtpCode, maskOtp } from "./exposure";
 export {
   sendOtp,
   auditOtpEvent,
+  validateOtpTransportConfig,
   type OtpChannel,
   type OtpPurpose,
   type OtpDeliveryRequest,
