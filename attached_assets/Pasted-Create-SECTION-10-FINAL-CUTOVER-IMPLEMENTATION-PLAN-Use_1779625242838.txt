@@ -1,0 +1,104 @@
+Create SECTION 10 — FINAL CUTOVER & IMPLEMENTATION PLAN.
+
+Use the completed V3 architecture and the implementation-readiness findings from Sections 1–9.
+
+Do NOT redesign architecture.
+
+Do NOT introduce new business rules.
+
+Purpose: Provide the exact implementation sequence required to move from the current codebase to the V3 Financial Ledger architecture without breaking existing functionality.
+
+Required subsections:
+
+10.1 Existing Financial Tables Disposition Matrix
+
+For every existing financial table identified in the readiness review classify as:
+
+Remains Canonical Becomes Event Source Becomes Projection Becomes Derived View Becomes Legacy Read-Only Future Deprecation Candidate 
+
+Include:
+
+table name current purpose future purpose migration strategy rollback strategy 
+
+Special attention:
+
+landowner_ledger_entries imbalance_ledger burden_recovery_adjustments burden_recovery_events distribution_records distribution_payment_events held_distribution_ledger sales_transactions sales_orders sales_invoices ownership_snapshots project_closure_workflows 
+
+10.2 Historical Data Strategy
+
+For every new V3 structure specify:
+
+full backfill required optional backfill forward-only population 
+
+Explain rationale.
+
+Special attention:
+
+partner_financial_ledger revenue_attribution_lines cost_allocation_lines reimbursement_allocation_lines project_closure_partner_snapshots sale_event_journal processed_sale_events 
+
+10.3 Double-Write Prevention Plan
+
+Identify every location where duplicate financial entries could occur.
+
+For each:
+
+source module competing writer failure scenario prevention mechanism 
+
+Include:
+
+landowner ledger reimbursement workflow distribution workflow sale recognition sale cancellation inheritance workflow manual adjustments 
+
+10.4 Feature Flag Rollout Plan
+
+Provide exact feature flags.
+
+Example structure:
+
+FIN_LEDGER_ENABLED FIN_REVENUE_ATTRIBUTION_ENABLED FIN_COST_ALLOCATION_ENABLED FIN_REIMBURSEMENT_ENABLED FIN_DISTRIBUTION_LEDGER_ENABLED FIN_CLOSURE_SNAPSHOT_ENABLED
+
+For each:
+
+purpose enabled behavior disabled behavior rollback effect 
+
+10.5 Recommended Implementation Waves
+
+Provide exact build order.
+
+Wave 1 — schema only Wave 2 — sale event infrastructure Wave 3 — revenue attribution Wave 4 — partner ledger Wave 5 — cost allocation Wave 6 — reimbursements Wave 7 — distribution workflow Wave 8 — closure snapshots Wave 9 — dashboards and reports Wave 10 — validators and cutover
+
+For every wave:
+
+tables touched routes touched risks rollback approach success criteria 
+
+10.6 Parallel Run Strategy
+
+Describe how old and new systems run simultaneously.
+
+Include:
+
+comparison reports mismatch detection reconciliation process duration recommendation 
+
+10.7 Production Cutover Checklist
+
+Provide a step-by-step operational checklist.
+
+Include:
+
+backups migration order feature flag order validation runs reconciliation reports rollback decision points 
+
+10.8 Final Decision
+
+Choose exactly one:
+
+READY FOR IMPLEMENTATION
+
+or
+
+NOT READY FOR IMPLEMENTATION
+
+If not ready: list every blocker in execution order.
+
+If ready: provide final implementation sequence and critical watchpoints.
+
+Return SECTION 10 only. Do not repeat Sections 1–9.
+
