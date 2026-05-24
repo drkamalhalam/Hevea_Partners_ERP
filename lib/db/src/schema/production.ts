@@ -1,10 +1,10 @@
 import {
   pgTable,
   uuid,
-  real,
   text,
   timestamp,
 } from "drizzle-orm/pg-core";
+import { numericFlex } from "../numericFlex";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { projectsTable } from "./projects";
@@ -16,10 +16,10 @@ export const productionRecordsTable = pgTable("production_records", {
     .notNull()
     .references(() => projectsTable.id, { onDelete: "cascade" }),
   recordedAt: timestamp("recorded_at", { withTimezone: true }).notNull(),
-  productionKg: real("production_kg").notNull(),
-  soldKg: real("sold_kg").notNull(),
-  sellingPricePerKg: real("selling_price_per_kg").notNull(),
-  revenue: real("revenue").notNull(),
+  productionKg: numericFlex("production_kg", { precision: 12, scale: 3 }).notNull(),
+  soldKg: numericFlex("sold_kg", { precision: 12, scale: 3 }).notNull(),
+  sellingPricePerKg: numericFlex("selling_price_per_kg", { precision: 15, scale: 2 }).notNull(),
+  revenue: numericFlex("revenue", { precision: 15, scale: 2 }).notNull(),
   notes: text("notes"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()

@@ -1,0 +1,247 @@
+HEVEA PARTNERS ERP — NPF STAGE 2 IMPLEMENTATION
+
+IMPORTANT
+
+This task is STRICTLY NPF Stage 2 implementation.
+
+Do NOT redesign business rules. Do NOT modify ownership formulas. Do NOT modify entitlement formulas. Do NOT modify sale allocation logic. Do NOT modify reimbursement formulas. Do NOT modify lifecycle logic. Do NOT modify OTP logic. Do NOT modify ownership attribution architecture. Do NOT modify commercial-model behavior.
+
+Only implement Numeric Precision Foundation Stage 2 exactly as described below.
+
+================================================== OBJECTIVE 
+
+Complete migration from remaining float-based financial storage to decimal-safe storage.
+
+Goal:
+
+Eliminate remaining real/float financial fields. Standardize financial arithmetic. Maintain existing business behavior. Preserve all existing calculations and workflows. Ensure future entitlement, profit, settlement and payment systems operate on precise decimals. ================================================== PHASE 1 — FRONTEND PREPARATION 
+
+Create:
+
+src/lib/numeric.ts
+
+Export:
+
+parseNumeric( value: string | number | null | undefined ): number
+
+Behavior:
+
+null -> 0 undefined -> 0 empty string -> 0 invalid -> 0 number -> same number string decimal -> Number(value) 
+
+Use this helper anywhere server-originated decimal values may appear.
+
+Audit and harden:
+
+pages/DistributionPreview.tsx pages/LandownerProfitability.tsx pages/Expenditure.tsx pages/Sales/SalesOrderDetail.tsx pages/FinancialAnalytics.tsx pages/Inventory.tsx pages/Production.tsx pages/Lca/Ledger.tsx pages/Lca/Projections.tsx pages/BurdenRecovery.tsx pages/Ownership.tsx pages/OwnershipDetails.tsx pages/Crystallization.tsx pages/ProjectDetails.tsx pages/ProjectParcels.tsx pages/Agreements/AgreementDetail.tsx
+
+Replace unsafe server-value usage before:
+
+toFixed() toLocaleString() Math.* / 
+
+< 
+
+=
+
+<= 
+
+Wrap server-originated decimal values with parseNumeric() first.
+
+Do not change display behavior.
+
+================================================== PHASE 2 — SCHEMA CONVERSION 
+
+MONEY FIELDS
+
+Convert remaining financial real fields to:
+
+numeric(15,2)
+
+OWNERSHIP PERCENTAGES
+
+IMPORTANT:
+
+Use:
+
+numeric(12,8)
+
+NOT numeric(10,6)
+
+Convert:
+
+agreements.ownershipShareLandowner agreements.ownershipShareDeveloper landowner_ledger_entries.ownershipPct
+
+NON-OWNERSHIP PERCENTAGES
+
+Use:
+
+numeric(7,4)
+
+Convert:
+
+agreement_accounting_profiles.grossSplitPctLandowner agreement_accounting_profiles.grossSplitPctDeveloper agreements.yearlyEscalation lca_configs.escalationPct
+
+QUANTITY / WEIGHT
+
+Use:
+
+numeric(12,3)
+
+Convert:
+
+production_records.productionKg production_records.soldKg store_entries.weightKg store_entries.scrapWeightKg
+
+LAND AREA
+
+Use:
+
+numeric(12,4)
+
+Convert:
+
+agreements.landArea projects.landArea project_parcels.landArea
+
+ESCALATION FACTOR
+
+Use:
+
+numeric(12,6)
+
+Convert:
+
+lca_ledger.escalationFactor
+
+GPS
+
+DO NOT CHANGE
+
+agreements.gpsLat agreements.gpsLng
+
+remain real.
+
+================================================== PHASE 3 — OPENAPI UPDATE 
+
+Update affected schemas.
+
+Financial decimal properties become:
+
+type: string format: decimal
+
+Ownership percentages: same decimal-string representation
+
+Quantity values: same decimal-string representation
+
+Land area: same decimal-string representation
+
+For transitional compatibility:
+
+Request DTOs must accept:
+
+oneOf:
+
+decimal string number 
+
+Responses should use decimal strings.
+
+================================================== PHASE 4 — CODEGEN 
+
+Run OpenAPI regeneration.
+
+Regenerate:
+
+lib/api-client-react lib/api-zod
+
+Commit generated files.
+
+No manual edits inside generated artifacts.
+
+================================================== PHASE 5 — SERVER VALIDATION 
+
+Ensure all affected routes continue functioning.
+
+Verify:
+
+contributions ownership expenditures lca burden burden_recovery distribution_previews landowner_account financial_analytics global_analytics project_card_summary fifty_pct production production_log agreements projects
+
+Existing Stage-1 hardening using:
+
+toNum()
+
+must remain intact.
+
+Do not replace business logic.
+
+Only ensure numeric-string compatibility.
+
+================================================== PHASE 6 — MIGRATION GENERATION 
+
+Generate a single Drizzle migration.
+
+Review generated SQL.
+
+Expected pattern:
+
+ALTER COLUMN ... TYPE numeric(...)
+
+using value-preserving casts.
+
+Do NOT introduce:
+
+column renames table renames data rewrites ownership recalculation financial recalculation ================================================== PHASE 7 — TYPECHECK 
+
+Run:
+
+pnpm run typecheck
+
+Resolve all compile errors.
+
+Required:
+
+@workspace/api-server PASS
+
+@workspace/plantation-web PASS
+
+workspace libraries PASS
+
+================================================== VALIDATION REQUIREMENTS 
+
+Ownership:
+
+Σ ownership percentages remain unchanged.
+
+Contribution totals unchanged.
+
+Expenditure totals unchanged.
+
+Burden totals unchanged.
+
+Burden recovery totals unchanged.
+
+LCA balances unchanged.
+
+Distribution preview outputs unchanged.
+
+50% revenue allocations unchanged.
+
+Project card summaries unchanged.
+
+Landowner accounting unchanged.
+
+Financial analytics unchanged.
+
+No NaN values.
+
+No string concatenation bugs.
+
+No runtime decimal parsing failures.
+
+================================================== EXPLICITLY OUT OF SCOPE 
+
+DO NOT implement:
+
+Payment Collection Workflow Partner Financial Ledger Profit Ledger Distributable Balance Engine Approval Framework Consolidation New entitlement architecture New settlement architecture Decimal.js migration (Stage 3) Ownership formula changes Sale allocation changes Inventory redesign 
+
+This task is ONLY NPF Stage 2 implementation.
+
+Provide final report including:
+
+Files changed Schema files changed OpenAPI files changed Generated client files changed Migration SQL summary Typecheck results Remaining risks Production-readiness verdict 

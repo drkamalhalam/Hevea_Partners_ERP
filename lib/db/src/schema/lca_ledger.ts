@@ -2,11 +2,11 @@ import {
   pgTable,
   uuid,
   text,
-  real,
   integer,
   boolean,
   timestamp,
 } from "drizzle-orm/pg-core";
+import { numericFlex } from "../numericFlex";
 import { usersTable } from "./users";
 import { projectsTable } from "./projects";
 import { lcaConfigsTable } from "./lca_configs";
@@ -41,19 +41,25 @@ export const lcaLedgerTable = pgTable("lca_ledger", {
 
   year: integer("year").notNull(),
 
-  baseAmount: real("base_amount").notNull(),
+  baseAmount: numericFlex("base_amount", { precision: 15, scale: 2 }).notNull(),
 
-  escalationFactor: real("escalation_factor").notNull().default(1.0),
+  escalationFactor: numericFlex("escalation_factor", { precision: 12, scale: 6 })
+    .notNull()
+    .default(1.0),
 
-  grossDue: real("gross_due").notNull(),
+  grossDue: numericFlex("gross_due", { precision: 15, scale: 2 }).notNull(),
 
-  carryForward: real("carry_forward").notNull().default(0),
+  carryForward: numericFlex("carry_forward", { precision: 15, scale: 2 })
+    .notNull()
+    .default(0),
 
-  totalDue: real("total_due").notNull(),
+  totalDue: numericFlex("total_due", { precision: 15, scale: 2 }).notNull(),
 
-  amountPaid: real("amount_paid").notNull().default(0),
+  amountPaid: numericFlex("amount_paid", { precision: 15, scale: 2 })
+    .notNull()
+    .default(0),
 
-  balance: real("balance").notNull(),
+  balance: numericFlex("balance", { precision: 15, scale: 2 }).notNull(),
 
   status: lcaLedgerStatusEnum("status").notNull().default("pending"),
 

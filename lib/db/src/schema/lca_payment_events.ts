@@ -2,10 +2,10 @@ import {
   pgTable,
   uuid,
   text,
-  real,
   integer,
   timestamp,
 } from "drizzle-orm/pg-core";
+import { numericFlex } from "../numericFlex";
 import { usersTable } from "./users";
 import { projectsTable } from "./projects";
 import { lcaConfigsTable } from "./lca_configs";
@@ -39,7 +39,7 @@ export const lcaPaymentEventsTable = pgTable("lca_payment_events", {
 
   year: integer("year").notNull(),
 
-  amountPaid: real("amount_paid").notNull(),
+  amountPaid: numericFlex("amount_paid", { precision: 15, scale: 2 }).notNull(),
 
   paymentDate: text("payment_date").notNull(),
 

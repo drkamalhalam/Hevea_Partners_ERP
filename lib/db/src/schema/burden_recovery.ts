@@ -2,10 +2,10 @@ import {
   pgTable,
   uuid,
   text,
-  real,
   boolean,
   timestamp,
 } from "drizzle-orm/pg-core";
+import { numericFlex } from "../numericFlex";
 import { usersTable } from "./users";
 import { projectsTable } from "./projects";
 import { partnersTable } from "./partners";
@@ -58,14 +58,14 @@ export const burdenRecoveryAdjustmentsTable = pgTable(
     // Free-text category: e.g. "tapping labour", "fertiliser", "transport"
 
     // ── Amounts ────────────────────────────────────────────────────────────
-    totalAmount: real("total_amount").notNull(),
+    totalAmount: numericFlex("total_amount", { precision: 15, scale: 2 }).notNull(),
     // Full cost originally paid by the source participant (always positive).
 
-    recoverableAmount: real("recoverable_amount").notNull(),
+    recoverableAmount: numericFlex("recoverable_amount", { precision: 15, scale: 2 }).notNull(),
     // Portion charged to this landowner's share. Usually == totalAmount
     // but may be less if costs are shared across multiple landowners.
 
-    recoveredAmount: real("recovered_amount").notNull().default(0),
+    recoveredAmount: numericFlex("recovered_amount", { precision: 15, scale: 2 }).notNull().default(0),
     // Running total recovered so far (updated atomically on each event).
 
     // ── Revenue model ──────────────────────────────────────────────────────
@@ -136,7 +136,7 @@ export const burdenRecoveryEventsTable = pgTable("burden_recovery_events", {
     .notNull()
     .references(() => projectsTable.id, { onDelete: "restrict" }),
 
-  amountRecovered: real("amount_recovered").notNull(),
+  amountRecovered: numericFlex("amount_recovered", { precision: 15, scale: 2 }).notNull(),
   // Amount deducted from landowner share in this single recovery event.
 
   recoveryDate: text("recovery_date").notNull(), // YYYY-MM-DD

@@ -1,0 +1,136 @@
+FinancialSummary|13705|grossRevenue|13708|grossRevenue: { type: string }
+FinancialSummary|13705|operationalCost|13711|operationalCost: { type: string }
+AllocationBreakdown|13831|grossRevenue|13834|grossRevenue: { type: string }
+Project|13851|landArea|13872|landArea:
+Project|13851|perTreeValue|13883|perTreeValue:
+ProjectInput|13978|landArea|13996|landArea:
+ProjectInput|13978|perTreeValue|14007|perTreeValue:
+ProjectUpdate|14035|landArea|14052|landArea:
+ProjectUpdate|14035|perTreeValue|14063|perTreeValue:
+ProjectParcel|14137|landArea|14161|landArea: { type: number }
+ProjectParcelInput|14168|landArea|14189|landArea: { type: number }
+Agreement|14323|landArea|14351|landArea:
+AgreementInput|14392|landArea|14411|landArea:
+AgreementUpdate|14448|landArea|14457|landArea:
+ProductionRecord|14756|revenue|14776|revenue:
+RevenueStats|14805|revenue|14816|revenue:
+ContributionEntry|16400|amount|16431|amount:
+CreateContributionBody|16496|amount|16516|amount:
+UpdateContributionBody|16540|amount|16543|amount:
+OwnershipPartnerEntry|16712|percentage|16730|percentage:
+ExpenditureEntry|17119|amount|17139|amount:
+PendingVerificationItem|17261|expenditure|17265|expenditure:
+ImbalanceLedgerEntry|17462|amount|17470|amount: { type: number, description: "Signed amount: positive = credit (owed to party), negative = debit (party owes)" }
+AdvanceRecoveryEvent|17590|amount|17597|amount: { type: number }
+RecordAdvanceRecoveryBody|17686|amount|17690|amount: { type: number, minimum: 0.01 }
+LcaConfig|17697|baseAmount|17706|baseAmount: { type: number }
+LcaLedgerEntry|17717|baseAmount|17726|baseAmount: { type: number }
+LcaLedgerEntry|17717|grossDue|17728|grossDue: { type: number }
+LcaLedgerEntry|17717|carryForward|17729|carryForward: { type: number }
+LcaLedgerEntry|17717|totalDue|17730|totalDue: { type: number }
+LcaLedgerEntry|17717|amountPaid|17731|amountPaid: { type: number }
+LcaLedgerEntry|17717|balance|17732|balance: { type: number }
+LcaScheduleEntry|17743|grossDue|17749|grossDue: { type: number }
+LcaScheduleEntry|17743|carryForward|17750|carryForward: { type: number }
+LcaScheduleEntry|17743|totalDue|17751|totalDue: { type: number }
+LcaScheduleEntry|17743|amountPaid|17752|amountPaid: { type: number }
+LcaScheduleEntry|17743|balance|17753|balance: { type: number }
+LcaSummary|17760|totalDue|17767|totalDue: { type: number }
+LcaGovernanceAlert|17834|amount|17850|amount: { type: number }
+CreateLcaConfigBody|17854|baseAmount|17860|baseAmount: { type: number, minimum: 0.01 }
+UpdateLcaConfigBody|17865|baseAmount|17868|baseAmount: { type: number, minimum: 0.01 }
+CreateLcaLedgerEntryBody|17873|amountPaid|17879|amountPaid: { type: number, minimum: 0 }
+UpdateLcaLedgerEntryBody|17882|amountPaid|17885|amountPaid: { type: number, minimum: 0 }
+LcaPaymentEvent|17892|amountPaid|17901|amountPaid: { type: number }
+RecordLcaPaymentBody|17909|amountPaid|17913|amountPaid: { type: number, minimum: 0.01 }
+LandownerLedgerEntry|17946|amount|17965|amount: { type: number }
+LandownerLedgerEntry|17946|grossRevenue|17966|grossRevenue: { type: number }
+CreateLandownerLedgerEntryBody|17983|amount|17999|amount: { type: number, minimum: 0.01 }
+CreateLandownerLedgerEntryBody|17983|grossRevenue|18000|grossRevenue: { type: number }
+UpdateLandownerLedgerEntryBody|18006|amount|18010|amount: { type: number, minimum: 0.01 }
+UpdateLandownerLedgerEntryBody|18006|grossRevenue|18011|grossRevenue: { type: number }
+LandownerLcaReceivableEntry|18043|grossDue|18051|grossDue: { type: number }
+LandownerLcaReceivableEntry|18043|carryForward|18052|carryForward: { type: number }
+LandownerLcaReceivableEntry|18043|totalDue|18053|totalDue: { type: number }
+LandownerLcaReceivableEntry|18043|amountPaid|18054|amountPaid: { type: number }
+LandownerLcaReceivableEntry|18043|balance|18055|balance: { type: number }
+LandownerLcaReceivableEntry|18043|baseAmount|18057|baseAmount: { type: number }
+LandownerLcaReceivable|18060|totalDue|18066|totalDue: { type: number }
+CostCategoryBreakdown|18221|amount|18226|amount: { type: number }
+ProductionEntry|18351|quantity|18360|quantity: { type: number }
+CreateProductionEntryBody|18388|quantity|18395|quantity: { type: number, minimum: 0.001 }
+UpdateProductionEntryBody|18400|quantity|18403|quantity: { type: number, minimum: 0.001 }
+StockBalance|18434|balance|18444|balance: { type: number }
+StockTypeSummary|18448|balance|18456|balance: { type: number }
+StockMovement|18474|quantity|18484|quantity: { type: number }
+CreateStockMovementBody|18502|quantity|18511|quantity: { type: number, minimum: 0.001 }
+BatchMovement|18519|quantity|18528|quantity: { type: number }
+BatchStockTypeSummary|18540|produced|18544|produced: { type: number }
+SaleLineItem|18646|quantity|18655|quantity: { type: number }
+SaleDeduction|18662|amount|18670|amount: { type: number }
+CreateSaleLineItemBody|18716|quantity|18722|quantity: { type: number }
+UpdateSaleLineItemBody|18727|quantity|18730|quantity: { type: number }
+CreateSaleDeductionBody|18734|amount|18740|amount: { type: number }
+StockValuationItem|18766|balance|18772|balance: { type: number }
+MonthlySalesTrend|18805|revenue|18810|revenue: { type: number }
+LowStockAlert|18844|balance|18850|balance: { type: number }
+DistributionShareEntry|19200|amount|19209|amount: { type: number }
+ContributionDistributionResult|19211|grossRevenue|19216|grossRevenue: { type: number }
+ContributionDistributionResult|19211|operationalCost|19217|operationalCost: { type: number }
+ContributionDistributionResult|19211|lcaAmount|19218|lcaAmount: { type: number }
+FiftyPercentDistributionResult|19233|grossRevenue|19238|grossRevenue: { type: number }
+FiftyPercentDistributionResult|19233|operationalCost|19239|operationalCost: { type: number }
+DistributionPreview|19253|grossRevenue|19265|grossRevenue: { type: number }
+DistributionPreview|19253|operationalCost|19266|operationalCost: { type: number }
+DistributionPreview|19253|lcaAmount|19267|lcaAmount: { type: number }
+OwnershipOverrideEntry|19308|percentage|19316|percentage: { type: number }
+CreateDistributionPreviewBody|19318|grossRevenue|19328|grossRevenue: { type: number }
+CreateDistributionPreviewBody|19318|operationalCost|19329|operationalCost: { type: number, default: 0 }
+CreateDistributionPreviewBody|19318|lcaAmount|19330|lcaAmount: { type: number, default: 0 }
+UpdateDistributionPreviewBody|19347|grossRevenue|19354|grossRevenue: { type: number }
+UpdateDistributionPreviewBody|19347|operationalCost|19355|operationalCost: { type: number }
+UpdateDistributionPreviewBody|19347|lcaAmount|19356|lcaAmount: { type: number }
+LcaLookupEntry|19364|grossDue|19370|grossDue: { type: number }
+LcaLookupEntry|19364|totalDue|19371|totalDue: { type: number }
+LcaLookupEntry|19364|amountPaid|19372|amountPaid: { type: number }
+LcaLookupEntry|19364|balance|19373|balance: { type: number }
+RevenueLookupSaleRow|19387|grossRevenue|19395|grossRevenue: { type: number }
+OwnershipSnapshotLookupEntry|19416|percentage|19426|percentage: { type: number }
+FiftyPctSession|19464|grossRevenue|19475|grossRevenue: { type: number }
+FiftyPctSession|19464|operationalCost|19480|operationalCost: { type: number }
+FiftyPctSession|19464|lcaAmount|19481|lcaAmount: { type: number }
+CreateFiftyPctSessionBody|19542|grossRevenue|19551|grossRevenue: { type: number }
+CreateFiftyPctSessionBody|19542|operationalCost|19554|operationalCost: { type: number, default: 0 }
+CreateFiftyPctSessionBody|19542|lcaAmount|19555|lcaAmount: { type: number, default: 0 }
+UpdateFiftyPctSessionBody|19559|grossRevenue|19566|grossRevenue: { type: number }
+UpdateFiftyPctSessionBody|19559|operationalCost|19569|operationalCost: { type: number }
+UpdateFiftyPctSessionBody|19559|lcaAmount|19570|lcaAmount: { type: number }
+FiftyPctSummaryLandownerSide|19596|operationalCost|19601|operationalCost: { type: number }
+FiftyPctSummaryLandownerSide|19596|lcaAmount|19602|lcaAmount: { type: number }
+FiftyPctSummary|19618|grossRevenue|19622|grossRevenue: { type: number }
+PayableAdjustment|19891|amount|19900|amount: { type: number }
+CreatePayableAdjustmentBody|19915|amount|19925|amount: { type: number }
+UpdatePayableAdjustmentBody|19931|amount|19938|amount: { type: number }
+DistributionRecord|20135|grossRevenue|20150|grossRevenue: { type: string }
+CreateDistributionRecordBody|20223|grossRevenue|20235|grossRevenue: { type: number, nullable: true }
+UpdateDistributionRecordBody|20240|grossRevenue|20249|grossRevenue: { type: number, nullable: true }
+SettlementAlert|20266|amount|20279|amount: { type: number, nullable: true }
+ValuationProfitRecord|20341|grossRevenue|20348|grossRevenue: { type: string, nullable: true }
+ValuationProfitRecord|20341|operationalCost|20349|operationalCost: { type: string, nullable: true }
+ValuationProfitRecord|20341|lcaAmount|20350|lcaAmount: { type: string, nullable: true }
+CreateValuationProfitRecordBody|20368|grossRevenue|20374|grossRevenue: { type: number }
+CreateValuationProfitRecordBody|20368|operationalCost|20375|operationalCost: { type: number }
+CreateValuationProfitRecordBody|20368|lcaAmount|20376|lcaAmount: { type: number }
+UpdateValuationProfitRecordBody|20383|grossRevenue|20387|grossRevenue: { type: number }
+UpdateValuationProfitRecordBody|20383|operationalCost|20388|operationalCost: { type: number }
+UpdateValuationProfitRecordBody|20383|lcaAmount|20389|lcaAmount: { type: number }
+ClaimantContribution|20844|amount|20856|amount: { type: string }
+CreateClaimantContributionBody|20880|amount|20889|amount: { type: number, minimum: 0.01 }
+DisputedAccumulationEntry|20901|amount|20913|amount: { type: string }
+CreateDisputedAccumulationBody|20936|amount|20945|amount: { type: number, minimum: 0.01 }
+MultiStoreDashboard|21555|ownership|21565|ownership:
+DetectPaymentBody|22001|amount|22006|amount: { type: number }
+PaymentTransaction|22019|amount|22025|amount: { type: string }
+MoneyCustodyEntry|22114|amount|22123|amount: { type: string }
+PostMaturityCostPayment|22329|amount|22338|amount: { type: number }
+PostMaturityPaymentInput|22366|amount|22373|amount: { type: number }

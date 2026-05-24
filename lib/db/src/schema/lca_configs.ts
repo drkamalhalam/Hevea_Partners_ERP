@@ -2,11 +2,11 @@ import {
   pgTable,
   uuid,
   text,
-  real,
   integer,
   boolean,
   timestamp,
 } from "drizzle-orm/pg-core";
+import { numericFlex } from "../numericFlex";
 import { usersTable } from "./users";
 import { projectsTable } from "./projects";
 import { agreementsTable } from "./agreements";
@@ -36,9 +36,11 @@ export const lcaConfigsTable = pgTable("lca_configs", {
     onDelete: "set null",
   }),
 
-  baseAmount: real("base_amount").notNull(),
+  baseAmount: numericFlex("base_amount", { precision: 15, scale: 2 }).notNull(),
 
-  escalationPct: real("escalation_pct").notNull().default(0),
+  escalationPct: numericFlex("escalation_pct", { precision: 7, scale: 4 })
+    .notNull()
+    .default(0),
 
   effectiveStartDate: text("effective_start_date").notNull(),
 

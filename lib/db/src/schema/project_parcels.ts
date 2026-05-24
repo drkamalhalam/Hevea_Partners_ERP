@@ -3,10 +3,10 @@ import {
   uuid,
   text,
   integer,
-  real,
   timestamp,
   unique,
 } from "drizzle-orm/pg-core";
+import { numericFlex } from "../numericFlex";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { projectsTable } from "./projects";
@@ -69,7 +69,7 @@ export const projectParcelsTable = pgTable(
     gpsCoordinates: text("gps_coordinates"),
 
     /** Parcel area (mandatory) — sum across parcels = projects.landArea. */
-    landArea: real("land_area").notNull(),
+    landArea: numericFlex("land_area", { precision: 12, scale: 4 }).notNull(),
     landAreaUnit: text("land_area_unit").notNull().default("kani"),
 
     notes: text("notes"),

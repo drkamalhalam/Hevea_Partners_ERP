@@ -6,6 +6,7 @@ import {
   integer,
   timestamp,
 } from "drizzle-orm/pg-core";
+import { numericFlex } from "../numericFlex";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { usersTable } from "./users";
@@ -26,16 +27,16 @@ export const agreementsTable = pgTable("agreements", {
   executionDate: text("execution_date").notNull(),
   executionPlace: text("execution_place").notNull(),
   termYears: integer("term_years").notNull().default(35),
-  landArea: real("land_area").notNull(),
+  landArea: numericFlex("land_area", { precision: 12, scale: 4 }).notNull(),
   landAreaUnit: text("land_area_unit").notNull().default("kani"),
-  landNotionalValue: real("land_notional_value").notNull(),
-  landValuePerUnit: real("land_value_per_unit").notNull(),
-  landContributionAdjustment: real("land_contribution_adjustment")
+  landNotionalValue: numericFlex("land_notional_value", { precision: 15, scale: 2 }).notNull(),
+  landValuePerUnit: numericFlex("land_value_per_unit", { precision: 15, scale: 2 }).notNull(),
+  landContributionAdjustment: numericFlex("land_contribution_adjustment", { precision: 15, scale: 2 })
     .notNull()
     .default(0),
-  yearlyEscalation: real("yearly_escalation").notNull().default(5),
-  ownershipShareLandowner: real("ownership_share_landowner"),
-  ownershipShareDeveloper: real("ownership_share_developer"),
+  yearlyEscalation: numericFlex("yearly_escalation", { precision: 7, scale: 4 }).notNull().default(5),
+  ownershipShareLandowner: numericFlex("ownership_share_landowner", { precision: 12, scale: 8 }),
+  ownershipShareDeveloper: numericFlex("ownership_share_developer", { precision: 12, scale: 8 }),
   revenueModel: text("revenue_model").notNull().default("contribution"),
   status: text("status").notNull().default("draft"),
   northBoundary: text("north_boundary"),

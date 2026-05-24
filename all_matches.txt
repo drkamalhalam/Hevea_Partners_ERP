@@ -1,0 +1,594 @@
+13479:    GovernanceOverride:
+13502:    GovernanceOverrideAnalytics:
+13539:    Dispute:
+13567:    DisputeResolutionEvent:
+13583:    DisputePendingSummary:
+13604:    EvidenceArchive:
+13637:    EvidenceAccessLog:
+13653:    EvidenceStats:
+13685:    AuditLogEntry:
+13705:    FinancialSummary:
+13708:        grossRevenue: { type: string }
+13711:        operationalCost: { type: string }
+13754:    RevenueTrend:
+13775:    SettlementAnalytics:
+13805:    ProjectProfitabilityReport:
+13831:    AllocationBreakdown:
+13834:        grossRevenue: { type: string }
+13844:    HealthStatus:
+13851:    Project:
+13872:        landArea:
+13883:        perTreeValue:
+13978:    ProjectInput:
+13996:        landArea:
+14007:        perTreeValue:
+14035:    ProjectUpdate:
+14052:        landArea:
+14063:        perTreeValue:
+14137:    ProjectParcel:
+14161:        landArea: { type: number }
+14168:    ProjectParcelInput:
+14189:        landArea: { type: number }
+14194:    ProjectParcelListResponse:
+14202:    ProjectAuditEvent:
+14225:    ProjectAuditTrailResponse:
+14234:    AgreementTemplateAssignmentInput:
+14243:    AgreementTemplateLink:
+14251:    Partner:
+14282:    PartnerInput:
+14304:    PartnerUpdate:
+14323:    Agreement:
+14351:        landArea:
+14392:    AgreementInput:
+14411:        landArea:
+14448:    AgreementUpdate:
+14457:        landArea:
+14494:    AgreementVariable:
+14530:    AgreementVariablesResponse:
+14550:    AgreementGeneration:
+14595:    AgreementAuditEntry:
+14625:    CreateGenerationBody:
+14638:    GenerateDocumentRequest:
+14649:    UpdateAgreementVariablesBody:
+14666:    DashboardSummary:
+14681:    PartnerPortfolio:
+14694:    ActivityItem:
+14718:    StockSummary:
+14756:    ProductionRecord:
+14776:        revenue:
+14783:    ProductionInput:
+14805:    RevenueStats:
+14816:        revenue:
+14823:    ProjectAssignmentItem:
+14837:    UserProfile:
+14905:    UserLoginAuditEvent:
+14930:    LoginStatusChangeInput:
+14937:    PreProvisionLoginInput:
+14957:    UpsertUserInput:
+14973:    UpdateProfileInput:
+14987:    SetUserRoleInput:
+14995:    AssignProjectInput:
+15006:    UpdateAssignmentInput:
+15014:    ProjectLifecycle:
+15029:    ProjectLifecycleHistoryEntry:
+15055:    TransitionLifecycleBody:
+15065:    AgreementActivation:
+15103:    AgreementActivationOtp:
+15142:    AgreementActivationSummary:
+15162:    AgreementAccountingProfile:
+15189:    UpsertAccountingProfileBody:
+15199:    AccountingProfileValidationCheck:
+15210:    AccountingProfileValidationResult:
+15228:    InitiateAgreementActivationBody:
+15234:    CancelAgreementActivationBody:
+15240:    VerifyAgreementActivationOtpBody:
+15247:    MaturityDeclaration:
+15287:    MaturityOtpVerification:
+15326:    MaturityBlockers:
+15337:    MaturityBlockerItem:
+15352:    InitiateMaturityBody:
+15358:    CancelMaturityBody:
+15364:    VerifyOtpBody:
+15371:    OwnershipFreeze:
+15407:    ProjectNominee:
+15448:    CreateNomineeInput:
+15463:    UpdateNomineeInput:
+15477:    ProjectParticipant:
+15514:    AddParticipantInput:
+15530:    UpdateParticipantInput:
+15545:    PartnerClaimant:
+15583:    CreateClaimantInput:
+15606:    UpdateClaimantInput:
+15627:    MissingDeveloperCase:
+15679:    FileMissingDeveloperCaseBody:
+15692:    UpdateMissingDeveloperCaseBody:
+15703:    NomineeActivationWorkflow:
+15778:    InitiateNomineeActivationBody:
+15792:    VerifyNomineeActivationBody:
+15800:    UpdateNomineeActivationBody:
+15809:    GovernanceAlert:
+15822:    ProjectGovernanceStatus:
+15839:    PartnerGovernanceStatus:
+15856:    GovernanceSummary:
+15879:    ProjectClosureWorkflow:
+15954:    InitiateClosureBody:
+15963:    AcknowledgeClosureBody:
+15972:    UpdateClosureWorkflowBody:
+15982:    ErrorResponse:
+15991:    OkResponse:
+15999:    RequestUploadUrlBody:
+16013:    RequestUploadUrlResponse:
+16025:    AgreementTemplate:
+16092:    CreateTemplateBody:
+16120:    UpdateTemplateBody:
+16137:    DocumentVariableRegistryEntry:
+16159:    CreateDocumentVariableBody:
+16175:    UpdateDocumentVariableBody:
+16190:    DocumentTemplateVariable:
+16207:    TemplateVariableMappingResponse:
+16229:    DocumentTemplateAuditEvent:
+16248:    ActivateTemplateBody:
+16253:    SupersedeTemplateBody:
+16261:    Document:
+16316:    CreateDocumentBody:
+16344:    UpdateDocumentBody:
+16363:    DocumentAccessLogEntry:
+16400:    ContributionEntry:
+16431:        amount:
+16496:    CreateContributionBody:
+16516:        amount:
+16540:    UpdateContributionBody:
+16543:        amount:
+16563:    ContributionSummary:
+16653:    LandNotionalState:
+16677:    ContributionVerificationEvent:
+16712:    OwnershipPartnerEntry:
+16730:        percentage:
+16734:    ProjectOwnershipDetail:
+16764:    OwnershipSnapshot:
+16798:    RofrResponse:
+16808:    OwnershipTransfer:
+16865:    CreateOwnershipTransferBody:
+16890:    UpdateOwnershipTransferBody:
+16913:    PartnerOwnershipState:
+16936:    UpsertPartnerOwnershipStateBody:
+16948:    HeldDistributionEntry:
+16979:    CreateHeldDistributionBody:
+16999:    TransferRofrOffer:
+17019:    TransferOtpEvent:
+17042:    TransferAuditEvent:
+17061:    TransferRofrDashboard:
+17084:    ContributionDisputeSummary:
+17119:    ExpenditureEntry:
+17139:        amount:
+17165:    ExpenditureVerificationRequest:
+17214:    ExpenditureVerificationEvent:
+17245:    ExpenditureVerificationDetail:
+17261:    PendingVerificationItem:
+17265:        expenditure:
+17270:    ExpenditureSummary:
+17318:    BurdenRule:
+17339:    BurdenRecord:
+17381:    BurdenSummary:
+17415:    CreateBurdenRuleBody:
+17431:    UpdateBurdenRuleBody:
+17446:    CreateBurdenRecordBody:
+17456:    UpdateBurdenRecordBody:
+17462:    ImbalanceLedgerEntry:
+17470:        amount: { type: number, description: "Signed amount: positive = credit (owed to party), negative = debit (party owes)" }
+17481:    ImbalanceSummary:
+17509:    PartnerImbalanceSummary:
+17530:    CreateImbalanceEntryBody:
+17541:    RecoverableAdvance:
+17590:    AdvanceRecoveryEvent:
+17597:        amount: { type: number }
+17603:    RecoverableAdvanceDetail:
+17614:    AdvanceSummary:
+17657:    CreateAdvanceBody:
+17686:    RecordAdvanceRecoveryBody:
+17690:        amount: { type: number, minimum: 0.01 }
+17697:    LcaConfig:
+17706:        baseAmount: { type: number }
+17717:    LcaLedgerEntry:
+17726:        baseAmount: { type: number }
+17728:        grossDue: { type: number }
+17729:        carryForward: { type: number }
+17730:        totalDue: { type: number }
+17731:        amountPaid: { type: number }
+17732:        balance: { type: number }
+17743:    LcaScheduleEntry:
+17749:        grossDue: { type: number }
+17750:        carryForward: { type: number }
+17751:        totalDue: { type: number }
+17752:        amountPaid: { type: number }
+17753:        balance: { type: number }
+17760:    LcaSummary:
+17767:        totalDue: { type: number }
+17792:    LcaGovernanceSummary:
+17819:    LcaEligibleProjectStatus:
+17834:    LcaGovernanceAlert:
+17850:        amount: { type: number }
+17854:    CreateLcaConfigBody:
+17860:        baseAmount: { type: number, minimum: 0.01 }
+17865:    UpdateLcaConfigBody:
+17868:        baseAmount: { type: number, minimum: 0.01 }
+17873:    CreateLcaLedgerEntryBody:
+17879:        amountPaid: { type: number, minimum: 0 }
+17882:    UpdateLcaLedgerEntryBody:
+17885:        amountPaid: { type: number, minimum: 0 }
+17892:    LcaPaymentEvent:
+17901:        amountPaid: { type: number }
+17909:    RecordLcaPaymentBody:
+17913:        amountPaid: { type: number, minimum: 0.01 }
+17918:    AutoGenerateLcaResult:
+17934:    LcaFullLedgerEntry:
+17946:    LandownerLedgerEntry:
+17965:        amount: { type: number }
+17966:        grossRevenue: { type: number }
+17983:    CreateLandownerLedgerEntryBody:
+17999:        amount: { type: number, minimum: 0.01 }
+18000:        grossRevenue: { type: number }
+18006:    UpdateLandownerLedgerEntryBody:
+18010:        amount: { type: number, minimum: 0.01 }
+18011:        grossRevenue: { type: number }
+18027:    LandownerAccountSummary:
+18043:    LandownerLcaReceivableEntry:
+18051:        grossDue: { type: number }
+18052:        carryForward: { type: number }
+18053:        totalDue: { type: number }
+18054:        amountPaid: { type: number }
+18055:        balance: { type: number }
+18057:        baseAmount: { type: number }
+18060:    LandownerLcaReceivable:
+18066:        totalDue: { type: number }
+18073:    LcaFullLedger:
+18095:    BurdenRecoveryAdjustment:
+18126:    CreateBurdenRecoveryAdjustment:
+18143:    PatchBurdenRecoveryAdjustment:
+18157:    BurdenRecoveryEvent:
+18171:    CreateBurdenRecoveryEvent:
+18180:    BurdenRecoverySummary:
+18196:    LandownerProfitabilitySummary:
+18210:    YearlyProfitabilityRow:
+18221:    CostCategoryBreakdown:
+18226:        amount: { type: number }
+18228:    BurdenStatusBreakdown:
+18237:    CostBurdenAnalysis:
+18251:    SustainabilityIndicators:
+18271:    ProjectProfitabilityRow:
+18286:    FinancialAccessLogEntry:
+18300:    FinancialAccessLogListResponse:
+18311:    LandownerProfitabilityAnalytics:
+18330:    ProductionBatch:
+18351:    ProductionEntry:
+18360:        quantity: { type: number }
+18369:    ProductionBatchDetail:
+18380:    CreateProductionBatchBody:
+18388:    CreateProductionEntryBody:
+18395:        quantity: { type: number, minimum: 0.001 }
+18400:    UpdateProductionEntryBody:
+18403:        quantity: { type: number, minimum: 0.001 }
+18408:    ProductionLogProjectSummary:
+18421:    ProductionLogSummary:
+18434:    StockBalance:
+18444:        balance: { type: number }
+18448:    StockTypeSummary:
+18456:        balance: { type: number }
+18461:    InventoryStockSummary:
+18474:    StockMovement:
+18484:        quantity: { type: number }
+18502:    CreateStockMovementBody:
+18511:        quantity: { type: number, minimum: 0.001 }
+18519:    BatchMovement:
+18528:        quantity: { type: number }
+18540:    BatchStockTypeSummary:
+18544:        produced: { type: number }
+18554:    BatchAnalytics:
+18578:    Buyer:
+18596:    CreateBuyerBody:
+18609:    UpdateBuyerBody:
+18621:    SalesTransaction:
+18646:    SaleLineItem:
+18655:        quantity: { type: number }
+18662:    SaleDeduction:
+18670:        amount: { type: number }
+18673:    SaleDetail:
+18688:    CreateSaleBody:
+18707:    UpdateSaleBody:
+18716:    CreateSaleLineItemBody:
+18722:        quantity: { type: number }
+18727:    UpdateSaleLineItemBody:
+18730:        quantity: { type: number }
+18734:    CreateSaleDeductionBody:
+18740:        amount: { type: number }
+18742:    SalesSummaryProject:
+18754:    SalesSummary:
+18766:    StockValuationItem:
+18772:        balance: { type: number }
+18784:    MonthlyStockTrend:
+18805:    MonthlySalesTrend:
+18810:        revenue: { type: number }
+18814:    RecentBatch:
+18831:    InventoryBatchSummary:
+18844:    LowStockAlert:
+18850:        balance: { type: number }
+18854:    InventoryAnalytics:
+18877:    SaleAuditFieldChange:
+18893:    SaleAuditEvent:
+18915:    SaleAuditLog:
+18929:    SaleGovernanceAlerts:
+18941:    SaleDocument:
+18964:    CreateSaleDocumentBody:
+18977:    UpdateSaleDocumentBody:
+18985:    OperationalTask:
+19015:    CreateTaskBody:
+19035:    UpdateTaskBody:
+19053:    TaskSummary:
+19065:    OperationalAlert:
+19100:    AlertSummary:
+19122:    AlertGenerationResult:
+19130:    UpdateAlertBody:
+19139:    AccessLogEntry:
+19157:    AccessLogPage:
+19169:    AccessLogRoleBreakdown:
+19177:    AccessLogResourceBreakdown:
+19185:    AccessLogSummary:
+19200:    DistributionShareEntry:
+19209:        amount: { type: number }
+19211:    ContributionDistributionResult:
+19216:        grossRevenue: { type: number }
+19217:        operationalCost: { type: number }
+19218:        lcaAmount: { type: number }
+19233:    FiftyPercentDistributionResult:
+19238:        grossRevenue: { type: number }
+19239:        operationalCost: { type: number }
+19253:    DistributionPreview:
+19265:        grossRevenue: { type: number }
+19266:        operationalCost: { type: number }
+19267:        lcaAmount: { type: number }
+19288:    DistributionPreviewDetail:
+19298:    DistributionPreviewPage:
+19308:    OwnershipOverrideEntry:
+19316:        percentage: { type: number }
+19318:    CreateDistributionPreviewBody:
+19328:        grossRevenue: { type: number }
+19329:        operationalCost: { type: number, default: 0 }
+19330:        lcaAmount: { type: number, default: 0 }
+19347:    UpdateDistributionPreviewBody:
+19354:        grossRevenue: { type: number }
+19355:        operationalCost: { type: number }
+19356:        lcaAmount: { type: number }
+19364:    LcaLookupEntry:
+19370:        grossDue: { type: number }
+19371:        totalDue: { type: number }
+19372:        amountPaid: { type: number }
+19373:        balance: { type: number }
+19376:    LcaLookupResult:
+19387:    RevenueLookupSaleRow:
+19395:        grossRevenue: { type: number }
+19400:    RevenueLookupResult:
+19416:    OwnershipSnapshotLookupEntry:
+19426:        percentage: { type: number }
+19428:    OwnershipSnapshotLookupRow:
+19444:    OwnershipLookupResult:
+19456:    SuccessResponse:
+19464:    FiftyPctSession:
+19475:        grossRevenue: { type: number }
+19480:        operationalCost: { type: number }
+19481:        lcaAmount: { type: number }
+19494:    FiftyPctSessionDetail:
+19504:    FiftyPctSessionPage:
+19514:    EppEntry:
+19531:    EppEntriesResult:
+19542:    CreateFiftyPctSessionBody:
+19551:        grossRevenue: { type: number }
+19554:        operationalCost: { type: number, default: 0 }
+19555:        lcaAmount: { type: number, default: 0 }
+19559:    UpdateFiftyPctSessionBody:
+19566:        grossRevenue: { type: number }
+19569:        operationalCost: { type: number }
+19570:        lcaAmount: { type: number }
+19574:    CreateEppEntryBody:
+19586:    UpdateEppEntryBody:
+19596:    FiftyPctSummaryLandownerSide:
+19601:        operationalCost: { type: number }
+19602:        lcaAmount: { type: number }
+19605:    FiftyPctSummaryEpp:
+19618:    FiftyPctSummary:
+19622:        grossRevenue: { type: number }
+19631:    FiftyPctSessionSummaryResult:
+19644:    FiftyPctRevenueLookupResult:
+19661:    FiftyPctLcaLookupResult:
+19670:    FiftyPctPartnersLookupResult:
+19684:    LossAbsorptionRecord:
+19721:    CreateLossAbsorptionRecordBody:
+19736:    UpdateLossAbsorptionRecordBody:
+19752:    NegativeBalanceEntry:
+19777:    CreateNegativeBalanceEntryBody:
+19792:    UpdateNegativeBalanceEntryBody:
+19800:    SettlementPriorityTier:
+19812:    SettlementPriority:
+19842:    LossAbsorptionSummary:
+19891:    PayableAdjustment:
+19900:        amount: { type: number }
+19915:    CreatePayableAdjustmentBody:
+19925:        amount: { type: number }
+19931:    UpdatePayableAdjustmentBody:
+19938:        amount: { type: number }
+19944:    PayableSnapshot:
+19970:    CreatePayableSnapshotBody:
+19979:    PayableComputation:
+19999:    SettlementRecord:
+20040:    SettlementOverrideEvent:
+20060:    SettlementComparison:
+20112:    CreateSettlementRecordBody:
+20127:    UpdateSettlementRecordBody:
+20135:    DistributionRecord:
+20150:        grossRevenue: { type: string }
+20170:    DistributionPaymentEvent:
+20193:    DistributionSummary:
+20207:    PartnerDistributionHistory:
+20223:    CreateDistributionRecordBody:
+20235:        grossRevenue: { type: number, nullable: true }
+20240:    UpdateDistributionRecordBody:
+20249:        grossRevenue: { type: number, nullable: true }
+20256:    RecordDistributionPaymentBody:
+20266:    SettlementAlert:
+20279:        amount: { type: number, nullable: true }
+20286:    SettlementGovernanceSummary:
+20311:    SettlementTaskCenter:
+20326:    DiscrepancyReport:
+20341:    ValuationProfitRecord:
+20348:        grossRevenue: { type: string, nullable: true }
+20349:        operationalCost: { type: string, nullable: true }
+20350:        lcaAmount: { type: string, nullable: true }
+20361:    ValuationProfitRecordPage:
+20368:    CreateValuationProfitRecordBody:
+20374:        grossRevenue: { type: number }
+20375:        operationalCost: { type: number }
+20376:        lcaAmount: { type: number }
+20383:    UpdateValuationProfitRecordBody:
+20387:        grossRevenue: { type: number }
+20388:        operationalCost: { type: number }
+20389:        lcaAmount: { type: number }
+20394:    ImportValuationProfitRecordsBody:
+20402:    ValuationRun:
+20431:    ValuationRunPage:
+20438:    ValuationRunDetail:
+20461:    CreateValuationRunBody:
+20473:    UpdateValuationRunBody:
+20482:    ValuationPreview:
+20504:    InheritanceClaim:
+20536:    InheritanceClaimPage:
+20543:    InheritanceClaimantShare:
+20565:    InheritanceDocument:
+20588:    InheritanceClaimDetail:
+20620:    CreateInheritanceClaimBody:
+20629:    UpdateInheritanceClaimBody:
+20636:    TransitionInheritanceClaimStatusBody:
+20644:    CreateInheritanceShareBody:
+20652:    UpdateInheritanceShareBody:
+20660:    CreateInheritanceDocumentBody:
+20671:    UpdateInheritanceDocumentBody:
+20681:    InheritanceSharesPage:
+20690:    InheritanceOwnershipHistory:
+20709:    RecordOwnershipHistoryBody:
+20721:    InheritanceDashboard:
+20756:    InheritanceAnalytics:
+20790:    ClaimantParticipationRecord:
+20817:    ClaimantParticipationPage:
+20824:    CreateClaimantParticipationBody:
+20836:    UpdateClaimantParticipationBody:
+20844:    ClaimantContribution:
+20856:        amount: { type: string }
+20873:    ClaimantContributionPage:
+20880:    CreateClaimantContributionBody:
+20889:        amount: { type: number, minimum: 0.01 }
+20894:    UpdateClaimantContributionBody:
+20901:    DisputedAccumulationEntry:
+20913:        amount: { type: string }
+20928:    DisputedAccumulationPage:
+20936:    CreateDisputedAccumulationBody:
+20945:        amount: { type: number, minimum: 0.01 }
+20949:    ReleaseAccumulationBody:
+20956:    PrematuritySuccessionDashboard:
+20981:    NotificationItem:
+20994:    ReportSummary:
+21036:    PartnerStatementReport:
+21069:    ProductionReport:
+21085:    GovernanceHealthReport:
+21109:    ActivityRecord:
+21122:    GovernanceMeeting:
+21147:    GovernanceResolution:
+21169:    NomineeSuccessionDashboard:
+21195:    NomineeAuthorityTransfer:
+21221:    MissingDeveloperCaseItem:
+21246:    BackupRun:
+21291:    IntegrityCheckResult:
+21322:    BackupStorageStats:
+21366:    Store:
+21387:    CreateStoreBody:
+21401:    UpdateStoreBody:
+21412:    InventoryLocation:
+21427:    StockTransfer:
+21457:    DispatchMemo:
+21484:    StockMovementAudit:
+21504:    ClosureReadiness:
+21555:    MultiStoreDashboard:
+21565:        ownership:
+21594:    CollectionEntry:
+21611:    CreateCollectionEntryBody:
+21620:    EditCollectionEntryBody:
+21626:    StoreEntry:
+21645:    CreateStoreEntryBody:
+21656:    EditStoreEntryBody:
+21664:    CollectionSummary:
+21676:    ProductionAssignment:
+21693:    CreateProductionAssignmentBody:
+21702:    ObservationAssignment:
+21719:    CreateObservationAssignmentBody:
+21731:    WorkforceAssignment:
+21753:    CreateWorkforceAssignmentBody:
+21768:    WorkAssignment:
+21796:    CreateWorkAssignmentBody:
+21814:    EditWorkAssignmentBody:
+21828:    WorkAssignmentAuditEvent:
+21842:    WorkAssignmentAutoSelectContext:
+21865:    MyWorkAssignment:
+21875:    SalesOrder:
+21912:    SalesOrderDetail:
+21933:    SalesOrderDispatch:
+21947:    SalesOrderAuditEntry:
+21962:    InventoryReservation:
+21978:    SalesOrderStats:
+21988:    CreateSalesOrderBody:
+22001:    DetectPaymentBody:
+22006:        amount: { type: number }
+22010:    DispatchSalesOrderBody:
+22019:    PaymentTransaction:
+22025:        amount: { type: string }
+22038:    PaymentReceiverAccount:
+22061:    CreatePaymentReceiverBody:
+22080:    SalesPermission:
+22099:    CreateSalesPermissionBody:
+22114:    MoneyCustodyEntry:
+22123:        amount: { type: string }
+22143:    CustodyHolderSummary:
+22155:    DepositBody:
+22165:    SalesInvoice:
+22200:    CentralPaymentAccount:
+22227:    CreatePaymentSettingsBody:
+22246:    PaymentSettingsAuditEntry:
+22258:    GovernanceMonitoringAlert:
+22275:    GovernanceMonitoringEvent:
+22293:    GovernanceMonitoringTask:
+22310:    ProjectTimelineEvent:
+22329:    PostMaturityCostPayment:
+22338:        amount: { type: number }
+22366:    PostMaturityPaymentInput:
+22373:        amount: { type: number }
+22384:    PostMaturityProjectBalance:
+22396:    PostMaturityBalanceTotals:
+22406:    OnboardingParticipant:
+22430:    OnboardingParticipantInput:
+22445:    OnboardingWitness:
+22462:    OnboardingWitnessInput:
+22474:    OtpRoleStatus:
+22481:    ProjectOnboardingState:
+22510:    SendOnboardingOtpRequest:
+22517:    VerifyOnboardingOtpRequest:
+22524:    ProjectCardSummary:
+22610:    PersonMasterSummary:
+22634:    PersonMasterProfile:
+22680:    CreatePersonMaster:
+22703:    UpdatePersonMaster:
+22735:    PersonRoleAssignment:
+22749:    PersonRoleAssignmentInput:
+22759:    PersonMasterAuditEvent:
+22773:    PersonStatusChangeInput:
+22785:    PersonStatusHistory:
+22799:    PersonArchiveBlockedError:
+22813:    PersonRelationships:
+22881:    PersonMasterDuplicateError:
+22889:    PersonMasterRemediationResult:
+22934:    PersonMasterMergeInput:

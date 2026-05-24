@@ -2,10 +2,10 @@ import {
   pgTable,
   uuid,
   text,
-  real,
   boolean,
   timestamp,
 } from "drizzle-orm/pg-core";
+import { numericFlex } from "../numericFlex";
 import { usersTable } from "./users";
 import { projectsTable } from "./projects";
 import {
@@ -46,7 +46,7 @@ export const expendituresTable = pgTable("expenditures", {
   category: expenditureCategoryEnum("category").notNull(),
 
   // INR amount (positive value)
-  amount: real("amount").notNull(),
+  amount: numericFlex("amount", { precision: 15, scale: 2 }).notNull(),
 
   // ISO date string (YYYY-MM-DD) when the expenditure was incurred
   expenditureDate: text("expenditure_date").notNull(),

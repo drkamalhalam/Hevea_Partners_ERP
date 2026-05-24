@@ -2,10 +2,10 @@ import {
   pgTable,
   uuid,
   text,
-  real,
   boolean,
   timestamp,
 } from "drizzle-orm/pg-core";
+import { numericFlex } from "../numericFlex";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { usersTable } from "./users";
@@ -56,7 +56,7 @@ export const contributionsTable = pgTable("contributions", {
   contributionType: contributionTypeEnum("contribution_type").notNull(),
 
   // INR amount (positive value; direction is implied by type)
-  amount: real("amount").notNull(),
+  amount: numericFlex("amount", { precision: 15, scale: 2 }).notNull(),
 
   // ISO date string (YYYY-MM-DD) of when the contribution was made/dated
   contributionDate: text("contribution_date").notNull(),

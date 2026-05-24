@@ -2,9 +2,9 @@ import {
   pgTable,
   uuid,
   text,
-  real,
   timestamp,
 } from "drizzle-orm/pg-core";
+import { numericFlex } from "../numericFlex";
 import { projectsTable } from "./projects";
 import { partnersTable } from "./partners";
 import { usersTable } from "./users";
@@ -44,7 +44,7 @@ export const postMaturityCostPaymentsTable = pgTable(
     partnerName: text("partner_name").notNull(),
 
     // ── Payment details ────────────────────────────────────────────────────
-    amount: real("amount").notNull(),
+    amount: numericFlex("amount", { precision: 15, scale: 2 }).notNull(),
     currency: text("currency").notNull().default("INR"),
     paymentDate: text("payment_date").notNull(), // ISO YYYY-MM-DD
 

@@ -2,10 +2,10 @@ import {
   pgTable,
   uuid,
   text,
-  real,
   boolean,
   timestamp,
 } from "drizzle-orm/pg-core";
+import { numericFlex } from "../numericFlex";
 import { usersTable } from "./users";
 import { projectsTable } from "./projects";
 import { partnersTable } from "./partners";
@@ -66,14 +66,14 @@ export const landownerLedgerTable = pgTable("landowner_ledger_entries", {
   // ── Core financials ───────────────────────────────────────────────────────
   description: text("description").notNull(),
 
-  amount: real("amount").notNull(),
+  amount: numericFlex("amount", { precision: 15, scale: 2 }).notNull(),
   // Always stored positive. direction field determines sign in summaries.
 
   // ── Revenue entitlement metadata (type=revenue_entitlement only) ──────────
-  grossRevenue: real("gross_revenue"),
+  grossRevenue: numericFlex("gross_revenue", { precision: 15, scale: 2 }),
   // Total project gross revenue for this period (before any split)
 
-  ownershipPct: real("ownership_pct"),
+  ownershipPct: numericFlex("ownership_pct", { precision: 12, scale: 8 }),
   // Landowner's ownership percentage at the time this entry was recorded
 
   revenueModelType: text("revenue_model_type"),
@@ -82,7 +82,7 @@ export const landownerLedgerTable = pgTable("landowner_ledger_entries", {
   // ── Recoverability (type=operational_burden) ──────────────────────────────
   isRecoverable: boolean("is_recoverable").notNull().default(false),
 
-  recoveredAmount: real("recovered_amount").notNull().default(0),
+  recoveredAmount: numericFlex("recovered_amount", { precision: 15, scale: 2 }).notNull().default(0),
 
   recoveryStatus: text("recovery_status").notNull().default("none"),
   // none | partial | full

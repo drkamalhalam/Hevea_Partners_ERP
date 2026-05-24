@@ -2,10 +2,10 @@ import {
   pgTable,
   uuid,
   integer,
-  real,
   text,
   timestamp,
 } from "drizzle-orm/pg-core";
+import { numericFlex } from "../numericFlex";
 import { usersTable } from "./users";
 import { projectsTable } from "./projects";
 
@@ -39,9 +39,9 @@ export const storeEntriesTable = pgTable("store_entries", {
 
   sheetCount: integer("sheet_count").notNull(),
 
-  weightKg: real("weight_kg"),
+  weightKg: numericFlex("weight_kg", { precision: 12, scale: 3 }),
 
-  scrapWeightKg: real("scrap_weight_kg"),
+  scrapWeightKg: numericFlex("scrap_weight_kg", { precision: 12, scale: 3 }),
 
   entryDate: text("entry_date").notNull(),
   entryTime: text("entry_time").notNull(),

@@ -2,10 +2,10 @@ import {
   pgTable,
   uuid,
   text,
-  real,
   boolean,
   timestamp,
 } from "drizzle-orm/pg-core";
+import { numericFlex } from "../numericFlex";
 import { usersTable } from "./users";
 import { agreementsTable } from "./agreements";
 
@@ -76,7 +76,7 @@ export const agreementAccountingProfilesTable = pgTable(
      * Default 50. Must sum to 100 with grossSplitPctDeveloper.
      * Applies to fifty_percent_revenue model only.
      */
-    grossSplitPctLandowner: real("gross_split_pct_landowner")
+    grossSplitPctLandowner: numericFlex("gross_split_pct_landowner", { precision: 7, scale: 4 })
       .notNull()
       .default(50),
 
@@ -85,7 +85,7 @@ export const agreementAccountingProfilesTable = pgTable(
      * Default 50. Must sum to 100 with grossSplitPctLandowner.
      * Applies to fifty_percent_revenue model only.
      */
-    grossSplitPctDeveloper: real("gross_split_pct_developer")
+    grossSplitPctDeveloper: numericFlex("gross_split_pct_developer", { precision: 7, scale: 4 })
       .notNull()
       .default(50),
 

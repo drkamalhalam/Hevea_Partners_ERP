@@ -2,12 +2,12 @@ import {
   pgTable,
   uuid,
   text,
-  real,
   boolean,
   timestamp,
   jsonb,
   integer,
 } from "drizzle-orm/pg-core";
+import { numericFlex } from "../numericFlex";
 import { usersTable } from "./users";
 import { projectsTable } from "./projects";
 import { agreementsTable } from "./agreements";
@@ -102,11 +102,15 @@ export const distributionPreviewsTable = pgTable("distribution_previews", {
 
   // ── Inputs ──────────────────────────────────────────────────────────────
 
-  grossRevenue: real("gross_revenue").notNull(),
-  operationalCost: real("operational_cost").notNull().default(0),
+  grossRevenue: numericFlex("gross_revenue", { precision: 15, scale: 2 }).notNull(),
+  operationalCost: numericFlex("operational_cost", { precision: 15, scale: 2 })
+    .notNull()
+    .default(0),
 
   // LCA amount for this period (manual entry or fetched from lca_ledger)
-  lcaAmount: real("lca_amount").notNull().default(0),
+  lcaAmount: numericFlex("lca_amount", { precision: 15, scale: 2 })
+    .notNull()
+    .default(0),
 
   // Whether LCA was fetched from the ledger or entered manually
   lcaSource: text("lca_source").notNull().default("manual"),
