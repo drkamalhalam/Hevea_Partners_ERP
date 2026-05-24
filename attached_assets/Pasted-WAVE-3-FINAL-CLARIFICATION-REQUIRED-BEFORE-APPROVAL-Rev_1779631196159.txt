@@ -1,0 +1,58 @@
+WAVE 3 FINAL CLARIFICATION REQUIRED BEFORE APPROVAL
+
+Revision 3 resolves the previously raised concerns regarding blocked entitlement handling and entitlement-engine boundaries. One accounting contract still requires explicit definition before Wave 3 implementation approval.
+
+REQUIRED CLARIFICATION — HELD REVENUE RELEASE INVARIANT
+
+Current design correctly states:
+
+Blocked entitlement ownership is preserved. revenue_attribution_lines row is written. held_distribution_ledger row is written. No partner_financial_ledger revenue_credit is created while entitlement is blocked. Existing held-distribution release workflow remains authoritative. 
+
+However, the future release path must be formally defined to prevent orphaned revenue.
+
+Please provide the accounting contract (design only, no implementation) covering:
+
+Relationship between attribution row and hold row 
+
+Required invariant:
+
+Σ revenue_attribution_lines.recognized_partner_revenue for blocked entitlement
+
+must equal
+
+held_distribution_ledger.heldAmount
+
+for the corresponding hold.
+
+Specify how linkage is maintained (sourceId, attributionId, metadata, or another immutable reference).
+
+Release-to-original-partner path 
+
+When a held amount is released to the original entitlement owner:
+
+Is a partner_financial_ledger revenue_credit required? Must amount exactly equal heldAmount? Must exactly one credit be created? How is duplicate release prevented? How does attribution evidence link to the released ledger credit? Release-to-alternative-party / dispute-settlement path 
+
+If governance resolves the entitlement in favour of another party:
+
+What ledger entry is eventually created? Which reference_type and entry_type are expected? How is the original attribution row connected to the final recipient? How is audit traceability preserved? Final invariant 
+
+Define the end-state accounting guarantee so that:
+
+Attribution Evidence ↓ Held Amount ↓ Final Ledger Entry
+
+can always be reconstructed without ambiguity.
+
+MULTI-TRANSFER EDGE CASE (documentation only)
+
+Please also document the intended resolution rule when multiple ownership_transfers affecting the same production batch exist before sale recognition, for example:
+
+A → B (retain_with_seller) B → C (retain_with_seller)
+
+State whether entitlement resolution is:
+
+chronological application, latest-transfer-wins, cumulative retained-entitlement chain, or another defined rule. 
+
+No implementation required now; documentation only.
+
+Once these two items are clarified, Wave 3 can be considered for implementation approval.
+
