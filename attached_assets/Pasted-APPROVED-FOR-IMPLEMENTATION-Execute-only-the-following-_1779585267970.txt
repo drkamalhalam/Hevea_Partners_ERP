@@ -1,0 +1,84 @@
+APPROVED FOR IMPLEMENTATION
+
+Execute only the following remediation wave.
+
+Scope is strictly limited to:
+
+Audit Architecture Write-Once Enforcement (H1) Stub Schema Investigation and Cleanup (H5) 
+
+DO NOT:
+
+begin Numeric Precision Foundation modify money column types convert real to numeric modify ownership formulas modify contribution formulas modify reimbursement formulas modify distribution formulas modify payment calculations modify project lifecycle modify approval framework modify observer workflow run db push without approval perform unrelated refactors ==================================================== TASK 1 — AUDIT ARCHITECTURE WRITE-ONCE ENFORCEMENT 
+
+Audit identified:
+
+audit_logs.ts contains mutating handlers governance_overrides.ts contains mutating handlers 
+
+Architecture requirement:
+
+Audit records are append-only. Audit records must never be edited or deleted.
+
+Implement:
+
+Identify every UPDATE/PATCH/PUT/DELETE route affecting:
+
+audit logs governance override logs other write-once audit entities 
+
+Remove or disable mutating routes.
+
+Preserve:
+
+create read search export 
+
+Add explicit protection:
+
+Return:
+
+405 Method Not Allowed or 403 Forbidden 
+
+for mutation attempts.
+
+Verify no legitimate workflow depends on modifying audit records. ==================================================== TASK 2 — STUB SCHEMA INVESTIGATION 
+
+Audit identified:
+
+lib/db/src/schema/stubs.ts
+
+Potential risk:
+
+Production-shaped schema existing under a “stub” namespace.
+
+Perform full investigation:
+
+Determine whether stubs.ts is:
+
+unused test-only development-only production referenced 
+
+Produce importer map.
+
+Produce runtime usage map.
+
+Determine whether any:
+
+routes services calculations reports distributions dashboards 
+
+reference stub tables.
+
+If unused:
+
+safely deprecate move to development-only area or remove references 
+
+If production referenced:
+
+DO NOT redesign.
+
+Return exact dependency graph.
+
+==================================================== AFTER IMPLEMENTATION 
+
+Return implementation report only:
+
+Files changed Exact code locations modified Audit mutation routes removed/blocked Stub schema usage findings Import dependency map Runtime dependency map Typecheck result Build result Remaining risks READY FOR NUMERIC PRECISION FOUNDATION or NOT READY 
+
+No additional work outside this scope.
+

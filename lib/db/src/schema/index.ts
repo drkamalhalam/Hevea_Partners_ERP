@@ -18,7 +18,6 @@ export * from "./missing_developer";
 export * from "./nominee_activation_workflow";
 export * from "./ownership_freeze";
 export * from "./project_closure_workflow";
-export * from "./stubs";
 export * from "./templates";
 export * from "./document_variable_registry";
 export * from "./document_template_variables";

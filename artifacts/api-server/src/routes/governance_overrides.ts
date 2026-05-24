@@ -372,9 +372,10 @@ router.get("/:id", requireRole("admin", "developer"), async (req, res) => {
 });
 
 // ── Explicit write-once protection ────────────────────────────────────────────
-// governanceOverridesTable is append-only. Reject any DELETE or PATCH attempts.
+// governanceOverridesTable is append-only. Reject any DELETE, PATCH, or PUT attempts.
 // Uses regex paths for Express 5 / path-to-regexp 8 compatibility.
 router.delete(/.*/, enforceWriteOnce("governance overrides"));
 router.patch(/.*/, enforceWriteOnce("governance overrides"));
+router.put(/.*/, enforceWriteOnce("governance overrides"));
 
 export default router;
