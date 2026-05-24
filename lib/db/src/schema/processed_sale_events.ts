@@ -1,10 +1,11 @@
 /**
  * processed_sale_events.ts
  *
- * V3 Partner Financial Ledger — Wave 1 (schema only).
+ * V3 Partner Financial Ledger — Wave 1 schema, Wave 2 uniqueness refinement.
  *
- * Idempotency tracker. UNIQUE on event_id guarantees at-most-once
- * processing of any envelope from sale_event_journal.
+ * Idempotency tracker. Composite UNIQUE on (event_id, processed_by_handler)
+ * guarantees at-most-once processing per (event, handler) pair, allowing
+ * multiple independent consumers to fan-out over the same envelope.
  */
 
 import { pgTable, uuid, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
@@ -26,7 +27,10 @@ export const processedSaleEventsTable = pgTable(
     notes: text("notes"),
   },
   (t) => ({
-    uniqueEventId: uniqueIndex("pse_event_id_uq").on(t.eventId),
+    uniqueEventHandler: uniqueIndex("pse_event_handler_uq").on(
+      t.eventId,
+      t.processedByHandler,
+    ),
   }),
 );
 
