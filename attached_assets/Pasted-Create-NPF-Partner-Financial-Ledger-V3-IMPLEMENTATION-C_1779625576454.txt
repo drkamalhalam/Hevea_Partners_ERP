@@ -1,0 +1,74 @@
+Create:
+
+NPF Partner Financial Ledger V3 IMPLEMENTATION CONTRACT & ACCEPTANCE CRITERIA
+
+Use V3 Final Freeze + Implementation Readiness Report + Section 10.
+
+Do NOT redesign architecture. Do NOT introduce new business rules. Do NOT propose alternative approaches.
+
+Purpose: Produce the final implementation contract that developers must satisfy before marking V3 complete.
+
+Required sections:
+
+Scope Lock 
+
+List every component that MUST be implemented.
+
+List every component explicitly OUT OF SCOPE.
+
+Definition of Done 
+
+For each implementation wave (1–10):
+
+required tables required routes required validators required UI screens required tests completion criteria Acceptance Test Matrix 
+
+For:
+
+individual partner sale store sale admin override sale developer override sale internal partner purchase expenditure allocation burden allocation LCA allocation reimbursement distribution payment distribution reversal inheritance transfer hold creation hold release project closure 
+
+For each:
+
+setup action expected ledger rows expected allocation rows expected balance change expected validator result Financial Integrity Tests 
+
+Verify:
+
+revenue attribution totals cost allocation totals reimbursement totals reversal totals closure snapshots held balances available balances distribution snapshots 
+
+Include expected formulas.
+
+Data Health Validator Contract 
+
+For every validator:
+
+purpose SQL/data source pass criteria fail criteria severity Performance Requirements 
+
+Specify:
+
+ledger query targets dashboard response targets snapshot rebuild targets validator execution targets Audit Requirements 
+
+Verify every write-once table.
+
+Verify every event linkage.
+
+Verify replayability requirements.
+
+Final Sign-Off Checklist 
+
+Provide a checklist that can be executed before enabling:
+
+FIN_DASHBOARD_USE_V3_VIEW FIN_LANDOWNER_WRITES_DEPRECATED
+
+Final Verdict 
+
+Return exactly one:
+
+READY FOR BUILD
+
+or
+
+NOT READY FOR BUILD
+
+with reasons.
+
+Return only the implementation contract. No redesign. No architecture changes. No new tables beyond V3. No migration plans. No rollout plans. No speculative improvements.
+
