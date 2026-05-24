@@ -1,0 +1,400 @@
+PARTNER FINANCIAL LEDGER & DISTRIBUTABLE BALANCE ENGINE
+ARCHITECTURE DESIGN WAVE
+
+IMPORTANT:
+This is an architecture and implementation design wave.
+
+Do NOT modify:
+- Ownership engine
+- Ownership attribution guard
+- Ownership calculation formulas
+- Contribution engine formulas
+- Reimbursement formulas
+- Entitlement creation formulas
+- Sale execution workflows already implemented
+- Inventory logic
+- Inheritance logic
+- Numeric Precision Foundation implementation
+- Existing OTP architecture
+- Existing assignment architecture
+
+====================================================
+OBJECTIVE
+====================================================
+
+Implement a complete Partner Financial Ledger system that tracks:
+
+1. Gross Revenue
+2. Cost Allocation
+3. Financial Adjustments
+4. Distributable Balance
+5. Distribution Payments
+6. Partner Financial Position
+
+Core formula:
+
+Distributable Balance =
+Revenue Credits
+- Cost Debits
++ Adjustment Credits
+- Adjustment Debits
+- Distribution Payments
+
+Negative balances must be allowed.
+
+====================================================
+ENTITLEMENT SOURCE OF REVENUE
+====================================================
+
+Revenue originates ONLY when entitlement rubber is sold.
+
+Entitlement creation remains unchanged.
+
+----------------------------------------------------
+CONTRIBUTION MODEL
+----------------------------------------------------
+
+After Store Entry correction window closes:
+
+Sheet KG entitlement distributed according to project ownership.
+
+Scrap KG entitlement distributed according to project ownership.
+
+----------------------------------------------------
+50% REVENUE MODEL
+----------------------------------------------------
+
+After Store Entry correction window closes:
+
+50% of Sheet KG entitlement belongs to landowner pool.
+
+50% of Scrap KG entitlement belongs to landowner pool.
+
+Remaining 50% distributed among economic participants only.
+
+Landowner participates in economic participant pool only for contributions beyond recorded land notional value.
+
+====================================================
+SALE REVENUE RECOGNITION
+====================================================
+
+Revenue recognition occurs automatically whenever entitlement ownership is consumed by a completed sale.
+
+Applicable sale types:
+
+- Individual Partner Sale
+- Store Sale
+- Internal Partner Purchase
+- Admin Override Sale
+- Developer Override Sale
+- Future Sale Mechanisms
+
+CRITICAL RULE:
+
+Revenue attribution must always follow entitlement ownership consumption.
+
+Revenue attribution must NEVER follow:
+
+- Project ownership percentage
+- Sale executor identity
+- Current stock percentage
+- Current ownership percentage
+
+The system must identify whose entitlement was consumed and credit revenue accordingly.
+
+====================================================
+INDIVIDUAL PARTNER SALE
+====================================================
+
+When Partner A sells:
+
+- Partner A entitlement decreases.
+- Partner A gross revenue increases by sale proceeds.
+- Inventory reduction logic remains unchanged.
+
+====================================================
+STORE SALE
+====================================================
+
+Store sale allocation logic remains unchanged.
+
+Revenue allocation must follow actual entitlement quantities consumed from participating eligible partners.
+
+Revenue must NOT be allocated according to project ownership.
+
+Revenue must NOT be allocated according to stock percentages.
+
+Revenue must follow actual entitlement consumption used in sale allocation.
+
+Each participating partner receives revenue only for entitlement consumed from their own balance.
+
+====================================================
+INTERNAL PARTNER PURCHASE
+====================================================
+
+Approved business rule:
+
+Seller:
+- Entitlement decreases.
+- Gross revenue increases by negotiated sale value.
+
+Buyer:
+- Entitlement increases.
+- Gross revenue unchanged.
+
+Buyer payment occurs externally.
+
+No project revenue created.
+
+No project ownership transfer.
+
+No inventory movement.
+
+Same physical stock remains in same store/place.
+
+Only entitlement ownership changes.
+
+====================================================
+ADMIN / DEVELOPER OVERRIDE SALES
+====================================================
+
+Existing override sale rights remain unchanged.
+
+Admin or Developer may execute sale involving:
+
+- blocked entitlement
+- disabled entitlement
+- otherwise restricted entitlement
+
+Override reason mandatory.
+
+Override fully auditable.
+
+IMPORTANT:
+
+Admin or Developer never becomes revenue owner.
+
+Revenue still belongs to the entitlement owners whose entitlement was consumed.
+
+Sale executor identity and revenue ownership must remain separate concepts.
+
+====================================================
+COST ALLOCATION
+====================================================
+
+----------------------------------------------------
+CONTRIBUTION MODEL
+----------------------------------------------------
+
+Costs allocated according to project ownership percentages.
+
+----------------------------------------------------
+50% REVENUE MODEL
+----------------------------------------------------
+
+Costs allocated entirely to landowner side.
+
+Economic participant revenue remains cost free.
+
+Make this rule explicit throughout the financial architecture.
+
+====================================================
+PARTNER FINANCIAL LEDGER
+====================================================
+
+Design an append-only ledger supporting:
+
+Revenue Credit
+Cost Allocation Debit
+Adjustment Credit
+Adjustment Debit
+Distribution Payment Debit
+Manual Override Credit
+Manual Override Debit
+Sale Reversal Credit
+Sale Reversal Debit
+Inheritance Transfer Out
+Inheritance Transfer In
+
+Every ledger record must contain:
+
+Project
+Partner
+Date
+Amount
+Entry Type
+Reference Type
+Reference ID
+Created By
+Reason
+Timestamp
+
+No hard delete.
+
+No editing of historical financial records.
+
+Correction must occur through reversal entries.
+
+====================================================
+DISTRIBUTABLE BALANCE
+====================================================
+
+For each partner:
+
+Distributable Balance =
+Revenue Credits
+- Cost Debits
++ Adjustment Credits
+- Adjustment Debits
+- Distribution Payments
+
+Negative balances allowed.
+
+Negative balances must remain visible.
+
+System must never silently reset negatives to zero.
+
+====================================================
+DISTRIBUTION PAYMENT WORKFLOW
+====================================================
+
+Admin or Developer may distribute money.
+
+Workflow:
+
+Select Project
+Select Partner
+Enter Amount
+Optional Proof Upload
+Optional OTP Confirmation
+Mark Paid
+
+Creates:
+
+Distribution Payment ledger entry.
+
+Distributable Balance reduces immediately.
+
+Partial distributions supported.
+
+Over-distribution only through override workflow with:
+
+- mandatory reason
+- warning acknowledgement
+- permanent audit trail
+
+====================================================
+PARTNER DASHBOARD
+====================================================
+
+Partner must see:
+
+OWN DATA
+
+- Own Sheet Entitlement
+- Own Scrap Entitlement
+- Own Gross Revenue
+- Own Distributable Balance
+
+PROJECT DATA
+
+- Total Project Entitlement
+- Total Project Sales
+- Total Project Profit
+
+====================================================
+PROJECT PROFIT
+====================================================
+
+Project Profit =
+Total Revenue
+- Total Cost
+
+Partner distributable balances may differ from ownership percentages because revenue follows entitlement consumption.
+
+====================================================
+SALE CANCELLATION
+====================================================
+
+Existing sale cancellation rules remain unchanged.
+
+If:
+
+Approved
++
+Paid
++
+Not dispatched
++
+Cancelled
+
+Then:
+
+- entitlement restored
+- revenue recognition reversed
+- related financial ledger entries reversed
+- full audit trail maintained
+
+Use reversal entries only.
+
+====================================================
+INHERITANCE
+====================================================
+
+Upon inheritance:
+
+- entitlement ownership transfers according to inheritance workflow
+- undistributed financial balances transfer according to inheritance workflow
+
+Historical ownership and financial audit records remain preserved.
+
+====================================================
+PROJECT CLOSURE
+====================================================
+
+Existing closure rule remains unchanged.
+
+Project may close when:
+
+Physical inventory = 0
+
+Even if entitlement books contain residual mismatch.
+
+Mandatory explanation required.
+
+Explanation must remain permanently auditable.
+
+====================================================
+OUTPUT REQUIRED
+====================================================
+
+Produce:
+
+1. Financial ledger architecture
+2. Ledger tables
+3. Revenue-recognition events
+4. Cost-allocation events
+5. Distribution-payment workflow
+6. Distributable-balance calculation engine
+7. Dashboard calculations
+8. Internal partner purchase accounting
+9. Admin/developer override sale accounting
+10. Sale cancellation accounting
+11. Inheritance accounting
+12. Closure accounting treatment
+13. Required APIs
+14. Required UI screens
+15. Validation rules
+16. Audit requirements
+17. Integration points with:
+   - Entitlement engine
+   - Store Entry
+   - Sale Rubber
+   - Ownership engine
+   - Inheritance engine
+   - Reimbursement engine
+   - Project closure workflow
+
+Do not implement code.
+
+Design architecture only.
