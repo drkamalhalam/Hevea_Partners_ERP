@@ -1,0 +1,176 @@
+NPF STAGE 2 — EXECUTION PLAN REVISION
+
+This task is READ-ONLY.
+
+DO NOT:
+
+modify schema generate migrations run drizzle push run db push modify code modify OpenAPI regenerate clients install packages alter database tables 
+
+Purpose:
+
+Revise the previously approved NPF Stage 2 implementation plan using the architect corrections below and produce the final execution plan that will be used for implementation approval.
+
+==================================================== ARCHITECT CORRECTIONS (MANDATORY) 
+
+CORRECTION 1 — LAND AREA
+
+Previous proposal:
+
+landArea -> real (unchanged)
+
+Rejected.
+
+Replace with:
+
+numeric(12,4)
+
+Apply to:
+
+agreements.landArea projects.landArea project_parcels.landArea 
+
+Reason:
+
+Land area participates in:
+
+Schedule A land valuation land notional value calculations per-unit valuation legal documents ownership-support calculations 
+
+Land area must be decimal-exact.
+
+====================================================
+
+CORRECTION 2 — OWNERSHIP PERCENTAGES
+
+Previous proposal:
+
+numeric(7,4)
+
+Rejected for ownership-related percentages.
+
+Use:
+
+numeric(10,6)
+
+Apply wherever ownership percentages are stored, including:
+
+agreements.ownershipShareLandowner agreements.ownershipShareDeveloper landowner_ledger_entries.ownershipPct 
+
+Search entire schema and identify any additional ownership-percentage fields that should use numeric(10,6).
+
+Reason:
+
+Ownership is a core ERP engine used by:
+
+crystallization maturity inheritance transfer allocation ownership snapshots entitlement allocation 
+
+Additional precision is required.
+
+==================================================== OUTPUT REQUIRED 
+
+SECTION 1
+
+Revised column inventory.
+
+Show:
+
+table column old type new type 
+
+====================================================
+
+SECTION 2
+
+Revised conversion matrix.
+
+Group by:
+
+money ownership percentage non-ownership percentage quantity/weight land area geographic escalation factor 
+
+====================================================
+
+SECTION 3
+
+Implementation impact.
+
+Recalculate:
+
+schema files affected columns affected estimated lines changed 
+
+====================================================
+
+SECTION 4
+
+Migration SQL preview.
+
+Show representative ALTER statements only.
+
+Do NOT execute anything.
+
+====================================================
+
+SECTION 5
+
+OpenAPI impact.
+
+Recalculate affected schemas and DTOs.
+
+====================================================
+
+SECTION 6
+
+Frontend impact.
+
+Recalculate pages likely to break after decimal-string migration.
+
+====================================================
+
+SECTION 7
+
+Execution sequence.
+
+Provide exact order:
+
+frontend preparation schema edits OpenAPI edits codegen migration generation migration execution validation deployment rollback 
+
+====================================================
+
+SECTION 8
+
+Validation checklist.
+
+Include:
+
+ownership engine contribution engine burden engine reimbursement engine LCA 50% revenue model entitlement calculations sale calculations landowner accounting financial reporting 
+
+====================================================
+
+SECTION 9
+
+Risk assessment.
+
+Identify:
+
+highest-risk calculations highest-risk files highest-risk endpoints 
+
+====================================================
+
+FINAL VERDICT
+
+Return:
+
+READY FOR NPF STAGE 2 IMPLEMENTATION
+
+or
+
+NOT READY FOR NPF STAGE 2 IMPLEMENTATION
+
+with justification.
+
+No implementation.
+
+No code changes.
+
+No schema changes.
+
+No migrations.
+
+Planning report only.
+
