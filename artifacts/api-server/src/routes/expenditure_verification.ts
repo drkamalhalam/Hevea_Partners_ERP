@@ -11,6 +11,7 @@ import {
   userProjectAssignmentsTable,
   agreementsTable,
 } from "@workspace/db";
+import { maskOtp, auditOtpEvent, isOtpVerificationFresh } from "../lib/otp";
 
 const router = Router();
 
@@ -42,6 +43,49 @@ async function getAssignedProjectIds(userId: string): Promise<string[]> {
   return rows.map((r) => r.projectId);
 }
 
+// SECURITY: shared authorization gate for every expenditure-verification
+// mutation route (approve / reject / otp request / otp confirm).
+// Returns null when allowed; returns {status, body} when the caller must short
+// circuit. Enforces:
+//   1. project-scope assignment for non-global roles
+//   2. designated-verifier OR matching-role OR admin/developer
+async function authorizeVerifierAction(
+  actor: { id: string; role: string },
+  projectId: string,
+  request: { requiredVerifierId: string | null; requiredVerifierRole: string },
+): Promise<{ status: number; body: { error: string; code?: string } } | null> {
+  // (1) Project-scope check for non-global roles
+  if (!canAccessAllProjects(actor.role)) {
+    const assigned = await getAssignedProjectIds(actor.id);
+    if (!assigned.includes(projectId)) {
+      return {
+        status: 403,
+        body: {
+          error: "You are not assigned to this project.",
+          code: "PROJECT_ACCESS_DENIED",
+        },
+      };
+    }
+  }
+
+  // (2) Verifier identity / role check
+  const isDesignatedVerifier = request.requiredVerifierId === actor.id;
+  const hasMatchingRole = request.requiredVerifierRole === actor.role;
+  const isAdminOrDev = actor.role === "admin" || actor.role === "developer";
+
+  if (!isDesignatedVerifier && !hasMatchingRole && !isAdminOrDev) {
+    return {
+      status: 403,
+      body: {
+        error: `This expenditure requires verification by a ${request.requiredVerifierRole}. Your role (${actor.role}) is not authorised.`,
+        code: "VERIFIER_NOT_AUTHORIZED",
+      },
+    };
+  }
+
+  return null;
+}
+
 function formatVerificationRequest(
   r: typeof expenditureVerificationRequestsTable.$inferSelect,
 ) {
@@ -54,7 +98,10 @@ function formatVerificationRequest(
     requiredVerifierName: r.requiredVerifierName ?? null,
     routingReason: r.routingReason,
     status: r.status,
-    otpCode: r.otpCode ?? null,
+    // SECURITY: never echo the raw OTP code back to clients. Presence of an
+    // active OTP is signalled via otpSentAt / otpExpiresAt only.
+    otpCode: null,
+    otpIssued: Boolean(r.otpSentAt && (!r.otpExpiresAt || r.otpExpiresAt >= new Date())),
     otpSentAt: r.otpSentAt?.toISOString() ?? null,
     otpExpiresAt: r.otpExpiresAt?.toISOString() ?? null,
     otpVerifiedAt: r.otpVerifiedAt?.toISOString() ?? null,
@@ -466,25 +513,34 @@ router.post("/:id/verification/approve", async (req, res) => {
     return res.status(400).json({ error: "This expenditure is already approved." });
   }
 
-  // ── Authorization: must be the designated verifier, have matching role, or be admin ──
-  const isDesignatedVerifier =
-    request.requiredVerifierId === actor.id;
-  const hasMatchingRole =
-    request.requiredVerifierRole === actor.role ||
-    request.requiredVerifierRole === "admin";
-  const isAdmin = actor.role === "admin";
-
-  if (!isDesignatedVerifier && !hasMatchingRole && !isAdmin) {
-    return res.status(403).json({
-      error: `This expenditure requires verification by a ${request.requiredVerifierRole}. Your role (${actor.role}) is not authorised.`,
-    });
-  }
+  // ── Authorization: project-scope + verifier identity/role ──
+  const gate = await authorizeVerifierAction(actor, exp.projectId, request);
+  if (gate) return res.status(gate.status).json(gate.body);
+  const isAdmin = actor.role === "admin" || actor.role === "developer";
 
   // Prevent the submitter from verifying their own expenditure (unless admin)
   if (!isAdmin && exp.recordedById === actor.id) {
     return res.status(403).json({
       error:
         "You cannot verify your own expenditure. A different user must approve it.",
+    });
+  }
+
+  // ── OTP GATE ──────────────────────────────────────────────────────────────
+  // Approve requires a fresh OTP verification (within the standard freshness
+  // window). The OTP must have been confirmed via the /otp/confirm route.
+  if (!isOtpVerificationFresh(request.otpVerifiedAt)) {
+    auditOtpEvent({
+      purpose: "expenditure_verification",
+      subjectId: expenditureId,
+      outcome: "failed",
+      actorId: actor.id,
+      metadata: { reason: "approve_without_fresh_otp", verificationRequestId: request.id },
+    });
+    return res.status(422).json({
+      error:
+        "OTP verification required. Request and confirm an OTP before approving this expenditure.",
+      code: "OTP_REQUIRED",
     });
   }
 
@@ -505,7 +561,8 @@ router.post("/:id/verification/approve", async (req, res) => {
     .where(eq(expendituresTable.id, expenditureId))
     .returning();
 
-  // Update verification request
+  // Update verification request — invalidate the OTP after successful approval
+  // so the same verification cannot be replayed.
   const [updatedRequest] = await db
     .update(expenditureVerificationRequestsTable)
     .set({
@@ -514,10 +571,21 @@ router.post("/:id/verification/approve", async (req, res) => {
       resolvedById: actor.id,
       resolvedByName: actor.displayName ?? null,
       resolverNotes: notes,
+      otpCode: null,
+      otpVerifiedAt: null,
+      otpExpiresAt: null,
       updatedAt: new Date(),
     })
     .where(eq(expenditureVerificationRequestsTable.id, request.id))
     .returning();
+
+  auditOtpEvent({
+    purpose: "expenditure_verification",
+    subjectId: expenditureId,
+    outcome: "verified",
+    actorId: actor.id,
+    metadata: { verificationRequestId: request.id, action: "approve_consumed_otp" },
+  });
 
   // Write audit event
   await db.insert(expenditureVerificationEventsTable).values({
@@ -593,16 +661,10 @@ router.post("/:id/verification/reject", async (req, res) => {
     });
   }
 
-  // Authorization: same as approve
-  const isDesignatedVerifier = request.requiredVerifierId === actor.id;
-  const hasMatchingRole = request.requiredVerifierRole === actor.role || request.requiredVerifierRole === "admin";
-  const isAdmin = actor.role === "admin";
-
-  if (!isDesignatedVerifier && !hasMatchingRole && !isAdmin) {
-    return res.status(403).json({
-      error: `This expenditure requires verification by a ${request.requiredVerifierRole}. Your role (${actor.role}) is not authorised.`,
-    });
-  }
+  // Authorization: project-scope + verifier identity/role (same gate as approve)
+  const gate = await authorizeVerifierAction(actor, exp.projectId, request);
+  if (gate) return res.status(gate.status).json(gate.body);
+  const isAdmin = actor.role === "admin" || actor.role === "developer";
 
   if (!isAdmin && exp.recordedById === actor.id) {
     return res.status(403).json({
@@ -658,7 +720,7 @@ router.post("/:id/verification/reject", async (req, res) => {
 // OTP placeholder — generates and stores a 6-digit code visible in the response
 
 router.post(
-  "/expenditures/:id/verification/otp/request",
+  "/:id/verification/otp/request",
   async (req, res) => {
     const { userId: clerkUserId } = getAuth(req);
     if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
@@ -686,14 +748,15 @@ router.post(
       });
     }
 
-    // Authorization: only the designated verifier or admin can request OTP
-    const isDesignatedVerifier = request.requiredVerifierId === actor.id;
-    const hasMatchingRole = request.requiredVerifierRole === actor.role;
-    const isAdmin = actor.role === "admin";
-
-    if (!isDesignatedVerifier && !hasMatchingRole && !isAdmin) {
-      return res.status(403).json({ error: "You are not the designated verifier for this expenditure." });
-    }
+    // Authorization: project-scope + verifier identity/role
+    const [expRowAuth] = await db
+      .select({ projectId: expendituresTable.projectId })
+      .from(expendituresTable)
+      .where(eq(expendituresTable.id, expenditureId))
+      .limit(1);
+    if (!expRowAuth) return res.status(404).json({ error: "Expenditure not found" });
+    const gate = await authorizeVerifierAction(actor, expRowAuth.projectId, request);
+    if (gate) return res.status(gate.status).json(gate.body);
 
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
@@ -719,11 +782,19 @@ router.post(
       notes: "OTP sent to verifier (placeholder — would be SMS in production)",
     });
 
-    req.log.info({ expenditureId }, "Expenditure verification OTP requested (placeholder)");
+    req.log.info({ expenditureId }, "Expenditure verification OTP requested");
+    auditOtpEvent({
+      purpose: "expenditure_verification",
+      subjectId: expenditureId,
+      outcome: "issued",
+      actorId: actor.id,
+      metadata: { verificationRequestId: request.id },
+    });
 
-    // Return code in dev mode (placeholder system)
+    // SECURITY: code only included when env permits (see maskOtp).
+    // Production must deliver OTP via configured transport.
     return res.json({
-      otpCode,
+      otpCode: maskOtp(otpCode),
       expiresAt: expiresAt.toISOString(),
     });
   },
@@ -732,7 +803,7 @@ router.post(
 // ── POST /expenditures/:id/verification/otp/confirm ───────────────────────────
 
 router.post(
-  "/expenditures/:id/verification/otp/confirm",
+  "/:id/verification/otp/confirm",
   async (req, res) => {
     const { userId: clerkUserId } = getAuth(req);
     if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
@@ -759,6 +830,18 @@ router.post(
       return res.status(404).json({ error: "No verification request found." });
     }
 
+    // SECURITY: project-scope + verifier identity/role gate. Without this
+    // any authenticated user with the expenditure id + a leaked OTP could
+    // mark otpVerifiedAt and stage approval.
+    const [expRowAuth] = await db
+      .select({ projectId: expendituresTable.projectId })
+      .from(expendituresTable)
+      .where(eq(expendituresTable.id, expenditureId))
+      .limit(1);
+    if (!expRowAuth) return res.status(404).json({ error: "Expenditure not found" });
+    const gate = await authorizeVerifierAction(actor, expRowAuth.projectId, request);
+    if (gate) return res.status(gate.status).json(gate.body);
+
     if (!request.otpCode) {
       return res.status(400).json({
         error: "No OTP has been sent. Request an OTP first.",
@@ -776,7 +859,10 @@ router.post(
       return res.status(400).json({ error: "Incorrect OTP." });
     }
 
-    // OTP confirmed — mark as verified and auto-approve
+    // SECURITY: OTP confirm ONLY marks the verification request as having a
+    // fresh confirmed OTP. It does NOT auto-approve the expenditure. The
+    // verifier must call POST /expenditures/:id/verification/approve, which
+    // re-checks isOtpVerificationFresh() and atomically clears the OTP.
     const [expRow] = await db
       .select({ exp: expendituresTable, projectName: projectsTable.name })
       .from(expendituresTable)
@@ -786,28 +872,13 @@ router.post(
 
     if (!expRow) return res.status(404).json({ error: "Expenditure not found" });
 
-    const [updatedExp] = await db
-      .update(expendituresTable)
-      .set({
-        verificationStatus: "approved",
-        verifiedAt: new Date(),
-        verifiedById: actor.id,
-        verifiedByName: actor.displayName ?? null,
-        verifierNotes: "Approved via OTP verification",
-        updatedAt: new Date(),
-      })
-      .where(eq(expendituresTable.id, expenditureId))
-      .returning();
+    const updatedExp = expRow.exp;
 
     const [updatedRequest] = await db
       .update(expenditureVerificationRequestsTable)
       .set({
-        status: "approved",
+        // Status remains 'pending'/current value — only OTP proof is updated.
         otpVerifiedAt: new Date(),
-        resolvedAt: new Date(),
-        resolvedById: actor.id,
-        resolvedByName: actor.displayName ?? null,
-        resolverNotes: "Approved via OTP verification",
         updatedAt: new Date(),
       })
       .where(eq(expenditureVerificationRequestsTable.id, request.id))
@@ -820,10 +891,18 @@ router.post(
       actorId: actor.id,
       actorName: actor.displayName ?? "Unknown",
       actorRole: actor.role,
-      notes: "OTP confirmed — expenditure auto-approved",
+      notes: "OTP confirmed. Verifier must now call /approve within freshness window.",
     });
 
-    req.log.info({ expenditureId }, "Expenditure verification OTP confirmed");
+    auditOtpEvent({
+      purpose: "expenditure_verification",
+      subjectId: expenditureId,
+      outcome: "verified",
+      actorId: actor.id,
+      metadata: { verificationRequestId: request.id, action: "otp_proof_set" },
+    });
+
+    req.log.info({ expenditureId }, "Expenditure verification OTP confirmed (approval still required)");
 
     return res.json({
       expenditure: formatEntry(updatedExp, expRow.projectName ?? null),

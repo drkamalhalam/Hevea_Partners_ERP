@@ -10,8 +10,12 @@ import {
   productionBatchesTable,
   stockTransfersTable,
   dispatchMemosTable,
+  settlementRecordsTable,
+  inheritanceClaimsTable,
+  disputesTable,
+  heldDistributionLedgerTable,
 } from "@workspace/db";
-import { eq, desc, inArray, and, sql } from "drizzle-orm";
+import { eq, desc, inArray, and, sql, isNull, notInArray, gt } from "drizzle-orm";
 import {
   InitiateProjectClosureBody,
   UpdateProjectClosureWorkflowBody,
@@ -92,21 +96,43 @@ interface StockBalance { stockType: string; netKg: number }
 interface OpenBatch { id: string; batchNumber: string; status: string }
 interface PendingTransfer { id: string; transferCode: string; quantityKg: string; transferStatus: string }
 interface ActiveMemo { id: string; memoCode: string; remainingKg: string; dispatchStatus: string }
+interface OpenSettlement { id: string; periodLabel: string; status: string; partnerId: string | null }
+interface UnreleasedHeld { id: string; partnerId: string | null; heldAmount: string; reason: string | null }
+interface OpenInheritanceClaim { id: string; status: string; partnerId: string | null }
+interface OpenDispute { id: string; status: string; disputeType: string | null }
 
 export interface ClosureReadiness {
   projectId: string;
-  eligibilityStatus: "closure_ready" | "blocked_inventory" | "pending_operational";
+  eligibilityStatus:
+    | "closure_ready"
+    | "blocked_inventory"
+    | "blocked_financial"
+    | "blocked_governance"
+    | "pending_operational";
   isEligible: boolean;
   blockers: string[];
   stockBalances: StockBalance[];
   openBatches: OpenBatch[];
   pendingTransfers: PendingTransfer[];
   activeMemos: ActiveMemo[];
+  openSettlements: OpenSettlement[];
+  unreleasedHeldDistributions: UnreleasedHeld[];
+  openInheritanceClaims: OpenInheritanceClaim[];
+  openDisputes: OpenDispute[];
   checkedAt: string;
 }
 
 export async function computeClosureReadiness(projectId: string): Promise<ClosureReadiness> {
-  const [stockRows, openBatchRows, pendingTransferRows, activeMemoRows] = await Promise.all([
+  const [
+    stockRows,
+    openBatchRows,
+    pendingTransferRows,
+    activeMemoRows,
+    openSettlementRows,
+    unreleasedHeldRows,
+    openClaimRows,
+    openDisputeRows,
+  ] = await Promise.all([
     db
       .select({
         stockType: inventoryStockMovementsTable.stockType,
@@ -131,6 +157,70 @@ export async function computeClosureReadiness(projectId: string): Promise<Closur
       .select({ id: dispatchMemosTable.id, memoCode: dispatchMemosTable.memoCode, remainingKg: dispatchMemosTable.remainingKg, dispatchStatus: dispatchMemosTable.dispatchStatus })
       .from(dispatchMemosTable)
       .where(and(eq(dispatchMemosTable.projectId, projectId), inArray(dispatchMemosTable.dispatchStatus, ["open", "partial"]))),
+
+    // ── FINANCIAL: settlement records not yet finalized ──────────────────
+    db
+      .select({
+        id: settlementRecordsTable.id,
+        periodLabel: settlementRecordsTable.periodLabel,
+        status: settlementRecordsTable.status,
+        partnerId: settlementRecordsTable.partnerId,
+      })
+      .from(settlementRecordsTable)
+      .where(
+        and(
+          eq(settlementRecordsTable.projectId, projectId),
+          eq(settlementRecordsTable.isActive, true),
+          notInArray(settlementRecordsTable.status, ["finalized"]),
+        ),
+      ),
+
+    // ── FINANCIAL: held distributions not yet released ───────────────────
+    db
+      .select({
+        id: heldDistributionLedgerTable.id,
+        partnerId: heldDistributionLedgerTable.partnerId,
+        heldAmount: heldDistributionLedgerTable.heldAmount,
+        reason: heldDistributionLedgerTable.holdReason,
+      })
+      .from(heldDistributionLedgerTable)
+      .where(
+        and(
+          eq(heldDistributionLedgerTable.projectId, projectId),
+          isNull(heldDistributionLedgerTable.releasedAt),
+          gt(heldDistributionLedgerTable.heldAmount, "0"),
+        ),
+      ),
+
+    // ── GOVERNANCE: inheritance claims still open ────────────────────────
+    db
+      .select({
+        id: inheritanceClaimsTable.id,
+        status: inheritanceClaimsTable.status,
+        partnerId: inheritanceClaimsTable.partnerId,
+      })
+      .from(inheritanceClaimsTable)
+      .where(
+        and(
+          eq(inheritanceClaimsTable.projectId, projectId),
+          notInArray(inheritanceClaimsTable.status, ["approved", "rejected"]),
+        ),
+      ),
+
+    // ── GOVERNANCE: disputes still open ──────────────────────────────────
+    db
+      .select({
+        id: disputesTable.id,
+        status: disputesTable.status,
+        disputeType: disputesTable.disputeType,
+      })
+      .from(disputesTable)
+      .where(
+        and(
+          eq(disputesTable.projectId, projectId),
+          eq(disputesTable.status, "open"),
+        ),
+      ),
   ]);
 
   const stockBalances: StockBalance[] = stockRows.map((r) => ({
@@ -140,6 +230,7 @@ export async function computeClosureReadiness(projectId: string): Promise<Closur
 
   const blockers: string[] = [];
 
+  // ── Operational blockers ────────────────────────────────────────────────
   const nonZeroStock = stockBalances.filter((b) => b.netKg > 0.001);
   for (const b of nonZeroStock) {
     const label = b.stockType === "latex" ? "Latex" : b.stockType === "rubber_sheet" ? "Rubber Sheet" : b.stockType === "rubber_scrap" ? "Rubber Scrap" : b.stockType;
@@ -152,12 +243,32 @@ export async function computeClosureReadiness(projectId: string): Promise<Closur
   if (activeMemoRows.length > 0)
     blockers.push(`${activeMemoRows.length} active dispatch memo${activeMemoRows.length > 1 ? "s" : ""} not completed`);
 
+  // ── Financial blockers ──────────────────────────────────────────────────
+  const hasFinancialBlocker = openSettlementRows.length > 0 || unreleasedHeldRows.length > 0;
+  if (openSettlementRows.length > 0)
+    blockers.push(`${openSettlementRows.length} settlement record${openSettlementRows.length > 1 ? "s" : ""} not yet finalized`);
+  if (unreleasedHeldRows.length > 0) {
+    const total = unreleasedHeldRows.reduce((s, r) => s + Number(r.heldAmount), 0);
+    blockers.push(`${unreleasedHeldRows.length} held distribution${unreleasedHeldRows.length > 1 ? "s" : ""} unreleased (₹${total.toFixed(2)})`);
+  }
+
+  // ── Governance blockers ─────────────────────────────────────────────────
+  const hasGovernanceBlocker = openClaimRows.length > 0 || openDisputeRows.length > 0;
+  if (openClaimRows.length > 0)
+    blockers.push(`${openClaimRows.length} inheritance claim${openClaimRows.length > 1 ? "s" : ""} still open`);
+  if (openDisputeRows.length > 0)
+    blockers.push(`${openDisputeRows.length} dispute${openDisputeRows.length > 1 ? "s" : ""} still open`);
+
   const isEligible = blockers.length === 0;
   const eligibilityStatus: ClosureReadiness["eligibilityStatus"] = isEligible
     ? "closure_ready"
     : nonZeroStock.length > 0
       ? "blocked_inventory"
-      : "pending_operational";
+      : hasFinancialBlocker
+        ? "blocked_financial"
+        : hasGovernanceBlocker
+          ? "blocked_governance"
+          : "pending_operational";
 
   return {
     projectId,
@@ -168,6 +279,10 @@ export async function computeClosureReadiness(projectId: string): Promise<Closur
     openBatches: openBatchRows,
     pendingTransfers: pendingTransferRows.map((t) => ({ ...t, quantityKg: String(t.quantityKg) })),
     activeMemos: activeMemoRows.map((m) => ({ ...m, remainingKg: String(m.remainingKg) })),
+    openSettlements: openSettlementRows,
+    unreleasedHeldDistributions: unreleasedHeldRows.map((r) => ({ ...r, heldAmount: String(r.heldAmount) })),
+    openInheritanceClaims: openClaimRows,
+    openDisputes: openDisputeRows,
     checkedAt: new Date().toISOString(),
   };
 }

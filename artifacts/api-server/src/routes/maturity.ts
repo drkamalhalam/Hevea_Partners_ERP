@@ -12,14 +12,17 @@ import {
   projectLifecycleHistoryTable,
   activityTable,
   projectOwnershipFreezesTable,
+  contributionsTable,
 } from "@workspace/db";
-import { eq, and, inArray, desc } from "drizzle-orm";
+import { eq, and, inArray, desc, isNull } from "drizzle-orm";
 import {
   InitiateMaturityDeclarationBody,
   CancelMaturityDeclarationBody,
   VerifyMaturityOtpBody,
 } from "@workspace/api-zod";
 import { requireRole } from "../middlewares/auth";
+import { maskOtp, auditOtpEvent } from "../lib/otp";
+import { assertOwnershipAttributionValid } from "../lib/ownershipAttributionGuard";
 
 const router = Router();
 
@@ -42,7 +45,9 @@ function formatVerification(
     partyPhone: v.partyPhone ?? null,
     partnerId: v.partnerId ?? null,
     status: v.status,
-    otpCodePlaceholder: exposeCode ? v.otpCode : null,
+    // SECURITY: OTP code is only included when (a) caller explicitly requested
+    // exposure AND (b) env permits it (NODE_ENV != production AND EXPOSE_OTP=true).
+    otpCodePlaceholder: exposeCode ? maskOtp(v.otpCode) : null,
     sentAt: v.sentAt?.toISOString() ?? null,
     verifiedAt: v.verifiedAt?.toISOString() ?? null,
     expiresAt: v.expiresAt?.toISOString() ?? null,
@@ -521,10 +526,19 @@ router.post(
 
       req.log.info(
         { verificationId, partyRole: verification.partyRole },
-        "Maturity OTP sent (placeholder)",
+        "Maturity OTP sent",
       );
+      const otpActor = await resolveActingUser(req.userId);
+      auditOtpEvent({
+        purpose: "maturity_declaration",
+        subjectId: verificationId,
+        outcome: "issued",
+        actorId: otpActor?.id ?? null,
+        metadata: { partyRole: verification.partyRole, declarationId: verification.declarationId },
+      });
 
-      // Expose code in response (placeholder system)
+      // Response: code only emitted when env permits (see maskOtp); transport
+      // delivery is handled out-of-band by the OTP transport layer.
       res.json(formatVerification(updated, true));
     } catch (err) {
       req.log.error({ err }, "Failed to send maturity OTP");
@@ -639,6 +653,51 @@ router.post(
 
       if (allVerified) {
         const actor = await resolveActingUser(req.userId);
+
+        // ── ATTRIBUTION GUARD: cannot freeze ownership while any live
+        // ownership-affecting contribution references an invalid identity.
+        // Mirrors the gate on /backfill-crystallization and ownership snapshot
+        // creation paths.
+        const ownershipRows = await db
+          .select({
+            partnerId: contributionsTable.partnerId,
+            partnerName: contributionsTable.partnerName,
+            contributionId: contributionsTable.id,
+            contributionType: contributionsTable.contributionType,
+          })
+          .from(contributionsTable)
+          .where(
+            and(
+              eq(contributionsTable.projectId, projectId),
+              eq(contributionsTable.affectsOwnership, true),
+              eq(contributionsTable.isActive, true),
+              isNull(contributionsTable.deletedAt),
+              eq(contributionsTable.verificationStatus, "verified"),
+            ),
+          );
+
+        const attribGate = await assertOwnershipAttributionValid({
+          rows: ownershipRows,
+          projectId,
+          action: "ownership.snapshot.maturity",
+          actor: {
+            id: actor.id ?? "system",
+            name: actor.name ?? "system",
+            role: "admin",
+          },
+          req,
+          targetTable: "project_ownership_freezes",
+          targetRecordId: declaration.id,
+        });
+
+        if (!attribGate.ok) {
+          req.log.warn(
+            { projectId, declarationId: declaration.id, invalidCount: attribGate.body.invalid.length },
+            "Maturity ownership freeze blocked by attribution guard",
+          );
+          res.status(attribGate.status).json(attribGate.body);
+          return;
+        }
 
         // Complete the declaration
         await db

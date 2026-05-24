@@ -1,0 +1,94 @@
+APPROVED FOR IMPLEMENTATION
+
+Execute only the approved remediation wave below.
+
+Scope is strictly limited to existing approved architecture defects.
+
+DO NOT:
+
+introduce new business rules redesign workflows change ownership formulas change contribution formulas change reimbursement formulas change observer behavior modify project lifecycle states perform numeric precision migration change database money types run db push without explicit approval create unrelated refactors ==================================================== WAVE 1 — OTP DEFECT REMEDIATION Maturity OTP Security Fix 
+
+Current defect:
+
+OTP code is exposed in API responses. OTP code is exposed through declaration read endpoints. No production environment gate. 
+
+Implement:
+
+OTP code must NEVER be returned in production. Allow OTP exposure only when: NODE_ENV != production AND EXPOSE_OTP=true Add reusable OTP transport abstraction: development transport (stdout/logging) production transport (provider-ready interface) Audit every OTP: issued verified expired failed 
+
+Preserve existing maturity workflow.
+
+Contribution Verification OTP Completion 
+
+Current defect:
+
+Architecture already reserves OTP verification. OTP event types already exist. Contribution verification currently bypasses OTP. 
+
+Implement:
+
+OTP request endpoint OTP confirm endpoint verification route must require: successful OTP verification fresh verification window enforce only when: affectsOwnership = true 
+
+Reuse existing contribution verification event infrastructure wherever possible.
+
+Reimbursement Verification OTP Completion 
+
+Current defect:
+
+OTP request route exists OTP confirm route exists approve route ignores OTP status OTP code exposed in response 
+
+Implement:
+
+production-safe OTP exposure rules approve route must require: otpVerifiedAt present and verification still valid invalidate OTP verification after successful approval reuse shared OTP middleware and transport ==================================================== WAVE 2 — ARCHITECTURE COMPLIANCE Dashboard Mock Data Removal 
+
+Remove:
+
+MOCK_REVENUE MOCK_PROJECT_PERF any equivalent fabricated financial metrics 
+
+Replace with:
+
+real backend data where available explicit "Coming Soon" placeholders where unavailable 
+
+Never display fabricated financial values.
+
+Closure Readiness Expansion 
+
+Extend closure readiness checks to include:
+
+Financial blockers:
+
+non-final settlements unpaid final obligations unreleased held distributions payable balances where applicable 
+
+Governance blockers:
+
+active inheritance claims active disputes 
+
+Existing operational blockers remain unchanged.
+
+Maintain existing waiver workflow. For financial/governance waivers:
+
+require justification preserve full audit trail ==================================================== DEFERRED — DO NOT IMPLEMENT 
+
+Observer Independence
+
+Reason: Architecture review determined observer workflow is currently:
+
+variance reporting operational analytics 
+
+NOT:
+
+segregation-of-duties control 
+
+Therefore:
+
+no observer ≠ collector enforcement no observer OTP signoff no observer attestation workflow 
+
+Leave observer module unchanged.
+
+==================================================== AFTER IMPLEMENTATION 
+
+Return implementation report only:
+
+Files changed Exact code locations modified New endpoints added Existing endpoints modified Schema changes (if any) Migration changes (if any) Typecheck result Build result OTP security verification result Dashboard verification result Closure-readiness verification result Remaining risks READY FOR ARCHITECT REVIEW or NOT READY 
+
+Do not perform any additional work outside this scope.
+

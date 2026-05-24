@@ -18,6 +18,20 @@ import { writeTimeline, TL } from "../lib/timelineLogger";
 import { writeOverride, OV } from "../lib/overrideLogger";
 import { logDispute, DT } from "../lib/disputeLogger";
 import { assertOwnershipMutationAllowed } from "../lib/ownershipGuard";
+import { maskOtp, auditOtpEvent, OTP_FRESHNESS_WINDOW_MS } from "../lib/otp";
+import { createHash, timingSafeEqual } from "node:crypto";
+
+// SECURITY: contribution OTPs are persisted as SHA-256 hashes in the
+// contribution_verification_events.notes column (JSON payload). The raw code
+// is never stored at rest and never returned in verification-history reads.
+function hashOtp(code: string): string {
+  return createHash("sha256").update(code).digest("hex");
+}
+
+function safeEqualHash(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  return timingSafeEqual(Buffer.from(a, "hex"), Buffer.from(b, "hex"));
+}
 
 const router = Router();
 
@@ -1018,9 +1032,214 @@ router.post(
   },
 );
 
+// ── POST /contributions/:id/verify/otp/request ─────────────────────────────────
+// Issue a fresh OTP for the designated verifier of an ownership-affecting
+// contribution. The verify route requires a fresh confirmed OTP before it will
+// mutate ownership-affecting equity.
+//
+// Storage: uses the existing contributionVerificationEvents table. The OTP
+// code is persisted in the event's `notes` field as JSON; this keeps the
+// implementation schema-stable while reusing the existing write-once audit
+// stream.
+
+function makeOtpCode(): string {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+router.post("/:id/verify/otp/request", async (req, res) => {
+  const { userId: clerkUserId } = getAuth(req);
+  if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
+
+  const actor = await resolveActingUser(clerkUserId);
+  if (!actor) return res.status(401).json({ error: "User not found" });
+
+  const id = String(req.params.id);
+  const existing = await db
+    .select({ contribution: contributionsTable })
+    .from(contributionsTable)
+    .where(and(eq(contributionsTable.id, id), isNull(contributionsTable.deletedAt)))
+    .limit(1);
+  if (!existing[0]) return res.status(404).json({ error: "Contribution not found" });
+
+  const curr = existing[0].contribution;
+
+  if (curr.verificationStatus === "verified") {
+    return res.status(400).json({ error: "Contribution already verified." });
+  }
+
+  // OTP is only required (and only issued) when the contribution affects
+  // ownership. Non-ownership contributions remain role-gated only.
+  if (curr.affectsOwnership !== true) {
+    return res.status(400).json({
+      error: "OTP verification is only applicable to ownership-affecting contributions.",
+      code: "OTP_NOT_APPLICABLE",
+    });
+  }
+
+  const isDesignatedVerifier = curr.designatedVerifierId === actor.id;
+  const isAdminOrDev = actor.role === "admin" || actor.role === "developer";
+  if (!isAdminOrDev && !isDesignatedVerifier) {
+    return res.status(403).json({
+      error: "Only the designated verifier or admin/developer may request the verification OTP.",
+    });
+  }
+
+  const otpCode = makeOtpCode();
+  const expiresAt = new Date(Date.now() + OTP_FRESHNESS_WINDOW_MS);
+
+  // SECURITY: store the hash, never the plaintext code.
+  await db.insert(contributionVerificationEventsTable).values({
+    contributionId: id,
+    eventType: "otp_sent",
+    actorId: actor.id,
+    actorName: actor.name,
+    targetUserId: curr.designatedVerifierId ?? null,
+    notes: JSON.stringify({ otpHash: hashOtp(otpCode), expiresAt: expiresAt.toISOString() }),
+    otpSentAt: new Date(),
+  });
+
+  auditOtpEvent({
+    purpose: "contribution_verification",
+    subjectId: id,
+    outcome: "issued",
+    actorId: actor.id,
+    metadata: { projectId: curr.projectId, contributionType: curr.contributionType },
+  });
+
+  req.log.info({ contributionId: id }, "Contribution verification OTP issued");
+
+  return res.json({
+    // SECURITY: code only included when env permits (see maskOtp).
+    otpCode: maskOtp(otpCode),
+    expiresAt: expiresAt.toISOString(),
+  });
+});
+
+// ── POST /contributions/:id/verify/otp/confirm ─────────────────────────────────
+// Confirm the OTP code. On success, writes an otp_verified event that the
+// /:id/verify route consumes (within the freshness window).
+
+router.post("/:id/verify/otp/confirm", async (req, res) => {
+  const { userId: clerkUserId } = getAuth(req);
+  if (!clerkUserId) return res.status(401).json({ error: "Unauthorized" });
+
+  const actor = await resolveActingUser(clerkUserId);
+  if (!actor) return res.status(401).json({ error: "User not found" });
+
+  const id = String(req.params.id);
+  const { otpCode } = (req.body ?? {}) as { otpCode?: string };
+  if (!otpCode || typeof otpCode !== "string") {
+    return res.status(400).json({ error: "otpCode is required." });
+  }
+
+  const existing = await db
+    .select({ contribution: contributionsTable })
+    .from(contributionsTable)
+    .where(and(eq(contributionsTable.id, id), isNull(contributionsTable.deletedAt)))
+    .limit(1);
+  if (!existing[0]) return res.status(404).json({ error: "Contribution not found" });
+
+  const curr = existing[0].contribution;
+  if (curr.verificationStatus === "verified") {
+    return res.status(400).json({ error: "Contribution already verified." });
+  }
+
+  // SECURITY: only the designated verifier or admin/developer may confirm.
+  // Without this gate, any authenticated user with the contribution id and a
+  // valid OTP could establish OTP proof.
+  {
+    const isDesignatedVerifier = curr.designatedVerifierId === actor.id;
+    const isAdminOrDev = actor.role === "admin" || actor.role === "developer";
+    if (!isAdminOrDev && !isDesignatedVerifier) {
+      return res.status(403).json({
+        error: "Only the designated verifier or admin/developer may confirm the OTP.",
+      });
+    }
+  }
+
+  // Pull the most recent otp_sent event for this contribution.
+  const [latestSent] = await db
+    .select()
+    .from(contributionVerificationEventsTable)
+    .where(
+      and(
+        eq(contributionVerificationEventsTable.contributionId, id),
+        eq(contributionVerificationEventsTable.eventType, "otp_sent"),
+      ),
+    )
+    .orderBy(desc(contributionVerificationEventsTable.createdAt))
+    .limit(1);
+
+  if (!latestSent || !latestSent.notes) {
+    return res.status(400).json({ error: "No OTP has been issued. Request one first." });
+  }
+
+  let storedHash: string | null = null;
+  let expiresAt: Date | null = null;
+  try {
+    const parsed = JSON.parse(latestSent.notes) as {
+      otpHash?: string;
+      otpCode?: string; // legacy fallback for any rows written before hashing landed
+      expiresAt?: string;
+    };
+    storedHash = parsed.otpHash ?? (parsed.otpCode ? hashOtp(parsed.otpCode) : null);
+    expiresAt = parsed.expiresAt ? new Date(parsed.expiresAt) : null;
+  } catch {
+    return res.status(500).json({ error: "OTP record corrupted." });
+  }
+
+  if (!storedHash || !expiresAt) {
+    return res.status(500).json({ error: "OTP record incomplete." });
+  }
+
+  if (expiresAt.getTime() < Date.now()) {
+    auditOtpEvent({
+      purpose: "contribution_verification",
+      subjectId: id,
+      outcome: "expired",
+      actorId: actor.id,
+    });
+    return res.status(400).json({ error: "OTP has expired. Request a new one.", code: "OTP_EXPIRED" });
+  }
+
+  const submittedHash = hashOtp(otpCode);
+  if (!safeEqualHash(storedHash, submittedHash)) {
+    auditOtpEvent({
+      purpose: "contribution_verification",
+      subjectId: id,
+      outcome: "failed",
+      actorId: actor.id,
+      metadata: { reason: "incorrect_code" },
+    });
+    return res.status(400).json({ error: "Incorrect OTP." });
+  }
+
+  await db.insert(contributionVerificationEventsTable).values({
+    contributionId: id,
+    eventType: "otp_verified",
+    actorId: actor.id,
+    actorName: actor.name,
+    notes: null,
+    otpSentAt: latestSent.otpSentAt,
+    otpVerifiedAt: new Date(),
+  });
+
+  auditOtpEvent({
+    purpose: "contribution_verification",
+    subjectId: id,
+    outcome: "verified",
+    actorId: actor.id,
+  });
+
+  req.log.info({ contributionId: id }, "Contribution verification OTP confirmed");
+
+  return res.json({ ok: true, verifiedAt: new Date().toISOString() });
+});
+
 // ── POST /contributions/:id/verify ─────────────────────────────────────────────
 // Extended: designated verifier AND admin/developer can approve.
 // Handles re_approved event for previously-rejected contributions.
+// When affectsOwnership=true, a fresh OTP verification is required.
 
 router.post("/:id/verify", async (req, res) => {
   const { userId: clerkUserId } = getAuth(req);
@@ -1063,6 +1282,45 @@ router.post("/:id/verify", async (req, res) => {
     targetRecordId: id,
   });
   if (!guardVerify.ok) return res.status(guardVerify.status).json(guardVerify.body);
+
+  // ── OTP GATE (ownership-affecting contributions only) ────────────────────
+  // For affectsOwnership=true, verify there is a fresh otp_verified event
+  // within the standard freshness window. Approval flips contribution to
+  // 'verified' which is itself the single-use barrier preventing OTP replay.
+  if (curr.affectsOwnership === true) {
+    const [latestOtpVerified] = await db
+      .select()
+      .from(contributionVerificationEventsTable)
+      .where(
+        and(
+          eq(contributionVerificationEventsTable.contributionId, id),
+          eq(contributionVerificationEventsTable.eventType, "otp_verified"),
+        ),
+      )
+      .orderBy(desc(contributionVerificationEventsTable.createdAt))
+      .limit(1);
+
+    const otpVerifiedAt = latestOtpVerified?.otpVerifiedAt ?? null;
+    const isFresh =
+      otpVerifiedAt !== null &&
+      Date.now() - otpVerifiedAt.getTime() <= OTP_FRESHNESS_WINDOW_MS;
+
+    if (!isFresh) {
+      auditOtpEvent({
+        purpose: "contribution_verification",
+        subjectId: id,
+        outcome: "failed",
+        actorId: actor.id,
+        metadata: { reason: "approve_without_fresh_otp" },
+      });
+      return res.status(422).json({
+        error:
+          "OTP verification required for ownership-affecting contributions. " +
+          "Request and confirm an OTP before approving.",
+        code: "OTP_REQUIRED",
+      });
+    }
+  }
 
   // ── Partner identity foundation ──────────────────────────────────────────
   // Re-validate contributor identity at verification time. Identity may have
@@ -1330,7 +1588,10 @@ router.get("/:id/verification-history", async (req, res) => {
       actorName: e.actorName,
       targetUserId: e.targetUserId,
       targetUserName: e.targetUserName,
-      notes: e.notes,
+      // SECURITY: otp_sent notes contain the OTP hash (and historically the
+      // raw code in legacy rows). Never expose this payload via the audit
+      // history surface.
+      notes: e.eventType === "otp_sent" ? null : e.notes,
       otpSentAt: e.otpSentAt?.toISOString() ?? null,
       otpVerifiedAt: e.otpVerifiedAt?.toISOString() ?? null,
       createdAt: e.createdAt.toISOString(),

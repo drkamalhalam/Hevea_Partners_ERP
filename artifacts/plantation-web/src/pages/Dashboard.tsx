@@ -82,27 +82,9 @@ import {
   Legend,
 } from "recharts";
 
-// ── Mock / placeholder data ───────────────────────────────────────────────
-
-const MOCK_REVENUE = [
-  { month: "Jul", revenue: 142000, expenditure: 48000 },
-  { month: "Aug", revenue: 165000, expenditure: 52000 },
-  { month: "Sep", revenue: 158000, expenditure: 51000 },
-  { month: "Oct", revenue: 180000, expenditure: 55000 },
-  { month: "Nov", revenue: 172000, expenditure: 49000 },
-  { month: "Dec", revenue: 195000, expenditure: 60000 },
-  { month: "Jan", revenue: 210000, expenditure: 63000 },
-  { month: "Feb", revenue: 202000, expenditure: 58000 },
-  { month: "Mar", revenue: 225000, expenditure: 67000 },
-  { month: "Apr", revenue: 218000, expenditure: 64000 },
-  { month: "May", revenue: 245000, expenditure: 72000 },
-];
-
-const MOCK_PROJECT_PERF = [
-  { project: "Manu V.", production: 1840, sales: 1620, target: 2000 },
-  { project: "Gandacherra", production: 960, sales: 810, target: 1200 },
-  { project: "Ambassa", production: 2480, sales: 2250, target: 2400 },
-];
+// ── Architecture: no fabricated financial values on dashboards ───────────
+// Charts that have no real backing data render a ComingSoon placeholder
+// instead of mock numbers. See `ComingSoonChart` below.
 
 
 const PRIORITY_COLORS = {
@@ -120,6 +102,18 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 // ── Shared helper components ──────────────────────────────────────────────
+
+function ComingSoonChart({ height, message }: { height: number; message: string }) {
+  return (
+    <div
+      className="flex flex-col items-center justify-center text-center px-4 rounded-md border border-dashed border-gray-200 bg-gray-50/40"
+      style={{ height }}
+    >
+      <div className="text-xs font-semibold text-gray-500 mb-1">Coming Soon</div>
+      <div className="text-[11px] text-gray-400 max-w-xs">{message}</div>
+    </div>
+  );
+}
 
 function getGreeting() {
   const h = new Date().getHours();
@@ -1336,28 +1330,11 @@ function AdminDashboard() {
       {/* Revenue chart + Approvals / Tasks */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         <div className="lg:col-span-7">
-          <ChartCard title="Revenue & Expenditure" subtitle="Monthly trend — current financial year" badge="Placeholder data" minHeight={220}>
-            <ResponsiveContainer width="100%" height={210}>
-              <AreaChart data={MOCK_REVENUE} margin={{ top: 4, right: 4, left: -10, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#16a34a" stopOpacity={0.18} />
-                    <stop offset="95%" stopColor="#16a34a" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="expGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#ef4444" stopOpacity={0.12} />
-                    <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-gray-100" vertical={false} />
-                <XAxis dataKey="month" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
-                <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`} />
-                <Tooltip contentStyle={{ borderRadius: "8px", border: "1px solid #e5e7eb", fontSize: "11px" }} formatter={(v: number, name: string) => [`₹${v.toLocaleString("en-IN")}`, name === "revenue" ? "Revenue" : "Expenditure"]} />
-                <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: "11px", paddingTop: "8px" }} />
-                <Area type="monotone" dataKey="revenue" name="Revenue" stroke="#16a34a" strokeWidth={2} fill="url(#revGrad)" />
-                <Area type="monotone" dataKey="expenditure" name="Expenditure" stroke="#ef4444" strokeWidth={2} fill="url(#expGrad)" />
-              </AreaChart>
-            </ResponsiveContainer>
+          <ChartCard title="Revenue & Expenditure" subtitle="Monthly trend — current financial year" badge="Coming Soon" minHeight={220}>
+            <ComingSoonChart
+              height={210}
+              message="Monthly revenue and expenditure aggregation is not yet wired."
+            />
           </ChartCard>
         </div>
         <div className="lg:col-span-5 space-y-4">
@@ -1469,17 +1446,11 @@ function DeveloperDashboard() {
         </div>
         <div className="lg:col-span-5 space-y-4">
           <GovernanceActionItems governance={governance} />
-          <ChartCard title="Project Performance" subtitle="Production vs sales — current season" badge="Placeholder" minHeight={170}>
-            <ResponsiveContainer width="100%" height={150}>
-              <BarChart data={MOCK_PROJECT_PERF} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-gray-100" vertical={false} />
-                <XAxis dataKey="project" tick={{ fontSize: 9 }} tickLine={false} axisLine={false} />
-                <YAxis tick={{ fontSize: 9 }} tickLine={false} axisLine={false} />
-                <Tooltip contentStyle={{ borderRadius: "8px", border: "1px solid #e5e7eb", fontSize: "11px" }} formatter={(v: number, name: string) => [`${v} kg`, name === "production" ? "Produced" : "Sold"]} />
-                <Bar dataKey="production" name="Produced" fill="#059669" radius={[3, 3, 0, 0]} />
-                <Bar dataKey="sales" name="Sold" fill="#0ea5e9" radius={[3, 3, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+          <ChartCard title="Project Performance" subtitle="Production vs sales — current season" badge="Coming Soon" minHeight={170}>
+            <ComingSoonChart
+              height={150}
+              message="Per-project production vs sales aggregation is not yet wired."
+            />
           </ChartCard>
         </div>
       </section>
@@ -1799,22 +1770,11 @@ function InvestorDashboard() {
               </ResponsiveContainer>
             </ChartCard>
           ) : (
-            <ChartCard title="Revenue Projections" subtitle="Annual income estimates (placeholder)" badge="Placeholder">
-              <ResponsiveContainer width="100%" height={210}>
-                <AreaChart data={MOCK_REVENUE.slice(-6)} margin={{ top: 4, right: 4, left: -10, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="invGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#7c3aed" stopOpacity={0.18} />
-                      <stop offset="95%" stopColor="#7c3aed" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-gray-100" vertical={false} />
-                  <XAxis dataKey="month" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
-                  <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`} />
-                  <Tooltip contentStyle={{ borderRadius: "8px", border: "1px solid #e5e7eb", fontSize: "11px" }} formatter={(v: number) => [`₹${v.toLocaleString("en-IN")}`, "Revenue"]} />
-                  <Area type="monotone" dataKey="revenue" name="Revenue" stroke="#7c3aed" strokeWidth={2} fill="url(#invGrad)" />
-                </AreaChart>
-              </ResponsiveContainer>
+            <ChartCard title="Revenue Projections" subtitle="Annual income estimates" badge="Coming Soon">
+              <ComingSoonChart
+                height={210}
+                message="Per-investor projected revenue is not yet wired."
+              />
             </ChartCard>
           )}
         </div>
