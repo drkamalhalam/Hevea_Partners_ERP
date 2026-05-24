@@ -70,7 +70,7 @@ export const payableAdjustmentsTable = pgTable("payable_adjustments", {
   direction: text("direction").notNull(),
 
   // Always stored as a positive number; direction determines sign
-  amount: numeric("amount", { precision: 14, scale: 2 }).notNull(),
+  amount: numeric("amount", { precision: 15, scale: 2 }).notNull(),
 
   periodLabel: text("period_label"),
   description: text("description").notNull(),
@@ -128,40 +128,40 @@ export const payableSnapshotsTable = pgTable("payable_snapshots", {
     .default(sql`now()`),
 
   // Component amounts
-  profitShareAmount: numeric("profit_share_amount", { precision: 14, scale: 2 })
+  profitShareAmount: numeric("profit_share_amount", { precision: 15, scale: 2 })
     .notNull()
     .default("0"),
   profitShareSource: text("profit_share_source").notNull().default("fifty_pct"),
   recoverableAdvancesAmount: numeric("recoverable_advances_amount", {
-    precision: 14,
+    precision: 15,
     scale: 2,
   })
     .notNull()
     .default("0"),
   pendingRecoveriesAmount: numeric("pending_recoveries_amount", {
-    precision: 14,
+    precision: 15,
     scale: 2,
   })
     .notNull()
     .default("0"),
-  pendingLcaAmount: numeric("pending_lca_amount", { precision: 14, scale: 2 })
+  pendingLcaAmount: numeric("pending_lca_amount", { precision: 15, scale: 2 })
     .notNull()
     .default("0"),
   priorAdjustmentsAmount: numeric("prior_adjustments_amount", {
-    precision: 14,
+    precision: 15,
     scale: 2,
   })
     .notNull()
     .default("0"),
   negativeCarryAmount: numeric("negative_carry_amount", {
-    precision: 14,
+    precision: 15,
     scale: 2,
   })
     .notNull()
     .default("0"),
 
   // Computed result
-  actualPayable: numeric("actual_payable", { precision: 14, scale: 2 }).notNull(),
+  actualPayable: numeric("actual_payable", { precision: 15, scale: 2 }).notNull(),
 
   // draft | finalized
   status: text("status").notNull().default("draft"),

@@ -1414,4 +1414,212 @@ router.get("/inheritance-workflow-inactive-identity", async (_req, res) => {
   return res.json({ items: r.rows, count: r.rows.length });
 });
 
+// ─────────────────────────────────────────────────────────────────────────────
+// NPF Stage 2 — Money Precision Diagnostics
+// ─────────────────────────────────────────────────────────────────────────────
+// All endpoints introspect live storage via information_schema. Target money
+// shape: numeric(15, 2). Aggregate-drift endpoints compute "component sum vs
+// stored total" deltas for the two highest-impact tables (burden, distribution).
+
+const MONEY_COLUMN_HINTS = [
+  "amount",
+  "value",
+  "cost",
+  "price",
+  "balance",
+  "total",
+  "revenue",
+  "payment",
+  "burden",
+  "advance",
+  "credit",
+  "debit",
+  "payable",
+  "received",
+  "recovered",
+];
+
+const MONEY_COLUMN_FILTER_SQL = sql.raw(
+  MONEY_COLUMN_HINTS.map((h) => `c.column_name ILIKE '%${h}%'`).join(" OR "),
+);
+
+const SNAPSHOT_TABLE_EXCLUDE = sql.raw(
+  `c.table_name NOT IN ('ownership_snapshots','inheritance_history','generations','backup','precision_conversion_audit')`,
+);
+
+// ── /money-precision/summary — 5 counters ────────────────────────────────────
+router.get("/money-precision/summary", async (_req, res) => {
+  const [usingReal, wrongScale, exceedingPrecision, burdenDrift, distDrift] =
+    await Promise.all([
+      db.execute(sql`
+        SELECT count(*)::int AS n
+        FROM information_schema.columns c
+        WHERE c.table_schema = 'public'
+          AND c.data_type = 'real'
+          AND (${MONEY_COLUMN_FILTER_SQL})
+          AND ${SNAPSHOT_TABLE_EXCLUDE}
+      `),
+      db.execute(sql`
+        SELECT count(*)::int AS n
+        FROM information_schema.columns c
+        WHERE c.table_schema = 'public'
+          AND c.data_type = 'numeric'
+          AND (${MONEY_COLUMN_FILTER_SQL})
+          AND ${SNAPSHOT_TABLE_EXCLUDE}
+          AND (c.numeric_precision <> 15 OR c.numeric_scale <> 2)
+      `),
+      db.execute(sql`
+        SELECT count(*)::int AS n
+        FROM precision_conversion_audit
+        WHERE delta <> 0
+      `),
+      db.execute(sql`
+        SELECT count(*)::int AS n
+        FROM burden_records br
+        WHERE ABS(
+          COALESCE(br.total_amount, 0) -
+          COALESCE((
+            SELECT SUM(c.amount)
+            FROM burden_components c
+            WHERE c.burden_record_id = br.id
+          ), 0)
+        ) > 0.01
+      `).catch(() => ({ rows: [{ n: 0 }] } as never)),
+      db.execute(sql`
+        SELECT count(*)::int AS n
+        FROM distribution_previews dp
+        WHERE ABS(
+          COALESCE(dp.gross_revenue, 0) -
+          (COALESCE(dp.epp_total, 0) + COALESCE(dp.landowner_total, 0))
+        ) > 0.01
+      `).catch(() => ({ rows: [{ n: 0 }] } as never)),
+    ]);
+
+  return res.json({
+    moneyColumnsUsingReal: Number((usingReal.rows?.[0] as { n: number })?.n ?? 0),
+    moneyColumnsWithWrongScale: Number((wrongScale.rows?.[0] as { n: number })?.n ?? 0),
+    valuesExceedingTargetPrecision: Number(
+      (exceedingPrecision.rows?.[0] as { n: number })?.n ?? 0,
+    ),
+    aggregateDriftBurden: Number((burdenDrift.rows?.[0] as { n: number })?.n ?? 0),
+    aggregateDriftDistribution: Number((distDrift.rows?.[0] as { n: number })?.n ?? 0),
+  });
+});
+
+// ── /money-precision/money-columns-using-real ────────────────────────────────
+router.get("/money-precision/money-columns-using-real", async (_req, res) => {
+  const r = await db.execute(sql`
+    SELECT c.table_name, c.column_name, c.data_type
+    FROM information_schema.columns c
+    WHERE c.table_schema = 'public'
+      AND c.data_type = 'real'
+      AND (${MONEY_COLUMN_FILTER_SQL})
+      AND ${SNAPSHOT_TABLE_EXCLUDE}
+    ORDER BY c.table_name, c.column_name
+  `);
+  return res.json({ items: r.rows, count: r.rows.length });
+});
+
+// ── /money-precision/money-columns-with-wrong-scale ──────────────────────────
+router.get("/money-precision/money-columns-with-wrong-scale", async (_req, res) => {
+  const r = await db.execute(sql`
+    SELECT c.table_name, c.column_name, c.numeric_precision, c.numeric_scale
+    FROM information_schema.columns c
+    WHERE c.table_schema = 'public'
+      AND c.data_type = 'numeric'
+      AND (${MONEY_COLUMN_FILTER_SQL})
+      AND ${SNAPSHOT_TABLE_EXCLUDE}
+      AND (c.numeric_precision <> 15 OR c.numeric_scale <> 2)
+    ORDER BY c.table_name, c.column_name
+  `);
+  return res.json({ items: r.rows, count: r.rows.length });
+});
+
+// ── /money-precision/values-exceeding-target-precision ───────────────────────
+// Audit-table backed: any captured row whose delta != 0 is a rounding event
+// that exceeded the post-migration target precision in its source representation.
+router.get(
+  "/money-precision/values-exceeding-target-precision",
+  async (_req, res) => {
+    const r = await db.execute(sql`
+      SELECT source_table, source_row_id, source_column,
+             original_value, converted_value, delta, migrated_at
+      FROM precision_conversion_audit
+      WHERE delta <> 0
+      ORDER BY ABS(delta) DESC
+      LIMIT 500
+    `);
+    return res.json({ items: r.rows, count: r.rows.length });
+  },
+);
+
+// ── /money-precision/aggregate-drift-burden ──────────────────────────────────
+router.get("/money-precision/aggregate-drift-burden", async (_req, res) => {
+  try {
+    const r = await db.execute(sql`
+      SELECT br.id AS burden_record_id,
+             br.total_amount AS stored_total,
+             COALESCE((
+               SELECT SUM(c.amount)
+               FROM burden_components c
+               WHERE c.burden_record_id = br.id
+             ), 0) AS computed_total,
+             br.total_amount - COALESCE((
+               SELECT SUM(c.amount)
+               FROM burden_components c
+               WHERE c.burden_record_id = br.id
+             ), 0) AS drift
+      FROM burden_records br
+      WHERE ABS(
+        COALESCE(br.total_amount, 0) -
+        COALESCE((
+          SELECT SUM(c.amount)
+          FROM burden_components c
+          WHERE c.burden_record_id = br.id
+        ), 0)
+      ) > 0.01
+      ORDER BY ABS(drift) DESC
+      LIMIT 200
+    `);
+    return res.json({ items: r.rows, count: r.rows.length });
+  } catch {
+    return res.json({ items: [], count: 0, note: "burden tables not present" });
+  }
+});
+
+// ── /money-precision/aggregate-drift-distribution ────────────────────────────
+router.get(
+  "/money-precision/aggregate-drift-distribution",
+  async (_req, res) => {
+    try {
+      const r = await db.execute(sql`
+        SELECT dp.id AS preview_id,
+               dp.gross_revenue,
+               dp.epp_total,
+               dp.landowner_total,
+               (dp.gross_revenue
+                 - COALESCE(dp.epp_total, 0)
+                 - COALESCE(dp.landowner_total, 0)) AS drift
+        FROM distribution_previews dp
+        WHERE ABS(
+          COALESCE(dp.gross_revenue, 0) -
+          (COALESCE(dp.epp_total, 0) + COALESCE(dp.landowner_total, 0))
+        ) > 0.01
+        ORDER BY ABS(
+          COALESCE(dp.gross_revenue, 0) -
+          (COALESCE(dp.epp_total, 0) + COALESCE(dp.landowner_total, 0))
+        ) DESC
+        LIMIT 200
+      `);
+      return res.json({ items: r.rows, count: r.rows.length });
+    } catch {
+      return res.json({
+        items: [],
+        count: 0,
+        note: "distribution_previews columns not present",
+      });
+    }
+  },
+);
+
 export default router;

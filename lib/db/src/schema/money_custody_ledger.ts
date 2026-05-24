@@ -36,7 +36,7 @@ export const moneyCustodyLedgerTable = pgTable("money_custody_ledger", {
   holderName: text("holder_name").notNull().default(""),
   holderRole: text("holder_role").notNull().default(""),
 
-  amount: numeric("amount", { precision: 14, scale: 2 }).notNull(),
+  amount: numeric("amount", { precision: 15, scale: 2 }).notNull(),
   paymentMode: text("payment_mode").notNull().default("online"),
   // online | cash
 
@@ -51,10 +51,10 @@ export const moneyCustodyLedgerTable = pgTable("money_custody_ledger", {
 
   receivedDate: date("received_date").notNull(),
 
-  depositedAmount: numeric("deposited_amount", { precision: 14, scale: 2 })
+  depositedAmount: numeric("deposited_amount", { precision: 15, scale: 2 })
     .notNull()
     .default("0"),
-  remainingBalance: numeric("remaining_balance", { precision: 14, scale: 2 }).notNull(),
+  remainingBalance: numeric("remaining_balance", { precision: 15, scale: 2 }).notNull(),
 
   depositedAt: timestamp("deposited_at", { withTimezone: true }),
   depositedById: uuid("deposited_by_id").references(() => usersTable.id, {

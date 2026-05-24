@@ -43,7 +43,7 @@ export const salesOrdersTable = pgTable("sales_orders", {
 
   quantityKg: numeric("quantity_kg", { precision: 12, scale: 3 }).notNull(),
   ratePerKg: numeric("rate_per_kg", { precision: 12, scale: 4 }).notNull(),
-  totalAmount: numeric("total_amount", { precision: 14, scale: 2 }).notNull(),
+  totalAmount: numeric("total_amount", { precision: 15, scale: 2 }).notNull(),
 
   paymentMode: text("payment_mode").notNull().default("online_only"),
   // online_only | cash_only | both

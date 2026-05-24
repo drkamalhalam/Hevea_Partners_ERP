@@ -53,7 +53,7 @@ export const salesInvoicesTable = pgTable("sales_invoices", {
 
   quantityKg: numeric("quantity_kg", { precision: 12, scale: 3 }).notNull(),
   ratePerKg: numeric("rate_per_kg", { precision: 12, scale: 4 }).notNull(),
-  totalAmount: numeric("total_amount", { precision: 14, scale: 2 }).notNull(),
+  totalAmount: numeric("total_amount", { precision: 15, scale: 2 }).notNull(),
 
   dispatchStatus: text("dispatch_status").notNull().default("not_dispatched"),
   quantityDispatchedKg: numeric("quantity_dispatched_kg", {

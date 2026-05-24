@@ -43,7 +43,7 @@ export const imbalanceLedgerTable = pgTable("imbalance_ledger", {
 
   // ── Amount ────────────────────────────────────────────────────────────────
   // Signed: positive = credit (owed to this party), negative = debit (owed by this party)
-  amount: numeric("amount", { precision: 14, scale: 2 }).notNull(),
+  amount: numeric("amount", { precision: 15, scale: 2 }).notNull(),
 
   // ── Classification ────────────────────────────────────────────────────────
   entryType: text("entry_type").notNull(),

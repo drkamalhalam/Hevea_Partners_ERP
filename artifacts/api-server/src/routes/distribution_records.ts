@@ -11,6 +11,7 @@
  */
 
 import { Router } from "express";
+import { sumMoney } from "../lib/money";
 import { getAuth } from "@clerk/express";
 import {
   db,
@@ -270,12 +271,15 @@ router.get("/summary", requireSettlementAccess, async (req, res) => {
     .where(and(...filters));
 
   const totalRecords = rows.length;
-  const totalGrossRevenue = rows.reduce((s, r) => s + parseFloat(r.grossRevenue ?? "0"), 0);
-  const totalRecommended = rows.reduce((s, r) => s + parseFloat(r.settlementRecommendation ?? "0"), 0);
-  const totalPaid = rows.reduce((s, r) => s + parseFloat(r.totalPaid ?? "0"), 0);
-  const totalPending = rows.reduce((s, r) => s + parseFloat(r.pendingPayable ?? "0"), 0);
-  const totalCarryForward = rows.reduce((s, r) => s + parseFloat(r.carryForwardBalance ?? "0"), 0);
-  const totalPriorCarry = rows.reduce((s, r) => s + parseFloat(r.priorCarryForward ?? "0"), 0);
+  // NPF Stage 2 — centralized decimal-safe money summation.
+  const totalGrossRevenue = sumMoney(rows.map((r) => r.grossRevenue)).toNumber();
+  const totalRecommended = sumMoney(
+    rows.map((r) => r.settlementRecommendation),
+  ).toNumber();
+  const totalPaid = sumMoney(rows.map((r) => r.totalPaid)).toNumber();
+  const totalPending = sumMoney(rows.map((r) => r.pendingPayable)).toNumber();
+  const totalCarryForward = sumMoney(rows.map((r) => r.carryForwardBalance)).toNumber();
+  const totalPriorCarry = sumMoney(rows.map((r) => r.priorCarryForward)).toNumber();
 
   const byStatus: Record<string, number> = {};
   for (const r of rows) {

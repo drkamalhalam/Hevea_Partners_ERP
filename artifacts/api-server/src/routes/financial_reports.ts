@@ -16,6 +16,7 @@
  */
 
 import { Router } from "express";
+import { sumMoney } from "../lib/money";
 import {
   db,
   projectsTable,
@@ -417,10 +418,11 @@ router.get("/lca", requireFinancialAccess, auditMiddleware("financial_reports", 
       .orderBy(desc(lcaPaymentEventsTable.createdAt)),
   ]);
 
-  const totalDue = entries.reduce((s, e) => s + e.totalDue, 0);
-  const totalPaid = entries.reduce((s, e) => s + e.amountPaid, 0);
-  const outstanding = entries.reduce((s, e) => s + e.balance, 0);
-  const totalCarryForward = entries.reduce((s, e) => s + e.carryForward, 0);
+  // NPF Stage 2 — money aggregation via centralized decimal-safe utility.
+  const totalDue = sumMoney(entries.map((e) => e.totalDue)).toNumber();
+  const totalPaid = sumMoney(entries.map((e) => e.amountPaid)).toNumber();
+  const outstanding = sumMoney(entries.map((e) => e.balance)).toNumber();
+  const totalCarryForward = sumMoney(entries.map((e) => e.carryForward)).toNumber();
   const negativeEntries = entries.filter(e => e.balance > 0);
 
   return res.json({

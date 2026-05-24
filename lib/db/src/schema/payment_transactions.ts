@@ -30,7 +30,7 @@ export const paymentTransactionsTable = pgTable("payment_transactions", {
     .references(() => salesOrdersTable.id, { onDelete: "cascade" }),
 
   transactionReference: text("transaction_reference"),
-  amount: numeric("amount", { precision: 14, scale: 2 }).notNull(),
+  amount: numeric("amount", { precision: 15, scale: 2 }).notNull(),
   paymentProvider: text("payment_provider").notNull().default("manual"),
   // manual | upi | razorpay | paytm | neft | rtgs | cash
 

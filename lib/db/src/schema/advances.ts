@@ -49,8 +49,8 @@ export const recoverableAdvancesTable = pgTable("recoverable_advances", {
   ),
 
   // ── Amounts ────────────────────────────────────────────────────────────────
-  originalAmount: numeric("original_amount", { precision: 14, scale: 2 }).notNull(),
-  recoveredAmount: numeric("recovered_amount", { precision: 14, scale: 2 })
+  originalAmount: numeric("original_amount", { precision: 15, scale: 2 }).notNull(),
+  recoveredAmount: numeric("recovered_amount", { precision: 15, scale: 2 })
     .notNull()
     .default("0"),
 
@@ -99,7 +99,7 @@ export const advanceRecoveryEventsTable = pgTable("advance_recovery_events", {
     .notNull()
     .references(() => recoverableAdvancesTable.id, { onDelete: "restrict" }),
   eventType: text("event_type").notNull(),
-  amount: numeric("amount", { precision: 14, scale: 2 }),
+  amount: numeric("amount", { precision: 15, scale: 2 }),
   description: text("description").notNull(),
   eventDate: date("event_date").notNull(),
   recordedById: uuid("recorded_by_id").references(() => usersTable.id, { onDelete: "set null" }),

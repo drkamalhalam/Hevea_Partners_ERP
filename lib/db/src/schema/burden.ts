@@ -102,7 +102,7 @@ export const burdenRecordsTable = pgTable("burden_records", {
 
   /** Copied from expenditure at record creation time. */
   category: text("category").notNull(),
-  totalAmount: numeric("total_amount", { precision: 14, scale: 2 }).notNull(),
+  totalAmount: numeric("total_amount", { precision: 15, scale: 2 }).notNull(),
   lifecyclePhaseSnapshot: text("lifecycle_phase_snapshot")
     .notNull()
     .default("prematurity"),
@@ -114,7 +114,7 @@ export const burdenRecordsTable = pgTable("burden_records", {
 
   /** Portion of totalAmount the developer was expected to bear. */
   expectedDeveloperAmount: numeric("expected_developer_amount", {
-    precision: 14,
+    precision: 15,
     scale: 2,
   })
     .notNull()
@@ -122,7 +122,7 @@ export const burdenRecordsTable = pgTable("burden_records", {
 
   /** Portion of totalAmount the landowner was expected to bear. */
   expectedLandownerAmount: numeric("expected_landowner_amount", {
-    precision: 14,
+    precision: 15,
     scale: 2,
   })
     .notNull()
@@ -139,7 +139,7 @@ export const burdenRecordsTable = pgTable("burden_records", {
 
   /** Amount the developer actually bore (= totalAmount if developer paid, else 0). */
   actualDeveloperAmount: numeric("actual_developer_amount", {
-    precision: 14,
+    precision: 15,
     scale: 2,
   })
     .notNull()
@@ -147,7 +147,7 @@ export const burdenRecordsTable = pgTable("burden_records", {
 
   /** Amount the landowner actually bore (= totalAmount if landowner paid, else 0). */
   actualLandownerAmount: numeric("actual_landowner_amount", {
-    precision: 14,
+    precision: 15,
     scale: 2,
   })
     .notNull()
@@ -161,7 +161,7 @@ export const burdenRecordsTable = pgTable("burden_records", {
    * Negative → developer underpaid (developer owes landowner).
    */
   developerImbalanceAmount: numeric("developer_imbalance_amount", {
-    precision: 14,
+    precision: 15,
     scale: 2,
   })
     .notNull()
@@ -169,7 +169,7 @@ export const burdenRecordsTable = pgTable("burden_records", {
 
   /** Mirror of developer imbalance. Positive → landowner overpaid. */
   landownerImbalanceAmount: numeric("landowner_imbalance_amount", {
-    precision: 14,
+    precision: 15,
     scale: 2,
   })
     .notNull()
@@ -190,14 +190,14 @@ export const burdenRecordsTable = pgTable("burden_records", {
 
   /** Net amount that needs to be recovered (= abs(imbalance)). */
   recoverableAmount: numeric("recoverable_amount", {
-    precision: 14,
+    precision: 15,
     scale: 2,
   })
     .notNull()
     .default("0"),
 
   /** Amount recovered so far (updated by mark-recovered actions). */
-  recoveredAmount: numeric("recovered_amount", { precision: 14, scale: 2 })
+  recoveredAmount: numeric("recovered_amount", { precision: 15, scale: 2 })
     .notNull()
     .default("0"),
 
