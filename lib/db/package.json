@@ -8,8 +8,10 @@
     "./schema": "./src/schema/index.ts"
   },
   "scripts": {
-    "push": "drizzle-kit push --config ./drizzle.config.ts",
-    "push-force": "drizzle-kit push --force --config ./drizzle.config.ts",
+    "push": "tsx src/dropViews.ts && drizzle-kit push --config ./drizzle.config.ts && tsx src/applyViews.ts",
+    "push-force": "tsx src/dropViews.ts && drizzle-kit push --force --config ./drizzle.config.ts && tsx src/applyViews.ts",
+    "apply-views": "tsx src/applyViews.ts",
+    "drop-views": "tsx src/dropViews.ts",
     "seed": "tsx src/seed.ts"
   },
   "dependencies": {
