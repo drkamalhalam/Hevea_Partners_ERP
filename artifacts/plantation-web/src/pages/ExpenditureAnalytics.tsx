@@ -137,10 +137,12 @@ function MonthlyTrendChart({ expenditures, loading }: { expenditures: Expenditur
     for (const exp of expenditures) {
       const month = exp.expenditureDate.slice(0, 7);
       if (!byMonth[month]) byMonth[month] = { total: 0, approved: 0, pending: 0, rejected: 0 };
-      byMonth[month].total += exp.amount;
-      if (exp.verificationStatus === "approved") byMonth[month].approved += exp.amount;
-      else if (exp.verificationStatus === "pending_review") byMonth[month].pending += exp.amount;
-      else if (exp.verificationStatus === "rejected") byMonth[month].rejected += exp.amount;
+      // NPF-safe: exp.amount may become a decimal string post-migration.
+      const amt = Number(exp.amount ?? 0);
+      byMonth[month].total += amt;
+      if (exp.verificationStatus === "approved") byMonth[month].approved += amt;
+      else if (exp.verificationStatus === "pending_review") byMonth[month].pending += amt;
+      else if (exp.verificationStatus === "rejected") byMonth[month].rejected += amt;
     }
     return Object.entries(byMonth)
       .sort(([a], [b]) => a.localeCompare(b))
@@ -199,7 +201,7 @@ function CategoryBreakdownChart({ projects, loading }: { projects: ExpenditureSu
     const cats: Record<string, number> = {};
     for (const p of projects) {
       for (const cat of p.categoryBreakdown) {
-        cats[cat.category] = (cats[cat.category] ?? 0) + cat.amount;
+        cats[cat.category] = (cats[cat.category] ?? 0) + Number(cat.amount ?? 0);
       }
     }
     return Object.entries(cats)
@@ -343,13 +345,13 @@ function ProjectCostTable({ projects, loading }: { projects: ExpenditureSummaryP
           <tr className="border-t-2 border-zinc-300 bg-zinc-50 font-semibold">
             <td className="py-2.5 px-3 text-zinc-700">All Projects</td>
             <td className="py-2.5 px-3 text-right text-zinc-800">
-              {INR(projects.reduce((s, p) => s + p.totalAmount, 0))}
+              {INR(projects.reduce((s, p) => s + Number(p.totalAmount ?? 0), 0))}
             </td>
             <td className="py-2.5 px-3 text-right text-emerald-700">
-              {INR(projects.reduce((s, p) => s + p.approvedAmount, 0))}
+              {INR(projects.reduce((s, p) => s + Number(p.approvedAmount ?? 0), 0))}
             </td>
             <td className="py-2.5 px-3 text-right text-amber-600">
-              {INR(projects.reduce((s, p) => s + p.pendingAmount, 0))}
+              {INR(projects.reduce((s, p) => s + Number(p.pendingAmount ?? 0), 0))}
             </td>
             <td className="py-2.5 px-3 text-right text-zinc-500">
               {projects.reduce((s, p) => s + p.count, 0)}

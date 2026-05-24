@@ -103,18 +103,20 @@ export default function Production() {
     ? (records ?? [])
     : (records ?? []).filter(r => String(r.projectId) === filterProject);
 
-  const totalProduction = filtered.reduce((s, r) => s + r.productionKg, 0);
-  const totalSold = filtered.reduce((s, r) => s + r.soldKg, 0);
-  const totalRevenue = filtered.reduce((s, r) => s + r.revenue, 0);
+  // NPF-safe: production/revenue columns may become decimal strings post-migration.
+  // Wrap in Number() so additive arithmetic continues to work for both shapes.
+  const totalProduction = filtered.reduce((s, r) => s + Number(r.productionKg ?? 0), 0);
+  const totalSold = filtered.reduce((s, r) => s + Number(r.soldKg ?? 0), 0);
+  const totalRevenue = filtered.reduce((s, r) => s + Number(r.revenue ?? 0), 0);
 
   // Chart data: aggregate by month
   const chartMap: Record<string, { month: string; production: number; sold: number; revenue: number }> = {};
   filtered.forEach(r => {
     const key = format(new Date(r.recordedAt), "MMM yy");
     if (!chartMap[key]) chartMap[key] = { month: key, production: 0, sold: 0, revenue: 0 };
-    chartMap[key].production += r.productionKg;
-    chartMap[key].sold += r.soldKg;
-    chartMap[key].revenue += r.revenue;
+    chartMap[key].production += Number(r.productionKg ?? 0);
+    chartMap[key].sold += Number(r.soldKg ?? 0);
+    chartMap[key].revenue += Number(r.revenue ?? 0);
   });
   const chartData = Object.values(chartMap).slice(-12);
 

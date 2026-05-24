@@ -12,6 +12,7 @@ import {
   userProjectAssignmentsTable,
 } from "@workspace/db";
 import { assertContributorIdentityValid } from "../lib/partnerIdentityGuard";
+import { toNum } from "../lib/numericSafe.js";
 import { requireRole } from "../middlewares/auth";
 import { writeAudit } from "../lib/auditLogger";
 import { writeTimeline, TL } from "../lib/timelineLogger";
@@ -296,8 +297,11 @@ router.get("/summary", async (req, res) => {
       });
     }
     const p = projectMap.get(row.projectId)!;
-    p.totalAmount += row.amount;
-    p.byType[row.contributionType] = (p.byType[row.contributionType] ?? 0) + row.amount;
+    // NPF-safe: row.amount may be `number` (real columns) today or `string`
+    // (numeric columns) after migration. toNum() normalises both shapes.
+    const amt = toNum(row.amount);
+    p.totalAmount += amt;
+    p.byType[row.contributionType] = (p.byType[row.contributionType] ?? 0) + amt;
 
     // ── Participant aggregation ────────────────────────────────────────────────
     const partKey = row.partnerName;
@@ -317,21 +321,21 @@ router.get("/summary", async (req, res) => {
       });
     }
     const part = p.participantMap.get(partKey)!;
-    part.totalAmount += row.amount;
+    part.totalAmount += amt;
 
     if (row.contributionType === "recoverable_advance") {
-      part.reimbursableAmount += row.amount;
-      p.reimbursableAmount += row.amount;
+      part.reimbursableAmount += amt;
+      p.reimbursableAmount += amt;
     }
 
     if (row.verificationStatus === "verified") {
-      p.verifiedAmount += row.amount;
-      part.verifiedAmount += row.amount;
-      grandVerified += row.amount;
+      p.verifiedAmount += amt;
+      part.verifiedAmount += amt;
+      grandVerified += amt;
       if (row.affectsOwnership && row.lifecyclePhaseSnapshot === "prematurity") {
-        p.ownershipEligibleAmount += row.amount;
-        part.ownershipEligibleAmount += row.amount;
-        grandOwnership += row.amount;
+        p.ownershipEligibleAmount += amt;
+        part.ownershipEligibleAmount += amt;
+        grandOwnership += amt;
       }
     }
 
@@ -341,7 +345,7 @@ router.get("/summary", async (req, res) => {
     if (row.verificationStatus === "rejected") { p.rejectedCount++; part.rejectedCount++; }
     if (row.verificationStatus === "disputed") { p.disputedCount++; part.disputedCount++; }
 
-    grandTotal += row.amount;
+    grandTotal += amt;
     grandCount++;
   }
 

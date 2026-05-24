@@ -10,6 +10,7 @@ import {
   userProjectAssignmentsTable,
 } from "@workspace/db";
 import { requireRole } from "../middlewares/auth";
+import { toNum } from "../lib/numericSafe.js";
 
 const router = Router();
 
@@ -188,11 +189,13 @@ router.get("/balance", async (req, res) => {
       });
     }
     const p = projectMap.get(row.projectId)!;
-    p.total += row.amount;
-    if (row.reimbursementStatus === "pending") p.pending += row.amount;
-    else if (row.reimbursementStatus === "approved") p.approved += row.amount;
-    else if (row.reimbursementStatus === "settled") p.settled += row.amount;
-    else if (row.reimbursementStatus === "rejected") p.rejected += row.amount;
+    // NPF-safe: row.amount may be number (real) today or string (numeric) post-migration.
+    const amt = toNum(row.amount);
+    p.total += amt;
+    if (row.reimbursementStatus === "pending") p.pending += amt;
+    else if (row.reimbursementStatus === "approved") p.approved += amt;
+    else if (row.reimbursementStatus === "settled") p.settled += amt;
+    else if (row.reimbursementStatus === "rejected") p.rejected += amt;
   }
 
   const balances = Array.from(projectMap.values());

@@ -10,6 +10,7 @@ import {
   userProjectAssignmentsTable,
 } from "@workspace/db";
 import { requireRole } from "../middlewares/auth";
+import { toNum } from "../lib/numericSafe.js";
 import { routeAndCreateVerificationRequest } from "./expenditure_verification";
 import { writeAudit } from "../lib/auditLogger";
 import { writeTimeline, TL } from "../lib/timelineLogger";
@@ -407,13 +408,15 @@ router.get("/summary", async (req, res) => {
       });
     }
     const proj = byProject.get(exp.projectId)!;
-    proj.totalAmount += exp.amount;
+    // NPF-safe: exp.amount may be number (real) today or string (numeric) post-migration.
+    const amt = toNum(exp.amount);
+    proj.totalAmount += amt;
     proj.count += 1;
-    if (exp.verificationStatus === "approved") proj.approvedAmount += exp.amount;
-    if (exp.verificationStatus === "pending_review") proj.pendingAmount += exp.amount;
+    if (exp.verificationStatus === "approved") proj.approvedAmount += amt;
+    if (exp.verificationStatus === "pending_review") proj.pendingAmount += amt;
 
     const cat = byCategory(proj.byCategory, exp.category);
-    cat.amount += exp.amount;
+    cat.amount += amt;
     cat.count += 1;
   }
 
@@ -448,10 +451,11 @@ router.get("/summary", async (req, res) => {
 
   const totals = allExps.reduce(
     (acc, e) => {
-      acc.totalAmount += e.amount;
+      const amt = toNum(e.amount);
+      acc.totalAmount += amt;
       acc.count += 1;
-      if (e.verificationStatus === "approved") acc.approvedAmount += e.amount;
-      if (e.verificationStatus === "pending_review") acc.pendingAmount += e.amount;
+      if (e.verificationStatus === "approved") acc.approvedAmount += amt;
+      if (e.verificationStatus === "pending_review") acc.pendingAmount += amt;
       return acc;
     },
     { totalAmount: 0, approvedAmount: 0, pendingAmount: 0, count: 0 },

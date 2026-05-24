@@ -1,0 +1,146 @@
+APPROVED FOR IMPLEMENTATION
+
+Execute Numeric Precision Foundation Stage 0 + Stage 1 ONLY.
+
+This is a preparation wave.
+
+NO schema migration is authorized.
+
+NO database column type conversion is authorized.
+
+NO db push is authorized.
+
+DO NOT modify any business rules.
+
+DO NOT modify ownership formulas.
+
+DO NOT modify reimbursement formulas.
+
+DO NOT modify profit allocation logic.
+
+DO NOT modify entitlement logic.
+
+DO NOT modify 50% revenue calculations.
+
+DO NOT modify project lifecycle behavior.
+
+==================================================== STAGE 0 — MONEY FOUNDATION 
+
+Create a reusable money utility layer.
+
+Preferred library:
+
+decimal.js-light 
+
+Implement:
+
+artifacts/api-server/src/lib/money/
+
+Include:
+
+toMoney() fromMoney() addMoney() subMoney() mulMoney() splitMoney() isZeroMoney() gtMoney() gteMoney() ltMoney() lteMoney() 
+
+Requirements:
+
+tolerant of number|string|null|undefined Decimal based internally HALF_EVEN rounding support exact decimal arithmetic no schema changes 
+
+Add unit tests for:
+
+addition subtraction multiplication division split allocations negative values null values string values large values ==================================================== STAGE 1 — CODEBASE CONSISTENCY PASS 
+
+Read-only arithmetic cleanup.
+
+Goal:
+
+Make every money arithmetic site safe for future numeric-string columns.
+
+Implement ONLY:
+
+Replace unsafe patterns:
+
+row.amount row.balance row.total row.revenue
+
+used directly in arithmetic
+
+with:
+
+toNum(...) or toMoney(...)
+
+where appropriate.
+
+Convert aggregation sites to a consistent pattern.
+
+Examples:
+
+reduce(...) sum(...) totals rollups financial counters
+
+Focus first on:
+
+ownership.ts contributions.ts expenditures.ts burden.ts burden_recovery.ts distribution_previews.ts lca.ts fifty_pct.ts landowner_account.ts financial_analytics.ts global_analytics.ts project_card_summary.ts 
+
+Frontend consistency pass:
+
+Replace unsafe:
+
+a + b total += amount
+
+where money fields may become strings later.
+
+Use explicit conversion.
+
+Do NOT alter API response shapes.
+
+Money values must continue behaving exactly as today.
+
+Do NOT modify OpenAPI.
+
+Do NOT regenerate clients.
+
+Do NOT change schemas.
+
+==================================================== EXPLICITLY DEFERRED 
+
+Stage 2:
+
+real -> numeric migration schema edits db push OpenAPI decimal-string conversion 
+
+Stage 3:
+
+Decimal rewrites of LCA escalation Fifty percent waterfall rewrite valuation engine rewrite 
+
+Stage 4:
+
+frontend decimal conversion 
+
+Stage 5:
+
+lint enforcement 
+
+Do not begin any deferred stage.
+
+==================================================== AFTER IMPLEMENTATION 
+
+Return report only:
+
+Files changed
+
+New utility files created
+
+Arithmetic sites hardened grouped by file
+
+Unit test results
+
+Typecheck results
+
+Build results
+
+Frontend compatibility findings
+
+Remaining unsafe arithmetic locations
+
+Stage 2 readiness assessment
+
+READY FOR SCHEMA MIGRATION or NOT READY
+
+No other work.
+
