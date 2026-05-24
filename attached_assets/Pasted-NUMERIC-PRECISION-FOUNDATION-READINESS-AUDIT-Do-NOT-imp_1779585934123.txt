@@ -1,0 +1,92 @@
+NUMERIC PRECISION FOUNDATION — READINESS AUDIT
+
+Do NOT implement anything.
+
+Do NOT modify code.
+
+Do NOT modify schema.
+
+Do NOT generate migrations.
+
+Do NOT run db push.
+
+Read-only audit only.
+
+==================================================== OBJECTIVE 
+
+Determine whether the repository is fully ready to begin Numeric Precision Foundation (NPF).
+
+Previous waves completed:
+
+OTP remediation Dashboard cleanup Closure readiness expansion Audit write-once enforcement Stub schema removal 
+
+This audit must focus ONLY on money precision migration readiness.
+
+==================================================== AUDIT REQUIRED MONEY COLUMN INVENTORY 
+
+Produce complete inventory of every money-bearing column.
+
+For each column report:
+
+table column current type nullable default value indexes constraints usage count 
+
+Include:
+
+contributions expenditures burden recovery landowner accounting LCA post maturity payments distributions sales settlement payable reimbursement financial reports ownership-related monetary values ==================================================== 2. AGGREGATION SITE INVENTORY 
+
+Identify every location where money values are:
+
+added subtracted multiplied divided averaged rounded converted 
+
+For each site provide:
+
+file line range operation risk level ==================================================== 3. REAL → NUMERIC IMPACT MAP 
+
+For every money column determine:
+
+API endpoints affected reports affected dashboards affected exports affected documents affected ownership calculations affected reimbursement calculations affected settlement calculations affected ==================================================== 4. COMPATIBILITY AUDIT 
+
+Identify:
+
+Number(...) parseFloat(...) unary + arithmetic assumptions JSON serialization assumptions frontend type assumptions 
+
+that would break if database values become strings.
+
+==================================================== 5. DATA MIGRATION RISK 
+
+Estimate:
+
+row counts per affected table largest values negative values null values precision anomalies rounding anomalies 
+
+Identify any rows likely to fail conversion.
+
+==================================================== 6. DECIMAL ARCHITECTURE REVIEW 
+
+Recommend:
+
+decimal library rounding policy money utility design serialization strategy testing strategy 
+
+No implementation.
+
+Architecture recommendation only.
+
+==================================================== 7. CUTOVER PLAN 
+
+Provide exact migration order.
+
+For each step include:
+
+prerequisite schema work code work validation work rollback strategy ==================================================== OUTPUT REQUIRED 
+
+Return only:
+
+Money column inventory Aggregation inventory Impact map Compatibility findings Migration risks Recommended decimal architecture Cutover sequence Blockers READY FOR NPF or NOT READY 
+
+No implementation.
+
+No code changes.
+
+No migrations.
+
+Read-only audit only.
+
