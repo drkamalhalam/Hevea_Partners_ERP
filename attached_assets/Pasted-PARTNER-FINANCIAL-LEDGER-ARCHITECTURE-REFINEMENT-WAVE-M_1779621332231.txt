@@ -1,0 +1,194 @@
+PARTNER FINANCIAL LEDGER – ARCHITECTURE REFINEMENT WAVE (MANDATORY BEFORE IMPLEMENTATION)
+
+This is a design-refinement task only. Do not begin implementation until every item below is incorporated into the architecture and reviewed.
+
+IMPORTANT:
+
+Do not remove any existing approved functionality. Do not change entitlement logic. Do not change ownership logic. Do not change inheritance logic. Do not change commercial-model rules. Do not introduce breaking API changes. Preserve append-only ledger architecture. Preserve reversal-based correction architecture. Preserve revenue attribution via entitlement consumption only. 
+
+==================================================
+
+REVENUE RECOGNITION TIMING CORRECTION ================================================== 
+
+Current design states:
+
+Revenue recognized on SaleCompleted.
+
+Review existing Sale Rubber workflow and align financial recognition timing with approved sale lifecycle.
+
+Revenue recognition must occur only when:
+
+payment is confirmed/received AND sale reaches Approved/Paid financial state 
+
+Revenue must NOT be recognized merely because a sale order exists.
+
+Cancellation before financial recognition must create no ledger activity.
+
+Document exact trigger state and update architecture accordingly.
+
+================================================== 2. SEPARATE REVENUE, PROFIT AND DISTRIBUTABLE BALANCE 
+
+Current design exposes:
+
+Gross Revenue Distributable Balance 
+
+This is insufficient.
+
+Introduce clear financial hierarchy:
+
+Gross Revenue minus Allocated Costs equals Net Profit
+
+Net Profit minus Distribution Payments plus/minus Adjustments equals Distributable Balance
+
+Update:
+
+ledger documentation balance view dashboard calculations reporting definitions 
+
+Required dashboard metrics:
+
+Own Gross Revenue Own Allocated Costs Own Net Profit Own Distributed Amount Own Distributable Balance
+
+================================================== 3. COST ALLOCATION AUDIT LAYER 
+
+Before cost debits enter the partner ledger, create an immutable audit layer.
+
+New table:
+
+cost_allocation_lines
+
+Purpose:
+
+Store exact allocation basis used during allocation.
+
+Suggested fields:
+
+id project_id cost_reference_type cost_reference_id partner_id allocation_percentage allocated_amount allocation_date ownership_snapshot_reference created_at
+
+Flow becomes:
+
+Cost Event → Cost Allocation Lines → Ledger Entries
+
+This table is the audit source for:
+
+burden allocation expenditure allocation LCA allocation future cost allocation mechanisms 
+
+No direct ledger insertion without allocation evidence.
+
+================================================== 4. INTERNAL PARTNER PURCHASE REVENUE CATEGORY 
+
+Current rule remains approved:
+
+Seller receives revenue credit. Buyer receives entitlement. Buyer gets no ledger entry.
+
+However reporting must distinguish:
+
+External Sale Revenue Internal Transfer Revenue
+
+Required:
+
+Revenue category field or equivalent reporting classification.
+
+Project financial reports must display:
+
+External Revenue Internal Transfer Revenue Total Revenue
+
+Project profit calculations must not accidentally treat internal transfers as external project income.
+
+================================================== 5. HELD / BLOCKED DISTRIBUTABLE BALANCE SUPPORT 
+
+Introduce financial-hold capability.
+
+Supported hold reasons:
+
+Dispute Inheritance dispute Court order Governance hold Administrative hold
+
+Held amounts must:
+
+remain visible remain auditable not disappear from history not alter revenue history 
+
+Required outputs:
+
+Total Balance Held Balance Available Distributable Balance
+
+Design must support future hold workflows.
+
+================================================== 6. PROJECT CLOSURE SNAPSHOT EXPANSION 
+
+Current closure snapshot stores only distributable balance.
+
+Expand closure snapshot.
+
+For every partner store:
+
+Sheet Entitlement Scrap Entitlement Gross Revenue Allocated Costs Net Profit Distributed Amount Remaining Distributable Balance
+
+Closure snapshot must support future reconstruction even if operational records are archived.
+
+================================================== 7. REIMBURSEMENT ACCOUNTING TRACEABILITY 
+
+Current architecture routes reimbursement through generic adjustments.
+
+Refine design.
+
+Create explicit reimbursement allocation evidence.
+
+Suggested flow:
+
+Reimbursement Event → Reimbursement Allocation Lines → Ledger Entries
+
+Store:
+
+source reimbursement affected partners allocation basis allocated amount
+
+Ledger entries must always trace back to reimbursement evidence.
+
+Generic adjustment records must not become the primary reimbursement audit source.
+
+================================================== 8. PROJECT PROFIT DEFINITION 
+
+Formally define project profit.
+
+Review treatment of:
+
+external sales internal partner purchases reversals cancellations reimbursements 
+
+Provide final formula.
+
+Document:
+
+Gross Revenue Project Costs Net Project Profit
+
+Ensure internal partner purchases cannot artificially inflate project profit.
+
+================================================== 9. VALIDATION RULES 
+
+Add validation requirements for:
+
+Revenue Attribution Lines Cost Allocation Lines Reimbursement Allocation Lines Held Balances Closure Snapshots
+
+Examples:
+
+Sum(all revenue attribution amounts) 
+
+Sum(all revenue ledger credits)
+
+Sum(cost allocation lines) 
+
+original cost amount
+
+Sum(reimbursement allocation lines) 
+
+reimbursement event amount
+
+Held balance cannot exceed distributable balance.
+
+================================================== 10. FINAL DELIVERABLE 
+
+Produce revised architecture containing:
+
+updated data model updated event flows updated financial formulas updated dashboard definitions updated API impacts updated validation rules updated audit requirements 
+
+Do not generate implementation code yet.
+
+Return a complete architecture revision ready for implementation review.
+
