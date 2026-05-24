@@ -10,9 +10,12 @@ import assert from "node:assert/strict";
 import {
   toMoney,
   fromMoney,
+  formatMoney,
+  parseMoneyFromDb,
   addMoney,
   subMoney,
   mulMoney,
+  sumMoney,
   splitMoney,
   isZeroMoney,
   gtMoney,
@@ -61,20 +64,40 @@ describe("toMoney — tolerance", () => {
   });
 });
 
-describe("fromMoney — serialization", () => {
+describe("fromMoney / formatMoney — serialization (HALF_UP)", () => {
   it("fixes 2 decimal places", () => {
     assert.equal(fromMoney(toMoney(100)), "100.00");
   });
-  it("rounds half-even down", () => {
-    // 1.005 → 1.00 (banker's rounding, half to even)
-    assert.equal(fromMoney(toMoney("1.005")), "1.00");
+  it("rounds half UP (0.005 → 0.01)", () => {
+    assert.equal(fromMoney(toMoney("1.005")), "1.01");
   });
-  it("rounds half-even up", () => {
-    // 1.015 → 1.02 (banker's rounding, half to even)
+  it("rounds half UP (0.015 → 0.02)", () => {
     assert.equal(fromMoney(toMoney("1.015")), "1.02");
+  });
+  it("rounds half UP for negative away-from-zero", () => {
+    // -1.005 → -1.01 (half-away-from-zero)
+    assert.equal(fromMoney(toMoney("-1.005")), "-1.01");
   });
   it("preserves negative", () => {
     assert.equal(fromMoney(toMoney("-7.50")), "-7.50");
+  });
+  it("formatMoney is alias of fromMoney", () => {
+    assert.equal(formatMoney(toMoney("42.5")), fromMoney(toMoney("42.5")));
+  });
+  it("parseMoneyFromDb tolerates Drizzle shapes", () => {
+    assert.equal(parseMoneyFromDb(12.5).toString(), "12.5");
+    assert.equal(parseMoneyFromDb("12.50").toString(), "12.5");
+    assert.equal(parseMoneyFromDb(null).toString(), "0");
+  });
+});
+
+describe("sumMoney — canonical aggregation", () => {
+  it("sums mixed Drizzle shapes exactly", () => {
+    const rows: (number | string | null)[] = [100, "200.50", null, "0.25", 50];
+    assert.equal(formatMoney(sumMoney(rows)), "350.75");
+  });
+  it("empty input → 0", () => {
+    assert.equal(formatMoney(sumMoney([])), "0.00");
   });
 });
 

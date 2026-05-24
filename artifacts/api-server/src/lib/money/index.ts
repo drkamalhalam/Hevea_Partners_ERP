@@ -16,19 +16,25 @@
  *   foundation for upcoming Stage 3 rewrites of multiplicative paths
  *   (LCA escalation, 50% waterfall, valuation DCF).
  *
- *   ROUNDING POLICY: HALF_EVEN (banker's rounding) at 2 decimal places for
- *   final money values. Intermediate values are kept at full Decimal precision.
+ *   ROUNDING POLICY: HALF_UP (round-half-away-from-zero) at 2 decimal places
+ *   for final money values. This is the canonical NPF policy — it matches
+ *   common business/accounting expectations (e.g. 0.005 → 0.01) and aligns
+ *   with PostgreSQL `numeric(p,2)` ROUND() default behaviour for non-negative
+ *   values. Intermediate values keep full Decimal precision.
  *
  *   This module performs NO schema, API, or behaviour changes. It is additive.
  */
 
 import Decimal from "decimal.js-light";
 
+// Canonical rounding mode for money: HALF_UP (round-half-away-from-zero).
+const ROUND = Decimal.ROUND_HALF_UP;
+
 // Configure Decimal globally for money-grade defaults. decimal.js-light is
 // configured at construction time via the static `set` method.
 Decimal.set({
   precision: 30,
-  rounding: Decimal.ROUND_HALF_EVEN,
+  rounding: ROUND,
   toExpNeg: -20,
   toExpPos: 30,
 });
@@ -83,16 +89,44 @@ export function toMoney(v: MoneyInput): Decimal {
 /**
  * Format a Decimal for storage or wire transmission. Always returns a fixed
  * 2-dp string suitable for `numeric(15,2)` columns and decimal-typed API
- * fields. HALF_EVEN rounding.
+ * fields. HALF_UP rounding (NPF canonical policy).
  */
 export function fromMoney(d: Decimal): string {
-  return d.toDecimalPlaces(MONEY_SCALE, Decimal.ROUND_HALF_EVEN).toFixed(MONEY_SCALE);
+  return d.toDecimalPlaces(MONEY_SCALE, ROUND).toFixed(MONEY_SCALE);
+}
+
+/**
+ * NPF canonical alias for `fromMoney(...)`. Returned string is always
+ * exactly 2 dp and safe to write to a `numeric(15,2)` column.
+ */
+export function formatMoney(d: Decimal): string {
+  return fromMoney(d);
+}
+
+/**
+ * NPF canonical alias for `toMoney(...)`. Use when the call site is
+ * specifically parsing a value read from a Drizzle row (legacy `real`
+ * → number, post-migration `numeric` → string, NULL → undefined).
+ */
+export function parseMoneyFromDb(v: MoneyInput): Decimal {
+  return toMoney(v);
 }
 
 // ── Arithmetic ───────────────────────────────────────────────────────────────
 
 export function addMoney(a: MoneyInput, b: MoneyInput): Decimal {
   return toMoney(a).plus(toMoney(b));
+}
+
+/**
+ * NPF canonical summation helper. Accepts an iterable of mixed-shape money
+ * values and returns the exact total as a Decimal. Tolerant of null/undefined
+ * entries (treated as 0).
+ */
+export function sumMoney(values: Iterable<MoneyInput>): Decimal {
+  let acc: Decimal = ZERO;
+  for (const v of values) acc = acc.plus(toMoney(v));
+  return acc;
 }
 
 export function subMoney(a: MoneyInput, b: MoneyInput): Decimal {
@@ -115,7 +149,7 @@ export function mulMoney(a: MoneyInput, factor: MoneyInput): Decimal {
  * If ratios sum to 0 (or are all empty), returns an array of zeros.
  */
 export function splitMoney(total: MoneyInput, ratios: MoneyInput[]): Decimal[] {
-  const totalD = toMoney(total).toDecimalPlaces(MONEY_SCALE, Decimal.ROUND_HALF_EVEN);
+  const totalD = toMoney(total).toDecimalPlaces(MONEY_SCALE, ROUND);
   const ratioDs = ratios.map(toMoney);
   const ratioSum = ratioDs.reduce<Decimal>((s, r) => s.plus(r), ZERO);
 
@@ -124,7 +158,7 @@ export function splitMoney(total: MoneyInput, ratios: MoneyInput[]): Decimal[] {
   }
 
   // Convert total to paise (integer Decimal) for the exact-sum guarantee.
-  const totalPaise = totalD.times(100).toDecimalPlaces(0, Decimal.ROUND_HALF_EVEN);
+  const totalPaise = totalD.times(100).toDecimalPlaces(0, ROUND);
 
   // Initial floor allocation per bucket in paise.
   const exact: Decimal[] = ratioDs.map((r) => totalPaise.times(r).div(ratioSum));
