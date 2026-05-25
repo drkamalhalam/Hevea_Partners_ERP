@@ -34,6 +34,9 @@ const fmtNum = (v: unknown) => {
   return n.toLocaleString("en-IN", { maximumFractionDigits: 2 });
 };
 
+const toN = (v: unknown): number =>
+  toMoney(v as string | number | null | undefined).toNumber();
+
 // ── FINANCIAL REPORT ──────────────────────────────────────────────────────────
 
 export async function fetchFinancialReportData(
@@ -102,12 +105,12 @@ export async function fetchFinancialReportData(
   const lca = lcaRows.rows as Record<string,unknown>[];
 
   const totalContrib = contributions.filter(r => r.status === "verified")
-    .reduce((s, r) => s + parseFloat(String(r.amount ?? "0")), 0);
+    .reduce((s, r) => s + toN(r.amount), 0);
   const totalExpend = expenditures.filter(r => r.status === "approved")
-    .reduce((s, r) => s + parseFloat(String(r.amount ?? "0")), 0);
-  const totalSalesGross = sales.reduce((s, r) => s + parseFloat(String(r.gross_amount ?? "0")), 0);
-  const totalSalesNet = sales.reduce((s, r) => s + parseFloat(String(r.net_amount ?? "0")), 0);
-  const totalDistributed = distributions.reduce((s, r) => s + parseFloat(String(r.net_payable ?? "0")), 0);
+    .reduce((s, r) => s + toN(r.amount), 0);
+  const totalSalesGross = sales.reduce((s, r) => s + toN(r.gross_amount), 0);
+  const totalSalesNet = sales.reduce((s, r) => s + toN(r.net_amount), 0);
+  const totalDistributed = distributions.reduce((s, r) => s + toN(r.net_payable), 0);
 
   return {
     summary: {
@@ -161,7 +164,7 @@ export async function fetchFinancialReportData(
           fmtNum(r.gross_entitlement), fmtNum(r.deductions), fmtNum(r.net_payable),
           fmt(r.status), fmt(r.settled_at),
         ]),
-        totals: ["TOTALS", "", `₹${fmtNum(distributions.reduce((s,r)=>s+parseFloat(String(r.gross_entitlement??'0')),0))}`, `₹${fmtNum(distributions.reduce((s,r)=>s+parseFloat(String(r.deductions??'0')),0))}`, `₹${fmtNum(totalDistributed)}`, "", ""],
+        totals: ["TOTALS", "", `₹${fmtNum(distributions.reduce((s,r)=>s+toN(r.gross_entitlement),0))}`, `₹${fmtNum(distributions.reduce((s,r)=>s+toN(r.deductions),0))}`, `₹${fmtNum(totalDistributed)}`, "", ""],
       },
       {
         title: "LCA Ledger",
@@ -232,7 +235,7 @@ export async function fetchProjectReportData(
   const agreementRows = agreements.rows as Record<string,unknown>[];
   const timelineRows = milestones.rows as Record<string,unknown>[];
 
-  const totalOwnership = partnerRows.reduce((s, r) => s + parseFloat(String(r.ownership_pct ?? "0")), 0);
+  const totalOwnership = partnerRows.reduce((s, r) => s + toN(r.ownership_pct), 0);
 
   return {
     summary: {
@@ -335,7 +338,7 @@ export async function fetchOwnershipReportData(
   const transferRows = transfers.rows as Record<string,unknown>[];
   const claimRows = claimsRows.rows as Record<string,unknown>[];
   const histRows = history.rows as Record<string,unknown>[];
-  const totalOwnership = ownershipRows.reduce((s, r) => s + parseFloat(String(r.ownership_pct ?? "0")), 0);
+  const totalOwnership = ownershipRows.reduce((s, r) => s + toN(r.ownership_pct), 0);
 
   return {
     summary: {
@@ -446,9 +449,9 @@ export async function fetchDistributionReportData(
   const fifties = fiftyRows.rows as Record<string,unknown>[];
   const saleDist = salesForDist.rows as Record<string,unknown>[];
 
-  const totalNetPayable = dists.reduce((s, r) => s + parseFloat(String(r.net_payable ?? "0")), 0);
-  const totalGross = dists.reduce((s, r) => s + parseFloat(String(r.gross_entitlement ?? "0")), 0);
-  const totalDeductions = dists.reduce((s, r) => s + parseFloat(String(r.deductions ?? "0")), 0);
+  const totalNetPayable = dists.reduce((s, r) => s + toN(r.net_payable), 0);
+  const totalGross = dists.reduce((s, r) => s + toN(r.gross_entitlement), 0);
+  const totalDeductions = dists.reduce((s, r) => s + toN(r.deductions), 0);
 
   return {
     summary: {
@@ -481,7 +484,7 @@ export async function fetchDistributionReportData(
           fmt(r.settlement_type), fmt(r.period_label), fmt(r.partner_name),
           fmtNum(r.amount), fmt(r.status), fmt(r.finalized_at), fmt(r.finalized_by_name),
         ]),
-        totals: ["TOTAL", "", "", `₹${fmtNum(settles.reduce((s, r) => s + parseFloat(String(r.amount ?? "0")), 0))}`, "", "", ""],
+        totals: ["TOTAL", "", "", `₹${fmtNum(settles.reduce((s, r) => s + toN(r.amount), 0))}`, "", "", ""],
       },
       {
         title: "50% Revenue Sessions",
@@ -544,11 +547,11 @@ export async function fetchInventoryReportData(
   const reserves = reservations.rows as Record<string,unknown>[];
   const prod = production.rows as Record<string,unknown>[];
 
-  const totalBalance = inv.reduce((s, r) => s + parseFloat(String(r.balance_value ?? "0")), 0);
+  const totalBalance = inv.reduce((s, r) => s + toN(r.balance_value), 0);
   const inflows = moves.filter(r => ["production_in", "purchase_in", "transfer_in", "adjustment_in"].includes(String(r.movement_type)));
   const outflows = moves.filter(r => ["sale_out", "transfer_out", "wastage_out", "adjustment_out"].includes(String(r.movement_type)));
-  const totalIn = inflows.reduce((s, r) => s + parseFloat(String(r.quantity ?? "0")), 0);
-  const totalOut = outflows.reduce((s, r) => s + parseFloat(String(r.quantity ?? "0")), 0);
+  const totalIn = inflows.reduce((s, r) => s + toN(r.quantity), 0);
+  const totalOut = outflows.reduce((s, r) => s + toN(r.quantity), 0);
 
   return {
     summary: {

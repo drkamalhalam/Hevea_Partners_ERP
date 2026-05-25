@@ -16,6 +16,7 @@
  *    Economic participant pool is NEVER reduced by operational costs.
  */
 
+import { toMoney } from "@workspace/db";
 import type {
   ContributionDistributionResult,
   FiftyPercentDistributionResult,
@@ -256,7 +257,7 @@ export function sharesFromAgreement(params: {
 // ── Utilities ──────────────────────────────────────────────────────────────
 
 function round2(n: number): number {
-  return Math.round(n * 100) / 100;
+  return toMoney(n).toDecimalPlaces(2).toNumber();
 }
 
 function fmt(n: number): string {

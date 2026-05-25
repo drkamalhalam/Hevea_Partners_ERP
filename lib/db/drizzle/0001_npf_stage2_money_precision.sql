@@ -33,25 +33,50 @@ BEGIN;
 -- This prevents silent rounding without audit evidence.
 DO $$
 DECLARE
-  audit_count INTEGER;
+  audit_count INTEGER := 0;
+  is_fresh_db  BOOLEAN := false;
 BEGIN
-  -- Table may not exist yet on a brand-new DB; skip check in that case.
-  IF EXISTS (
-    SELECT 1 FROM information_schema.tables
-    WHERE table_name = 'precision_conversion_audit'
-  ) THEN
+  -- Attempt to read audit rows.  If the table does not yet exist we land in the
+  -- EXCEPTION block and must decide whether this is a fresh database (safe) or
+  -- an existing database where the helper was never run (unsafe).
+  BEGIN
     SELECT COUNT(*) INTO audit_count
     FROM precision_conversion_audit
     WHERE notes = 'npf_stage2_migrate_money';
+  EXCEPTION WHEN undefined_table THEN
+    -- precision_conversion_audit does not exist yet.  Check whether any financial
+    -- data is already present.  If the key tables are empty (or don't exist) this
+    -- is a brand-new deployment — no rows to round, so no audit evidence is needed.
+    BEGIN
+      EXECUTE $q$
+        SELECT NOT EXISTS (SELECT 1 FROM agreements      LIMIT 1)
+           AND NOT EXISTS (SELECT 1 FROM contributions   LIMIT 1)
+           AND NOT EXISTS (SELECT 1 FROM expenditures    LIMIT 1)
+           AND NOT EXISTS (SELECT 1 FROM lca_ledger      LIMIT 1)
+      $q$ INTO is_fresh_db;
+    EXCEPTION WHEN OTHERS THEN
+      -- Some tables do not exist yet — definitely a fresh database.
+      is_fresh_db := true;
+    END;
 
-    IF audit_count = 0 THEN
+    IF NOT is_fresh_db THEN
       RAISE EXCEPTION
-        'NPF Stage 2 safety gate: no audit snapshots found. '
-        'Run the migration helper first: '
-        'pnpm --filter @workspace/scripts run npf:stage2:migrate-money. '
-        'Every rounding event must be captured in precision_conversion_audit '
-        'before this DDL is applied.';
+        'NPF Stage 2 safety gate: financial data exists but precision_conversion_audit '
+        'table not found. Run the migration helper first to snapshot every money column '
+        'before this DDL alters column types: '
+        'pnpm --filter @workspace/scripts run npf:stage2:migrate-money';
     END IF;
+    RETURN;  -- Fresh DB: proceed without audit rows.
+  END;
+
+  -- Audit table exists — require at least one snapshot row.
+  IF audit_count = 0 THEN
+    RAISE EXCEPTION
+      'NPF Stage 2 safety gate: no audit snapshots found. '
+      'Run the migration helper first: '
+      'pnpm --filter @workspace/scripts run npf:stage2:migrate-money. '
+      'Every rounding event must be captured in precision_conversion_audit '
+      'before this DDL is applied.';
   END IF;
 END $$;
 
