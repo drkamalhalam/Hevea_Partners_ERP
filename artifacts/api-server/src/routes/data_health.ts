@@ -1446,9 +1446,8 @@ async function getMoneyPrecisionCounters(): Promise<{
         AND ${SNAPSHOT_TABLE_EXCLUDE}
         AND (c.numeric_precision <> 15 OR c.numeric_scale <> 2)
     `),
-    db.execute(sql`
-      SELECT count(*)::int AS n FROM precision_conversion_audit WHERE delta <> 0
-    `),
+    // Live check: rows in still-real money columns with sub-cent precision
+    getLiveValuesExceedingPrecision(),
     // Burden imbalance: burden_records.total_amount vs actual split amounts
     // (burden_components table does not exist in schema; use live columns only).
     db.execute(sql`
@@ -1469,15 +1468,15 @@ async function getMoneyPrecisionCounters(): Promise<{
     `),
   ]);
 
-  const n = (r: Awaited<ReturnType<typeof db.execute>>) =>
+  const execN = (r: Awaited<ReturnType<typeof db.execute>>) =>
     Number((r.rows?.[0] as { n: number } | undefined)?.n ?? 0);
 
   return {
-    moneyColumnsUsingReal: n(usingReal),
-    moneyColumnsWithWrongScale: n(wrongScale),
-    valuesExceedingTargetPrecision: n(exceeding),
-    aggregateDriftBurden: n(burdenDrift),
-    aggregateDriftDistribution: n(distDrift),
+    moneyColumnsUsingReal: execN(usingReal),
+    moneyColumnsWithWrongScale: execN(wrongScale),
+    valuesExceedingTargetPrecision: exceeding,
+    aggregateDriftBurden: execN(burdenDrift),
+    aggregateDriftDistribution: execN(distDrift),
   };
 }
 
@@ -1511,65 +1510,138 @@ const SNAPSHOT_TABLE_EXCLUDE = sql.raw(
   `c.table_name NOT IN ('ownership_snapshots','inheritance_history','generations','backup','precision_conversion_audit')`,
 );
 
+/**
+ * Live precision check: count rows across all still-real money columns where
+ * the value has sub-cent precision (i.e., would be rounded on conversion).
+ * Returns 0 when all money columns are already numeric (post-migration).
+ * This is a live DB introspection — NOT an audit-history count.
+ */
+async function getLiveValuesExceedingPrecision(): Promise<number> {
+  const cols = await db.execute(sql`
+    SELECT c.table_name, c.column_name
+    FROM information_schema.columns c
+    WHERE c.table_schema = 'public'
+      AND c.data_type = 'real'
+      AND (${MONEY_COLUMN_FILTER_SQL})
+      AND ${SNAPSHOT_TABLE_EXCLUDE}
+    ORDER BY c.table_name, c.column_name
+  `);
+  if (!cols.rows.length) return 0;
+  let total = 0;
+  for (const row of cols.rows as Array<{ table_name: string; column_name: string }>) {
+    const r = await db.execute(
+      sql.raw(`
+        SELECT count(*)::int AS n FROM "${row.table_name}"
+        WHERE "${row.column_name}" IS NOT NULL
+          AND ABS("${row.column_name}"::double precision
+                  - ROUND("${row.column_name}"::numeric, 2)::double precision) > 1e-6
+      `),
+    );
+    total += Number((r.rows?.[0] as { n: number } | undefined)?.n ?? 0);
+  }
+  return total;
+}
+
+/**
+ * Live precision rows: for detail endpoint. Returns individual rows from
+ * real money columns where values have sub-cent precision.
+ */
+async function getLiveValuesExceedingPrecisionRows(): Promise<
+  Array<{ table_name: string; column_name: string; id: unknown; raw_value: unknown; excess: unknown }>
+> {
+  const cols = await db.execute(sql`
+    SELECT c.table_name, c.column_name
+    FROM information_schema.columns c
+    WHERE c.table_schema = 'public'
+      AND c.data_type = 'real'
+      AND (${MONEY_COLUMN_FILTER_SQL})
+      AND ${SNAPSHOT_TABLE_EXCLUDE}
+    ORDER BY c.table_name, c.column_name
+  `);
+  if (!cols.rows.length) return [];
+  const rows: Array<{ table_name: string; column_name: string; id: unknown; raw_value: unknown; excess: unknown }> = [];
+  for (const col of cols.rows as Array<{ table_name: string; column_name: string }>) {
+    const r = await db.execute(
+      sql.raw(`
+        SELECT id,
+               '${col.table_name}' AS table_name,
+               '${col.column_name}' AS column_name,
+               "${col.column_name}" AS raw_value,
+               ("${col.column_name}"::double precision
+                - ROUND("${col.column_name}"::numeric, 2)::double precision) AS excess
+        FROM "${col.table_name}"
+        WHERE "${col.column_name}" IS NOT NULL
+          AND ABS("${col.column_name}"::double precision
+                  - ROUND("${col.column_name}"::numeric, 2)::double precision) > 1e-6
+        ORDER BY ABS("${col.column_name}"::double precision
+                     - ROUND("${col.column_name}"::numeric, 2)::double precision) DESC
+        LIMIT 100
+      `),
+    );
+    for (const row of r.rows) {
+      rows.push(row as { table_name: string; column_name: string; id: unknown; raw_value: unknown; excess: unknown });
+    }
+    if (rows.length >= 500) break;
+  }
+  return rows;
+}
+
 // ── /money-precision/summary — 5 counters ────────────────────────────────────
 router.get("/money-precision/summary", async (_req, res) => {
-  const [usingReal, wrongScale, exceedingPrecision, burdenDrift, distDrift] =
+  // Run schema introspection queries and live precision check concurrently.
+  const [[usingReal, wrongScale, burdenDrift, distDrift], exceedingLive] =
     await Promise.all([
-      db.execute(sql`
-        SELECT count(*)::int AS n
-        FROM information_schema.columns c
-        WHERE c.table_schema = 'public'
-          AND c.data_type = 'real'
-          AND (${MONEY_COLUMN_FILTER_SQL})
-          AND ${SNAPSHOT_TABLE_EXCLUDE}
-      `),
-      db.execute(sql`
-        SELECT count(*)::int AS n
-        FROM information_schema.columns c
-        WHERE c.table_schema = 'public'
-          AND c.data_type = 'numeric'
-          AND (${MONEY_COLUMN_FILTER_SQL})
-          AND ${SNAPSHOT_TABLE_EXCLUDE}
-          AND (c.numeric_precision <> 15 OR c.numeric_scale <> 2)
-      `),
-      db.execute(sql`
-        SELECT count(*)::int AS n
-        FROM precision_conversion_audit
-        WHERE delta <> 0
-      `),
-      // Burden imbalance: count burden_records whose actual_developer_amount +
-      // actual_landowner_amount deviates from total_amount by more than 0.01.
-      // Uses only columns present in the burden_records table itself.
-      db.execute(sql`
-        SELECT count(*)::int AS n
-        FROM burden_records br
-        WHERE ABS(
-          COALESCE(br.total_amount, 0) -
-          (COALESCE(br.actual_developer_amount, 0) + COALESCE(br.actual_landowner_amount, 0))
-        ) > 0.01
-      `),
-      // Distribution imbalance: count fifty_pct_sessions where gross_revenue
-      // deviates from landowner_split + participant_pool_split by more than 0.01.
-      // Note: distribution_previews does not carry per-split totals; the fifty-
-      // percent split totals live in fifty_pct_sessions.
-      db.execute(sql`
-        SELECT count(*)::int AS n
-        FROM fifty_pct_sessions fps
-        WHERE ABS(
-          COALESCE(fps.gross_revenue, 0) -
-          (COALESCE(fps.landowner_split, 0) + COALESCE(fps.participant_pool_split, 0))
-        ) > 0.01
-      `),
+      Promise.all([
+        db.execute(sql`
+          SELECT count(*)::int AS n
+          FROM information_schema.columns c
+          WHERE c.table_schema = 'public'
+            AND c.data_type = 'real'
+            AND (${MONEY_COLUMN_FILTER_SQL})
+            AND ${SNAPSHOT_TABLE_EXCLUDE}
+        `),
+        db.execute(sql`
+          SELECT count(*)::int AS n
+          FROM information_schema.columns c
+          WHERE c.table_schema = 'public'
+            AND c.data_type = 'numeric'
+            AND (${MONEY_COLUMN_FILTER_SQL})
+            AND ${SNAPSHOT_TABLE_EXCLUDE}
+            AND (c.numeric_precision <> 15 OR c.numeric_scale <> 2)
+        `),
+        // Burden imbalance: uses columns present in burden_records itself.
+        db.execute(sql`
+          SELECT count(*)::int AS n
+          FROM burden_records br
+          WHERE ABS(
+            COALESCE(br.total_amount, 0) -
+            (COALESCE(br.actual_developer_amount, 0) + COALESCE(br.actual_landowner_amount, 0))
+          ) > 0.01
+        `),
+        // Distribution imbalance via fifty_pct_sessions (correct table for split totals).
+        db.execute(sql`
+          SELECT count(*)::int AS n
+          FROM fifty_pct_sessions fps
+          WHERE ABS(
+            COALESCE(fps.gross_revenue, 0) -
+            (COALESCE(fps.landowner_split, 0) + COALESCE(fps.participant_pool_split, 0))
+          ) > 0.01
+        `),
+      ]),
+      // Live precision check: rows in still-real money columns with sub-cent values.
+      // Returns 0 post-migration (all money columns already numeric).
+      getLiveValuesExceedingPrecision(),
     ]);
 
+  const execN = (r: Awaited<ReturnType<typeof db.execute>>) =>
+    Number((r.rows?.[0] as { n: number } | undefined)?.n ?? 0);
+
   return res.json({
-    moneyColumnsUsingReal: Number((usingReal.rows?.[0] as { n: number })?.n ?? 0),
-    moneyColumnsWithWrongScale: Number((wrongScale.rows?.[0] as { n: number })?.n ?? 0),
-    valuesExceedingTargetPrecision: Number(
-      (exceedingPrecision.rows?.[0] as { n: number })?.n ?? 0,
-    ),
-    aggregateDriftBurden: Number((burdenDrift.rows?.[0] as { n: number })?.n ?? 0),
-    aggregateDriftDistribution: Number((distDrift.rows?.[0] as { n: number })?.n ?? 0),
+    moneyColumnsUsingReal: execN(usingReal),
+    moneyColumnsWithWrongScale: execN(wrongScale),
+    valuesExceedingTargetPrecision: exceedingLive,
+    aggregateDriftBurden: execN(burdenDrift),
+    aggregateDriftDistribution: execN(distDrift),
   });
 });
 
@@ -1603,20 +1675,14 @@ router.get("/money-precision/money-columns-with-wrong-scale", async (_req, res) 
 });
 
 // ── /money-precision/values-exceeding-target-precision ───────────────────────
-// Audit-table backed: any captured row whose delta != 0 is a rounding event
-// that exceeded the post-migration target precision in its source representation.
+// Live check: rows in still-real money columns whose values have sub-cent
+// precision (would be rounded on conversion to numeric(15,2)).
+// Returns empty when all money columns are already numeric (post-migration).
 router.get(
   "/money-precision/values-exceeding-target-precision",
   async (_req, res) => {
-    const r = await db.execute(sql`
-      SELECT source_table, source_row_id, source_column,
-             original_value, converted_value, delta, migrated_at
-      FROM precision_conversion_audit
-      WHERE delta <> 0
-      ORDER BY ABS(delta) DESC
-      LIMIT 500
-    `);
-    return res.json({ items: r.rows, count: r.rows.length });
+    const items = await getLiveValuesExceedingPrecisionRows();
+    return res.json({ items, count: items.length });
   },
 );
 
