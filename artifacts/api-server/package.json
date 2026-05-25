@@ -8,7 +8,7 @@
     "build": "node ./build.mjs",
     "start": "node --enable-source-maps ./dist/index.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "node --import tsx --test src/lib/money/index.test.ts"
+    "test": "node --import tsx --test src/lib/money/index.test.ts src/lib/entitlement/resolveBatchEntitlement.test.ts"
   },
   "dependencies": {
     "@clerk/express": "^2.1.15",
