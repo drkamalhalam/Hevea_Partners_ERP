@@ -7,7 +7,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { db } from "@workspace/db";
+import { db, toMoney } from "@workspace/db";
 import { sql } from "drizzle-orm";
 import type { ReportData, ReportMeta } from "./reportGenerator";
 
@@ -30,8 +30,8 @@ const fmt = (v: unknown): string => {
 };
 
 const fmtNum = (v: unknown) => {
-  const n = parseFloat(String(v ?? "0"));
-  return isNaN(n) ? "0" : n.toLocaleString("en-IN", { maximumFractionDigits: 2 });
+  const n = toMoney(v as string | number | null | undefined).toNumber();
+  return n.toLocaleString("en-IN", { maximumFractionDigits: 2 });
 };
 
 // ── FINANCIAL REPORT ──────────────────────────────────────────────────────────

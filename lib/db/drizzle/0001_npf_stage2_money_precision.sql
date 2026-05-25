@@ -19,12 +19,41 @@
 -- are explicitly excluded — write-once historical tables must not be converted.
 --
 -- Operational guidance:
---   Run `pnpm --filter @workspace/scripts run npf:stage2:migrate-money` for
---   per-row audit snapshots before each ALTER. This file is the equivalent
---   direct DDL for manual DBA cut-over without per-row audit evidence.
+--   ALWAYS run the audit helper BEFORE applying this file:
+--     pnpm --filter @workspace/scripts run npf:stage2:migrate-money
+--   The helper snapshots every row into precision_conversion_audit
+--   and runs parity checks. Applying this file without those audit rows
+--   violates the NPF Stage 2 immutability requirement.
 -- ════════════════════════════════════════════════════════════════════════════
 
 BEGIN;
+
+-- ── Safety gate: require per-row audit snapshots to exist ────────────────────
+-- If no rows tagged 'npf_stage2_migrate_money' are found, abort immediately.
+-- This prevents silent rounding without audit evidence.
+DO $$
+DECLARE
+  audit_count INTEGER;
+BEGIN
+  -- Table may not exist yet on a brand-new DB; skip check in that case.
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_name = 'precision_conversion_audit'
+  ) THEN
+    SELECT COUNT(*) INTO audit_count
+    FROM precision_conversion_audit
+    WHERE notes = 'npf_stage2_migrate_money';
+
+    IF audit_count = 0 THEN
+      RAISE EXCEPTION
+        'NPF Stage 2 safety gate: no audit snapshots found. '
+        'Run the migration helper first: '
+        'pnpm --filter @workspace/scripts run npf:stage2:migrate-money. '
+        'Every rounding event must be captured in precision_conversion_audit '
+        'before this DDL is applied.';
+    END IF;
+  END IF;
+END $$;
 
 -- ── Precision conversion audit table (append-only) ───────────────────────────
 CREATE TABLE IF NOT EXISTS "precision_conversion_audit" (

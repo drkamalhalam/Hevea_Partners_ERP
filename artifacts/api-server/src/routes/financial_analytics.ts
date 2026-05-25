@@ -20,6 +20,7 @@ import {
 } from "../middlewares/settlement_security";
 import {
   db,
+  toMoney,
   fiftyPctSessionsTable,
   eppEntriesTable,
   lcaLedgerTable,
@@ -39,8 +40,8 @@ const router = Router();
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-const toNum = (v: unknown) => parseFloat(String(v ?? "0")) || 0;
-const toFixed = (v: number) => v.toFixed(2);
+const toNum = (v: unknown) => toMoney(v as string | number | null | undefined).toNumber();
+const toFixed = (v: number) => toMoney(v).toFixed(2);
 
 // ── GET /financial-analytics/summary ──────────────────────────────────────
 

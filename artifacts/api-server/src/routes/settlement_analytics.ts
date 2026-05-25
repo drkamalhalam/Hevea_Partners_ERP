@@ -20,15 +20,15 @@
  */
 
 import { Router } from "express";
-import { db, usersTable, projectsTable, userProjectAssignmentsTable } from "@workspace/db";
+import { db, toMoney, usersTable, projectsTable, userProjectAssignmentsTable } from "@workspace/db";
 import { eq, and, inArray, isNull, sql, desc, asc } from "drizzle-orm";
 import { requireFinancialAccess, auditMiddleware } from "../middlewares/reportAccessControl";
 
 const router = Router();
 
 // ── Helpers ───────────────────────────────────────────────────────────────
-const toNum = (v: unknown) => parseFloat(String(v ?? "0")) || 0;
-const toF2 = (v: number) => parseFloat(v.toFixed(2));
+const toNum = (v: unknown) => toMoney(v as string | number | null | undefined).toNumber();
+const toF2 = (v: number) => parseFloat(toMoney(v).toFixed(2));
 
 const isPrivileged = (role: string) => role === "admin" || role === "developer";
 

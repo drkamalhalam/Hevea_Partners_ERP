@@ -3,6 +3,10 @@ import { getAuth } from "@clerk/express";
 import { eq, and, inArray, desc, isNull, asc } from "drizzle-orm";
 import {
   db,
+  toMoney,
+  fromMoney,
+  sumMoney,
+  subMoney,
   usersTable,
   projectsTable,
   agreementsTable,
@@ -415,8 +419,8 @@ router.get("/configs/:id/schedule", requireFinancialRole, async (req, res) => {
     .where(eq(lcaLedgerTable.configId, row.id));
   const entryByYear = new Map(existingEntries.map((e) => [e.year, e]));
 
-  const baseAmount = Number(row.baseAmount);
-  const escalationPct = Number(row.escalationPct);
+  const baseAmount = toMoney(row.baseAmount).toNumber();
+  const escalationPct = toMoney(row.escalationPct).toNumber();
   const startYear = row.startYear;
 
   const schedule = [];
@@ -428,20 +432,21 @@ router.get("/configs/:id/schedule", requireFinancialRole, async (req, res) => {
 
     const grossDue = computeGrossDue(baseAmount, escalationPct, i);
     const carryForward = existing
-      ? Number(existing.carryForward)
+      ? toMoney(existing.carryForward).toNumber()
       : cumulativeCarryForward;
-    const totalDue = grossDue + carryForward;
-    const amountPaid = existing ? Number(existing.amountPaid) : 0;
-    const balance = Math.max(0, totalDue - amountPaid);
+    const totalDue = parseFloat(fromMoney(sumMoney([grossDue, carryForward])));
+    const amountPaid = existing ? toMoney(existing.amountPaid).toNumber() : 0;
+    const balanceD = subMoney(totalDue, amountPaid);
+    const balance = parseFloat(fromMoney(balanceD.isNegative() ? balanceD.times(0) : balanceD));
 
     schedule.push({
       year,
       yearOffset: i,
-      grossDue: Math.round(grossDue * 100) / 100,
-      carryForward: Math.round(carryForward * 100) / 100,
-      totalDue: Math.round(totalDue * 100) / 100,
-      amountPaid: Math.round(amountPaid * 100) / 100,
-      balance: Math.round(balance * 100) / 100,
+      grossDue: parseFloat(toMoney(grossDue).toFixed(2)),
+      carryForward: parseFloat(toMoney(carryForward).toFixed(2)),
+      totalDue: parseFloat(toMoney(totalDue).toFixed(2)),
+      amountPaid: parseFloat(toMoney(amountPaid).toFixed(2)),
+      balance: parseFloat(toMoney(balance).toFixed(2)),
       status: existing?.status ?? "pending",
       ledgerEntryId: existing?.id ?? null,
       hasLedgerEntry: !!existing,
@@ -560,8 +565,8 @@ router.post(
       });
     }
 
-    const baseAmount = Number(config.baseAmount);
-    const escalationPct = Number(config.escalationPct);
+    const baseAmount = toMoney(config.baseAmount).toNumber();
+    const escalationPct = toMoney(config.escalationPct).toNumber();
     const grossDue = computeGrossDue(baseAmount, escalationPct, yearOffset);
     const escalationFactor = yearOffset === 0 ? 1.0 : Math.pow(1 + escalationPct / 100, yearOffset);
 
@@ -579,12 +584,15 @@ router.post(
       )
       .limit(1);
     if (prevEntry && prevEntry.status !== "paid" && prevEntry.status !== "waived") {
-      carryForward = Math.max(0, Number(prevEntry.balance));
+      const prevBal = toMoney(prevEntry.balance);
+      carryForward = prevBal.isNegative() ? 0 : prevBal.toNumber();
     }
 
-    const totalDue = grossDue + carryForward;
-    const amountPaid = Math.min(typeof body.amountPaid === "number" ? body.amountPaid : 0, totalDue);
-    const balance = Math.max(0, totalDue - amountPaid);
+    const totalDue = parseFloat(fromMoney(sumMoney([grossDue, carryForward])));
+    const rawPaid = typeof body.amountPaid === "number" ? body.amountPaid : 0;
+    const amountPaid = parseFloat(fromMoney(toMoney(rawPaid).greaterThan(totalDue) ? toMoney(totalDue) : toMoney(rawPaid)));
+    const balanceD = subMoney(totalDue, amountPaid);
+    const balance = parseFloat(fromMoney(balanceD.isNegative() ? balanceD.times(0) : balanceD));
 
     let status: "pending" | "partial" | "paid" | "waived" = "pending";
     if (amountPaid >= totalDue) status = "paid";
@@ -749,11 +757,11 @@ router.get("/summary", requireFinancialRole, async (req, res) => {
         )
     : [];
 
-  const totalGrossDue = ledgerRows.reduce((s, r) => s + Number(r.grossDue), 0);
-  const totalCarryForward = ledgerRows.reduce((s, r) => s + Number(r.carryForward), 0);
-  const totalDue = ledgerRows.reduce((s, r) => s + Number(r.totalDue), 0);
-  const totalPaid = ledgerRows.reduce((s, r) => s + Number(r.amountPaid), 0);
-  const totalBalance = ledgerRows.reduce((s, r) => s + Number(r.balance), 0);
+  const totalGrossDue = parseFloat(fromMoney(sumMoney(ledgerRows.map((r) => r.grossDue))));
+  const totalCarryForward = parseFloat(fromMoney(sumMoney(ledgerRows.map((r) => r.carryForward))));
+  const totalDue = parseFloat(fromMoney(sumMoney(ledgerRows.map((r) => r.totalDue))));
+  const totalPaid = parseFloat(fromMoney(sumMoney(ledgerRows.map((r) => r.amountPaid))));
+  const totalBalance = parseFloat(fromMoney(sumMoney(ledgerRows.map((r) => r.balance))));
 
   const pendingCount = ledgerRows.filter((r) => r.status === "pending").length;
   const partialCount = ledgerRows.filter((r) => r.status === "partial").length;
