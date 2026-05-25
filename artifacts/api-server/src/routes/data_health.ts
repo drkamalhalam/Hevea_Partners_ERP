@@ -1427,17 +1427,9 @@ async function getMoneyPrecisionCounters(): Promise<{
   aggregateDriftBurden: number;
   aggregateDriftDistribution: number;
 }> {
-  const safeExec = async (q: ReturnType<typeof sql>) => {
-    try {
-      const r = await db.execute(q);
-      return Number((r.rows?.[0] as { n: number } | undefined)?.n ?? 0);
-    } catch {
-      return 0;
-    }
-  };
-
+  // NOTE: no silent catch-to-zero — errors propagate so callers see real failures.
   const [usingReal, wrongScale, exceeding, burdenDrift, distDrift] = await Promise.all([
-    safeExec(sql`
+    db.execute(sql`
       SELECT count(*)::int AS n
       FROM information_schema.columns c
       WHERE c.table_schema = 'public'
@@ -1445,7 +1437,7 @@ async function getMoneyPrecisionCounters(): Promise<{
         AND (${MONEY_COLUMN_FILTER_SQL})
         AND ${SNAPSHOT_TABLE_EXCLUDE}
     `),
-    safeExec(sql`
+    db.execute(sql`
       SELECT count(*)::int AS n
       FROM information_schema.columns c
       WHERE c.table_schema = 'public'
@@ -1454,31 +1446,38 @@ async function getMoneyPrecisionCounters(): Promise<{
         AND ${SNAPSHOT_TABLE_EXCLUDE}
         AND (c.numeric_precision <> 15 OR c.numeric_scale <> 2)
     `),
-    safeExec(sql`
+    db.execute(sql`
       SELECT count(*)::int AS n FROM precision_conversion_audit WHERE delta <> 0
     `),
-    safeExec(sql`
+    // Burden imbalance: burden_records.total_amount vs actual split amounts
+    // (burden_components table does not exist in schema; use live columns only).
+    db.execute(sql`
       SELECT count(*)::int AS n FROM burden_records br
       WHERE ABS(
         COALESCE(br.total_amount, 0) -
-        COALESCE((SELECT SUM(c.amount) FROM burden_components c WHERE c.burden_record_id = br.id), 0)
+        (COALESCE(br.actual_developer_amount, 0) + COALESCE(br.actual_landowner_amount, 0))
       ) > 0.01
     `),
-    safeExec(sql`
-      SELECT count(*)::int AS n FROM distribution_previews dp
+    // Distribution imbalance: fifty_pct_sessions gross_revenue vs split totals.
+    // distribution_previews.epp_total / landowner_total do not exist.
+    db.execute(sql`
+      SELECT count(*)::int AS n FROM fifty_pct_sessions fps
       WHERE ABS(
-        COALESCE(dp.gross_revenue, 0) -
-        (COALESCE(dp.epp_total, 0) + COALESCE(dp.landowner_total, 0))
+        COALESCE(fps.gross_revenue, 0) -
+        (COALESCE(fps.landowner_split, 0) + COALESCE(fps.participant_pool_split, 0))
       ) > 0.01
     `),
   ]);
 
+  const n = (r: Awaited<ReturnType<typeof db.execute>>) =>
+    Number((r.rows?.[0] as { n: number } | undefined)?.n ?? 0);
+
   return {
-    moneyColumnsUsingReal: usingReal,
-    moneyColumnsWithWrongScale: wrongScale,
-    valuesExceedingTargetPrecision: exceeding,
-    aggregateDriftBurden: burdenDrift,
-    aggregateDriftDistribution: distDrift,
+    moneyColumnsUsingReal: n(usingReal),
+    moneyColumnsWithWrongScale: n(wrongScale),
+    valuesExceedingTargetPrecision: n(exceeding),
+    aggregateDriftBurden: n(burdenDrift),
+    aggregateDriftDistribution: n(distDrift),
   };
 }
 
