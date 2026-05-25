@@ -17,3 +17,9 @@ id = "LWZhzA508Ymz024ZogHGC"
 uri = "file://OWNERSHIP_ARCHITECTURE_ASSESSMENT.md"
 type = "text"
 title = "Ownership Architecture Assessment"
+
+[[outputs]]
+id = "q59dkUSoEo5OwXUhAEOJn"
+uri = "file://WAVE3_READINESS_AUDIT.md"
+type = "text"
+title = "Wave 3 Readiness Audit Report"
