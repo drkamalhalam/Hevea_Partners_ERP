@@ -1538,26 +1538,29 @@ router.get("/money-precision/summary", async (_req, res) => {
         FROM precision_conversion_audit
         WHERE delta <> 0
       `),
+      // Burden imbalance: count burden_records whose actual_developer_amount +
+      // actual_landowner_amount deviates from total_amount by more than 0.01.
+      // Uses only columns present in the burden_records table itself.
       db.execute(sql`
         SELECT count(*)::int AS n
         FROM burden_records br
         WHERE ABS(
           COALESCE(br.total_amount, 0) -
-          COALESCE((
-            SELECT SUM(c.amount)
-            FROM burden_components c
-            WHERE c.burden_record_id = br.id
-          ), 0)
+          (COALESCE(br.actual_developer_amount, 0) + COALESCE(br.actual_landowner_amount, 0))
         ) > 0.01
-      `).catch(() => ({ rows: [{ n: 0 }] } as never)),
+      `),
+      // Distribution imbalance: count fifty_pct_sessions where gross_revenue
+      // deviates from landowner_split + participant_pool_split by more than 0.01.
+      // Note: distribution_previews does not carry per-split totals; the fifty-
+      // percent split totals live in fifty_pct_sessions.
       db.execute(sql`
         SELECT count(*)::int AS n
-        FROM distribution_previews dp
+        FROM fifty_pct_sessions fps
         WHERE ABS(
-          COALESCE(dp.gross_revenue, 0) -
-          (COALESCE(dp.epp_total, 0) + COALESCE(dp.landowner_total, 0))
+          COALESCE(fps.gross_revenue, 0) -
+          (COALESCE(fps.landowner_split, 0) + COALESCE(fps.participant_pool_split, 0))
         ) > 0.01
-      `).catch(() => ({ rows: [{ n: 0 }] } as never)),
+      `),
     ]);
 
   return res.json({
@@ -1619,71 +1622,57 @@ router.get(
 );
 
 // ── /money-precision/aggregate-drift-burden ──────────────────────────────────
+// Checks burden_records rows where total_amount ≠ actual_developer_amount +
+// actual_landowner_amount. Uses only columns present in burden_records itself.
 router.get("/money-precision/aggregate-drift-burden", async (_req, res) => {
-  try {
-    const r = await db.execute(sql`
-      SELECT br.id AS burden_record_id,
-             br.total_amount AS stored_total,
-             COALESCE((
-               SELECT SUM(c.amount)
-               FROM burden_components c
-               WHERE c.burden_record_id = br.id
-             ), 0) AS computed_total,
-             br.total_amount - COALESCE((
-               SELECT SUM(c.amount)
-               FROM burden_components c
-               WHERE c.burden_record_id = br.id
-             ), 0) AS drift
-      FROM burden_records br
-      WHERE ABS(
-        COALESCE(br.total_amount, 0) -
-        COALESCE((
-          SELECT SUM(c.amount)
-          FROM burden_components c
-          WHERE c.burden_record_id = br.id
-        ), 0)
-      ) > 0.01
-      ORDER BY ABS(drift) DESC
-      LIMIT 200
-    `);
-    return res.json({ items: r.rows, count: r.rows.length });
-  } catch {
-    return res.json({ items: [], count: 0, note: "burden tables not present" });
-  }
+  const r = await db.execute(sql`
+    SELECT br.id AS burden_record_id,
+           br.total_amount AS stored_total,
+           (COALESCE(br.actual_developer_amount, 0) + COALESCE(br.actual_landowner_amount, 0))
+             AS computed_total,
+           br.total_amount -
+           (COALESCE(br.actual_developer_amount, 0) + COALESCE(br.actual_landowner_amount, 0))
+             AS drift
+    FROM burden_records br
+    WHERE ABS(
+      COALESCE(br.total_amount, 0) -
+      (COALESCE(br.actual_developer_amount, 0) + COALESCE(br.actual_landowner_amount, 0))
+    ) > 0.01
+    ORDER BY ABS(
+      COALESCE(br.total_amount, 0) -
+      (COALESCE(br.actual_developer_amount, 0) + COALESCE(br.actual_landowner_amount, 0))
+    ) DESC
+    LIMIT 200
+  `);
+  return res.json({ items: r.rows, count: r.rows.length });
 });
 
 // ── /money-precision/aggregate-drift-distribution ────────────────────────────
+// Checks fifty_pct_sessions rows where gross_revenue ≠ landowner_split +
+// participant_pool_split. distribution_previews does not carry split totals.
 router.get(
   "/money-precision/aggregate-drift-distribution",
   async (_req, res) => {
-    try {
-      const r = await db.execute(sql`
-        SELECT dp.id AS preview_id,
-               dp.gross_revenue,
-               dp.epp_total,
-               dp.landowner_total,
-               (dp.gross_revenue
-                 - COALESCE(dp.epp_total, 0)
-                 - COALESCE(dp.landowner_total, 0)) AS drift
-        FROM distribution_previews dp
-        WHERE ABS(
-          COALESCE(dp.gross_revenue, 0) -
-          (COALESCE(dp.epp_total, 0) + COALESCE(dp.landowner_total, 0))
-        ) > 0.01
-        ORDER BY ABS(
-          COALESCE(dp.gross_revenue, 0) -
-          (COALESCE(dp.epp_total, 0) + COALESCE(dp.landowner_total, 0))
-        ) DESC
-        LIMIT 200
-      `);
-      return res.json({ items: r.rows, count: r.rows.length });
-    } catch {
-      return res.json({
-        items: [],
-        count: 0,
-        note: "distribution_previews columns not present",
-      });
-    }
+    const r = await db.execute(sql`
+      SELECT fps.id AS session_id,
+             fps.gross_revenue,
+             fps.landowner_split,
+             fps.participant_pool_split,
+             fps.gross_revenue -
+             (COALESCE(fps.landowner_split, 0) + COALESCE(fps.participant_pool_split, 0))
+               AS drift
+      FROM fifty_pct_sessions fps
+      WHERE ABS(
+        COALESCE(fps.gross_revenue, 0) -
+        (COALESCE(fps.landowner_split, 0) + COALESCE(fps.participant_pool_split, 0))
+      ) > 0.01
+      ORDER BY ABS(
+        COALESCE(fps.gross_revenue, 0) -
+        (COALESCE(fps.landowner_split, 0) + COALESCE(fps.participant_pool_split, 0))
+      ) DESC
+      LIMIT 200
+    `);
+    return res.json({ items: r.rows, count: r.rows.length });
   },
 );
 

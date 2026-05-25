@@ -81,27 +81,36 @@ ALTER TABLE "lca_ledger"
 ALTER TABLE "lca_payment_events"
   ALTER COLUMN "amount_paid" TYPE numeric(15, 2) USING ROUND("amount_paid"::numeric, 2);
 
-ALTER TABLE "landowner_account_ledger"
+-- Correct table name: landowner_ledger_entries (previously incorrectly named
+-- landowner_account_ledger in an earlier draft — that table does not exist).
+ALTER TABLE "landowner_ledger_entries"
   ALTER COLUMN "amount" TYPE numeric(15, 2) USING ROUND("amount"::numeric, 2);
 
 ALTER TABLE "burden_recovery_adjustments"
   ALTER COLUMN "amount_recovered"   TYPE numeric(15, 2) USING ROUND("amount_recovered"::numeric, 2),
   ALTER COLUMN "recoverable_amount" TYPE numeric(15, 2) USING ROUND("recoverable_amount"::numeric, 2);
 
-ALTER TABLE "post_maturity_payments"
+-- Correct table name: post_maturity_cost_payments (previously incorrectly
+-- named post_maturity_payments in an earlier draft — that table does not exist).
+ALTER TABLE "post_maturity_cost_payments"
   ALTER COLUMN "amount" TYPE numeric(15, 2) USING ROUND("amount"::numeric, 2);
 
 ALTER TABLE "distribution_previews"
-  ALTER COLUMN "gross_revenue"   TYPE numeric(15, 2) USING ROUND("gross_revenue"::numeric, 2),
-  ALTER COLUMN "epp_total"       TYPE numeric(15, 2) USING ROUND("epp_total"::numeric, 2),
-  ALTER COLUMN "landowner_total" TYPE numeric(15, 2) USING ROUND("landowner_total"::numeric, 2);
+  ALTER COLUMN "gross_revenue" TYPE numeric(15, 2) USING ROUND("gross_revenue"::numeric, 2);
+  -- NOTE: epp_total and landowner_total columns do not exist in distribution_previews.
+  -- The 50/50 split totals are in fifty_pct_sessions (gross_revenue,
+  -- landowner_split, participant_pool_split) — those are standard numeric(15,2)
+  -- columns and do NOT require conversion here.
 
 ALTER TABLE "agreement_accounting_profiles"
   ALTER COLUMN "monthly_developer_share" TYPE numeric(15, 2) USING ROUND("monthly_developer_share"::numeric, 2),
   ALTER COLUMN "monthly_landowner_share" TYPE numeric(15, 2) USING ROUND("monthly_landowner_share"::numeric, 2);
 
+-- Correct column name: selling_price_per_kg (previously incorrectly named
+-- price_per_kg in an earlier draft — that column does not exist in
+-- production_records).
 ALTER TABLE "production_records"
-  ALTER COLUMN "price_per_kg" TYPE numeric(15, 2) USING ROUND("price_per_kg"::numeric, 2);
+  ALTER COLUMN "selling_price_per_kg" TYPE numeric(15, 2) USING ROUND("selling_price_per_kg"::numeric, 2);
 
 -- 1b. numeric(14, 2) → numeric(15, 2) -------------------------------------
 
@@ -197,12 +206,11 @@ ALTER TABLE "agreements"
 -- ════════════════════════════════════════════════════════════════════════════
 -- 7.  EXPLICITLY UNCHANGED
 -- ════════════════════════════════════════════════════════════════════════════
---   - projects.latitude, projects.longitude         (real, GPS)
---   - project_parcels.latitude, .longitude          (real, GPS)
---   - ownership_snapshots.*                         (frozen historical)
---   - inheritance_history.*                         (frozen historical)
---   - generations.*                                 (frozen historical)
---   - backup_* tables                               (frozen historical)
+--   - agreements.gps_lat, agreements.gps_lng                (real, GPS)
+--   - ownership_snapshots.*                                  (frozen historical)
+--   - inheritance_history.*                                  (frozen historical)
+--   - generations.*                                          (frozen historical)
+--   - backup_* tables                                        (frozen historical)
 --
 -- No table renames. No column renames. No data rewrites beyond
 -- value-preserving ROUND. No business-logic changes.
