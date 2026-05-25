@@ -134,6 +134,18 @@ Every project now carries three master governance fields that control all downst
 
 ---
 
+## Wave 3 Implementation Note (numericFlex mutability exception)
+
+`numericFlex` columns defined with `data: number` in Drizzle require `number`-type values at insert time.
+Pattern for Wave 3 attribution inserts:
+- `toNum2(d: Decimal): number` = `parseFloat(d.toDecimalPlaces(2).toFixed(2))`
+- `toNum4(d: Decimal): number` = `parseFloat(d.toDecimalPlaces(4).toFixed(4))`
+
+Standard `numeric(p,s)` columns (e.g. `heldDistributionLedgerTable`) accept `string` — use `fromMoney()` directly.
+Pre-generate UUIDs with `randomUUID()` before `INSERT ... ON CONFLICT DO NOTHING` when the ID must be referenced by a subsequent insert in the same transaction block.
+
+---
+
 ## Architecture Decisions
 
 - **Contract-first API:** OpenAPI spec → Orval codegen → React Query hooks + Zod schemas in both client and server

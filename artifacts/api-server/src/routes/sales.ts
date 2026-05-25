@@ -21,6 +21,7 @@ import {
   type FieldChange,
 } from "../lib/saleAuditHelper";
 import { logOperationalAccess } from "../lib/accessLog";
+import { emitSaleRecognized } from "../lib/revenueHandler/index.js";
 
 const router = Router();
 
@@ -719,6 +720,16 @@ router.post(
       actorId: actor.id,
       actorName: actorName,
       actorRole: actor.role,
+    });
+
+    // ── V3 Wave 3: sale-event emission (flag-gated, no-op when flags OFF) ─────
+    emitSaleRecognized(db, {
+      saleTxId: txId,
+      projectId: updated.projectId,
+      recognizedAt: updated.confirmedAt ?? new Date(),
+      log: req.log,
+    }).catch((err) => {
+      req.log.warn({ err, txId }, "sales/confirm: emitSaleRecognized failed (non-fatal)");
     });
 
     return res.json(formatTransaction(updated, actor.role));

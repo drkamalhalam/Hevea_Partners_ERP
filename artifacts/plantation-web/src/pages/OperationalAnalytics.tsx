@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuthFetcher } from "../lib/authFetch";
+import { parseNumeric } from "../lib/numeric";
 import { useQuery } from "@tanstack/react-query";
 import {
   BarChart, Bar, LineChart, Line, AreaChart, Area,
@@ -369,7 +370,7 @@ export default function OperationalAnalytics() {
                         <tr key={e.id} className="border-b border-slate-700/50 hover:bg-slate-700/20">
                           <td className="px-3 py-2 text-slate-400 text-xs">{e.productionDate}</td>
                           <td className="px-3 py-2"><TypeLabel type={e.productionType} /></td>
-                          <td className="px-3 py-2 text-white font-semibold">{e.quantity.toFixed(2)} {e.unit}</td>
+                          <td className="px-3 py-2 text-white font-semibold">{parseNumeric(e.quantity).toFixed(2)} {e.unit}</td>
                           <td className="px-3 py-2 text-slate-400 text-xs font-mono">{e.batchNumber}</td>
                           <td className="px-3 py-2"><Badge text={e.batchStatus} /></td>
                           <td className="px-3 py-2 text-slate-500 text-xs">{e.enteredByName}</td>
@@ -610,7 +611,7 @@ export default function OperationalAnalytics() {
                               ? <span className="flex items-center gap-1 text-emerald-400 text-xs"><ArrowUp className="w-3 h-3" />in</span>
                               : <span className="flex items-center gap-1 text-rose-400 text-xs"><ArrowDown className="w-3 h-3" />out</span>}
                           </td>
-                          <td className="px-3 py-2 text-white font-semibold">{m.quantity.toFixed(2)} {m.unit}</td>
+                          <td className="px-3 py-2 text-white font-semibold">{parseNumeric(m.quantity).toFixed(2)} {m.unit}</td>
                           <td className="px-3 py-2 text-slate-500 text-xs font-mono">{m.referenceId ?? "—"}</td>
                           <td className="px-3 py-2 text-slate-500 text-xs font-mono">{m.batchNumber ?? "—"}</td>
                           <td className="px-3 py-2"><Badge text={m.status} /></td>
@@ -856,7 +857,7 @@ export default function OperationalAnalytics() {
                         <tr key={e.id} className="border-b border-slate-700/50 hover:bg-slate-700/20">
                           <td className="px-3 py-2 text-slate-400 text-xs">{e.movementDate}</td>
                           <td className="px-3 py-2"><TypeLabel type={e.stockType} /></td>
-                          <td className="px-3 py-2 text-orange-400 font-semibold">{e.quantity.toFixed(2)} {e.unit}</td>
+                          <td className="px-3 py-2 text-orange-400 font-semibold">{parseNumeric(e.quantity).toFixed(2)} {e.unit}</td>
                           <td className="px-3 py-2 text-slate-500 text-xs font-mono">{e.batchNumber ?? "—"}</td>
                           <td className="px-3 py-2 text-slate-500 text-xs max-w-xs truncate">{e.notes ?? "—"}</td>
                           <td className="px-3 py-2"><Badge text={e.status} /></td>

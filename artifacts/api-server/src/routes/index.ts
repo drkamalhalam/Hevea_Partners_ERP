@@ -109,6 +109,7 @@ import governanceAuditReportsRouter from "./governance_audit_reports";
 import { analyticsHubRouter } from "./analytics_hub";
 import { reportExportsRouter } from "./report_exports";
 import reportAccessAuditRouter from "./report_access_audit";
+import saleEventsAdminRouter from "./sale_events_admin";
 
 const router: IRouter = Router();
 
@@ -233,5 +234,6 @@ router.use("/report-access-audit", reportAccessAuditRouter);
 router.use("/analytics-hub", analyticsHubRouter);
 router.use("/workforce-assignments", workforceAssignmentsRouter);
 router.use("/work-assignments", workAssignmentsRouter);
+router.use("/admin/sale-events", saleEventsAdminRouter);
 
 export default router;

@@ -20,6 +20,7 @@ import { eq, and, desc, sql, gte, lte, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { format, addMinutes } from "date-fns";
 import { canAccessProject } from "../middlewares/auth";
+import { emitSaleRecognized } from "../lib/revenueHandler/index.js";
 
 const router = Router();
 
@@ -505,6 +506,25 @@ router.post("/:id/confirm-payment", async (req, res): Promise<void> => {
           { salesCode: order.salesCode, amount: order.totalAmount, projectId: order.projectId },
           "sales-orders: V1 financial bridge record created at payment confirmation",
         );
+
+        // ── V3 Wave 3: sale-event emission on bridge record (flag-gated) ─────
+        const bridgeTxId = (await db
+          .select({ id: salesTransactionsTable.id })
+          .from(salesTransactionsTable)
+          .where(eq(salesTransactionsTable.saleNumber, bridgeSaleNumber))
+          .limit(1)
+          .then((rows) => rows[0]?.id ?? null));
+
+        if (bridgeTxId) {
+          emitSaleRecognized(db, {
+            saleTxId: bridgeTxId,
+            projectId: order.projectId,
+            recognizedAt: now,
+            log: req.log,
+          }).catch((err) => {
+            req.log.warn({ err, salesCode: order.salesCode }, "sales-orders/confirm-payment: emitSaleRecognized failed (non-fatal)");
+          });
+        }
       }
     }
 
