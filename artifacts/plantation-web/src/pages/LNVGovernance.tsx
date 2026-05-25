@@ -51,17 +51,18 @@ import {
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { getListProjectsQueryKey } from "@workspace/api-client-react";
+import { parseNumeric } from "@/lib/numeric";
 
 // ── Formatting helpers ──────────────────────────────────────────────────────
 
-const fmtINR = (n: number | null | undefined) => {
-  if (n == null || isNaN(Number(n))) return "—";
-  return `₹${Number(n).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const fmtINR = (n: number | string | null | undefined) => {
+  if (n == null || n === "") return "—";
+  return `₹${parseNumeric(n).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
-const fmtNum = (n: number | null | undefined) => {
+const fmtNum = (n: number | string | null | undefined) => {
   if (n == null) return "—";
-  return Number(n).toLocaleString("en-IN");
+  return parseNumeric(n).toLocaleString("en-IN");
 };
 
 // ── Method metadata ─────────────────────────────────────────────────────────
@@ -374,7 +375,7 @@ function ProjectLNVCard({
           <div className="flex items-center gap-3 text-xs bg-amber-50 border border-amber-100 rounded-md px-3 py-2">
             <TrendingUp className="w-3.5 h-3.5 text-amber-600 shrink-0" />
             <span className="text-amber-700">
-              LCA: {project.lcaBaseAmount ? fmtINR(Number(project.lcaBaseAmount)) : "—"} / yr
+              LCA: {project.lcaBaseAmount ? fmtINR(project.lcaBaseAmount) : "—"} / yr
               {project.lcaEscalationPct ? ` · ${project.lcaEscalationPct}% escalation` : ""}
             </span>
           </div>

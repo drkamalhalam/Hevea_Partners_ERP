@@ -34,6 +34,7 @@ import {
 } from "lucide-react";
 import { useRole } from "@/contexts/RoleContext";
 import { useListProjects } from "@workspace/api-client-react";
+import { parseNumeric } from "@/lib/numeric";
 
 interface OwnershipEntry {
   stockType: string;
@@ -96,7 +97,7 @@ interface Dashboard {
 }
 
 function fmt(v: number | string): string {
-  return typeof v === "string" ? parseFloat(v).toFixed(2) : v.toFixed(2);
+  return parseNumeric(v).toFixed(2);
 }
 
 const STOCK_TYPE_LABELS: Record<string, string> = {
@@ -161,7 +162,7 @@ export default function MultiStoreInventory() {
 
   const allReconciled = dashboard?.reconciliation.every((r) => r.reconciled) ?? true;
   const physicalTotal = Object.values(dashboard?.physicalDistribution.reduce((acc, loc) => {
-    acc[loc.stockType] = (acc[loc.stockType] ?? 0) + parseFloat(loc.quantityKg);
+    acc[loc.stockType] = (acc[loc.stockType] ?? 0) + parseNumeric(loc.quantityKg);
     return acc;
   }, {} as Record<string, number>) ?? {});
 
@@ -313,7 +314,7 @@ export default function MultiStoreInventory() {
               ) : (
                 <div className="space-y-3">
                   {Object.values(storeGroups).map((group) => {
-                    const groupTotal = group.items.reduce((s, i) => s + parseFloat(i.quantityKg), 0);
+                    const groupTotal = group.items.reduce((s, i) => s + parseNumeric(i.quantityKg), 0);
                     return (
                       <Card key={group.storeCode}>
                         <CardContent className="pt-4 pb-3">

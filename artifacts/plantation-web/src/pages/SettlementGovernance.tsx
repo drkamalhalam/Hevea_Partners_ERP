@@ -39,6 +39,7 @@ import {
   Activity, ChevronRight, ExternalLink,
 } from "lucide-react";
 import { useLocation } from "wouter";
+import { parseNumeric } from "@/lib/numeric";
 
 // ── Constants ─────────────────────────────────────────────────────────────
 
@@ -68,7 +69,7 @@ const DIFF_FLAG_CONFIG = {
 // ── Helpers ───────────────────────────────────────────────────────────────
 
 const fmt = (v: string | number | null | undefined) =>
-  new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(Number(v ?? 0));
+  new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(parseNumeric(v));
 
 const fmtDate = (d: string | null | undefined) =>
   d ? new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—";
@@ -201,8 +202,8 @@ function TaskRow({ task, type }: { task: Record<string, unknown>; type: "payment
 function DiscrepancyRow({ d }: { d: Record<string, unknown> }) {
   const flag = d.diffFlag as string;
   const fc = DIFF_FLAG_CONFIG[flag as keyof typeof DIFF_FLAG_CONFIG] ?? DIFF_FLAG_CONFIG.OK;
-  const diffPct = parseFloat(d.diffPct as string);
-  const diff = parseFloat(d.diff as string);
+  const diffPct = parseNumeric(d.diffPct as string | number | null | undefined);
+  const diff = parseNumeric(d.diff as string | number | null | undefined);
 
   return (
     <div className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-3 items-center p-3 rounded-lg bg-slate-800/50 border border-slate-700/50 text-xs">

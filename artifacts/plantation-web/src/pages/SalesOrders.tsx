@@ -33,6 +33,7 @@ import { useRole } from "@/contexts/RoleContext";
 import { useProjectFilter } from "@/contexts/ProjectFilterContext";
 import { Link } from "wouter";
 import { Plus, ArrowRight, Search, Package } from "lucide-react";
+import { parseNumeric } from "@/lib/numeric";
 
 const STATUS_COLORS: Record<string, string> = {
   draft: "bg-gray-500/20 text-gray-300 border-gray-500/30",
@@ -64,7 +65,7 @@ function fmt(v: string | null | undefined) {
 }
 
 function fmtINR(v: string | number | null | undefined) {
-  const n = typeof v === "string" ? parseFloat(v) : (v ?? 0);
+  const n = parseNumeric(v as string | number | null | undefined);
   return `₹${n.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`;
 }
 
@@ -217,8 +218,8 @@ export default function SalesOrders() {
                         </div>
                         <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-300">
                           <span><span className="text-gray-500">Buyer:</span> {order.buyerName}</span>
-                          <span><span className="text-gray-500">Qty:</span> {parseFloat(order.quantityKg ?? "0").toFixed(1)} kg</span>
-                          <span><span className="text-gray-500">Rate:</span> ₹{parseFloat(order.ratePerKg ?? "0").toFixed(2)}/kg</span>
+                          <span><span className="text-gray-500">Qty:</span> {parseNumeric(order.quantityKg).toFixed(1)} kg</span>
+                          <span><span className="text-gray-500">Rate:</span> ₹{parseNumeric(order.ratePerKg).toFixed(2)}/kg</span>
                           <span className="font-semibold text-white">{fmtINR(order.totalAmount)}</span>
                         </div>
                         <div className="mt-1 text-xs text-gray-500">{fmt(order.createdAt)}</div>

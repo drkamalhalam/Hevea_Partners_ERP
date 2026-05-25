@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useRole } from "@/contexts/RoleContext";
+import { parseNumeric } from "@/lib/numeric";
 import {
   ArrowLeft, CheckCircle, XCircle, Clock, Package,
   CreditCard, Truck, QrCode, AlertTriangle, FileText,
@@ -73,7 +74,7 @@ const UPI_APPS = [
 ];
 
 function fmtINR(v: string | number | null | undefined) {
-  const n = typeof v === "string" ? parseFloat(v) : (v ?? 0);
+  const n = parseNumeric(v as string | number | null | undefined);
   return `₹${n.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`;
 }
 
@@ -118,7 +119,7 @@ function UpiQRPanel({ order, receivers }: { order: any; receivers: any[] }) {
   const receiver = receivers.find((r: any) => r.id === order.paymentReceiverAccountId);
   const upiId = receiver?.paymentType === "upi" ? (receiver?.accountIdentifier ?? "") : "";
   const payeeName = receiver?.accountName ?? order.paymentReceiverName ?? "Hevea Partners";
-  const amount = parseFloat(order.totalAmount ?? "0").toFixed(2);
+  const amount = parseNumeric(order.totalAmount).toFixed(2);
   const orderRef = order.salesCode ?? "";
 
   const upiUrl = upiId
@@ -299,7 +300,7 @@ export default function SalesOrderDetail() {
   const canAdmin = ["admin", "developer"].includes(role ?? "");
   const canSell = ["admin", "developer", "employee", "landowner"].includes(role ?? "");
   const status = order.orderStatus;
-  const remaining = parseFloat(order.quantityKg ?? "0") - parseFloat(order.quantityDispatchedKg ?? "0");
+  const remaining = parseNumeric(order.quantityKg) - parseNumeric(order.quantityDispatchedKg);
 
   const handleSubmitPayment = () => {
     const utr = paidForm.utr.trim();
@@ -348,9 +349,9 @@ export default function SalesOrderDetail() {
           </div>
         </div>
         <div className="flex gap-4 text-sm text-gray-400 pt-1 border-t border-gray-700">
-          <span>{parseFloat(order.quantityKg ?? "0").toFixed(1)} kg</span>
+          <span>{parseNumeric(order.quantityKg).toFixed(1)} kg</span>
           <span>@</span>
-          <span>₹{parseFloat(order.ratePerKg ?? "0").toFixed(2)}/kg</span>
+          <span>₹{parseNumeric(order.ratePerKg).toFixed(2)}/kg</span>
           <span className="ml-auto">{fmt(order.createdAt)}</span>
         </div>
       </div>
@@ -363,7 +364,7 @@ export default function SalesOrderDetail() {
               <IndianRupee className="w-12 h-12 text-emerald-400 mx-auto" />
               <p className="text-white font-bold text-xl">Ready to Receive Payment</p>
               <p className="text-gray-400 text-sm">
-                This will generate a UPI QR and reserve {parseFloat(order.quantityKg ?? "0").toFixed(1)} kg from inventory
+                This will generate a UPI QR and reserve {parseNumeric(order.quantityKg).toFixed(1)} kg from inventory
               </p>
             </div>
             <div className="bg-gray-900 rounded-xl p-4 space-y-2">
@@ -373,11 +374,11 @@ export default function SalesOrderDetail() {
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-400">Quantity</span>
-                <span className="text-white">{parseFloat(order.quantityKg ?? "0").toFixed(1)} kg</span>
+                <span className="text-white">{parseNumeric(order.quantityKg).toFixed(1)} kg</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-400">Rate</span>
-                <span className="text-white">₹{parseFloat(order.ratePerKg ?? "0").toFixed(2)}/kg</span>
+                <span className="text-white">₹{parseNumeric(order.ratePerKg).toFixed(2)}/kg</span>
               </div>
               <div className="flex justify-between font-bold border-t border-gray-700 pt-2 mt-2">
                 <span className="text-gray-300">Total</span>
@@ -525,11 +526,11 @@ export default function SalesOrderDetail() {
             <div className="grid grid-cols-3 gap-3 text-center bg-gray-900 rounded-xl p-4">
               <div>
                 <span className="text-gray-500 text-xs block">Ordered</span>
-                <span className="text-white font-bold">{parseFloat(order.quantityKg ?? "0").toFixed(1)} kg</span>
+                <span className="text-white font-bold">{parseNumeric(order.quantityKg).toFixed(1)} kg</span>
               </div>
               <div>
                 <span className="text-gray-500 text-xs block">Dispatched</span>
-                <span className="text-cyan-400 font-bold">{parseFloat(order.quantityDispatchedKg ?? "0").toFixed(1)} kg</span>
+                <span className="text-cyan-400 font-bold">{parseNumeric(order.quantityDispatchedKg).toFixed(1)} kg</span>
               </div>
               <div>
                 <span className="text-gray-500 text-xs block">Remaining</span>
@@ -557,7 +558,7 @@ export default function SalesOrderDetail() {
             <CheckCircle className="w-14 h-14 text-green-400 mx-auto" />
             <p className="text-white font-bold text-xl">Order Completed</p>
             <p className="text-gray-400 text-sm">
-              All {parseFloat(order.quantityKg ?? "0").toFixed(1)} kg dispatched successfully
+              All {parseNumeric(order.quantityKg).toFixed(1)} kg dispatched successfully
             </p>
           </CardContent>
         </Card>

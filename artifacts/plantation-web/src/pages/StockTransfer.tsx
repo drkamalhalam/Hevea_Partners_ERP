@@ -43,6 +43,7 @@ import {
 } from "lucide-react";
 import { useRole } from "@/contexts/RoleContext";
 import { useListProjects } from "@workspace/api-client-react";
+import { parseNumeric } from "@/lib/numeric";
 
 interface Store {
   id: string;
@@ -177,9 +178,9 @@ export default function StockTransfer() {
   }, [form.toStoreId, stores]);
 
   const availableFromStore = fromLocations.find((l) => l.stockType === form.stockType);
-  const availableQty = parseFloat(availableFromStore?.quantityKg ?? "0");
-  const toCap = parseFloat(toStore?.capacityKg ?? "0");
-  const toOcc = parseFloat(toStore?.currentOccupancyKg ?? "0");
+  const availableQty = parseNumeric(availableFromStore?.quantityKg);
+  const toCap = parseNumeric(toStore?.capacityKg);
+  const toOcc = parseNumeric(toStore?.currentOccupancyKg);
   const toRemaining = toCap > 0 ? toCap - toOcc : null;
   const requestedQty = parseFloat(form.quantityKg) || 0;
 
@@ -304,7 +305,7 @@ export default function StockTransfer() {
                         </TableCell>
                         <TableCell className="text-xs capitalize">{t.stockType.replace("_", " ")}</TableCell>
                         <TableCell className="text-xs font-mono text-right">
-                          {parseFloat(t.quantityKg).toFixed(2)}
+                          {parseNumeric(t.quantityKg).toFixed(2)}
                         </TableCell>
                         <TableCell>
                           <Badge className={`text-xs flex items-center gap-1 w-fit ${cfg.color}`}>

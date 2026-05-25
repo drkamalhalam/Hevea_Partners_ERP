@@ -1,0 +1,70 @@
+Wave 3 Business Rule Validation Audit
+
+Do not modify code.
+
+Do not implement anything.
+
+Read the actual implementation and compare it against our approved business architecture.
+
+Audit the following specifically:
+
+Entitlement Resolution Validation 
+
+Verify with worked examples whether resolveBatchEntitlement() produces the correct result for:
+
+A. retain_with_seller transfer
+
+B. transfer_to_buyer transfer
+
+C. multiple retain_with_seller chain: A → B retain_with_seller B → C retain_with_seller
+
+Confirm who receives revenue from stock produced before both transfers.
+
+D. mixed chain: A → B retain_with_seller B → C transfer_to_buyer
+
+E. partial retained/transferred KG fields
+
+F. internal entitlement purchase
+
+G. sale with no batch linkage
+
+Show actual output produced by the implementation.
+
+Held Entitlement Validation 
+
+Verify:
+
+blocked partner receives attribution row no revenue_credit is created held_distribution_ledger row is created reconciliation totals remain correct release path remains compatible with Revision 4 design Contribution-Model Compatibility 
+
+Confirm Wave 3 does not conflict with:
+
+ownership crystallization at maturity contribution freeze after maturity reimbursement settlements task expenditure contribution conversion withdrawal burden transfers Land Contribution Adjustment (LCA) Compatibility 
+
+Using the approved roadmap decisions:
+
+LCA = Land Contribution Adjustment contribution model only not applicable under 50% revenue model accrues monthly paid yearly escalation clock starts at maturity and never resets switching between operating models does not reset escalation 
+
+Confirm whether any Wave 3 table, ledger entry type, attribution logic, hold logic, or revenue category would conflict with this design.
+
+Multi-Project Compatibility 
+
+Developer may manage many projects.
+
+Verify:
+
+attribution processing is project isolated held distributions are project isolated ownership snapshots are project isolated partner balances cannot leak across projects Produce 
+
+WAVE3_BUSINESS_RULE_VALIDATION.md
+
+Final section:
+
+APPROVED FOR STAGING FLAG ENABLEMENT
+
+or
+
+BLOCKED WITH FINDINGS
+
+with detailed reasoning.
+
+No code changes. Audit only.
+

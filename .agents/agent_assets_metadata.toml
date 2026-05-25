@@ -23,3 +23,9 @@ id = "q59dkUSoEo5OwXUhAEOJn"
 uri = "file://WAVE3_READINESS_AUDIT.md"
 type = "text"
 title = "Wave 3 Readiness Audit Report"
+
+[[outputs]]
+id = "FoEmzRlMdLoioXoXhnYI3"
+uri = "file://WAVE3_IMPLEMENTATION_STATE_AUDIT.md"
+type = "text"
+title = "Wave 3 Implementation State Audit"

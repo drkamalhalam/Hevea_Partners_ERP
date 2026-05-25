@@ -22,9 +22,10 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useProjectFilter } from "@/contexts/ProjectFilterContext";
 import { AlertTriangle, Wallet, TrendingDown, Banknote, Globe, CheckCircle } from "lucide-react";
+import { parseNumeric } from "@/lib/numeric";
 
-function fmtINR(v: number | string) {
-  const n = typeof v === "string" ? parseFloat(v) : v;
+function fmtINR(v: number | string | null | undefined) {
+  const n = parseNumeric(v);
   return `₹${n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 

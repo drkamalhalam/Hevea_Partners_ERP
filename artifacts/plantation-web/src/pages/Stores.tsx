@@ -41,6 +41,7 @@ import {
   ToggleRight,
 } from "lucide-react";
 import { useRole } from "@/contexts/RoleContext";
+import { parseNumeric } from "@/lib/numeric";
 
 interface Store {
   id: string;
@@ -197,8 +198,8 @@ export default function Stores() {
   }
 
   const activeStores = stores.filter((s) => s.isActive);
-  const totalCapacity = activeStores.reduce((s, st) => s + parseFloat(st.capacityKg || "0"), 0);
-  const totalOccupancy = activeStores.reduce((s, st) => s + parseFloat(st.currentOccupancyKg || "0"), 0);
+  const totalCapacity = activeStores.reduce((s, st) => s + parseNumeric(st.capacityKg), 0);
+  const totalOccupancy = activeStores.reduce((s, st) => s + parseNumeric(st.currentOccupancyKg), 0);
 
   return (
     <div className="p-6 space-y-6 max-w-7xl">
@@ -266,8 +267,8 @@ export default function Stores() {
               </Card>
             ) : (
               stores.map((store) => {
-                const cap = parseFloat(store.capacityKg) || 0;
-                const occ = parseFloat(store.currentOccupancyKg) || 0;
+                const cap = parseNumeric(store.capacityKg);
+                const occ = parseNumeric(store.currentOccupancyKg);
                 const pct = cap > 0 ? Math.round((occ / cap) * 100) : 0;
                 const isSelected = selectedStore?.id === store.id;
 
@@ -375,7 +376,7 @@ export default function Stores() {
                             <TableCell className="text-xs">{loc.projectName}</TableCell>
                             <TableCell className="text-xs capitalize">{loc.stockType.replace("_", " ")}</TableCell>
                             <TableCell className="text-xs text-right font-mono">
-                              {parseFloat(loc.quantityKg).toFixed(2)}
+                              {parseNumeric(loc.quantityKg).toFixed(2)}
                             </TableCell>
                           </TableRow>
                         ))}

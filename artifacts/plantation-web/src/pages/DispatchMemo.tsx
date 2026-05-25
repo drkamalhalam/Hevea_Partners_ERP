@@ -44,6 +44,7 @@ import {
 } from "lucide-react";
 import { useRole } from "@/contexts/RoleContext";
 import { useListProjects } from "@workspace/api-client-react";
+import { parseNumeric } from "@/lib/numeric";
 
 interface DispatchMemo {
   id: string;
@@ -88,12 +89,12 @@ const STOCK_TYPES = [
 ];
 
 function fmt(v: string | number): string {
-  return typeof v === "string" ? parseFloat(v).toFixed(2) : v.toFixed(2);
+  return parseNumeric(v).toFixed(2);
 }
 
 function ProgressBar({ dispatched, total }: { dispatched: string; total: string }) {
-  const d = parseFloat(dispatched);
-  const t = parseFloat(total);
+  const d = parseNumeric(dispatched);
+  const t = parseNumeric(total);
   const pct = t > 0 ? Math.min(100, Math.round((d / t) * 100)) : 0;
   return (
     <div className="space-y-0.5">
@@ -296,7 +297,7 @@ export default function DispatchMemo() {
                 <TableBody>
                   {memos.map((m) => {
                     const cfg = STATUS_CONFIG[m.dispatchStatus] ?? STATUS_CONFIG.pending;
-                    const remaining = parseFloat(m.remainingKg);
+                    const remaining = parseNumeric(m.remainingKg);
                     return (
                       <TableRow key={m.id} className="cursor-pointer hover:bg-gray-50" onClick={() => setSelectedMemo(m)}>
                         <TableCell className="font-mono text-xs">{m.memoCode}</TableCell>
@@ -519,13 +520,13 @@ export default function DispatchMemo() {
                   type="number"
                   min="0"
                   step="0.001"
-                  max={selectedMemo ? parseFloat(selectedMemo.remainingKg) : undefined}
+                  max={selectedMemo ? parseNumeric(selectedMemo.remainingKg) : undefined}
                   value={dispatchQty}
                   onChange={(e) => setDispatchQty(e.target.value)}
                   placeholder="Enter kg picked up"
                   autoFocus
                 />
-                {dispatchQty && selectedMemo && parseFloat(dispatchQty) > parseFloat(selectedMemo.remainingKg) && (
+                {dispatchQty && selectedMemo && parseFloat(dispatchQty) > parseNumeric(selectedMemo.remainingKg) && (
                   <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
                     <AlertTriangle className="w-3 h-3" />
                     Exceeds remaining {fmt(selectedMemo.remainingKg)} kg
@@ -542,7 +543,7 @@ export default function DispatchMemo() {
               <Button variant="outline" onClick={() => setDispatchOpen(false)}>Cancel</Button>
               <Button
                 onClick={handleDispatch}
-                disabled={saving || !dispatchQty || (selectedMemo ? parseFloat(dispatchQty) > parseFloat(selectedMemo.remainingKg) : false)}
+                disabled={saving || !dispatchQty || (selectedMemo ? parseFloat(dispatchQty) > parseNumeric(selectedMemo.remainingKg) : false)}
                 className="bg-emerald-600 hover:bg-emerald-700"
               >
                 {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}

@@ -96,13 +96,15 @@ import {
 
 // ── Formatting ────────────────────────────────────────────────────────────
 
+import { parseNumeric } from "@/lib/numeric";
+
 const fmt = (n: number) =>
   `₹${n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 const fmtPct = (n: number) => `${Number(n).toFixed(2)}%`;
 
 function num(v: unknown) {
-  return parseFloat(String(v ?? "0")) || 0;
+  return parseNumeric(v as string | number | null | undefined);
 }
 
 // ── Status badge ──────────────────────────────────────────────────────────
@@ -377,7 +379,7 @@ export default function FiftyPctSettlement() {
     () =>
       (revenueData?.sales ?? [])
         .filter((s: any) => wSelectedSaleIds.has(s.id))
-        .reduce((sum: number, s: any) => sum + parseFloat(String(s.grossRevenue)), 0),
+        .reduce((sum: number, s: any) => sum + parseNumeric(s.grossRevenue), 0),
     [revenueData, wSelectedSaleIds],
   );
 
@@ -827,7 +829,7 @@ export default function FiftyPctSettlement() {
                                 <span className="font-medium text-slate-200">{s.saleNumber}</span>
                                 <span className="text-slate-500 text-xs ml-2">{s.saleDate} · {s.buyerName}</span>
                               </div>
-                              <span className="font-mono text-emerald-400">{fmt(parseFloat(String(s.grossRevenue)))}</span>
+                              <span className="font-mono text-emerald-400">{fmt(parseNumeric(s.grossRevenue))}</span>
                             </div>
                           </label>
                         ))}

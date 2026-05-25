@@ -49,10 +49,11 @@ import {
 } from "@/components/ui/table";
 import { PlusCircle, RefreshCw, Wallet, ArrowUpRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { parseNumeric } from "@/lib/numeric";
 
 const INR = (v: string | number | null | undefined) => {
   if (!v) return "₹0";
-  return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 2 }).format(Number(v));
+  return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 2 }).format(parseNumeric(v));
 };
 
 function StatusBadge({ status }: { status: string }) {
@@ -189,7 +190,7 @@ export default function HeldDistributions() {
     );
   }
 
-  const totalHeld = entries.filter(e => e.status === "held").reduce((s, e) => s + parseFloat(e.heldAmount), 0);
+  const totalHeld = entries.filter(e => e.status === "held").reduce((s, e) => s + parseNumeric(e.heldAmount), 0);
 
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-6">

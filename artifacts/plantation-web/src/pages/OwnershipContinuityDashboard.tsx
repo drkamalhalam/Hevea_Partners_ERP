@@ -71,6 +71,8 @@ import {
 
 // ── Colour tokens ──────────────────────────────────────────────────────────────
 
+import { parseNumeric } from "@/lib/numeric";
+
 const STATUS_COLORS: Record<string, string> = {
   // Transfers
   draft: "#94a3b8",
@@ -318,7 +320,7 @@ export default function OwnershipContinuityDashboard() {
       const entries: any[] = proj.partners ?? [];
       let other = 100;
       entries.slice(0, 4).forEach((p: any) => {
-        const pct = parseFloat(p.ownershipPct ?? "0");
+        const pct = parseNumeric(p.ownershipPct);
         partners[p.partnerName?.split(" ")[0] ?? "P"] = pct;
         other -= pct;
       });
@@ -650,8 +652,8 @@ export default function OwnershipContinuityDashboard() {
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-medium text-slate-800 truncate">{t.projectName ?? t.projectId}</p>
                         <p className="text-[10px] text-slate-400 mt-0.5">
-                          {t.transferType === "internal" ? "Internal" : "Third-Party"} · {parseFloat(t.offeredPercentage ?? "0").toFixed(2)}%
-                          {t.offeredValue ? ` · ₹${Number(t.offeredValue).toLocaleString("en-IN")}` : ""}
+                          {t.transferType === "internal" ? "Internal" : "Third-Party"} · {parseNumeric(t.offeredPercentage).toFixed(2)}%
+                          {t.offeredValue ? ` · ₹${parseNumeric(t.offeredValue).toLocaleString("en-IN")}` : ""}
                         </p>
                       </div>
                       {transferStatusBadge(t.status)}
@@ -912,7 +914,7 @@ export default function OwnershipContinuityDashboard() {
                 </div>
                 <div className={`text-center rounded-lg border p-3 ${(prematurity?.totalAccumulatedAmount ?? 0) > 0 ? "border-amber-200 bg-amber-50" : "border-slate-200 bg-slate-50"}`}>
                   <p className={`text-xl font-bold ${(prematurity?.totalAccumulatedAmount ?? 0) > 0 ? "text-amber-700" : "text-slate-800"}`}>
-                    ₹{Number(prematurity?.totalAccumulatedAmount ?? 0).toLocaleString("en-IN")}
+                    ₹{parseNumeric(prematurity?.totalAccumulatedAmount).toLocaleString("en-IN")}
                   </p>
                   <p className="text-[10px] font-medium uppercase tracking-wider mt-1 text-slate-500">Accumulated (Disputed)</p>
                 </div>
@@ -949,7 +951,7 @@ export default function OwnershipContinuityDashboard() {
               <div className="space-y-3">
                 {ownership.map((proj: any) => {
                   const partners: any[] = proj.partners ?? [];
-                  const total = partners.reduce((s: number, p: any) => s + parseFloat(p.ownershipPct ?? "0"), 0);
+                  const total = partners.reduce((s: number, p: any) => s + parseNumeric(p.ownershipPct), 0);
                   return (
                     <div key={proj.projectId} className="space-y-1">
                       <div className="flex items-center justify-between">
@@ -964,7 +966,7 @@ export default function OwnershipContinuityDashboard() {
                       {/* Stacked percentage bar */}
                       <div className="flex h-5 rounded-full overflow-hidden gap-px bg-slate-200">
                         {partners.slice(0, 6).map((p: any, i: number) => {
-                          const pct = parseFloat(p.ownershipPct ?? "0");
+                          const pct = parseNumeric(p.ownershipPct);
                           return (
                             <div
                               key={p.partnerId ?? i}
@@ -994,7 +996,7 @@ export default function OwnershipContinuityDashboard() {
                               className="inline-block w-2 h-2 rounded-sm"
                               style={{ background: CHART_PALETTE[i % CHART_PALETTE.length] }}
                             />
-                            {p.partnerName?.split(" ")[0] ?? "Partner"} {parseFloat(p.ownershipPct ?? "0").toFixed(1)}%
+                            {p.partnerName?.split(" ")[0] ?? "Partner"} {parseNumeric(p.ownershipPct).toFixed(1)}%
                           </span>
                         ))}
                         {partners.length > 6 && (
