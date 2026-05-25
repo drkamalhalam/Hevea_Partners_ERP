@@ -17,7 +17,7 @@
  */
 
 import { Router } from "express";
-import { sumMoney } from "../lib/money";
+import { toMoney, fromMoney, sumMoney, subMoney, mulMoney, splitMoney } from "../lib/money";
 import {
   db,
   fiftyPctSessionsTable,
@@ -54,21 +54,24 @@ async function resolveActor(clerkUserId: string) {
 
 // ── Helper: compute derived values ────────────────────────────────────────
 
-function computeSplit(grossRevenue: number) {
-  const split = Math.round((grossRevenue / 2) * 100) / 100;
+function computeSplit(grossRevenue: number | string) {
+  const [half] = splitMoney(grossRevenue, [1, 1]);
+  const split = parseFloat(fromMoney(half!));
   return { landownerSplit: split, participantPoolSplit: split };
 }
 
 function computeLandownerNet(
-  landownerSplit: number,
-  operationalCost: number,
-  lcaAmount: number,
+  landownerSplit: number | string,
+  operationalCost: number | string,
+  lcaAmount: number | string,
 ) {
-  return Math.max(0, Math.round((landownerSplit - operationalCost - lcaAmount) * 100) / 100);
+  const net = subMoney(subMoney(landownerSplit, operationalCost), lcaAmount);
+  return parseFloat(fromMoney(net.isNegative() ? net.times(0) : net));
 }
 
-function computeEppAllocated(poolSplit: number, pct: number) {
-  return Math.round((poolSplit * pct) / 100 * 100) / 100;
+function computeEppAllocated(poolSplit: number | string, pct: number | string) {
+  const allocated = mulMoney(poolSplit, toMoney(pct).div(100));
+  return parseFloat(fromMoney(allocated));
 }
 
 // ── Validation schemas ─────────────────────────────────────────────────────

@@ -46,9 +46,9 @@ interface Target {
  *   - escalation factor: agreements.escalation_factor
  */
 const TARGETS: Target[] = [
-  // agreements — money fields
+  // agreements — money fields only
+  // yearly_escalation is numeric(7,4) escalation rate — NOT money, excluded
   { table: "agreements",              column: "land_notional_value",   pk: "id" },
-  { table: "agreements",              column: "yearly_escalation",     pk: "id" },
   // contributions
   { table: "contributions",           column: "amount",                pk: "id" },
   // expenditures

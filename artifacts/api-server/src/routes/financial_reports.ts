@@ -16,7 +16,7 @@
  */
 
 import { Router } from "express";
-import { sumMoney } from "../lib/money";
+import { toMoney, sumMoney } from "../lib/money";
 import {
   db,
   projectsTable,
@@ -37,8 +37,8 @@ import { requireFinancialAccess, auditMiddleware } from "../middlewares/reportAc
 const router = Router();
 
 // ── Helpers ───────────────────────────────────────────────────────────────
-const toNum = (v: unknown) => parseFloat(String(v ?? "0")) || 0;
-const toF = (v: number) => parseFloat(v.toFixed(2));
+const toNum = (v: unknown) => toMoney(v as string | number | null | undefined).toNumber();
+const toF = (v: number) => parseFloat(toMoney(v).toFixed(2));
 const isPrivileged = (role: string) => role === "admin" || role === "developer";
 
 function yearFilter(col: Parameters<typeof sql>[0], year?: string): string {
