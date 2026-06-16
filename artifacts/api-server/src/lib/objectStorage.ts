@@ -1,6 +1,8 @@
 import { Storage, File } from "@google-cloud/storage";
 import { Readable } from "stream";
 import { randomUUID } from "crypto";
+import fs from "fs";
+import path from "path";
 import {
   ObjectAclPolicy,
   ObjectPermission,
@@ -9,29 +11,29 @@ import {
   setObjectAclPolicy,
 } from "./objectAcl";
 
-// Configurable via REPLIT_SIDECAR_ENDPOINT env var for non-Replit deployments.
-// Default is the Replit GCS sidecar address. Override when hosting on other
-// providers by pointing to your own token/credential service.
 const REPLIT_SIDECAR_ENDPOINT =
   process.env.REPLIT_SIDECAR_ENDPOINT ?? "http://127.0.0.1:1106";
 
-export const objectStorageClient = new Storage({
-  credentials: {
-    audience: "replit",
-    subject_token_type: "access_token",
-    token_url: `${REPLIT_SIDECAR_ENDPOINT}/token`,
-    type: "external_account",
-    credential_source: {
-      url: `${REPLIT_SIDECAR_ENDPOINT}/credential`,
-      format: {
-        type: "json",
-        subject_token_field_name: "access_token",
-      },
-    },
-    universe_domain: "googleapis.com",
-  },
-  projectId: "",
-});
+export const objectStorageClient =
+  process.env.MOCK_STORAGE === "true"
+    ? (null as any)
+    : new Storage({
+        credentials: {
+          audience: "replit",
+          subject_token_type: "access_token",
+          token_url: `${REPLIT_SIDECAR_ENDPOINT}/token`,
+          type: "external_account",
+          credential_source: {
+            url: `${REPLIT_SIDECAR_ENDPOINT}/credential`,
+            format: {
+              type: "json",
+              subject_token_field_name: "access_token",
+            },
+          },
+          universe_domain: "googleapis.com",
+        },
+        projectId: "",
+      });
 
 export class ObjectNotFoundError extends Error {
   constructor() {
@@ -41,8 +43,53 @@ export class ObjectNotFoundError extends Error {
   }
 }
 
+// ── Mock File Interface for Local Storage ─────────────────────────────────────
+export class MockFile {
+  name: string;
+  localPath: string;
+
+  constructor(name: string, localPath: string) {
+    this.name = name;
+    this.localPath = localPath;
+  }
+
+  createReadStream() {
+    return fs.createReadStream(this.localPath);
+  }
+
+  async exists(): Promise<[boolean]> {
+    return [fs.existsSync(this.localPath)];
+  }
+
+  async getMetadata(): Promise<[any]> {
+    if (!fs.existsSync(this.localPath)) {
+      throw new ObjectNotFoundError();
+    }
+    const stats = fs.statSync(this.localPath);
+    const ext = path.extname(this.name).toLowerCase();
+    let contentType = "application/octet-stream";
+    if (ext === ".docx") {
+      contentType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+    } else if (ext === ".pdf") {
+      contentType = "application/pdf";
+    }
+    return [{
+      contentType,
+      size: stats.size
+    }];
+  }
+}
+
+const UPLOADS_DIR = path.resolve(process.cwd(), "uploads");
+
 export class ObjectStorageService {
-  constructor() {}
+  constructor() {
+    if (process.env.MOCK_STORAGE === "true") {
+      if (!fs.existsSync(UPLOADS_DIR)) {
+        fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+      }
+    }
+  }
 
   getPublicObjectSearchPaths(): Array<string> {
     const pathsStr = process.env.PUBLIC_OBJECT_SEARCH_PATHS || "";
@@ -54,44 +101,67 @@ export class ObjectStorageService {
           .filter((path) => path.length > 0)
       )
     );
-    if (paths.length === 0) {
+    if (paths.length === 0 && process.env.MOCK_STORAGE !== "true") {
       throw new Error(
         "PUBLIC_OBJECT_SEARCH_PATHS not set. Create a bucket in 'Object Storage' " +
           "tool and set PUBLIC_OBJECT_SEARCH_PATHS env var (comma-separated paths)."
       );
     }
-    return paths;
+    return paths.length > 0 ? paths : ["public"];
   }
 
   getPrivateObjectDir(): string {
     const dir = process.env.PRIVATE_OBJECT_DIR || "";
-    if (!dir) {
+    if (!dir && process.env.MOCK_STORAGE !== "true") {
       throw new Error(
         "PRIVATE_OBJECT_DIR not set. Create a bucket in 'Object Storage' " +
           "tool and set PRIVATE_OBJECT_DIR env var."
       );
     }
-    return dir;
+    return dir || "private";
   }
 
   async searchPublicObject(filePath: string): Promise<File | null> {
+    if (process.env.MOCK_STORAGE === "true") {
+      const publicPaths = this.getPublicObjectSearchPaths();
+      for (const sp of publicPaths) {
+        const fullLocalPath = path.join(UPLOADS_DIR, sp, filePath);
+        if (fs.existsSync(fullLocalPath)) {
+          return new MockFile(`${sp}/${filePath}`, fullLocalPath) as any;
+        }
+      }
+      return null;
+    }
+
     for (const searchPath of this.getPublicObjectSearchPaths()) {
       const fullPath = `${searchPath}/${filePath}`;
-
       const { bucketName, objectName } = parseObjectPath(fullPath);
       const bucket = objectStorageClient.bucket(bucketName);
       const file = bucket.file(objectName);
-
       const [exists] = await file.exists();
       if (exists) {
         return file;
       }
     }
-
     return null;
   }
 
   async downloadObject(file: File, cacheTtlSec: number = 3600): Promise<Response> {
+    if (process.env.MOCK_STORAGE === "true") {
+      const mockFile = file as any as MockFile;
+      const [metadata] = await mockFile.getMetadata();
+      const nodeStream = mockFile.createReadStream();
+      const webStream = Readable.toWeb(nodeStream) as ReadableStream;
+      const headers: Record<string, string> = {
+        "Content-Type": metadata.contentType,
+        "Cache-Control": `private, max-age=${cacheTtlSec}`,
+      };
+      if (metadata.size) {
+        headers["Content-Length"] = String(metadata.size);
+      }
+      return new Response(webStream, { headers });
+    }
+
     const [metadata] = await file.getMetadata();
     const aclPolicy = await getObjectAclPolicy(file);
     const isPublic = aclPolicy?.visibility === "public";
@@ -112,16 +182,15 @@ export class ObjectStorageService {
 
   async getObjectEntityUploadURL(): Promise<string> {
     const privateObjectDir = this.getPrivateObjectDir();
-    if (!privateObjectDir) {
-      throw new Error(
-        "PRIVATE_OBJECT_DIR not set. Create a bucket in 'Object Storage' " +
-          "tool and set PRIVATE_OBJECT_DIR env var."
-      );
+    const objectId = randomUUID();
+
+    if (process.env.MOCK_STORAGE === "true") {
+      // Return local server upload endpoint
+      const port = process.env.PORT || "5000";
+      return `http://localhost:${port}/api/storage/local-upload/${objectId}`;
     }
 
-    const objectId = randomUUID();
     const fullPath = `${privateObjectDir}/uploads/${objectId}`;
-
     const { bucketName, objectName } = parseObjectPath(fullPath);
 
     return signObjectURL({
@@ -144,6 +213,15 @@ export class ObjectStorageService {
 
     const entityId = parts.slice(1).join("/");
     let entityDir = this.getPrivateObjectDir();
+
+    if (process.env.MOCK_STORAGE === "true") {
+      const fullLocalPath = path.join(UPLOADS_DIR, entityDir, entityId);
+      if (!fs.existsSync(fullLocalPath)) {
+        throw new ObjectNotFoundError();
+      }
+      return new MockFile(entityId, fullLocalPath) as any;
+    }
+
     if (!entityDir.endsWith("/")) {
       entityDir = `${entityDir}/`;
     }
@@ -159,6 +237,17 @@ export class ObjectStorageService {
   }
 
   normalizeObjectEntityPath(rawPath: string): string {
+    if (process.env.MOCK_STORAGE === "true") {
+      // Local URLs look like http://localhost:5000/api/storage/local-upload/UUID
+      // or similar relative paths.
+      if (rawPath.includes("/api/storage/local-upload/")) {
+        const parts = rawPath.split("/local-upload/");
+        const uuid = parts[parts.length - 1];
+        return `/objects/uploads/${uuid}`;
+      }
+      return rawPath;
+    }
+
     if (!rawPath.startsWith("https://storage.googleapis.com/")) {
       return rawPath;
     }
@@ -188,6 +277,11 @@ export class ObjectStorageService {
       return normalizedPath;
     }
 
+    if (process.env.MOCK_STORAGE === "true") {
+      // Mock ACL operations on local files
+      return normalizedPath;
+    }
+
     const objectFile = await this.getObjectEntityFile(normalizedPath);
     await setObjectAclPolicy(objectFile, aclPolicy);
     return normalizedPath;
@@ -204,6 +298,15 @@ export class ObjectStorageService {
   ): Promise<string> {
     const privateObjectDir = this.getPrivateObjectDir();
     const objectId = randomUUID();
+
+    if (process.env.MOCK_STORAGE === "true") {
+      const generatedSubdir = path.join(UPLOADS_DIR, privateObjectDir, "generated", objectId);
+      fs.mkdirSync(generatedSubdir, { recursive: true });
+      const fullLocalPath = path.join(generatedSubdir, filename);
+      fs.writeFileSync(fullLocalPath, buffer);
+      return `/objects/generated/${objectId}/${filename}`;
+    }
+
     const fullPath = `${privateObjectDir}/generated/${objectId}/${filename}`;
     const { bucketName, objectName } = parseObjectPath(fullPath);
     const bucket = objectStorageClient.bucket(bucketName);
@@ -221,6 +324,9 @@ export class ObjectStorageService {
     objectFile: File;
     requestedPermission?: ObjectPermission;
   }): Promise<boolean> {
+    if (process.env.MOCK_STORAGE === "true") {
+      return true;
+    }
     return canAccessObject({
       userId,
       objectFile,
@@ -288,3 +394,4 @@ async function signObjectURL({
   const { signed_url: signedURL } = (await response.json()) as { signed_url: string };
   return signedURL;
 }
+

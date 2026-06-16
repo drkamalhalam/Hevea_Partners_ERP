@@ -265,7 +265,7 @@ function AdminRoute({ component: Component }: { component: React.ComponentType }
 function SignInPage() {
   return (
     <div className="flex min-h-[100dvh] items-center justify-center bg-gray-50 px-4">
-      <SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} />
+      <SignIn signUpUrl={`$basePath}/sign-up`} />
     </div>
   );
 }
@@ -273,7 +273,7 @@ function SignInPage() {
 function SignUpPage() {
   return (
     <div className="flex min-h-[100dvh] items-center justify-center bg-gray-50 px-4">
-      <SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} />
+      <SignUp signInUrl={`{basePath}/sign-in`} />
     </div>
   );
 }
@@ -281,19 +281,9 @@ function SignUpPage() {
 function AppRoutes() {
   const [, setLocation] = useLocation();
 
-  if (!clerkPubKey) {
-    return <div className="p-8 text-destructive">Missing Clerk Publishable Key</div>;
-  }
 
   return (
-    <ClerkProvider
-      publishableKey={clerkPubKey}
-      proxyUrl={clerkProxyUrl}
-      signInUrl={`${basePath}/sign-in`}
-      signUpUrl={`${basePath}/sign-up`}
-      routerPush={(to) => setLocation(stripBase(to))}
-      routerReplace={(to) => setLocation(stripBase(to), { replace: true })}
-    >
+    <ClerkProvider>
       <QueryClientProvider client={queryClient}>
         <ClerkAuthTokenSetter />
         <ClerkQueryClientCacheInvalidator />

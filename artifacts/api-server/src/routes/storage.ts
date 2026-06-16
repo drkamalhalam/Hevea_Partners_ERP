@@ -100,7 +100,13 @@ router.get("/public-objects/*filePath", async (req: Request, res: Response) => {
  */
 router.get("/objects/*path", async (req: Request, res: Response) => {
   // ── Step 1: Require Clerk authentication ────────────────────────────────
-  const { userId: clerkUserId } = getAuth(req);
+  let clerkUserId: string | null = null;
+  if (process.env.MOCK_AUTH === "true") {
+    clerkUserId = (req.headers["x-mock-user-id"] as string) || "user_sample_admin";
+  } else {
+    clerkUserId = getAuth(req).userId;
+  }
+
   if (!clerkUserId) {
     res.status(401).json({ error: "Unauthorized" });
     return;
@@ -181,6 +187,48 @@ router.get("/objects/*path", async (req: Request, res: Response) => {
     }
     req.log.error({ err: error }, "Error serving object");
     res.status(500).json({ error: "Failed to serve object" });
+  }
+});
+
+/**
+ * PUT /storage/local-upload/:objectId
+ *
+ * Dev-only local upload endpoint for mock storage.
+ * Reads the request binary stream and saves it to ./uploads/private/uploads/:objectId.
+ */
+router.put("/local-upload/:objectId", async (req: Request, res: Response) => {
+  if (process.env.MOCK_STORAGE !== "true") {
+    res.status(403).json({ error: "Local upload only allowed when MOCK_STORAGE is true" });
+    return;
+  }
+  try {
+    const objectId = Array.isArray(req.params.objectId)
+      ? req.params.objectId[0]
+      : req.params.objectId;
+    const fs = await import("fs");
+    const path = await import("path");
+    const privateObjectDir = objectStorageService.getPrivateObjectDir();
+
+    // We write to ./uploads/private/uploads/:objectId
+    const uploadDir = path.resolve(process.cwd(), "uploads", privateObjectDir, "uploads");
+    fs.mkdirSync(uploadDir, { recursive: true });
+
+    const filePath = path.join(uploadDir, objectId);
+    const writeStream = fs.createWriteStream(filePath);
+
+    req.pipe(writeStream);
+
+    req.on("end", () => {
+      res.status(200).json({ success: true, objectPath: `/objects/uploads/${objectId}` });
+    });
+
+    req.on("error", (err) => {
+      req.log.error({ err }, "Upload write failed");
+      res.status(500).json({ error: "Write failed" });
+    });
+  } catch (error) {
+    req.log.error({ err: error }, "Local upload failed");
+    res.status(500).json({ error: "Local upload failed" });
   }
 });
 

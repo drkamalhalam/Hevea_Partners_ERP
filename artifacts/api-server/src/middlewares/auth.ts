@@ -100,8 +100,22 @@ export async function requireAuth(
     return;
   }
 
-  const auth = getAuth(req);
-  const { userId } = auth;
+  let userId: string | null = null;
+  if (process.env.MOCK_AUTH === "true") {
+    // Read the mock Clerk user ID from the Bearer token or Authorization header
+    const authHeader = req.headers["authorization"];
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      userId = authHeader.substring(7);
+    }
+    // Fallback default mock user if missing
+    if (!userId) {
+      userId = "user_sample_admin";
+    }
+  } else {
+    const auth = getAuth(req);
+    userId = auth.userId;
+  }
+
   if (!userId) {
     res.status(401).json({ error: "Unauthorized" });
     return;
